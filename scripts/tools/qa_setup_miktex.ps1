@@ -127,6 +127,18 @@ $packageVersionFile = Join-Path $recordDir 'explicit-package-versions.txt'
 foreach ($package in $packages) {
     $info = (& $miktexExe packages info --template '{id}|{version}|{timePackaged}|{isInstalled}' $package 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -ne 0) { throw "Cannot inspect installed package version for $package" }
+    # A successful explicit install is not a proof that *each* dependency is now installed.
+    # Reject unknown/duplicate/malformed post-provision metadata, not just absent TeX files.
+    $installedRows = @($info -split '(?:\r\n|\r|\n)' |
+        Where-Object { $_ -match ('^' + [regex]::Escape($package) + '\|') })
+    if ($installedRows.Count -ne 1) {
+        throw "MiKTeX post-provision package metadata missing/ambiguous for $package"
+    }
+    $installedFields = @($installedRows[0].Trim() -split '\|', 4)
+    if ($installedFields.Count -ne 4 -or $installedFields[0] -cne $package -or
+        $installedFields[3] -cne 'true') {
+        throw "MiKTeX declared package $package is not confirmed installed after provisioning"
+    }
     "$package => $info" | Out-File -FilePath $packageVersionFile -Append -Encoding utf8
 }
 
@@ -155,4 +167,11 @@ $setupRecord = @{
     ci_host = 'windows-2022'; target_windows10 = 'NOT_RUN'; physical_mac_arm = 'NOT_RUN'
 }
 $setupRecord | ConvertTo-Json -Depth 5 | Out-File -FilePath (Join-Path $recordDir 'setup.json') -Encoding utf8
+# Terminal status is for the *setup stage*, not the XeLaTeX/PDF QA job.
+# An incomplete checkpoint must not survive a successfully committed setup.json.
+@{ schema_version = 1; stage = 'setup-complete'; status = 'SETUP_COMPLETE'
+   installer_sha256 = $downloadedHash; xelatex_path = $xelatex
+   auto_install_config_readback = $configValue; host = 'windows-2022'
+   physical_windows10 = 'NOT_RUN' } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
 Write-Host "MiKTeX private XeLaTeX: $xelatex"
