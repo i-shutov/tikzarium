@@ -180,8 +180,8 @@ fn generate_legacy(tool: Tool, draft: &Draft, id: u64) -> Result<String, String>
 /// changes unrelated source, and the public N1 marker prefix stays stable.
 pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
     let source = command(tool, draft)?;
-    let metadata = serde_json::to_string(&(2_u8, id, tool.id(), &draft.values))
-        .map_err(|e| e.to_string())?;
+    let metadata =
+        serde_json::to_string(&(2_u8, id, tool.id(), &draft.values)).map_err(|e| e.to_string())?;
     Ok(format!("  {source}{MARKER}{metadata}"))
 }
 #[derive(Clone, Debug)]
@@ -209,12 +209,7 @@ fn parse_owned(line: &str, offset: usize, number: usize) -> Option<Owned> {
         if marker.schema != 1 || marker.id == 0 {
             return None;
         }
-        (
-            Tool::from_id(&marker.tool)?,
-            marker.id,
-            marker.draft,
-            true,
-        )
+        (Tool::from_id(&marker.tool)?, marker.id, marker.draft, true)
     };
     // Metadata is NOT proof by itself. Both schemas must reproduce the exact
     // C-generated command AND full authored line, byte for byte.
@@ -842,11 +837,17 @@ mod tests {
             session.reset(&source);
             let mut draft = Draft::for_tool(tool);
             if tool == Tool::Node {
-                draft.values.insert("content".into(), "Привет % tikzarium:n1: текст".into());
+                draft
+                    .values
+                    .insert("content".into(), "Привет % tikzarium:n1: текст".into());
             }
             session.insert(&mut source, tool, draft.clone()).unwrap();
             let items = owned(&source);
-            assert_eq!(items.len(), 1, "{tool:?}: valid compact marker lost ownership");
+            assert_eq!(
+                items.len(),
+                1,
+                "{tool:?}: valid compact marker lost ownership"
+            );
             let (_, metadata) = items[0].text.split_once(MARKER).unwrap();
             assert!(metadata.starts_with("[2,"), "{tool:?}: unexpected schema");
             let old = generate_legacy(tool, &draft, 1).unwrap();
@@ -881,7 +882,10 @@ mod tests {
             editor.undo(&mut changed).unwrap();
             assert_eq!(changed, source, "Undo must restore all original bytes");
             session.undo(&mut source).unwrap();
-            assert_eq!(source, original, "original CRLF and opaque TeX were damaged");
+            assert_eq!(
+                source, original,
+                "original CRLF and opaque TeX were damaged"
+            );
         }
     }
 
@@ -900,7 +904,10 @@ mod tests {
         session.reset(&source);
         session.choose(&source, 7).unwrap();
         session.apply_parameters(&mut source).unwrap();
-        assert_eq!(source, before, "no-op Apply must not rewrite legacy metadata");
+        assert_eq!(
+            source, before,
+            "no-op Apply must not rewrite legacy metadata"
+        );
         assert!(!session.undo_available());
         session.draft.values.insert("radius".into(), "3cm".into());
         session.apply_parameters(&mut source).unwrap();
@@ -924,7 +931,10 @@ mod tests {
         };
         let command = command(Tool::Circle, &draft).unwrap();
         let tampered = format!("  {command}{MARKER}{wrong_values}");
-        assert!(owned(&tampered).is_empty(), "marker cannot grant edit authority");
+        assert!(
+            owned(&tampered).is_empty(),
+            "marker cannot grant edit authority"
+        );
         let future = good.replacen(&format!("{MARKER}[2,"), &format!("{MARKER}[99,"), 1);
         assert!(owned(&future).is_empty(), "unknown schema is source-first");
         assert!(owned(&format!("\\unknownMacro{{{good}}}")).is_empty());
