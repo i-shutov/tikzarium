@@ -192,13 +192,19 @@ mod tests {
         fs::write(&source, "other process edited\n").unwrap();
         let error = doc.save().unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
-        assert_eq!(fs::read_to_string(&source).unwrap(), "other process edited\n");
+        assert_eq!(
+            fs::read_to_string(&source).unwrap(),
+            "other process edited\n"
+        );
 
         doc.source.push_str("% my unsaved change\n");
         assert!(doc.dirty());
         let error = doc.save().unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
-        assert_eq!(fs::read_to_string(&source).unwrap(), "other process edited\n");
+        assert_eq!(
+            fs::read_to_string(&source).unwrap(),
+            "other process edited\n"
+        );
         assert_eq!(doc.path.as_deref(), Some(source.as_path()));
     }
 
@@ -244,11 +250,21 @@ mod tests {
         symlink(&real, &alias).unwrap();
         let mut doc = Document::load(&alias).unwrap();
         doc.save().unwrap();
-        assert!(fs::symlink_metadata(&alias).unwrap().file_type().is_symlink());
+        assert!(
+            fs::symlink_metadata(&alias)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
         doc.source.push_str("% change\n");
         let error = doc.save().unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
-        assert!(fs::symlink_metadata(&alias).unwrap().file_type().is_symlink());
+        assert!(
+            fs::symlink_metadata(&alias)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
         assert_eq!(fs::read_to_string(&real).unwrap(), "unchanged\n");
     }
 
@@ -265,10 +281,12 @@ mod tests {
         let mut doc = Document::load(&file).unwrap();
         assert!(doc.save().is_ok());
         doc.source.push_str("% change\n");
-        assert_eq!(doc.save().unwrap_err().kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(
+            doc.save().unwrap_err().kind(),
+            io::ErrorKind::PermissionDenied
+        );
         assert_eq!(fs::read_to_string(&file).unwrap(), "unchanged\n");
         // Restore write permissions before TempDir cleanup on Windows.
         fs::set_permissions(&file, original_permissions).unwrap();
     }
-
 }
