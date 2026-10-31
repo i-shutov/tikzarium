@@ -49,6 +49,38 @@ def miktex_engine(version: str) -> bool:
     return "miktex" in version.casefold() and "xetex" in version.casefold()
 
 
+def poppler_version(tool: str, transcript: str) -> bool:
+    """A real Poppler auditor, not MiKTeX's same-named TeX shim."""
+    return bool(re.search(rf"(?m)^{re.escape(tool)} version [0-9]+(?:[.][0-9]+)+", transcript))
+
+
+def select_poppler(directory: Path) -> dict:
+    """Use independent Chocolatey Poppler explicitly for PDF evidence.
+
+    MiKTeX ships pdfinfo/pdftotext/pdffonts shims with identical names;
+    PATH after installing MiKTeX otherwise silently selects those shims.
+    """
+    root = directory.resolve(strict=True)
+    if not root.is_dir():
+        raise RuntimeError("Independent Poppler tool directory is not a directory")
+    os.environ["PATH"] = str(root) + os.pathsep + os.environ.get("PATH", "")
+    tools = {}
+    for name in ("pdfinfo", "pdftotext", "pdffonts"):
+        executable = shutil.which(name)
+        if not executable:
+            raise RuntimeError(f"Independent Poppler {name} missing")
+        path = Path(executable).resolve()
+        if not path.is_relative_to(root):
+            raise RuntimeError(f"PDF auditor {name} resolved outside independent Poppler: {path}")
+        probe = run([str(path), "-v"], timeout=30)
+        transcript = (probe.stdout + probe.stderr).decode("utf-8", errors="replace")
+        if probe.returncode or not poppler_version(name, transcript):
+            raise RuntimeError(f"Independent Poppler {name} version probe failed: {transcript[:200]}")
+        tools[name] = {"path": str(path), "sha256": sha(path),
+                       "version": transcript.splitlines()[0]}
+    return tools
+
+
 def run(cmd: list[str], cwd: Path | None = None, timeout: int = 180) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(cmd, cwd=cwd, capture_output=True, timeout=timeout, check=False)
 
@@ -198,7 +230,7 @@ def n1_positive(root: Path, output: Path, engine: Path, cli: Path, proof: Path) 
         result["session_state"] = state
         for source, name, wanted, font in (
             (plain_source, "text", ["Геометрия", "оптика"], ["DejaVuSerif"]),
-            (math_source, "math", ["α", "β"], ["LatinModernMath"]),
+            (math_source, "math", ["𝛼", "𝛽"], ["LatinModernMath"]),
         ):
             original = sha(source)
             dest = workspace / f"PDF {name}"
@@ -265,6 +297,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--cli", type=Path, required=True)
     p.add_argument("--n1-proof", type=Path, required=True)
     p.add_argument("--xelatex", type=Path, required=True)
+    p.add_argument("--poppler-dir", type=Path, required=True)
     p.add_argument("--miktex-prefix", type=Path, required=True)
     p.add_argument("--setup-record", type=Path, required=True)
     p.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
@@ -304,13 +337,9 @@ def main(argv: list[str] | None = None) -> int:
                 or Path(setup.get("user_install", "")).resolve() != prefix):
             raise RuntimeError("Isolated MiKTeX setup provenance or auto-install-off proof absent")
         report["setup"] = setup
-        required_tools = ("pdfinfo", "pdftotext", "pdffonts")
-        missing = [tool for tool in required_tools if not shutil.which(tool)]
-        if missing:
-            raise RuntimeError(f"Missing Poppler PDF inspectors: {missing}")
+        report["pdf_tools"] = select_poppler(args.poppler_dir)
         if os.environ.get("TIKZARIUM_XELATEX", "").casefold() != str(engine).casefold():
             raise RuntimeError("CLI must be explicitly pointed to this MiKTeX XeLaTeX binary")
-        report["pdf_tools"] = {k: shutil.which(k) for k in required_tools}
         report["results"].append(positive(root, output, engine, cli))
         report["results"].append(negative(
             root / "fixtures/qa/d06-native-primitives/missing-library.tex",

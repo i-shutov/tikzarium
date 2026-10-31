@@ -10,6 +10,8 @@ on:
       - scripts/tools/qa_setup_miktex.ps1
       - scripts/tools/qa_miktex_config.ps1
       - scripts/tools/test_qa_miktex_config.ps1
+      - scripts/tools/qa_miktex_inventory.ps1
+      - scripts/tools/test_qa_miktex_inventory.ps1
       - fixtures/qa/d06-native-primitives/**
       - scripts/tools/qa_smoke.py
       - crates/tikzarium-core/**
@@ -44,11 +46,24 @@ jobs:
       - name: D06 MiKTeX configuration readback parser regression
         shell: pwsh
         run: ./scripts/tools/test_qa_miktex_config.ps1
+      - name: D06 MiKTeX package inventory stdout/stderr parser regression
+        shell: pwsh
+        run: ./scripts/tools/test_qa_miktex_inventory.ps1
       - name: Isolated private MiKTeX installation with pinned installer and declared packages
         shell: pwsh
         run: ./scripts/tools/qa_setup_miktex.ps1
       - name: Poppler PDF auditors (independent from MiKTeX)
         run: choco install poppler --version=26.9.0 --yes --no-progress
+      - name: Verify independent Poppler shim installation for required PDF auditors
+        shell: pwsh
+        run: |
+          if (-not $env:ChocolateyInstall) { throw 'ChocolateyInstall root is unknown' }
+          $popplerBin = Join-Path $env:ChocolateyInstall 'bin'
+          foreach ($tool in @('pdfinfo','pdftotext','pdffonts')) {
+            $path = Join-Path $popplerBin "$tool.exe"
+            if (-not (Test-Path -LiteralPath $path)) { throw "Chocolatey Poppler $tool shim missing: $path" }
+          }
+          "TIKZARIUM_POPPLER_BIN=$popplerBin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Verify selected engine and required installed files (no tlmgr)
         shell: pwsh
         run: |
@@ -66,18 +81,19 @@ jobs:
             if ($LASTEXITCODE -ne 0 -or -not $found) { throw "Missing declared MiKTeX dependency $name" }
             Write-Host "$name => $found"
           }
-      - name: Record package inventory before actual compilation
+      - name: Record clean package inventory before actual compilation
         shell: pwsh
         run: |
-          & $env:TIKZARIUM_MIKTEX_EXE packages list --template '{id}|{isInstalled}' | Sort-Object | Set-Content .qa-artifacts/miktex-windows-server/packages-before.txt -Encoding utf8
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot collect MiKTeX baseline inventory' }
+          . ./scripts/tools/qa_miktex_inventory.ps1
+          $record = '.qa-artifacts/miktex-windows-server'
+          Save-MiKTeXInventory -Executable $env:TIKZARIUM_MIKTEX_EXE -Snapshot "$record/packages-before.txt" -StderrLog "$record/packages-before-stderr.log"
       - name: Build native Rust CLI (uses explicitly selected MiKTeX executable)
         run: cargo build -p tikzarium-cli
       - name: Build merged N1 app Session authoring-source producer (not GUI event QA)
         run: cargo build -p tikzarium-app --bin n1-authoring-proof
       - name: Actual N1 Session-generated TikZ + hand-authored baseline + strict negatives
         shell: pwsh
-        run: python scripts/tools/qa_miktex_vertical.py --cli target/debug/tikzarium-cli.exe --n1-proof target/debug/n1-authoring-proof.exe --xelatex "$env:TIKZARIUM_XELATEX" --miktex-prefix "$env:TIKZARIUM_MIKTEX_PREFIX" --setup-record .qa-artifacts/miktex-windows-server/setup.json --output .qa-artifacts/miktex-windows-server
+        run: python scripts/tools/qa_miktex_vertical.py --cli target/debug/tikzarium-cli.exe --n1-proof target/debug/n1-authoring-proof.exe --xelatex "$env:TIKZARIUM_XELATEX" --poppler-dir "$env:TIKZARIUM_POPPLER_BIN" --miktex-prefix "$env:TIKZARIUM_MIKTEX_PREFIX" --setup-record .qa-artifacts/miktex-windows-server/setup.json --output .qa-artifacts/miktex-windows-server
       - name: Require zero implicit MiKTeX package installs during compilation, even after failures
         if: always()
         shell: pwsh
@@ -87,10 +103,8 @@ jobs:
             Write-Host 'NOT_RUN: package baseline was not obtained (earlier setup failed)'
           } else {
             if (-not $env:TIKZARIUM_MIKTEX_EXE) { throw 'Missing MiKTeX executable for postcompile inventory' }
-            $inventory = & $env:TIKZARIUM_MIKTEX_EXE packages list --template '{id}|{isInstalled}' 2>&1
-            $inventoryExit = $LASTEXITCODE
-            $inventory | Sort-Object | Set-Content .qa-artifacts/miktex-windows-server/packages-after.txt -Encoding utf8
-            if ($inventoryExit -ne 0) { throw 'Cannot collect MiKTeX postcompile inventory' }
+            . ./scripts/tools/qa_miktex_inventory.ps1
+            Save-MiKTeXInventory -Executable $env:TIKZARIUM_MIKTEX_EXE -Snapshot '.qa-artifacts/miktex-windows-server/packages-after.txt' -StderrLog '.qa-artifacts/miktex-windows-server/packages-after-stderr.log'
             $diff = Compare-Object (Get-Content $baseline) (Get-Content .qa-artifacts/miktex-windows-server/packages-after.txt)
             if ($diff) { throw 'MiKTeX package inventory changed during supposedly offline compiler run' }
           }

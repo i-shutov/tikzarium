@@ -4,10 +4,18 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, tex_failure
+from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, poppler_version, tex_failure
 
 
 class MiKTeXVerticalContract(unittest.TestCase):
+    def test_independent_poppler_identity_vs_miktex_shims(self):
+        self.assertTrue(poppler_version("pdfinfo", "pdfinfo version 26.09.0\nCopyright Poppler"))
+        self.assertTrue(poppler_version("pdftotext", "pdftotext version 26.09.0"))
+        self.assertTrue(poppler_version("pdffonts", "pdffonts version 26.09.0"))
+        self.assertFalse(poppler_version("pdfinfo", "MiKTeX pdfinfo executable"))
+        self.assertFalse(poppler_version("pdffonts", "pdffonts: internal error"))
+        self.assertFalse(poppler_version("pdftotext", "pdftotext version unknown"))
+
     def test_miktex_version_must_be_xetex(self):
         self.assertTrue(miktex_engine("MiKTeX-XeTeX 4.0 (MiKTeX 25.12)"))
         self.assertFalse(miktex_engine("XeTeX 3.14159 (TeX Live 2026)"))
