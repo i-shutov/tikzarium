@@ -1,0 +1,15 @@
+# D06 — independent QA, exact SHA and MiKTeX provenance
+
+Date 2026-10-31. Starting main c5c8c1576b6288e1d125d558d0d4872b321efb86; checked main again before work, branched from 08c376523e133ad1fa7994203a6442955740c64a after merged B05 #25. Read AGENTS.md, plans, insights, CI/target-host documents and open PRs (#27/#28/#31/#32/#33/#34/#36/#37). Changes exclusively D-owned paths.
+
+## Verified previous D05 — NOT evidence for D06
+
+D05 #31 exact head e6a3e3db93c97667be8b8dffdec0625bd2760a1f had Rust CI https://github.com/i-shutov/tikzarium/actions/runs/41185834712 3/3, D QA https://github.com/i-shutov/tikzarium/actions/runs/41185834802 7/7, and F01 https://github.com/i-shutov/tikzarium/actions/runs/41185834709 1/1. Actually downloaded and reviewed crosshost artifact 13036784027; its accepted=true verifies six fixtures, five extension cases, PDF text/font checks on Linux, Windows Server and hosted macOS ARM. Also downloaded actual host QA ZIPs: Linux 13036627532, Windows Server 13036878252, macOS ARM 13037095015; checked reports and five extension observation artifacts per host. Windows XeLaTeX executable was C:\Users\runneradmin/texlive/bin/windows\xelatex.EXE, therefore **TeX Live**, not MiKTeX. Cannot transfer these PASS results to MiKTeX or physical Win10/M1/M4.
+
+## D06 executed local results — NOT MiKTeX
+
+D06 stdlib negative tests: 5/5 PASS. Local engine XeTeX 3.141592653-2.6-0.999996, TeX Live 2025/dev/Debian, compiled the authored native-primitive source into real one-page PDF. Poppler pdftotext extracted Cyrillic and Greek; pdffonts recorded embedded DejaVuSerif and LatinModernMath; no Missing character warnings. Source SHA-256 bca344c361a0e62f0191a0d62ad20c5bf1145c40e83177f3c14c0c3841314e67.
+
+**Separate D06 hosted Windows MiKTeX test is NOT_RUN/PENDING until new exact SHA CI plus artifacts are reviewed.** Installer is private and SHA-pinned, automatic package installation explicitly disabled and verified. TeX is independently installed on user Windows 10, never shipped or installed by TikZarium.
+
+Physical Win10, native Mac M1/M4 GUI screenshots, mouse authoring six primitives, permanent code pane and shared help, Save/Reopen/Undo, GUI theme source/PDF invariance remain NOT_RUN. Hand-written fixture does not prove mouse authoring. R4 corpus source-only and no unverified licenses/assets imported; O027/O028/O030/O047 open.
