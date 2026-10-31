@@ -1365,6 +1365,11 @@ mod tests {
                 assert_eq!(items.len(), 1);
                 assert_eq!(items[0].tool, tool);
                 assert_eq!(items[0].line, line);
+                // The REAL palette→gesture handler must author the same short,
+                // readable metadata that the editor/Save/Reopen path recognizes.
+                let (_, metadata) = items[0].text.split_once(tikz_authoring::MARKER).unwrap();
+                assert!(metadata.starts_with("[2,"), "{tool:?}: old hex emitted");
+                assert!(metadata.len() < 240, "{tool:?}: unreadably long marker");
                 assert!(source.contains(r"\myOpaqueMacro{a_b}"));
                 let tmp = tempfile::tempdir().unwrap();
                 let tex = tmp.path().join("native-gesture.tex");

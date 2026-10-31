@@ -161,7 +161,9 @@ fn decode_hex(hex: &str) -> Option<Vec<u8>> {
         })
         .collect()
 }
-pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
+/// Read-only compatibility with the original opaque hex JSON comment.
+/// Existing user documents retain this exact line until a deliberate edit.
+fn generate_legacy(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
     let source = command(tool, draft)?;
     let marker = Ownership {
         schema: 1,
@@ -171,6 +173,16 @@ pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
     };
     let json = serde_json::to_vec(&marker).map_err(|e| e.to_string())?;
     Ok(format!("  {source}{MARKER}{}", encode_hex(&json)))
+}
+
+/// B20: human-readable, compact versioned JSON metadata in a TeX comment.
+/// The C catalogue still generates the entire TikZ command. Metadata never
+/// changes unrelated source, and the public N1 marker prefix stays stable.
+pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
+    let source = command(tool, draft)?;
+    let metadata = serde_json::to_string(&(2_u8, id, tool.id(), &draft.values))
+        .map_err(|e| e.to_string())?;
+    Ok(format!("  {source}{MARKER}{metadata}"))
 }
 #[derive(Clone, Debug)]
 pub struct Owned {
@@ -182,20 +194,43 @@ pub struct Owned {
     pub range: Range<usize>,
 }
 fn parse_owned(line: &str, offset: usize, number: usize) -> Option<Owned> {
-    let (_, hex) = line.rsplit_once(MARKER)?;
-    let marker: Ownership = serde_json::from_slice(&decode_hex(hex)?).ok()?;
-    if marker.schema != 1 || marker.id == 0 {
-        return None;
+    // The FIRST marker starts the trailing comment. A node's JSON content
+    // may itself mention the marker string; never split inside that content.
+    let (_, payload) = line.split_once(MARKER)?;
+    let (tool, id, draft, legacy) = if payload.starts_with('[') {
+        let (schema, id, tool_id, values): (u8, u64, String, BTreeMap<String, String>) =
+            serde_json::from_str(payload).ok()?;
+        if schema != 2 || id == 0 {
+            return None;
+        }
+        (Tool::from_id(&tool_id)?, id, Draft { values }, false)
+    } else {
+        let marker: Ownership = serde_json::from_slice(&decode_hex(payload)?).ok()?;
+        if marker.schema != 1 || marker.id == 0 {
+            return None;
+        }
+        (
+            Tool::from_id(&marker.tool)?,
+            marker.id,
+            marker.draft,
+            true,
+        )
+    };
+    // Metadata is NOT proof by itself. Both schemas must reproduce the exact
+    // C-generated command AND full authored line, byte for byte.
+    let expected = if legacy {
+        generate_legacy(tool, &draft, id)
+    } else {
+        generate(tool, &draft, id)
     }
-    let tool = Tool::from_id(&marker.tool)?;
-    // A marker alone grants no authority: authored code must still be byte-exact.
-    if generate(tool, &marker.draft, marker.id).ok()?.as_str() != line {
+    .ok()?;
+    if expected != line {
         return None;
     }
     Some(Owned {
-        id: marker.id,
+        id,
         tool,
-        draft: marker.draft,
+        draft,
         line: number,
         text: line.into(),
         range: offset..offset + line.len(),
@@ -460,9 +495,14 @@ impl Session {
         }
         let id = self.selected.ok_or("Выберите собственную команду N1")?;
         let old = one_owned(source, id)?;
-        let after = generate(old.tool, &self.draft, id)?;
-        if old.text != after {
-            self.patch(source, old.range, old.text, after)?;
+        // Applying unchanged fields must not silently reformat legacy source.
+        // A real parameter edit may compact this exact owned line; Undo restores
+        // the entire original line including the former hex marker.
+        if old.draft != self.draft {
+            let after = generate(old.tool, &self.draft, id)?;
+            if old.text != after {
+                self.patch(source, old.range, old.text, after)?;
+            }
         }
         self.status =
             "Изменена только выбранная команда и её метаданные; другой код не переписан".into();
@@ -791,6 +831,103 @@ mod tests {
         assert!(edited.contains("4cm"));
         reopened_session.undo(&mut edited).unwrap();
         assert_eq!(edited, reopened.source);
+    }
+
+    #[test]
+    fn b20_compact_readable_metadata_survives_real_document_reopen_and_undo() {
+        for tool in TOOLS {
+            let mut source = SOURCE.replace('\n', "\r\n");
+            let original = source.clone();
+            let mut session = Session::default();
+            session.reset(&source);
+            let mut draft = Draft::for_tool(tool);
+            if tool == Tool::Node {
+                draft.values.insert("content".into(), "Привет % tikzarium:n1: текст".into());
+            }
+            session.insert(&mut source, tool, draft.clone()).unwrap();
+            let items = owned(&source);
+            assert_eq!(items.len(), 1, "{tool:?}: valid compact marker lost ownership");
+            let (_, metadata) = items[0].text.split_once(MARKER).unwrap();
+            assert!(metadata.starts_with("[2,"), "{tool:?}: unexpected schema");
+            let old = generate_legacy(tool, &draft, 1).unwrap();
+            let (_, opaque_hex) = old.split_once(MARKER).unwrap();
+            assert!(
+                metadata.len() < opaque_hex.len(),
+                "{tool:?}: new metadata is not shorter"
+            );
+            if tool == Tool::Node {
+                assert!(metadata.contains("Привет"), "Unicode must remain readable");
+            }
+            let doc = tikzarium_core::Document::scratch(&source);
+            let tmp = tempfile::tempdir().unwrap();
+            let file = tmp.path().join("b20-русский.tex");
+            doc.save_to(&file).unwrap();
+            let reopened = tikzarium_core::Document::load(&file).unwrap();
+            assert_eq!(reopened.source, source);
+            let mut editor = Session::default();
+            editor.reset(&reopened.source);
+            editor.choose(&reopened.source, 1).unwrap();
+            let key = if tool == Tool::Circle {
+                "radius"
+            } else if tool == Tool::Node {
+                "x"
+            } else {
+                "start_x"
+            };
+            editor.draft.values.insert(key.into(), "3.25cm".into());
+            let mut changed = reopened.source.clone();
+            editor.apply_parameters(&mut changed).unwrap();
+            assert_ne!(changed, source);
+            editor.undo(&mut changed).unwrap();
+            assert_eq!(changed, source, "Undo must restore all original bytes");
+            session.undo(&mut source).unwrap();
+            assert_eq!(source, original, "original CRLF and opaque TeX were damaged");
+        }
+    }
+
+    #[test]
+    fn b20_legacy_hex_reopens_without_reformatting_and_upgrades_only_on_real_edit() {
+        let draft = Draft::for_tool(Tool::Circle);
+        let old = generate_legacy(Tool::Circle, &draft, 7).unwrap();
+        let mut source = SOURCE.replacen(
+            "\\end{tikzpicture}",
+            &format!("{old}\\n\\end{{tikzpicture}}"),
+            1,
+        );
+        let before = source.clone();
+        assert_eq!(owned(&source).len(), 1);
+        let mut session = Session::default();
+        session.reset(&source);
+        session.choose(&source, 7).unwrap();
+        session.apply_parameters(&mut source).unwrap();
+        assert_eq!(source, before, "no-op Apply must not rewrite legacy metadata");
+        assert!(!session.undo_available());
+        session.draft.values.insert("radius".into(), "3cm".into());
+        session.apply_parameters(&mut source).unwrap();
+        assert_eq!(owned(&source).len(), 1);
+        assert!(source.contains(&format!("{MARKER}[2,")));
+        assert!(source.contains(r"\myMacro{x}"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, before, "legacy bytes must survive Undo");
+        assert_eq!(owned(&source)[0].id, 7);
+    }
+
+    #[test]
+    fn b20_tampered_compact_payload_and_unknown_schema_fail_closed() {
+        let draft = Draft::for_tool(Tool::Circle);
+        let good = generate(Tool::Circle, &draft, 9).unwrap();
+        assert_eq!(owned(&good).len(), 1);
+        let wrong_values = {
+            let mut values = draft.values.clone();
+            values.insert("radius".into(), "987cm".into());
+            serde_json::to_string(&(2_u8, 9_u64, "circle", values)).unwrap()
+        };
+        let command = command(Tool::Circle, &draft).unwrap();
+        let tampered = format!("  {command}{MARKER}{wrong_values}");
+        assert!(owned(&tampered).is_empty(), "marker cannot grant edit authority");
+        let future = good.replacen(&format!("{MARKER}[2,"), &format!("{MARKER}[99,"), 1);
+        assert!(owned(&future).is_empty(), "unknown schema is source-first");
+        assert!(owned(&format!("\\unknownMacro{{{good}}}")).is_empty());
     }
 
     #[test]
