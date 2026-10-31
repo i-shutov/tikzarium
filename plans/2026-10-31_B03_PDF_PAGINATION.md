@@ -16,9 +16,11 @@ Open PRs read before work: A #10 (structured TeX failure API, conflict), integra
 - [ ] Windows 10 x64 physical GUI and macOS ARM64 physical GUI — NOT_RUN (hosted CI is not a substitute).
 
 ## Reproduction + visual acceptance
-Create `two-pages.tex` with:
+Use the committed `crates/tikzarium-app/fixtures/two_pages.tex` (DejaVu Serif via fontspec is needed for Cyrillic on this reference specimen):
 ```tex
 \documentclass{article}
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
 \begin{document}
 First page — Привет.
 \newpage
