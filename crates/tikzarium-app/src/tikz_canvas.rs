@@ -518,7 +518,9 @@ fn show_inspector_action_bar_frame(
     ui.small(&session.status);
     // F1 is useful without scrolling through a long list of properties.
     // All wording, syntax and provenance come straight from the C catalogue.
-    if session.help && let Some(tool) = session.active {
+    if session.help
+        && let Some(tool) = session.active
+    {
         let info = tikz_authoring::spec(tool);
         let summary = ui
             .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
@@ -917,13 +919,7 @@ mod tests {
                 |ctx| {
                     handle_help_shortcut(ctx, session);
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        show_inspector_action_bar_frame(
-                            ui,
-                            session,
-                            source,
-                            None,
-                            Some(&mut help),
-                        );
+                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help));
                     });
                 },
             );
@@ -1040,30 +1036,34 @@ mod tests {
             true,
         );
         let prior = source.clone();
-        assert!(frame(
-            &ctx,
-            &mut session,
-            &mut source,
-            &mut editor,
-            vec![z(true)],
-            modifiers,
-            true,
-        )
-        .is_none());
+        assert!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(true)],
+                modifiers,
+                true,
+            )
+            .is_none()
+        );
         assert_eq!(source, prior);
         source.push_str("% ручная правка\n");
         session.note_manual_source_edit(&source);
         assert!(!session.undo_available());
-        assert!(frame(
-            &ctx,
-            &mut session,
-            &mut source,
-            &mut editor,
-            vec![z(false)],
-            modifiers,
-            false,
-        )
-        .is_none());
+        assert!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(false)],
+                modifiers,
+                false,
+            )
+            .is_none()
+        );
         assert!(source.ends_with("% ручная правка\n"));
     }
 
