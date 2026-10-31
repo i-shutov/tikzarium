@@ -1,18 +1,18 @@
 # I04 — end-to-end two-page PDF regression, not a GUI surrogate
 
 Date: 2026-10-31. Scope: i-shutov/tikzarium, independent integration/QA lane.
-Starting main: \`0220e3117d850c18d1016db39389d7c90bd73900\`.
+Starting main: `0220e3117d850c18d1016db39389d7c90bd73900`.
 B03 #19 is merged; B04 #20 is stacked/retargeted, source inspection independent.
 D03 #22 and F02 #18 are merged. Existing B03 tests only exercised page count
 parser and navigation bounds; they did not build the two-page fixture in CI.
 
 ## Committed implementation
 
-- \`scripts/qa_multipage_pdf.py\`: launch the **actual tikzarium-cli**
+- `scripts/qa_multipage_pdf.py`: launch the **actual tikzarium-cli**
   in a disposable copy of the B03 fixture, build with the installed XeLaTeX,
-  inspect exactly two pages with \`pdfinfo\`, render each page with **the same
-  Poppler \`pdftoppm -f/-l/-singlefile/-png/-r 120\` arguments used by B03**,
-  extract UTF-8 text with \`pdftotext\` per page and require distinct markers
+  inspect exactly two pages with `pdfinfo`, render each page with **the same
+  Poppler `pdftoppm -f/-l/-singlefile/-png/-r 120` arguments used by B03**,
+  extract UTF-8 text with `pdftotext` per page and require distinct markers
   (Привет, Геометрия) on their intended pages, not both on one.
 - Fail if the PDF header, page count, PNG signatures, page differentiation,
   Unicode extraction, CLI/Poppler exit codes or source SHA-256 invariant fails.
@@ -20,10 +20,10 @@ parser and navigation bounds; they did not build the two-page fixture in CI.
 - Never hand the Rust CLI the checked-in original: copy the source into a
   separate output directory and verify both original and copy before/after.
   Prevent source path/directory overlap with the output directory.
-- \`scripts/tests/test_qa_multipage_pdf.py\`: offline negative controls for
+- `scripts/tests/test_qa_multipage_pdf.py`: offline negative controls for
   missing/ambiguous PDF pages, swapped/overlapping Unicode, fake/same PNGs,
   source mutation and unsafe output paths.
-- \`.github/workflows/ci.yml\` Linux real-XeLaTeX job: run unit regressions,
+- `.github/workflows/ci.yml` Linux real-XeLaTeX job: run unit regressions,
   execute the compiled Rust CLI and real TeX+Poppler proof, and upload its
   fixture PDF, page-1/page-2 PNGs and JSON under the existing artifact path.
 
@@ -32,7 +32,7 @@ parser and navigation bounds; they did not build the two-page fixture in CI.
 1. PR exact-head GitHub Actions **must** pass Linux real tool proof and
    hosted Windows Server 2022/macOS-15 Rust jobs. Record exact SHA, run,
    artifact IDs/digests and potential errors; no synthetic PASS.
-2. Inspect uploaded \`multipage-evidence.json\`: \`PASS_CLI_POPPLER_ONLY\`,
+2. Inspect uploaded `multipage-evidence.json`: `PASS_CLI_POPPLER_ONLY`,
    2 pages, distinct PNG hashes, Unicode markers, original source hash and
    CLI/PDF hash. Report any missing/misplaced data as a defect.
 3. Distinguish **CLI/PDF/Poppler correctness** from actual egui async worker
