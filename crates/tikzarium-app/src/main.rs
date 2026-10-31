@@ -1235,11 +1235,8 @@ mod split_layout_tests {
                     let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
                     show_split_inspector_panel(ctx, layout, |ui| {
                         inspector_width = ui.max_rect().width();
-                        let _ = tikz_canvas::show_inspector_action_bar(
-                            ui,
-                            &mut session,
-                            &mut source,
-                        );
+                        let _ =
+                            tikz_canvas::show_inspector_action_bar(ui, &mut session, &mut source);
                     });
                     show_split_source_panel(ctx, layout, |ui| {
                         editor_width = ui.max_rect().width();
@@ -1261,12 +1258,18 @@ mod split_layout_tests {
                     });
                 },
             );
-            assert!(editor_width > 200.0, "source hidden at {viewport}: {editor_width}");
+            assert!(
+                editor_width > 200.0,
+                "source hidden at {viewport}: {editor_width}"
+            );
             assert!(
                 inspector_width > 180.0,
                 "inspector hidden at {viewport}: {inspector_width}"
             );
-            assert!(guide_width > 190.0, "guide clipped at {viewport}: {guide_width}");
+            assert!(
+                guide_width > 190.0,
+                "guide clipped at {viewport}: {guide_width}"
+            );
             assert_eq!(source, untouched, "resizing silently changed source");
             assert!(!session.undo_available());
         }
