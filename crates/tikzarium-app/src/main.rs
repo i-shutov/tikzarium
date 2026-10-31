@@ -6,9 +6,13 @@ use std::{
     time::Duration,
 };
 use tikzarium_core::{
-    BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, Document, TexEnvironment,
+    BuildArtifact, BuildDiagnostic, BuildError, BuildOptions, BuildRequest, BuildService, Document,
+    Severity, TexEnvironment,
 };
 use tikzarium_extensions::{ExtensionStatus, Registry};
+
+mod ui_state;
+use ui_state::{BottomView, WorkspaceMode, line_start_char_index, preview_is_stale, scaled_zoom};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 
@@ -17,6 +21,11 @@ struct TikzariumApp {
     file_field: String,
     tex: TexEnvironment,
     package_statuses: Vec<ExtensionStatus>,
+    diagnostics: Vec<BuildDiagnostic>,
+    workspace: WorkspaceMode,
+    bottom_view: BottomView,
+    jump_to_line: Option<usize>,
+    last_build_failed: bool,
     log: String,
     status: String,
     preview_status: String,
@@ -43,6 +52,11 @@ impl TikzariumApp {
             file_field: String::new(),
             tex,
             package_statuses,
+            diagnostics: Vec::new(),
+            workspace: WorkspaceMode::Split,
+            bottom_view: BottomView::Issues,
+            jump_to_line: None,
+            last_build_failed: false,
             log: String::new(),
             status: "Save the starter as a .tex file, then Build".into(),
             preview_status: "No exact preview yet".into(),
@@ -81,6 +95,10 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.built_source = None;
+                self.diagnostics.clear();
+                self.log.clear();
+                self.jump_to_line = None;
+                self.last_build_failed = false;
                 self.preview_texture = None;
                 self.pdf = None;
                 self.preview_status = "Not built".into();
@@ -90,19 +108,11 @@ impl TikzariumApp {
         }
     }
 
-    fn save(&mut self) -> bool {
-        let path = if !self.file_field.trim().is_empty() {
-            PathBuf::from(self.file_field.trim())
-        } else if let Some(path) = &self.document.path {
-            path.clone()
-        } else {
-            self.status = "Enter the destination .tex file path first".into();
-            return false;
-        };
+    fn save_to_path(&mut self, path: PathBuf) -> bool {
         match self.document.save_to(&path) {
             Ok(()) => {
                 self.file_field = path.display().to_string();
-                self.status = "Saved".into();
+                self.status = format!("Saved {}", path.display());
                 true
             }
             Err(error) => {
@@ -110,6 +120,49 @@ impl TikzariumApp {
                 false
             }
         }
+    }
+
+    fn save_as(&mut self) -> bool {
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        {
+            let filename = self
+                .document
+                .path
+                .as_ref()
+                .and_then(|path| path.file_name())
+                .and_then(|name| name.to_str())
+                .unwrap_or("figure.tex");
+            let path = rfd::FileDialog::new()
+                .add_filter("TeX / TikZ", &["tex", "tikz"])
+                .set_file_name(filename)
+                .save_file();
+            match path {
+                Some(path) => self.save_to_path(path),
+                None => {
+                    self.status = "Save cancelled".into();
+                    false
+                }
+            }
+        }
+        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+        {
+            if self.file_field.trim().is_empty() {
+                self.status =
+                    "Enter a destination .tex path (no native dialog on this host)".into();
+                return false;
+            }
+            self.save_to_path(PathBuf::from(self.file_field.trim()))
+        }
+    }
+
+    fn save(&mut self) -> bool {
+        if let Some(path) = self.document.path.clone() {
+            return self.save_to_path(path);
+        }
+        if !self.file_field.trim().is_empty() {
+            return self.save_to_path(PathBuf::from(self.file_field.trim()));
+        }
+        self.save_as()
     }
 
     fn build(&mut self) {
@@ -163,6 +216,8 @@ impl TikzariumApp {
             let build_source = self.building_source.take();
             match result {
                 Ok(artifact) => {
+                    self.diagnostics = artifact.diagnostics.clone();
+                    self.last_build_failed = false;
                     self.preview_texture = None;
                     self.preview_status = "Exact PDF created by XeLaTeX".into();
                     match artifact.preview {
@@ -202,6 +257,14 @@ impl TikzariumApp {
                     );
                 }
                 Err(error) => {
+                    self.last_build_failed = true;
+                    self.diagnostics = vec![BuildDiagnostic {
+                        severity: Severity::Error,
+                        message: error.to_string(),
+                        line: None,
+                    }];
+                    self.bottom_view = BottomView::Issues;
+                    self.show_log = true;
                     self.log = error.to_string();
                     self.preview_status = if self.pdf.is_some() {
                         "Build failed — last good PDF retained (stale)".into()
@@ -240,6 +303,114 @@ impl TikzariumApp {
             .status(&self.tex);
         self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
     }
+    fn show_source_editor(&mut self, ui: &mut egui::Ui) {
+        ui.heading("TeX / TikZ source");
+        ui.small(
+            self.document
+                .path
+                .as_ref()
+                .map_or("Scratch: save as .tex", |p| {
+                    p.to_str().unwrap_or("Unicode path")
+                }),
+        );
+        ui.separator();
+        egui::ScrollArea::both()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                let mut output = egui::TextEdit::multiline(&mut self.document.source)
+                    .code_editor()
+                    .desired_width(f32::INFINITY)
+                    .desired_rows(36)
+                    .show(ui);
+                if let Some(line) = self.jump_to_line.take() {
+                    if let Some(position) = line_start_char_index(&self.document.source, line) {
+                        use egui::text::{CCursor, CCursorRange};
+                        output
+                            .state
+                            .cursor
+                            .set_char_range(Some(CCursorRange::one(CCursor::new(position))));
+                        output.state.store(ui.ctx(), output.response.id);
+                        output.response.request_focus();
+                        let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
+                        let y = output.response.rect.top()
+                            + (line.saturating_sub(1) as f32) * row_height;
+                        ui.scroll_to_rect(
+                            egui::Rect::from_min_size(
+                                egui::pos2(output.response.rect.left(), y),
+                                egui::vec2(1.0, row_height),
+                            ),
+                            Some(egui::Align::Center),
+                        );
+                    } else {
+                        self.status = format!("Line {line} is outside this document");
+                    }
+                }
+            });
+    }
+
+    fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
+        let canvas_width = ui.available_width();
+        ui.horizontal_wrapped(|ui| {
+            ui.heading("Canvas · exact PDF (read-only)");
+            if ui.button("−").clicked() {
+                self.zoom = scaled_zoom(self.zoom, 1.0 / 1.2);
+            }
+            ui.label(format!("{}%", (self.zoom * 100.0).round() as u32));
+            if ui.button("+").clicked() {
+                self.zoom = scaled_zoom(self.zoom, 1.2);
+            }
+            if ui.button("100%").clicked() {
+                self.zoom = 1.0;
+            }
+            let fit = self.preview_texture.as_ref().map(|texture| {
+                ((canvas_width - 24.0).max(80.0) / texture.size_vec2().x).clamp(0.2, 5.0)
+            });
+            if ui
+                .add_enabled(fit.is_some(), egui::Button::new("Fit width"))
+                .clicked()
+                && let Some(fit) = fit
+            {
+                self.zoom = fit;
+            }
+        });
+        if preview_is_stale(
+            self.pdf.is_some(),
+            self.last_build_failed,
+            self.built_source.as_deref(),
+            &self.document.source,
+        ) {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "STALE · last successful PDF, not current source",
+            );
+        }
+        ui.label(&self.preview_status);
+        ui.small(
+            "Showing page 1 only; multi-page navigation and source-linked canvas edits are pending.",
+        );
+        ui.separator();
+        egui::ScrollArea::both()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                if let Some(texture) = &self.preview_texture {
+                    ui.image((texture.id(), texture.size_vec2() * self.zoom));
+                } else {
+                    ui.vertical_centered(|ui| {
+                        ui.add_space(48.0);
+                        ui.label("Build a TeX project to show the first PDF page.");
+                        ui.small(
+                            "XeLaTeX creates the exact PDF; optional pdftoppm rasterizes page 1.",
+                        );
+                        if let Some(pdf) = &self.pdf {
+                            ui.label(format!(
+                                "PDF retained in memory: {} bytes. Use Export PDF.",
+                                pdf.len()
+                            ));
+                        }
+                    });
+                }
+            });
+    }
 }
 
 impl eframe::App for TikzariumApp {
@@ -271,6 +442,9 @@ impl eframe::App for TikzariumApp {
                 if ui.button("Save").clicked() {
                     self.save();
                 }
+                if ui.button("Save As…").clicked() {
+                    self.save_as();
+                }
                 if ui
                     .add_enabled(
                         self.receiver.is_none(),
@@ -298,16 +472,22 @@ impl eframe::App for TikzariumApp {
                 }
             });
             ui.horizontal_wrapped(|ui| {
+                ui.label("Workspace:");
+                ui.selectable_value(&mut self.workspace, WorkspaceMode::Source, "Source");
+                ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
+                ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
+                ui.separator();
                 ui.checkbox(&mut self.show_packages, "Packages");
-                ui.checkbox(&mut self.show_log, "Build log");
+                ui.checkbox(&mut self.show_log, "Diagnostics / log");
                 if self.document.dirty() {
                     ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
                 }
-                if self
-                    .built_source
-                    .as_ref()
-                    .is_some_and(|built| built != &self.document.source)
-                {
+                if preview_is_stale(
+                    self.pdf.is_some(),
+                    self.last_build_failed,
+                    self.built_source.as_deref(),
+                    &self.document.source,
+                ) {
                     ui.colored_label(egui::Color32::YELLOW, "PDF stale");
                 }
                 ui.label(&self.status);
@@ -341,74 +521,81 @@ impl eframe::App for TikzariumApp {
         if self.show_log {
             egui::TopBottomPanel::bottom("log")
                 .resizable(true)
-                .default_height(130.0)
+                .default_height(145.0)
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        ui.strong("XeLaTeX log");
-                        if ui.button("Copy").clicked() {
+                        ui.selectable_value(
+                            &mut self.bottom_view,
+                            BottomView::Issues,
+                            format!("Diagnostics ({})", self.diagnostics.len()),
+                        );
+                        ui.selectable_value(
+                            &mut self.bottom_view,
+                            BottomView::Log,
+                            "Raw XeLaTeX log",
+                        );
+                        if self.bottom_view == BottomView::Log && ui.button("Copy log").clicked() {
                             ui.ctx().copy_text(self.log.clone());
                         }
                     });
-                    egui::ScrollArea::both().show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.log)
-                                .font(egui::TextStyle::Monospace)
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(5)
-                                .interactive(false),
-                        );
-                    });
+                    ui.separator();
+                    egui::ScrollArea::both()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| match self.bottom_view {
+                            BottomView::Issues => {
+                                if self.diagnostics.is_empty() {
+                                    ui.label("No diagnostics captured from the most recent build.");
+                                }
+                                for item in &self.diagnostics {
+                                    let severity = match &item.severity {
+                                        Severity::Error => "ERROR",
+                                        Severity::Warning => "WARNING",
+                                    };
+                                    let label = match item.line {
+                                        Some(line) => {
+                                            format!("{severity} · line {line} · {}", item.message)
+                                        }
+                                        None => format!("{severity} · {}", item.message),
+                                    };
+                                    if let Some(line) = item.line {
+                                        if ui.button(label).clicked() {
+                                            self.jump_to_line = Some(line);
+                                            if !self.workspace.show_source() {
+                                                self.workspace = WorkspaceMode::Split;
+                                            }
+                                        }
+                                    } else {
+                                        ui.label(label);
+                                    }
+                                }
+                            }
+                            BottomView::Log => {
+                                ui.add(
+                                    egui::TextEdit::multiline(&mut self.log)
+                                        .font(egui::TextStyle::Monospace)
+                                        .desired_width(f32::INFINITY)
+                                        .desired_rows(6)
+                                        .interactive(false),
+                                );
+                            }
+                        });
                 });
         }
-        egui::SidePanel::left("source")
-            .resizable(true)
-            .default_width(500.0)
-            .min_width(240.0)
-            .show(ctx, |ui| {
-                ui.heading("TeX / TikZ source");
-                ui.small(
-                    self.document
-                        .path
-                        .as_ref()
-                        .map_or("Scratch: save as .tex", |p| {
-                            p.to_str().unwrap_or("Unicode path")
-                        }),
-                );
-                ui.separator();
-                egui::ScrollArea::both()
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut self.document.source)
-                                .code_editor()
-                                .desired_width(f32::INFINITY)
-                                .desired_rows(40),
-                        );
-                    });
-            });
+        if self.workspace == WorkspaceMode::Split {
+            egui::SidePanel::left("source")
+                .resizable(true)
+                .default_width(500.0)
+                .min_width(240.0)
+                .show(ctx, |ui| {
+                    self.show_source_editor(ui);
+                });
+        }
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.heading("Exact PDF preview");
-                if ui.button("−").clicked() { self.zoom = (self.zoom / 1.2).max(0.2); }
-                ui.label(format!("{}%", (100.0 * self.zoom) as u32));
-                if ui.button("+").clicked() { self.zoom = (self.zoom * 1.2).min(5.0); }
-            });
-            ui.label(&self.preview_status);
-            ui.separator();
-            egui::ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
-                if let Some(texture) = &self.preview_texture {
-                    ui.image((texture.id(), texture.size_vec2() * self.zoom));
-                } else {
-                    ui.vertical_centered(|ui| {
-                        ui.add_space(60.0);
-                        ui.label("Build a TeX file to show page 1 here.");
-                        ui.small("XeLaTeX generates exact PDF; pdftoppm rasterizes only the viewport.");
-                        if let Some(pdf) = &self.pdf {
-                            ui.label(format!("PDF in memory: {} bytes. Use Export PDF.", pdf.len()));
-                        }
-                    });
-                }
-            });
+            if self.workspace.show_canvas() {
+                self.show_pdf_canvas(ui);
+            } else {
+                self.show_source_editor(ui);
+            }
         });
         if let Some(path) = self.pending_open.clone() {
             egui::Window::new("Unsaved edits")
