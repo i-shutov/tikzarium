@@ -204,8 +204,7 @@ fn record_literal_sites(
     trimmed: &str,
     command: &str,
     options_allowed: bool,
-    line_start: usize,
-    line_len: usize,
+    line_range: Range<usize>,
     token_start: usize,
 ) {
     if let Some(spans) = literal_name_spans(trimmed, command, options_allowed) {
@@ -214,7 +213,7 @@ fn record_literal_sites(
                 kind,
                 name,
                 name_range: token_start + local.start..token_start + local.end,
-                line_range: line_start..line_start + line_len,
+                line_range: line_range.clone(),
             });
         }
     }
@@ -334,8 +333,7 @@ pub fn inspect(source: &str) -> ProjectImports {
                         trimmed,
                         "\\usepackage",
                         true,
-                        offset,
-                        line.len(),
+                        offset..offset + line.len(),
                         token_start,
                     );
                 }
@@ -380,8 +378,7 @@ pub fn inspect(source: &str) -> ProjectImports {
                             trimmed,
                             "\\usetikzlibrary",
                             false,
-                            offset,
-                            line.len(),
+                            offset..offset + line.len(),
                             token_start,
                         );
                     }
