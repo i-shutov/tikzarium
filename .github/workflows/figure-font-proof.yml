@@ -1,0 +1,54 @@
+name: XeLaTeX figure fonts and glyph integrity
+on:
+  push:
+    branches: ["feat/fontspec-*"]
+  pull_request:
+    branches: [main, "feat/b02-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  font-proof:
+    name: Cyrillic + Unicode math + PDF embedding
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XeLaTeX font packages and Poppler
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            texlive-xetex texlive-latex-extra texlive-pictures \
+            texlive-fonts-recommended fonts-dejavu-core poppler-utils
+      - name: Validate font discovery and compile proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          xelatex --version | head -n 1
+          kpsewhich latinmodern-math.otf
+          fc-match "DejaVu Serif"
+          mkdir -p "$RUNNER_TEMP/tikzarium-fonts"
+          xelatex -interaction=nonstopmode -halt-on-error -no-shell-escape \
+            -output-directory="$RUNNER_TEMP/tikzarium-fonts" \
+            examples/fontspec-cyrillic-math.tex > "$RUNNER_TEMP/tikzarium-fonts/run.log"
+          PDF="$RUNNER_TEMP/tikzarium-fonts/fontspec-cyrillic-math.pdf"
+          test -s "$PDF"
+          ! grep -F "Missing character:" "$RUNNER_TEMP/tikzarium-fonts/fontspec-cyrillic-math.log"
+          pdftotext -enc UTF-8 -layout "$PDF" "$RUNNER_TEMP/tikzarium-fonts/extracted.txt"
+          grep -F "Привет, мир!" "$RUNNER_TEMP/tikzarium-fonts/extracted.txt"
+          grep -F "Геометрия и оптика" "$RUNNER_TEMP/tikzarium-fonts/extracted.txt"
+          grep -F "Научный рисунок" "$RUNNER_TEMP/tikzarium-fonts/extracted.txt"
+          pdffonts "$PDF" | tee "$RUNNER_TEMP/tikzarium-fonts/pdf-fonts.txt"
+          grep -F "DejaVuSerif" "$RUNNER_TEMP/tikzarium-fonts/pdf-fonts.txt"
+          grep -F "LatinModernMath" "$RUNNER_TEMP/tikzarium-fonts/pdf-fonts.txt"
+          awk 'NR>2 && NF { if ($(NF-4)!="yes") exit 1; count++ } END { if (count<2) exit 1 }' \
+            "$RUNNER_TEMP/tikzarium-fonts/pdf-fonts.txt"
+          pdfinfo "$PDF" | grep -E '^Pages: *1$'
+      - name: Store font proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figure-font-proof-linux
+          path: ${{ runner.temp }}/tikzarium-fonts/
+          if-no-files-found: warn

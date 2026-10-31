@@ -1,0 +1,4 @@
+\begin{tikzpicture}
+  \draw[thick] (0,0) -- (2,0) -- (1,1.5) -- cycle;
+  \node[above] at (1,1.5) {Included TikZ};
+\end{tikzpicture}

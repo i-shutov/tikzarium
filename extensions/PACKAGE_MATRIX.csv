@@ -1,0 +1,15 @@
+family,manifest_id,engine_requirement,installation,xelatex_build,inspection,visual_edit,evidence
+PGF/TikZ core,org.tikzarium.core,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Discovery metadata only
+PGF basic libraries,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Includes calc positioning arrows.meta intersections and decorations; fixture evidence pending
+PGFPlots,org.tikzarium.pgfplots,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned XeLaTeX fixture pending
+pgfplotstable,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Separate table fixture pending
+CircuitikZ,org.tikzarium.circuitikz,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned circuit fixture pending
+TikZ-CD,org.tikzarium.tikz-cd,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned diagram fixture pending
+tkz-euclide,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned geometry fixture pending
+automata and petri,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Package and feature-level verification pending
+forest,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned trees fixture pending
+quantikz,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned quantum-circuit fixture pending
+chemfig,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Versioned chemistry fixture pending
+tikz-feynman explicit layout,,xelatex,NOT_PROBED,NOT_TESTED,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Manual layout only; verify engine-specific features separately
+TikZ Lua graphdrawing,org.tikzarium.graphdrawing-lua,lualatex,NOT_PROBED,INCOMPATIBLE_ENGINE,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Lua-driven algorithmic layout is not XeLaTeX-native
+tkz-elements Lua operations,,lualatex,NOT_PROBED,INCOMPATIBLE_ENGINE,NOT_IMPLEMENTED,NOT_IMPLEMENTED,Lua operations cannot be run as native XeLaTeX macros

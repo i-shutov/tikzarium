@@ -7,7 +7,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, Severity};
+use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, FontIssueKind, Severity};
 
 fn fake_xelatex(directory: &Path) -> PathBuf {
     let executable = directory.join("fake xelatex");
@@ -28,6 +28,15 @@ case "$name" in
         printf '! Undefined control sequence.\nl.9 \\badmacro\n' > "$out/$stem.log"
         printf 'simulated engine failure\n' >&2
         exit 1
+        ;;
+    missing-font.tex)
+        printf './missing-font.tex:4: Package fontspec Error:\n(fontspec) The font "Definitely Nonexistent Font 424242"\n(fontspec) cannot be found.\n' > "$out/$stem.log"
+        exit 1
+        ;;
+    missing-glyph.tex)
+        printf 'Missing character: There is no Ж (U+0416) in font Fake/OT:la\nnguage=dflt;mapping=tex-text;!\n' > "$out/$stem.log"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
         ;;
     slow.tex)
         printf 'Starting slow compilation\n' > "$out/$stem.log"
@@ -186,4 +195,46 @@ fn cancelling_active_compilation_stops_the_child() {
     wait_for_engine_start(directory.path());
     service.cancel();
     assert!(matches!(thread.join().unwrap(), Err(BuildError::Cancelled)));
+}
+
+#[test]
+fn failed_fontspec_run_reports_family_and_preserves_source_and_full_log() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("missing-font.tex");
+    fs::write(&source, b"\\setmainfont{Definitely Nonexistent Font 424242}\n").unwrap();
+    let before = fs::read(&source).unwrap();
+    let engine = fake_xelatex(directory.path());
+    let persistent_log = directory.path().join("missing-font-run.log");
+    let mut build = request(&source, &engine);
+    build.options.log_path = Some(persistent_log.clone());
+
+    let failure = BuildService::new().run(&build).unwrap_err();
+    assert!(matches!(failure, BuildError::TeXFailure { .. }));
+    assert_eq!(failure.font_issues().len(), 1);
+    assert_eq!(failure.font_issues()[0].kind, FontIssueKind::MissingFont);
+    assert_eq!(
+        failure.font_issues()[0].font_name.as_deref(),
+        Some("Definitely Nonexistent Font 424242")
+    );
+    assert!(failure.diagnostics().iter().any(|d|
+        d.severity == Severity::Error && d.line == Some(4)));
+    assert!(failure.log_excerpt().unwrap().contains("cannot be found"));
+    assert!(fs::read_to_string(&persistent_log).unwrap().contains("fontspec Error"));
+    assert_eq!(before, fs::read(&source).unwrap());
+}
+
+#[test]
+fn successful_engine_exit_still_surfaces_wrapped_missing_glyph() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("missing-glyph.tex");
+    fs::write(&source, b"% deliberately missing glyph\n").unwrap();
+    let before = fs::read(&source).unwrap();
+    let engine = fake_xelatex(directory.path());
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.font_issues.len(), 1);
+    assert_eq!(artifact.font_issues[0].kind, FontIssueKind::MissingGlyph);
+    assert!(artifact.font_issues[0].message.contains("OT:language=dflt"));
+    assert_eq!(artifact.diagnostics.len(), 1);
+    assert_eq!(artifact.diagnostics[0].severity, Severity::Warning);
+    assert_eq!(before, fs::read(&source).unwrap());
 }

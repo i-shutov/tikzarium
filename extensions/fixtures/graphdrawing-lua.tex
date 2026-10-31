@@ -1,0 +1,10 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{graphs,graphdrawing}
+\usegdlibrary{trees}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}
+\graph [tree layout] { root -> {left,right} };
+\end{tikzpicture}
+\end{document}

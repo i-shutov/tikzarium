@@ -1,7 +1,9 @@
+schema_version = 1
 id = "org.tikzarium.core"
 display_name = "PGF / TikZ Core"
 version = "0.1.0"
 category = "Foundational graphics"
+engine = "xelatex"
 requires_files = ["tikz.sty", "pgf.sty"]
 visual_features = []
-notes = "Compile/preserve source in v0.1. Safe visual editing follows in v0.2."
+notes = "File discovery is not a compile test. Safe visual editing follows in v0.2."

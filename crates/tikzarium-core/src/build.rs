@@ -1,6 +1,7 @@
 //! Direct XeLaTeX runner. -no-shell-escape is not an OS sandbox.
 use crate::{
-    diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
+    diagnostics::{BuildDiagnostic, Severity, extract_diagnostics, extract_located_diagnostics},
+    font_audit::{FontIssue, audit_font_log},
     preview::{Preview, render_first_page},
 };
 use std::{
@@ -50,6 +51,8 @@ pub struct BuildArtifact {
     pub log: String,
     pub dependencies: Vec<PathBuf>,
     pub diagnostics: Vec<BuildDiagnostic>,
+    /// Typed fontspec/glyph records (also available on successful builds).
+    pub font_issues: Vec<FontIssue>,
     pub preview: Result<Option<Preview>, String>,
     pub elapsed: Duration,
 }
@@ -71,6 +74,8 @@ pub enum BuildError {
         /// Bounded in-memory TeX log for GUI error navigation (not the full persistent log).
         log_excerpt: String,
         diagnostics: Vec<BuildDiagnostic>,
+        /// Typed F02 XeLaTeX font issues retained even when no PDF was produced.
+        font_issues: Vec<FontIssue>,
     },
     #[error("Compiled PDF missing: {0}")]
     MissingPdf(PathBuf),
@@ -93,6 +98,15 @@ impl BuildError {
     pub fn diagnostics(&self) -> &[BuildDiagnostic] {
         match self {
             Self::TeXFailure { diagnostics, .. } => diagnostics,
+            _ => &[],
+        }
+    }
+
+    /// Typed font errors/warnings from the F02 parser on failed builds.
+    #[must_use]
+    pub fn font_issues(&self) -> &[FontIssue] {
+        match self {
+            Self::TeXFailure { font_issues, .. } => font_issues,
             _ => &[],
         }
     }
@@ -205,6 +219,7 @@ impl BuildService {
         let log_saved = save_log(&log_path, &stdout_file, request.options.log_path.as_deref());
         if !status.success() {
             let diagnostics = extract_diagnostics(&log);
+            let font_issues = audit_font_log(&log).issues;
             let mut details = failure_details(&log, &stderr);
             if let Err(error) = log_saved {
                 details.push_str(&format!("\nLog persistence also failed: {error}"));
@@ -214,6 +229,7 @@ impl BuildService {
                 details,
                 log_excerpt: log,
                 diagnostics,
+                font_issues,
             });
         }
         log_saved?;
@@ -238,11 +254,13 @@ impl BuildService {
             Ok(None)
         };
         let diagnostics = extract_diagnostics(&log);
+        let font_issues = audit_font_log(&log).issues;
         Ok(BuildArtifact {
             pdf,
             log,
             dependencies,
             diagnostics,
+            font_issues,
             preview,
             elapsed: started.elapsed(),
         })
@@ -280,20 +298,20 @@ fn save_log(primary: &Path, stdout: &Path, destination: Option<&Path>) -> Result
 
 fn failure_details(log: &str, stderr: &str) -> String {
     let mut text = String::new();
-    if let Some(diagnostic) = extract_diagnostics(log)
+    if let Some(located) = extract_located_diagnostics(log)
         .into_iter()
-        .find(|item| item.severity == Severity::Error)
+        .find(|item| item.diagnostic.severity == Severity::Error)
     {
-        if let Some(path) = diagnostic.source {
+        if let Some(path) = located.source {
             text.push_str(&path.display().to_string());
-            if let Some(line) = diagnostic.line {
+            if let Some(line) = located.diagnostic.line {
                 text.push_str(&format!(":{line}"));
             }
             text.push_str(": ");
-        } else if let Some(line) = diagnostic.line {
+        } else if let Some(line) = located.diagnostic.line {
             text.push_str(&format!("line {line}: "));
         }
-        text.push_str(&diagnostic.message);
+        text.push_str(&located.diagnostic.message);
         text.push('\n');
     }
     if !stderr.trim().is_empty() {
