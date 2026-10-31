@@ -207,9 +207,9 @@ mod tests {
         fs::write(&asset, b"abcdef").unwrap();
         let before_source = fs::read(&source).unwrap();
 
+        let inputs = std::slice::from_ref(&asset);
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[asset.clone()], true)
-                .unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, inputs, true).unwrap();
         assert!(snapshot.is_project_fresh());
         assert_eq!(snapshot.tracked_project_paths().len(), 2);
 
@@ -229,9 +229,9 @@ mod tests {
         let absent = project.path().join("missing.tex");
         fs::write(&source, "original").unwrap();
 
+        let inputs = std::slice::from_ref(&absent);
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()], true)
-                .unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, inputs, true).unwrap();
         assert!(!snapshot.is_project_fresh());
         assert_eq!(
             snapshot.invalidated_project_paths(),
@@ -252,9 +252,9 @@ mod tests {
         let external = other.path().join("outside.sty");
         fs::write(&source, "source").unwrap();
         fs::write(&external, "external").unwrap();
+        let inputs = std::slice::from_ref(&external);
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[external.clone()], true)
-                .unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, inputs, true).unwrap();
         assert!(snapshot.is_project_fresh());
         assert_eq!(
             snapshot.ignored_external_paths(),
@@ -273,9 +273,9 @@ mod tests {
         file.set_len(MAX_TRACKED_FILE_BYTES + 1).unwrap();
         file.flush().unwrap();
 
+        let inputs = std::slice::from_ref(&big);
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()], true)
-                .unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, inputs, true).unwrap();
         assert_eq!(
             snapshot.invalidated_project_paths(),
             vec![big.canonicalize().unwrap()]

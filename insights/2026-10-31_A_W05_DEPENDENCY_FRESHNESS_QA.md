@@ -49,3 +49,7 @@ Exact `61e095b5bab63818b3e8bd148f9e5b7845472dc0`, [D QA run 41184006839](https:/
 ## Exact SHA formatter correction after path fix
 
 The macOS hosted fmt gate for `377cf455e0e04691137a9be68ee20433747e98a9`, [CI 41184117973](https://github.com/i-shutov/tikzarium/actions/runs/41184117973), rejected 3 long assertions in the new A tests. Applied only the three requested rustfmt layout edits, no behavior change. Earlier Mac functional failure remains recorded; new exact SHA must independently pass.
+
+## Windows Server clippy — exact `fc09ad32` run is FAIL
+
+[GitHub CI 41184185958](https://github.com/i-shutov/tikzarium/actions/runs/41184185958), Windows Server job 124487593011: Rust fmt and workspace tests PASSED, strict Clippy FAILED with four `clippy::cloned_ref_to_slice_refs` findings in new A unit tests (local variables `asset`, `absent`, `external`, `big`). Replaced all four unnecessary `&[path.clone()]` with `std::slice::from_ref(&path)`, preserving each original test assertion. Corrected SHA must rerun checks before any PASS assertion. Hosted Windows Server is CI-only, not Win10 acceptance.
