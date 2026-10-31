@@ -162,20 +162,32 @@ def inspect_pdf(
         info["embedded_fonts_checked"] = tool is not None
         if tool:
             proc = subprocess.run([tool, str(path)], capture_output=True, timeout=30)
+            # Use column 0 (PDF font name) and column -5 (emb), never a
+            # substring match against the entire row: a similarly-named
+            # non-embedded font must not satisfy a required embedded family.
             table = proc.stdout.decode("utf-8", errors="replace").splitlines()[2:]
+            records = []
+            for line in table:
+                fields = line.split()
+                if len(fields) < 7 or fields[-5].lower() not in ("yes", "no"):
+                    continue
+                records.append({"name": fields[0], "embedded": fields[-5].lower() == "yes"})
+            info["font_records_count"] = len(records)
+            info["font_records"] = records[:50]
             checks = {}
             for family in font_expect:
-                matched = [
-                    line for line in table
-                    if family.casefold() in line.casefold()
-                ]
-                # pdffonts columns end with emb/sub/uni/obj/ID. Require "emb=yes".
+                # Typical subset prefix: ABCDEF+DejaVuSerif-Bold. A font
+                # merely containing 'DejaVuSerif' in its name is not proof.
+                family_pattern = re.compile(
+                    r"^(?:[A-Z]{6}\+)?" + re.escape(family) + r"(?:[-+,]|$)",
+                    re.IGNORECASE,
+                )
                 checks[family] = any(
-                    len(line.split()) >= 6 and line.split()[-5].lower() == "yes"
-                    for line in matched
+                    record["embedded"] and family_pattern.search(record["name"])
+                    for record in records
                 )
             info["font_embedded"] = checks
-            valid = valid and proc.returncode == 0 and all(checks.values())
+            valid = valid and proc.returncode == 0 and bool(records) and all(checks.values())
         else:
             info["font_embedding_note"] = (
                 "NOT_CHECKED: pdffonts unavailable; required embedded-font assertion FAILED"
