@@ -753,10 +753,7 @@ mod tests {
             let mut jump = None;
             let _output = ctx.run(
                 egui::RawInput {
-                    screen_rect: Some(Rect::from_min_size(
-                        Pos2::ZERO,
-                        Vec2::new(260.0, 360.0),
-                    )),
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(260.0, 360.0))),
                     events,
                     ..Default::default()
                 },
@@ -787,7 +784,13 @@ mod tests {
         session.apply_parameters(&mut source).unwrap();
         assert_ne!(source, inserted);
         let mut undo_button = Rect::NOTHING;
-        frame(&ctx, &mut session, &mut source, vec![], Some(&mut undo_button));
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![],
+            Some(&mut undo_button),
+        );
         assert!(undo_button.width() > 0.0 && undo_button.height() > 0.0);
         let at = undo_button.center();
         frame(
@@ -797,7 +800,13 @@ mod tests {
             vec![egui::Event::PointerMoved(at), primary(at, true)],
             None,
         );
-        let jump = frame(&ctx, &mut session, &mut source, vec![primary(at, false)], None);
+        let jump = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            None,
+        );
         assert_eq!(source, inserted);
         assert_eq!(jump, Some(tikz_authoring::owned(&source)[0].line));
         assert!(session.undo_available());
@@ -811,9 +820,14 @@ mod tests {
             vec![primary(at, true)],
             None,
         );
-        let deletion_line =
-            frame(&ctx, &mut session, &mut source, vec![primary(at, false)], None)
-                .expect("second Undo must focus the deletion site");
+        let deletion_line = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            None,
+        )
+        .expect("second Undo must focus the deletion site");
         assert_eq!(source, original);
         assert_eq!(
             deletion_line,
