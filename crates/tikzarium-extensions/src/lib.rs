@@ -534,5 +534,4 @@ visual_features = []
                 .is_err()
         );
     }
-
 }
