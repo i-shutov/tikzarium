@@ -24,7 +24,7 @@ fn mask_comments(source: &str) -> Vec<u8> {
             masked[index] = b' ';
             continue;
         }
-        if byte == b'%' && slashes % 2 == 0 {
+        if byte == b'%' && slashes.is_multiple_of(2) {
             in_comment = true;
             masked[index] = b' ';
         }
@@ -101,7 +101,10 @@ fn font_argument(bytes: &[u8], command: &str, at: usize) -> Option<(usize, usize
         }
         at += 1;
         let start = at;
-        while bytes.get(at).is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'@') {
+        while bytes
+            .get(at)
+            .is_some_and(|byte| byte.is_ascii_alphabetic() || *byte == b'@')
+        {
             at += 1;
         }
         if at == start {
@@ -147,7 +150,10 @@ pub fn scan_explicit_font_hints(source: &str) -> Vec<FontHint> {
                 font_argument(&masked, command, i + 1 + command.len())
         {
             // Byte offsets remain aligned with the unchanged UTF-8 original.
-            let family = source[start..end].split_whitespace().collect::<Vec<_>>().join(" ");
+            let family = source[start..end]
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ");
             if !family.is_empty() {
                 let line = 1 + source.as_bytes()[..i]
                     .iter()
