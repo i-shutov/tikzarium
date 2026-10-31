@@ -2,12 +2,12 @@
 //! The small input guide is explicitly approximate; XeLaTeX alone renders the PDF.
 use crate::tikz_authoring::{self, Draft, Point, Session, TOOLS, Tool};
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Stroke, Vec2};
-use tikzarium_extensions::primitives::ParameterSpec;
+use tikzarium_extensions::primitives::{Evidence, ParameterSpec};
 
 #[derive(Clone, Copy)]
 pub struct Capabilities {
     pub installed: bool,
-    pub loaded: bool,
+    pub loaded: Evidence,
     pub engine_compatible: bool,
     pub implemented: bool,
 }
@@ -20,11 +20,20 @@ impl Capabilities {
             "Путь внешнего XeLaTeX не подтверждён. Windows: отдельно установленный MiKTeX."
         } else if !self.installed {
             "Наличие tikz.sty не подтверждено. Редактор не устанавливает TeX или пакеты автоматически."
-        } else if !self.loaded {
-            "Подключение TikZ в исходнике не подтверждено; просмотрите предлагаемую правку преамбулы."
+        } else if self.loaded == Evidence::Absent {
+            "ABSENT: прямого подключения TikZ в проверенной преамбуле нет; просмотрите C/N2 diff."
+        } else if self.loaded == Evidence::Unknown {
+            "UNKNOWN: нельзя доказать подключение TikZ из непрозрачной преамбулы; автоматическая правка запрещена."
         } else {
             "Установка, подключение в проекте и успешная компиляция — разные статусы. Результат проверяет XeLaTeX."
         }
+    }
+}
+fn evidence_label(value: Evidence) -> &'static str {
+    match value {
+        Evidence::Confirmed => "CONFIRMED",
+        Evidence::Absent => "ABSENT",
+        Evidence::Unknown => "UNKNOWN",
     }
 }
 const SCALE: f32 = 29.0;
@@ -456,7 +465,7 @@ pub fn show_inspector(
     ui.small(format!(
         "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · B-инструмент=реализован · C-справка=доступна",
         if caps.installed { "CONFIRMED" } else { "UNKNOWN" },
-        if caps.loaded { "CONFIRMED" } else { "UNKNOWN/ABSENT" },
+        evidence_label(caps.loaded),
         if caps.engine_compatible { "CONFIRMED" } else { "UNKNOWN" },
     ));
     ui.small(caps.explanation());
@@ -495,14 +504,14 @@ pub fn show_inspector(
         let import_state = tikz_authoring::requirements_status(source, tool);
         let loaded = import_state == tikzarium_extensions::primitives::Evidence::Confirmed;
         ui.small(format!(
-            "Требуемые пакеты: {}; библиотеки: {}; подключение {:?}",
+            "Требуемые пакеты: {}; библиотеки: {}; подключение {}",
             info.requirements.packages.join(", "),
             if info.requirements.libraries.is_empty() {
                 "core".into()
             } else {
                 info.requirements.libraries.join(", ")
             },
-            import_state
+            evidence_label(import_state)
         ));
         for parameter in &info.parameter {
             let value = session
@@ -639,6 +648,42 @@ mod tests {
         }
     }
     #[test]
+    fn c_n2_project_load_status_is_three_way_in_the_inspector() {
+        use tikzarium_extensions::project_imports::{ImportKind, inspect};
+        let cases = [
+            (
+                "\\documentclass{article}\n\\usepackage{tikz}\n\\begin{document}\n",
+                Evidence::Confirmed,
+                "CONFIRMED",
+            ),
+            (
+                "\\documentclass{article}\n\\begin{document}\n",
+                Evidence::Absent,
+                "ABSENT",
+            ),
+            (
+                "\\documentclass{article}\n\\myOpaquePreamble\n\\begin{document}\n",
+                Evidence::Unknown,
+                "UNKNOWN",
+            ),
+        ];
+        for (source, expected, label) in cases {
+            let state = inspect(source).status(ImportKind::Package, "tikz");
+            assert_eq!(state, expected);
+            assert_eq!(evidence_label(state), label);
+            let capabilities = Capabilities {
+                installed: true,
+                loaded: state,
+                engine_compatible: true,
+                implemented: true,
+            };
+            let explanation = capabilities.explanation();
+            if state != Evidence::Confirmed {
+                assert!(explanation.contains(label));
+            }
+        }
+    }
+    #[test]
     fn gesture_mapping_uses_explicit_cm_not_fake_pdf_coordinates() {
         let rect = Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(300.0, 170.0));
         let point = Point::new(1.25, 2.5);
@@ -657,7 +702,7 @@ mod tests {
 
     const READY: Capabilities = Capabilities {
         installed: true,
-        loaded: true,
+        loaded: Evidence::Confirmed,
         engine_compatible: true,
         implemented: true,
     };
