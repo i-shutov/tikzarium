@@ -1,0 +1,118 @@
+name: D06 distinct MiKTeX Windows Server XeLaTeX proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-miktex-windows.yml
+      - scripts/tools/qa_miktex_vertical.py
+      - scripts/tools/test_qa_miktex_vertical.py
+      - scripts/tools/qa_setup_miktex.ps1
+      - scripts/tools/qa_miktex_config.ps1
+      - scripts/tools/test_qa_miktex_config.ps1
+      - scripts/tools/qa_miktex_inventory.ps1
+      - scripts/tools/test_qa_miktex_inventory.ps1
+      - fixtures/qa/d06-native-primitives/**
+      - scripts/tools/qa_smoke.py
+      - crates/tikzarium-core/**
+      - crates/tikzarium-cli/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  miktex-windows-hosted:
+    name: MiKTeX 25.12 XeLaTeX / hosted Windows Server 2022 x64 only
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Verify hosted Windows x64 (not Windows 10 acceptance)
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_OS -ne 'Windows' -or $env:RUNNER_ARCH -ne 'X64') { throw 'Wrong runner' }
+          Write-Host "OS=$([System.Environment]::OSVersion.VersionString); architecture=$env:RUNNER_ARCH"
+      - name: D06 stdlib negative contract tests
+        run: python -m unittest discover -s scripts/tools -p test_qa_miktex_vertical.py -v
+      - name: D06 MiKTeX configuration readback parser regression
+        shell: pwsh
+        run: ./scripts/tools/test_qa_miktex_config.ps1
+      - name: D06 MiKTeX package inventory stdout/stderr parser regression
+        shell: pwsh
+        run: ./scripts/tools/test_qa_miktex_inventory.ps1
+      - name: Isolated private MiKTeX installation with pinned installer and declared packages
+        shell: pwsh
+        run: ./scripts/tools/qa_setup_miktex.ps1
+      - name: Poppler PDF auditors (independent from MiKTeX)
+        run: choco install poppler --version=26.9.0 --yes --no-progress
+      - name: Verify independent Poppler shim installation for required PDF auditors
+        shell: pwsh
+        run: |
+          if (-not $env:ChocolateyInstall) { throw 'ChocolateyInstall root is unknown' }
+          $popplerBin = Join-Path $env:ChocolateyInstall 'bin'
+          foreach ($tool in @('pdfinfo','pdftotext','pdffonts')) {
+            $path = Join-Path $popplerBin "$tool.exe"
+            if (-not (Test-Path -LiteralPath $path)) { throw "Chocolatey Poppler $tool shim missing: $path" }
+          }
+          "TIKZARIUM_POPPLER_BIN=$popplerBin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Verify selected engine and required installed files (no tlmgr)
+        shell: pwsh
+        run: |
+          & $env:TIKZARIUM_XELATEX --version
+          # MiKTeX 25.12 --help may exit nonzero / omit the switch. Its official
+          # XeTeX manual documents the switch; probe the REAL binary with it.
+          $flagProbe = (& $env:TIKZARIUM_XELATEX --disable-installer --version 2>&1 | Out-String)
+          $probeExit = $LASTEXITCODE
+          $flagProbe | Set-Content .qa-artifacts/miktex-windows-server/disable-installer-version.log -Encoding utf8
+          if ($probeExit -ne 0 -or $flagProbe -notmatch 'MiKTeX-XeTeX\s+[0-9]') {
+            throw 'Real MiKTeX XeLaTeX rejected --disable-installer version probe'
+          }
+          foreach ($name in @('standalone.cls','tikz.sty','fontspec.sty','unicode-math.sty','DejaVuSerif.ttf','latinmodern-math.otf')) {
+            $found = & kpsewhich $name
+            if ($LASTEXITCODE -ne 0 -or -not $found) { throw "Missing declared MiKTeX dependency $name" }
+            Write-Host "$name => $found"
+          }
+      - name: Record clean package inventory before actual compilation
+        shell: pwsh
+        run: |
+          . ./scripts/tools/qa_miktex_inventory.ps1
+          $record = '.qa-artifacts/miktex-windows-server'
+          Save-MiKTeXInventory -Executable $env:TIKZARIUM_MIKTEX_EXE -Snapshot "$record/packages-before.txt" -StderrLog "$record/packages-before-stderr.log"
+      - name: Build native Rust CLI (uses explicitly selected MiKTeX executable)
+        run: cargo build -p tikzarium-cli
+      - name: Build merged N1 app Session authoring-source producer (not GUI event QA)
+        run: cargo build -p tikzarium-app --bin n1-authoring-proof
+      - name: Actual N1 Session-generated TikZ + hand-authored baseline + strict negatives
+        shell: pwsh
+        run: python scripts/tools/qa_miktex_vertical.py --cli target/debug/tikzarium-cli.exe --n1-proof target/debug/n1-authoring-proof.exe --xelatex "$env:TIKZARIUM_XELATEX" --poppler-dir "$env:TIKZARIUM_POPPLER_BIN" --miktex-prefix "$env:TIKZARIUM_MIKTEX_PREFIX" --setup-record .qa-artifacts/miktex-windows-server/setup.json --output .qa-artifacts/miktex-windows-server
+      - name: Require zero implicit MiKTeX package installs during compilation, even after failures
+        if: always()
+        shell: pwsh
+        run: |
+          $baseline = '.qa-artifacts/miktex-windows-server/packages-before.txt'
+          if (-not (Test-Path -LiteralPath $baseline)) {
+            Write-Host 'NOT_RUN: package baseline was not obtained (earlier setup failed)'
+          } else {
+            if (-not $env:TIKZARIUM_MIKTEX_EXE) { throw 'Missing MiKTeX executable for postcompile inventory' }
+            . ./scripts/tools/qa_miktex_inventory.ps1
+            Save-MiKTeXInventory -Executable $env:TIKZARIUM_MIKTEX_EXE -Snapshot '.qa-artifacts/miktex-windows-server/packages-after.txt' -StderrLog '.qa-artifacts/miktex-windows-server/packages-after-stderr.log'
+            $diff = Compare-Object (Get-Content $baseline) (Get-Content .qa-artifacts/miktex-windows-server/packages-after.txt)
+            if ($diff) { throw 'MiKTeX package inventory changed during supposedly offline compiler run' }
+          }
+      - name: Upload evidence also on failure; CI_ONLY is not physical Win10 PASS
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-miktex-windows-server
+          path: .qa-artifacts/miktex-windows-server/
+          if-no-files-found: warn
+          retention-days: 14
