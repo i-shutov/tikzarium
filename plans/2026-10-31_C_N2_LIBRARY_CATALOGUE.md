@@ -12,3 +12,7 @@
 
 ## Rollout
 B can read `Catalog::libraries` with non-fabricated statuses, show the actual package/library source link, then call C planners after explicit user choice. D can execute example fixture generator and negative cases. Visual library-specific tooling remains an N2 follow-up outside this C metadata slice.
+
+## Consolidated integration checkpoint
+
+The C/N2 library metadata and safe late-import evidence were independently developed in C draft PR #58 and PR #61. The consolidated C branch includes both without carrying A/B/D/E/F file changes into the PR diff. One extra public-API regression asserts that the library panel retains five independent states when a real XeLaTeX document imports `calc` after `\\begin{document}`, and refuses a stale/unsafe source proposal. B still owns visible diff/confirmation/Undo; D/E/F still own independent validation. No parser, installation, engine fallback or implicit GUI capability is introduced.

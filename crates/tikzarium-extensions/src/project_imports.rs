@@ -238,8 +238,47 @@ fn literal_flat_font_assignment(line: &str, command: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b" ._+-".contains(&b))
 }
 
+/// A *hint* that source after \begin{document} might import packages or
+/// libraries. This never grants Confirmed evidence: verbatim and macro scopes
+/// cannot be resolved by a lexical scanner. False positives fail closed.
+fn contains_control_word(line: &str, command: &str) -> bool {
+    line.match_indices(command).any(|(start, _)| {
+        // A preceding escaped backslash is a TeX \\ control symbol, not
+        // the start of this control word. Handle longer backslash runs too.
+        let previous_slashes = line[..start]
+            .bytes()
+            .rev()
+            .take_while(|byte| *byte == b'\\')
+            .count();
+        previous_slashes.is_multiple_of(2)
+            && !line[start + command.len()..]
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_alphabetic() || ch == '@')
+    })
+}
+
+fn document_body_may_import(body: &str) -> bool {
+    const IMPORT_LIKE_COMMANDS: [&str; 6] = [
+        "\\usetikzlibrary",
+        "\\usepackage",
+        "\\RequirePackage",
+        "\\input",
+        "\\include",
+        "\\csname",
+    ];
+    body.split_inclusive('\n').any(|raw| {
+        let line = raw.trim_end_matches(['\r', '\n']);
+        let active = uncommented(line);
+        IMPORT_LIKE_COMMANDS
+            .iter()
+            .any(|command| contains_control_word(active, command))
+    })
+}
+
 /// Recognize only complete, literal preamble lines. Never expand arbitrary macros.
-/// Text after begin(document) is left entirely opaque to this scanner.
+/// After begin(document), detect only possible late import hints: these never
+/// establish positive evidence or authorize a source edit.
 #[must_use]
 pub fn inspect(source: &str) -> ProjectImports {
     let has_crlf = source.contains("\r\n");
@@ -400,6 +439,20 @@ pub fn inspect(source: &str) -> ProjectImports {
             literal_prefix_trusted = false;
         }
         offset += raw.len();
+    }
+    // Direct library loading after \begin{document} is supported by TeX.
+    // Likewise, body-side \input/\include can pull in external imports. Do
+    // not turn a preamble-only absence into a false NOT_LOADED verdict or
+    // silently add an earlier duplicate. Existing trusted sites stay known.
+    if result
+        .begin_document
+        .as_ref()
+        .is_some_and(|begin| document_body_may_import(&source[begin.end..]))
+    {
+        first_reason(
+            &mut result.uncertain_reason,
+            "possible late import or external source in document body",
+        );
     }
     if result.begin_document.is_none() {
         first_reason(

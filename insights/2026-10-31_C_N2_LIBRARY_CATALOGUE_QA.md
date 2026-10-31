@@ -36,3 +36,7 @@ Exact SHA `23003dabebf99eabe39457b10b326e45d281fa31`: [native Rust Windows Serve
 ## Engine compatibility evidence precision
 
 For the four declared PGF/TikZ libraries, `engine=xelatex` records the **primary engine verified by fixture**, not evidence that alternate TeX engines reject that library. `capabilities_for_library(..., Some("lualatex"))` now conservatively returns `ENGINE_COMPATIBLE=UNKNOWN` rather than false `Absent`; an actual Lua-only library such as graphdrawing remains explicitly incompatible with native XeLaTeX via its separate registry metadata. No engine switching or feature promotion is performed.
+
+## C/N2 convergence on current main — exact-head gate pending
+
+Base main `ab5705d4dd7e3dcefd3ef6ddfd695f6d0ee4dfd1`. The previously independent C late-import PR #61 HEAD `e66ed1f97cf39e824dea61c8c54ef96dec7b1001` passed its exact-head native Rust, D QA, N1→XeLaTeX, font and hosted MiKTeX workflows (41213489854/41213489872/41213489866/41213489861/41213489864). The prior #58 HEAD `0ad8978a0b094c35a81d3cbc756e128b7e29585b` passed native Rust, XeLaTeX and font checks but D QA 41211862002 originally failed one unrelated B-owned Poppler timeout test on Ubuntu; failed-job rerun requested, not yet counted as PASS. Both code paths are now combined with a new C integration test, without editing B/A/D/E/F. **Consolidated HEAD CI has NOT RUN at commit authoring; do not inherit any prior PASS**. Physical Windows 10+installed MiKTeX and Mac ARM64 GUI: NOT_RUN; UI library panel acceptance: NOT_RUN. The main branch remains untouched.

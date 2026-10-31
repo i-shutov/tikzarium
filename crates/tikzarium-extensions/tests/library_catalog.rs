@@ -245,3 +245,44 @@ fn already_connected_and_missing_are_distinct_from_unknown() {
         DisconnectDecision::AlreadyAbsent
     );
 }
+
+#[test]
+fn late_body_import_remains_unknown_in_shared_library_panel() {
+    // Real XeLaTeX permits late calc, but source inspection cannot prove
+    // project loading or authorize an earlier duplicate import.
+    let catalog = Catalog::bundled().unwrap();
+    let original = include_str!("../../../extensions/primitives/fixtures/late-library-in-body.tex");
+    for source in [original.to_owned(), original.replace('\n', "\r\n")] {
+        let project = inspect(&source);
+        let state = capabilities_for_library(
+            &catalog,
+            "calc",
+            &project,
+            Evidence::Confirmed,
+            Some("xelatex"),
+        )
+        .unwrap();
+        assert_eq!(state.installed, Evidence::Confirmed);
+        assert_eq!(state.project_loaded, Evidence::Unknown);
+        assert_eq!(state.engine_compatible, Evidence::Confirmed);
+        assert_eq!(state.tool_implemented, Evidence::Absent);
+        assert_eq!(state.help_available, Evidence::Confirmed);
+        assert!(!state.visual_editable);
+        assert_eq!(
+            project.status(ImportKind::Package, "tikz"),
+            Evidence::Confirmed
+        );
+        assert!(project.begin_document_target(42).is_none());
+        let untouched = source.clone();
+        assert!(matches!(
+            plan_import(
+                &source,
+                SourceTarget::new(0..0, 42),
+                ImportKind::TikzLibrary,
+                "calc",
+            ),
+            ImportDecision::Refused { .. }
+        ));
+        assert_eq!(source, untouched);
+    }
+}
