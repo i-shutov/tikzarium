@@ -68,7 +68,7 @@ fn first_reason(slot: &mut Option<&'static str>, reason: &'static str) {
     }
 }
 
-fn uncommented(line: &str) -> &str {
+pub(crate) fn uncommented(line: &str) -> &str {
     let mut slashes = 0usize;
     for (index, ch) in line.char_indices() {
         if ch == '%' && slashes.is_multiple_of(2) {
@@ -83,7 +83,7 @@ fn uncommented(line: &str) -> &str {
     line
 }
 
-fn literal_names(line: &str, command: &str, options_allowed: bool) -> Option<Vec<String>> {
+pub(crate) fn literal_names(line: &str, command: &str, options_allowed: bool) -> Option<Vec<String>> {
     let rest = line.strip_prefix(command)?;
     if !rest
         .chars()
