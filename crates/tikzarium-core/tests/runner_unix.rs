@@ -325,7 +325,11 @@ fn recorded_symlink_retarget_invalidates_real_runner_snapshot_and_preserves_sour
     let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
     assert_eq!(artifact.pdf, b"%PDF-1.4\n");
     assert!(artifact.project_dependencies.is_project_fresh());
-    assert!(artifact.dependencies.contains(&first.canonicalize().unwrap()));
+    assert!(
+        artifact
+            .dependencies
+            .contains(&first.canonicalize().unwrap())
+    );
 
     fs::remove_file(&link).unwrap();
     symlink(&second, &link).unwrap();
