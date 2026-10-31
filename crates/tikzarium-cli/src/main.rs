@@ -6,7 +6,7 @@ use std::{
 };
 use tikzarium_core::{
     BuildOptions, BuildRequest, BuildService, PackageProbe, TexDistribution, TexEnvironment,
-    inspect_xelatex,
+    audit_font_log, inspect_xelatex,
 };
 
 fn usage() {
@@ -165,6 +165,9 @@ fn main() -> ExitCode {
                             artifact.elapsed,
                             artifact.dependencies.len()
                         );
+                        for issue in audit_font_log(&artifact.log).issues {
+                            eprintln!("Figure font {:?}: {}", issue.kind, issue.message);
+                        }
                         if let Some(log) = log_path {
                             println!("Persistent TeX log: {}", log.display());
                         }

@@ -41,7 +41,10 @@ done
 name=$(basename "$last")
 stem=$(printf '%s' "$name" | sed 's/\.tex$//')
 printf '%%PDF-1.4\n' > "$output/$stem.pdf"
-printf 'Transcript for %s\n' "$name" > "$output/$stem.log"
+case "$name" in
+    *glyph*) printf 'Missing character: There is no Ж (U+0416) in font Example!\n' > "$output/$stem.log" ;;
+    *) printf 'Transcript for %s\n' "$name" > "$output/$stem.log" ;;
+esac
 printf 'PWD %s\nINPUT ./%s\n' "$PWD" "$name" > "$output/$stem.fls"
 "#,
     );
@@ -143,4 +146,29 @@ fn native_argv_build_keeps_unicode_source_bytes_and_never_installs() {
     assert_eq!(fs::read(&source).unwrap(), original);
     assert_eq!(fs::read(&pdf).unwrap(), b"%PDF-1.4\n");
     assert!(fs::read_to_string(&log).unwrap().contains("точка α.tex"));
+}
+
+#[test]
+fn successful_pdf_with_missing_glyph_reports_explicit_cli_warning() {
+    let directory = tempfile::tempdir().unwrap();
+    let bin = directory.path().join("MiKTeX user");
+    fs::create_dir_all(&bin).unwrap();
+    let engine = fake_engine(&bin);
+    let source = directory.path().join("glyph.tex");
+    let pdf = directory.path().join("glyph.pdf");
+    fs::write(&source, b"% glyph-warning fixture\n").unwrap();
+
+    let result = cli(
+        &engine,
+        &[
+            "build",
+            source.to_str().unwrap(),
+            pdf.to_str().unwrap(),
+        ],
+    );
+    assert_eq!(result.status.code(), Some(0));
+    assert!(pdf.is_file());
+    let warning = String::from_utf8(result.stderr).unwrap();
+    assert!(warning.contains("MissingGlyph"));
+    assert!(warning.contains("U+0416"));
 }
