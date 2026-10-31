@@ -25,3 +25,7 @@ No declaration of PASS until exact-head CI is observed.
 ## Recorder completeness: fail-closed extension
 
 A successful engine exit plus PDF is insufficient if `.fls` is absent, unreadable or contains no `INPUT`. The runner now passes an explicit `recorder_complete` flag to the snapshot. Its `is_project_fresh` returns false with no usable recorder, but the PDF remains accessible to avoid incorrectly failing the build itself. A fake engine test covers this failure mode.
+
+## Platform path canonicalization gate
+
+macOS `/var` → `/private/var` alias demonstrated a dangerous false-fresh classification when a missing input is under an aliased project root. Missing paths now resolve through the nearest existing canonical ancestor before root-boundary checks. Regression tests require macOS and Unix symlink-root parity.

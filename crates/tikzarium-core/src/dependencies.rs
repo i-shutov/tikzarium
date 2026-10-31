@@ -3,6 +3,7 @@
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashSet,
+    ffi::OsString,
     fs::{self, File},
     io::{self, Read},
     path::{Component, Path, PathBuf},
@@ -54,9 +55,7 @@ impl ProjectDependencySnapshot {
             };
             // A missing file cannot be canonicalized; collapse .. components
             // before applying the root boundary.
-            let resolved = absolute
-                .canonicalize()
-                .unwrap_or_else(|_| lexical_normalize(&absolute));
+            let resolved = canonicalize_existing_prefix(&absolute);
             if !seen.insert(resolved.clone()) {
                 continue;
             }
@@ -126,6 +125,31 @@ impl ProjectDependencySnapshot {
     }
 }
 
+/// Canonicalize the nearest existing parent when the leaf has disappeared.
+/// On macOS /var may alias /private/var; normalizing only the lexical
+/// absolute path would mistakenly classify missing local inputs as external.
+fn canonicalize_existing_prefix(path: &Path) -> PathBuf {
+    let normalized = lexical_normalize(path);
+    let mut ancestor = normalized.as_path();
+    let mut missing_components: Vec<OsString> = Vec::new();
+    loop {
+        if let Ok(mut existing) = ancestor.canonicalize() {
+            for component in missing_components.iter().rev() {
+                existing.push(component);
+            }
+            return existing;
+        }
+        let Some(name) = ancestor.file_name() else {
+            return normalized;
+        };
+        missing_components.push(name.to_os_string());
+        let Some(parent) = ancestor.parent() else {
+            return normalized;
+        };
+        ancestor = parent;
+    }
+}
+
 fn lexical_normalize(path: &Path) -> PathBuf {
     let mut normalized = PathBuf::new();
     for component in path.components() {
@@ -190,7 +214,10 @@ mod tests {
         assert_eq!(snapshot.tracked_project_paths().len(), 2);
 
         fs::write(&asset, b"abcXef").unwrap();
-        assert_eq!(snapshot.invalidated_project_paths(), vec![asset]);
+        assert_eq!(
+            snapshot.invalidated_project_paths(),
+            vec![asset.canonicalize().unwrap()]
+        );
         assert!(!snapshot.is_project_fresh());
         assert_eq!(fs::read(source).unwrap(), before_source);
     }
@@ -206,11 +233,15 @@ mod tests {
             ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()], true)
                 .unwrap();
         assert!(!snapshot.is_project_fresh());
-        assert_eq!(snapshot.invalidated_project_paths(), vec![absent]);
+        assert_eq!(
+            snapshot.invalidated_project_paths(),
+            vec![project.path().canonicalize().unwrap().join("missing.tex")]
+        );
 
         let plain = ProjectDependencySnapshot::capture(project.path(), &source, &[], true).unwrap();
+        let canonical_source = source.canonicalize().unwrap();
         fs::remove_file(&source).unwrap();
-        assert_eq!(plain.invalidated_project_paths(), vec![source]);
+        assert_eq!(plain.invalidated_project_paths(), vec![canonical_source]);
     }
 
     #[test]
@@ -225,7 +256,7 @@ mod tests {
             ProjectDependencySnapshot::capture(project.path(), &source, &[external.clone()], true)
                 .unwrap();
         assert!(snapshot.is_project_fresh());
-        assert_eq!(snapshot.ignored_external_paths(), &[external]);
+        assert_eq!(snapshot.ignored_external_paths(), &[external.canonicalize().unwrap()]);
         assert_eq!(snapshot.tracked_project_paths().len(), 1);
     }
 
@@ -242,7 +273,10 @@ mod tests {
         let snapshot =
             ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()], true)
                 .unwrap();
-        assert_eq!(snapshot.invalidated_project_paths(), vec![big]);
+        assert_eq!(
+            snapshot.invalidated_project_paths(),
+            vec![big.canonicalize().unwrap()]
+        );
         assert!(!snapshot.is_project_fresh());
     }
 
@@ -276,7 +310,7 @@ mod tests {
         symlink(&target, &link).unwrap();
         let snapshot =
             ProjectDependencySnapshot::capture(project.path(), &source, &[link], true).unwrap();
-        assert_eq!(snapshot.ignored_external_paths(), &[target]);
+        assert_eq!(snapshot.ignored_external_paths(), &[target.canonicalize().unwrap()]);
     }
 }
 
@@ -294,5 +328,31 @@ mod recorder_completeness_regression {
         assert!(!snapshot.recorder_complete());
         assert!(!snapshot.is_project_fresh());
         assert!(snapshot.invalidated_project_paths().is_empty());
+    }
+}
+
+#[cfg(all(test, unix))]
+mod missing_symlink_root_regression {
+    use super::*;
+    use std::os::unix::fs::symlink;
+
+    #[test]
+    fn missing_local_input_under_symlinked_root_remains_local() {
+        let actual = tempfile::tempdir().unwrap();
+        let alias_owner = tempfile::tempdir().unwrap();
+        let alias = alias_owner.path().join("project-link");
+        symlink(actual.path(), &alias).unwrap();
+        let source = alias.join("main.tex");
+        fs::write(&source, "valid").unwrap();
+        let missing = alias.join("nested").join("absent.tex");
+
+        let snapshot =
+            ProjectDependencySnapshot::capture(&alias, &source, &[missing], true).unwrap();
+        assert!(!snapshot.is_project_fresh());
+        assert!(snapshot.ignored_external_paths().is_empty());
+        assert_eq!(
+            snapshot.invalidated_project_paths(),
+            vec![actual.path().canonicalize().unwrap().join("nested/absent.tex")]
+        );
     }
 }

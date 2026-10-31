@@ -41,3 +41,7 @@ The **older** `7b322c8c00a58b10e3a36a68c97b07695716a1f8` head failed hosted macO
 ## Exact hosted formatter correction
 
 The still-older `50d2a012401b2db5f5d59b98367590445a243eef` head failed rustfmt in [CI 41183937545](https://github.com/i-shutov/tikzarium/actions/runs/41183937545): multiline `recorder_complete` expression and 3 long unit-test calls. Applied the four requested formatting edits to A-only paths. That failed run does not certify the corrected SHA.
+
+## macOS ARM64: real canonical-path failure
+
+Exact `61e095b5bab63818b3e8bd148f9e5b7845472dc0`, [D QA run 41184006839](https://github.com/i-shutov/tikzarium/actions/runs/41184006839) macOS hosted tests: **5 dependency-unit FAIL**, other 26 core tests PASS. macOS temp paths expose `/var` which canonicalizes to `/private/var`. Four tests compared canonical results to noncanonical expectations. Crucially, a fifth showed missing input falsely classified outside root, allowing `is_project_fresh=true`: actual implementation bug. Corrected by canonicalizing the nearest existing ancestor before reconstructing missing path suffix; adjusted expectations to compare canonicalized paths; added a Unix symlink-root regression for missing nested inputs. No macOS PASS until re-run of corrected SHA.
