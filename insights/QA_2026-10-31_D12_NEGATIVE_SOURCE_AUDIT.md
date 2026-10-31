@@ -1,0 +1,11 @@
+# D12 — independent discovery: missing raw-source proof for MiKTeX negative cases
+
+Date 2026-10-31, D-only investigation. Before edits read fresh `main` (`9b4cd26b5b73f8011b975f9922cb208e36e12564`), `AGENTS.md`, D11 plan/insight, PR #40 (merged), open B #62 and integrator #48, existing MiKTeX workflow and producer/verifier source.
+
+Exact B20 candidate source `2034960b9bc303d5ab2447e239325f954f82e0ed`; actual [MiKTeX CI 41234368515](https://github.com/i-shutov/tikzarium/actions/runs/41234368515) Windows and Linux jobs SUCCESS. Downloaded **both** original ZIPs: [Windows 13054968476](https://github.com/i-shutov/tikzarium/actions/runs/41234368515/artifacts/13054968476), SHA-256 `4d13b159ca87796825762b80f3abda7c3ba726b9fb9d4fb3d6a070a61df8c5c6`, 45 files; [Linux 13054968521](https://github.com/i-shutov/tikzarium/actions/runs/41234368515/artifacts/13054968521), SHA-256 `8a214689310630dcfc6a7e234d5cea4d88f48b6591c5660dbaf10c68a2bcb3d0`. Linux report is PASS for checkout `920998040ee2831055871c17b0eae024347e8d6d`, same source SHA. Existing evidence: 6 PDF, 2 negative, 9130 before/after package lines identical, private roots, `SETUP_COMPLETE`; no physical target-host or mouse PASS.
+
+**Independently identified evidence gap:** archive has `missing-library/missing-library.log` and `lua-only/graphdrawing-lua.log`, but **neither negative `.tex` input**. Existing JSON `source_sha256_before == source_sha256_after` is therefore not recomputable by the Linux auditor. This does not invalidate the previously observed real negative MiKTeX behavior; it limits independent source-provenance completeness.
+
+D12 producer and verifier change scope: `qa_miktex_vertical.py` copies unchanged input into negative evidence folder, records `source_artifact`, requires its hash; `qa_miktex_uploaded.py` verifies uploaded bytes/hash and source-specific TikZ library tokens; tests cover tampering/removing each negative input. No A/B/C/E/F production files touched and no extra stand-alone fixture.
+
+**Current D12 branch status at preparation:** source/test/docs changed, new exact-SHA hosted CI not yet run. Do not claim D12 PASS until workflow and second-host artifacts have been verified; update the PR with specific SHA, jobs/artifact URLs after real execution. Avoid redundant Windows CI runs for each individual file.
