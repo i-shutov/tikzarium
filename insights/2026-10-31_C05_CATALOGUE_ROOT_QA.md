@@ -11,6 +11,7 @@ Previously `read_dir` followed a symlink supplied for `dir`, even though linked 
 ## Regression coverage added
 - `regular_file_is_not_an_optional_catalogue_directory`: platform-neutral, asserts `UnsafeEntry` and unchanged registry.
 - `directory_root_symlinks_are_rejected_without_mutation`: Unix/macOS, verifies a valid symlink and a dangling symlink both fail without insertion; direct read of the genuine directory still succeeds.
+- `windows_directory_symlink_is_rejected_if_host_allows_creation`: Windows only; checks root symlink rejection when symlink creation succeeds. A privilege denial prints an explicit SKIP; it is not evidence of a Windows symlink probe.
 
 ## Actual vs pending evidence
 - Repository source, documentation and test changes were committed through the GitHub connector; no local Rust compiler/rustfmt is available in the execution environment, so local `cargo test/fmt/clippy` **NOT_RUN**.
