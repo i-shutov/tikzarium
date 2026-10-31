@@ -1,30 +1,78 @@
-//! Declarative extensions: TeX packages are NOT executable native plugins.
-//! Package presence, successful XeLaTeX build and safe visual edit are distinct.
+//! Declarative PGF/TikZ extension catalogue.
+//!
+//! A TeX package is not an executable plugin. Finding a package does not
+//! establish successful compilation, inspection, or safe visual editing.
+//! No manifest field is interpreted as a command, shared library, or script.
+
 use serde::Deserialize;
-use std::{collections::HashSet, fs, path::Path};
+use std::{
+    collections::HashSet,
+    fs,
+    io::{ErrorKind, Read},
+    path::Path,
+};
 use thiserror::Error;
 use tikzarium_core::TexEnvironment;
 
+pub const MANIFEST_SCHEMA_VERSION: u32 = 1;
+const MAX_MANIFEST_BYTES: usize = 64 * 1024;
+const MAX_DIRECTORY_MANIFESTS: usize = 128;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EngineRequirement {
+    Xelatex,
+    Lualatex,
+}
+
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ExtensionManifest {
+    pub schema_version: u32,
     pub id: String,
     pub display_name: String,
     pub version: String,
     pub category: String,
+    pub engine: EngineRequirement,
     #[serde(default)]
     pub requires_files: Vec<String>,
+    /// Metadata for future adapters, never proof of editability.
     #[serde(default)]
     pub visual_features: Vec<String>,
     #[serde(default)]
     pub notes: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InstallationState {
+    /// Every required file was located by the configured TeX lookup.
+    Present,
+    /// At least one lookup returned a negative result.
+    NotLocated,
+    /// Lookup was unavailable or at least one result was indeterminate.
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompilationState {
+    /// No real XeLaTeX fixture has been executed for this environment.
+    NotTested,
+    /// The advertised feature requires a different engine.
+    IncompatibleEngine,
+}
+
 #[derive(Debug, Clone)]
 pub struct ExtensionStatus {
     pub manifest: ExtensionManifest,
+    pub installation: InstallationState,
+    pub compilation: CompilationState,
+    pub inspectable: bool,
+    pub visual_editable: bool,
+    /// Compatibility with the W01 package panel: only true for Present.
     pub installed: bool,
+    /// Names for which a lookup explicitly failed, not a complete package inventory.
     pub missing_files: Vec<String>,
-    /// Discovery is not a successful compilation test.
+    /// Never promoted by mere package discovery.
     pub compilation_verified: bool,
 }
 
@@ -37,13 +85,21 @@ pub enum RegistryError {
         path: String,
         source: toml::de::Error,
     },
+    #[error("Invalid extension manifest {path}: {reason}")]
+    Invalid { path: String, reason: String },
     #[error("Duplicate extension id: {0}")]
     DuplicateId(String),
-    #[error("Invalid extension identifier: {0}")]
-    InvalidId(String),
+    #[error("Unsafe extension entry (not a regular TOML file): {0}")]
+    UnsafeEntry(String),
+    #[error("Extension manifest is larger than 64 KiB: {0}")]
+    TooLarge(String),
+    #[error("Extension manifest is not UTF-8: {0}")]
+    InvalidUtf8(String),
+    #[error("Too many extension manifests (maximum 128)")]
+    TooMany,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Registry {
     pub manifests: Vec<ExtensionManifest>,
 }
@@ -65,67 +121,127 @@ impl Registry {
                 "tikz-cd.toml",
                 include_str!("../../../extensions/tikz-cd.toml"),
             ),
+            (
+                "graphdrawing-lua.toml",
+                include_str!("../../../extensions/graphdrawing-lua.toml"),
+            ),
         ] {
             registry.add(path, source)?;
         }
         Ok(registry)
     }
 
+    /// Parse and validate before inserting; an unsuccessful add changes nothing.
     pub fn add(&mut self, path: &str, source: &str) -> Result<(), RegistryError> {
-        let item: ExtensionManifest =
+        if source.len() > MAX_MANIFEST_BYTES {
+            return Err(RegistryError::TooLarge(path.to_owned()));
+        }
+        let manifest: ExtensionManifest =
             toml::from_str(source).map_err(|source| RegistryError::Toml {
-                path: path.into(),
+                path: path.to_owned(),
                 source,
             })?;
-        if item.id.is_empty()
-            || !item
-                .id
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || ".-_".contains(c))
-        {
-            return Err(RegistryError::InvalidId(item.id));
+        validate_manifest(&manifest).map_err(|reason| RegistryError::Invalid {
+            path: path.to_owned(),
+            reason,
+        })?;
+        if self.manifests.iter().any(|known| known.id == manifest.id) {
+            return Err(RegistryError::DuplicateId(manifest.id));
         }
-        if self.manifests.iter().any(|known| known.id == item.id) {
-            return Err(RegistryError::DuplicateId(item.id));
-        }
-        self.manifests.push(item);
+        self.manifests.push(manifest);
         Ok(())
     }
 
+    /// Read metadata only, never execute it. Deterministic and all-or-nothing.
+    ///
+    /// A missing directory is an empty optional catalogue. Other IO errors
+    /// propagate. Symlinks and non-regular TOML entries are rejected to avoid
+    /// following unexpected paths outside the selected directory.
     pub fn load_directory(&mut self, dir: &Path) -> Result<usize, RegistryError> {
-        if !dir.exists() {
-            return Ok(0);
+        let entries = match fs::read_dir(dir) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == ErrorKind::NotFound => return Ok(0),
+            Err(error) => return Err(error.into()),
+        };
+        let mut entries = entries.collect::<Result<Vec<_>, _>>()?;
+        entries.sort_by_key(|entry| entry.file_name());
+        let candidates: Vec<_> = entries
+            .iter()
+            .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "toml"))
+            .collect();
+        if candidates.len() > MAX_DIRECTORY_MANIFESTS {
+            return Err(RegistryError::TooMany);
         }
-        let mut paths = fs::read_dir(dir)?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| path.extension().is_some_and(|ext| ext == "toml"))
-            .collect::<Vec<_>>();
-        paths.sort();
-        let mut count = 0;
-        for path in paths {
-            let source = fs::read_to_string(&path)?;
-            self.add(&path.display().to_string(), &source)?;
-            count += 1;
+
+        let mut staged = self.clone();
+        for entry in &candidates {
+            let path = entry.path();
+            let label = path.display().to_string();
+            if !entry.file_type()?.is_file() {
+                return Err(RegistryError::UnsafeEntry(label));
+            }
+            let mut reader = fs::File::open(&path)?.take((MAX_MANIFEST_BYTES + 1) as u64);
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes)?;
+            if bytes.len() > MAX_MANIFEST_BYTES {
+                return Err(RegistryError::TooLarge(label));
+            }
+            let source =
+                String::from_utf8(bytes).map_err(|_| RegistryError::InvalidUtf8(label.clone()))?;
+            staged.add(&label, &source)?;
         }
-        Ok(count)
+        *self = staged;
+        Ok(candidates.len())
     }
 
+    /// Discovery is performed on demand by the caller, not on every UI frame.
     #[must_use]
     pub fn status(&self, tex: &TexEnvironment) -> Vec<ExtensionStatus> {
+        self.status_with_lookup(|file| {
+            tex.kpsewhich.as_ref()?;
+            Some(tex.package_file(file).is_some())
+        })
+    }
+
+    /// Testable lookup boundary: Some(true) means found, Some(false) means
+    /// not located, and None means there is no reliable lookup result.
+    /// No PASS compilation or editor capability is synthesized here.
+    #[must_use]
+    pub fn status_with_lookup(
+        &self,
+        mut lookup: impl FnMut(&str) -> Option<bool>,
+    ) -> Vec<ExtensionStatus> {
         self.manifests
             .iter()
             .cloned()
             .map(|manifest| {
-                let missing_files = manifest
-                    .requires_files
-                    .iter()
-                    .filter(|name| tex.package_file(name).is_none())
-                    .cloned()
-                    .collect::<Vec<_>>();
+                let mut missing_files = Vec::new();
+                let mut indeterminate = false;
+                for file in &manifest.requires_files {
+                    match lookup(file) {
+                        Some(true) => {}
+                        Some(false) => missing_files.push(file.clone()),
+                        None => indeterminate = true,
+                    }
+                }
+                let installation = if indeterminate {
+                    InstallationState::Unknown
+                } else if missing_files.is_empty() {
+                    InstallationState::Present
+                } else {
+                    InstallationState::NotLocated
+                };
+                let compilation = match manifest.engine {
+                    EngineRequirement::Xelatex => CompilationState::NotTested,
+                    EngineRequirement::Lualatex => CompilationState::IncompatibleEngine,
+                };
                 ExtensionStatus {
-                    installed: missing_files.is_empty(),
+                    installed: installation == InstallationState::Present,
                     manifest,
+                    installation,
+                    compilation,
+                    inspectable: false,
+                    visual_editable: false,
                     missing_files,
                     compilation_verified: false,
                 }
@@ -136,27 +252,259 @@ impl Registry {
     #[must_use]
     pub fn unique_ids(&self) -> bool {
         let mut ids = HashSet::new();
-        self.manifests.iter().all(|item| ids.insert(&item.id))
+        self.manifests
+            .iter()
+            .all(|item| ids.insert(item.id.as_str()))
     }
+}
+
+fn validate_manifest(manifest: &ExtensionManifest) -> Result<(), String> {
+    if manifest.schema_version != MANIFEST_SCHEMA_VERSION {
+        return Err(format!(
+            "unsupported schema_version {}; supported: {}",
+            manifest.schema_version, MANIFEST_SCHEMA_VERSION
+        ));
+    }
+    if manifest.id.len() > 128
+        || manifest.id.split('.').count() < 2
+        || !manifest.id.split('.').all(|part| {
+            part.as_bytes().first().is_some_and(u8::is_ascii_lowercase)
+                && !part.ends_with('-')
+                && part
+                    .bytes()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'-')
+        })
+    {
+        return Err("id must be a lowercase dotted identifier".into());
+    }
+    if !is_semver_triplet(&manifest.version) {
+        return Err("version must be a three-component numeric version".into());
+    }
+    for (label, value, max) in [
+        ("display_name", manifest.display_name.as_str(), 128),
+        ("category", manifest.category.as_str(), 96),
+        ("notes", manifest.notes.as_str(), 2048),
+    ] {
+        if value.len() > max
+            || (label != "notes" && value.trim().is_empty())
+            || value
+                .chars()
+                .any(|c| c.is_control() && c != '\n' && c != '\t')
+        {
+            return Err(format!("invalid {label}"));
+        }
+    }
+    if manifest.requires_files.is_empty() || manifest.requires_files.len() > 32 {
+        return Err("requires_files must contain 1..32 TeX filenames".into());
+    }
+    let mut names = HashSet::new();
+    for name in &manifest.requires_files {
+        if !is_tex_filename(name) || !names.insert(name) {
+            return Err(format!("unsafe or duplicate TeX filename: {name}"));
+        }
+    }
+    if manifest.visual_features.len() > 64 {
+        return Err("too many declared visual_features".into());
+    }
+    let mut features = HashSet::new();
+    for feature in &manifest.visual_features {
+        if feature.is_empty()
+            || feature.len() > 96
+            || !feature
+                .bytes()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || b"-_:.".contains(&c))
+            || !features.insert(feature)
+        {
+            return Err(format!("invalid or duplicate visual feature: {feature}"));
+        }
+    }
+    Ok(())
+}
+
+fn is_semver_triplet(version: &str) -> bool {
+    let parts = version.split('.').collect::<Vec<_>>();
+    parts.len() == 3
+        && parts.iter().all(|part| {
+            !part.is_empty()
+                && (part.len() == 1 || !part.starts_with('0'))
+                && part.bytes().all(|c| c.is_ascii_digit())
+                && part.parse::<u64>().is_ok()
+        })
+}
+
+fn is_tex_filename(file: &str) -> bool {
+    file.len() <= 128
+        && !file.starts_with('.')
+        && !file.contains("..")
+        && file
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
+        && [".sty", ".cls", ".tex", ".def"]
+            .iter()
+            .any(|suffix| file.ends_with(suffix))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const VALID: &str = r#"
+schema_version = 1
+id = "org.example.geometry"
+display_name = "Example geometry"
+version = "0.1.0"
+category = "Mathematics"
+engine = "xelatex"
+requires_files = ["tikz.sty"]
+visual_features = []
+"#;
+
     #[test]
-    fn baseline_registry_has_distinct_ids() {
-        let r = Registry::new().unwrap();
-        assert!(r.unique_ids());
-        assert_eq!(r.manifests.len(), 4);
-        assert!(r.manifests.iter().all(|e| e.visual_features.is_empty()));
-    }
-    #[test]
-    fn malformed_and_duplicate_manifests_are_rejected() {
-        let mut r = Registry::new().unwrap();
-        assert!(r.add("bad.toml", "id = 17").is_err());
+    fn bundled_registry_has_unique_valid_entries() {
+        let registry = Registry::new().unwrap();
+        assert_eq!(registry.manifests.len(), 5);
+        assert!(registry.unique_ids());
         assert!(
-            r.add("copy.toml", include_str!("../../../extensions/core.toml"))
+            registry
+                .manifests
+                .iter()
+                .all(|item| item.visual_features.is_empty())
+        );
+    }
+
+    #[test]
+    fn rejects_duplicates_unsafe_paths_and_unknown_keys() {
+        let mut registry = Registry::new().unwrap();
+        let original = registry.manifests.len();
+        assert!(
+            registry
+                .add(
+                    "duplicate.toml",
+                    include_str!("../../../extensions/core.toml")
+                )
                 .is_err()
         );
+        assert!(
+            registry
+                .add(
+                    "traversal.toml",
+                    &VALID.replace("tikz.sty", "../secret.tex")
+                )
+                .is_err()
+        );
+        assert!(
+            registry
+                .add("windows.toml", &VALID.replace("tikz.sty", "C:\\secret.tex"))
+                .is_err()
+        );
+        assert!(
+            registry
+                .add("unknown.toml", &format!("{VALID}\ncommand = \"rm -rf x\""))
+                .is_err()
+        );
+        assert!(
+            registry
+                .add(
+                    "id.toml",
+                    &VALID.replace("org.example.geometry", "org..geometry")
+                )
+                .is_err()
+        );
+        assert!(
+            registry
+                .add("version.toml", &VALID.replace("0.1.0", "v1"))
+                .is_err()
+        );
+        assert!(
+            registry
+                .add(
+                    "future.toml",
+                    &VALID.replace("schema_version = 1", "schema_version = 999")
+                )
+                .is_err()
+        );
+        assert_eq!(registry.manifests.len(), original);
+    }
+
+    #[test]
+    fn reports_installation_independently_of_compilation_and_editing() {
+        let registry = Registry::new().unwrap();
+        let unknown = registry.status_with_lookup(|_| None);
+        assert!(unknown.iter().all(|s| {
+            s.installation == InstallationState::Unknown
+                && !s.installed
+                && !s.compilation_verified
+                && !s.inspectable
+                && !s.visual_editable
+        }));
+        let found = registry.status_with_lookup(|_| Some(true));
+        assert!(found.iter().all(|s| s.installed));
+        assert!(found.iter().all(|s| !s.compilation_verified));
+        assert_eq!(
+            found
+                .iter()
+                .find(|s| s.manifest.id == "org.tikzarium.graphdrawing-lua")
+                .unwrap()
+                .compilation,
+            CompilationState::IncompatibleEngine
+        );
+        let mixed = registry.status_with_lookup(|name| Some(name != "pgfplots.sty"));
+        assert_eq!(
+            mixed
+                .iter()
+                .find(|s| s.manifest.id == "org.tikzarium.pgfplots")
+                .unwrap()
+                .installation,
+            InstallationState::NotLocated
+        );
+    }
+
+    #[test]
+    fn directory_load_is_transactional() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("a.toml"), VALID).unwrap();
+        fs::write(dir.path().join("b.toml"), "schema_version = 9").unwrap();
+        let mut registry = Registry::new().unwrap();
+        let original = registry.manifests.len();
+        assert!(registry.load_directory(dir.path()).is_err());
+        assert_eq!(registry.manifests.len(), original);
+        fs::remove_file(dir.path().join("b.toml")).unwrap();
+        assert_eq!(registry.load_directory(dir.path()).unwrap(), 1);
+        assert_eq!(registry.manifests.len(), original + 1);
+        assert!(registry.load_directory(dir.path()).is_err());
+    }
+
+    #[test]
+    fn missing_directory_is_optional_and_size_limit_is_enforced() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut registry = Registry::default();
+        assert_eq!(
+            registry
+                .load_directory(&dir.path().join("missing"))
+                .unwrap(),
+            0
+        );
+        let oversized = "x".repeat(MAX_MANIFEST_BYTES + 1);
+        fs::write(dir.path().join("oversized.toml"), oversized).unwrap();
+        assert!(matches!(
+            registry.load_directory(dir.path()),
+            Err(RegistryError::TooLarge(_))
+        ));
+        assert!(registry.manifests.is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn directory_does_not_follow_symlinked_manifest() {
+        use std::os::unix::fs::symlink;
+        let dir = tempfile::tempdir().unwrap();
+        let outside = tempfile::NamedTempFile::new().unwrap();
+        fs::write(outside.path(), VALID).unwrap();
+        symlink(outside.path(), dir.path().join("link.toml")).unwrap();
+        let mut registry = Registry::default();
+        assert!(matches!(
+            registry.load_directory(dir.path()),
+            Err(RegistryError::UnsafeEntry(_))
+        ));
     }
 }
