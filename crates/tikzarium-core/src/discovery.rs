@@ -251,6 +251,42 @@ mod tests {
         assert_eq!(env.probe_package("tikz.sty"), PackageProbe::Unavailable);
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn miktex_uses_sibling_findtexmf_without_install_option() {
+        use std::{fs, os::unix::fs::PermissionsExt};
+        let directory = tempfile::tempdir().unwrap();
+        let bin = directory.path().join("путь с пробелом");
+        fs::create_dir_all(&bin).unwrap();
+        let engine = bin.join("xelatex");
+        fs::write(&engine, "").unwrap();
+        let package = directory.path().join("tikz.sty");
+        fs::write(&package, "% installed").unwrap();
+        let argv = directory.path().join("arguments.txt");
+        let tool = bin.join("findtexmf");
+        let script = format!(
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" > '{}'\nprintf '%s\\n' '{}'\n",
+            argv.display(),
+            package.display()
+        );
+        fs::write(&tool, script).unwrap();
+        let mut permissions = fs::metadata(&tool).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&tool, permissions).unwrap();
+
+        let environment = TexEnvironment {
+            xelatex: Some(engine),
+            xelatex_version: Some("MiKTeX-XeTeX 4.20".to_owned()),
+            kpsewhich: None,
+            pdf_renderer: None,
+        };
+        assert_eq!(
+            environment.probe_package("tikz.sty"),
+            PackageProbe::Present(package)
+        );
+        assert_eq!(fs::read_to_string(argv).unwrap(), "tikz.sty\n");
+    }
+
     #[test]
     fn traversal_is_not_accepted_as_package_name() {
         let env = TexEnvironment {
