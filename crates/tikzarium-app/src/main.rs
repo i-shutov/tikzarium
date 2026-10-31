@@ -495,6 +495,9 @@ impl TikzariumApp {
             self.font_proof_rx = None;
             match result {
                 Ok(proof) => {
+                    if !proof.verified {
+                        self.status = "Typography proof is not verified; see Figure fonts".into();
+                    }
                     self.font_proof_status = proof.description;
                     self.font_proof_report = proof.font_report;
                     if let Some(bytes) = proof.preview_png {
