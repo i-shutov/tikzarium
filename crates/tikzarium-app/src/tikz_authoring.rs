@@ -63,7 +63,9 @@ pub fn catalog() -> &'static Catalog {
     CATALOG.get_or_init(|| Catalog::bundled().expect("bundled primitive catalogue must validate"))
 }
 pub fn spec(tool: Tool) -> &'static tikzarium_extensions::primitives::ToolSpec {
-    catalog().tool(tool.catalog_id()).expect("six stable C tool IDs")
+    catalog()
+        .tool(tool.catalog_id())
+        .expect("six stable C tool IDs")
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -111,7 +113,11 @@ fn literal_cm(value: f32) -> String {
 /// B retains only pointer geometry. C owns the syntax, units and validation.
 pub fn parameter_values(tool: Tool, draft: &Draft) -> Result<BTreeMap<String, String>, String> {
     if ![
-        draft.start.x, draft.start.y, draft.end.x, draft.end.y, draft.bend,
+        draft.start.x,
+        draft.start.y,
+        draft.end.x,
+        draft.end.y,
+        draft.bend,
     ]
     .into_iter()
     .all(safe_number)
@@ -119,7 +125,9 @@ pub fn parameter_values(tool: Tool, draft: &Draft) -> Result<BTreeMap<String, St
         return Err("Coordinates must be finite and within ±1000".into());
     }
     if tool == Tool::Node && !safe_text(&draft.text) {
-        return Err("Node content must be 1–80 Unicode characters without control characters".into());
+        return Err(
+            "Node content must be 1–80 Unicode characters without control characters".into(),
+        );
     }
     let mut p = BTreeMap::new();
     let a = draft.start;
@@ -127,8 +135,10 @@ pub fn parameter_values(tool: Tool, draft: &Draft) -> Result<BTreeMap<String, St
     match tool {
         Tool::Line | Tool::Arrow | Tool::Rectangle | Tool::Cubic => {
             for (key, value) in [
-                ("start_x", a.x), ("start_y", a.y),
-                ("end_x", b.x), ("end_y", b.y),
+                ("start_x", a.x),
+                ("start_y", a.y),
+                ("end_x", b.x),
+                ("end_y", b.y),
             ] {
                 p.insert(key.to_owned(), literal_cm(value));
             }
@@ -136,7 +146,10 @@ pub fn parameter_values(tool: Tool, draft: &Draft) -> Result<BTreeMap<String, St
         Tool::Circle => {
             p.insert("center_x".into(), literal_cm(a.x));
             p.insert("center_y".into(), literal_cm(a.y));
-            p.insert("radius".into(), literal_cm((b.x - a.x).hypot(b.y - a.y).max(0.1)));
+            p.insert(
+                "radius".into(),
+                literal_cm((b.x - a.x).hypot(b.y - a.y).max(0.1)),
+            );
         }
         Tool::Node => {
             p.insert("x".into(), literal_cm(a.x));
@@ -207,8 +220,12 @@ fn decode_generated_text(raw: &str) -> String {
         (r"\textbackslash{}", r"\"),
         (r"\textasciicircum{}", "^"),
         (r"\textasciitilde{}", "~"),
-        (r"\{", "{"), (r"\}", "}"), (r"\$", "$"),
-        (r"\&", "&"), (r"\%", "%"), (r"\#", "#"),
+        (r"\{", "{"),
+        (r"\}", "}"),
+        (r"\$", "$"),
+        (r"\&", "&"),
+        (r"\%", "%"),
+        (r"\#", "#"),
         (r"\_", "_"),
     ] {
         value = value.replace(encoded, literal);
@@ -324,9 +341,13 @@ fn unescaped_comment(line: &str) -> &str {
 /// Macro-generated imports are UNKNOWN. Only literal project declarations
 /// grant a visual tool permission to insert its package-dependent source.
 fn has_declaration(line: &str, command: &str, name: &str) -> bool {
-    let Some(mut rest) = line.strip_prefix(command) else { return false; };
+    let Some(mut rest) = line.strip_prefix(command) else {
+        return false;
+    };
     if let Some(options) = rest.strip_prefix('[') {
-        let Some((_, remaining)) = options.split_once(']') else { return false; };
+        let Some((_, remaining)) = options.split_once(']') else {
+            return false;
+        };
         rest = remaining;
     }
     let Some((names, _)) = rest.strip_prefix('{').and_then(|body| body.split_once('}')) else {
@@ -337,7 +358,9 @@ fn has_declaration(line: &str, command: &str, name: &str) -> bool {
 fn literal_loaded(source: &str, commands: &[&str], name: &str) -> bool {
     source.lines().map(unescaped_comment).any(|line| {
         let compact: String = line.chars().filter(|c| !c.is_whitespace()).collect();
-        commands.iter().any(|command| has_declaration(&compact, command, name))
+        commands
+            .iter()
+            .any(|command| has_declaration(&compact, command, name))
     })
 }
 pub fn tikz_loaded(source: &str) -> bool {
@@ -400,7 +423,12 @@ struct Patch {
     inverse: SourcePatch,
     after_fingerprint: u64,
 }
-fn minimal_changed_span(before: &str, after: &str, at: usize, rev: u64) -> Result<SourcePatch, String> {
+fn minimal_changed_span(
+    before: &str,
+    after: &str,
+    at: usize,
+    rev: u64,
+) -> Result<SourcePatch, String> {
     if before == after {
         return Err("No parameter change".into());
     }
@@ -413,14 +441,22 @@ fn minimal_changed_span(before: &str, after: &str, at: usize, rev: u64) -> Resul
     let mut old_end = before.len();
     let mut new_end = after.len();
     while old_end > prefix && new_end > prefix {
-        let a = before[..old_end].chars().next_back().ok_or("Invalid old UTF-8")?;
-        let b = after[..new_end].chars().next_back().ok_or("Invalid new UTF-8")?;
-        if a != b { break; }
+        let a = before[..old_end]
+            .chars()
+            .next_back()
+            .ok_or("Invalid old UTF-8")?;
+        let b = after[..new_end]
+            .chars()
+            .next_back()
+            .ok_or("Invalid new UTF-8")?;
+        if a != b {
+            break;
+        }
         old_end -= a.len_utf8();
         new_end -= b.len_utf8();
     }
     Ok(SourcePatch {
-        range: at + prefix .. at + old_end,
+        range: at + prefix..at + old_end,
         expected_old: before[prefix..old_end].to_owned(),
         replacement: after[prefix..new_end].to_owned(),
         source_revision: rev,
@@ -449,8 +485,13 @@ impl Session {
         self.undo.clear();
         self.revision = 0;
         self.source_fingerprint = source_fingerprint(source);
-        self.next_id = owned(source).iter().map(|item| item.id)
-            .max().unwrap_or(0).saturating_add(1).max(1);
+        self.next_id = owned(source)
+            .iter()
+            .map(|item| item.id)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1)
+            .max(1);
         self.status = "Source-first: unknown TeX and macros remain unchanged".into();
     }
     /// Direct Source edits never get rewritten; they invalidate transient undo.
@@ -461,8 +502,13 @@ impl Session {
             self.source_fingerprint = current;
             self.undo.clear();
             self.selected = None;
-            self.next_id = owned(source).iter().map(|item| item.id)
-                .max().unwrap_or(0).saturating_add(1).max(1);
+            self.next_id = owned(source)
+                .iter()
+                .map(|item| item.id)
+                .max()
+                .unwrap_or(0)
+                .saturating_add(1)
+                .max(1);
             self.status = "Source edited manually; previous visual undo invalidated".into();
         }
     }
@@ -473,10 +519,14 @@ impl Session {
         if self.source_fingerprint != source_fingerprint(source) {
             return Err("Source changed after visual inspection; patch refused".into());
         }
-        let inverse = patch.apply(source, &mut self.revision)
+        let inverse = patch
+            .apply(source, &mut self.revision)
             .map_err(|e| e.to_string())?;
         self.source_fingerprint = source_fingerprint(source);
-        self.undo.push(Patch { inverse, after_fingerprint: self.source_fingerprint });
+        self.undo.push(Patch {
+            inverse,
+            after_fingerprint: self.source_fingerprint,
+        });
         Ok(())
     }
     pub fn undo_available(&self) -> bool {
@@ -490,14 +540,21 @@ impl Session {
         self.draft = item.draft;
         Ok(item.line)
     }
-    pub fn insert(&mut self, source: &mut String, tool: Tool, draft: Draft) -> Result<usize, String> {
+    pub fn insert(
+        &mut self,
+        source: &mut String,
+        tool: Tool,
+        draft: Draft,
+    ) -> Result<usize, String> {
         self.adopt_external(source);
         if !tikz_loaded(source) {
             return Err("TikZ not explicitly loaded; approve the visible \\usepackage diff".into());
         }
         for library in &spec(tool).requirements.libraries {
             if !library_loaded(source, library) {
-                return Err(format!("Missing project \\usetikzlibrary{{{library}}}; review source diff first"));
+                return Err(format!(
+                    "Missing project \\usetikzlibrary{{{library}}}; review source diff first"
+                ));
             }
         }
         let at = insertion_offset(source)?;
@@ -508,17 +565,23 @@ impl Session {
         let line = generate(tool, &draft, id)?;
         let after = format!("{}{}", line, eol(source));
         let number = source[..at].bytes().filter(|b| *b == b'\n').count() + 1;
-        self.apply_patch(source, SourcePatch {
-            range: at..at,
-            expected_old: String::new(),
-            replacement: after,
-            source_revision: self.revision,
-        })?;
+        self.apply_patch(
+            source,
+            SourcePatch {
+                range: at..at,
+                expected_old: String::new(),
+                replacement: after,
+                source_revision: self.revision,
+            },
+        )?;
         self.next_id = id.saturating_add(1);
         self.active = Some(tool);
         self.selected = Some(id);
         self.draft = draft;
-        self.status = format!("Created {} with C catalogue · Build XeLaTeX for exact PDF", tool.id());
+        self.status = format!(
+            "Created {} with C catalogue · Build XeLaTeX for exact PDF",
+            tool.id()
+        );
         Ok(number)
     }
     pub fn apply_parameters(&mut self, source: &mut String) -> Result<usize, String> {
@@ -534,7 +597,9 @@ impl Session {
         Ok(old.line)
     }
     pub fn propose_usepackage(source: &str) -> Result<String, String> {
-        if tikz_loaded(source) { return Err("TikZ is already explicitly loaded".into()); }
+        if tikz_loaded(source) {
+            return Err("TikZ is already explicitly loaded".into());
+        }
         unique_line_start(source, r"\begin{document}", true)?;
         Ok(format!("+ \\usepackage{{tikz}}{}", eol(source)))
     }
@@ -543,16 +608,23 @@ impl Session {
         Self::propose_usepackage(source)?;
         let at = unique_line_start(source, r"\begin{document}", true)?;
         let after = format!("\\usepackage{{tikz}}{}", eol(source));
-        self.apply_patch(source, SourcePatch {
-            range: at..at, expected_old: String::new(), replacement: after,
-            source_revision: self.revision,
-        })?;
+        self.apply_patch(
+            source,
+            SourcePatch {
+                range: at..at,
+                expected_old: String::new(),
+                replacement: after,
+                source_revision: self.revision,
+            },
+        )?;
         self.status = "Added \\usepackage{tikz} via visible diff; Undo available".into();
         Ok(())
     }
     pub fn propose_library(source: &str, library: &str) -> Result<String, String> {
         if library != "arrows.meta" {
-            return Err("Only C-catalogue arrows.meta is supported in this B visual adapter".into());
+            return Err(
+                "Only C-catalogue arrows.meta is supported in this B visual adapter".into(),
+            );
         }
         if library_loaded(source, library) {
             return Err(format!("Library {library} already loaded"));
@@ -565,10 +637,15 @@ impl Session {
         Self::propose_library(source, library)?;
         let at = unique_line_start(source, r"\begin{document}", true)?;
         let after = format!("\\usetikzlibrary{{{library}}}{}", eol(source));
-        self.apply_patch(source, SourcePatch {
-            range: at..at, expected_old: String::new(), replacement: after,
-            source_revision: self.revision,
-        })?;
+        self.apply_patch(
+            source,
+            SourcePatch {
+                range: at..at,
+                expected_old: String::new(),
+                replacement: after,
+                source_revision: self.revision,
+            },
+        )?;
         self.status = format!("Added \\usetikzlibrary{{{library}}}; Undo available");
         Ok(())
     }
@@ -577,7 +654,10 @@ impl Session {
         if source_fingerprint(source) != patch.after_fingerprint {
             return Err("Undo refused: source edited since visual patch".into());
         }
-        patch.inverse.apply(source, &mut self.revision).map_err(|e| e.to_string())?;
+        patch
+            .inverse
+            .apply(source, &mut self.revision)
+            .map_err(|e| e.to_string())?;
         self.undo.pop();
         self.source_fingerprint = source_fingerprint(source);
         if let Some(id) = self.selected {
@@ -758,7 +838,11 @@ mod tests {
         let mut session = Session::default();
         session.reset(&source);
         assert!(!library_loaded(&source, "arrows.meta"));
-        assert!(session.insert(&mut source, Tool::Arrow, Draft::default()).is_err());
+        assert!(
+            session
+                .insert(&mut source, Tool::Arrow, Draft::default())
+                .is_err()
+        );
         let diff = Session::propose_library(&source, "arrows.meta").unwrap();
         assert!(diff.contains("+ \\usetikzlibrary{arrows.meta}"));
         session.add_library(&mut source, "arrows.meta").unwrap();
@@ -770,8 +854,14 @@ mod tests {
     #[test]
     fn literal_imports_and_opaque_macro_imports_remain_distinct() {
         assert!(tikz_loaded(r"\usepackage[utf8]{graphics,tikz,amsmath}"));
-        assert!(library_loaded(r"\usetikzlibrary{calc,arrows.meta}", "arrows.meta"));
-        assert!(!library_loaded("% \\usetikzlibrary{arrows.meta}", "arrows.meta"));
+        assert!(library_loaded(
+            r"\usetikzlibrary{calc,arrows.meta}",
+            "arrows.meta"
+        ));
+        assert!(!library_loaded(
+            "% \\usetikzlibrary{arrows.meta}",
+            "arrows.meta"
+        ));
         assert!(!tikz_loaded(r"\myLoadTikZ"));
     }
 
@@ -780,13 +870,20 @@ mod tests {
         let mut source = SOURCE.to_owned();
         let mut session = Session::default();
         session.reset(&source);
-        let math = Draft { text: r"\alpha+\beta".into(), mode: "math".into(), ..Default::default() };
+        let math = Draft {
+            text: r"\alpha+\beta".into(),
+            mode: "math".into(),
+            ..Default::default()
+        };
         session.insert(&mut source, Tool::Node, math).unwrap();
         assert!(source.contains("$\\alpha+\\beta$"));
         assert_eq!(owned(&source).len(), 1);
         session.undo(&mut source).unwrap();
         assert_eq!(source, SOURCE);
-        let text = Draft { text: "Привет_мир".into(), ..Default::default() };
+        let text = Draft {
+            text: "Привет_мир".into(),
+            ..Default::default()
+        };
         session.insert(&mut source, Tool::Node, text).unwrap();
         assert!(source.contains(r"Привет\_мир"));
         assert_eq!(owned(&source).len(), 1);
@@ -799,7 +896,9 @@ mod tests {
         let mut source = SOURCE.replace("% user opaque code\n", "% user opaque code\nx=5.25cm\n");
         let mut session = Session::default();
         session.reset(&source);
-        session.insert(&mut source, Tool::Rectangle, Draft::default()).unwrap();
+        session
+            .insert(&mut source, Tool::Rectangle, Draft::default())
+            .unwrap();
         let created = source.clone();
         session.draft.end.x = 5.25;
         session.apply_parameters(&mut source).unwrap();
@@ -816,7 +915,9 @@ mod tests {
         let mut source = SOURCE.to_owned();
         let mut session = Session::default();
         session.reset(&source);
-        session.insert(&mut source, Tool::Circle, Draft::default()).unwrap();
+        session
+            .insert(&mut source, Tool::Circle, Draft::default())
+            .unwrap();
         source.push_str("% user's final source edit\n");
         assert!(session.undo(&mut source).is_err());
         let edited = source.clone();
@@ -824,5 +925,4 @@ mod tests {
         assert!(!session.undo_available());
         assert_eq!(source, edited);
     }
-
 }

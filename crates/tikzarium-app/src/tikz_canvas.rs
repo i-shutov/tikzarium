@@ -413,17 +413,29 @@ pub fn show_inspector(
                 info.requirements.engine, info.requirements.documented_against,
                 info.requirements.pgf_version_min
             ));
-            ui.small(format!("Первоисточник: {} · {}", info.manual_section, info.manual_url));
+            ui.small(format!(
+                "Первоисточник: {} · {}",
+                info.manual_section, info.manual_url
+            ));
             for parameter in &info.parameter {
                 ui.collapsing(format!("{} · {}", parameter.id, parameter.kind), |ui| {
                     ui.label(&parameter.help_ru);
                     ui.small(format!("Синтаксис: {}", parameter.syntax));
-                    ui.small(format!("Единицы {:?}; допустимые значения {:?}", parameter.units, parameter.allowed_values));
-                    ui.small(format!("Default: {} ({})", parameter.default, parameter.default_provenance));
+                    ui.small(format!(
+                        "Единицы {:?}; допустимые значения {:?}",
+                        parameter.units, parameter.allowed_values
+                    ));
+                    ui.small(format!(
+                        "Default: {} ({})",
+                        parameter.default, parameter.default_provenance
+                    ));
                     ui.small(format!("Предупреждение: {}", parameter.warning_ru));
                     ui.small(format!("Взаимодействие: {}", parameter.interaction_ru));
                     ui.code(&parameter.example);
-                    ui.small(format!("PGF Manual: {} · {}", parameter.manual_section, parameter.manual_url));
+                    ui.small(format!(
+                        "PGF Manual: {} · {}",
+                        parameter.manual_section, parameter.manual_url
+                    ));
                 });
             }
         }
@@ -460,7 +472,9 @@ pub fn show_inspector(
                     session.status = error;
                 }
             }
-            Err(error) => { ui.small(error); }
+            Err(error) => {
+                ui.small(error);
+            }
         }
     }
     if ui
