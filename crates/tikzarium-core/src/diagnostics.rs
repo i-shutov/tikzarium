@@ -23,7 +23,12 @@ pub fn extract_diagnostics(log: &str) -> Vec<BuildDiagnostic> {
                 message: rest.to_owned(),
                 line: None,
             });
-        } else if trimmed.contains("LaTeX Warning:") || trimmed.contains("Package pgf Warning:") {
+        } else if trimmed.contains("LaTeX Warning:")
+            || trimmed.contains("Package pgf Warning:")
+            || trimmed.starts_with("Missing character:")
+            || trimmed.starts_with("LaTeX Font Warning:")
+            || trimmed.starts_with("Package fontspec Warning:")
+        {
             items.push(BuildDiagnostic {
                 severity: Severity::Warning,
                 message: trimmed.to_owned(),
@@ -49,6 +54,14 @@ pub fn extract_diagnostics(log: &str) -> Vec<BuildDiagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn missing_glyph_is_nonfatal_but_always_reported() {
+        let log = "Missing character: There is no Ж in font LM Roman 10!\nLaTeX Font Warning: substituted\n";
+        let out = extract_diagnostics(log);
+        assert_eq!(out.len(), 2);
+        assert!(out.iter().all(|item| item.severity == Severity::Warning));
+    }
+
     #[test]
     fn parse_log_without_panics() {
         let diagnostics = extract_diagnostics(
