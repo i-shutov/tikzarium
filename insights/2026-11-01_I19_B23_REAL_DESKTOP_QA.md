@@ -7,3 +7,7 @@ Prior I18 reviewed real B22 run 41247531372: 6/6 genuine pointer gestures persis
 I19 isolates QA-only transplants on a fresh B23-based branch. Source build is exact checkout HEAD, not a stale separate B22 worktree. `git rev-parse HEAD:crates/tikzarium-app/src` must equal 0fbea02a14a08e568da831d78c562cd20dedb8d9 before running hard-coded screenshot coordinates; workflow and profile both reject source drift. Profile Fit width [1027,72] is hypothesis requiring new real evidence. Live F1 and fit screenshot differences are weak automated events, *not* Russian content or full-page visual acceptance. Canonical Poppler PDF raster is independent reference only, not a GUI replacement. JSON hashes and ZIP must include `clipboard-input.txt`.
 
 First exact-head CI result: NOT_RUN. Whole-page preview and F1 content: NOT_RUN. Physical Win10 x64 user MiKTeX, Mac M1/M4 user XeLaTeX: NOT_RUN. No auto-install/fallback. Native TeX source and single C catalogue remain authoritative; PDF is rendered externally and interaction guide provisional.
+
+## I19 first source-head hosted failure
+
+Exact QA `0739e81a`, run 41250529679: source-tree pin PASS, seven Python evidence predicates PASS, runtime prerequisites installed; `cargo build --locked` stopped at Cargo.lock because Cargo 1.91 requested a lockfile update. Real egui GUI/Saved TeX/PDF **NOT_RUN**, artifact empty. New QA source follows preexisting B23 CI build semantics without `--locked` while archiving the exact lockfile diff as warning/evidence; do not treat dependency drift as accepted until reviewed. Re-run at new SHA.

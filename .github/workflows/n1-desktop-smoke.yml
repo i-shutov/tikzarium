@@ -62,8 +62,14 @@ jobs:
             texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
       - name: Offline evidence predicate tests, never called desktop acceptance
         run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
-      - name: Build actual exact-checkout egui application
-        run: cargo build --locked -p tikzarium-app --bin tikzarium-app
+      - name: Build exact-checkout egui application; record Cargo.lock drift explicitly
+        run: |
+          mkdir -p "$RUNNER_TEMP/i19-evidence"
+          cargo build -p tikzarium-app --bin tikzarium-app
+          git diff -- Cargo.lock > "$RUNNER_TEMP/i19-evidence/cargo-lock.diff"
+          if test -s "$RUNNER_TEMP/i19-evidence/cargo-lock.diff"; then
+            echo "::warning::Tracked Cargo.lock changes under Rust 1.91.0; diff is preserved in evidence, not committed by this QA branch"
+          fi
       - name: Real X11 pointer gestures, application Save, GUI XeLaTeX Build/Export
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
@@ -83,4 +89,5 @@ jobs:
             ${{ runner.temp }}/i19-evidence/*.pdf
             ${{ runner.temp }}/i19-evidence/*.log
             ${{ runner.temp }}/i19-evidence/*.txt
+            ${{ runner.temp }}/i19-evidence/*.diff
           if-no-files-found: warn

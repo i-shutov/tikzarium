@@ -12,3 +12,7 @@ Base source PR #62 exact fb8908adff8b993670ae0a69f3f65d413318515a; main e28a3a4f
 
 ## State
 Initial branch + QA code prepared; exact B23 live run and manual acceptance pending. Never inherit B22 X11 PASS as B23 PASS; never call visual/frame-difference assertions an inspected screenshot.
+
+## Exact-head first CI failure, corrected transparently
+
+The first QA head `0739e81a` [run 41250529679](https://github.com/i-shutov/tikzarium/actions/runs/41250529679) verified checkout/tree and all 7/7 offline predicates but **FAILED before GUI launch** because `cargo build --locked` found a tracked Cargo.lock that Cargo 1.91 wants to update. This new `--locked` gate was stricter than existing accepted B23 builds; no desktop PASS can be inherited. The existing B23 crate must be built to exercise the actual GUI, so QA now builds with the repository's existing CI semantics, emits a visible warning and uploads `cargo-lock.diff` for precise subsequent shared lock reconciliation. This is NOT a hidden XeLaTeX/package fallback, and no lock mutation is committed by I19. Fresh exact-head CI and independent artifact inspection required.
