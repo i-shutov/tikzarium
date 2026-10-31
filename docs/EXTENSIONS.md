@@ -40,11 +40,13 @@ Rules enforced by the crate:
 - Unknown TOML keys, unsupported schema versions and malformed version triplets are rejected.
 - IDs are lower-case dotted names. Duplicate IDs, duplicate or unsafe TeX filenames, parent traversal and path separators are rejected.
 - TeX requirements are simple filenames with .sty/.cls/.tex/.def extensions, never arbitrary paths or shell arguments.
-- Files in a selected directory load **atomically** in sorted order. A malformed file rolls back the whole directory load. Symlinks and non-regular .toml entries are rejected. Other file types are ignored.
+- Files in a selected directory load **atomically** in sorted order. A malformed file rolls back the whole directory load. Symlinks and non-regular .toml entries are rejected. The selected directory itself must be a real directory (a symlink or dangling symlink is rejected); a genuinely missing optional directory is accepted as empty. Other file types are ignored.
 - Additional metadata cannot launch scripts, postprocessors, DLLs, dylibs, network requests or WASM.
 - visual_features is forward-looking declarative metadata. It does not make a feature selectable or editable without a separately verified source adapter.
 
 Only built-in manifests are enabled by Registry::new(); optional user directories must be explicitly loaded. No automatic execution or installation of third-party code occurs.
+
+The directory check rejects a symlink at the **final directory component** but is not a race-free filesystem sandbox: symlinked ancestor directories and concurrent filesystem replacement require a platform-specific handle-relative API. Configure optional catalogue roots in a trusted, non-writable location; do not use untrusted concurrently mutated directories.
 
 ## 4. Initial built-in catalogue
 
