@@ -46,6 +46,17 @@ pub fn line_start_char_index(source: &str, one_based_line: usize) -> Option<usiz
     None
 }
 
+/// Only a PDF corresponding to current source and a successful latest build is fresh.
+#[must_use]
+pub fn preview_is_stale(
+    has_pdf: bool,
+    last_build_failed: bool,
+    built_source: Option<&str>,
+    current_source: &str,
+) -> bool {
+    has_pdf && (last_build_failed || built_source != Some(current_source))
+}
+
 /// Keep zoom finite and inside a user-visible range, including corrupt state.
 #[must_use]
 pub fn scaled_zoom(current: f32, factor: f32) -> f32 {
@@ -78,6 +89,15 @@ mod tests {
         assert_eq!(line_start_char_index(source, 3), Some(27));
         assert_eq!(line_start_char_index(source, 4), Some(33));
         assert_eq!(line_start_char_index(source, 5), None);
+    }
+
+    #[test]
+    fn last_good_pdf_never_masquerades_as_current_after_failure_or_edit() {
+        assert!(!preview_is_stale(false, true, Some("x"), "y"));
+        assert!(!preview_is_stale(true, false, Some("x"), "x"));
+        assert!(preview_is_stale(true, true, Some("x"), "x"));
+        assert!(preview_is_stale(true, false, Some("x"), "changed"));
+        assert!(preview_is_stale(true, false, None, "x"));
     }
 
     #[test]
