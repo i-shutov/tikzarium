@@ -12,7 +12,10 @@ use tikzarium_core::{
 use tikzarium_extensions::{ExtensionStatus, Registry};
 
 mod ui_state;
-use ui_state::{BottomView, WorkspaceMode, line_start_char_index, preview_is_stale, scaled_zoom};
+use ui_state::{
+    BottomView, EditorCommand, WorkspaceMode, editor_command, line_start_char_index,
+    preview_is_stale, scaled_zoom,
+};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 
@@ -32,7 +35,9 @@ struct TikzariumApp {
     preview_texture: Option<egui::TextureHandle>,
     pdf: Option<Vec<u8>>,
     built_source: Option<String>,
+    built_path: Option<PathBuf>,
     building_source: Option<String>,
+    building_path: Option<PathBuf>,
     zoom: f32,
     receiver: Option<Receiver<Result<BuildArtifact, BuildError>>>,
     cancellation: Option<BuildService>,
@@ -63,7 +68,9 @@ impl TikzariumApp {
             preview_texture: None,
             pdf: None,
             built_source: None,
+            built_path: None,
             building_source: None,
+            building_path: None,
             zoom: 1.0,
             receiver: None,
             cancellation: None,
@@ -95,6 +102,9 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.built_source = None;
+                self.built_path = None;
+                self.building_source = None;
+                self.building_path = None;
                 self.diagnostics.clear();
                 self.log.clear();
                 self.jump_to_line = None;
@@ -165,6 +175,29 @@ impl TikzariumApp {
         self.save_as()
     }
 
+    fn preview_stale(&self) -> bool {
+        preview_is_stale(
+            self.pdf.is_some(),
+            self.last_build_failed,
+            self.built_source.as_deref(),
+            &self.document.source,
+            self.built_path.as_deref(),
+            self.document.path.as_deref(),
+        )
+    }
+
+    fn open_document_dialog(&mut self) {
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        if let Some(path) = rfd::FileDialog::new()
+            .add_filter("TeX & TikZ", &["tex", "tikz"])
+            .pick_file()
+        {
+            self.open_path(path);
+        }
+        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+        self.open_path(PathBuf::from(self.file_field.trim()));
+    }
+
     fn build(&mut self) {
         if self.receiver.is_some() {
             return;
@@ -181,7 +214,7 @@ impl TikzariumApp {
             return;
         };
         let request = BuildRequest {
-            source,
+            source: source.clone(),
             xelatex,
             pdf_renderer: self.tex.pdf_renderer.clone(),
             options: BuildOptions::default(),
@@ -195,6 +228,7 @@ impl TikzariumApp {
         self.receiver = Some(rx);
         self.cancellation = Some(service);
         self.building_source = Some(self.document.source.clone());
+        self.building_path = Some(source);
         self.status = "Compiling with XeLaTeX …".into();
     }
 
@@ -214,6 +248,7 @@ impl TikzariumApp {
             self.receiver = None;
             self.cancellation = None;
             let build_source = self.building_source.take();
+            let build_path = self.building_path.take();
             match result {
                 Ok(artifact) => {
                     self.diagnostics = artifact.diagnostics.clone();
@@ -249,6 +284,7 @@ impl TikzariumApp {
                     self.log = artifact.log;
                     self.pdf = Some(artifact.pdf);
                     self.built_source = build_source;
+                    self.built_path = build_path;
                     self.status = format!(
                         "Built in {:.2}s; {} inputs; {} diagnostics",
                         artifact.elapsed.as_secs_f64(),
@@ -281,6 +317,10 @@ impl TikzariumApp {
     }
 
     fn export(&mut self) {
+        if self.preview_stale() {
+            self.status = "PDF is stale: rebuild the current file before exporting".into();
+            return;
+        }
         let Some(pdf) = &self.pdf else {
             self.status = "No successful PDF to export".into();
             return;
@@ -373,12 +413,7 @@ impl TikzariumApp {
                 self.zoom = fit;
             }
         });
-        if preview_is_stale(
-            self.pdf.is_some(),
-            self.last_build_failed,
-            self.built_source.as_deref(),
-            &self.document.source,
-        ) {
+        if self.preview_stale() {
             ui.colored_label(
                 egui::Color32::YELLOW,
                 "STALE · last successful PDF, not current source",
@@ -416,19 +451,40 @@ impl TikzariumApp {
 impl eframe::App for TikzariumApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_build(ctx);
+        let shortcut = ctx.input(|input| {
+            if input.key_pressed(egui::Key::S) {
+                editor_command(egui::Key::S, input.modifiers)
+            } else if input.key_pressed(egui::Key::O) {
+                editor_command(egui::Key::O, input.modifiers)
+            } else if input.key_pressed(egui::Key::Enter) {
+                editor_command(egui::Key::Enter, input.modifiers)
+            } else {
+                None
+            }
+        });
+        // A modal or running XeLaTeX run must not change the active file mid-build.
+        if self.receiver.is_none() && self.pending_open.is_none() {
+            match shortcut {
+                Some(EditorCommand::Open) => self.open_document_dialog(),
+                Some(EditorCommand::Save) => {
+                    self.save();
+                }
+                Some(EditorCommand::SaveAs) => {
+                    self.save_as();
+                }
+                Some(EditorCommand::Build) => self.build(),
+                None => {}
+            }
+        }
         egui::TopBottomPanel::top("tools").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
                 ui.heading("TikZarium");
-                if ui.button("Open").clicked() {
-                    #[cfg(any(target_os = "windows", target_os = "macos"))]
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("TeX & TikZ", &["tex", "tikz"])
-                        .pick_file()
-                    {
-                        self.open_path(path);
-                    }
-                    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-                    self.open_path(PathBuf::from(self.file_field.trim()));
+                if ui
+                    .add_enabled(self.receiver.is_none(), egui::Button::new("Open"))
+                    .on_hover_text("Ctrl+O / Cmd+O")
+                    .clicked()
+                {
+                    self.open_document_dialog();
                 }
                 ui.label("Path:");
                 ui.add(
@@ -436,13 +492,24 @@ impl eframe::App for TikzariumApp {
                         .desired_width(280.0)
                         .hint_text("path/to/figure.tex"),
                 );
-                if ui.button("Open path").clicked() {
+                if ui
+                    .add_enabled(self.receiver.is_none(), egui::Button::new("Open path"))
+                    .clicked()
+                {
                     self.open_path(PathBuf::from(self.file_field.trim()));
                 }
-                if ui.button("Save").clicked() {
+                if ui
+                    .add_enabled(self.receiver.is_none(), egui::Button::new("Save"))
+                    .on_hover_text("Ctrl+S / Cmd+S")
+                    .clicked()
+                {
                     self.save();
                 }
-                if ui.button("Save As…").clicked() {
+                if ui
+                    .add_enabled(self.receiver.is_none(), egui::Button::new("Save As…"))
+                    .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
+                    .clicked()
+                {
                     self.save_as();
                 }
                 if ui
@@ -450,6 +517,7 @@ impl eframe::App for TikzariumApp {
                         self.receiver.is_none(),
                         egui::Button::new("Build (XeLaTeX)"),
                     )
+                    .on_hover_text("Ctrl+Enter / Cmd+Enter")
                     .clicked()
                 {
                     self.build();
@@ -462,12 +530,18 @@ impl eframe::App for TikzariumApp {
                     cancel.cancel();
                 }
                 if ui
-                    .add_enabled(self.pdf.is_some(), egui::Button::new("Export PDF"))
+                    .add_enabled(
+                        self.pdf.is_some() && !self.preview_stale(),
+                        egui::Button::new("Export PDF"),
+                    )
                     .clicked()
                 {
                     self.export();
                 }
-                if ui.button("Discover TeX").clicked() {
+                if ui
+                    .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
+                    .clicked()
+                {
                     self.refresh_tex();
                 }
             });
@@ -482,12 +556,7 @@ impl eframe::App for TikzariumApp {
                 if self.document.dirty() {
                     ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
                 }
-                if preview_is_stale(
-                    self.pdf.is_some(),
-                    self.last_build_failed,
-                    self.built_source.as_deref(),
-                    &self.document.source,
-                ) {
+                if self.preview_stale() {
                     ui.colored_label(egui::Color32::YELLOW, "PDF stale");
                 }
                 ui.label(&self.status);
