@@ -110,6 +110,7 @@ fn installed_loaded_engine_and_tool_are_five_separate_dimensions() {
     assert_eq!(status.installed, Evidence::Confirmed);
     assert_eq!(status.project_loaded, Evidence::Unknown);
     assert_eq!(status.engine_compatible, Evidence::Confirmed);
+    assert_eq!(c.capabilities("tikz.arrow", Evidence::Confirmed, Evidence::Unknown, Some("lualatex")).unwrap().engine_compatible, Evidence::Unknown);
     assert_eq!(status.tool_implemented, Evidence::Confirmed);
     assert_eq!(status.help_available, Evidence::Confirmed);
     assert!(!status.visual_editable);

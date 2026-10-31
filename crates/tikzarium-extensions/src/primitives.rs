@@ -36,7 +36,7 @@ pub struct Requirements {
 #[serde(deny_unknown_fields)]
 pub struct ParameterSpec {
  pub id:String,pub syntax:String,pub kind:String,pub units:Vec<String>,
- pub allowed_values:Vec<String>,pub positive:bool,pub default:String,
+ pub allowed_values:Vec<String>,pub positive:bool,pub max_abs:f64,pub default:String,
  pub default_provenance:String,pub help_ru:String,pub example:String,
  pub warning_ru:String,pub interaction_ru:String,pub manual_section:String,
  pub manual_url:String,pub requirements_inherit:String,
@@ -63,7 +63,7 @@ impl Catalog {
   let t=self.tool(id).ok_or_else(||PrimitiveError::UnknownTool(id.to_owned()))?;
   Ok(Capabilities{
    installed,project_loaded,
-   engine_compatible:match engine{None=>Evidence::Unknown,Some(e) if e.eq_ignore_ascii_case(&t.requirements.engine)=>Evidence::Confirmed,Some(_)=>Evidence::Absent},
+   engine_compatible:match engine{None=>Evidence::Unknown,Some(e) if e.eq_ignore_ascii_case(&t.requirements.engine)=>Evidence::Confirmed,Some(_)=>Evidence::Unknown},
    tool_implemented:Evidence::Confirmed,help_available:Evidence::Confirmed,visual_editable:false,
   })
  }
@@ -122,6 +122,7 @@ impl Catalog {
      "node_content" if p.units.is_empty()&&p.allowed_values.is_empty()=>{},
      _=>return Err(invalid("unsupported type or units")),
     }
+    if p.kind=="dimension"&&(!p.max_abs.is_finite()||p.max_abs<=0.0||p.max_abs>10000.0){return Err(invalid("invalid declared magnitude limit"));}
     if p.default!="UNKNOWN"{validate_literal(p,&p.default)?;}
    }
    if self.generate(&t.id,&BTreeMap::new())?.source!=t.example{return Err(invalid("example mismatches executable schema"));}
@@ -140,7 +141,7 @@ fn validate_literal(p:&ParameterSpec,v:&str)->Result<(),PrimitiveError>{
    if digits.is_empty()||!digits.bytes().all(|b|b.is_ascii_digit()||b==b'.')
     ||digits.bytes().filter(|b|*b==b'.').count()>1||!digits.bytes().any(|b|b.is_ascii_digit()){return Err(bad("expected literal decimal, not TeX expression"));}
    let n:f64=raw.parse().map_err(|_|bad("invalid number"))?;
-   if !n.is_finite()||n.abs()>10000.0||(p.positive&&n<=0.0){return Err(bad("invalid magnitude/radius"));}
+   if !n.is_finite()||n.abs()>p.max_abs||(p.positive&&n<=0.0){return Err(bad("invalid magnitude/radius"));}
   },
   "choice" if p.allowed_values.iter().any(|s|s==v)=>{},
   "node_content"=>{},
