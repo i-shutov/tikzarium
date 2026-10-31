@@ -383,14 +383,17 @@ impl TikzariumApp {
     }
 
     fn poll_pages(&mut self, ctx: &egui::Context) {
-        let count_result = self.page_count_rx.as_ref().and_then(|rx| match rx.try_recv() {
-            Ok(result) => Some(result),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => Some((
-                self.preview_epoch,
-                Err("Page-count worker disconnected".into()),
-            )),
-        });
+        let count_result = self
+            .page_count_rx
+            .as_ref()
+            .and_then(|rx| match rx.try_recv() {
+                Ok(result) => Some(result),
+                Err(TryRecvError::Empty) => None,
+                Err(TryRecvError::Disconnected) => Some((
+                    self.preview_epoch,
+                    Err("Page-count worker disconnected".into()),
+                )),
+            });
         if let Some((epoch, result)) = count_result {
             self.page_count_rx = None;
             if epoch == self.preview_epoch {
@@ -406,15 +409,18 @@ impl TikzariumApp {
                 }
             }
         }
-        let render_result = self.page_render_rx.as_ref().and_then(|rx| match rx.try_recv() {
-            Ok(result) => Some(result),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => Some((
-                self.preview_epoch,
-                self.page_index,
-                Err("Page-render worker disconnected".into()),
-            )),
-        });
+        let render_result = self
+            .page_render_rx
+            .as_ref()
+            .and_then(|rx| match rx.try_recv() {
+                Ok(result) => Some(result),
+                Err(TryRecvError::Empty) => None,
+                Err(TryRecvError::Disconnected) => Some((
+                    self.preview_epoch,
+                    self.page_index,
+                    Err("Page-render worker disconnected".into()),
+                )),
+            });
         if let Some((epoch, page, result)) = render_result {
             self.page_render_rx = None;
             if epoch == self.preview_epoch {
