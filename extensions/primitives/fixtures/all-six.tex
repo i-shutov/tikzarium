@@ -1,0 +1,14 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}
+\draw (0cm,0cm) -- (2cm,1cm);
+\draw[-{Stealth}] (0cm,0cm) -- (2cm,0cm);
+\draw (0cm,0cm) rectangle (2cm,1cm);
+\draw (1cm,1cm) circle[radius=8mm];
+\node at (0cm,0cm) {A};
+\draw (0cm,0cm) .. controls (1cm,2cm) and (2cm,2cm) .. (3cm,1cm);
+\end{tikzpicture}
+\end{document}

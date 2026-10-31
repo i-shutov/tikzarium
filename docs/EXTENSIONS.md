@@ -106,3 +106,14 @@ The C03 tool [extensions/qa/verify_smoke.py](../extensions/qa/verify_smoke.py) i
 ## I05 real package evidence integration
 
 The fixed five-fixture C02 runner is followed by the independent C03 auditor in CI. An observation is bound to a source SHA, exact TeX and log/PDF artifacts, the host/TeX engine, a pdfinfo page count and an explicit incompatible-Lua negative. This is **not** a whitelist of all CTAN libraries, nor an editable scene model. See `plans/2026-10-31_I05_XELATEX_CORE_EXTENSION_AUDIT.md` and `insights/2026-10-31_I05_INTEGRATION_QA.md`. The packages on real Windows 10 and physical M1/M4 are not yet accepted.
+
+
+## 11. C07 — native TikZ tool catalogue (six generators, no CAD)
+
+The versioned [single source of truth](../extensions/primitives/catalog-v1.toml) defines the IDs, literal parameter types/units/choices, explicit editor-preset provenance (not inferred PGF defaults), requirements and Russian help for **line, arrow, rectangle, circle, node and cubic Bézier**. The same schema drives an executable generator and can be consumed by future egui toolbar, inspector, completion and contextual help. Each tool emits an ordinary TikZ command; see [the C-owned contract and fixtures](../extensions/primitives/README.md).
+
+Only the arrow tool needs `\\usetikzlibrary{arrows.meta}`; all six require `\\usepackage{tikz}`. The standalone package-installed status, the actual project-loaded declaration, XeLaTeX compatibility, source-tool implementation and help availability are five separate dimensions. The bundled source generator is implemented; **GUI visual interaction and range discovery are not**. An installed MiKTeX package must never be treated as loaded source; unknown user macros imply unknown dependency evidence, not missing packages. The minimum PGF version is reported UNKNOWN; syntax was checked against the v3.1.12 manual, not an invented compatibility floor.
+
+The `SourcePatch` contract changes one caller-owned known byte span with an expected previous substring and source revision; it emits its inverse for undo. It neither decompiles a PDF nor rewrites unknown TeX. Raw mathematical TeX in a node is user-authored and intentionally not blocked by the literal coordinate validator. XeLaTeX remains an external prerequisite: MiKTeX on actual Windows 10, user-installed XeLaTeX on physical macOS ARM64. Lua-only graphdrawing is still incompatible with XeLaTeX, and existing installed compatible packages remain source-compilable without a GUI adapter.
+
+Review primary PGF/TikZ 3.1.12 manual sections [14 — paths](https://tikz.dev/tikz-paths), [16 — arrows](https://tikz.dev/tikz-arrows) and [17 — nodes](https://tikz.dev/tikz-shapes); linked descriptions here are original summaries, not copied manual pages.

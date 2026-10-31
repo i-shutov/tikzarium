@@ -1,0 +1,587 @@
+schema_version = 1
+id = "org.tikzarium.primitives"
+
+[[tools]]
+id = "tikz.line"
+title_ru = "Линия"
+syntax = "\\draw (${start_x},${start_y}) -- (${end_x},${end_y});"
+help_ru = "Создаёт прямой отрезок между двумя точками штатным оператором TikZ --."
+example = "\\draw (0cm,0cm) -- (2cm,1cm);"
+warning_ru = "При совпадении точек отрезок вырождается; геометрия других команд не изменяется."
+interaction_ru = "Координаты интерпретируются внутри действующего tikzpicture и наследуют его стили."
+manual_section = "14.2.1"
+manual_url = "https://tikz.dev/tikz-paths"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = []
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "start_x"
+syntax = "${start_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "X первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.2.1"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "start_y"
+syntax = "${start_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.2.1"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_x"
+syntax = "${end_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "X конечной точки."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.2.1"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_y"
+syntax = "${end_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "Y конечной точки."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.2.1"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools]]
+id = "tikz.arrow"
+title_ru = "Стрелка"
+syntax = "\\draw[-{${tip}}] (${start_x},${start_y}) -- (${end_x},${end_y});"
+help_ru = "Чертит открытый отрезок с наконечником arrows.meta на конечной точке."
+example = "\\draw[-{Stealth}] (0cm,0cm) -- (2cm,0cm);"
+warning_ru = "Для Stealth и Latex необходимо явно подключить библиотеку arrows.meta; наконечники на замкнутых путях не рисуются."
+interaction_ru = "Наконечник наследует толщину/цвет линии и окружающие TikZ-стили; библиотека нужна именно проекту."
+manual_section = "16.2; 16.5"
+manual_url = "https://tikz.dev/tikz-arrows"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = ["arrows.meta"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "start_x"
+syntax = "${start_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "X первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "16.2"
+manual_url = "https://tikz.dev/tikz-arrows"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "start_y"
+syntax = "${start_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "16.2"
+manual_url = "https://tikz.dev/tikz-arrows"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_x"
+syntax = "${end_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "X конечной точки."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "16.2"
+manual_url = "https://tikz.dev/tikz-arrows"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_y"
+syntax = "${end_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y конечной точки."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "16.2"
+manual_url = "https://tikz.dev/tikz-arrows"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "tip"
+syntax = "${tip}"
+kind = "choice"
+units = []
+allowed_values = ["Stealth", "Latex"]
+positive = false
+default = "Stealth"
+default_provenance = "editor_preset"
+help_ru = "Форма наконечника, добавляемого в конец линии."
+example = "Stealth"
+warning_ru = "Допускаются только перечисленные значения; дополнительные стили вводятся вручную в TeX."
+interaction_ru = "Выбор меняет только подставляемый ключ TikZ, не форму соседних объектов."
+manual_section = "16.5"
+manual_url = "https://tikz.dev/tikz-arrows"
+requirements_inherit = "tool"
+
+[[tools]]
+id = "tikz.rectangle"
+title_ru = "Прямоугольник"
+syntax = "\\draw (${start_x},${start_y}) rectangle (${end_x},${end_y});"
+help_ru = "Противоположные углы ограничивают прямоугольник штатной операцией rectangle."
+example = "\\draw (0cm,0cm) rectangle (2cm,1cm);"
+warning_ru = "Пара одинаковых X или Y даёт вырожденную фигуру; используйте разные координаты."
+interaction_ru = "Стороны следуют текущей системе координат и трансформациям tikzpicture."
+manual_section = "14.4"
+manual_url = "https://tikz.dev/tikz-paths"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = []
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "start_x"
+syntax = "${start_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "X первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.4"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "start_y"
+syntax = "${start_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.4"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_x"
+syntax = "${end_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "X конечной точки."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.4"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_y"
+syntax = "${end_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "Y конечной точки."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.4"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools]]
+id = "tikz.circle"
+title_ru = "Окружность"
+syntax = "\\draw (${center_x},${center_y}) circle[radius=${radius}];"
+help_ru = "Рисует окружность с центром в точке и буквальным положительным радиусом."
+example = "\\draw (1cm,1cm) circle[radius=8mm];"
+warning_ru = "Эффективная форма зависит от трансформаций текущего tikzpicture; это не самостоятельный CAD-объект."
+interaction_ru = "Радиус и координаты действуют только на текущий оператор circle."
+manual_section = "14.6"
+manual_url = "https://tikz.dev/tikz-paths"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = []
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "center_x"
+syntax = "${center_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "X центра окружности."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение center_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.6"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "center_y"
+syntax = "${center_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "Y центра окружности."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение center_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.6"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "radius"
+syntax = "${radius}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = true
+default = "8mm"
+default_provenance = "editor_preset"
+help_ru = "Радиус окружности с единицей TeX."
+example = "8mm"
+warning_ru = "Радиус должен быть строго положительным."
+interaction_ru = "Изменяет только значение radius в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.6"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools]]
+id = "tikz.node"
+title_ru = "Узел с текстом или математикой"
+syntax = "\\node at (${x},${y}) {${content}};"
+help_ru = "Вставляет TikZ node в заданной точке: text — буквальный LaTeX-текст с экранированием, math — пользовательское математическое выражение."
+example = "\\node at (0cm,0cm) {A};"
+warning_ru = "Для кириллицы требуется подходящий настроенный шрифт в исходном документе; math является raw TeX и не проходит песочницу."
+interaction_ru = "mode влияет только на интерпретацию content; неизвестные макросы в остальном документе не анализируются."
+manual_section = "17.2; 17.4"
+manual_url = "https://tikz.dev/tikz-shapes"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = []
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "x"
+syntax = "${x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "X позиции узла."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "17.2"
+manual_url = "https://tikz.dev/tikz-shapes"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "y"
+syntax = "${y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y позиции узла."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "17.2"
+manual_url = "https://tikz.dev/tikz-shapes"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "mode"
+syntax = "${mode}"
+kind = "choice"
+units = []
+allowed_values = ["text", "math"]
+positive = false
+default = "text"
+default_provenance = "editor_preset"
+help_ru = "Режим буквального текста или математического TeX."
+example = "text"
+warning_ru = "Допускаются только перечисленные значения; дополнительные стили вводятся вручную в TeX."
+interaction_ru = "Выбор меняет только подставляемый ключ TikZ, не форму соседних объектов."
+manual_section = "17.4"
+manual_url = "https://tikz.dev/tikz-shapes"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "content"
+syntax = "{${content}}"
+kind = "node_content"
+units = []
+allowed_values = []
+positive = false
+default = "A"
+default_provenance = "editor_preset"
+help_ru = "Содержимое узла; в math доступны обычные команды TeX."
+example = "A"
+warning_ru = "В режиме math содержимое — намеренно сырой пользовательский TeX; компилятор может отвергнуть неизвестные макросы."
+interaction_ru = "Режим text экранирует специальные символы LaTeX; режим math помещает содержимое в $...$."
+manual_section = "17.2"
+manual_url = "https://tikz.dev/tikz-shapes"
+requirements_inherit = "tool"
+
+[[tools]]
+id = "tikz.bezier-cubic"
+title_ru = "Кубическая кривая Безье"
+syntax = "\\draw (${start_x},${start_y}) .. controls (${control1_x},${control1_y}) and (${control2_x},${control2_y}) .. (${end_x},${end_y});"
+help_ru = "Создаёт кубическую кривую TikZ с двумя контрольными точками controls ... and ... ."
+example = "\\draw (0cm,0cm) .. controls (1cm,2cm) and (2cm,2cm) .. (3cm,1cm);"
+warning_ru = "Контрольные точки определяют касательные, а не промежуточные точки, через которые обязательно проходит кривая."
+interaction_ru = "Изменение одной контрольной точки влияет на форму только этого сегмента; соседние сегменты не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+
+[tools.requirements]
+packages = ["tikz"]
+libraries = []
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[tools.parameter]]
+id = "start_x"
+syntax = "${start_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "X первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "start_y"
+syntax = "${start_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "0cm"
+default_provenance = "editor_preset"
+help_ru = "Y первой точки в координатах TikZ."
+example = "0cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение start_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_x"
+syntax = "${end_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "3cm"
+default_provenance = "editor_preset"
+help_ru = "X конечной точки."
+example = "3cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "end_y"
+syntax = "${end_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "Y конечной точки."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение end_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "control1_x"
+syntax = "${control1_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "1cm"
+default_provenance = "editor_preset"
+help_ru = "X первой контрольной точки: начальная касательная."
+example = "1cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение control1_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "control1_y"
+syntax = "${control1_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "Y первой контрольной точки: начальная касательная."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение control1_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "control2_x"
+syntax = "${control2_x}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "X второй контрольной точки: конечная касательная."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение control2_x в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
+[[tools.parameter]]
+id = "control2_y"
+syntax = "${control2_y}"
+kind = "dimension"
+units = ["pt", "mm", "cm", "in"]
+allowed_values = []
+positive = false
+default = "2cm"
+default_provenance = "editor_preset"
+help_ru = "Y второй контрольной точки: конечная касательная."
+example = "2cm"
+warning_ru = "Это буквальная длина с единицей, не выражение TeX; для формул используйте исходник."
+interaction_ru = "Изменяет только значение control2_y в создаваемой команде; другие конструкции TeX не пересчитываются."
+manual_section = "14.3"
+manual_url = "https://tikz.dev/tikz-paths"
+requirements_inherit = "tool"
+
