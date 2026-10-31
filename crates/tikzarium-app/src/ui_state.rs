@@ -1,6 +1,6 @@
 //! Small, testable UI state transitions. No dependency on the compiler or OS.
-use std::path::Path;
 use eframe::egui::{Key, Modifiers};
+use std::path::Path;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkspaceMode {
     Source,
@@ -128,22 +128,52 @@ mod tests {
         let moved = Path::new("fig-copy.tex");
         assert!(!preview_is_stale(false, true, Some("x"), "y", None, None));
         assert!(!preview_is_stale(
-            true, false, Some("x"), "x", Some(path), Some(path),
+            true,
+            false,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
         ));
         assert!(preview_is_stale(
-            true, true, Some("x"), "x", Some(path), Some(path),
+            true,
+            true,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
         ));
         assert!(preview_is_stale(
-            true, false, Some("x"), "changed", Some(path), Some(path),
+            true,
+            false,
+            Some("x"),
+            "changed",
+            Some(path),
+            Some(path),
         ));
         assert!(preview_is_stale(
-            true, false, None, "x", Some(path), Some(path),
+            true,
+            false,
+            None,
+            "x",
+            Some(path),
+            Some(path),
         ));
         assert!(preview_is_stale(
-            true, false, Some("x"), "x", Some(path), Some(moved),
+            true,
+            false,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(moved),
         ));
         assert!(preview_is_stale(
-            true, false, Some("x"), "x", None, Some(path),
+            true,
+            false,
+            Some("x"),
+            "x",
+            None,
+            Some(path),
         ));
     }
 
@@ -161,7 +191,10 @@ mod tests {
         assert_eq!(editor_command(Key::S, command), Some(EditorCommand::Save));
         assert_eq!(editor_command(Key::S, save_as), Some(EditorCommand::SaveAs));
         assert_eq!(editor_command(Key::O, command), Some(EditorCommand::Open));
-        assert_eq!(editor_command(Key::Enter, command), Some(EditorCommand::Build));
+        assert_eq!(
+            editor_command(Key::Enter, command),
+            Some(EditorCommand::Build)
+        );
         assert_eq!(editor_command(Key::O, save_as), None);
         assert_eq!(editor_command(Key::S, Modifiers::default()), None);
     }
