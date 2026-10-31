@@ -15,7 +15,10 @@ pub const MAX_TRACKED_FILE_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
 struct ProjectInput {
+    /// Resolved target at capture time (retained for the existing public paths API).
     path: PathBuf,
+    /// Original recorded spelling must survive to catch symlink retargeting.
+    recorded_path: PathBuf,
     digest: Option<[u8; 32]>,
 }
 
@@ -38,7 +41,7 @@ pub struct ProjectDependencySnapshot {
 impl ProjectDependencySnapshot {
     /// The author source is mandatory even if the recorder omits it. If it
     /// resolves outside root, freshness fails closed rather than silently
-    /// ignoring the source. Inputs are canonicalized and deduplicated.
+    /// ignoring the source. Recorded input spellings are normalized and deduplicated without losing link identity.
     pub fn capture(
         root: &Path,
         source: &Path,
@@ -62,18 +65,20 @@ impl ProjectDependencySnapshot {
             };
             // A missing file cannot be canonicalized; collapse .. components
             // before applying the root boundary.
-            let resolved = canonicalize_existing_prefix(&absolute);
+            let recorded_path = lexical_normalize(&absolute);
+            let resolved = canonicalize_existing_prefix(&recorded_path);
             let is_local = resolved.starts_with(&root);
             if index == 0 {
                 source_is_project_local = is_local;
             }
-            if !seen.insert(resolved.clone()) {
+            if !seen.insert(recorded_path.clone()) {
                 continue;
             }
             if is_local {
                 project_inputs.push(ProjectInput {
-                    digest: file_digest(&resolved).ok().flatten(),
+                    digest: file_digest(&recorded_path).ok().flatten(),
                     path: resolved,
+                    recorded_path,
                 });
             } else {
                 ignored_external.push(resolved);
@@ -123,7 +128,9 @@ impl ProjectDependencySnapshot {
         self.project_inputs
             .iter()
             .filter(|item| {
-                item.digest.is_none() || file_digest(&item.path).ok().flatten() != item.digest
+                item.digest.is_none()
+                    || canonicalize_existing_prefix(&item.recorded_path) != item.path
+                    || file_digest(&item.recorded_path).ok().flatten() != item.digest
             })
             .map(|item| item.path.clone())
             .collect()
@@ -311,6 +318,38 @@ mod tests {
         .unwrap();
         assert_eq!(snapshot.tracked_project_paths().len(), 1);
         assert!(snapshot.is_project_fresh());
+    }
+
+
+    #[cfg(unix)]
+    #[test]
+    fn retargeted_project_symlink_invalidates_even_when_previous_target_is_unchanged() {
+        use std::os::unix::fs::symlink;
+        let project = tempfile::tempdir().unwrap();
+        let source = project.path().join("рисунок.tex");
+        let first = project.path().join("first.tex");
+        let second = project.path().join("second.tex");
+        let link = project.path().join("asset.tex");
+        let original = b"% user source\\r\\n\\\\unknownmacro{opaque}\\r\\n";
+        fs::write(&source, original).unwrap();
+        fs::write(&first, b"AAA").unwrap();
+        fs::write(&second, b"BBB").unwrap();
+        symlink(&first, &link).unwrap();
+
+        let snapshot =
+            ProjectDependencySnapshot::capture(project.path(), &source, &[link.clone()], true)
+                .unwrap();
+        assert!(snapshot.is_project_fresh());
+        fs::remove_file(&link).unwrap();
+        symlink(&second, &link).unwrap();
+
+        assert_eq!(
+            snapshot.invalidated_project_paths(),
+            vec![first.canonicalize().unwrap()]
+        );
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(fs::read(&first).unwrap(), b"AAA");
+        assert_eq!(fs::read(&source).unwrap(), original);
     }
 
     #[cfg(unix)]

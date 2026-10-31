@@ -304,3 +304,36 @@ fn external_only_recorder_cannot_certify_source_freshness() {
     assert!(!artifact.project_dependencies.is_project_fresh());
     assert_eq!(fs::read(source).unwrap(), original);
 }
+
+#[test]
+fn recorded_symlink_retarget_invalidates_real_runner_snapshot_and_preserves_source() {
+    use std::os::unix::fs::symlink;
+    let directory = tempfile::tempdir().unwrap();
+    let assets = directory.path().join("assets");
+    fs::create_dir_all(&assets).unwrap();
+    let first = assets.join("alpha.tex");
+    let second = assets.join("beta.tex");
+    let link = assets.join("shape.tex");
+    fs::write(&first, "AAA").unwrap();
+    fs::write(&second, "BBB").unwrap();
+    symlink(&first, &link).unwrap();
+    let source = directory.path().join("рисунок с пробелом.tex");
+    let original = b"% user source\\r\\n\\\\opaque{value}\\r\\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\\n");
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert!(artifact.dependencies.contains(&first.canonicalize().unwrap()));
+
+    fs::remove_file(&link).unwrap();
+    symlink(&second, &link).unwrap();
+    assert_eq!(
+        artifact.project_dependencies.invalidated_project_paths(),
+        vec![first.canonicalize().unwrap()]
+    );
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(&first).unwrap(), b"AAA");
+    assert_eq!(fs::read(&source).unwrap(), original);
+}

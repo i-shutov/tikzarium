@@ -54,3 +54,9 @@ Previous exact A source `bd18d1b94ca2c76516f3bb3d85ef3ebe87ce9c63` completed its
 - [ ] Integrator reviews core `BuildArtifact.project_dependencies` compatibility with B UI and freshness semantics; no automatic GUI stale marker claimed.
 - [ ] Genuine CLI `doctor` using actual MiKTeX sibling `findtexmf.exe` remains a separately identified D evidence gap, **NOT_RUN**; hosted MiKTeX build cannot certify it.
 - [ ] Physical Windows 10 x64 user/shared MiKTeX and physical Mac M1/M4 and full GUI acceptance: **NOT_RUN**.
+
+## 2026-10-31 — W05 symlink identity and D11 reconciliation
+
+Integrator reproduced a remaining false-fresh after symlink replacement: `asset.tex -> a.tex` at compile time, then `asset.tex -> b.tex`, while the old target `a.tex` remains unchanged. Canonical paths in the old `.fls` public output erased the recorded alias. Fix in this existing PR: retain the original `.fls` INPUT spelling for snapshot hashing and link-target checks; keep public `BuildArtifact.dependencies` canonical and unchanged. Also retain an explicitly chosen source path before the runner canonicalizes its compiler operand. Unit, parser and end-to-end fake-engine regressions cover retarget, Unicode/spaces, opaque macro, CRLF and preserved source bytes.
+
+At branch reconciliation main `5f5a805005430ff26d3e3dd9c17c3ca3d7af9fa3` includes D11 #64 and GUI/integrator changes. Those main changes are all outside A core/CLI and A-specific docs; preserve them byte-for-byte. Physical Win10/M1/M4 remain NOT_RUN. Require exact new SHA CI (fmt/check/test/clippy), QA and true MiKTeX build; no PASS inherited from old `de114ea5`. D owns MiKTeX workflow, so do not edit it. Integration review must verify source/undo API unchanged and confirm no symlink-retarget false-fresh.
