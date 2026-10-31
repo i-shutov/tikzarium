@@ -233,7 +233,7 @@ def check_host(root: Path, sources: Path, slug: str, expected_sha: str,
             or unit.get("status") != "PASS_UNIT" or unit.get("scope") != "UNIT_TEST_ONLY"
             or any(unit.get(k) != "NOT_RUN" for k in
                    ("physical_win10_smoke", "physical_m1_m4_smoke",
-                    "gui_restart_persistence", "gui_visual_theme_invariance")):
+                    "gui_restart_persistence", "gui_visual_theme_invariance"))):
         raise AuditError(f"GUI unit-contract status or acceptance boundary invalid: {slug}")
     groups = unit.get("groups", {})
     for name, count in (("ui_theme::tests", 3), ("font_proof::tests", 2)):
