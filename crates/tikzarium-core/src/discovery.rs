@@ -4,6 +4,8 @@ use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
     process::Command,
+    thread,
+    time::Duration,
 };
 
 #[must_use]
@@ -71,10 +73,24 @@ pub struct TexEngineIdentity {
 /// The first nonempty version line is displayed, but the full output is used
 /// for classification because distributors may put the name on a later line.
 pub fn inspect_xelatex(path: &Path) -> std::io::Result<TexEngineIdentity> {
-    let output = Command::new(path)
-        .arg("--version")
-        .stdin(std::process::Stdio::null())
-        .output()?;
+    // An executable still being published on Unix can temporarily refuse
+    // execve() with ETXTBSY (26). Retry only that OS condition, with a
+    // bounded delay; all other failures remain errors and never trigger
+    // fallback to a different user-installed TeX distribution.
+    let mut busy_retries = 0;
+    let output = loop {
+        match Command::new(path)
+            .arg("--version")
+            .stdin(std::process::Stdio::null())
+            .output()
+        {
+            Err(error) if cfg!(unix) && error.raw_os_error() == Some(26) && busy_retries < 6 => {
+                busy_retries += 1;
+                thread::sleep(Duration::from_millis(25));
+            }
+            result => break result?,
+        }
+    };
     if !output.status.success() {
         return Err(std::io::Error::other(format!(
             "XeLaTeX --version exited with {}",
@@ -291,6 +307,33 @@ mod tests {
             PackageProbe::Present(package)
         );
         assert_eq!(fs::read_to_string(argv).unwrap(), "tikz.sty\n");
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn transient_executable_busy_probe_is_bounded_and_does_not_fallback() {
+        use std::{fs, os::unix::fs::PermissionsExt};
+        let directory = tempfile::tempdir().unwrap();
+        let engine = directory.path().join("MiKTeX with spaces");
+        fs::write(
+            &engine,
+            "#!/bin/sh\\nprintf 'MiKTeX-XeTeX 4.20 (MiKTeX 25.12)\\n'\\n",
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&engine).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&engine, permissions).unwrap();
+
+        // Simulate a concurrent publisher holding the exact executable open
+        // for writing. A Linux execve must return ETXTBSY until it is closed.
+        let writer = fs::OpenOptions::new().write(true).open(&engine).unwrap();
+        let release = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(65));
+            drop(writer);
+        });
+        let identity = inspect_xelatex(&engine).unwrap();
+        release.join().unwrap();
+        assert_eq!(identity.distribution, TexDistribution::MiKTeX);
     }
 
     #[test]
