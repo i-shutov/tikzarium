@@ -53,6 +53,8 @@ def run_gate() -> dict:
         "schema_version": 1,
         "utc": datetime.now(timezone.utc).isoformat(),
         "sha": os.environ.get("GITHUB_SHA", "unrecorded-local"),
+        "source_head_sha": os.environ.get("TIKZARIUM_SOURCE_SHA", "unrecorded-local"),
+        "sha_note": "sha is the checked-out PR merge commit on pull_request; source_head_sha is the PR head",
         "platform": platform.platform(),
         "machine": platform.machine(),
         "scope": "UNIT_TEST_ONLY",
