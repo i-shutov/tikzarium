@@ -21,7 +21,7 @@ use ui_state::{
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
-use pdf_navigation::{can_navigate, spawn_page_count, spawn_page_render};
+use pdf_navigation::{PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render};
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
@@ -49,8 +49,8 @@ struct TikzariumApp {
     preview_epoch: u64,
     page_index: usize,
     page_count: Option<usize>,
-    page_count_rx: Option<Receiver<(u64, Result<usize, String>)>>,
-    page_render_rx: Option<Receiver<(u64, usize, Result<Vec<u8>, String>)>>,
+    page_count_rx: Option<PageCountReceiver>,
+    page_render_rx: Option<PageRenderReceiver>,
     page_navigation_status: String,
     receiver: Option<Receiver<Result<BuildArtifact, BuildError>>>,
     cancellation: Option<BuildService>,
