@@ -88,6 +88,9 @@ fn main() -> ExitCode {
             for package in [
                 "standalone.cls",
                 "tikz.sty",
+                "tikzlibrarycalc.code.tex",
+                "tikzlibrarypositioning.code.tex",
+                "tikzlibraryarrows.meta.code.tex",
                 "fontspec.sty",
                 "unicode-math.sty",
             ] {

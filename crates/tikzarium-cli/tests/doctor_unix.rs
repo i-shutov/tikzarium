@@ -56,7 +56,7 @@ fn fake_findtexmf(directory: &Path, marker: &Path, packages: &Path) {
         r#"#!/bin/sh
 printf '%s\n' "$*" >> "{}"
 case "$1" in
-    standalone.cls|tikz.sty|fontspec.sty|unicode-math.sty)
+    standalone.cls|tikz.sty|tikzlibrarycalc.code.tex|tikzlibrarypositioning.code.tex|tikzlibraryarrows.meta.code.tex|fontspec.sty|unicode-math.sty)
         if [ -f "{}/$1" ]; then
             printf '%s/%s\n' "{}" "$1"
             exit 0
@@ -90,7 +90,15 @@ fn doctor_reports_present_and_missing_without_installer_invocation() {
     fs::create_dir_all(&packages).unwrap();
     let marker = directory.path().join("lookup argv.txt");
     fake_findtexmf(&bin, &marker, &packages);
-    for name in ["standalone.cls", "tikz.sty", "fontspec.sty", "unicode-math.sty"] {
+    for name in [
+        "standalone.cls",
+        "tikz.sty",
+        "tikzlibrarycalc.code.tex",
+        "tikzlibrarypositioning.code.tex",
+        "tikzlibraryarrows.meta.code.tex",
+        "fontspec.sty",
+        "unicode-math.sty",
+    ] {
         fs::write(packages.join(name), b"installed").unwrap();
     }
 
@@ -99,9 +107,10 @@ fn doctor_reports_present_and_missing_without_installer_invocation() {
     let stdout = String::from_utf8(present.stdout).unwrap();
     assert!(stdout.contains("Distribution: MiKTeX"));
     assert!(stdout.contains("unicode-math.sty: present"));
+    assert!(stdout.contains("tikzlibraryarrows.meta.code.tex: present"));
     assert!(stdout.contains("MiKTeX user с пробелом"));
     let calls = fs::read_to_string(&marker).unwrap();
-    assert_eq!(calls.lines().count(), 4);
+    assert_eq!(calls.lines().count(), 7);
     assert!(!calls.contains("--must-exist"));
     assert!(!calls.contains("--enable-installer"));
 
