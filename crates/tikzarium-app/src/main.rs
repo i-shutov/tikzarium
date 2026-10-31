@@ -21,7 +21,9 @@ use ui_state::{
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
-use pdf_navigation::{PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render};
+use pdf_navigation::{
+    PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
+};
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
