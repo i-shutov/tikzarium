@@ -445,13 +445,15 @@ pub fn inspect(source: &str) -> ProjectImports {
     // Likewise, body-side \input/\include can pull in external imports. Do
     // not turn a preamble-only absence into a false NOT_LOADED verdict or
     // silently add an earlier duplicate. Existing trusted sites stay known.
-    if let Some(begin) = result.begin_document.as_ref() {
-        if document_body_may_import(&source[begin.end..]) {
-            first_reason(
-                &mut result.uncertain_reason,
-                "possible late import or external source in document body",
-            );
-        }
+    if result
+        .begin_document
+        .as_ref()
+        .is_some_and(|begin| document_body_may_import(&source[begin.end..]))
+    {
+        first_reason(
+            &mut result.uncertain_reason,
+            "possible late import or external source in document body",
+        );
     }
     if result.begin_document.is_none() {
         first_reason(
