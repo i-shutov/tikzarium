@@ -1224,7 +1224,7 @@ mod split_layout_tests {
     fn b21_source_navigation_targets_actual_textedit_galley_for_long_unicode_lines() {
         let ctx = egui::Context::default();
         let original = format!(
-            "\\documentclass{{standalone}}\\n% {}\\n\\begin{{tikzpicture}}\\n  \\draw (0,0) -- (1,1);\\n\\end{{tikzpicture}}\\n",
+            "\\documentclass{{standalone}}\n% {}\n\\begin{{tikzpicture}}\n  \\draw (0,0) -- (1,1);\n\\end{{tikzpicture}}\n",
             "длинный_пользовательский_макрос_".repeat(40)
         );
         let mut source = original.clone();
