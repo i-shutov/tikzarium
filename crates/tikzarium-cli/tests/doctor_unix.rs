@@ -56,7 +56,7 @@ fn fake_findtexmf(directory: &Path, marker: &Path, packages: &Path) {
         r#"#!/bin/sh
 printf '%s\n' "$*" >> "{}"
 case "$1" in
-    standalone.cls|tikz.sty|tikzlibrarycalc.code.tex|tikzlibrarypositioning.code.tex|tikzlibraryarrows.meta.code.tex|fontspec.sty|unicode-math.sty)
+    standalone.cls|tikz.sty|tikzlibrarycalc.code.tex|tikzlibrarypositioning.code.tex|pgflibraryarrows.meta.code.tex|fontspec.sty|unicode-math.sty)
         if [ -f "{}/$1" ]; then
             printf '%s/%s\n' "{}" "$1"
             exit 0
@@ -106,7 +106,13 @@ fn doctor_reports_present_and_missing_without_installer_invocation() {
     // The old invented tikzlibraryarrows.meta.code.tex is intentionally absent.
     assert!(!packages.join("tikzlibraryarrows.meta.code.tex").exists());
     let present = cli(&engine, &["doctor"]);
-    assert_eq!(present.status.code(), Some(0));
+    assert_eq!(
+        present.status.code(),
+        Some(0),
+        "stdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&present.stdout),
+        String::from_utf8_lossy(&present.stderr)
+    );
     let stdout = String::from_utf8(present.stdout).unwrap();
     assert!(stdout.contains("Distribution: MiKTeX"));
     assert!(stdout.contains("unicode-math.sty: present"));

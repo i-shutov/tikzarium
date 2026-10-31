@@ -83,3 +83,7 @@ The existing doctor incorrectly probed the invented `tikzlibraryarrows.meta.code
 - [ ] Independent hosted real MiKTeX #40 and physical Win10/M1/M4 acceptance remain separate gates.
 
 Verified package naming locally using `kpsewhich` and direct real XeLaTeX; no Rust build tools available in local workspace. This correction touches only A-owned code/tests and A plans/insights; other engineers own CI and GUI.
+
+### W06.2 stub test parity correction
+
+First hosted Rust QA on W06.1 SHA `52e2278be693` proved real Linux TeX fixture/doctor passed, but `doctor_reports_present_and_missing_without_installer_invocation` still failed: the fake `findtexmf` shell `case` whitelist retained the obsolete `tikzlibraryarrows.meta.code.tex` even though the generated test file and CLI were corrected to PGF. It returned 8 for the real library, which the doctor appropriately treated as not found. Fixed the mocked lookup whitelist **without changing the production doctor semantics**; added stdout/stderr to the failing assert. Exact-head CI pending after this correction. Never treat the earlier job as PASS.
