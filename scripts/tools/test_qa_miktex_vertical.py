@@ -35,7 +35,10 @@ class MiKTeXVerticalContract(unittest.TestCase):
         # Structural regression only: live MiKTeX/hosted network is separate CI evidence.
         setup = (Path(__file__).resolve().parent / "qa_setup_miktex.ps1").read_text(encoding="utf-8")
         self.assertLess(setup.index("packages update-package-database"),
-                        setup.index("packages install @packages"))
+                        setup.index("packages install @missingPackages"))
+        self.assertIn("if ($fields[3] -ceq 'false')", setup)
+        self.assertIn("$fields[3] -cnotin @('true','false')", setup)
+        self.assertNotIn("packages install @packages", setup)
         self.assertIn("if ($refreshExitCode -ne 0)", setup)
         self.assertIn("Assert-MiKTeXAutoInstallDisabled", setup)
         self.assertIn("AutoInstall=0", setup)

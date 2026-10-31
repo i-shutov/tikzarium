@@ -86,6 +86,7 @@ $packages = @('miktex-xetex-bin-x64-2.9','xetex','pgf','standalone',
 # Retain the metadata transcript on failure; an unknown ID must fail closed.
 $metadataPath = Join-Path $recordDir 'package-metadata-before-install.txt'
 New-Item -ItemType File -Force -Path $metadataPath | Out-Null
+$missingPackages = @()
 foreach ($package in $packages) {
     $rawInfo = (& $miktexExe packages info --template '{id}|{version}|{timePackaged}|{isInstalled}' $package 2>&1 | Out-String)
     $lookupExitCode = $LASTEXITCODE
@@ -95,9 +96,26 @@ foreach ($package in $packages) {
     if ($lookupExitCode -ne 0 -or $matchesId.Count -ne 1) {
         throw "MiKTeX refreshed index missing/ambiguous official package $package (exit $lookupExitCode)"
     }
+    $fields = @($matchesId[0].Trim() -split '\|', 4)
+    if ($fields.Count -ne 4 -or $fields[0] -cne $package -or
+        $fields[3] -cnotin @('true','false')) {
+        throw "MiKTeX package $package has malformed installation metadata"
+    }
+    if ($fields[3] -ceq 'false') { $missingPackages += $package }
 }
-& $miktexExe packages install @packages
-if ($LASTEXITCODE -ne 0) { throw "MiKTeX explicit package provisioning failed ($LASTEXITCODE)" }
+# The Basic 25.12 installer may contain XeTeX binaries already. Installing a
+# present package is a MiKTeX ERROR, not an idempotent no-op. Explicitly
+# install ONLY verified missing dependencies; never infer missing from a failed
+# install command and never enable automatic installs during compilation.
+@{ schema_version = 1; stage = 'package-metadata-validated'; status = 'INCOMPLETE'
+   missing_packages = $missingPackages; installed_by_basic = @($packages | Where-Object { $_ -notin $missingPackages }) } |
+    ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
+if ($missingPackages.Count -gt 0) {
+    & $miktexExe packages install @missingPackages
+    if ($LASTEXITCODE -ne 0) { throw "MiKTeX explicit package provisioning failed ($LASTEXITCODE)" }
+} else {
+    Write-Host 'All declared MiKTeX dependencies already installed by the private basic distribution'
+}
 # Assert that provisioning and any MiKTeX maintenance still use the same
 # isolated TEXMF roots; a successful package exit is not enough.
 $rootReportPost = (& $initexmf --report 2>&1 | Out-String)
