@@ -155,3 +155,43 @@ jobs:
           path: .qa-artifacts/${{ matrix.label }}/
           if-no-files-found: warn
           retention-days: 14
+
+  crosshost-artifact-audit:
+    name: D05 independent uploaded evidence / ubuntu-24.04
+    needs: [rust-quality, xelatex-smoke]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: qa-evidence-*
+          path: .qa-crosshost/
+          merge-multiple: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: qa-ui-unit-contract-*
+          path: .qa-crosshost/
+          merge-multiple: false
+      - name: Install independent Poppler PDF inspectors
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y poppler-utils
+      - name: Validate all six downloaded artifact folders and source bindings
+        run: >-
+          python3 scripts/tools/qa_crosshost_evidence.py
+          --root .qa-crosshost
+          --sources extensions/fixtures
+          --manifest fixtures/qa/manifest.json
+          --source-head "$TIKZARIUM_SOURCE_SHA"
+          --report .qa-artifacts/crosshost-audit.json
+      - name: Retain fail-closed D05 audit report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-crosshost-integrity
+          path: .qa-artifacts/crosshost-audit.json
+          if-no-files-found: warn
+          retention-days: 14
