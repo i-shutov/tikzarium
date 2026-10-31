@@ -19,8 +19,10 @@ reported three-host XeLaTeX job. Compile the real Rust CLI and exercise:
 - G01: nested TeX input from a source directory containing spaces and Unicode;
 - G08: intentionally invalid TeX, requiring a TeX-specific error and no PDF.
 
-Collect qa-report.json (SHA, host architecture, XeTeX version, per-case status,
-PDF checksums, stdout/stderr tails). Preserve fixture logs as Actions artifacts
+Collect qa-report.json (Git source/head SHA, CLI executable SHA-256, input
+source checksums, host architecture, XeTeX version, per-case status,
+PDF checksums, stdout/stderr tails). Enforce no original source-file mutation.
+Preserve fixture logs and installer failure logs as Actions artifacts
 even when tests fail. Failure must make the job red, never yield a false PASS.
 
 ## Acceptance gates
@@ -55,3 +57,19 @@ Coordinate core Rust issues with A (no changes to crates). Pin external
 Actions to reviewed commit SHAs and Cargo.lock with the integrator;
 then add bad-font and missing-package negative cases with retained
 TeX diagnostic bundles.
+
+## CI follow-up (same D workpack)
+
+- Resolved all third-party action tags to SHA values observed in successful
+  GitHub Actions jobs (2026-10-31), and limited triggering to pull requests
+  or manual invocation; push and PR double-runs were wasting runners.
+- TeX Live `texlive_version: 2026` freezes a **major version**, not the
+  rolling CTAN package revisions. Do NOT claim bit-reproducibility.
+- A hosted Windows TeX Live installer failed from an inconsistent CTAN mirror
+  (`ctan.katoptra.org`: `texlive-scripts.tar.xz does not verify`): this was
+  an installer/network integrity failure, **not** a XeLaTeX fixture failure.
+  Switch to mirrors already observed successful (RIT Windows / Princeton Mac),
+  still fail closed on invalid checksums; archive install-tl.log on failure.
+- Runner actions/checkout@v4 and setup-python@v5 emitted Node20 EOL warnings
+  under forced Node24. Their pinned revisions work, but migration to newer
+  Node24-native major versions must be evaluated separately.

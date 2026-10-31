@@ -58,3 +58,34 @@ When QA workflow completes, record head commit SHA, exact run/job URLs,
 tool versions, fixture IDs, pass/fail counts, package installer outcome,
 artifact checksums and missing checks in this stream's next insight file.
 Do not mark anything PASS before reviewing actual workflow results.
+
+## First hosted execution evidence and supply-chain note
+
+At D head `5d700d5`, [GitHub Actions run 41169467841](https://github.com/i-shutov/tikzarium/actions/runs/41169467841)
+reported **SUCCESS** for real built Rust CLI → XeLaTeX on Linux x64,
+Windows Server 2022 x64 and hosted macOS-15 ARM64 (four pre-glyph-audit
+fixtures); Rust fmt/test/clippy also succeeded on Linux and Windows Server
+in this run, while macOS Rust quality was still queued on initial review.
+These results apply only to that exact older SHA; the five-case Cyrillic
+font audit at later SHAs must be evaluated independently.
+
+A subsequent Windows Server XeLaTeX installer run
+[41169655547](https://github.com/i-shutov/tikzarium/actions/runs/41169655547)
+failed **before** building/running fixture tests because the automatically
+chosen CTAN mirror `ctan.katoptra.org` served `texlive-scripts.tar.xz`
+with invalid verification. The subsequent `tlmgr.bat` executable missing
+was downstream damage. Label as INFRA/INSTALLER FAIL, **not** code or
+fixture FAIL; changing source would conceal the actual cause.
+
+On 2026-10-31 the D branch merged the latest W01 strict-Clippy fixes
+(`aae15fb9f425921aa0f37fc39ba6354eabc4fefa`) without changing A/B
+sources; only own 12 D files differ from W01. Original failed Clippy cases
+in both A and B components are historical, not assumed current.
+
+Pinned action SHAs from successful job logs:
+- checkout v4: `11d5960a326750d5838078e36cf38b85af677262`;
+- rust-toolchain stable: `b725eda525362e7cf34af9a7243cac1e3f01a7ec`;
+- setup-python v5: `a26af69be951a213d495a4c3e4e4022e16d87065`;
+- install-texlive v4: `f5e7d0b117035fff797d4392ea94131747e03d60`;
+- upload-artifact v4: `ea165f8d65b6e75b540449e92b4886f43607fa02`.
+This pins action code only, **not** CTAN mirrors or package revisions.

@@ -24,6 +24,15 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def source_snapshot(project: Path) -> dict[str, str]:
+    """Hash all original project inputs; never compare generated TeX aux files."""
+    extensions = {".tex", ".tikz", ".sty", ".cls", ".bib", ".csv", ".pdf",
+                  ".png", ".jpg", ".jpeg", ".svg"}
+    return {file.relative_to(project).as_posix(): sha256(file)
+            for file in sorted(project.rglob("*"))
+            if file.is_file() and file.suffix.lower() in extensions}
+
+
 def checked_child(root: Path, child: str) -> Path:
     """Resolve a manifest path without allowing traversal outside the root."""
     relative = Path(child)
@@ -50,6 +59,9 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
         if fixture_id in ids:
             raise ValueError(f"Duplicate fixture id: {fixture_id}")
         ids.add(fixture_id)
+        for key in ("source", "project_dir"):
+            if not isinstance(case.get(key), str):
+                raise ValueError(f"Missing or non-string {key} for {fixture_id}")
         if case.get("expect") not in ("pdf", "tex-error"):
             raise ValueError(f"Unexpected expectation for {fixture_id}")
         project = checked_child(root, case["project_dir"])
@@ -58,7 +70,7 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
         source = checked_child(project, case["source"])
         if not source.is_file():
             raise ValueError(f"Missing fixture source: {source}")
-        if case.get("pages") is not None and (not isinstance(case["pages"], int) or case["pages"] < 1):
+        if case.get("pages") is not None and (type(case["pages"]) is not int or case["pages"] < 1):
             raise ValueError(f"Invalid expected page count: {fixture_id}")
     return cases
 
@@ -135,6 +147,8 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
         source_dir = checked_child(root, case["project_dir"])
         shutil.copytree(source_dir, project)
         source = checked_child(project, case["source"])
+        source_before = source_snapshot(project)
+        result["source_sha256"] = source_before
         pdf = output / f"{fixture_id}.pdf"
         pdf.unlink(missing_ok=True)
         try:
@@ -162,6 +176,16 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
                 result["error"] = "CLI returned nonzero or did not create a PDF"
         except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
             result["error"] = f"{type(exc).__name__}: {exc}"
+        finally:
+            source_after = source_snapshot(project)
+            result["source_unchanged"] = source_after == source_before
+            if not result["source_unchanged"]:
+                result["status"] = "FAIL"
+                result["source_mutation"] = {
+                    "before": source_before,
+                    "after": source_after,
+                }
+                result["error"] = "Source/project inputs modified by CLI or XeLaTeX"
     return result
 
 
@@ -183,6 +207,11 @@ def main() -> int:
         "commit_sha": os.getenv("GITHUB_SHA", "unrecorded-local"),
         "source_head_sha": os.getenv("TIKZARIUM_SOURCE_SHA", "unrecorded-local"),
         "platform": platform.platform(),
+        "ci_runner": {
+            "os": os.getenv("RUNNER_OS"),
+            "arch": os.getenv("RUNNER_ARCH"),
+            "image_os": os.getenv("ImageOS"),
+        },
         "machine": platform.machine(),
         "system": platform.system(),
         "python": platform.python_version(),
@@ -195,6 +224,7 @@ def main() -> int:
     try:
         if not executable.is_file():
             raise FileNotFoundError(f"CLI binary missing: {executable}")
+        report["cli_sha256"] = sha256(executable)
         cases = load_manifest(root, manifest)
         doctor = command([str(executable), "doctor"], timeout=30)
         report["doctor"] = {"exit_code": doctor.returncode, "stdout": doctor.stdout[-3000:], "stderr": doctor.stderr[-1000:]}
@@ -208,7 +238,8 @@ def main() -> int:
             report["cases"].append(outcome)
             report["summary"][outcome["status"]] += 1
             print(f"{outcome['status']} {outcome['id']} ({outcome.get('exit_code', 'no process')})", flush=True)
-    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, RuntimeError, TypeError, KeyError, subprocess.TimeoutExpired,
+            json.JSONDecodeError) as exc:
         report["fatal"] = f"{type(exc).__name__}: {exc}"
         report["summary"]["FAIL"] += 1
         print(f"FAIL preflight: {report['fatal']}", file=sys.stderr, flush=True)
