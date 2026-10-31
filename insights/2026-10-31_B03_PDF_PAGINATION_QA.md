@@ -24,3 +24,15 @@ A stale last-good PDF is still browsable for comparison but cannot be exported. 
 1. Inspect PR B03 exact-SHA GitHub Actions jobs; fix any rustfmt/compilation/Clippy findings on B-only paths.
 2. Add optional headless Poppler page-2 fixture to the B lane after an agreed CI executor is available; preserve first/second PNG and source hash.
 3. Run physically on Windows 10 22H2 x64 and Apple Silicon macOS ARM64 at 1366x768 and Retina; attach dated screenshots, font/TeX versions and hash manifest. Never equate Windows Server CI with Windows 10.
+
+## Linux Poppler argument contract — observed, not GUI acceptance
+A fresh local Debian TeX Live 2025/dev XeTeX `3.141592653-2.6-0.999996` successfully compiled the committed `crates/tikzarium-app/fixtures/two_pages.tex` using direct `xelatex -no-shell-escape -interaction=nonstopmode -halt-on-error`; result: **2-page PDF**, exit 0. Poppler `pdfinfo 25.06.0` printed `Pages: 2`. Both `pdftoppm -f 1 -l 1 -singlefile -png -r 120` and page 2 with `-f 2 -l 2` exited successfully, producing distinct 993×1404 RGB PNG images. Exact byte evidence from this local Linux reference only:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| two_pages.tex | `c185c916d04a404e403b67380ef82a74b953d58d8aecc09e610158fac81a5bd5` |
+| two_pages.pdf | `eed6bc1f332c5e18cb93db170b40fc973e27b705bbd6e7c05b34bd6c8bd7743f` |
+| page1.png | `589ebf04fca55c4cd24dd0cc7b3958d44baf00d6d7f98e9d444da848590db2b9` |
+| page2.png | `aa98849e32599a0317de834b5170fa44c7ec8a4fcc49533568720b0a337b6387` |
+
+**PASS scope:** only the external Linux XeLaTeX+Poppler command/fixture contract. **NOT_RUN:** app Rust integration, GUI page-button behavior, Windows 10 and physical Mac screenshots. No generated PDF/PNG binary is committed.
