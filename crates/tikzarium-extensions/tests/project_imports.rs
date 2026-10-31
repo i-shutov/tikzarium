@@ -301,22 +301,25 @@ fn core_existing_fixture_does_not_regress_to_unknown_for_pagestyle() {
 }
 
 #[test]
-fn existing_library_without_tikz_proposes_only_missing_base_package() {
-    let mut source = "\\documentclass{article}\n\\usetikzlibrary{calc}\n\\begin{document}\n".to_owned();
-    let mut revision = 3;
-    let plan = match plan_import(
-        &source,
-        target(&source, revision),
-        ImportKind::TikzLibrary,
-        "calc",
-    ) {
-        ImportDecision::Proposed(p) => p,
-        other => panic!("expected missing-base-package proposal, got {other:?}"),
-    };
-    assert_eq!(plan.declarations, ["\\usepackage{tikz}"]);
-    plan.apply(&mut source, &mut revision).unwrap();
-    assert_eq!(source.matches("\\usetikzlibrary{calc}").count(), 1);
-    assert_eq!(source.matches("\\usepackage{tikz}").count(), 1);
+fn library_before_tikz_is_unknown_and_refused_not_silently_reordered() {
+    let source = "\\documentclass{article}\n\\usetikzlibrary{calc}\n\\begin{document}\n".to_owned();
+    let before = source.clone();
+    let p = inspect(&source);
+    assert!(p.uncertain_reason.is_some());
+    assert_eq!(
+        p.status(ImportKind::TikzLibrary, "calc"),
+        Evidence::Unknown
+    );
+    assert!(matches!(
+        plan_import(
+            &source,
+            SourceTarget::new(0..0, 3),
+            ImportKind::TikzLibrary,
+            "calc"
+        ),
+        ImportDecision::Refused { .. }
+    ));
+    assert_eq!(source, before);
 }
 
 #[test]
