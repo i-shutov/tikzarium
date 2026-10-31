@@ -1,8 +1,8 @@
 //! B07 egui-only interaction for an independent approximate coordinate pad.
 //! Exact output is the XeLaTeX PDF below this pad, NEVER the painted guides.
 
+use crate::tikz_authoring::{self, Draft, Point, Session, TOOLS, Tool};
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Stroke, Vec2};
-use crate::tikz_authoring::{self, Draft, Point, Session, Tool, TOOLS};
 
 #[derive(Clone, Copy)]
 pub struct Capabilities {
@@ -35,14 +35,16 @@ const SCALE: f32 = 29.0;
 const MARGIN: f32 = 14.0;
 const HEIGHT: f32 = 176.0;
 fn screen_point(rect: Rect, p: Point) -> Pos2 {
-    Pos2::new(rect.left() + MARGIN + p.x * SCALE, rect.bottom() - MARGIN - p.y * SCALE)
+    Pos2::new(
+        rect.left() + MARGIN + p.x * SCALE,
+        rect.bottom() - MARGIN - p.y * SCALE,
+    )
 }
 fn snap(pos: Pos2, rect: Rect) -> Point {
     let x = ((pos.x - rect.left() - MARGIN) / SCALE).max(0.0);
     let y = ((rect.bottom() - MARGIN - pos.y) / SCALE).max(0.0);
     Point::new((x * 4.0).round() / 4.0, (y * 4.0).round() / 4.0)
 }
-fn lerp(a: Pos2, b: Pos2, t: f32) -> Pos2 { a + (b - a) * t }
 fn paint_draft(painter: &egui::Painter, rect: Rect, tool: Tool, draft: &Draft) {
     let blue = Color32::from_rgb(50, 158, 222);
     let a = screen_point(rect, draft.start);
@@ -64,19 +66,32 @@ fn paint_draft(painter: &egui::Painter, rect: Rect, tool: Tool, draft: &Draft) {
             }
         }
         Tool::Rectangle => {
-            painter.rect_stroke(Rect::from_two_pos(a, b), 0.0, stroke, egui::StrokeKind::Middle);
+            painter.rect_stroke(
+                Rect::from_two_pos(a, b),
+                0.0,
+                stroke,
+                egui::StrokeKind::Middle,
+            );
         }
         Tool::Circle => {
             painter.circle_stroke(a, (b - a).length().max(0.1), stroke);
         }
         Tool::Node => {
             painter.circle_stroke(a, 5.0, stroke);
-            painter.text(a + Vec2::new(8.0, -10.0), egui::Align2::LEFT_TOP, &draft.text,
-                egui::FontId::proportional(12.0), blue);
+            painter.text(
+                a + Vec2::new(8.0, -10.0),
+                egui::Align2::LEFT_TOP,
+                &draft.text,
+                egui::FontId::proportional(12.0),
+                blue,
+            );
         }
         Tool::Cubic => {
             let dx = (draft.end.x - draft.start.x) / 3.0;
-            let c1 = screen_point(rect, Point::new(draft.start.x + dx, draft.start.y + draft.bend));
+            let c1 = screen_point(
+                rect,
+                Point::new(draft.start.x + dx, draft.start.y + draft.bend),
+            );
             let c2 = screen_point(rect, Point::new(draft.end.x - dx, draft.end.y + draft.bend));
             painter.line_segment([a, c1], Stroke::new(1.0, blue));
             painter.line_segment([c2, b], Stroke::new(1.0, blue));
@@ -100,7 +115,9 @@ fn paint_draft(painter: &egui::Painter, rect: Rect, tool: Tool, draft: &Draft) {
         }
     }
     painter.circle_filled(a, 3.5, blue);
-    if tool != Tool::Node { painter.circle_filled(b, 3.5, blue); }
+    if tool != Tool::Node {
+        painter.circle_filled(b, 3.5, blue);
+    }
 }
 
 pub fn show_guide(
@@ -114,8 +131,14 @@ pub fn show_guide(
         for tool in TOOLS {
             let info = tikz_authoring::spec(tool);
             let response = ui
-                .add_enabled(caps.can_draw(), egui::Button::new(info.title).selected(session.active == Some(tool)))
-                .on_hover_text(format!("{}\n{}\n{}", info.explanation, info.syntax, info.source));
+                .add_enabled(
+                    caps.can_draw(),
+                    egui::Button::new(info.title).selected(session.active == Some(tool)),
+                )
+                .on_hover_text(format!(
+                    "{}\n{}\n{}",
+                    info.explanation, info.syntax, info.source
+                ));
             if response.clicked() {
                 session.active = Some(tool);
                 session.selected = None;
@@ -128,31 +151,53 @@ pub fn show_guide(
     }
     ui.small("СКЕТЧ-СЕТКА · приблизительные координаты 0.25 cm, НЕ совмещена с PDF и не отражает arbitrary scopes/transforms.");
     let width = ui.available_width().max(180.0);
-    let (rect, response) = ui.allocate_exact_size(Vec2::new(width, HEIGHT), Sense::click_and_drag());
+    let (rect, response) =
+        ui.allocate_exact_size(Vec2::new(width, HEIGHT), Sense::click_and_drag());
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 3.0, ui.visuals().faint_bg_color);
-    let grid_color = ui.visuals().widgets.noninteractive.bg_stroke.color.gamma_multiply(0.55);
+    let grid_color = ui
+        .visuals()
+        .widgets
+        .noninteractive
+        .bg_stroke
+        .color
+        .gamma_multiply(0.55);
     let vertical = ((rect.width() - 2.0 * MARGIN) / SCALE).floor() as usize;
     let horizontal = ((rect.height() - 2.0 * MARGIN) / SCALE).floor() as usize;
     for x in 0..=vertical {
         let screen_x = rect.left() + MARGIN + x as f32 * SCALE;
         painter.line_segment(
-            [Pos2::new(screen_x, rect.top()), Pos2::new(screen_x, rect.bottom())],
-            Stroke::new(0.6, grid_color));
+            [
+                Pos2::new(screen_x, rect.top()),
+                Pos2::new(screen_x, rect.bottom()),
+            ],
+            Stroke::new(0.6, grid_color),
+        );
     }
     for y in 0..=horizontal {
         let screen_y = rect.bottom() - MARGIN - y as f32 * SCALE;
         painter.line_segment(
-            [Pos2::new(rect.left(), screen_y), Pos2::new(rect.right(), screen_y)],
-            Stroke::new(0.6, grid_color));
+            [
+                Pos2::new(rect.left(), screen_y),
+                Pos2::new(rect.right(), screen_y),
+            ],
+            Stroke::new(0.6, grid_color),
+        );
     }
-    painter.text(rect.left_top() + Vec2::new(8.0, 6.0),
-        egui::Align2::LEFT_TOP, "Guide only · x/y TikZ units assumed 1 cm",
-        egui::FontId::monospace(10.0), ui.visuals().text_color());
+    painter.text(
+        rect.left_top() + Vec2::new(8.0, 6.0),
+        egui::Align2::LEFT_TOP,
+        "Guide only · x/y TikZ units assumed 1 cm",
+        egui::FontId::monospace(10.0),
+        ui.visuals().text_color(),
+    );
 
     if let Some(tool) = session.active {
         if let Some(start) = session.drag_start {
-            let end = response.interact_pointer_pos().map(|pos| snap(pos, rect)).unwrap_or(start);
+            let end = response
+                .interact_pointer_pos()
+                .map(|pos| snap(pos, rect))
+                .unwrap_or(start);
             let mut draft = session.draft.clone();
             draft.start = start;
             draft.end = end;
@@ -162,17 +207,26 @@ pub fn show_guide(
         }
     }
 
-    if !caps.can_draw() || session.active.is_none() { return None; }
-    if response.drag_started() && let Some(pointer) = response.interact_pointer_pos() {
+    if !caps.can_draw() || session.active.is_none() {
+        return None;
+    }
+    if response.drag_started()
+        && let Some(pointer) = response.interact_pointer_pos()
+    {
         session.drag_start = Some(snap(pointer, rect));
     }
     let mut finish = None;
     if response.drag_stopped() {
         if let Some(start) = session.drag_start.take() {
-            let end = response.interact_pointer_pos().map(|pos| snap(pos, rect)).unwrap_or(start);
+            let end = response
+                .interact_pointer_pos()
+                .map(|pos| snap(pos, rect))
+                .unwrap_or(start);
             finish = Some((start, end));
         }
-    } else if response.clicked() && let Some(pointer) = response.interact_pointer_pos() {
+    } else if response.clicked()
+        && let Some(pointer) = response.interact_pointer_pos()
+    {
         let start = snap(pointer, rect);
         finish = Some((start, Point::new(start.x + 1.0, start.y + 1.0)));
     }
@@ -208,8 +262,16 @@ pub fn show_inspector(
         })
         .show_ui(ui, |ui| {
             for item in choices {
-                let label = format!("#{} {} · line {}", item.id, tikz_authoring::spec(item.tool).title, item.line);
-                if ui.selectable_label(session.selected == Some(item.id), label).clicked() {
+                let label = format!(
+                    "#{} {} · line {}",
+                    item.id,
+                    tikz_authoring::spec(item.tool).title,
+                    item.line
+                );
+                if ui
+                    .selectable_label(session.selected == Some(item.id), label)
+                    .clicked()
+                {
                     match session.choose(source, item.id) {
                         Ok(line) => jump = Some(line),
                         Err(error) => session.status = error,
@@ -257,11 +319,20 @@ pub fn show_inspector(
             }
             ui.small(format!("Source-owned marker: B07 #{id}"));
         }
-        if let Ok(command) = tikz_authoring::generate(tool, &session.draft, session.selected.unwrap_or(0)) {
+        if let Ok(command) =
+            tikz_authoring::generate(tool, &session.draft, session.selected.unwrap_or(0))
+        {
             ui.label("Генерируемый код:");
             ui.code(command);
         }
-        if ui.button(if session.help { "Скрыть справку F1" } else { "Справка F1" }).clicked() {
+        if ui
+            .button(if session.help {
+                "Скрыть справку F1"
+            } else {
+                "Справка F1"
+            })
+            .clicked()
+        {
             session.help = !session.help;
         }
         if session.help {
@@ -288,14 +359,26 @@ pub fn show_inspector(
             Ok(diff) => {
                 ui.code(diff);
                 if ui.button("Принять diff").clicked() {
-                    if let Err(error) = session.add_usepackage(source) { session.status = error; }
+                    if let Err(error) = session.add_usepackage(source) {
+                        session.status = error;
+                    }
                 }
             }
-            Err(error) => { ui.small(error); }
+            Err(error) => {
+                ui.small(error);
+            }
         }
     }
-    if ui.add_enabled(session.undo_available(), egui::Button::new("↶ Undo visual patch")).clicked() {
-        if let Err(error) = session.undo(source) { session.status = error; }
+    if ui
+        .add_enabled(
+            session.undo_available(),
+            egui::Button::new("↶ Undo visual patch"),
+        )
+        .clicked()
+    {
+        if let Err(error) = session.undo(source) {
+            session.status = error;
+        }
     }
     ui.separator();
     ui.small(&session.status);
