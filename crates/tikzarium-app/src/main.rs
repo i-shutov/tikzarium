@@ -526,18 +526,23 @@ impl TikzariumApp {
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
-                        output
-                            .state
-                            .cursor
-                            .set_char_range(Some(if self.highlight_generated_line {
-                                let count = self.document.source.lines()
+                        output.state.cursor.set_char_range(Some(
+                            if self.highlight_generated_line {
+                                let count = self
+                                    .document
+                                    .source
+                                    .lines()
                                     .nth(line.saturating_sub(1))
                                     .map(|text| text.trim_end_matches('\r').chars().count())
                                     .unwrap_or(0);
-                                CCursorRange::two(CCursor::new(position), CCursor::new(position + count))
+                                CCursorRange::two(
+                                    CCursor::new(position),
+                                    CCursor::new(position + count),
+                                )
                             } else {
                                 CCursorRange::one(CCursor::new(position))
-                            }));
+                            },
+                        ));
                         self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
                         output.response.request_focus();
@@ -559,22 +564,26 @@ impl TikzariumApp {
     }
 
     fn primitive_capabilities(&self) -> tikz_canvas::Capabilities {
-        let core = self.package_statuses.iter().find(|status| status.manifest.id == "org.tikzarium.core");
+        let core = self
+            .package_statuses
+            .iter()
+            .find(|status| status.manifest.id == "org.tikzarium.core");
         tikz_canvas::Capabilities {
             installed: core.is_some_and(|status| status.installed),
             loaded: tikz_authoring::tikz_loaded(&self.document.source),
             engine_compatible: self.tex.xelatex.is_some()
-                && core.is_some_and(|status| status.compilation
-                    != tikzarium_extensions::CompilationState::IncompatibleEngine),
+                && core.is_some_and(|status| {
+                    status.compilation != tikzarium_extensions::CompilationState::IncompatibleEngine
+                }),
             implemented: true, // Only B07's six explicitly narrow built-in primitives.
         }
     }
 
     fn show_authoring_inspector(&mut self, ui: &mut egui::Ui) {
         let caps = self.primitive_capabilities();
-        if let Some(line) = tikz_canvas::show_inspector(
-            ui, &mut self.authoring, &mut self.document.source, caps,
-        ) {
+        if let Some(line) =
+            tikz_canvas::show_inspector(ui, &mut self.authoring, &mut self.document.source, caps)
+        {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
@@ -654,9 +663,9 @@ impl TikzariumApp {
         ui.small(&self.page_navigation_status);
         ui.small("Only the guide pad below makes B07-owned source patches. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
         let caps = self.primitive_capabilities();
-        if let Some(line) = tikz_canvas::show_guide(
-            ui, &mut self.authoring, &mut self.document.source, caps,
-        ) {
+        if let Some(line) =
+            tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
+        {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
