@@ -702,5 +702,5 @@ mod tests {
         assert!(far.x <= (rect.width() - 2.0 * MARGIN) / SCALE + 0.25);
         assert!(far.y <= (rect.height() - 2.0 * MARGIN) / SCALE + 0.25);
         assert!(far.x >= 0.0 && far.y >= 0.0);
-     }
+    }
 }
