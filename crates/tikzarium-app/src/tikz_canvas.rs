@@ -203,9 +203,9 @@ pub fn show_guide(
                 .map(|pos| snap(pos, rect))
                 .unwrap_or(start);
             let draft = Draft::from_gesture(tool, start, end, &session.draft);
-            paint_draft(&painter, rect, tool, &draft);
+            let _ = paint_draft(&painter, rect, tool, &draft);
         } else if session.selected.is_some() {
-            paint_draft(&painter, rect, tool, &session.draft);
+            let _ = paint_draft(&painter, rect, tool, &session.draft);
         }
     }
     if !ready {

@@ -661,13 +661,20 @@ impl TikzariumApp {
         }
         ui.label(&self.preview_status);
         ui.small(&self.page_navigation_status);
-        ui.small("Only the guide pad below makes B07-owned source patches. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
-        let caps = self.primitive_capabilities();
-        if let Some(line) =
-            tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
-        {
-            self.jump_to_line = Some(line);
-            self.highlight_generated_line = true;
+        ui.small("The guide pad edits N1-owned source through the shared TikZ catalogue. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
+        if self.workspace == WorkspaceMode::Split {
+            let caps = self.primitive_capabilities();
+            if let Some(line) =
+                tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
+            {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+            }
+        } else {
+            ui.label("Canvas: только просмотр. Рисование требует кода рядом.");
+            if ui.button("Рисовать TikZ — показать код рядом").clicked() {
+                self.workspace = WorkspaceMode::Split;
+            }
         }
         ui.separator();
         egui::ScrollArea::both()
@@ -982,7 +989,7 @@ impl eframe::App for TikzariumApp {
                 ui.label(&self.status);
             });
         });
-        if self.workspace.show_canvas() {
+        if self.workspace == WorkspaceMode::Split {
             egui::SidePanel::right("tikz-source-inspector")
                 .resizable(true)
                 .default_width(250.0)

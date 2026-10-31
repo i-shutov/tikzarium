@@ -1,5 +1,6 @@
 [package]
 name = "tikzarium-app"
+default-run = "tikzarium-app"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
