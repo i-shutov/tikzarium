@@ -358,7 +358,10 @@ fn symlinked_project_root_keeps_one_author_source_in_snapshot() {
 
     let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
     assert!(artifact.project_dependencies.is_project_fresh());
-    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 2);
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        2
+    );
     assert_eq!(fs::read(&source).unwrap(), original);
 }
 
