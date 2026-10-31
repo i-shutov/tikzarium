@@ -505,7 +505,7 @@ impl Session {
             .start;
         let line = source
             .get(..start)
-            .map(|prefix| prefix.bytes().filter(|byte| *byte == b'\\n').count() + 1)
+            .map(|prefix| prefix.bytes().filter(|byte| *byte == b'\n').count() + 1)
             .unwrap_or(1);
         self.undo(source)?;
         Ok(line)

@@ -817,10 +817,14 @@ mod tests {
         assert_eq!(source, original);
         assert_eq!(
             deletion_line,
-            original.lines().position(|line| line == r"\\end{tikzpicture}").unwrap() + 1
+            original
+                .lines()
+                .position(|line| line == r"\end{tikzpicture}")
+                .unwrap()
+                + 1
         );
         assert!(!session.undo_available());
-        source.push_str("% ручной код после Undo\\n");
+        source.push_str("% ручной код после Undo\n");
         session.note_manual_source_edit(&source);
         let hand_edited = source.clone();
         let no_jump = frame(
