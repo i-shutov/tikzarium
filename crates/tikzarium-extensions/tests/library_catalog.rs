@@ -1,13 +1,11 @@
 //! C/N2 single-schema library panel contract; no B UI or package installation.
+use std::collections::BTreeMap;
 use tikzarium_extensions::{
     primitive_edit::SourceTarget,
     primitives::{Catalog, Evidence, N2_LIBRARY_NAMES},
     project_disconnect::{DisconnectDecision, plan_library_disconnect},
-    project_imports::{
-        ImportDecision, ImportKind, capabilities_for_library, inspect, plan_import,
-    },
+    project_imports::{ImportDecision, ImportKind, capabilities_for_library, inspect, plan_import},
 };
-use std::collections::BTreeMap;
 
 fn target(source: &str, revision: u64) -> SourceTarget {
     inspect(source)
@@ -43,10 +41,7 @@ fn four_libraries_are_in_the_same_schema_as_six_native_tools() {
     );
     for tool in &catalog.tools {
         assert_eq!(
-            catalog
-                .generate(&tool.id, &BTreeMap::new())
-                .unwrap()
-                .source,
+            catalog.generate(&tool.id, &BTreeMap::new()).unwrap().source,
             tool.example
         );
     }
@@ -58,14 +53,9 @@ fn installation_loaded_engine_tool_and_help_remain_five_independent_states() {
     let source = "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta,calc}\n\\begin{document}\n";
     let project = inspect(source);
     for name in N2_LIBRARY_NAMES {
-        let states = capabilities_for_library(
-            &catalog,
-            name,
-            &project,
-            Evidence::Unknown,
-            Some("xelatex"),
-        )
-        .unwrap();
+        let states =
+            capabilities_for_library(&catalog, name, &project, Evidence::Unknown, Some("xelatex"))
+                .unwrap();
         assert_eq!(states.installed, Evidence::Unknown);
         assert_eq!(states.engine_compatible, Evidence::Confirmed);
         assert_eq!(states.help_available, Evidence::Confirmed);
@@ -87,20 +77,27 @@ fn installation_loaded_engine_tool_and_help_remain_five_independent_states() {
             }
         );
     }
-    let different_engine =
-        capabilities_for_library(&catalog, "fit", &project, Evidence::Confirmed, Some("lualatex"))
-            .unwrap();
+    let different_engine = capabilities_for_library(
+        &catalog,
+        "fit",
+        &project,
+        Evidence::Confirmed,
+        Some("lualatex"),
+    )
+    .unwrap();
     assert_eq!(different_engine.installed, Evidence::Confirmed);
     assert_eq!(different_engine.engine_compatible, Evidence::Absent);
     assert_eq!(different_engine.project_loaded, Evidence::Absent);
-    assert!(capabilities_for_library(
-        &catalog,
-        "graphdrawing",
-        &project,
-        Evidence::Confirmed,
-        Some("xelatex")
-    )
-    .is_err());
+    assert!(
+        capabilities_for_library(
+            &catalog,
+            "graphdrawing",
+            &project,
+            Evidence::Confirmed,
+            Some("xelatex")
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -108,14 +105,28 @@ fn opaque_conditional_import_is_unknown_not_missing_or_installed() {
     let catalog = Catalog::bundled().unwrap();
     let source = "\\documentclass{article}\n\\iftrue\n\\usepackage{tikz}\n\\usetikzlibrary{fit}\n\\fi\n\\begin{document}\n";
     let project = inspect(source);
-    let capabilities =
-        capabilities_for_library(&catalog, "fit", &project, Evidence::Unknown, Some("xelatex"))
-            .unwrap();
+    let capabilities = capabilities_for_library(
+        &catalog,
+        "fit",
+        &project,
+        Evidence::Unknown,
+        Some("xelatex"),
+    )
+    .unwrap();
     assert_eq!(capabilities.project_loaded, Evidence::Unknown);
     assert_eq!(capabilities.installed, Evidence::Unknown);
-    assert!(project.declaration_sites(ImportKind::TikzLibrary, "fit").is_empty());
+    assert!(
+        project
+            .declaration_sites(ImportKind::TikzLibrary, "fit")
+            .is_empty()
+    );
     assert!(matches!(
-        plan_import(source, SourceTarget::new(0..0, 8), ImportKind::TikzLibrary, "fit"),
+        plan_import(
+            source,
+            SourceTarget::new(0..0, 8),
+            ImportKind::TikzLibrary,
+            "fit"
+        ),
         ImportDecision::Refused { .. }
     ));
     assert!(matches!(
@@ -142,7 +153,10 @@ fn four_library_connect_disconnect_proposals_are_reversible_with_crlf_and_unicod
         };
         assert_eq!(
             plan.declarations,
-            ["\\usepackage{tikz}".to_owned(), format!("\\usetikzlibrary{{{name}}}")]
+            [
+                "\\usepackage{tikz}".to_owned(),
+                format!("\\usetikzlibrary{{{name}}}")
+            ]
         );
         assert_eq!(source, original);
         let undo_import = plan.apply(&mut source, &mut revision).unwrap();
@@ -208,21 +222,19 @@ fn unmodified_inverse_import_restores_every_byte_and_rejects_stale_revision() {
 #[test]
 fn already_connected_and_missing_are_distinct_from_unknown() {
     let catalog = Catalog::bundled().unwrap();
-    let source = "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{calc}\n\\begin{document}\n";
+    let source =
+        "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{calc}\n\\begin{document}\n";
     let state = inspect(source);
     assert_eq!(
-        capabilities_for_library(
-            &catalog,
-            "calc",
-            &state,
-            Evidence::Absent,
-            Some("xelatex")
-        )
-        .unwrap()
-        .project_loaded,
+        capabilities_for_library(&catalog, "calc", &state, Evidence::Absent, Some("xelatex"))
+            .unwrap()
+            .project_loaded,
         Evidence::Confirmed
     );
-    assert_eq!(state.status(ImportKind::TikzLibrary, "fit"), Evidence::Absent);
+    assert_eq!(
+        state.status(ImportKind::TikzLibrary, "fit"),
+        Evidence::Absent
+    );
     assert_eq!(
         plan_import(source, target(source, 0), ImportKind::TikzLibrary, "calc"),
         ImportDecision::AlreadyLoaded

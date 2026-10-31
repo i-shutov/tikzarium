@@ -462,14 +462,14 @@ pub fn capabilities_for_library(
         .ok_or_else(|| PrimitiveError::UnknownLibrary(name.to_owned()))?;
     let package = project.status(ImportKind::Package, "tikz");
     let loaded_library = project.status(ImportKind::TikzLibrary, name);
-    let project_loaded =
-        if package == Evidence::Confirmed && loaded_library == Evidence::Confirmed {
-            Evidence::Confirmed
-        } else if package == Evidence::Unknown || loaded_library == Evidence::Unknown {
-            Evidence::Unknown
-        } else {
-            Evidence::Absent
-        };
+    let project_loaded = if package == Evidence::Confirmed && loaded_library == Evidence::Confirmed
+    {
+        Evidence::Confirmed
+    } else if package == Evidence::Unknown || loaded_library == Evidence::Unknown {
+        Evidence::Unknown
+    } else {
+        Evidence::Absent
+    };
     let tool_implemented = if catalog.tools.iter().any(|tool| {
         tool.requirements
             .libraries

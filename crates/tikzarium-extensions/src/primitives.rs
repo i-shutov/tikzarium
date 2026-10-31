@@ -355,9 +355,10 @@ impl Catalog {
             }
         }
         if self.tools.iter().any(|tool| {
-            tool.requirements.libraries.iter().any(|name| {
-                !self.libraries.iter().any(|library| library.name == *name)
-            })
+            tool.requirements
+                .libraries
+                .iter()
+                .any(|name| !self.libraries.iter().any(|library| library.name == *name))
         }) {
             return Err(invalid("tool requirement lacks shared library help"));
         }
