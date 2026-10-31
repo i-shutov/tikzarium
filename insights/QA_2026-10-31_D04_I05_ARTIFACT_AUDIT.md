@@ -41,6 +41,18 @@ The downloaded Windows `qa-report.json` records exactly:
 - `g08-intentional-tex-error`: **FALSE PASS** with exit 3 / no PDF, because existing D harness only searched the generic `XeLaTeX exited`. Its log did **not** contain `\\TikzariumIntentionallyUndefinedCommand`; the intentional invalid macro was never executed. This is a separate D QA harness defect fixed in this D04 branch.
 - Windows extension smoke step was **skipped** due to earlier fixture step failure; there are **zero Windows extension observation TOMLs** in the ZIP. Do not invent five Windows extension passes.
 
+## Independently checked three F01/U01 hosted Rust unit-contract archives
+
+Also downloaded all three `qa-ui-unit-contract-*` artifact ZIPs for **the same I05 source SHA** and read `ui-unit-contract.json`, rather than relying on the green job icon:
+
+| Runner | Artifact ID | ZIP SHA-256 | Result |
+|---|---:|---|---|
+| Linux x64 | [13034099832](https://github.com/i-shutov/tikzarium/actions/runs/41180076260/artifacts/13034099832) | `e87e395ae412ffdd21982ac3701ed868084d3b14d5febb8b028f36613952a4e5` | 3/3 theme tests + 2/2 font-proof tests `PASS_UNIT` |
+| Windows **Server 2022** x64 | [13034926146](https://github.com/i-shutov/tikzarium/actions/runs/41180076260/artifacts/13034926146) | `96acddbb4b97466412e5b63745c89f0fd9426c91d0c0547523c6a1d2a21100b1` | 3/3 + 2/2 `PASS_UNIT` |
+| Hosted macOS 15 ARM64 | [13034697032](https://github.com/i-shutov/tikzarium/actions/runs/41180076260/artifacts/13034697032) | `2d5b8772f3c58bf668659caf92a527558fff74de2bd16a858e174f0cc2521a15` | 3/3 + 2/2 `PASS_UNIT` |
+
+All three JSONs have `sha=d8b2885...` (checked-out synthetic PR merge), `source_head_sha=1db951c...`, `status=PASS_UNIT`, no missing registered tests, and explicitly **`gui_restart_persistence=NOT_RUN`, `gui_visual_theme_invariance=NOT_RUN`, `physical_win10_smoke=NOT_RUN`, `physical_m1_m4_smoke=NOT_RUN`**. These checks confirm Rust unit behavior for default/legacy partial preferences, theme distinctions and figure-source invariance *in memory*; they do **not** prove that settings were saved and restored after closing/reopening the real egui application.
+
 ## Work delivered in D04
 
 Added required source-specific `error_expect` manifest metadata and an exact-match negative diagnostic gate (including no PDF), with nine offline tamper tests. D04 is separate from the integrator's A-owned Windows operand repair. At initial D04 commit, **fresh exact-head CI is pending**, no PASS inherited from PR #24's SHA.
