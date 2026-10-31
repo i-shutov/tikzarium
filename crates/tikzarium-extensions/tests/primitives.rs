@@ -47,14 +47,20 @@ fn six_commands_match_real_xelatex_fixture() {
         c.fixture_document().unwrap(),
         include_str!("../../../extensions/primitives/fixtures/all-six.tex")
     );
-    assert!(c.generate("tikz.arrow", &BTreeMap::new()).unwrap().usetikzlibrary.contains(&"arrows.meta".to_owned()));
+    assert!(
+        c.generate("tikz.arrow", &BTreeMap::new())
+            .unwrap()
+            .usetikzlibrary
+            .contains(&"arrows.meta".to_owned())
+    );
 }
 #[test]
 fn negative_literals_cannot_enter_tikz_template() {
     let c = Catalog::bundled().unwrap();
     let fixture: NegativeFixtures = toml::from_str(include_str!(
         "../../../extensions/primitives/fixtures/negative-cases.toml"
-    )).unwrap();
+    ))
+    .unwrap();
     assert_eq!(fixture.schema_version, 1);
     assert!(fixture.case.len() >= 6);
     let mut ids = HashSet::new();
@@ -70,12 +76,22 @@ fn negative_literals_cannot_enter_tikz_template() {
 fn text_is_escaped_but_math_is_intentional_raw_user_tex() {
     let c = Catalog::bundled().unwrap();
     let plain = BTreeMap::from([("content".to_owned(), "x_50% & y".to_owned())]);
-    assert!(c.generate("tikz.node", &plain).unwrap().source.contains("x\\_50\\% \\& y"));
+    assert!(
+        c.generate("tikz.node", &plain)
+            .unwrap()
+            .source
+            .contains("x\\_50\\% \\& y")
+    );
     let math = BTreeMap::from([
         ("content".to_owned(), "\\alpha^2 + x_1".to_owned()),
         ("mode".to_owned(), "math".to_owned()),
     ]);
-    assert!(c.generate("tikz.node", &math).unwrap().source.contains("{$\\alpha^2 + x_1$}"));
+    assert!(
+        c.generate("tikz.node", &math)
+            .unwrap()
+            .source
+            .contains("{$\\alpha^2 + x_1$}")
+    );
 }
 #[test]
 fn known_range_patch_is_minimal_reversible_and_conflict_checked() {
@@ -83,7 +99,11 @@ fn known_range_patch_is_minimal_reversible_and_conflict_checked() {
     let original = source.clone();
     let original_line = "\\draw (0cm,0cm) -- (2cm,1cm);";
     let start = source.find(original_line).unwrap();
-    let replacement = Catalog::bundled().unwrap().generate("tikz.rectangle", &BTreeMap::new()).unwrap().source;
+    let replacement = Catalog::bundled()
+        .unwrap()
+        .generate("tikz.rectangle", &BTreeMap::new())
+        .unwrap()
+        .source;
     let patch = SourcePatch {
         range: start..start + original_line.len(),
         expected_old: original_line.to_owned(),
@@ -99,20 +119,46 @@ fn known_range_patch_is_minimal_reversible_and_conflict_checked() {
     inverse.apply(&mut source, &mut rev).unwrap();
     assert_eq!(source, original);
     assert_eq!(rev, 43);
-    let wrong = SourcePatch { source_revision: 43, expected_old: "other".into(), ..patch };
+    let wrong = SourcePatch {
+        source_revision: 43,
+        expected_old: "other".into(),
+        ..patch
+    };
     assert!(wrong.apply(&mut source, &mut rev).is_err());
     assert_eq!(source, original);
 }
 #[test]
 fn installed_loaded_engine_and_tool_are_five_separate_dimensions() {
     let c = Catalog::bundled().unwrap();
-    let status = c.capabilities("tikz.arrow", Evidence::Confirmed, Evidence::Unknown, Some("xelatex")).unwrap();
+    let status = c
+        .capabilities(
+            "tikz.arrow",
+            Evidence::Confirmed,
+            Evidence::Unknown,
+            Some("xelatex"),
+        )
+        .unwrap();
     assert_eq!(status.installed, Evidence::Confirmed);
     assert_eq!(status.project_loaded, Evidence::Unknown);
     assert_eq!(status.engine_compatible, Evidence::Confirmed);
-    assert_eq!(c.capabilities("tikz.arrow", Evidence::Confirmed, Evidence::Unknown, Some("lualatex")).unwrap().engine_compatible, Evidence::Unknown);
+    assert_eq!(
+        c.capabilities(
+            "tikz.arrow",
+            Evidence::Confirmed,
+            Evidence::Unknown,
+            Some("lualatex")
+        )
+        .unwrap()
+        .engine_compatible,
+        Evidence::Absent
+    );
     assert_eq!(status.tool_implemented, Evidence::Confirmed);
     assert_eq!(status.help_available, Evidence::Confirmed);
     assert!(!status.visual_editable);
-    assert_eq!(c.capabilities("tikz.line", Evidence::Unknown, Evidence::Unknown, None).unwrap().engine_compatible, Evidence::Unknown);
+    assert_eq!(
+        c.capabilities("tikz.line", Evidence::Unknown, Evidence::Unknown, None)
+            .unwrap()
+            .engine_compatible,
+        Evidence::Unknown
+    );
 }
