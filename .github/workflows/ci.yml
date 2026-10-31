@@ -108,6 +108,16 @@ jobs:
           pdftoppm -f 1 -singlefile -png -scale-to 1200 \
             /tmp/tikzarium-ci/quickstart.pdf /tmp/tikzarium-ci/preview
           test -s /tmp/tikzarium-ci/preview.png
+      - name: B03 actual two-page PDF + Poppler navigation regression
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_qa_multipage_pdf.py' -v
+          mkdir -p /tmp/tikzarium-ci/multipage
+          python3 scripts/qa_multipage_pdf.py \
+            --cli target/debug/tikzarium-cli \
+            --source crates/tikzarium-app/fixtures/two_pages.tex \
+            --output-dir /tmp/tikzarium-ci/multipage \
+            --expect-first 'Привет' \
+            --expect-second 'Геометрия'
       - name: Upload smoke PDFs and Unicode evidence
         if: always()
         uses: actions/upload-artifact@v4
