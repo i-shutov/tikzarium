@@ -63,6 +63,17 @@ class UiContractTests(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertIn("cargo test", result["error"])
 
+    def test_pr_merge_sha_is_not_confused_with_source_head(self):
+        with patch.dict("os.environ", {
+            "GITHUB_SHA": "f" * 40,
+            "TIKZARIUM_SOURCE_SHA": "a" * 40,
+        }):
+            with patch("qa_ui_contract.run_cargo", return_value=fake_result("", 101)):
+                result = run_gate()
+        self.assertEqual(result["sha"], "f" * 40)
+        self.assertEqual(result["source_head_sha"], "a" * 40)
+        self.assertEqual(result["status"], "FAIL")
+
     def test_pass_counter_requires_explicit_success_record(self):
         self.assertEqual(test_result_pass_count("test result: ok. 3 passed; 0 failed;"), 3)
         self.assertIsNone(test_result_pass_count("test result: FAILED. 3 passed; 1 failed;"))
