@@ -218,8 +218,14 @@ pages = 1
             good.replace("pages = 1", "pages = 2"),
             good.replace("exit_code = 0", "exit_code = 1"),
             good.replace("source_preserved = true", "source_preserved = false"),
-            good.replace("tested_engine = \"xelatex\"", "tested_engine = \"lualatex\""),
-            good.replace("manifest_id = \"org.tikzarium.core\"", "manifest_id = \"org.other\""),
+            good.replace(
+                "tested_engine = \"xelatex\"",
+                "tested_engine = \"lualatex\"",
+            ),
+            good.replace(
+                "manifest_id = \"org.tikzarium.core\"",
+                "manifest_id = \"org.other\"",
+            ),
             good.replace("schema_version = 1", "schema_version = 2"),
             format!("{good}\ncommand = 'evil'"),
         ] {
@@ -235,13 +241,21 @@ pages = 1
     fn lua_negative_cannot_claim_rendered_pdf() {
         let negative = valid()
             .replace("fixture_id = \"core\"", "fixture_id = \"graphdrawing-lua\"")
-            .replace("manifest_id = \"org.tikzarium.core\"", "manifest_id = \"org.tikzarium.graphdrawing-lua\"")
-            .replace("verdict = \"rendered_pdf\"", "verdict = \"expected_engine_error\"")
+            .replace(
+                "manifest_id = \"org.tikzarium.core\"",
+                "manifest_id = \"org.tikzarium.graphdrawing-lua\"",
+            )
+            .replace(
+                "verdict = \"rendered_pdf\"",
+                "verdict = \"expected_engine_error\"",
+            )
             .replace("exit_code = 0", "exit_code = 1")
             .replace("pages = 1\n", "")
             .replace(&format!("pdf_sha256 = \"{}\"\n", "d".repeat(64)), "");
         let item = FixtureObservation::parse(&negative).unwrap();
         assert_eq!(item.verdict, FixtureVerdict::ExpectedEngineError);
-        assert!(FixtureObservation::parse(&negative.replace("exit_code = 1", "exit_code = 0")).is_err());
+        assert!(
+            FixtureObservation::parse(&negative.replace("exit_code = 1", "exit_code = 0")).is_err()
+        );
     }
 }
