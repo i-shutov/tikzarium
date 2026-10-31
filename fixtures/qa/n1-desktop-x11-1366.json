@@ -5,11 +5,12 @@
   "calibration_runs": [
     41192581511,
     41193030547,
-    41193713529
+    41193713529,
+    41246209257
   ],
-  "initial_png_sha256": "a1a72ba7c8e5b5f156d52f2a1c34d701e9e893b52111ccd9340b5896f66b63af",
-  "selected_png_sha256": "5e984019c816835adb601c65e86daad7d73499e2fc05d5e5f7f44dbe35db138a",
-  "layout_note": "I18 candidate B22 SHA pinned; Cubic corrected from prior actual X11 screenshot (old x798/y204 selected Node). All coordinates provisional until fresh real GUI screenshot and six saved-source/PDF acceptance.",
+  "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
+  "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
+  "layout_note": "I18 B22 actual source HEAD 3c6d7689: run 41246209257 first real click x648/y142 selected Arrow, not Line; source records v2 Arrow. Screenshot showed toolbar row1 Line x599,y142, Arrow 653, Rectangle 737, Circle 832; row2 Node 559,y168, Cubic 742. All six coords recalibrated from real PNG. Next exact-head actual GUI acceptance PENDING; do not claim a screenshot alone PASS.",
   "path_click": [
     310,
     18
@@ -30,7 +31,7 @@
     {
       "tool": "line",
       "tool_click": [
-        648,
+        599,
         142
       ],
       "start": [
@@ -45,8 +46,8 @@
     {
       "tool": "arrow",
       "tool_click": [
-        704,
-        178
+        653,
+        142
       ],
       "start": [
         650,
@@ -60,8 +61,8 @@
     {
       "tool": "rectangle",
       "tool_click": [
-        789,
-        178
+        737,
+        142
       ],
       "start": [
         740,
@@ -75,8 +76,8 @@
     {
       "tool": "circle",
       "tool_click": [
-        888,
-        178
+        832,
+        142
       ],
       "start": [
         850,
@@ -90,8 +91,8 @@
     {
       "tool": "node",
       "tool_click": [
-        611,
-        204
+        559,
+        168
       ],
       "start": [
         580,
@@ -105,8 +106,8 @@
     {
       "tool": "cubic",
       "tool_click": [
-        600,
-        230
+        742,
+        168
       ],
       "start": [
         710,

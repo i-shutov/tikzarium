@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — I18 real X11 B22 GUI acceptance (QA candidate, NOT MERGED)
+
+- Integrator-owned [#48](https://github.com/i-shutov/tikzarium/pull/48) now builds independently pinned B22 [#62](https://github.com/i-shutov/tikzarium/pull/62) source `3c6d76894b23397d252d771d985baa933d00723a` in a separate Git worktree, rather than silently testing old N1. B production files are unchanged. Exact B source SHA and QA source SHA are logged separately. A reviewed-source mismatch fails closed.
+- Native-source QA now recognizes legacy hex v1 and compact UTF-8 JSON v2 with a single shared strict predicate, unique positive integer IDs, known six tools, string parameters, first marker parsing and byte-for-byte preservation of unrelated original TeX. Offline predicate tests passed (6/6), but they are not GUI proof. Full six gestures, source save, exact XeLaTeX GUI Build/Export and independent raster inspection required before merge. Physical Win10/MiKTeX and Mac M1/M4 remain NOT_RUN.
+- Actual [B22 X11 run 41246209257](https://github.com/i-shutov/tikzarium/actions/runs/41246209257) built, launched and saved original Unicode source successfully, but real first pointer selected Arrow instead of Line from obsolete toolbar coordinates. Inspected screenshot/source artifact `13058913292` and recalibrated all six button positions from the new B22 layout. Next SHA-specific CI currently NOT_RUN/PENDING; no release or #62 merge.
+
 ## Unreleased — 2026-10-31: I06 source-saving integrity (draft until CI)
 
 - Normal Build/Save of an **unchanged** TeX buffer now checks the bound file's bytes, then performs a **true no-op**: preserves file identity, symlink/hardlink relationship, timestamps and user content rather than replacing it with a temporary file.

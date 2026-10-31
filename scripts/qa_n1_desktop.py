@@ -129,6 +129,8 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     profile = json.loads(args.profile.read_text()) if args.profile else {
         "path_click": [310, 18], "source_click": [120, 190], "gestures": []}
+    if args.profile and profile.get("reviewed_app_source") != os.getenv("TIKZARIUM_SOURCE_SHA"):
+        parser.error("Coordinate profile was not reviewed for the exact B source HEAD")
     source = out / "drawing.tex"
     clipboard = out / "clipboard-input.txt"
     clipboard.write_bytes(FIXTURE.encode("utf-8"))
