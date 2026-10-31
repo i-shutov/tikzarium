@@ -303,16 +303,16 @@ fn show_guide_frame(
             && let Some(pos) = response.interact_pointer_pos()
         {
             match hit_authored_anchor(source, rect, pos) {
-                    Ok(Some(id)) => match session.choose(source, id) {
-                        Ok(line) => {
-                            session.status = "Команда выбрана; код выделяется рядом".into();
-                            jump = Some(line);
-                        }
-                        Err(error) => session.status = error,
-                    },
-                    Ok(None) => {
-                        session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
+                Ok(Some(id)) => match session.choose(source, id) {
+                    Ok(line) => {
+                        session.status = "Команда выбрана; код выделяется рядом".into();
+                        jump = Some(line);
                     }
+                    Err(error) => session.status = error,
+                },
+                Ok(None) => {
+                    session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
+                }
                 Err(error) => session.status = error.into(),
             }
         }
