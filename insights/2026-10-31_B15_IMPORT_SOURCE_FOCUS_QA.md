@@ -15,3 +15,7 @@ These are UNIT/SOURCE tests; the previously existing six-tool real-egui pointer,
 ## Pending exact-head CI
 
 Work committed with B15 code + tests + B-owned plans/insights in the existing draft PR #50. Read final SHA and all workflow conclusions before any PASS claim. Physical Windows 10 MiKTeX and Mac ARM64 M1/M4 GUI, native dialogs and screenshot review: NOT_RUN. If a hosted CI failure is found, report its exact log and repair without changing C public types.
+
+## Exact first B15 HEAD rustfmt failure — corrected precisely
+
+Commit `c5d28f1f786ec1ac824ac16036b269fc9465ac93`: [Rust CI 41210276808](https://github.com/i-shutov/tikzarium/actions/runs/41210276808), hosted Windows Server job `124563637674` **FAILED** source formatting in `tikz_canvas.rs:773` before its app tests; [D QA 41210276795](https://github.com/i-shutov/tikzarium/actions/runs/41210276795) Windows rustfmt job independently failed. Retrieved actual job log and applied exactly the one `rustfmt` line fold for `let opaque = source.replace(...)`. No changes to C catalogue, source behavior, assertions or lint strictness. The new exact SHA needs all tests+Clippy/N1/MiKTeX+fonts anew, previous PASS on a parent does not count.

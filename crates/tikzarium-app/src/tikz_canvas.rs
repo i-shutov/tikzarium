@@ -773,10 +773,7 @@ mod tests {
         );
         assert_eq!(source, original);
         // A macro before the literal imports makes their provenance UNKNOWN.
-        let opaque = source.replace(
-            "% русская строка\r\n",
-            "\\myUnexpandedPackageMacro\r\n",
-        );
+        let opaque = source.replace("% русская строка\r\n", "\\myUnexpandedPackageMacro\r\n");
         assert!(confirmed_import_lines(&opaque, Tool::Arrow).is_empty());
         // No fabricated positive site for an invalid pre-class package.
         let preclass = "\\usepackage{tikz}\n\\documentclass{article}\n\\begin{document}\n";
