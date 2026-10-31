@@ -23,6 +23,10 @@ The integration workpack selects DejaVu Serif, installs it on the Linux runner a
 - PRs #7/#13 added `extensions/PACKAGE_MATRIX.csv` and fixture observation parsing. Default `NOT_PROBED` / `NOT_TESTED` is intentional; the existence of a TOML manifest or local package does not prove XeLaTeX compilation or egui visual editing. LuaTeX-only graphdrawing remains `INCOMPATIBLE_ENGINE`.
 - Integrated main after C02: `f2a55fa13fd9a1e0af2718bc328ed16786975184`. Verify post-merge workflow on **this exact SHA** before claiming integrated PASS. Missing physical smoke blocks release acceptance.
 
+## I06 — source-preserving clean Save / Build (proposed, unmerged)
+
+Both the native build CI and 3-host D Rust QA matrix explicitly run `cargo test -p tikzarium-core document::tests -- --nocapture`. Tests reject external source changes and deleted source, preserve clean source file bytes and Unix inode, reject replacing symlink and read-only paths, and allow explicit Save As to a new path. This does **not** attest an actual egui Save dialog, a real Windows 10 machine, or physical M1/M4; record native screenshots and hashes separately. Rust CI statuses are PENDING until exact I06 branch-head jobs complete. The tests do not assert race-free inter-process save semantics.
+
 ## C04/C06 mandatory extension catalogue static gate (pending integration)
 
 Run `python extensions/qa/verify_catalog.py --report .qa-artifacts/catalog-audit.json` and `python -m unittest discover -s extensions/qa -p test_verify_catalog.py -v` on all 3 hosted D QA Rust jobs, plus Linux real XeLaTeX fixture CI. Publish `qa-catalog-metadata-<OS>` and Linux `catalog-audit.json` evidence. This catches incompatible `lualatex` metadata and manifest/CSV/fixture drift; it does not compile every package, declare installation or certify visual editing. A green ordinary Rust/TeX job without these **new explicit steps** cannot be counted as C04 acceptance.

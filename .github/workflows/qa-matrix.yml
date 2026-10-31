@@ -58,6 +58,8 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Rust full workspace tests
         run: cargo test --workspace --all-targets
+      - name: I06 source-save integrity (NOT a physical GUI smoke)
+        run: cargo test -p tikzarium-core document::tests -- --nocapture
       - name: GUI theme persistence and font proof Rust unit contract (NOT native GUI smoke)
         run: python scripts/tools/qa_ui_contract.py --output .qa-artifacts/ui-unit-contract.json
       - name: Archive GUI unit-test contract evidence

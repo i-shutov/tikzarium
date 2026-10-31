@@ -7,3 +7,7 @@ The C06 combined integration PR uses exact inherited C04 code + mandatory workfl
 Acceptance gate: inspect exact combined PR HEAD, three green workflows and artifact JSON `accepted: true`, `manifest_count:5`, `matrix_rows:14`, `bound_rows:5`, `fixture_bindings:5`, `errors:[]`; then merge with SHA lease. Green jobs alone without the new commands are insufficient. Any new file count or matrix update should be investigated rather than silently changing expected counts.
 
 **Status when authored: PENDING / NOT_RUN**; no local Python/cargo from this connector environment. Physical Windows 10 x64 and physical macOS M1/M4 GUI NOT_RUN; hosted Windows Server and hosted macOS ARM are not these targets. No all-packages-XeLaTeX or visual-edit compatibility claim; Lua-only remains `INCOMPATIBLE_ENGINE`. No changes to extension PACKAGE_MATRIX.csv because statuses remain correct.
+
+## Integrator rebase evidence, 2026-10-31
+
+On C06 original exact HEAD `c03801e4f3f426c1b8e5777fc0a77e669c2d3a47`: hosted TikZarium CI 3/3, D QA 6/6 and figure fonts 1/1 PASS (runs 41186709171, 41186709166, 41186709270). Reviewed I06 main `7b2f11de63b20f3ae2ee61ae899f863ac52c521f` and preserved its source-save regression jobs while merging C04 audit steps. The new combined branch must pass fresh checks before merge; its SHA does not inherit PASS by assumption. Physical Windows 10 and M1/M4 GUI acceptance NOT_RUN.
