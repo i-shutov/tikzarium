@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I19: independent I18 B22 screenshots located Fit width near x1027,y72, previous x538,y98 missed. B23 preserves B22 main.rs layout, but this coordinate remains provisional until fresh real B23 screenshot review. Absolute app-src Git tree pin prevents source drift; F1 screenshots and full PDF are separate gates. No physical Win10/M1/M4 claims.",
+  "layout_note": "I19: independent I18 B22 screenshots located Fit width near x1027,y72, previous x538,y98 missed. B23 preserves B22 main.rs layout, but this coordinate remains provisional until fresh real B23 screenshot review. Absolute app-src Git tree pin prevents source drift; F1 screenshots and full PDF are separate gates. No physical Win10/M1/M4 claims. Independent B23 79b5859 exact X11 CI passed 6/6 actual gestures and real GUI PDF/F1; Fit width 38% shows all six primitives but the original Cyrillic macro at the bottom is cut off at 1366x740. Candidate Zoom Out x882/y72 (one click) targets complete whole-page view; must visually review fresh screenshot.",
   "path_click": [
     310,
     18
@@ -128,5 +128,9 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "0fbea02a14a08e568da831d78c562cd20dedb8d9"
+  "reviewed_app_tree_sha": "0fbea02a14a08e568da831d78c562cd20dedb8d9",
+  "zoom_out_click": [
+    882,
+    72
+  ]
 }

@@ -50,6 +50,7 @@ class DesktopEvidenceTests(unittest.TestCase):
                          "0fbea02a14a08e568da831d78c562cd20dedb8d9")
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
+        self.assertEqual(profile["zoom_out_click"], [882, 72])
         self.assertEqual(len(profile["gestures"]), 6)
         self.assertEqual({case["tool"] for case in profile["gestures"]}, desktop.TOOLS)
 

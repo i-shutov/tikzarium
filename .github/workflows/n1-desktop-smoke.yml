@@ -31,7 +31,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: i19-desktop-${{ github.ref }}
+  group: i19-desktop-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 jobs:
   desktop:

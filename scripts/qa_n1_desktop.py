@@ -140,7 +140,7 @@ def main() -> int:
               "app_sha256": sha256(app), "gui_backend": "X11/Xvfb/software-GL",
               "physical_win10_miktex": "NOT_RUN", "physical_m1_m4": "NOT_RUN",
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
-              "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN",
+              "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -311,6 +311,19 @@ def main() -> int:
             report["fit_width"] = "FRAMES_DIFFER_MANUAL_WHOLE_PAGE_REVIEW_REQUIRED"
             report["steps"].append({"case": "fit_width_frame_change",
                                     "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+            # Fit WIDTH shows all six primitives but cuts off the source's
+            # original \\UserLabel at the bottom in a 1366x740 Split window.
+            # Test the existing user's one-step Zoom Out control, not invented
+            # Fit-page behavior: capture the real frame for independent review.
+            if "zoom_out_click" in profile:
+                click(profile["zoom_out_click"])
+                time.sleep(0.4)
+                screenshot("04b-entire-page-candidate.png")
+                if sha256(out / "04-exact-pdf.png") == sha256(out / "04b-entire-page-candidate.png"):
+                    raise RuntimeError("Zoom Out click had no visible UI frame effect")
+                report["full_page"] = "ZOOM_OUT_FRAME_MANUAL_REVIEW_REQUIRED"
+                report["steps"].append({"case": "zoom_out_entire_page",
+                                        "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
         report["status"] = ("PASS_DESKTOP_AUTOMATED_VISUAL_REVIEW_PENDING"
                             if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY")
     except Exception as exc:
