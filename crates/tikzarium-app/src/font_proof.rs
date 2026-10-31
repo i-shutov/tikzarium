@@ -156,8 +156,10 @@ mod tests {
     }
     #[test]
     fn malicious_family_is_rejected_before_spawning_tex() {
-        let mut fonts = FigureFonts::default();
-        fonts.text_family = "Evil} \\input{secret}".into();
+        let fonts = FigureFonts {
+            text_family: "Evil} \\input{secret}".into(),
+            ..FigureFonts::default()
+        };
         let result = test_fonts(fonts, None, None);
         assert!(result.unwrap_err().contains("unsafe"));
     }
