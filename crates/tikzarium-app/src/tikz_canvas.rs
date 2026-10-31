@@ -748,7 +748,7 @@ mod tests {
             session: &mut Session,
             source: &mut String,
             events: Vec<egui::Event>,
-            rect: Option<&mut Rect>,
+            mut rect: Option<&mut Rect>,
         ) -> Option<usize> {
             let mut jump = None;
             let _output = ctx.run(
@@ -759,7 +759,12 @@ mod tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        jump = show_inspector_action_bar_frame(ui, session, source, rect);
+                        jump = show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            rect.as_deref_mut(),
+                        );
                     });
                 },
             );
