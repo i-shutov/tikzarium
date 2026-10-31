@@ -231,9 +231,9 @@ impl BuildService {
         let recorder = fs::read_to_string(&fls_path);
         // A valid PDF without a usable recorder is not a trustworthy
         // dependency snapshot. Keep the PDF but report freshness as unknown.
-        let recorder_complete = recorder.as_ref().is_ok_and(|contents| {
-            contents.lines().any(|line| line.starts_with("INPUT "))
-        });
+        let recorder_complete = recorder
+            .as_ref()
+            .is_ok_and(|contents| contents.lines().any(|line| line.starts_with("INPUT ")));
         let dependencies: Vec<PathBuf> =
             parse_fls_with_cwd(recorder.as_deref().unwrap_or_default(), cwd)
                 .into_iter()

@@ -184,7 +184,8 @@ mod tests {
         let before_source = fs::read(&source).unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[asset.clone()], true).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[asset.clone()], true)
+                .unwrap();
         assert!(snapshot.is_project_fresh());
         assert_eq!(snapshot.tracked_project_paths().len(), 2);
 
@@ -202,7 +203,8 @@ mod tests {
         fs::write(&source, "original").unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()], true).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()], true)
+                .unwrap();
         assert!(!snapshot.is_project_fresh());
         assert_eq!(snapshot.invalidated_project_paths(), vec![absent]);
 
@@ -238,7 +240,8 @@ mod tests {
         file.flush().unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()], true).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()], true)
+                .unwrap();
         assert_eq!(snapshot.invalidated_project_paths(), vec![big]);
         assert!(!snapshot.is_project_fresh());
     }

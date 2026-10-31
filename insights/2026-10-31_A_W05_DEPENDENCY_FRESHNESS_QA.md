@@ -37,3 +37,7 @@ Identified and addressed an initially uncovered failure mode: if XeLaTeX emits a
 ## Compile blocker discovered from hosted W05 predecessor
 
 The **older** `7b322c8c00a58b10e3a36a68c97b07695716a1f8` head failed hosted macOS and Linux Rust compilation: [main CI 41183832561](https://github.com/i-shutov/tikzarium/actions/runs/41183832561), [D QA 41183832301](https://github.com/i-shutov/tikzarium/actions/runs/41183832301). Compiler E0277/E0308 inferred the collected dependencies as an unsized `[PathBuf]` when passed to `capture(&[PathBuf])`. Add an explicit `Vec<PathBuf>` type in `build.rs`; not PASS until this new commit is compiled.
+
+## Exact hosted formatter correction
+
+The still-older `50d2a012401b2db5f5d59b98367590445a243eef` head failed rustfmt in [CI 41183937545](https://github.com/i-shutov/tikzarium/actions/runs/41183937545): multiline `recorder_complete` expression and 3 long unit-test calls. Applied the four requested formatting edits to A-only paths. That failed run does not certify the corrected SHA.
