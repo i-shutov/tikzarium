@@ -250,9 +250,8 @@ mod tests {
         let captured = read_capture(&capture, "fixture").unwrap();
         assert_eq!(captured.len(), MAX_CAPTURE_BYTES as usize);
         assert!(check_png_budget(1, MAX_PREVIEW_PNG_BYTES).is_ok());
-        assert!(check_png_budget(2, MAX_PREVIEW_PNG_BYTES + 1)
-            .unwrap_err()
-            .contains("page 2"));
+        let error = check_png_budget(2, MAX_PREVIEW_PNG_BYTES + 1).unwrap_err();
+        assert!(error.contains("page 2"));
     }
 
     #[test]
