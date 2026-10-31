@@ -48,6 +48,14 @@ impl ProjectDependencySnapshot {
         dependencies: &[PathBuf],
         recorder_complete: bool,
     ) -> io::Result<Self> {
+        // Keep the caller's root spelling for relative INPUTs. On macOS,
+        // /var and /private/var may name the same directory; mixing the
+        // original source spelling with a canonical root created duplicates.
+        let root_spelling = if root.is_absolute() {
+            root.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(root)
+        };
         let root = root.canonicalize()?;
         let mut seen = HashSet::new();
         let mut project_inputs = Vec::new();
@@ -61,7 +69,7 @@ impl ProjectDependencySnapshot {
             let absolute = if input.is_absolute() {
                 input.to_path_buf()
             } else {
-                root.join(input)
+                root_spelling.join(input)
             };
             // A missing file cannot be canonicalized; collapse .. components
             // before applying the root boundary.
@@ -464,5 +472,33 @@ mod source_boundary_regression {
         fs::write(&real_source, b"% changed!\r\n").unwrap();
         assert!(!snapshot.is_project_fresh());
         assert_eq!(fs::read(&symlink_source).unwrap(), b"% changed!\r\n");
+    }
+}
+
+#[cfg(all(test, unix))]
+mod root_alias_dedup_regression {
+    use super::*;
+    use std::os::unix::fs::symlink;
+
+    #[test]
+    fn relative_recorder_input_and_absolute_source_share_root_alias_spelling() {
+        let project = tempfile::tempdir().unwrap();
+        let owner = tempfile::tempdir().unwrap();
+        let alias = owner.path().join("project-link");
+        symlink(project.path(), &alias).unwrap();
+        let source = alias.join("main.tex");
+        let original = b"% opaque user macro\r\n";
+        fs::write(&source, original).unwrap();
+
+        let snapshot = ProjectDependencySnapshot::capture(
+            &alias,
+            &source,
+            &[PathBuf::from("./main.tex")],
+            true,
+        )
+        .unwrap();
+        assert_eq!(snapshot.tracked_project_paths().len(), 1);
+        assert!(snapshot.is_project_fresh());
+        assert_eq!(fs::read(&source).unwrap(), original);
     }
 }
