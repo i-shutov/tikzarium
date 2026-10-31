@@ -82,3 +82,14 @@ Fixture import requires provenance/licensing checks. No historical alternate-ren
 ## 8. Reproducible XeLaTeX smoke fixtures
 
 Five minimal original TeX documents and a local Linux/macOS verification script live in [extensions/fixtures](../extensions/fixtures) and [extensions/qa](../extensions/qa). An observed Debian 13 x86_64 TeX Live 2025/dev local test compiled four XeLaTeX examples into one-page PDFs (core, PGFPlots, circuitikz, tikz-cd), and confirmed that Lua-driven graphdrawing fails with its explicit LuaTeX-required diagnostic. This is **fixture-level local evidence only**: not Windows 10/macOS acceptance or package-wide compatibility. The broader package matrix remains environment-agnostic and NOT_TESTED until per-environment evidence is aggregated.
+
+
+## 9. C02 per-fixture evidence, not global package certification
+
+The portable Python 3.11+ runner in extensions/qa/run_smoke.py executes only five fixed, original, repository-owned fixtures with XeLaTeX, no shell and no shell escape. It requires pdfinfo and verifies positive PDFs have exactly one page. Its outputs include the actual compiler version, OS/architecture, source/console/TeX-log/PDF SHA-256, exit code, elapsed time and source preservation. It writes versioned observation.toml for each fixture, preserves complete logs, and writes summary.json.
+
+The Rust FixtureObservation::parse accepts only bounded, structurally consistent v1 TOML. Positive PDF observations require exit 0, unchanged source, a valid PDF hash, TeX-log hash and exactly one page. A graphdrawing-lua expected-error observation requires a nonzero XeLaTeX exit and no PDF. Unknown fields and contradictory outcomes are rejected. Neither TOML nor this runner is a signed attestation.
+
+Importantly, storing or parsing evidence cannot mark ExtensionStatus.compilation_verified true or enable a visual adapter. A hosted Windows Server job is not Windows 10 acceptance; hosted macOS ARM compilation is not physical Mac GUI acceptance. The recorded Linux probe covers the five source fixtures only, not general PGF compatibility.
+
+The C02 registry now prioritizes a definite missing file over another indeterminate lookup and rejects manifest filenames starting with a dash, preventing option-like arguments from reaching kpsewhich. The general-purpose kpsewhich caller in A-owned core needs a separate upstream safety review.
