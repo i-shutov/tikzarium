@@ -338,7 +338,7 @@ fn one_owned(source: &str, id: u64) -> Result<Owned, String> {
 fn unescaped_comment(line: &str) -> &str {
     let mut backslashes = 0usize;
     for (i, c) in line.char_indices() {
-        if c == '%' && backslashes % 2 == 0 {
+        if c == '%' && backslashes.is_multiple_of(2) {
             return &line[..i];
         }
         backslashes = if c == '\\' { backslashes + 1 } else { 0 };
@@ -657,8 +657,10 @@ mod tests {
 
     #[test]
     fn unsafe_node_text_and_invalid_numbers_are_refused() {
-        let mut draft = Draft::default();
-        draft.text = r"a_b".to_owned();
+        let mut draft = Draft {
+            text: r"a_b".to_owned(),
+            ..Default::default()
+        };
         assert!(generate(Tool::Node, &draft, 1).is_err());
         draft.text = "Привет".into();
         assert!(generate(Tool::Node, &draft, 1).is_ok());
