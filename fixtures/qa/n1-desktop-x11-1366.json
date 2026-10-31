@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "profile": "N1 Linux X11 1366x740 compact Dark",
+  "reviewed_app_source": "6b0fe3551cb6ded5cf737e28a7a74326f0b4fe49",
+  "calibration_run": 41192581511,
+  "calibration_png_sha256": "a1a72ba7c8e5b5f156d52f2a1c34d701e9e893b52111ccd9340b5896f66b63af",
+  "path_click": [310, 18],
+  "source_click": [120, 190],
+  "export_click": [837, 13],
+  "gestures": [
+    {"tool": "line", "tool_click": [648, 142], "start": [550, 335], "end": [610, 300]},
+    {"tool": "arrow", "tool_click": [704, 142], "start": [650, 335], "end": [710, 300]},
+    {"tool": "rectangle", "tool_click": [789, 142], "start": [740, 335], "end": [800, 285]},
+    {"tool": "circle", "tool_click": [888, 142], "start": [850, 310], "end": [878, 310]},
+    {"tool": "node", "tool_click": [611, 168], "start": [580, 240], "end": [581, 241]},
+    {"tool": "cubic", "tool_click": [798, 168], "start": [710, 240], "end": [820, 240]}
+  ]
+}

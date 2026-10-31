@@ -31,17 +31,22 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
       - name: Build actual egui app executable
         run: cargo build -p tikzarium-app --bin tikzarium-app
-      - name: Launch real X11 display and exercise keyboard save
+      - name: Six real pointer gestures, keyboard save and GUI XeLaTeX export
         run: |
           mkdir -p "$RUNNER_TEMP/i06-runtime"
           chmod 700 "$RUNNER_TEMP/i06-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/i06-runtime"
           xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
-            bash -c 'openbox --sm-disable >/tmp/i06-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app target/debug/tikzarium-app --output "$RUNNER_TEMP/i06-evidence"'
+            bash -c 'openbox --sm-disable >/tmp/i06-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app target/debug/tikzarium-app --output "$RUNNER_TEMP/i06-evidence" --profile fixtures/qa/n1-desktop-x11-1366.json'
       - name: Upload real screenshots and source/JSON proof, also on failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: n1-desktop-x11-${{ github.sha }}
-          path: ${{ runner.temp }}/i06-evidence/
+          path: |
+            ${{ runner.temp }}/i06-evidence/*.json
+            ${{ runner.temp }}/i06-evidence/*.png
+            ${{ runner.temp }}/i06-evidence/*.tex
+            ${{ runner.temp }}/i06-evidence/*.pdf
+            ${{ runner.temp }}/i06-evidence/*.log
           if-no-files-found: warn
