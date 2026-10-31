@@ -37,6 +37,13 @@ fn screen_point(rect: Rect, point: Point) -> Pos2 {
     )
 }
 fn snap(pos: Pos2, rect: Rect) -> Point {
+    // Captured drags can finish outside the guide. Clamp their end point to
+    // the guide boundary rather than authoring offscreen coordinates.
+    let inner = rect.shrink(MARGIN);
+    let pos = Pos2::new(
+        pos.x.clamp(inner.left(), inner.right()),
+        pos.y.clamp(inner.top(), inner.bottom()),
+    );
     let x = ((pos.x - rect.left() - MARGIN) / SCALE).max(0.0);
     let y = ((rect.bottom() - MARGIN - pos.y) / SCALE).max(0.0);
     Point::new((x * 4.0).round() / 4.0, (y * 4.0).round() / 4.0)
@@ -123,12 +130,12 @@ fn paint_draft(painter: &egui::Painter, rect: Rect, tool: Tool, draft: &Draft) -
     Some(())
 }
 
-pub fn show_guide(
+fn show_guide_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
-) -> Option<usize> {
+) -> (Option<usize>, Rect) {
     ui.horizontal_wrapped(|ui| {
         ui.strong("TikZ · инструменты");
         for tool in TOOLS {
@@ -209,7 +216,8 @@ pub fn show_guide(
         }
     }
     if !ready {
-        return None;
+        session.drag_start = None;
+        return (None, rect);
     }
     if response.drag_started() {
         let pointer = ui
@@ -223,6 +231,7 @@ pub fn show_guide(
         session.drag_start.take().map(|start| {
             let end = response
                 .interact_pointer_pos()
+                .or_else(|| ui.input(|input| input.pointer.latest_pos()))
                 .map(|pos| snap(pos, rect))
                 .unwrap_or(start);
             (start, end)
@@ -247,11 +256,28 @@ pub fn show_guide(
     if let (Some(tool), Some((start, end))) = (session.active, finish) {
         let draft = Draft::from_gesture(tool, start, end, &session.draft);
         match session.insert(source, tool, draft) {
-            Ok(line) => return Some(line),
+            Ok(line) => return (Some(line), rect),
             Err(error) => session.status = error,
         }
     }
-    None
+    (None, rect)
+}
+
+/// The production handler and UNIT_EVENT egui frames run the same Response
+/// processing. The guide is provisional; neither path decodes a PDF.
+pub fn show_guide(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> Option<usize> {
+    show_guide_frame(ui, session, source, caps).0
+}
+
+pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
+    if ctx.input(|input| input.key_pressed(egui::Key::F1)) {
+        session.help = !session.help;
+    }
 }
 
 fn parameter_help(p: &ParameterSpec) -> String {
@@ -503,4 +529,186 @@ mod tests {
         let point = Point::new(1.25, 2.5);
         assert_eq!(snap(screen_point(rect, point), rect), point);
     }
+    const EVENT_SOURCE: &str = r"\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\begin{document}
+\begin{tikzpicture}
+% пользовательский непрозрачный материал
+\myOpaqueMacro{a_b}
+\end{tikzpicture}
+\end{document}
+";
+
+    const READY: Capabilities = Capabilities {
+        installed: true,
+        loaded: true,
+        engine_compatible: true,
+        implemented: true,
+    };
+
+    // Input frames, hit-testing, and Response transitions are executed by
+    // the real egui Context; these are not fabricated drag flags.
+    fn event_frame(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+    ) -> (Option<usize>, Rect) {
+        let mut observed = None;
+        let mut guide_rect = Rect::NOTHING;
+        let _output = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(
+                    Pos2::ZERO,
+                    Vec2::new(820.0, 480.0),
+                )),
+                events,
+                ..Default::default()
+            },
+            |ctx| {
+                handle_help_shortcut(ctx, session);
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    (observed, guide_rect) = show_guide_frame(ui, session, source, READY);
+                });
+            },
+        );
+        (observed, guide_rect)
+    }
+
+    fn primary(pos: Pos2, pressed: bool) -> egui::Event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        }
+    }
+
+    #[test]
+    fn actual_egui_pointer_frames_create_six_c_catalogue_commands_and_preserve_source() {
+        for tool in TOOLS {
+            let ctx = egui::Context::default();
+            let mut source = EVENT_SOURCE.to_owned();
+            let mut session = Session::default();
+            session.reset(&source);
+            session.select_tool(tool);
+            let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+            assert!(rect.width() > 300.0);
+            let start = screen_point(rect, Point::new(1.0, 1.0));
+            let end = screen_point(rect, Point::new(3.0, 2.0));
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(start), primary(start, true)],
+            );
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(end)],
+            );
+            let (jump, _) = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![primary(end, false)],
+            );
+            assert!(jump.is_some(), "{tool:?} did not commit through egui Response");
+            assert_eq!(session.selected, Some(1));
+            let items = tikz_authoring::owned(&source);
+            assert_eq!(items.len(), 1, "{tool:?}");
+            assert_eq!(items[0].tool, tool);
+            let expected = tikz_authoring::command(tool, &items[0].draft).unwrap();
+            assert!(source.contains(&expected));
+            assert!(source.contains("% пользовательский непрозрачный материал"));
+            assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+            let jump_start =
+                crate::ui_state::line_start_char_index(&source, jump.unwrap()).unwrap();
+            let source_chars: String = source.chars().skip(jump_start).take(16).collect();
+            assert!(source_chars.starts_with("  \\"), "{tool:?}: {source_chars:?}");
+
+            let temp = tempfile::tempdir().unwrap();
+            let file = temp.path().join("gesture.tex");
+            std::fs::write(&file, &source).unwrap();
+            let disk = std::fs::read_to_string(&file).unwrap();
+            assert_eq!(disk, source);
+            let mut reopened = Session::default();
+            reopened.reset(&disk);
+            assert_eq!(reopened.choose(&disk, 1).unwrap(), jump.unwrap());
+            assert_eq!(reopened.draft, items[0].draft);
+            if tool == Tool::Circle {
+                let prior = source.clone();
+                reopened
+                    .draft
+                    .values
+                    .insert("radius".into(), "2cm".into());
+                reopened.apply_parameters(&mut source).unwrap();
+                assert!(source.contains("radius=2cm"));
+                reopened.undo(&mut source).unwrap();
+                assert_eq!(source, prior);
+            }
+
+            // A manual edit in the real TextEdit must revoke these patches,
+            // even if the owned TikZ command itself remains byte-exact.
+            source.push_str("% ручная правка вне сгенерированной команды\n");
+            let hand_edited = source.clone();
+            session.note_manual_source_edit(&source);
+            assert_eq!(session.selected, None);
+            assert!(!session.undo_available());
+            assert!(session.undo(&mut source).is_err());
+            assert_eq!(source, hand_edited);
+        }
+    }
+
+    #[test]
+    fn actual_egui_click_and_f1_are_distinct_from_drag_and_pdf_preview() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Node);
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let at = screen_point(rect, Point::new(1.0, 1.0));
+        let _ = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+        );
+        let (jump, _) = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+        );
+        assert!(jump.is_some(), "click did not insert a node through egui");
+        assert_eq!(tikz_authoring::owned(&source).len(), 1);
+        let prior = session.help;
+        let _ = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::Key {
+                key: egui::Key::F1,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::default(),
+            }],
+        );
+        assert_ne!(session.help, prior, "F1 did not reach the production handler");
+        assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+    }
+
+    #[test]
+    fn releasing_outside_guide_never_authors_unbounded_offscreen_coordinates() {
+        let rect = Rect::from_min_size(Pos2::new(10.0, 20.0), Vec2::new(390.0, 170.0));
+        let far = snap(Pos2::new(9000.0, -10000.0), rect);
+        assert!(far.x <= (rect.width() - 2.0 * MARGIN) / SCALE + 0.25);
+        assert!(far.y <= (rect.height() - 2.0 * MARGIN) / SCALE + 0.25);
+        assert!(far.x >= 0.0 && far.y >= 0.0);
+    }
+
 }

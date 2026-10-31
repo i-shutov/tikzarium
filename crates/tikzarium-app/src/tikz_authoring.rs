@@ -361,8 +361,21 @@ impl Session {
         }
         self.revision = self.revision.checked_add(1).ok_or("Revision overflow")?;
         self.observed_source = source.into();
+        // A manual source edit invalidates both old inverse patches and the
+        // selected object's parameter authority until explicitly reselected.
         self.undo.clear();
+        self.selected = None;
+        self.drag_start = None;
         Ok(true)
+    }
+    pub fn note_manual_source_edit(&mut self, source: &str) {
+        match self.sync(source) {
+            Ok(true) => {
+                self.status = "Код изменён вручную: старые визуальные Undo отменены; выберите команду повторно".into();
+            }
+            Err(error) => self.status = error,
+            Ok(false) => {}
+        }
     }
     pub fn select_tool(&mut self, tool: Tool) {
         self.active = Some(tool);
@@ -463,7 +476,7 @@ impl Session {
         Ok(())
     }
     pub fn undo(&mut self, source: &mut String) -> Result<(), String> {
-        if source != &self.observed_source {
+        if self.sync(source)? {
             return Err("Undo отменён: исходник изменён вне этой транзакции".into());
         }
         let mut inverse = self.undo.last().ok_or("Нет изменений для отмены")?.clone();
@@ -598,6 +611,33 @@ mod tests {
         let duplicated = format!("{line}\n{line}\n");
         assert!(one_owned(&duplicated, 8).is_err());
     }
+    #[test]
+    fn manual_source_typing_immediately_revokes_visual_undo_and_selection() {
+        let mut source = SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Line, Draft::for_tool(Tool::Line))
+            .unwrap();
+        assert!(session.undo_available());
+        assert_eq!(session.selected, Some(1));
+        source.push_str("% изменение вручную\n");
+        let edited = source.clone();
+        session.note_manual_source_edit(&source);
+        assert!(!session.undo_available());
+        assert_eq!(session.selected, None);
+        assert!(session.undo(&mut source).is_err());
+        assert_eq!(source, edited);
+        // Re-selection is deliberate and uses the same C-catalogue ownership proof.
+        assert!(session.choose(&source, 1).is_ok());
+        session
+            .draft
+            .values
+            .insert("start_x".into(), "2cm".into());
+        session.apply_parameters(&mut source).unwrap();
+        assert!(source.contains("% изменение вручную"));
+    }
+
     #[test]
     fn ambiguous_picture_and_invalid_parameter_leave_source_unchanged() {
         let mut source = format!("{SOURCE}\\begin{{tikzpicture}}\n\\end{{tikzpicture}}\n");
