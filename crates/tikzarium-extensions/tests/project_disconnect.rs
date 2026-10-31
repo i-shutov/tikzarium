@@ -137,7 +137,10 @@ fn duplicate_imports_are_refused_instead_of_claiming_disconnected() {
 
 #[test]
 fn inline_comments_are_preserved_by_refusing_to_edit_them() {
-    for tail in ["\\usetikzlibrary{calc} % моя пометка", "\\usetikzlibrary{calc, fit} % keep this"] {
+    for tail in [
+        "\\usetikzlibrary{calc} % моя пометка",
+        "\\usetikzlibrary{calc, fit} % keep this",
+    ] {
         let source = format!(
             "\\documentclass{{article}}\n\\usepackage{{tikz}}\n{tail}\n\\begin{{document}}\n"
         );
