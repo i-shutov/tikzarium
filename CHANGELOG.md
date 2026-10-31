@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — 2026-11-01: I21 B24 real egui GUI re-acceptance (NOT_RUN until exact-head evidence)
+
+- B24 production [#62](https://github.com/i-shutov/tikzarium/pull/62) exact `33f5ef5cc0f5dbb955d7979497a291845b9f6130` is now included in QA [#66](https://github.com/i-shutov/tikzarium/pull/66) alongside the seven original I19 QA-only files. The real-window test tree pin is updated from B23 `0fbea02a14a08e568da831d78c562cd20dedb8d9` to B24 `e00089592b23219df58adf6cc9550ecaefd7414b` without replaying older I06 branch or overwriting B-owned files. Actual B23 6/6 gestures, GUI PDF, Russian F1, and full-page 32% acceptance are **historical B23 evidence**, not B24 PASS. Pending fresh exact-head hosted X11 run, source/PDF/screenshot review, lease-controlled QA merge into #62 and separate B/main CI. No physical Windows10 or macOS tests, no release.
+
 ## Unreleased — 2026-11-01: I19 independent B23 Linux/X11 real GUI acceptance (PASS, not physical OS)
 
 - **Exact QA source HEAD `519c288fb34d48e4354ce292681cec495cc00246`**, [actual GUI CI 41251681392](https://github.com/i-shutov/tikzarium/actions/runs/41251681392) **SUCCESS**. Independently downloaded [artifact 13061293588](https://github.com/i-shutov/tikzarium/actions/runs/41251681392/artifacts/13061293588), ZIP SHA-256 `852ef10b43ee7217c98f8f4cbcdef9b5aa7e64c378a39f52a1fd57de25ebef63`: 29/29 CRC-clean members, 27/27 JSON manifest hashes match uploaded files, including generated Cargo.lock for transparency. Actual B23 egui executable X11/Xvfb performed **6/6 GUI pointer gestures and GUI Save**, distinct native TikZ commands, v2 owner IDs 1–6, unchanged original Cyrillic opaque macro; true GUI Build/Export generated one-page external XeLaTeX PDF SHA-256 `955138a162998731acdc9093e91ca18d7b353cd607c7efc5807c71533c3d7795` with embedded DejaVuSerif, extractable `A` and `Не менять`.

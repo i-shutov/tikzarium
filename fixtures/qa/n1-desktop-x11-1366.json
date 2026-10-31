@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B23 Linux X11 1366x740; real app source tree pinned, no physical platform claim",
+  "profile": "B24 candidate Linux X11 1366x740; exact app tree pinned; screenshots pending independent B24 visual review",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I19: independent I18 B22 screenshots located Fit width near x1027,y72, previous x538,y98 missed. B23 preserves B22 main.rs layout, but this coordinate remains provisional until fresh real B23 screenshot review. Absolute app-src Git tree pin prevents source drift; F1 screenshots and full PDF are separate gates. No physical Win10/M1/M4 claims. Independent B23 79b5859 exact X11 CI passed 6/6 actual gestures and real GUI PDF/F1; Fit width 38% shows all six primitives but the original Cyrillic macro at the bottom is cut off at 1366x740. Candidate Zoom Out x882/y72 (one click) targets complete whole-page view; must visually review fresh screenshot.",
+  "layout_note": "I19: independent I18 B22 screenshots located Fit width near x1027,y72, previous x538,y98 missed. B23 preserves B22 main.rs layout, but this coordinate remains provisional until fresh real B23 screenshot review. Absolute app-src Git tree pin prevents source drift; F1 screenshots and full PDF are separate gates. No physical Win10/M1/M4 claims. Independent B23 79b5859 exact X11 CI passed 6/6 actual gestures and real GUI PDF/F1; Fit width 38% shows all six primitives but the original Cyrillic macro at the bottom is cut off at 1366x740. Candidate Zoom Out x882/y72 (one click) targets complete whole-page view; must visually review fresh screenshot. I21 B24 inherited unchanged toolbar/layout from B23 but modified pointer capture/gesture cancellation; these coordinates are hypotheses until exact B24 hosted X11 screenshots and PDF are independently inspected. No B23 visual PASS inherited.",
   "path_click": [
     310,
     18
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "0fbea02a14a08e568da831d78c562cd20dedb8d9",
+  "reviewed_app_tree_sha": "e00089592b23219df58adf6cc9550ecaefd7414b",
   "zoom_out_click": [
     882,
     72

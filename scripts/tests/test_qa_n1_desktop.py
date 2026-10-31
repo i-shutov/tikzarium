@@ -43,11 +43,11 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
-    def test_b23_profile_is_pinned_to_reviewed_app_tree_not_old_commit(self):
+    def test_b24_candidate_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "0fbea02a14a08e568da831d78c562cd20dedb8d9")
+                         "e00089592b23219df58adf6cc9550ecaefd7414b")
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
         self.assertEqual(profile["zoom_out_click"], [882, 72])

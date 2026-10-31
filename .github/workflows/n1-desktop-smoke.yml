@@ -1,4 +1,4 @@
-name: I19 real B23 egui desktop source and PDF evidence
+name: I21 real B24 egui desktop source and PDF evidence
 on:
   push:
     branches:
@@ -52,7 +52,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0fbea02a14a08e568da831d78c562cd20dedb8d9'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'e00089592b23219df58adf6cc9550ecaefd7414b'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -87,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i19-b23-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
+          name: i21-b24-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
           path: |
             ${{ runner.temp }}/i19-evidence/*.json
             ${{ runner.temp }}/i19-evidence/*.png

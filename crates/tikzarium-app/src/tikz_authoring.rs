@@ -382,6 +382,10 @@ pub struct Session {
     /// is released. A click has no drag_start, so clearing only drag_start
     /// would permit a ghost insertion on the subsequent egui click event.
     pub cancelled_pointer_capture: bool,
+    /// A press on the provisional guide is an in-flight gesture before egui
+    /// reports drag_started(). Manual TextEdit changes must cancel even a
+    /// short click while its primary mouse button is still held.
+    pub guide_pointer_armed: bool,
     pub status: String,
     pub help: bool,
     revision: u64,
@@ -409,7 +413,10 @@ impl Session {
         self.selected = None;
         self.drag_start = None;
         self.alt_selection_capture = false;
-        self.cancelled_pointer_capture = false;
+        // Never turn an old press into a new TikZ command after the user
+        // manually changes the source during that very pointer gesture.
+        self.cancelled_pointer_capture |= self.guide_pointer_armed;
+        self.guide_pointer_armed = false;
         Ok(true)
     }
     pub fn note_manual_source_edit(&mut self, source: &str) {
@@ -422,11 +429,14 @@ impl Session {
         }
     }
     pub fn select_tool(&mut self, tool: Tool) {
+        // Switching tools must not re-arm a guide press that began with
+        // another tool. A fresh primary release clears the cancellation.
+        self.cancelled_pointer_capture |= self.guide_pointer_armed;
+        self.guide_pointer_armed = false;
         self.active = Some(tool);
         self.selected = None;
         self.drag_start = None;
         self.alt_selection_capture = false;
-        self.cancelled_pointer_capture = false;
         self.draft = Draft::for_tool(tool);
         self.help = true;
     }
