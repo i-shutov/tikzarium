@@ -378,6 +378,10 @@ pub struct Session {
     pub drag_start: Option<Point>,
     /// Alt-initiated pointer gesture is selection-only until mouse release.
     pub alt_selection_capture: bool,
+    /// Keep an Esc-cancelled click/drag inert until the primary mouse button
+    /// is released. A click has no drag_start, so clearing only drag_start
+    /// would permit a ghost insertion on the subsequent egui click event.
+    pub cancelled_pointer_capture: bool,
     pub status: String,
     pub help: bool,
     revision: u64,
@@ -405,6 +409,7 @@ impl Session {
         self.selected = None;
         self.drag_start = None;
         self.alt_selection_capture = false;
+        self.cancelled_pointer_capture = false;
         Ok(true)
     }
     pub fn note_manual_source_edit(&mut self, source: &str) {
@@ -421,6 +426,7 @@ impl Session {
         self.selected = None;
         self.drag_start = None;
         self.alt_selection_capture = false;
+        self.cancelled_pointer_capture = false;
         self.draft = Draft::for_tool(tool);
         self.help = true;
     }

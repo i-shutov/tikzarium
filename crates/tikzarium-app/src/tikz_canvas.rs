@@ -247,7 +247,7 @@ fn show_guide_frame_with_palette(
         Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
         None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
     });
-    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
     let project_state = session
         .active
         .map(|tool| tikz_authoring::requirements_status(source, tool));
@@ -340,6 +340,38 @@ fn show_guide_frame_with_palette(
     // Snapshot Response flags *before* locking egui InputState. Calling
     // Response methods from inside ui.input can recurse into the context lock.
     let clicked = response.clicked();
+    // A short click has no drag_start. Esc must therefore capture the entire
+    // in-flight pointer gesture (including a release in the same event frame),
+    // not just clear the provisional dragged point. Keep it inert until mouse-up
+    // even if Esc/Alt are released earlier than the primary pointer button.
+    let (escape, primary_down, origin_on_guide) = ui.input(|input| {
+        (
+            input.key_pressed(egui::Key::Escape),
+            input.pointer.primary_down(),
+            input
+                .pointer
+                .press_origin()
+                .is_some_and(|origin| rect.contains(origin)),
+        )
+    });
+    if escape
+        && (session.drag_start.is_some()
+            || session.alt_selection_capture
+            || (primary_down && origin_on_guide)
+            || clicked
+            || response.drag_stopped())
+    {
+        session.drag_start = None;
+        session.cancelled_pointer_capture = true;
+        session.status = "Esc: клик или жест отменён; исходный TeX не изменён".into();
+    }
+    if session.cancelled_pointer_capture {
+        if !primary_down {
+            session.cancelled_pointer_capture = false;
+            session.alt_selection_capture = false;
+        }
+        return (None, rect);
+    }
     let alt_press_on_guide = ui.input(|input| {
         input.modifiers.alt
             && (input.pointer.primary_down() || clicked)
@@ -385,13 +417,6 @@ fn show_guide_frame_with_palette(
         if let Some(pointer) = pointer {
             session.drag_start = Some(snap(pointer, rect));
         }
-    }
-    // Escape cancels the active provisional gesture, including a key event in
-    // the same frame as drag-stop. Never turn a cancelled drag into TeX source.
-    if ui.input(|input| input.key_pressed(egui::Key::Escape)) && session.drag_start.take().is_some()
-    {
-        session.status = "Жест отменён Esc; исходный TeX не изменён".into();
-        return (None, rect);
     }
     let finish = if response.drag_stopped() {
         session.drag_start.take().map(|start| {
@@ -1826,6 +1851,194 @@ mod tests {
         let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
         assert!(jump.is_some());
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
+    }
+
+
+    #[test]
+    fn b22_escape_cancels_click_and_drag_on_release_or_before_release_all_six_tools() {
+        let escape = || egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        // Modes: click+Esc on release, Esc while a click is still held,
+        // and drag-stop+Esc in exactly the same frame. Each previously lacked
+        // at least one cancellation guarantee from the production handler.
+        for viewport_width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for mode in 0..3 {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    if mode == 2 {
+                        let _ = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            None,
+                            viewport_width,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    if mode == 1 {
+                        let (jump, _) = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![escape()],
+                            egui::Modifiers::default(),
+                            None,
+                            viewport_width,
+                        );
+                        assert_eq!(jump, None);
+                        assert!(session.cancelled_pointer_capture);
+                    }
+                    let release = if mode == 2 { end } else { start };
+                    let mut events = vec![primary(release, false)];
+                    if mode != 1 {
+                        events.push(escape());
+                    }
+                    let (jump, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        events,
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    assert_eq!(jump, None, "{tool:?} {viewport_width} mode {mode}");
+                    assert_eq!(source, original, "{tool:?} mode {mode}: Esc inserted TeX");
+                    assert!(!session.undo_available());
+                    assert!(session.drag_start.is_none());
+                    assert!(!session.cancelled_pointer_capture);
+                    assert!(session.status.contains("отмен"));
+
+                    // Cancellation must not poison the next real click.
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let (inserted, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(start, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    assert!(inserted.is_some(), "{tool:?} mode {mode}: next click blocked");
+                    assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, original);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b22_escape_during_alt_select_keeps_source_and_ownership_unchanged() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let draft = Draft::from_gesture(
+            Tool::Line,
+            Point::new(1.0, 1.0),
+            Point::new(3.0, 2.0),
+            &Draft::for_tool(Tool::Line),
+        );
+        session.insert(&mut source, Tool::Line, draft).unwrap();
+        session.select_tool(Tool::Circle);
+        let original = source.clone();
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let point = screen_point(rect, Point::new(1.0, 1.0));
+        let alt = egui::Modifiers {
+            alt: true,
+            ..Default::default()
+        };
+        let _ = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(point), egui::Event::PointerButton {
+                pos: point,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: alt,
+            }],
+            alt,
+        );
+        assert!(session.alt_selection_capture);
+        let (cancelled, _) = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: alt,
+            }],
+            alt,
+        );
+        assert_eq!(cancelled, None);
+        assert!(session.cancelled_pointer_capture);
+        let (released, _) = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(point, false)],
+        );
+        assert_eq!(released, None);
+        assert_eq!(session.selected, None);
+        assert_eq!(source, original);
+        assert!(!session.alt_selection_capture);
+        assert!(!session.cancelled_pointer_capture);
+        assert!(session.undo_available());
     }
 
     #[test]

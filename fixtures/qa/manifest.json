@@ -56,7 +56,8 @@
       "id": "g08-intentional-tex-error",
       "project_dir": "fixtures/qa/g08-error",
       "source": "main.tex",
-      "expect": "tex-error"
+      "expect": "tex-error",
+      "error_expect": "\\TikzariumIntentionallyUndefinedCommand"
     }
   ]
 }
