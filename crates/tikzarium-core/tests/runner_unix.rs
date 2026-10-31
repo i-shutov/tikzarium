@@ -201,7 +201,10 @@ fn real_runner_snapshot_invalidates_after_included_asset_change() {
 
     let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
     assert!(artifact.project_dependencies.is_project_fresh());
-    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 2);
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        2
+    );
 
     // Same-length edit: metadata size cannot be used as a freshness guarantee.
     fs::write(&asset, "abcXef").unwrap();

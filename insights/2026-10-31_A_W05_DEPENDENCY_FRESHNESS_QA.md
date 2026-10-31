@@ -25,3 +25,7 @@ Reviewed AGENTS.md, I05 plan/insights, core runner and Unix integration fixtures
 Unverified dependencies always invalidate project freshness; out-of-root inputs do not, because this is deliberately a **project-only** claim. Rechecking hashes incurs disk I/O, so GUI must not poll this API every frame. Existing built artifact PDF is not auto-deleted: callers can mark it stale.
 
 Follow-up after CI: inspect exact-run Rust test logs; fix formatting/compiler issues in A branch; only then request integration. Never confuse macOS hosted ARM64 and Windows Server with target-machine acceptance.
+
+## First hosted CI finding (not PASS)
+
+Exact first head `f0bc0e2e0b3041c999f610eaedf8afeb892570ee`, [GitHub Actions 41183770626](https://github.com/i-shutov/tikzarium/actions/runs/41183770626), Windows Server + hosted macOS formatting gate **FAILED**. Rustfmt requested only two A-owned formatting changes: collapse the `item.digest.is_none() || ...` line and expand one long assert in `runner_unix.rs`. Both are applied in this follow-up commit; initial head is explicitly not PASS. All other jobs on that old SHA cannot certify the corrected head. Await fresh exact-head CI.

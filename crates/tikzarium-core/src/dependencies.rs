@@ -98,8 +98,7 @@ impl ProjectDependencySnapshot {
         self.project_inputs
             .iter()
             .filter(|item| {
-                item.digest.is_none()
-                    || file_digest(&item.path).ok().flatten() != item.digest
+                item.digest.is_none() || file_digest(&item.path).ok().flatten() != item.digest
             })
             .map(|item| item.path.clone())
             .collect()
