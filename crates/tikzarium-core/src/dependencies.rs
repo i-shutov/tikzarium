@@ -256,7 +256,10 @@ mod tests {
             ProjectDependencySnapshot::capture(project.path(), &source, &[external.clone()], true)
                 .unwrap();
         assert!(snapshot.is_project_fresh());
-        assert_eq!(snapshot.ignored_external_paths(), &[external.canonicalize().unwrap()]);
+        assert_eq!(
+            snapshot.ignored_external_paths(),
+            &[external.canonicalize().unwrap()]
+        );
         assert_eq!(snapshot.tracked_project_paths().len(), 1);
     }
 
@@ -310,7 +313,10 @@ mod tests {
         symlink(&target, &link).unwrap();
         let snapshot =
             ProjectDependencySnapshot::capture(project.path(), &source, &[link], true).unwrap();
-        assert_eq!(snapshot.ignored_external_paths(), &[target.canonicalize().unwrap()]);
+        assert_eq!(
+            snapshot.ignored_external_paths(),
+            &[target.canonicalize().unwrap()]
+        );
     }
 }
 
@@ -352,7 +358,13 @@ mod missing_symlink_root_regression {
         assert!(snapshot.ignored_external_paths().is_empty());
         assert_eq!(
             snapshot.invalidated_project_paths(),
-            vec![actual.path().canonicalize().unwrap().join("nested/absent.tex")]
+            vec![
+                actual
+                    .path()
+                    .canonicalize()
+                    .unwrap()
+                    .join("nested/absent.tex")
+            ]
         );
     }
 }
