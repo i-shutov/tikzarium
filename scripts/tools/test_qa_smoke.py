@@ -168,5 +168,26 @@ class FixtureHarnessTests(unittest.TestCase):
 
 
 
+    def test_required_page_count_fails_without_pdfinfo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "unchecked-page.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            with patch("qa_smoke.shutil.which", return_value=None):
+                valid, info = inspect_pdf(path, 1)
+            self.assertFalse(valid)
+            self.assertFalse(info["pages_checked"])
+            self.assertIn("FAILED", info["pages_note"])
+
+    def test_required_embedded_font_fails_without_pdffonts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "unchecked-font.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            with patch("qa_smoke.shutil.which", return_value=None):
+                valid, info = inspect_pdf(path, None, font_expect=["DejaVuSerif"])
+            self.assertFalse(valid)
+            self.assertFalse(info["embedded_fonts_checked"])
+            self.assertIn("FAILED", info["font_embedding_note"])
+
+
 if __name__ == "__main__":
     unittest.main()
