@@ -54,3 +54,44 @@ NOT_RUN = no test executed; BLOCKED = explicit prerequisite absent.
 Hosted Windows Server results are separately labeled CI_ONLY and
 MUST NOT be transcribed as a Windows 10 PASS. Native M1/M4 GUI tests
 remain NOT_RUN until screenshots, commands and host metadata exist.
+
+
+## Font and theme acceptance extension — F01/U01
+
+**Font support is a release gate for graphics**, not only for body text.
+For each real target host, compile the new
+\`fixtures/qa/g02-tikz-fonts/main.tex\` through the native TikZarium
+Rust CLI. It contains Cyrillic/Greek text and mathematical expressions
+*inside actual TikZ nodes*, with DejaVu Serif via \`fontspec\` and Latin
+Modern Math via \`unicode-math\`. The test must verify:
+
+1. XeLaTeX returns success without \`Missing character:\` warnings.
+2. \`pdftotext -enc UTF-8 <pdf> -\` extracts both expected Cyrillic and
+   literal Greek text strings. On Windows, compare decoded UTF-8 bytes;
+   do not decode using the PowerShell/ANSI system codepage.
+3. \`pdffonts <pdf>\` identifies both chosen families as **embedded**,
+   not merely present on the host. If utility is unavailable, record
+   font-embedding \`NOT_CHECKED\` and do not approve the release.
+4. \`pdfinfo <pdf>\` confirms one page; if unavailable, page count is
+   \`NOT_CHECKED\` rather than a passing page-count assertion.
+5. Repeat with a project's explicitly selected nondefault fonts if
+   available: capture family name, font file path/hash, fontconfig/OS
+   discovery and PDF evidence. A missing user font must produce a
+   visible diagnostic rather than silently substitute an unnoticed font.
+6. Verify font selection survives Save/Reopen and does not rewrite
+   unrelated TeX constructs. This step is \`NOT_RUN\` until the GUI/core
+   typography controls are implemented.
+
+Install Poppler utilities before running this gate. Linux/macOS CI
+installs them explicitly; the exact user-machine installation is outside
+the scope of a hosted build. Windows Server 2022 evidence is **CI_ONLY**,
+not Windows 10 acceptance.
+
+For user-interface themes (when implemented by GUI lane B), check
+Dark/Light and other supplied themes, switching without restart,
+persisting across restart, Cyrillic input/IME and menus in compact
+1366×768 and Retina environments. Record GUI screenshots and compare
+the TeX source SHA-256 and figure PDF semantics before/after changing
+the GUI theme. GUI presentation MUST NOT alter the embedded fonts,
+stroke colors, geometry or source of a TikZ figure. Until feature
+availability and physical screenshots are recorded: **NOT_RUN**.
