@@ -18,3 +18,9 @@ Driver correction: retry ONLY Ctrl+S within8s until the strict expected source o
 
 ## Boundaries
 Xvfb/Linux TeXLive is not physical Win10+MiKTeX or Mac M1/M4. Approximate guide is not aligned with PDF; no arbitrary macro reverse editing. Physical screenshots, native font/theme restart and target interaction remain NOT_RUN. All generated source/PDF must come through app, never fabricated after exit.
+
+## I18 integration review (2026-11-01)
+
+Baseline main `e28a3a4fb067a0a752d720cea484043d52beab00`; B22 draft exact SHA `3c6d76894b23397d252d771d985baa933d00723a` has five GitHub CI families SUCCESS, but only egui UNIT_EVENT. Prior real I06 `91d5798f` got 5/6 actual X11 pointer actions; cubic was mis-selected as Node. Old I06 decoder accepted v1 exclusively; B22 generates v2.
+
+This QA-only change pins the exact B candidate in an isolated worktree and makes the real executable the test target, with strict v1/v2 evidence checks, all-six source gate, source byte equality and Bézier control syntax. No production source rewrites, no synthetic screenshot. New workflow evidence is NOT_RUN until GitHub executes the exact QA head and artifacts are independently inspected. Screenshot coordinates are provisional and must not imply success if the PDF/ownership predicates fail.

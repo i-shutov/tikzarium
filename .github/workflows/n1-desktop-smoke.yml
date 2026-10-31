@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      TIKZARIUM_SOURCE_SHA: ${{ github.sha }}
+      TIKZARIUM_SOURCE_SHA: '3c6d76894b23397d252d771d985baa933d00723a'
+      TIKZARIUM_QA_SHA: ${{ github.sha }}
       CARGO_PROFILE_DEV_DEBUG: '0'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -29,15 +30,20 @@ jobs:
             texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
       - name: Offline evidence predicates
         run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
-      - name: Build actual egui app executable
-        run: cargo build -p tikzarium-app --bin tikzarium-app
+      - name: Check out exact B22 candidate without editing either production branch
+        run: |
+          git fetch --no-tags --depth=1 origin '3c6d76894b23397d252d771d985baa933d00723a'
+          git worktree add --detach "$RUNNER_TEMP/i06-b22-under-test" '3c6d76894b23397d252d771d985baa933d00723a'
+          test "$(git -C "$RUNNER_TEMP/i06-b22-under-test" rev-parse HEAD)" = '3c6d76894b23397d252d771d985baa933d00723a'
+      - name: Build actual B22 egui executable, not the old I06 application tree
+        run: cargo build --manifest-path "$RUNNER_TEMP/i06-b22-under-test/Cargo.toml" -p tikzarium-app --bin tikzarium-app
       - name: Six real pointer gestures, keyboard save and GUI XeLaTeX export
         run: |
           mkdir -p "$RUNNER_TEMP/i06-runtime"
           chmod 700 "$RUNNER_TEMP/i06-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/i06-runtime"
           xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
-            bash -c 'openbox --sm-disable >/tmp/i06-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app target/debug/tikzarium-app --output "$RUNNER_TEMP/i06-evidence" --profile fixtures/qa/n1-desktop-x11-1366.json'
+            bash -c 'openbox --sm-disable >/tmp/i06-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app "$RUNNER_TEMP/i06-b22-under-test/target/debug/tikzarium-app" --output "$RUNNER_TEMP/i06-evidence" --profile fixtures/qa/n1-desktop-x11-1366.json'
       - name: Upload real screenshots and source/JSON proof, also on failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

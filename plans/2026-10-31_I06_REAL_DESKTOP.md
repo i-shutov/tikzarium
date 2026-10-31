@@ -14,3 +14,9 @@ Launch the real compiled egui executable on an isolated X11 display. Paste a Uni
 - [ ] Native Windows10+MiKTeX, Mac M1/M4 (NOT_RUN; Xvfb cannot substitute).
 
 Bootstrap status can be PASS_BOOTSTRAP_ONLY, not authoring PASS. F1 event sent alone is not verified help visibility. A failing coordinate or missing window must fail with captured evidence, not a synthesized screenshot. No OCR and no assumed GUI pixel results.
+
+## I18 exact-head acceptance bridge (2026-11-01)
+
+I06 remains the integrator-owned QA branch; production B22 lives only in draft PR #62. The isolated X11 job now builds pinned B22 SHA `3c6d76894b23397d252d771d985baa933d00723a` in a separate Git worktree and drives that **real executable** using I06 Python/xdotool; no B production source is copied into this PR. Review and update the pin if B HEAD moves. Both QA and tested source SHAs appear separately in the JSON report.
+
+New source parser checks both legacy v1 hex and B20 compact v2 JSON (strict schema, unique positive integer IDs, six known tools, string parameters), splitting at the **first** ownership marker. The six-of-six gate and real Bézier controls must appear in on-disk source; original Unicode/user macro bytes remain unchanged. Cubic click moved to screenshot-derived (600,230), provisional until fresh screenshots. Build/Export and fonts remain conditional on actual PDF; passing offline unit tests is not GUI proof. Physical Win10/M1/M4 remain NOT_RUN.

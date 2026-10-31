@@ -1,42 +1,68 @@
-"""Offline tests of evidence predicates, not GUI execution."""
+"""Offline checks for real-desktop evidence predicates, not GUI acceptance."""
 import importlib.util
 import json
 from pathlib import Path
 import unittest
 
-MODULE = Path(__file__).resolve().parents[1] / 'qa_n1_desktop.py'
-spec = importlib.util.spec_from_file_location('desktop', MODULE)
+MODULE = Path(__file__).resolve().parents[1] / "qa_n1_desktop.py"
+spec = importlib.util.spec_from_file_location("desktop", MODULE)
 desktop = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(desktop)
 
 
-def line(owner_id=1, tool='line'):
-    data = {'schema': 1, 'id': owner_id, 'tool': tool, 'draft': {'values': {}}}
-    return ('  \\draw (0,0)--(1,1);' + desktop.MARKER + json.dumps(data).encode().hex() + '\n').encode()
+def line(owner_id=1, tool="line", version=1, values=None):
+    values = {} if values is None else values
+    if version == 1:
+        payload = json.dumps({"schema": 1, "id": owner_id, "tool": tool,
+                              "draft": {"values": values}}).encode().hex()
+    else:
+        payload = json.dumps([version, owner_id, tool, values], ensure_ascii=False,
+                             separators=(",", ":"))
+    return ("  \\draw (0,0)--(1,1);" + desktop.MARKER + payload + "\n").encode()
 
 
 class DesktopEvidenceTests(unittest.TestCase):
-    def test_known_metadata_is_decoded(self):
-        self.assertEqual(desktop.owners(line())[0]['tool'], 'line')
+    def test_legacy_v1_and_compact_v2(self):
+        self.assertEqual(desktop.owners(line())[0]["schema"], 1)
+        self.assertEqual(desktop.owners(line(2, "cubic", 2))[0]["tool"], "cubic")
+        self.assertEqual(desktop.owners(line(2, "node", 2,
+                                            {"content": "Привет % tikzarium:n1: мир"}))[0]["values"]["content"],
+                         "Привет % tikzarium:n1: мир")
 
-    def test_duplicate_ids_fail(self):
+    def test_duplicate_across_schemas_fails(self):
         with self.assertRaises(ValueError):
-            desktop.owners(line() + line())
+            desktop.owners(line() + line(1, version=2))
 
-    def test_malformed_marker_fails(self):
-        with self.assertRaises(ValueError):
-            desktop.owners((desktop.MARKER + 'zz\n').encode())
+    def test_malformed_unknown_and_invalid_types_fail(self):
+        bad = [(desktop.MARKER + "zz\n").encode(), line(version=3),
+               line(owner_id=0), line(owner_id=True, version=2),
+               line(tool="unregistered", version=2),
+               line(version=2, values={"radius": 3})]
+        for candidate in bad:
+            with self.subTest(candidate=candidate):
+                with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
+                    desktop.owners(candidate)
 
-    def test_inserted_commands_preserve_unicode_original(self):
+    def test_generated_lines_preserve_unicode_original(self):
         original = desktop.FIXTURE.encode()
-        current = original.replace(b'\\end{tikzpicture}', line() + b'\\end{tikzpicture}')
+        current = original.replace(b"\\end{tikzpicture}",
+                                   line() + line(2, version=2) + b"\\end{tikzpicture}")
         self.assertTrue(desktop.original_preserved(original, current))
 
     def test_unrelated_byte_or_newline_mutation_fails(self):
         original = desktop.FIXTURE.encode()
-        self.assertFalse(desktop.original_preserved(original, original.replace('Не менять'.encode(), b'changed')))
-        self.assertFalse(desktop.original_preserved(original, original.replace(b'\n', b'\r\n')))
+        self.assertFalse(desktop.original_preserved(
+            original, original.replace("Не менять".encode(), b"changed")))
+        self.assertFalse(desktop.original_preserved(
+            original, original.replace(b"\n", b"\r\n")))
+
+    def test_unrelated_marker_comment_cannot_be_discarded(self):
+        original = desktop.FIXTURE.encode()
+        current = original.replace(b"\\end{tikzpicture}",
+                                   b"% user % tikzarium:n1: fake\n\\end{tikzpicture}")
+        with self.assertRaises(ValueError):
+            desktop.original_preserved(original, current)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -17,6 +17,7 @@ import subprocess
 import time
 
 MARKER = " % tikzarium:n1:"
+TOOLS = frozenset(("line", "arrow", "rectangle", "circle", "node", "cubic"))
 FIXTURE = r"""\documentclass{standalone}
 \usepackage{fontspec}
 \setmainfont{DejaVu Serif}
@@ -45,28 +46,65 @@ def run(argv: list[str], *, timeout: float = 20) -> str:
     return result.stdout.decode("utf-8", "replace").strip()
 
 
+def parse_owner_line(line: str) -> dict | None:
+    """Read exact trailing N1 metadata, without changing native TikZ bytes.
+
+    The first marker starts the comment: the JSON payload itself may contain
+    marker-like Cyrillic node text. V1 is legacy hex JSON, V2 a compact tuple.
+    This checks source provenance for the desktop fixture, not a TeX parser.
+    """
+    if MARKER not in line:
+        return None
+    prefix, payload = line.split(MARKER, 1)
+    if not prefix.startswith("  \\") or not prefix.rstrip().endswith(";"):
+        raise ValueError("N1 marker is not attached to a native command line")
+    if payload.startswith("["):
+        value = json.loads(payload)
+        if not isinstance(value, list) or len(value) != 4:
+            raise ValueError("Invalid compact N1 tuple")
+        schema, owner_id, tool, values = value
+        if type(schema) is not int or schema != 2:
+            raise ValueError("Unsupported compact N1 schema")
+    else:
+        value = json.loads(bytes.fromhex(payload))
+        if not isinstance(value, dict) or set(value) != {"schema", "id", "tool", "draft"}:
+            raise ValueError("Invalid legacy N1 object")
+        schema, owner_id, tool = value["schema"], value["id"], value["tool"]
+        draft = value["draft"]
+        if type(schema) is not int or schema != 1 or not isinstance(draft, dict):
+            raise ValueError("Unsupported legacy N1 schema")
+        values = draft.get("values")
+    if type(owner_id) is not int or owner_id <= 0 or tool not in TOOLS:
+        raise ValueError("Invalid N1 owner ID or native tool")
+    if not isinstance(values, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) for k, v in values.items()
+    ):
+        raise ValueError("Invalid typed N1 parameter values")
+    return {"schema": schema, "id": owner_id, "tool": tool, "values": values}
+
+
 def owners(source: bytes) -> list[dict]:
     found = []
     for line in source.decode("utf-8").splitlines():
-        if MARKER not in line:
-            continue
-        _, value = line.rsplit(MARKER, 1)
-        record = json.loads(bytes.fromhex(value))
-        if record.get("schema") != 1 or not isinstance(record.get("id"), int):
-            raise ValueError("Invalid N1 owner metadata")
-        found.append(record)
+        owner = parse_owner_line(line)
+        if owner is not None:
+            found.append(owner)
     ids = [record["id"] for record in found]
     if len(ids) != len(set(ids)):
-        raise ValueError("Duplicate N1 owner ID")
+        raise ValueError("Duplicate N1 owner ID across schema versions")
     return found
 
 
 def original_preserved(original: bytes, current: bytes) -> bool:
-    # In this dedicated test document the only permitted mutations are new
-    # complete generated lines. Byte equality includes UTF-8 and line endings.
-    remainder = b"".join(line for line in current.splitlines(keepends=True)
-                         if MARKER.encode() not in line)
-    return remainder == original
+    # Strip only independently validated complete native N1 command lines.
+    # Any altered unrelated byte, including Unicode/CRLF, fails closed.
+    remainder = []
+    for line in current.splitlines(keepends=True):
+        if MARKER.encode() in line:
+            parse_owner_line(line.decode("utf-8").rstrip("\r\n"))
+        else:
+            remainder.append(line)
+    return b"".join(remainder) == original
 
 
 def wait_for(predicate, seconds: float, message: str) -> None:
@@ -96,6 +134,7 @@ def main() -> int:
     clipboard.write_bytes(FIXTURE.encode("utf-8"))
     report = {"schema": 1, "status": "FAIL", "host": platform.platform(),
               "source_head_sha": os.getenv("TIKZARIUM_SOURCE_SHA", "UNKNOWN"),
+              "qa_head_sha": os.getenv("TIKZARIUM_QA_SHA", "UNKNOWN"),
               "app_sha256": sha256(app), "gui_backend": "X11/Xvfb/software-GL",
               "physical_win10_miktex": "NOT_RUN", "physical_m1_m4": "NOT_RUN",
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
@@ -193,12 +232,20 @@ def main() -> int:
                 raise RuntimeError(f"Pointer {case['tool']} was not saved after {save_attempts} attempts")
             if not original_preserved(FIXTURE.encode("utf-8"), after):
                 raise RuntimeError("Pointer authoring changed unrelated user TeX")
+            if case["tool"] == "cubic" and b".. controls " not in after:
+                raise RuntimeError("Cubic gesture lacks real TikZ Bézier controls")
             report["steps"].append({"case": "pointer_" + case["tool"], "status": "PASS",
                                     "sha256": sha256(source), "id": found[-1]["id"],
                                     "save_attempts": save_attempts})
             screenshot("pointer-" + case["tool"] + ".png")
         if profile.get("gestures"):
-            report["pointer_authoring"] = "PASS_RECORDED_GESTURES"
+            names = [case["tool"] for case in profile["gestures"]]
+            if len(names) != len(TOOLS) or set(names) != TOOLS:
+                raise RuntimeError("Real desktop requires all six unique C-native tools")
+            persisted = owners(source.read_bytes())
+            if len(persisted) != len(TOOLS) or set(x["tool"] for x in persisted) != TOOLS:
+                raise RuntimeError("Persisted N1 source is not six real unique tools")
+            report["pointer_authoring"] = "PASS_SIX_RECORDED_GESTURES"
         key("F1")
         screenshot("03-f1-panel.png")
         report["steps"].append({"case": "F1_event_sent", "status": "SENT_NOT_VISUALLY_VERIFIED"})
@@ -214,6 +261,9 @@ def main() -> int:
             if not pdf.is_file() or pdf.read_bytes()[:5] != b"%PDF-":
                 raise RuntimeError("Build/export through GUI produced no PDF")
             report["pdf_info"] = run(["pdfinfo", str(pdf)])
+            report["pdf_fonts"] = run(["pdffonts", str(pdf)])
+            if "emb" not in report["pdf_fonts"] or "yes" not in report["pdf_fonts"]:
+                raise RuntimeError("PDF font embedding evidence missing")
             report["pdf_text"] = run(["pdftotext", "-enc", "UTF-8", str(pdf), "-"])
             if "Не менять" not in report["pdf_text"]:
                 raise RuntimeError("GUI PDF lost original Cyrillic macro text")
