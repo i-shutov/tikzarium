@@ -31,8 +31,20 @@ FLAGS = (
     "-recorder", "-no-shell-escape",
 )
 # TeX wraps the engine-error message across lines in narrow log output.
+# XeTeX 2026 can wrap within a word (observed grap followed by newline+h).
+# Require the entire canonical message; tolerate only TeX display line breaks.
+def _tex_wrapped_word(word: str) -> str:
+    return r"\s*".join(map(re.escape, word))
+
+
 LUA_REQUIRED = re.compile(
-    r"need to run LuaTeX to use the graph\s+drawing library", re.I,
+    r"\b"
+    + r"\s+".join(
+        _tex_wrapped_word(token)
+        for token in ("need", "to", "run", "LuaTeX", "to", "use", "the", "graph", "drawing", "library")
+    )
+    + r"\b",
+    re.I,
 )
 MISSING_GLYPH = re.compile(r"Missing character:", re.I)
 

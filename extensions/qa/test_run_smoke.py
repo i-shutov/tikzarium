@@ -27,6 +27,12 @@ class FixtureRunnerTests(unittest.TestCase):
             source_preserved=True,
         )
         self.assertEqual(verdict(**args), "expected_engine_error")
+        for wrapped in (
+            "Need to run LuaTeX to use the grap\nh drawing library",
+            "Need to run LuaTeX to use the graph draw\ning library",
+            "Need to run LuaTeX to use the graph drawing libr\nary",
+        ):
+            self.assertEqual(verdict(**(args | {"log_text": wrapped})), "expected_engine_error")
         for change in (
             {"exit_code": 0}, {"pdf_valid": True},
             {"log_text": "Some unrelated TeX error"},
