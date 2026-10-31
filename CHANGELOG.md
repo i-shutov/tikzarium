@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-31: I07 bounded initial XeLaTeX PDF preview
+
+- Protect the **first-page** Poppler renderer (`tikzarium-core::preview`), previously missing time and allocation budgets despite B05 navigation and B06 PNG decoding protections: 45-second subprocess deadline with kill/wait; 64MiB compressed PNG read cap.
+- Source and canonical compiled PDF are never modified by the guard. On missing/stalled/oversized raster, retain the valid PDF and report a preview-specific error instead of hanging indefinitely.
+- Add five small Rust tests (portable and Unix mock-tool paths), separate physical Windows 10 and M1/M4 QA protocol, plan, insight. Existing full workspace CI exercises the tests; exact new-head results PENDING at authoring. No package capability changes.
+
 ## Unreleased — 2026-10-31: I05 hardened XeLaTeX runner and extension evidence
 
 - Correct the Windows-hosted XeLaTeX `./filename.tex` source operand: never construct it using Windows-native `Path::join` (`.\\filename.tex` is a TeX control-sequence hazard). Use an `OsString` literal `./` prefix and regression-test ordinary, leading-dash and Cyrillic filenames. Re-run cross-host CI against the exact new SHA; no Win10 acceptance claim.
