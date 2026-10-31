@@ -91,3 +91,16 @@ First hosted Rust QA on W06.1 SHA `52e2278be693` proved real Linux TeX fixture/d
 ### W06.3 — fix real hosted Linux ETXTBSY in fake engine test
 
 In exact-head [QA 41191856961](https://github.com/i-shutov/tikzarium/actions/runs/41191856961) the corrected `doctor_unix` **4/4 PASS**, Windows and macOS Rust suites passed, but one Linux `runner_unix` test hit `UnverifiedEngine: Text file busy (os error 26)` when executing a fake engine that the test had overwritten *in place*. This is a flaky test executable creation pattern, not evidence of a native MiKTeX compile failure. Reworked A-owned fake engine constructor to select the version string **before its first and only fs::write**, for both fake MiKTeX and unknown engine; no in-place rewrite. Production runner logic, PDFs and source bytes unchanged. CI at the new exact SHA is required to certify Linux regressions; do not count prior failed suite as pass.
+
+## W06.4 — N1 integration and exact-head reliability gate (2026-10-31)
+
+Current authoritative main was re-read after #44 N1 merge: `97c4b44eeee7ac84ba85f789269c3e15a9f528e4` (also includes C/N2 #49). Root AGENTS and all open PRs were re-read. The A/W06 branch changes only nine A-owned files and does not overlap files changed by main since the original merge base `c5c8c1576b6288e1d125d558d0d4872b321efb86`. The integration must preserve **the entire latest main tree** and overlay only those nine A files, keeping B/C native primitives and help intact. Do not merge obsolete #10 or touch D's MiKTeX workflow.
+
+Exact earlier head `ca70d60d38f4f02f467b1703751083e2ff875e6f` was NOT an all-green gate: [basic CI 41192232154](https://github.com/i-shutov/tikzarium/actions/runs/41192232154), [font CI 41192232264](https://github.com/i-shutov/tikzarium/actions/runs/41192232264), and [N1 proof 41192232180](https://github.com/i-shutov/tikzarium/actions/runs/41192232180) succeeded; [D QA 41192232187](https://github.com/i-shutov/tikzarium/actions/runs/41192232187) failed **only** the Ubuntu runner test `fake_miktex_compiler_receives_no_auto_installer_override` (ETXTBSY on a temporary fake executable during --version). The other six D QA matrix jobs succeeded. W06.4 changes the test helper to publish its generated executable by atomic rename only after closing the write handle. This is a test-fixture reliability fix, not a change to the production runner's safety contract. Run full exact-HEAD CI and D's real MiKTeX workflow after integration; do not infer PASS from earlier heads.
+
+[Independent D06 genuine MiKTeX run 41192766128](https://github.com/i-shutov/tikzarium/actions/runs/41192766128) succeeded on D's separate exact HEAD `54a0d0d7befaa745514c18aa97163507b1c3b11c`; this does **not** prove A/W06's production CLI. D's workflow is now present on main, so the integrated A PR must be exercised independently there.
+
+- [ ] A integrated commit: preserve current main and B/C N1/C-N2 files.
+- [ ] Exact merged-tree Rust fmt/check/test/Clippy + D QA matrix PASS.
+- [ ] Real MiKTeX Windows Server **production CLI** + --disable-installer and source hash/PDF/Unicode proof at the exact A integration SHA; ask D to inspect if workflow conditions do not cover it.
+- [ ] Native physical Windows 10 x64 MiKTeX user and shared installs, offline network isolation, Mac M1/M4 external XeLaTeX and actual GUI: all NOT_RUN without physical evidence.
