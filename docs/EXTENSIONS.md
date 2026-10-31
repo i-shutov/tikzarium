@@ -93,3 +93,10 @@ The Rust FixtureObservation::parse accepts only bounded, structurally consistent
 Importantly, storing or parsing evidence cannot mark ExtensionStatus.compilation_verified true or enable a visual adapter. A hosted Windows Server job is not Windows 10 acceptance; hosted macOS ARM compilation is not physical Mac GUI acceptance. The recorded Linux probe covers the five source fixtures only, not general PGF compatibility.
 
 The C02 registry now prioritizes a definite missing file over another indeterminate lookup and rejects manifest filenames starting with a dash, preventing option-like arguments from reaching kpsewhich. The general-purpose kpsewhich caller in A-owned core needs a separate upstream safety review.
+
+
+## 10. C03 artifact-integrity audit (still not package certification)
+
+The C03 tool [extensions/qa/verify_smoke.py](../extensions/qa/verify_smoke.py) independently checks the *bytes* behind a C02 observation: the fixed fixture SHA-256 in the current source tree, captured console and TeX logs, positive PDF hash/signature/EOF plus \`pdfinfo\` page count, and the specific expected LuaTeX-only diagnostic for the negative graphdrawing probe. It reconciles the five observations with summary.json and rejects incomplete, contradictory, mixed-host and symlinked evidence by default. See the [QA runbook](../extensions/qa/README.md), [C03 plan](../plans/2026-10-31_C03_ARTIFACT_AUDIT.md), and [C03 insights](../insights/2026-10-31_C03_ARTIFACT_AUDIT_QA.md).
+
+\`--allow-partial\` is explicitly *selected-only* auditing, never an accepted full five-fixture suite. A recorded \`runner_kind=hosted_ci\` is self-reported metadata, not an attested GitHub runner. Matching hashes also cannot prove the compiler really produced those bytes or identify the exact operating system. The auditor does not promote registry capabilities, authenticate machines, certify package versions, or prove visual edits. The PACKAGE_MATRIX.csv remains conservative until per-platform evidence has been reviewed, not merely parsed.
