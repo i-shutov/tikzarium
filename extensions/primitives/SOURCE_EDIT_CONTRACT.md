@@ -20,9 +20,11 @@ let values = BTreeMap::new();
 let old = catalog.generate("tikz.circle", &values)?;
 let patch = plan_parameter_edit(
     &catalog, "tikz.circle", &values, "radius", "2cm",
-    &document, known_command_byte_range, document_revision,
+    &document, SourceTarget::new(known_command_byte_range, document_revision),
 )?;
 let undo = patch.apply(&mut document, &mut document_revision)?;
 ~~~
 
 The application must first verify that the known byte range belongs to this command; code in this crate never searches or rewrites unknown document regions. Physical Windows 10 MiKTeX and M1/M4 GUI tests remain separate.
+
+`SourceTarget` binds range and revision, matching the N1 integration contract; SourcePatch still checks expected source bytes. Unknown TeX stays untouched.

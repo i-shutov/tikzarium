@@ -6,6 +6,20 @@
 use crate::primitives::{Catalog, PrimitiveError, SourcePatch};
 use std::{collections::BTreeMap, ops::Range};
 
+/// Caller-confirmed source command span and monotone revision belong together.
+/// The caller-verified byte span and monotone revision are one source snapshot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceTarget {
+    pub range: Range<usize>,
+    pub revision: u64,
+}
+
+impl SourceTarget {
+    pub fn new(range: Range<usize>, revision: u64) -> Self {
+        Self { range, revision }
+    }
+}
+
 /// Plan one property change without modifying the source.
 ///
 /// The full document, unknown user macros, comments, and adjacent commands are
@@ -19,9 +33,12 @@ pub fn plan_parameter_edit(
     parameter_id: &str,
     new_value: &str,
     source: &str,
-    command_range: Range<usize>,
-    source_revision: u64,
+    target: SourceTarget,
 ) -> Result<SourcePatch, PrimitiveError> {
+    let SourceTarget {
+        range: command_range,
+        revision: source_revision,
+    } = target;
     let tool = catalog
         .tool(tool_id)
         .ok_or_else(|| PrimitiveError::UnknownTool(tool_id.to_owned()))?;

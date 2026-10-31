@@ -173,7 +173,7 @@ impl Catalog {
             let rendered = if p.kind == "node_content" {
                 match effective.get("mode").map(String::as_str) {
                     Some("text") => escape_text(v),
-                    Some("math") => format!("{}{}{}", ', v, '),
+                    Some("math") => format!("{}{}{}", '\u{24}', v, '\u{24}'),
                     _ => {
                         return Err(PrimitiveError::Literal {
                             parameter: "mode".into(),
@@ -201,6 +201,24 @@ impl Catalog {
         for t in &self.tools {
             s.push_str(&self.generate(&t.id, &BTreeMap::new())?.source);
             s.push('\n');
+        }
+        s.push_str("\\end{tikzpicture}\n\\end{document}\n");
+        Ok(s)
+    }
+    /// Separated visual QA: all commands come from the same six source generators.
+    pub fn gallery_document(&self) -> Result<String, PrimitiveError> {
+        let mut s = String::from(
+            "\\documentclass{article}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta}\n\\pagestyle{empty}\n\\begin{document}\n\\noindent\\begin{tikzpicture}\n",
+        );
+        let captions = ["Line", "Arrow", "Rectangle", "Circle", "Node", "Bezier"];
+        for (i, (tool, caption)) in self.tools.iter().zip(captions).enumerate() {
+            let x = (i % 3) * 4;
+            let y = if i < 3 { 0 } else { -4 };
+            s.push_str(&format!("\\begin{{scope}}[shift={{({x}cm,{y}cm)}}]\n"));
+            s.push_str("\\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);\n");
+            s.push_str(&format!("\\node[anchor=west] at (0cm,2.65cm) {{\\small {caption}}};\n"));
+            s.push_str(&self.generate(&tool.id, &BTreeMap::new())?.source);
+            s.push_str("\n\\end{scope}\n");
         }
         s.push_str("\\end{tikzpicture}\n\\end{document}\n");
         Ok(s)
@@ -344,7 +362,7 @@ fn escape_text(v: &str) -> String {
             '\\' => out.push_str("\\textbackslash{}"),
             '{' => out.push_str("\\{"),
             '}' => out.push_str("\\}"),
-            ' => out.push_str("\\$"),
+            '\u{24}' => out.push_str("\\$"),
             '&' => out.push_str("\\&"),
             '%' => out.push_str("\\%"),
             '#' => out.push_str("\\#"),

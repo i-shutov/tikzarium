@@ -1,0 +1,38 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\pagestyle{empty}
+\begin{document}
+\noindent\begin{tikzpicture}
+\begin{scope}[shift={(0cm,0cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Line};
+\draw (0cm,0cm) -- (2cm,1cm);
+\end{scope}
+\begin{scope}[shift={(4cm,0cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Arrow};
+\draw[-{Stealth}] (0cm,0cm) -- (2cm,0cm);
+\end{scope}
+\begin{scope}[shift={(8cm,0cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Rectangle};
+\draw (0cm,0cm) rectangle (2cm,1cm);
+\end{scope}
+\begin{scope}[shift={(0cm,-4cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Circle};
+\draw (1cm,1cm) circle[radius=8mm];
+\end{scope}
+\begin{scope}[shift={(4cm,-4cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Node};
+\node at (0cm,0cm) {A};
+\end{scope}
+\begin{scope}[shift={(8cm,-4cm)}]
+\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);
+\node[anchor=west] at (0cm,2.65cm) {\small Bezier};
+\draw (0cm,0cm) .. controls (1cm,2cm) and (2cm,2cm) .. (3cm,1cm);
+\end{scope}
+\end{tikzpicture}
+\end{document}

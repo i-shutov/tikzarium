@@ -45,7 +45,7 @@ fn six_commands_match_real_xelatex_fixture() {
     let c = Catalog::bundled().unwrap();
     assert_eq!(
         c.fixture_document().unwrap(),
-        include_str!("../../../extensions/primitives/fixtures/all-six.tex")
+        include_str!("../../../extensions/primitives/fixtures/all-six.tex").replace("\r\n", "\n")
     );
     assert!(
         c.generate("tikz.arrow", &BTreeMap::new())
@@ -161,4 +161,21 @@ fn installed_loaded_engine_and_tool_are_five_separate_dimensions() {
             .engine_compatible,
         Evidence::Unknown
     );
+}
+
+#[test]
+fn six_separate_gallery_panels_match_the_native_generators() {
+    let catalog = Catalog::bundled().unwrap();
+    let gallery = catalog.gallery_document().unwrap();
+    assert_eq!(
+        gallery,
+        include_str!("../../../extensions/primitives/fixtures/all-six-gallery.tex")
+            .replace("\r\n", "\n")
+    );
+    assert_eq!(gallery.matches("\\begin{scope}").count(), 6);
+    assert_eq!(gallery.matches("\\end{scope}").count(), 6);
+    for tool in &catalog.tools {
+        let native = catalog.generate(&tool.id, &BTreeMap::new()).unwrap().source;
+        assert_eq!(gallery.matches(&native).count(), 1, "{}", tool.id);
+    }
 }
