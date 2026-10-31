@@ -13,14 +13,22 @@ pub struct Capabilities {
     pub implemented: bool,
 }
 impl Capabilities {
-    fn base_ready(self) -> bool {
-        self.installed && self.engine_compatible && self.implemented
+    // Native code generation uses C's catalogue and verified project imports;
+    // it does NOT invoke a TeX engine. Missing external TeX blocks an exact
+    // build, not ordinary editable TikZ source authoring.
+    fn source_authoring_supported(self) -> bool {
+        self.implemented
+    }
+    fn exact_build_prerequisites_verified(self) -> bool {
+        self.installed && self.engine_compatible
     }
     fn explanation(self) -> &'static str {
-        if !self.engine_compatible {
-            "Путь внешнего XeLaTeX не подтверждён. Windows: отдельно установленный MiKTeX."
+        if !self.implemented {
+            "Визуальный обработчик для этого инструмента не реализован; исходный TeX можно редактировать вручную."
+        } else if !self.engine_compatible {
+            "Внешний XeLaTeX не найден: TikZ-код создавать можно, но точный PDF пока не проверить. Windows 10: отдельно установите MiKTeX."
         } else if !self.installed {
-            "Наличие tikz.sty не подтверждено. Редактор не устанавливает TeX или пакеты автоматически."
+            "Наличие tikz.sty не подтверждено: исходный TikZ можно создавать, но точный PDF пока не проверить. Пакеты не устанавливаются автоматически."
         } else if self.loaded == Evidence::Absent {
             "ABSENT: прямого подключения TikZ в проверенной преамбуле нет; просмотрите C/N2 diff."
         } else if self.loaded == Evidence::Unknown {
@@ -251,12 +259,16 @@ fn show_guide_frame_with_palette(
     let project_state = session
         .active
         .map(|tool| tikz_authoring::requirements_status(source, tool));
-    let ready = caps.base_ready()
+    let ready = caps.source_authoring_supported()
         && project_state == Some(tikzarium_extensions::primitives::Evidence::Confirmed);
-    if !ready {
+    // Missing XeLaTeX/tikz.sty is a build-time warning, not a veto on safe
+    // source patches. Keep import UNKNOWN/ABSENT fail-closed independently.
+    if !ready || !caps.exact_build_prerequisites_verified() {
         ui.colored_label(
             ui.visuals().warn_fg_color,
-            if !caps.base_ready() {
+            if !caps.source_authoring_supported() {
+                caps.explanation()
+            } else if ready {
                 caps.explanation()
             } else {
                 match project_state {
@@ -744,7 +756,7 @@ pub fn show_inspector(
             }
         } else if ui
             .add_enabled(
-                caps.base_ready() && loaded,
+                caps.source_authoring_supported() && loaded,
                 egui::Button::new("Вставить по параметрам"),
             )
             .clicked()
@@ -1241,8 +1253,30 @@ mod tests {
         source: &mut String,
         events: Vec<egui::Event>,
         modifiers: egui::Modifiers,
+        palette_rects: Option<&mut [Rect; 6]>,
+        viewport_width: f32,
+    ) -> (Option<usize>, Rect) {
+        event_frame_mod_with_palette_caps(
+            ctx,
+            session,
+            source,
+            events,
+            modifiers,
+            palette_rects,
+            viewport_width,
+            READY,
+        )
+    }
+
+    fn event_frame_mod_with_palette_caps(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
         mut palette_rects: Option<&mut [Rect; 6]>,
         viewport_width: f32,
+        caps: Capabilities,
     ) -> (Option<usize>, Rect) {
         let mut observed = None;
         let mut guide_rect = Rect::NOTHING;
@@ -1263,7 +1297,7 @@ mod tests {
                         ui,
                         session,
                         source,
-                        READY,
+                        caps,
                         palette_rects.as_deref_mut(),
                     );
                 });
@@ -1851,6 +1885,138 @@ mod tests {
         let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
         assert!(jump.is_some());
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
+    }
+
+
+    #[test]
+    fn b23_external_tex_absence_warns_but_does_not_block_native_c_source_gestures() {
+        // 6 catalogue tools × 2 widths × 3 distinct external-runtime gaps.
+        // Actual egui RawInput pointer frames exercise the production handler.
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for (installed, engine_compatible) in
+                    [(false, false), (true, false), (false, true)]
+                {
+                    let caps = Capabilities {
+                        installed,
+                        engine_compatible,
+                        loaded: Evidence::Confirmed,
+                        implemented: true,
+                    };
+                    assert!(!caps.exact_build_prerequisites_verified());
+                    assert!(caps.source_authoring_supported());
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                        caps,
+                    );
+                    let at = screen_point(rect, Point::new(1.0, 1.0));
+                    let _ = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(at), primary(at, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                        caps,
+                    );
+                    let (line, _) = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(at, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                        caps,
+                    );
+                    assert!(
+                        line.is_some(),
+                        "{tool:?}: source gesture blocked when installed={installed}, engine={engine_compatible}"
+                    );
+                    let objects = tikz_authoring::owned(&source);
+                    assert_eq!(objects.len(), 1);
+                    assert_eq!(objects[0].tool, tool);
+                    assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, original);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b23_missing_c_adapter_or_unverified_project_imports_still_block_source_writes() {
+        // External runtime unavailability must not weaken ownership/import
+        // checks. These stay fail-closed even in offline authoring mode.
+        for caps in [
+            Capabilities {
+                implemented: false,
+                ..READY
+            },
+            Capabilities {
+                installed: false,
+                engine_compatible: false,
+                ..READY
+            },
+        ] {
+            let mut source = if caps.implemented {
+                EVENT_SOURCE.replace("\\usetikzlibrary{arrows.meta}\n", "")
+            } else {
+                EVENT_SOURCE.to_owned()
+            };
+            let original = source.clone();
+            let ctx = egui::Context::default();
+            let mut session = Session::default();
+            session.reset(&source);
+            session.select_tool(Tool::Arrow);
+            let (_, rect) = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![],
+                egui::Modifiers::default(),
+                None,
+                820.0,
+                caps,
+            );
+            let at = screen_point(rect, Point::new(1.0, 1.0));
+            let _ = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(at), primary(at, true)],
+                egui::Modifiers::default(),
+                None,
+                820.0,
+                caps,
+            );
+            let (line, _) = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![primary(at, false)],
+                egui::Modifiers::default(),
+                None,
+                820.0,
+                caps,
+            );
+            assert!(line.is_none());
+            assert_eq!(source, original);
+            assert!(!session.undo_available());
+        }
     }
 
     #[test]
