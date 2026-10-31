@@ -58,7 +58,8 @@ struct TikzariumApp {
 
 impl TikzariumApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let prefs = cc.storage
+        let prefs = cc
+            .storage
             .and_then(|storage| eframe::get_value::<UiPreferences>(storage, STORAGE_KEY))
             .unwrap_or_default();
         prefs.theme.apply(&cc.egui_ctx, prefs.compact);
@@ -480,11 +481,16 @@ impl TikzariumApp {
     }
 
     fn poll_font_proof(&mut self, ctx: &egui::Context) {
-        let result = self.font_proof_rx.as_ref().and_then(|rx| match rx.try_recv() {
-            Ok(value) => Some(value),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => Some(Err("Font proof worker disconnected".into())),
-        });
+        let result = self
+            .font_proof_rx
+            .as_ref()
+            .and_then(|rx| match rx.try_recv() {
+                Ok(value) => Some(value),
+                Err(TryRecvError::Empty) => None,
+                Err(TryRecvError::Disconnected) => {
+                    Some(Err("Font proof worker disconnected".into()))
+                }
+            });
         if let Some(result) = result {
             self.font_proof_rx = None;
             match result {
@@ -496,13 +502,17 @@ impl TikzariumApp {
                             Ok(image) => {
                                 let rgba = image.to_rgba8();
                                 let size = [rgba.width() as usize, rgba.height() as usize];
-                                let color = egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
+                                let color =
+                                    egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
                                 self.font_proof_texture = Some(ctx.load_texture(
-                                    "exact-figure-font-proof", color, egui::TextureOptions::LINEAR
+                                    "exact-figure-font-proof",
+                                    color,
+                                    egui::TextureOptions::LINEAR,
                                 ));
                             }
                             Err(error) => {
-                                self.font_proof_report.push_str(&format!("\nPreview decode: {error}"));
+                                self.font_proof_report
+                                    .push_str(&format!("\nPreview decode: {error}"));
                             }
                         }
                     }
@@ -519,7 +529,9 @@ impl TikzariumApp {
     }
 
     fn show_font_lab(&mut self, ctx: &egui::Context) {
-        if !self.prefs.show_font_lab { return; }
+        if !self.prefs.show_font_lab {
+            return;
+        }
         let mut open = true;
         egui::Window::new("Figure typography · XeLaTeX")
             .open(&mut open)
@@ -585,7 +597,6 @@ impl TikzariumApp {
             });
         self.prefs.show_font_lab = open;
     }
-
 }
 
 impl eframe::App for TikzariumApp {

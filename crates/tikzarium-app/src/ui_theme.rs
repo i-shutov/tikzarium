@@ -58,7 +58,11 @@ impl UiTheme {
         }
         ctx.set_visuals(visuals);
         ctx.style_mut(|style| {
-            style.spacing.item_spacing = if compact { egui::vec2(5.0, 3.0) } else { egui::vec2(8.0, 6.0) };
+            style.spacing.item_spacing = if compact {
+                egui::vec2(5.0, 3.0)
+            } else {
+                egui::vec2(8.0, 6.0)
+            };
             style.spacing.interact_size.y = if compact { 23.0 } else { 29.0 };
         });
     }
@@ -104,7 +108,9 @@ impl UiPreferences {
             .selected_text(format!("Theme: {}", self.theme.label()))
             .show_ui(ui, |ui| {
                 for theme in UiTheme::ALL {
-                    changed |= ui.selectable_value(&mut self.theme, theme, theme.label()).changed();
+                    changed |= ui
+                        .selectable_value(&mut self.theme, theme, theme.label())
+                        .changed();
                 }
             });
         changed |= ui.checkbox(&mut self.compact, "Compact").changed();
@@ -121,7 +127,10 @@ mod tests {
     #[test]
     fn themes_are_stable_and_distinct() {
         assert_eq!(UiTheme::ALL.len(), 4);
-        assert_eq!(UiTheme::ALL.map(UiTheme::label), ["Light", "Dark", "Midnight", "Paper"]);
+        assert_eq!(
+            UiTheme::ALL.map(UiTheme::label),
+            ["Light", "Dark", "Midnight", "Paper"]
+        );
     }
 
     #[test]

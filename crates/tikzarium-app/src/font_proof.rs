@@ -15,7 +15,11 @@ pub struct FontProofResult {
     pub verified: bool,
 }
 
-pub fn spawn_font_proof(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm: Option<std::path::PathBuf>) -> Receiver<Result<FontProofResult, String>> {
+pub fn spawn_font_proof(
+    fonts: FigureFonts,
+    xelatex: Option<std::path::PathBuf>,
+    pdftoppm: Option<std::path::PathBuf>,
+) -> Receiver<Result<FontProofResult, String>> {
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
         let result = test_fonts(fonts, xelatex, pdftoppm);
@@ -24,7 +28,11 @@ pub fn spawn_font_proof(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>,
     rx
 }
 
-fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm: Option<std::path::PathBuf>) -> Result<FontProofResult, String> {
+fn test_fonts(
+    fonts: FigureFonts,
+    xelatex: Option<std::path::PathBuf>,
+    pdftoppm: Option<std::path::PathBuf>,
+) -> Result<FontProofResult, String> {
     let source = fonts.proof_source().map_err(|error| error.to_string())?;
     let xelatex = xelatex.ok_or_else(|| "XeLaTeX not found; font proof is NOT_RUN".to_owned())?;
     let dir = tempfile::tempdir().map_err(|e| e.to_string())?;
@@ -36,7 +44,9 @@ fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm:
         pdf_renderer: pdftoppm,
         options: BuildOptions::default(),
     };
-    let artifact = BuildService::new().run(&request).map_err(|e| format!("XeLaTeX font proof failed: {e}"))?;
+    let artifact = BuildService::new()
+        .run(&request)
+        .map_err(|e| format!("XeLaTeX font proof failed: {e}"))?;
     let missing = tikzarium_core::missing_glyph_messages(&artifact.log);
     let mut report = String::new();
     let mut verified = missing.is_empty();
@@ -51,17 +61,31 @@ fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm:
     fs::write(&pdf_path, &artifact.pdf).map_err(|e| e.to_string())?;
     let expected = ["Привет, мир!", "Геометрия", "Научный рисунок"];
     let extraction = find_executable("pdftotext").and_then(|tool| {
-        Command::new(tool).arg("-enc").arg("UTF-8").arg("-layout").arg(&pdf_path).arg("-").output().ok()
+        Command::new(tool)
+            .arg("-enc")
+            .arg("UTF-8")
+            .arg("-layout")
+            .arg(&pdf_path)
+            .arg("-")
+            .output()
+            .ok()
     });
     match extraction {
         Some(out) if out.status.success() => {
             let text = String::from_utf8_lossy(&out.stdout);
-            let not_found = expected.iter().copied().filter(|phrase| !text.contains(phrase)).collect::<Vec<_>>();
+            let not_found = expected
+                .iter()
+                .copied()
+                .filter(|phrase| !text.contains(phrase))
+                .collect::<Vec<_>>();
             if not_found.is_empty() {
                 report.push_str("PDF Cyrillic text extraction: PASS\n");
             } else {
                 verified = false;
-                report.push_str(&format!("PDF Cyrillic text extraction: FAIL: {}\n", not_found.join(", ")));
+                report.push_str(&format!(
+                    "PDF Cyrillic text extraction: FAIL: {}\n",
+                    not_found.join(", ")
+                ));
             }
         }
         _ => {
@@ -69,15 +93,22 @@ fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm:
             report.push_str("PDF Cyrillic text extraction: NOT_RUN (pdftotext unavailable)\n");
         }
     }
-    let embedding = find_executable("pdffonts").and_then(|tool| Command::new(tool).arg(&pdf_path).output().ok());
+    let embedding = find_executable("pdffonts")
+        .and_then(|tool| Command::new(tool).arg(&pdf_path).output().ok());
     match embedding {
         Some(out) if out.status.success() => {
             let text = String::from_utf8_lossy(&out.stdout);
-            let lines = text.lines().skip(2).filter(|line| !line.trim().is_empty()).collect::<Vec<_>>();
-            if lines.is_empty() || lines.iter().any(|line| {
-                let fields = line.split_whitespace().collect::<Vec<_>>();
-                fields.len() < 7 || fields[fields.len() - 5] != "yes" // emb, sub, uni, obj, gen are final columns
-            }) {
+            let lines = text
+                .lines()
+                .skip(2)
+                .filter(|line| !line.trim().is_empty())
+                .collect::<Vec<_>>();
+            if lines.is_empty()
+                || lines.iter().any(|line| {
+                    let fields = line.split_whitespace().collect::<Vec<_>>();
+                    fields.len() < 7 || fields[fields.len() - 5] != "yes" // emb, sub, uni, obj, gen are final columns
+                })
+            {
                 verified = false;
                 report.push_str("Embedded fonts: FAIL / UNKNOWN\n");
             } else {
@@ -107,7 +138,12 @@ fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm:
     } else {
         "INCOMPLETE / FAIL: inspect typography report (PDF exists)".into()
     };
-    Ok(FontProofResult { description, font_report: report, preview_png, verified })
+    Ok(FontProofResult {
+        description,
+        font_report: report,
+        preview_png,
+        verified,
+    })
 }
 
 #[cfg(test)]

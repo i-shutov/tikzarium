@@ -93,7 +93,9 @@ impl FigureFonts {
         self.validate()?;
         Ok(format!(
             "\\usepackage{{fontspec}}\n\\usepackage{{unicode-math}}\n\\setmainfont{{{}}}\n\\setsansfont{{{}}}\n\\setmathfont{{{}}}\n",
-            self.text_family.trim(), self.sans_family.trim(), self.math_font.trim(),
+            self.text_family.trim(),
+            self.sans_family.trim(),
+            self.math_font.trim(),
         ))
     }
 
@@ -103,7 +105,7 @@ impl FigureFonts {
         let mut doc = String::from("\\documentclass{standalone}\n");
         doc.push_str(&self.preamble()?);
         doc.push_str(
-            "\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta,positioning}\n\\begin{document}\n"
+            "\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta,positioning}\n\\begin{document}\n",
         );
         doc.push_str(
             r"\begin{tikzpicture}[>=Stealth,every node/.style={align=center}]
@@ -125,7 +127,8 @@ impl FigureFonts {
             &mut result,
             "\\node[font=\\fontspec{{{family}}},draw,rounded corners] at (0,0) {{{}}};",
             tex_escape_plain_text(plain_text)
-        ).expect("writing to a String cannot fail");
+        )
+        .expect("writing to a String cannot fail");
         Ok(result)
     }
 }
@@ -151,7 +154,14 @@ mod tests {
 
     #[test]
     fn malicious_font_families_do_not_become_tex_commands() {
-        for bad in ["", "{}", "Noto} \\input{secrets}", "%", "Noto\nSans", "C:\\fonts"] {
+        for bad in [
+            "",
+            "{}",
+            "Noto} \\input{secrets}",
+            "%",
+            "Noto\nSans",
+            "C:\\fonts",
+        ] {
             assert!(validate_font_name(bad).is_err(), "{bad:?}");
         }
         assert!(validate_font_name("Noto Sans CJK SC").is_ok());
