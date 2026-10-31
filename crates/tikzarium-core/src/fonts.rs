@@ -137,14 +137,17 @@ impl FigureFonts {
 /// A return code of zero therefore does not prove correct font coverage.
 #[must_use]
 pub fn missing_glyph_messages(log: &str) -> Vec<String> {
-    log.lines()
-        .map(str::trim)
-        .filter(|line| {
-            line.starts_with("Missing character:")
-                || line.starts_with("LaTeX Font Warning:")
-                || line.starts_with("Package fontspec Warning:")
+    crate::font_audit::audit_font_log(log)
+        .issues
+        .into_iter()
+        .filter(|issue| {
+            matches!(
+                issue.kind,
+                crate::font_audit::FontIssueKind::MissingGlyph
+                    | crate::font_audit::FontIssueKind::FontWarning
+            )
         })
-        .map(str::to_owned)
+        .map(|issue| issue.message)
         .collect()
 }
 

@@ -4,6 +4,7 @@ pub mod build;
 pub mod diagnostics;
 pub mod discovery;
 pub mod document;
+pub mod font_audit;
 pub mod fonts;
 pub mod preview;
 
@@ -11,6 +12,7 @@ pub use build::{BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildServ
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
 pub use discovery::{TexEnvironment, find_executable};
 pub use document::Document;
+pub use font_audit::{FontIssue, FontIssueKind, FontLogAudit, audit_font_log};
 pub use fonts::{
     FigureFonts, FontInputError, missing_glyph_messages, tex_escape_plain_text, validate_font_name,
 };
