@@ -120,7 +120,7 @@ jobs:
             --output-dir /tmp/tikzarium-ci/multipage \
             --expect-first 'Привет' \
             --expect-second 'Геометрия'
-      - name: C04/C06 extension catalogue gate: 14 tamper tests and audit
+      - name: C04/C06 extension catalogue audit and 14 tamper tests
         run: |
           python3 -m unittest discover -s extensions/qa -p 'test_verify_catalog.py' -v
           python3 extensions/qa/verify_catalog.py --report /tmp/tikzarium-ci/catalog-audit.json

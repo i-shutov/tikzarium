@@ -15,3 +15,5 @@ On C06 original exact HEAD `c03801e4f3f426c1b8e5777fc0a77e669c2d3a47`: hosted Ti
 ## I11 current-main integration checkpoint
 
 Main base: `b7c8e993b9da64060dfd3261833e4be3a1d280ba`; legacy C04/C06 source head `2fad1ab90b56a749ceceeb1725e82804c2b0597d`. A Git tree comparison confirmed the 3 missing executable catalogue files before this migration. C04/C06 legacy #26/#34 stay open until this new branch passes exact-head CI and is merged. The original tamper tests and verifier are retained; current workflow changes are additive. No user TeX, native TikZ catalogue, MiKTeX configuration or PACKAGE_MATRIX.csv changes. Hosted and physical acceptance are separate.
+
+I11 first HEAD `df8b526c3c4126dc38a85a891382e366874be22d` failed workflow parsing before any job due unquoted YAML colon in newly added step labels: [CI 41210232857](https://github.com/i-shutov/tikzarium/actions/runs/41210232857), [D QA 41210232119](https://github.com/i-shutov/tikzarium/actions/runs/41210232119). Exact correction removes the colon from both YAML plain scalar labels. Real audit, Rust and XeLaTeX were NOT_RUN at this failed head; new-head CI remains PENDING until checked.
