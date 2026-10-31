@@ -8,6 +8,10 @@ use std::{
 };
 use tikzarium_core::find_executable;
 
+/// Worker replies carry the PDF identity epoch, avoiding stale cross-document updates.
+pub type PageCountReceiver = Receiver<(u64, Result<usize, String>)>;
+pub type PageRenderReceiver = Receiver<(u64, usize, Result<Vec<u8>, String>)>;
+
 /// Page numbers in the UI and Poppler are one-based. Never report a guessed page count.
 #[must_use]
 pub fn parse_page_count(output: &str) -> Option<usize> {
@@ -27,7 +31,7 @@ pub fn can_navigate(page_count: Option<usize>, current: usize, target: usize) ->
 }
 
 /// The result carries the PDF epoch so a previous document's worker cannot update a new one.
-pub fn spawn_page_count(pdf: Vec<u8>, epoch: u64) -> Receiver<(u64, Result<usize, String>)> {
+pub fn spawn_page_count(pdf: Vec<u8>, epoch: u64) -> PageCountReceiver {
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
         let _ = tx.send((epoch, inspect_pages(&pdf)));
@@ -66,7 +70,7 @@ pub fn spawn_page_render(
     page: usize,
     renderer: Option<PathBuf>,
     epoch: u64,
-) -> Receiver<(u64, usize, Result<Vec<u8>, String>)> {
+) -> PageRenderReceiver {
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
         let _ = tx.send((epoch, page, rasterize_page(&pdf, page, renderer)));
