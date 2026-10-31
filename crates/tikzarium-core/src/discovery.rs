@@ -39,6 +39,70 @@ fn candidate(path: &Path) -> Option<PathBuf> {
     }
 }
 
+/// The distribution can only be trusted when XeLaTeX itself reports it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TexDistribution {
+    MiKTeX,
+    TeXLive,
+    Unknown,
+}
+
+impl TexDistribution {
+    #[must_use]
+    pub fn from_version(version: &str) -> Self {
+        let lower = version.to_ascii_lowercase();
+        if lower.contains("miktex") {
+            Self::MiKTeX
+        } else if lower.contains("tex live") {
+            Self::TeXLive
+        } else {
+            Self::Unknown
+        }
+    }
+}
+
+/// A version probe is read-only and never invokes a package manager.
+#[derive(Clone, Debug)]
+pub struct TexEngineIdentity {
+    pub version: String,
+    pub distribution: TexDistribution,
+}
+
+/// The first nonempty version line is displayed, but the full output is used
+/// for classification because distributors may put the name on a later line.
+pub fn inspect_xelatex(path: &Path) -> std::io::Result<TexEngineIdentity> {
+    let output = Command::new(path)
+        .arg("--version")
+        .stdin(std::process::Stdio::null())
+        .output()?;
+    if !output.status.success() {
+        return Err(std::io::Error::other(format!(
+            "XeLaTeX --version exited with {}",
+            output.status
+        )));
+    }
+    let mut complete = String::from_utf8_lossy(&output.stdout).into_owned();
+    complete.push_str(&String::from_utf8_lossy(&output.stderr));
+    let version = complete
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .unwrap_or("")
+        .trim()
+        .to_owned();
+    Ok(TexEngineIdentity {
+        distribution: TexDistribution::from_version(&complete),
+        version,
+    })
+}
+
+/// An unavailable lookup is not evidence that a package is missing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PackageProbe {
+    Present(PathBuf),
+    Missing,
+    Unavailable,
+}
+
 #[derive(Clone, Debug)]
 pub struct TexEnvironment {
     pub xelatex: Option<PathBuf>,
@@ -53,15 +117,10 @@ impl TexEnvironment {
         let xelatex = env::var_os("TIKZARIUM_XELATEX")
             .and_then(|path| candidate(Path::new(&path)))
             .or_else(|| find_executable("xelatex"));
-        let xelatex_version = xelatex.as_ref().and_then(|p| {
-            Command::new(p)
-                .arg("--version")
-                .output()
-                .ok()
-                .filter(|o| o.status.success())
-                .and_then(|o| String::from_utf8(o.stdout).ok())
-                .and_then(|o| o.lines().next().map(str::to_owned))
-        });
+        let xelatex_version = xelatex
+            .as_ref()
+            .and_then(|p| inspect_xelatex(p).ok())
+            .map(|identity| identity.version);
         Self {
             xelatex,
             xelatex_version,
@@ -70,9 +129,11 @@ impl TexEnvironment {
         }
     }
 
-    /// A successful kpsewhich lookup only establishes presence, not compile compatibility.
+    /// Read-only lookup: MiKTeX's native findtexmf never receives
+    /// --must-exist (which can trigger package installation). We never call
+    /// bare MiKTeX kpsewhich, which has historically triggered auto-install.
     #[must_use]
-    pub fn package_file(&self, name: &str) -> Option<PathBuf> {
+    pub fn probe_package(&self, name: &str) -> PackageProbe {
         if name.is_empty()
             || name.starts_with('/')
             || name.contains("..")
@@ -80,17 +141,67 @@ impl TexEnvironment {
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || "-_./".contains(c))
         {
-            return None;
+            return PackageProbe::Unavailable;
         }
-        let tool = self.kpsewhich.as_ref()?;
-        let output = Command::new(tool).arg(OsStr::new(name)).output().ok()?;
+
+        let distribution = self
+            .xelatex_version
+            .as_deref()
+            .map(TexDistribution::from_version)
+            .unwrap_or(TexDistribution::Unknown);
+        let tool = match distribution {
+            TexDistribution::MiKTeX => tool_near_engine(self.xelatex.as_deref(), "findtexmf"),
+            TexDistribution::TeXLive => tool_near_engine(self.xelatex.as_deref(), "kpsewhich")
+                .or_else(|| self.kpsewhich.clone()),
+            TexDistribution::Unknown => None,
+        };
+        let Some(tool) = tool else {
+            return PackageProbe::Unavailable;
+        };
+        let output = Command::new(tool)
+            .arg(OsStr::new(name))
+            .stdin(std::process::Stdio::null())
+            .output();
+        let Ok(output) = output else {
+            return PackageProbe::Unavailable;
+        };
         if !output.status.success() {
-            return None;
+            return PackageProbe::Missing;
         }
-        let found = String::from_utf8(output.stdout).ok()?;
+        let Ok(found) = String::from_utf8(output.stdout) else {
+            return PackageProbe::Unavailable;
+        };
         let path = PathBuf::from(found.trim());
-        if path.is_file() { Some(path) } else { None }
+        if path.is_file() {
+            PackageProbe::Present(path)
+        } else {
+            PackageProbe::Missing
+        }
     }
+
+    /// Compatibility helper for existing read-only package panels.
+    #[must_use]
+    pub fn package_file(&self, name: &str) -> Option<PathBuf> {
+        match self.probe_package(name) {
+            PackageProbe::Present(path) => Some(path),
+            PackageProbe::Missing | PackageProbe::Unavailable => None,
+        }
+    }
+}
+
+/// Prefer the selected engine's bin directory to avoid mixing an explicitly
+/// configured user MiKTeX with an unrelated shared/TeX Live PATH installation.
+fn tool_near_engine(engine: Option<&Path>, name: &str) -> Option<PathBuf> {
+    if let Some(directory) = engine.and_then(Path::parent) {
+        #[cfg(windows)]
+        let filename = format!("{name}.exe");
+        #[cfg(not(windows))]
+        let filename = name;
+        if let Some(found) = candidate(&directory.join(filename)) {
+            return Some(found);
+        }
+    }
+    find_executable(name)
 }
 
 #[cfg(test)]
@@ -100,6 +211,33 @@ mod tests {
     fn empty_executable_never_resolves() {
         assert_eq!(find_executable(""), None);
     }
+    #[test]
+    fn distribution_identity_is_explicit_and_fail_closed() {
+        assert_eq!(
+            TexDistribution::from_version("MiKTeX-XeTeX 4.20 (MiKTeX 25.12)"),
+            TexDistribution::MiKTeX
+        );
+        assert_eq!(
+            TexDistribution::from_version("XeTeX 0.999996 (TeX Live 2025)"),
+            TexDistribution::TeXLive
+        );
+        assert_eq!(
+            TexDistribution::from_version("XeTeX-custom 0.1"),
+            TexDistribution::Unknown
+        );
+    }
+
+    #[test]
+    fn unknown_distribution_cannot_use_an_arbitrary_package_manager() {
+        let env = TexEnvironment {
+            xelatex: None,
+            xelatex_version: Some("unidentified".to_owned()),
+            kpsewhich: Some(PathBuf::from("/unknown/kpsewhich")),
+            pdf_renderer: None,
+        };
+        assert_eq!(env.probe_package("tikz.sty"), PackageProbe::Unavailable);
+    }
+
     #[test]
     fn traversal_is_not_accepted_as_package_name() {
         let env = TexEnvironment {
