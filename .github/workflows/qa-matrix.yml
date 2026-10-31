@@ -71,6 +71,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install TeX Live 2026 fixture subset (rolling CTAN)
+        id: texlive_install
         uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60
         with:
           texlive_version: '2026'
@@ -93,7 +94,7 @@ jobs:
       - name: Execute fixture suite with machine-readable evidence
         run: python scripts/tools/qa_smoke.py --cli "target/debug/${{ matrix.cli }}" --output ".qa-artifacts/${{ matrix.label }}"
       - name: Capture TeX installer failure log, if present
-        if: failure()
+        if: failure() && steps.texlive_install.outcome == 'failure'
         run: python -c "from pathlib import Path; import shutil; d=Path('.qa-artifacts/${{ matrix.label }}'); d.mkdir(parents=True,exist_ok=True); s=Path('install-tl.log'); shutil.copyfile(s,d/'install-tl.log') if s.is_file() else (d/'installer-log-unavailable.txt').write_text('TeX installation failed before producing install-tl.log', encoding='utf-8')"
       - name: Upload fixture evidence and failure logs
         if: always()
