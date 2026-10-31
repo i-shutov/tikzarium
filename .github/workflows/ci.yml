@@ -35,7 +35,8 @@ jobs:
       - name: Verify physical architecture of hosted runner
         if: runner.os == 'macOS'
         shell: bash
-        run: rustc -vV | grep -F 'host: aarch64-apple-darwin'
+        run: |
+          rustc -vV | grep -F 'host: aarch64-apple-darwin'
       - name: Check source formatting
         run: cargo fmt --all -- --check
       - name: Check crates compile
