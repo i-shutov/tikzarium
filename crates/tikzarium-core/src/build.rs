@@ -1,6 +1,7 @@
 //! Direct XeLaTeX runner. -no-shell-escape is not an OS sandbox.
 use crate::{
     diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
+    discovery::{TexDistribution, inspect_xelatex},
     preview::{Preview, render_first_page},
 };
 use std::{
@@ -63,6 +64,8 @@ pub enum BuildError {
     MissingEngine(PathBuf),
     #[error("Build cancelled")]
     Cancelled,
+    #[error("Cannot verify XeLaTeX distribution at {path}: {details}; offline build refused")]
+    UnverifiedEngine { path: PathBuf, details: String },
     #[error("XeLaTeX exceeded timeout of {0:?}")]
     Timeout(Duration),
     #[error("XeLaTeX exited with {code:?}: {details}")]
@@ -136,6 +139,21 @@ impl BuildService {
         }
 
         let started = Instant::now();
+        // MiKTeX can silently download missing packages even in nonstopmode.
+        // Refuse an unidentifiable engine, and override MiKTeX's user/shared
+        // AutoInstall setting only for this invocation (never persist it).
+        let identity = inspect_xelatex(&request.xelatex).map_err(|error| {
+            BuildError::UnverifiedEngine {
+                path: request.xelatex.clone(),
+                details: error.to_string(),
+            }
+        })?;
+        if identity.distribution == TexDistribution::Unknown {
+            return Err(BuildError::UnverifiedEngine {
+                path: request.xelatex.clone(),
+                details: format!("unrecognized --version: {}", identity.version),
+            });
+        }
         let source = request.source.canonicalize()?;
         if let Some(destination) = request.options.log_path.as_deref()
             && destination.exists()
@@ -157,7 +175,11 @@ impl BuildService {
         // A literal forward-slash ./ prefix protects a leading-dash filename.
         // Path::new(".").join(filename) creates a backslash on Windows that
         // XeTeX interprets as a TeX control sequence instead of a path.
-        let mut child = Command::new(&request.xelatex)
+        let mut command = Command::new(&request.xelatex);
+        if identity.distribution == TexDistribution::MiKTeX {
+            command.arg("--disable-installer");
+        }
+        let mut child = command
             .current_dir(cwd)
             .arg("-interaction=nonstopmode")
             .arg("-halt-on-error")
