@@ -630,10 +630,7 @@ mod tests {
         assert_eq!(source, edited);
         // Re-selection is deliberate and uses the same C-catalogue ownership proof.
         assert!(session.choose(&source, 1).is_ok());
-        session
-            .draft
-            .values
-            .insert("start_x".into(), "2cm".into());
+        session.draft.values.insert("start_x".into(), "2cm".into());
         session.apply_parameters(&mut source).unwrap();
         assert!(source.contains("% изменение вручную"));
     }

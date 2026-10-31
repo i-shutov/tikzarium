@@ -559,10 +559,7 @@ mod tests {
         let mut guide_rect = Rect::NOTHING;
         let _output = ctx.run(
             egui::RawInput {
-                screen_rect: Some(Rect::from_min_size(
-                    Pos2::ZERO,
-                    Vec2::new(820.0, 480.0),
-                )),
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(820.0, 480.0))),
                 events,
                 ..Default::default()
             },
@@ -609,13 +606,11 @@ mod tests {
                 &mut source,
                 vec![egui::Event::PointerMoved(end)],
             );
-            let (jump, _) = event_frame(
-                &ctx,
-                &mut session,
-                &mut source,
-                vec![primary(end, false)],
+            let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
+            assert!(
+                jump.is_some(),
+                "{tool:?} did not commit through egui Response"
             );
-            assert!(jump.is_some(), "{tool:?} did not commit through egui Response");
             assert_eq!(session.selected, Some(1));
             let items = tikz_authoring::owned(&source);
             assert_eq!(items.len(), 1, "{tool:?}");
@@ -627,7 +622,10 @@ mod tests {
             let jump_start =
                 crate::ui_state::line_start_char_index(&source, jump.unwrap()).unwrap();
             let source_chars: String = source.chars().skip(jump_start).take(16).collect();
-            assert!(source_chars.starts_with("  \\"), "{tool:?}: {source_chars:?}");
+            assert!(
+                source_chars.starts_with("  \\"),
+                "{tool:?}: {source_chars:?}"
+            );
 
             let temp = tempfile::tempdir().unwrap();
             let file = temp.path().join("gesture.tex");
@@ -640,10 +638,7 @@ mod tests {
             assert_eq!(reopened.draft, items[0].draft);
             if tool == Tool::Circle {
                 let prior = source.clone();
-                reopened
-                    .draft
-                    .values
-                    .insert("radius".into(), "2cm".into());
+                reopened.draft.values.insert("radius".into(), "2cm".into());
                 reopened.apply_parameters(&mut source).unwrap();
                 assert!(source.contains("radius=2cm"));
                 reopened.undo(&mut source).unwrap();
@@ -677,12 +672,7 @@ mod tests {
             &mut source,
             vec![egui::Event::PointerMoved(at), primary(at, true)],
         );
-        let (jump, _) = event_frame(
-            &ctx,
-            &mut session,
-            &mut source,
-            vec![primary(at, false)],
-        );
+        let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]);
         assert!(jump.is_some(), "click did not insert a node through egui");
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
         let prior = session.help;
@@ -698,7 +688,10 @@ mod tests {
                 modifiers: egui::Modifiers::default(),
             }],
         );
-        assert_ne!(session.help, prior, "F1 did not reach the production handler");
+        assert_ne!(
+            session.help, prior,
+            "F1 did not reach the production handler"
+        );
         assert!(source.contains(r"\myOpaqueMacro{a_b}"));
     }
 
@@ -709,6 +702,4 @@ mod tests {
         assert!(far.x <= (rect.width() - 2.0 * MARGIN) / SCALE + 0.25);
         assert!(far.y <= (rect.height() - 2.0 * MARGIN) / SCALE + 0.25);
         assert!(far.x >= 0.0 && far.y >= 0.0);
-    }
-
-}
+    }}

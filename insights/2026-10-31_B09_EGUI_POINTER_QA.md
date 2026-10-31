@@ -15,3 +15,7 @@ Committed code, static review and exact diff: pending PR evidence. Rust fmt/test
 ## Remaining blockers / integration handoff
 
 Record exact PR HEAD, its Rust/workflow statuses and any failing logs. If event frames expose click vs drag ordering, fix the production handler and repeat on a NEW exact SHA. Do not merge #37/#43 independently. Physical Win10 x64+MiKTeX and Mac ARM M1/M4 are NOT_RUN, as are real screenshots and native file dialogs. Unknown macro scopes, transformations and PDF inverse mapping remain intentionally opaque; no Rust TeX/CAS/solver.
+
+## Exact-head QA correction #1
+
+Hosted Windows Server 2022 Rust CI [41192043579](https://github.com/i-shutov/tikzarium/actions/runs/41192043579), job 124510633089, failed at `cargo fmt --all -- --check` on B09 SHA `93602b4cc250bda5e0b1e81b061edbe75003c838`. The formatter-only diffs were applied in this next commit (two B-owned `.rs` files), without suppressing CI or changing test assertions. This is not a compile/test pass. Recheck exact new SHA across all jobs.
