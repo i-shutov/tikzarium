@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/qa-miktex-windows.yml
       - scripts/tools/qa_miktex_vertical.py
+      - scripts/tools/qa_miktex_uploaded.py
+      - scripts/tools/test_qa_miktex_uploaded.py
       - scripts/tools/test_qa_miktex_vertical.py
       - scripts/tools/qa_setup_miktex.ps1
       - scripts/tools/qa_miktex_config.ps1
@@ -26,6 +28,8 @@ on:
     paths:
       - .github/workflows/qa-miktex-windows.yml
       - scripts/tools/qa_miktex_vertical.py
+      - scripts/tools/qa_miktex_uploaded.py
+      - scripts/tools/test_qa_miktex_uploaded.py
       - scripts/tools/test_qa_miktex_vertical.py
       - scripts/tools/qa_setup_miktex.ps1
       - scripts/tools/qa_miktex_config.ps1
@@ -139,5 +143,43 @@ jobs:
         with:
           name: qa-miktex-windows-server
           path: .qa-artifacts/miktex-windows-server/
+          if-no-files-found: warn
+          retention-days: 14
+
+  uploaded-evidence-ubuntu:
+    name: Independently audit uploaded MiKTeX PDF/source/log evidence / Linux
+    needs: miktex-windows-hosted
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TIKZARIUM_MIKTEX_ARTIFACT: .qa-artifacts/miktex-uploaded
+      TIKZARIUM_CHECKOUT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: qa-miktex-windows-server
+          path: .qa-artifacts/miktex-uploaded
+      - name: Independent Poppler auditors (no TeX installation)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          command -v pdfinfo && command -v pdftotext && command -v pdffonts
+      - name: Fail-closed parser and real-artifact mutation regressions
+        run: python -m unittest discover -s scripts/tools -p test_qa_miktex_uploaded.py -v
+      - name: Independently reopen six real uploaded PDFs, fonts, logs and source bytes
+        run: |
+          python scripts/tools/qa_miktex_uploaded.py \
+            --artifact-dir "$TIKZARIUM_MIKTEX_ARTIFACT" \
+            --expected-source-sha "$TIKZARIUM_SOURCE_SHA" \
+            --expected-checkout-sha "$TIKZARIUM_CHECKOUT_SHA" \
+            --report .qa-artifacts/miktex-independent-audit.json
+      - name: Preserve second-host evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-miktex-independent-postupload
+          path: .qa-artifacts/miktex-independent-audit.json
           if-no-files-found: warn
           retention-days: 14

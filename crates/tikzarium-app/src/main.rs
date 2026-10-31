@@ -886,6 +886,18 @@ impl eframe::App for TikzariumApp {
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
         tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
+        // The text editor keeps its native Ctrl/Cmd+Z; outside focused text
+        // widgets the same revision-checked Undo works from the keyboard.
+        if self.workspace == WorkspaceMode::Split
+            && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
+                ctx,
+                &mut self.authoring,
+                &mut self.document.source,
+            )
+        {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
                 editor_command(egui::Key::S, input.modifiers)

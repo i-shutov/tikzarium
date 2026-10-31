@@ -455,6 +455,32 @@ pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
     }
 }
 
+/// A focused source/parameter TextEdit owns native Ctrl/Cmd+Z. Elsewhere the
+/// shortcut invokes the same revision-checked inverse source patch as the
+/// inspector button; it never reconstructs TikZ from approximate geometry.
+pub fn handle_visual_undo_shortcut(
+    ctx: &egui::Context,
+    session: &mut Session,
+    source: &mut String,
+) -> Option<usize> {
+    let pressed = ctx.input(|input| {
+        input.key_pressed(egui::Key::Z)
+            && input.modifiers.command
+            && !input.modifiers.shift
+            && !input.modifiers.alt
+    });
+    if !pressed || ctx.wants_keyboard_input() || !session.undo_available() {
+        return None;
+    }
+    match session.undo_and_focus_line(source) {
+        Ok(line) => Some(line),
+        Err(error) => {
+            session.status = error;
+            None
+        }
+    }
+}
+
 /// The same TextEdit change hook is used by the desktop app and egui events.
 pub fn observe_source_text_edit(response: &egui::Response, session: &mut Session, source: &str) {
     if response.changed() {
@@ -469,6 +495,7 @@ fn show_inspector_action_bar_frame(
     session: &mut Session,
     source: &mut String,
     undo_rect: Option<&mut Rect>,
+    help_rect: Option<&mut Rect>,
 ) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
@@ -477,7 +504,7 @@ fn show_inspector_action_bar_frame(
                 session.undo_available(),
                 egui::Button::new("↶ Отменить правку"),
             )
-            .on_hover_text("Undo точной TikZ/source-правки; перейти к изменённой строке");
+            .on_hover_text("Undo TikZ/source-правки; Ctrl/Cmd+Z вне текстовых полей. В редакторе Ctrl/Cmd+Z остаётся текстовым Undo.");
         if let Some(rect) = undo_rect {
             *rect = button.rect;
         }
@@ -489,6 +516,25 @@ fn show_inspector_action_bar_frame(
         }
     });
     ui.small(&session.status);
+    // F1 is useful without scrolling through a long list of properties.
+    // All wording, syntax and provenance come straight from the C catalogue.
+    if session.help && let Some(tool) = session.active {
+        let info = tikz_authoring::spec(tool);
+        let summary = ui
+            .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
+            .on_hover_text(format!(
+                "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
+                info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
+            ));
+        ui.add(egui::Label::new(&info.syntax).truncate());
+        ui.hyperlink_to(
+            format!("PGF/TikZ §{}", info.manual_section),
+            &info.manual_url,
+        );
+        if let Some(rect) = help_rect {
+            *rect = summary.rect;
+        }
+    }
     jump
 }
 
@@ -497,7 +543,7 @@ pub fn show_inspector_action_bar(
     session: &mut Session,
     source: &mut String,
 ) -> Option<usize> {
-    show_inspector_action_bar_frame(ui, session, source, None)
+    show_inspector_action_bar_frame(ui, session, source, None, None)
 }
 
 fn parameter_help(p: &ParameterSpec) -> String {
@@ -764,6 +810,7 @@ mod tests {
                             session,
                             source,
                             rect.as_deref_mut(),
+                            None,
                         );
                     });
                 },
@@ -850,6 +897,174 @@ mod tests {
         );
         assert!(no_jump.is_none());
         assert_eq!(source, hand_edited);
+    }
+
+    #[test]
+    fn f1_pinned_c_help_is_visible_without_scrolling_and_never_edits_source() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+        ) -> Rect {
+            let mut help = Rect::NOTHING;
+            let _output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(320.0, 260.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_help_shortcut(ctx, session);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            None,
+                            Some(&mut help),
+                        );
+                    });
+                },
+            );
+            help
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Cubic);
+        assert!(session.help);
+        let visible = frame(&ctx, &mut session, &mut source, vec![]);
+        assert!(visible.width() > 0.0 && visible.bottom() < 260.0);
+        let f1 = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![f1(true)]),
+            Rect::NOTHING
+        );
+        assert!(!session.help);
+        frame(&ctx, &mut session, &mut source, vec![f1(false)]);
+        assert!(frame(&ctx, &mut session, &mut source, vec![f1(true)]).width() > 0.0);
+        assert!(session.help);
+        assert_eq!(source, original);
+        assert!(!session.undo_available());
+        assert_eq!(tikz_authoring::spec(Tool::Cubic).id, "tikz.bezier-cubic");
+    }
+
+    #[test]
+    fn keyboard_visual_undo_uses_real_frames_without_stealing_textedit_undo() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            editor: &mut String,
+            events: Vec<egui::Event>,
+            modifiers: egui::Modifiers,
+            focus_editor: bool,
+        ) -> Option<usize> {
+            let mut jump = None;
+            let _output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(440.0, 260.0))),
+                    events,
+                    modifiers,
+                    ..Default::default()
+                },
+                |ctx| {
+                    jump = handle_visual_undo_shortcut(ctx, session, source);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        if focus_editor {
+                            let response = ui.add(egui::TextEdit::singleline(editor));
+                            response.request_focus();
+                        }
+                    });
+                },
+            );
+            jump
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        session.draft.values.insert("radius".into(), "2cm".into());
+        session.apply_parameters(&mut source).unwrap();
+        let expected_line = tikz_authoring::owned(&source)[0].line;
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        let mut editor = String::from("manual editor");
+        assert_eq!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(true)],
+                modifiers,
+                false,
+            ),
+            Some(expected_line)
+        );
+        assert_eq!(source, inserted);
+        assert!(session.undo_available());
+        // Native Cmd/Ctrl+Z in a focused editor cannot consume visual history.
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            &mut editor,
+            vec![z(false)],
+            modifiers,
+            true,
+        );
+        let prior = source.clone();
+        assert!(frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            &mut editor,
+            vec![z(true)],
+            modifiers,
+            true,
+        )
+        .is_none());
+        assert_eq!(source, prior);
+        source.push_str("% ручная правка\n");
+        session.note_manual_source_edit(&source);
+        assert!(!session.undo_available());
+        assert!(frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            &mut editor,
+            vec![z(false)],
+            modifiers,
+            false,
+        )
+        .is_none());
+        assert!(source.ends_with("% ручная правка\n"));
     }
 
     #[test]
