@@ -355,7 +355,8 @@ impl TikzariumApp {
                         }];
                     }
                     self.bottom_view = BottomView::Issues;
-                    self.show_log = error
+                    self.show_log = true;
+                    self.log = error
                         .log_excerpt()
                         .map(str::to_owned)
                         .unwrap_or_else(|| error.to_string());
