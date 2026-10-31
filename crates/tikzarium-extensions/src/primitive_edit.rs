@@ -12,6 +12,13 @@ use std::{collections::BTreeMap, ops::Range};
 /// never regenerated. The returned patch changes only the shortest differing
 /// UTF-8 span inside an exactly matched, generated command. The caller applies
 /// this patch through SourcePatch::apply with the authoritative revision.
+/// The caller-verified byte span and monotone revision are one source snapshot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceTarget {
+    pub range: Range<usize>,
+    pub revision: u64,
+}
+
 pub fn plan_parameter_edit(
     catalog: &Catalog,
     tool_id: &str,
@@ -19,9 +26,12 @@ pub fn plan_parameter_edit(
     parameter_id: &str,
     new_value: &str,
     source: &str,
-    command_range: Range<usize>,
-    source_revision: u64,
+    target: SourceTarget,
 ) -> Result<SourcePatch, PrimitiveError> {
+    let SourceTarget {
+        range: command_range,
+        revision: source_revision,
+    } = target;
     let tool = catalog
         .tool(tool_id)
         .ok_or_else(|| PrimitiveError::UnknownTool(tool_id.to_owned()))?;

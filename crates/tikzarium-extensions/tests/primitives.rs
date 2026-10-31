@@ -45,7 +45,7 @@ fn six_commands_match_real_xelatex_fixture() {
     let c = Catalog::bundled().unwrap();
     assert_eq!(
         c.fixture_document().unwrap(),
-        include_str!("../../../extensions/primitives/fixtures/all-six.tex")
+        include_str!("../../../extensions/primitives/fixtures/all-six.tex").replace("\r\n", "\n")
     );
     assert!(
         c.generate("tikz.arrow", &BTreeMap::new())

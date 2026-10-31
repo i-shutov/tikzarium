@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use tikzarium_extensions::primitive_edit::plan_parameter_edit;
+use tikzarium_extensions::primitive_edit::{plan_parameter_edit, SourceTarget};
 use tikzarium_extensions::primitives::{Catalog, PrimitiveError};
 
 fn enclosed_command(
@@ -41,8 +41,7 @@ fn every_tool_can_change_a_literal_property_with_undo_and_unrelated_bytes_intact
             key,
             value,
             &source,
-            command_range.clone(),
-            revision,
+            SourceTarget { range: command_range.clone(), revision: revision },
         )
         .unwrap();
 
@@ -74,8 +73,7 @@ fn changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal() {
         "radius",
         "2cm",
         &source,
-        command_range.clone(),
-        12,
+        SourceTarget { range: command_range.clone(), revision: 12 },
     )
     .unwrap();
     let mut wrong_revision = 13;
@@ -91,8 +89,7 @@ fn changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal() {
             "radius",
             "2cm",
             &changed,
-            command_range.clone(),
-            12,
+            SourceTarget { range: command_range.clone(), revision: 12 },
         ),
         Err(PrimitiveError::SourceConflict)
     ));
@@ -104,8 +101,7 @@ fn changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal() {
             "radius",
             "2cm",
             &source,
-            0..source.len(),
-            12,
+            SourceTarget { range: 0..source.len(), revision: 12 },
         )
         .is_err()
     );
@@ -117,8 +113,7 @@ fn changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal() {
             "radius",
             "0cm",
             &source,
-            command_range,
-            12,
+            SourceTarget { range: command_range, revision: 12 },
         )
         .is_err()
     );
@@ -138,8 +133,7 @@ fn math_mode_and_utf8_node_content_only_change_the_owned_command() {
         "content",
         "График $x_1$",
         &source,
-        command_range,
-        revision,
+        SourceTarget { range: command_range, revision: revision },
     )
     .unwrap();
     let undo = patch.apply(&mut source, &mut revision).unwrap();
@@ -162,8 +156,7 @@ fn unsupported_or_no_op_parameter_edits_are_rejected_without_mutation() {
             "missing_key",
             "1cm",
             &source,
-            range.clone(),
-            1,
+            SourceTarget { range: range.clone(), revision: 1 },
         ),
         Err(PrimitiveError::UnknownParameter(_))
     ));
@@ -175,8 +168,7 @@ fn unsupported_or_no_op_parameter_edits_are_rejected_without_mutation() {
             "start_x",
             "0cm",
             &source,
-            range,
-            1,
+            SourceTarget { range: range, revision: 1 },
         ),
         Err(PrimitiveError::SourceConflict)
     ));
