@@ -283,11 +283,7 @@ fn relative_selected_engine_survives_source_directory_switch() {
     );
     assert!(String::from_utf8_lossy(&doctor.stdout).contains("Distribution: MiKTeX"));
 
-    let build = run(&[
-        "build",
-        source.to_str().unwrap(),
-        pdf.to_str().unwrap(),
-    ]);
+    let build = run(&["build", source.to_str().unwrap(), pdf.to_str().unwrap()]);
     assert_eq!(
         build.status.code(),
         Some(0),
