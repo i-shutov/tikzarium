@@ -63,7 +63,7 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
     return cases
 
 
-def inspect_pdf(path: Path, expected_pages: int | None) -> tuple[bool, dict]:
+def inspect_pdf(path: Path, expected_pages: int | None, text_expect: str | None = None) -> tuple[bool, dict]:
     info: dict = {"bytes": path.stat().st_size, "sha256": sha256(path)}
     with path.open("rb") as stream:
         head = stream.read(8)
@@ -84,11 +84,46 @@ def inspect_pdf(path: Path, expected_pages: int | None) -> tuple[bool, dict]:
             valid = valid and info["pages_actual"] == expected_pages
         else:
             info["pages_note"] = "NOT_CHECKED: pdfinfo unavailable; PDF byte integrity only"
+    if text_expect:
+        pdftotext = shutil.which("pdftotext")
+        if pdftotext:
+            proc = subprocess.run([pdftotext, str(path), "-"], capture_output=True,
+                                  text=True, errors="replace", timeout=30)
+            normalized = " ".join(proc.stdout.split())
+            info["text_extraction_checked"] = True
+            info["text_expected"] = text_expect
+            info["text_found"] = proc.returncode == 0 and " ".join(text_expect.split()) in normalized
+            valid = valid and info["text_found"]
+        else:
+            info["text_extraction_checked"] = False
+            info["text_extraction_note"] = "NOT_CHECKED: pdftotext unavailable"
     return valid, info
 
 
-def command(args: list[str], timeout: int = 180) -> subprocess.CompletedProcess:
-    return subprocess.run(args, capture_output=True, text=True, errors="replace", timeout=timeout)
+def command(args: list[str], timeout: int = 180, cwd: Path | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, errors="replace", timeout=timeout)
+
+
+def check_missing_glyphs(source: Path, output: Path, fixture_id: str) -> tuple[bool, dict]:
+    """Independent XeLaTeX audit: a successful PDF can still omit glyphs."""
+    engine = os.environ.get("TIKZARIUM_XELATEX") or shutil.which("xelatex")
+    if not engine:
+        return False, {"glyph_audit": "FAIL", "glyph_error": "XeLaTeX executable not found"}
+    with tempfile.TemporaryDirectory(prefix="xelatex-font-audit-", dir=output) as temp:
+        target = Path(temp)
+        args = [str(engine), "-interaction=nonstopmode", "-halt-on-error",
+                "-file-line-error", "-no-shell-escape",
+                f"-output-directory={target}", source.name]
+        proc = command(args, cwd=source.parent)
+        log_file = target / f"{source.stem}.log"
+        audit_log = log_file.read_text(encoding="utf-8", errors="replace") if log_file.exists() else proc.stdout
+        (output / f"{fixture_id}.font-audit.log").write_text(audit_log, encoding="utf-8")
+        warnings = re.findall(r"(?m)^Missing character:.*$", audit_log)
+        passed = proc.returncode == 0 and log_file.exists() and (target / f"{source.stem}.pdf").is_file() and not warnings
+        return passed, {"glyph_audit": "PASS" if passed else "FAIL",
+                        "glyph_audit_exit_code": proc.returncode,
+                        "missing_glyphs": len(warnings),
+                        "missing_glyph_examples": warnings[:4]}
 
 
 def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
@@ -115,8 +150,12 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
                 result["status"] = "PASS" if passed else "FAIL"
                 result["assertion"] = "TeXFailure / no exported PDF"
             elif proc.returncode == 0 and pdf.is_file():
-                valid, details = inspect_pdf(pdf, case.get("pages"))
+                valid, details = inspect_pdf(pdf, case.get("pages"), case.get("text_expect"))
                 result.update(details)
+                if case.get("check_no_missing_glyphs"):
+                    glyph_ok, glyph_details = check_missing_glyphs(source, output, fixture_id)
+                    result.update(glyph_details)
+                    valid = valid and glyph_ok
                 result["status"] = "PASS" if valid else "FAIL"
                 result["assertion"] = "PDF magic, EOF, size; page count when pdfinfo installed"
             else:
@@ -142,6 +181,7 @@ def main() -> int:
         "schema_version": 1,
         "utc": datetime.now(timezone.utc).isoformat(),
         "commit_sha": os.getenv("GITHUB_SHA", "unrecorded-local"),
+        "source_head_sha": os.getenv("TIKZARIUM_SOURCE_SHA", "unrecorded-local"),
         "platform": platform.platform(),
         "machine": platform.machine(),
         "system": platform.system(),

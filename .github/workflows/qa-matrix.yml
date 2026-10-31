@@ -49,6 +49,8 @@ jobs:
     name: Actual XeLaTeX CLI / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 55
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     strategy:
       fail-fast: false
       matrix:
@@ -80,6 +82,7 @@ jobs:
             collection-latexrecommended
             collection-pictures
             standalone
+            dejavu
             lm
       - name: Verify XeLaTeX available
         run: xelatex --version

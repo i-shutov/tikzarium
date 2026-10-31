@@ -13,7 +13,9 @@ Clippy warnings-as-errors and Python harness unit tests on each runner.
 Install TeX Live 2026 via a cross-platform installer for a separately
 reported three-host XeLaTeX job. Compile the real Rust CLI and exercise:
 - G00: existing W01 quickstart PDF, one page;
-- G00: existing W01 Cyrillic source PDF, one page;
+- G00: existing W01 Cyrillic source PDF, page check only (known missing-glyph risk);
+- G00: project-authored DejaVu Serif Cyrillic fixture, explicit no-missing-glyph
+  TeX log audit and PDF text extraction when pdftotext is installed;
 - G01: nested TeX input from a source directory containing spaces and Unicode;
 - G08: intentionally invalid TeX, requiring a TeX-specific error and no PDF.
 
@@ -24,8 +26,11 @@ even when tests fail. Failure must make the job red, never yield a false PASS.
 ## Acceptance gates
 
 - [x] Independent Python harness unit tests: 3/3 on local Linux Python 3.13.
-- [x] Fixture TeX: 4/4 using a **test-only direct XeLaTeX mock adapter**,
+- [x] Fixture TeX: 5/5 using a **test-only direct XeLaTeX mock adapter**,
   Linux TeX Live 2025/dev; this is NOT Rust CLI verification.
+- [x] Local Cyrillic PDF visual/text investigation: W01's legacy example
+  omits Cyrillic glyphs with default Latin Modern (19 missing-character
+  diagnostics in Linux TeX Live 2025/dev); recorded, not silently waived.
 - [ ] Actual GitHub Rust fmt/clippy/test for Linux/Windows/macOS ARM64.
 - [ ] Real compiled Rust CLI → XeLaTeX on all three hosted CI runners.
 - [ ] Windows 10 x64 real-machine source/UI/preview and file-path smoke.

@@ -10,11 +10,21 @@
       "pages": 1
     },
     {
-      "id": "g00-cyrillic",
+      "id": "g00-legacy-cyrillic-pdf-only",
       "project_dir": "examples",
       "source": "cyrillic.tex",
       "expect": "pdf",
-      "pages": 1
+      "pages": 1,
+      "note": "Compiles to PDF but may drop Cyrillic glyphs with default Latin Modern; not a Unicode glyph validation."
+    },
+    {
+      "id": "g00-cyrillic-glyph-audit",
+      "project_dir": "fixtures/qa/g00-cyrillic-glyph-audit",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "check_no_missing_glyphs": true,
+      "text_expect": "Тест XeLaTeX и Unicode. Кириллица."
     },
     {
       "id": "g01-multifile-unicode-path",

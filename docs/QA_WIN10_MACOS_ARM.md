@@ -24,6 +24,9 @@ with correct HiDPI layout, fonts or PDF preview on a user's M1/M4.
 6. Run scripts/tools/qa_smoke.py with an explicit path to the native
    CLI binary and an empty output directory. The source path containing
    Unicode and spaces must pass; the broken TeX must exit as TeXFailure.
+   Review the separately authored Cyrillic glyph-audit fixture's log for
+   zero Missing character diagnostics. The legacy example is only a PDF
+   compilation test and is not evidence that Cyrillic is rendered.
 7. Inspect qa-report.json. A missing pdfinfo means expected PDF page
    count was NOT_CHECKED even when byte-integrity passed.
 

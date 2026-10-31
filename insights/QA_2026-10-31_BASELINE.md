@@ -20,9 +20,17 @@ Do not recycle older red results as current head CI results.
 - On Linux Python 3.13.5, unit tests for path traversal, duplicate IDs,
   PDF header/EOF checks: **3 passed**.
 - On Linux TeX Live 2025/dev, the fixture harness with a **test-only Python
-  adapter invoking actual XeLaTeX**, not the Rust CLI: 4 fixture outcomes
-  passed (quickstart, Cyrillic, nested source with Unicode+spaces path,
-  expected TeX failure). pdfinfo confirmed 1 page for the 3 good PDFs.
+  adapter invoking actual XeLaTeX**, not the Rust CLI: initially 4 PDF/exit
+  assertions passed. Visual inspection then found that W01's original
+  Cyrillic PDF is **not visually correct**: TeX reported 19
+  "Missing character" warnings and the displayed PDF had no Cyrillic.
+  This exposes an important false-positive in PDF-only smoke.
+- Added a separately authored DejaVuSerif.ttf fixture and an independent
+  XeLaTeX log glyph audit (no Missing character warnings). The updated
+  local harness now passes 5/5 PDF/error fixtures; pdfinfo confirms all
+  4 positive PDFs are one page, and pdftotext confirms exact Cyrillic
+  text extraction for the new glyph-audited fixture. The original W01
+  example remains labeled **PDF-only / known limitation**, not Unicode PASS.
 - This establishes correctness of the QA harness plus the example TeX in
   that specific local environment only. It does not show that TikZarium's
   BuildService or its Rust executable works.
@@ -31,7 +39,8 @@ Do not recycle older red results as current head CI results.
 
 - CI windows-2022 is **Windows Server**; Windows 10 GUI acceptance is untouched.
 - Hosted macos-15 ARM64 is not equivalent to M1/M4 user GUI/Retina checks.
-- A missing pdfinfo is recorded as NOT_CHECKED, not silently passed; PDF
+- A missing pdfinfo or pdftotext is recorded as NOT_CHECKED, not silently
+  passed as a page/text assertion; PDF
   byte integrity remains a separate assertion.
 - TeX Live 2026 installation action is initially version-tagged (v4).
   Audit/pin SHA and exact package versions before reproducible release.
