@@ -426,3 +426,111 @@ fn direct_package_before_conditional_remains_known_but_conditional_library_unkno
         ImportDecision::Refused { .. }
     ));
 }
+
+
+#[test]
+fn real_late_calc_import_is_unknown_without_false_absence_or_unsafe_patch() {
+    // Compiles under real external XeLaTeX; the preamble-only inspection
+    // must not misreport the late library declaration as NOT_LOADED.
+    let source = include_str!("../../../extensions/primitives/fixtures/late-library-in-body.tex");
+    let project = inspect(source);
+    assert_eq!(
+        project.status(ImportKind::Package, "tikz"),
+        Evidence::Confirmed
+    );
+    assert_eq!(
+        project.status(ImportKind::TikzLibrary, "calc"),
+        Evidence::Unknown
+    );
+    assert_eq!(
+        project.status(ImportKind::TikzLibrary, "fit"),
+        Evidence::Unknown
+    );
+    assert!(project.uncertain_reason.unwrap().contains("document body"));
+    assert!(project.declaration_sites(ImportKind::TikzLibrary, "calc").is_empty());
+    assert_eq!(project.declaration_sites(ImportKind::Package, "tikz").len(), 1);
+    assert!(project.begin_document_target(19).is_none());
+    assert!(matches!(
+        plan_import(
+            source,
+            SourceTarget::new(0..0, 19),
+            ImportKind::TikzLibrary,
+            "calc"
+        ),
+        ImportDecision::Refused { .. }
+    ));
+    // Disconnect also leaves the source untouched until manual inspection.
+    assert!(matches!(
+        tikzarium_extensions::project_disconnect::plan_library_disconnect(
+            source,
+            SourceTarget::new(0..0, 19),
+            "calc"
+        ),
+        tikzarium_extensions::project_disconnect::DisconnectDecision::Refused { .. }
+    ));
+}
+
+#[test]
+fn body_side_imports_external_files_and_dynamic_names_fail_closed() {
+    for body in [
+        r"\input{external-preamble}",
+        r"\include{figure-with-library}",
+        r"\RequirePackage{tikz}",
+        r"\csname dynamicimport\endcsname",
+        r"\usetikzlibrary{positioning}",
+    ] {
+        let source = format!(
+            "\\documentclass{{article}}\n\\usepackage{{tikz}}\n\\begin{{document}}\n{body}\n\\end{{document}}\n"
+        );
+        let project = inspect(&source);
+        assert!(project.uncertain_reason.is_some(), "{body}");
+        assert_eq!(
+            project.status(ImportKind::Package, "tikz"),
+            Evidence::Confirmed,
+            "{body}"
+        );
+        assert_eq!(
+            project.status(ImportKind::TikzLibrary, "positioning"),
+            Evidence::Unknown,
+            "{body}"
+        );
+        assert!(project.begin_document_target(5).is_none(), "{body}");
+        assert!(matches!(
+            plan_import(
+                &source,
+                SourceTarget::new(0..0, 5),
+                ImportKind::TikzLibrary,
+                "fit"
+            ),
+            ImportDecision::Refused { .. }
+        ));
+    }
+}
+
+#[test]
+fn body_comments_escaped_control_and_longer_names_do_not_forge_import_hints() {
+    let source = concat!(
+        "\\documentclass{article}\r\n",
+        "\\usepackage{tikz}\r\n",
+        "\\begin{document}\r\n",
+        "% \\usetikzlibrary{calc} and \\input{external}\r\n",
+        "\\\\usetikzlibrary is just text after a line break\r\n",
+        "\\usetikzlibraryCustom is a different control word\r\n",
+        "\\end{document}\r\n",
+    );
+    let project = inspect(source);
+    assert_eq!(project.uncertain_reason, None);
+    assert_eq!(
+        project.status(ImportKind::Package, "tikz"),
+        Evidence::Confirmed
+    );
+    assert_eq!(
+        project.status(ImportKind::TikzLibrary, "calc"),
+        Evidence::Absent
+    );
+    let target = project.begin_document_target(2).expect("safe preamble");
+    assert!(matches!(
+        plan_import(source, target, ImportKind::TikzLibrary, "calc"),
+        ImportDecision::Proposed(_)
+    ));
+}
