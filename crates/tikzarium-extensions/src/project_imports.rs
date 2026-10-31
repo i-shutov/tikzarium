@@ -19,11 +19,24 @@ pub enum ImportKind {
     TikzLibrary,
 }
 
+/// Byte-accurate attribution for one directly authored, trusted literal import.
+/// The name_range highlights only the package/library name (not the command).
+/// line_range covers the physical line without its LF/CRLF terminator.
+/// It is read-only evidence, never an authorization for an arbitrary source edit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeclarationSite {
+    pub kind: ImportKind,
+    pub name: String,
+    pub name_range: Range<usize>,
+    pub line_range: Range<usize>,
+}
+
 /// Facts from the current source buffer only. No kpsewhich or package installation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectImports {
     packages: BTreeSet<String>,
     libraries: BTreeSet<String>,
+    declaration_sites: Vec<DeclarationSite>,
     pub uncertain_reason: Option<&'static str>,
     pub begin_document: Option<Range<usize>>,
     pub class_declared: bool,
@@ -52,6 +65,19 @@ impl ProjectImports {
         } else {
             Evidence::Absent
         }
+    }
+
+    /// Return source sites only for declarations confirmed in the trusted
+    /// literal prefix. Missing, macro-derived and conditional imports have no
+    /// fabricated source site; consult status() separately for UNKNOWN/Absent.
+    /// Ranges use UTF-8 bytes in the source passed to inspect().
+    #[must_use]
+    pub fn declaration_sites(&self, kind: ImportKind, name: &str) -> Vec<DeclarationSite> {
+        self.declaration_sites
+            .iter()
+            .filter(|site| site.kind == kind && site.name == name)
+            .cloned()
+            .collect()
     }
 
     pub fn begin_document_target(&self, revision: u64) -> Option<SourceTarget> {
@@ -140,6 +166,59 @@ pub(crate) fn literal_names(
     Some(names)
 }
 
+/// Obtain the exact UTF-8 token spans after validation by the existing,
+/// deliberately narrow literal recognizer. Package options cannot contain
+/// braces, so the first opening brace belongs to the name list.
+fn literal_name_spans(
+    line: &str,
+    command: &str,
+    options_allowed: bool,
+) -> Option<Vec<(String, Range<usize>)>> {
+    let names = literal_names(line, command, options_allowed)?;
+    let opening = line.find('{')?;
+    let body = &line[opening + 1..];
+    let closing = body.find('}')?;
+    let mut positions = Vec::new();
+    let mut cursor = opening + 1;
+    for field in body[..closing].split(',') {
+        let name = field.trim();
+        let leading = field.len() - field.trim_start().len();
+        let start = cursor + leading;
+        positions.push((name.to_owned(), start..start + name.len()));
+        cursor += field.len() + 1;
+    }
+    if positions.len() != names.len()
+        || positions
+            .iter()
+            .zip(&names)
+            .any(|((observed, _), validated)| observed != validated)
+    {
+        return None;
+    }
+    Some(positions)
+}
+
+fn record_literal_sites(
+    result: &mut ProjectImports,
+    kind: ImportKind,
+    trimmed: &str,
+    command: &str,
+    options_allowed: bool,
+    line_range: Range<usize>,
+    token_start: usize,
+) {
+    if let Some(spans) = literal_name_spans(trimmed, command, options_allowed) {
+        for (name, local) in spans {
+            result.declaration_sites.push(DeclarationSite {
+                kind,
+                name,
+                name_range: token_start + local.start..token_start + local.end,
+                line_range: line_range.clone(),
+            });
+        }
+    }
+}
+
 /// Only flat, literal fontspec/unicode-math font choices are import-neutral.
 /// Options, TeX commands, nested braces and other opaque forms remain UNKNOWN.
 /// This does not test font installation or override the XeLaTeX compiler.
@@ -170,6 +249,7 @@ pub fn inspect(source: &str) -> ProjectImports {
     let mut result = ProjectImports {
         packages: BTreeSet::new(),
         libraries: BTreeSet::new(),
+        declaration_sites: Vec::new(),
         uncertain_reason: None,
         begin_document: None,
         class_declared: false,
@@ -203,6 +283,10 @@ pub fn inspect(source: &str) -> ProjectImports {
             offset += raw.len();
             continue;
         }
+        let token_start = offset
+            + line
+                .find(trimmed)
+                .expect("trimmed literal is in source line");
         if trimmed == BEGIN_DOCUMENT {
             let local = line.find(BEGIN_DOCUMENT).expect("literal begin token");
             let start = offset + local;
@@ -218,7 +302,9 @@ pub fn inspect(source: &str) -> ProjectImports {
             literal_prefix_trusted = false;
         } else if trimmed.starts_with("\\documentclass") {
             match literal_names(trimmed, "\\documentclass", true) {
-                Some(names) if names.len() == 1 && !result.class_declared => {
+                Some(names)
+                    if names.len() == 1 && !result.class_declared && literal_prefix_trusted =>
+                {
                     result.class_declared = true;
                 }
                 _ => {
@@ -239,7 +325,25 @@ pub fn inspect(source: &str) -> ProjectImports {
             // These exact forms only select fonts; they do not import TikZ.
         } else if trimmed.starts_with("\\usepackage") {
             match literal_names(trimmed, "\\usepackage", true) {
-                Some(names) if literal_prefix_trusted => result.packages.extend(names),
+                Some(names) if literal_prefix_trusted && result.class_declared => {
+                    result.packages.extend(names);
+                    record_literal_sites(
+                        &mut result,
+                        ImportKind::Package,
+                        trimmed,
+                        "\\usepackage",
+                        true,
+                        offset..offset + line.len(),
+                        token_start,
+                    );
+                }
+                Some(_) if !result.class_declared => {
+                    first_reason(
+                        &mut result.uncertain_reason,
+                        "package declaration precedes documentclass",
+                    );
+                    literal_prefix_trusted = false;
+                }
                 Some(_) => {}
                 None => {
                     first_reason(
@@ -252,6 +356,13 @@ pub fn inspect(source: &str) -> ProjectImports {
         } else if trimmed.starts_with("\\usetikzlibrary") {
             match literal_names(trimmed, "\\usetikzlibrary", false) {
                 Some(names) => {
+                    if !result.class_declared {
+                        first_reason(
+                            &mut result.uncertain_reason,
+                            "TikZ library declaration precedes documentclass",
+                        );
+                        literal_prefix_trusted = false;
+                    }
                     if !result.packages.contains("tikz") {
                         first_reason(
                             &mut result.uncertain_reason,
@@ -261,6 +372,15 @@ pub fn inspect(source: &str) -> ProjectImports {
                     }
                     if literal_prefix_trusted {
                         result.libraries.extend(names);
+                        record_literal_sites(
+                            &mut result,
+                            ImportKind::TikzLibrary,
+                            trimmed,
+                            "\\usetikzlibrary",
+                            false,
+                            offset..offset + line.len(),
+                            token_start,
+                        );
                     }
                 }
                 None => {
