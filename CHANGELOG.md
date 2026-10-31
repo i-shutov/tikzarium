@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-31: I12 verified B15 egui/TikZ source-first integration
+
+- [PR #50](https://github.com/i-shutov/tikzarium/pull/50) merged at `8c77976ec6c5698904cdd15a2d45a310a34dca33` from exact head `6a1f3f9c5d7ed060e53c072b6ee36bb115dd23d7`. Source visible alongside external XeLaTeX PDF, six C-native TikZ tools, Russian context F1/help, explicit C/N2 import preview and undo, source-line focus, Alt-selection, Esc-cancel and stale-Undo invalidation. User macros and CRLF not replaced. No private TeX parser or hidden installation.
+- All five exact-head workflow families SUCCESS: [Rust](https://github.com/i-shutov/tikzarium/actions/runs/41210626857), [D QA](https://github.com/i-shutov/tikzarium/actions/runs/41210626845), [N1 source to XeLaTeX](https://github.com/i-shutov/tikzarium/actions/runs/41210626866), [hosted MiKTeX](https://github.com/i-shutov/tikzarium/actions/runs/41210626859), [font gate](https://github.com/i-shutov/tikzarium/actions/runs/41210626838). Independently inspected real N1 PDF PNG and SHA-256 audited artifacts (details in I12 insight).
+- Main post-merge jobs [Rust](https://github.com/i-shutov/tikzarium/actions/runs/41212000216), [D QA](https://github.com/i-shutov/tikzarium/actions/runs/41212000320), [MiKTeX](https://github.com/i-shutov/tikzarium/actions/runs/41212000199) require separate completion. Linux/X11 actual egui #48 remains 5/6 gestures PASS, cubic FAIL; GUI PDF export and native Windows10/M1/M4 acceptance NOT_RUN. Lua-only is not XeLaTeX compatible. NO RELEASE.
+
 ## Unreleased — 2026-10-31: I11 C04/C06 catalogue gate restoration and C/N2 integration
 
 - Merged C/N2 source attribution [#55](https://github.com/i-shutov/tikzarium/pull/55) at main `b7c8e993b9da64060dfd3261833e4be3a1d280ba`, exact head `0cc7427cbbdee8b5ffe5fa63dcc8737ae5781cba`; seven new provenance tests and no opaque source changes. All five source-head workflow families SUCCESS. Independently inspected hosted real MiKTeX artifact `13045161386` (SHA-256 `6970bdfb252bc07d854d544bbf801db6b24285ed672345108d0995b0692d9368`; 44 ZIP members, six PDFs, 9,130 identical package rows) and Linux N1 PDF artifact `13044543886` (SHA-256 `0ed343667fc89acf2967193d2dcc6f0f2fa1a3e2dc5cfdf7cc145a0d59707191`, 9/9 manifest hashes, embedded fonts and Unicode text). No physical GUI claim.
