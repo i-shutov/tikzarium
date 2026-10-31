@@ -43,13 +43,17 @@ printf 'LaTeX Warning: Integration fixture.\nCommand: %s\n' "$*" > "$out/$stem.l
 printf 'PWD %s\nINPUT ./%s\nINPUT ./assets/shape.tex\nINPUT %s/%s.aux\n' "$PWD" "$name" "$out" "$stem" > "$out/$stem.fls"
 printf '%%PDF-1.4\n' > "$out/$stem.pdf"
 "#;
-    // Write the executable only once. Rewriting a runnable script in place
-    // can race execve() on Linux and intermittently yield ETXTBSY.
+    // Publish only after the writer is closed: Linux rejects execve() with
+    // ETXTBSY when the script inode is still open for writing. Installing an
+    // immutable, permissioned script by rename keeps version probes away from
+    // a partially written executable, even on heavily loaded CI hosts.
     let script = script.replace("XeTeX 0.999996 (TeX Live 2025)", version);
-    fs::write(&executable, script).unwrap();
-    let mut permissions = fs::metadata(&executable).unwrap().permissions();
+    let staging = directory.join("fake xelatex.pending");
+    fs::write(&staging, script).unwrap();
+    let mut permissions = fs::metadata(&staging).unwrap().permissions();
     permissions.set_mode(0o755);
-    fs::set_permissions(&executable, permissions).unwrap();
+    fs::set_permissions(&staging, permissions).unwrap();
+    fs::rename(&staging, &executable).unwrap();
     executable
 }
 
