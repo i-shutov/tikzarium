@@ -209,7 +209,15 @@ pub fn inspect(source: &str) -> ProjectImports {
             }
         } else if trimmed.starts_with("\\usetikzlibrary") {
             match literal_names(trimmed, "\\usetikzlibrary", false) {
-                Some(names) => result.libraries.extend(names),
+                Some(names) => {
+                    if !result.packages.contains("tikz") {
+                        first_reason(
+                            &mut result.uncertain_reason,
+                            "usetikzlibrary precedes explicit tikz package",
+                        );
+                    }
+                    result.libraries.extend(names);
+                }
                 None => first_reason(
                     &mut result.uncertain_reason,
                     "opaque usetikzlibrary declaration",
