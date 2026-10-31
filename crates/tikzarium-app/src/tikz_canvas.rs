@@ -759,12 +759,7 @@ mod tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        jump = show_inspector_action_bar_frame(
-                            ui,
-                            session,
-                            source,
-                            rect,
-                        );
+                        jump = show_inspector_action_bar_frame(ui, session, source, rect);
                     });
                 },
             );
