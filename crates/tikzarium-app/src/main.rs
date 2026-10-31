@@ -523,6 +523,12 @@ impl TikzariumApp {
                     .desired_width(f32::INFINITY)
                     .desired_rows(36)
                     .show(ui);
+                if output.response.changed() {
+                    // A real TextEdit event, not an attempt to undo old B-owned
+                    // patches over newer user-authored TeX.
+                    self.authoring
+                        .note_manual_source_edit(&self.document.source);
+                }
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
@@ -871,9 +877,7 @@ impl eframe::App for TikzariumApp {
         self.poll_pages(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
-        if ctx.input(|input| input.key_pressed(egui::Key::F1)) {
-            self.authoring.help = !self.authoring.help;
-        }
+        tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
                 editor_command(egui::Key::S, input.modifiers)
