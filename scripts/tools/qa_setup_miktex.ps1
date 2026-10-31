@@ -49,8 +49,35 @@ $configValue = Assert-MiKTeXAutoInstallDisabled -Transcript $configTranscript -E
 
 # Explicitly resolve the declared fixture dependencies; no engine auto-installs.
 # IDs are official MiKTeX package names, not TeX Live tlmgr names.
+# The pinned 25.12 basic installer rejected an official XeTeX package ID
+# as unknown in hosted CI run 41188398041. Refresh ONLY the isolated private
+# package index before explicitly installing packages. Never alter a user's
+# MiKTeX installation or enable auto-install during document compilation.
+# https://docs.miktex.org/manual/miktex-packages.html
+$refreshTranscript = (& $miktexExe packages update-package-database 2>&1 | Out-String)
+$refreshExitCode = $LASTEXITCODE
+$refreshTranscript | Set-Content -LiteralPath (Join-Path $recordDir 'package-db-refresh.log') -Encoding utf8
+if ($refreshExitCode -ne 0) { throw "MiKTeX private package index refresh failed ($refreshExitCode)" }
+@{ schema_version = 1; stage = 'private-package-index-refreshed'
+   status = 'INCOMPLETE'; config_readback = $configValue; installer_sha256 = $downloadedHash } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
+
 $packages = @('miktex-xetex-bin-x64-2.9','xetex','pgf','standalone',
               'fontspec','unicode-math','lm-math','lm','dejavu')
+# Require the exact official IDs to be available in the refreshed index.
+# Retain the metadata transcript on failure; an unknown ID must fail closed.
+$metadataPath = Join-Path $recordDir 'package-metadata-before-install.txt'
+New-Item -ItemType File -Force -Path $metadataPath | Out-Null
+foreach ($package in $packages) {
+    $rawInfo = (& $miktexExe packages info --template '{id}|{version}|{timePackaged}|{isInstalled}' $package 2>&1 | Out-String)
+    $lookupExitCode = $LASTEXITCODE
+    "$package => $($rawInfo.Trim())" | Out-File -FilePath $metadataPath -Append -Encoding utf8
+    $matchesId = @($rawInfo -split '(?:\r\n|\r|\n)' |
+        Where-Object { $_ -match ('^' + [regex]::Escape($package) + '\|') })
+    if ($lookupExitCode -ne 0 -or $matchesId.Count -ne 1) {
+        throw "MiKTeX refreshed index missing/ambiguous official package $package (exit $lookupExitCode)"
+    }
+}
 & $miktexExe packages install @packages
 if ($LASTEXITCODE -ne 0) { throw "MiKTeX explicit package provisioning failed ($LASTEXITCODE)" }
 $packageVersionFile = Join-Path $recordDir 'explicit-package-versions.txt'

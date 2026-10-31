@@ -31,6 +31,18 @@ class MiKTeXVerticalContract(unittest.TestCase):
         with self.assertRaises(ValueError):
             tex_failure("another-kind", 1, "not found", False)
 
+    def test_private_index_refresh_is_fail_closed_and_precedes_package_install(self):
+        # Structural regression only: live MiKTeX/hosted network is separate CI evidence.
+        setup = (Path(__file__).resolve().parent / "qa_setup_miktex.ps1").read_text(encoding="utf-8")
+        self.assertLess(setup.index("packages update-package-database"),
+                        setup.index("packages install @packages"))
+        self.assertIn("if ($refreshExitCode -ne 0)", setup)
+        self.assertIn("Assert-MiKTeXAutoInstallDisabled", setup)
+        self.assertIn("AutoInstall=0", setup)
+        self.assertIn("package-metadata-before-install.txt", setup)
+        self.assertIn("private-package-index-refreshed", setup)
+        self.assertNotIn("packages update @packages", setup)
+
     def test_source_fixture_covers_six_native_primitives(self):
         root = Path(__file__).resolve().parents[2]
         tex = (root / "fixtures/qa/d06-native-primitives/main.tex").read_text(encoding="utf-8")
