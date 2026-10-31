@@ -9,10 +9,14 @@ use std::{
 };
 use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, Severity};
 
-fn fake_xelatex(directory: &Path) -> PathBuf {
+fn fake_xelatex_with_version(directory: &Path, version: &str) -> PathBuf {
     let executable = directory.join("fake xelatex");
     let script = r#"#!/bin/sh
 set -eu
+if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
+    printf 'XeTeX 0.999996 (TeX Live 2025)\n'
+    exit 0
+fi
 out=""
 last=""
 for arg in "$@"; do
@@ -39,11 +43,22 @@ printf 'LaTeX Warning: Integration fixture.\nCommand: %s\n' "$*" > "$out/$stem.l
 printf 'PWD %s\nINPUT ./%s\nINPUT ./assets/shape.tex\nINPUT %s/%s.aux\n' "$PWD" "$name" "$out" "$stem" > "$out/$stem.fls"
 printf '%%PDF-1.4\n' > "$out/$stem.pdf"
 "#;
-    fs::write(&executable, script).unwrap();
-    let mut permissions = fs::metadata(&executable).unwrap().permissions();
+    // Publish only after the writer is closed: Linux rejects execve() with
+    // ETXTBSY when the script inode is still open for writing. Installing an
+    // immutable, permissioned script by rename keeps version probes away from
+    // a partially written executable, even on heavily loaded CI hosts.
+    let script = script.replace("XeTeX 0.999996 (TeX Live 2025)", version);
+    let staging = directory.join("fake xelatex.pending");
+    fs::write(&staging, script).unwrap();
+    let mut permissions = fs::metadata(&staging).unwrap().permissions();
     permissions.set_mode(0o755);
-    fs::set_permissions(&executable, permissions).unwrap();
+    fs::set_permissions(&staging, permissions).unwrap();
+    fs::rename(&staging, &executable).unwrap();
     executable
+}
+
+fn fake_xelatex(directory: &Path) -> PathBuf {
+    fake_xelatex_with_version(directory, "XeTeX 0.999996 (TeX Live 2025)")
 }
 
 fn request(source: &Path, engine: &Path) -> BuildRequest {
@@ -186,4 +201,36 @@ fn cancelling_active_compilation_stops_the_child() {
     wait_for_engine_start(directory.path());
     service.cancel();
     assert!(matches!(thread.join().unwrap(), Err(BuildError::Cancelled)));
+}
+
+#[test]
+fn fake_miktex_compiler_receives_no_auto_installer_override() {
+    let directory = tempfile::tempdir().unwrap();
+    let assets = directory.path().join("assets");
+    fs::create_dir_all(&assets).unwrap();
+    fs::write(assets.join("shape.tex"), "% shape").unwrap();
+    let source = directory.path().join("примитив с пробелом.tex");
+    let original = b"% Do not modify source bytes\r\n\x5C\x5Copaque{content}\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex_with_version(directory.path(), "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)");
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.log.contains("--disable-installer"));
+    assert!(artifact.log.contains("-no-shell-escape"));
+    assert!(artifact.log.contains("./примитив с пробелом.tex"));
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn unrecognized_engine_refuses_compilation_without_modifying_source() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("drawing.tex");
+    let original = b"% opaque source\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex_with_version(directory.path(), "Custom Engine Unidentified");
+    let failure = BuildService::new()
+        .run(&request(&source, &engine))
+        .unwrap_err();
+    assert!(matches!(failure, BuildError::UnverifiedEngine { .. }));
+    assert_eq!(fs::read(&source).unwrap(), original);
 }
