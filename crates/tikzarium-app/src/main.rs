@@ -13,6 +13,7 @@ use tikzarium_extensions::{ExtensionStatus, Registry};
 
 mod font_proof;
 mod pdf_navigation;
+mod preview_image;
 mod source_fonts;
 mod ui_state;
 mod ui_theme;
@@ -25,6 +26,7 @@ use font_proof::{FontProofResult, spawn_font_proof};
 use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
+use preview_image::decode_preview_png;
 use source_fonts::scan_explicit_font_hints;
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
@@ -307,9 +309,8 @@ impl TikzariumApp {
                     self.preview_texture = None;
                     self.preview_status = "Exact PDF created by XeLaTeX".into();
                     match artifact.preview {
-                        Ok(Some(bitmap)) => match image::load_from_memory(&bitmap.png) {
-                            Ok(image) => {
-                                let rgba = image.to_rgba8();
+                        Ok(Some(bitmap)) => match decode_preview_png(&bitmap.png) {
+                            Ok(rgba) => {
                                 let size = [rgba.width() as usize, rgba.height() as usize];
                                 let color =
                                     egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
@@ -440,11 +441,8 @@ impl TikzariumApp {
         if let Some((epoch, page, result)) = render_result {
             self.page_render_rx = None;
             if epoch == self.preview_epoch {
-                match result.and_then(|png| {
-                    image::load_from_memory(&png).map_err(|error| format!("PNG decode: {error}"))
-                }) {
-                    Ok(image) => {
-                        let rgba = image.to_rgba8();
+                match result.and_then(|png| decode_preview_png(&png)) {
+                    Ok(rgba) => {
                         let size = [rgba.width() as usize, rgba.height() as usize];
                         let color = egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
                         self.preview_texture = Some(ctx.load_texture(
@@ -658,9 +656,8 @@ impl TikzariumApp {
                     self.font_proof_status = proof.description;
                     self.font_proof_report = proof.font_report;
                     if let Some(bytes) = proof.preview_png {
-                        match image::load_from_memory(&bytes) {
-                            Ok(image) => {
-                                let rgba = image.to_rgba8();
+                        match decode_preview_png(&bytes) {
+                            Ok(rgba) => {
                                 let size = [rgba.width() as usize, rgba.height() as usize];
                                 let color =
                                     egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
