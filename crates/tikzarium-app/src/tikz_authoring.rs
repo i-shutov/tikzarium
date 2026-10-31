@@ -525,7 +525,15 @@ impl Session {
         }
         source.replace_range(at..at + patch.after.len(), &patch.before);
         self.undo.pop();
-        self.selected = None;
+        if let Some(id) = self.selected {
+            if let Ok(current) = one_owned(source, id) {
+                self.active = Some(current.tool);
+                self.draft = current.draft;
+            } else {
+                self.selected = None;
+                self.draft = Draft::default();
+            }
+        }
         self.status = "Undo: reverted only the exact B07 source patch".into();
         Ok(())
     }
@@ -567,6 +575,8 @@ mod tests {
         assert!(src.contains("\\myMacro{x}"));
         session.undo(&mut src).unwrap();
         assert_eq!(src, inserted);
+        assert_eq!(session.selected, Some(1));
+        assert_eq!(session.draft.end.x, 3.0);
         session.undo(&mut src).unwrap();
         assert_eq!(src, SOURCE);
     }
