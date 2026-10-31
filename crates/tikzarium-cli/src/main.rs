@@ -4,7 +4,10 @@ use std::{
     path::{Path, PathBuf},
     process::ExitCode,
 };
-use tikzarium_core::{BuildOptions, BuildRequest, BuildService, TexEnvironment};
+use tikzarium_core::{
+    BuildOptions, BuildRequest, BuildService, PackageProbe, TexDistribution, TexEnvironment,
+    inspect_xelatex,
+};
 
 fn usage() {
     eprintln!(
@@ -46,16 +49,53 @@ fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("doctor") if args.len() == 2 => {
-            let env = TexEnvironment::discover();
-            println!("XeLaTeX: {:?}", env.xelatex);
-            println!("Version: {:?}", env.xelatex_version);
-            println!("kpsewhich: {:?}", env.kpsewhich);
-            println!("pdftoppm: {:?}", env.pdf_renderer);
-            println!("PGF: {:?}", env.package_file("pgf.sty"));
-            if env.xelatex.is_some() {
-                ExitCode::SUCCESS
-            } else {
+            let environment = TexEnvironment::discover();
+            let Some(xelatex) = environment.xelatex.as_deref() else {
+                eprintln!("XeLaTeX: MISSING (install external MiKTeX on Windows or XeLaTeX on macOS)");
+                return ExitCode::from(2);
+            };
+            let identity = match inspect_xelatex(xelatex) {
+                Ok(identity) => identity,
+                Err(error) => {
+                    eprintln!("XeLaTeX version probe failed at {}: {error}", xelatex.display());
+                    return ExitCode::from(2);
+                }
+            };
+            println!("XeLaTeX path: {}", xelatex.display());
+            println!("XeLaTeX version: {}", identity.version);
+            println!("Distribution: {:?}", identity.distribution);
+            println!("Package lookup: read-only (MiKTeX findtexmf without --must-exist; TeX Live kpsewhich)");
+            println!("Offline policy: MiKTeX build passes --disable-installer; no TeX settings are changed");
+            println!("Installation scope: not inferred (explicit user/shared paths are supported)");
+            println!("PDF rasterizer: {:?}", environment.pdf_renderer);
+            if identity.distribution == TexDistribution::Unknown {
+                eprintln!("Unrecognized engine; refuse builds until the XeLaTeX distribution is identifiable.");
+                return ExitCode::from(2);
+            }
+            let mut missing = false;
+            let mut unavailable = false;
+            for package in ["standalone.cls", "tikz.sty", "fontspec.sty", "unicode-math.sty"] {
+                match environment.probe_package(package) {
+                    PackageProbe::Present(path) => {
+                        println!("{package}: present ({})", path.display());
+                    }
+                    PackageProbe::Missing => {
+                        eprintln!("{package}: MISSING (install manually in your TeX distribution)");
+                        missing = true;
+                    }
+                    PackageProbe::Unavailable => {
+                        eprintln!("{package}: NOT_CHECKED (read-only lookup unavailable)");
+                        unavailable = true;
+                    }
+                }
+            }
+            println!("Fonts: NOT_CHECKED by doctor; real XeLaTeX build diagnoses missing fontspec fonts/glyphs");
+            if missing {
+                ExitCode::from(3)
+            } else if unavailable {
                 ExitCode::from(2)
+            } else {
+                ExitCode::SUCCESS
             }
         }
         Some("build") if args.len() == 4 || args.len() == 6 => {
