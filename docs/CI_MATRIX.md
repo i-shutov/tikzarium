@@ -22,3 +22,9 @@ The integration workpack selects DejaVu Serif, installs it on the Linux runner a
 - PR #16 added an independent Linux `fontspec`/`unicode-math` proof, extracted Cyrillic phrases and `pdffonts` embedding checks: https://github.com/i-shutov/tikzarium/actions/runs/41173786603. That test does not prove comprehensive installed-font discovery or a physical GUI session.
 - PRs #7/#13 added `extensions/PACKAGE_MATRIX.csv` and fixture observation parsing. Default `NOT_PROBED` / `NOT_TESTED` is intentional; the existence of a TOML manifest or local package does not prove XeLaTeX compilation or egui visual editing. LuaTeX-only graphdrawing remains `INCOMPATIBLE_ENGINE`.
 - Integrated main after C02: `f2a55fa13fd9a1e0af2718bc328ed16786975184`. Verify post-merge workflow on **this exact SHA** before claiming integrated PASS. Missing physical smoke blocks release acceptance.
+
+## C04/C06 mandatory extension catalogue static gate (pending integration)
+
+Run `python extensions/qa/verify_catalog.py --report .qa-artifacts/catalog-audit.json` and `python -m unittest discover -s extensions/qa -p test_verify_catalog.py -v` on all 3 hosted D QA Rust jobs, plus Linux real XeLaTeX fixture CI. Publish `qa-catalog-metadata-<OS>` and Linux `catalog-audit.json` evidence. This catches incompatible `lualatex` metadata and manifest/CSV/fixture drift; it does not compile every package, declare installation or certify visual editing. A green ordinary Rust/TeX job without these **new explicit steps** cannot be counted as C04 acceptance.
+
+Physical Windows 10 x64 and physical M1/M4 remain **NOT_RUN**; hosted Windows Server 2022 / macOS 15 ARM are CI_ONLY. New combined PR SHA/CI evidence must be substituted here after runs.

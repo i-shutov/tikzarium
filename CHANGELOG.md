@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-31: C06 execute C04 catalogue gate in required CI
+
+- Wire C04's `verify_catalog.py` and its 14 tamper/regression tests into the real Linux XeLaTeX fixture CI and **all three** D hosted Rust/QA jobs; retain machine-readable `catalog-audit.json` per runner.
+- This is an integration of existing C04 metadata code in PR #26, not a declaration of package installation or visual edit support. No original TeX was changed; `extensions/PACKAGE_MATRIX.csv` is unchanged because no capability was added. Lua-only graphdrawing still `INCOMPATIBLE_ENGINE`.
+- CI exact combined HEAD PENDING at authoring. Physical Windows 10/M1/M4 GUI NOT_RUN.
+
 ## Unreleased — 2026-10-31: I05 hardened XeLaTeX runner and extension evidence
 
 - Correct the Windows-hosted XeLaTeX `./filename.tex` source operand: never construct it using Windows-native `Path::join` (`.\\filename.tex` is a TeX control-sequence hazard). Use an `OsString` literal `./` prefix and regression-test ordinary, leading-dash and Cyrillic filenames. Re-run cross-host CI against the exact new SHA; no Win10 acceptance claim.
