@@ -30,3 +30,11 @@ Body-side arbitrary macro expansion cannot be resolved without executing TeX; un
 
 PR #61 initial HEAD 9045b56d4f2c843454809606ac8531e624118236:
 [Native Rust CI run 41212945414](https://github.com/i-shutov/tikzarium/actions/runs/41212945414) **FAILED** macOS and Windows Server at cargo fmt --check, before Rust tests. Retrieved job log 124571547263. Formatter requested only: remove one excess blank line ahead of the first new test, and wrap two long declaration_sites() assertions. Those exact changes were applied in C test code (commit 6e3173eca2896c3557c0e283b4e4ac9a78393d64). This is a correction, **not a PASS** until the subsequent exact-head CI is checked. TeX compilation evidence remains the independent local fixture proof, not the initial failed Rust CI.
+
+
+## Second hosted gate and negative compiler control
+
+On source HEAD cba46ec8f29cc15a70284e54859c44802a610c31,
+[D QA run 41213143785](https://github.com/i-shutov/tikzarium/actions/runs/41213143785) Ubuntu reported workspace Rust tests SUCCESS but strict Clippy FAILURE at project_imports.rs:448 (collapsible_if). The actual error was retrieved from job 124572119835; the nested conditional was rewritten into is_some_and() in commit 731c6563f91360075ec1abafd97ebc37e461d3d7 without disabling any lint. All-gates PASS requires the new exact HEAD; the older run remains FAILED.
+
+Independent *negative* local compiler control removed the post-begin \usetikzlibrary{calc} line while keeping the same let \p1 drawing: external Debian XeLaTeX (TeX Live 2025/dev, -no-shell-escape, -halt-on-error) exited 1 with the explicit TikZ diagnostic "You need to say \usetikzlibrary{calc} to use the let command"; no PDF was produced. This shows the positive fixture's post-begin import is semantically essential. The positive one-page PDF was rasterized and visually inspected: the expected diagonal line is present. This remains local fixture-level proof, not native GUI editing or physical Windows/macOS validation.
