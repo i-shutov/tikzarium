@@ -352,6 +352,8 @@ pub struct Session {
     pub selected: Option<u64>,
     pub draft: Draft,
     pub drag_start: Option<Point>,
+    /// Alt-initiated pointer gesture is selection-only until mouse release.
+    pub alt_selection_capture: bool,
     pub status: String,
     pub help: bool,
     revision: u64,
@@ -378,6 +380,7 @@ impl Session {
         self.undo.clear();
         self.selected = None;
         self.drag_start = None;
+        self.alt_selection_capture = false;
         Ok(true)
     }
     pub fn note_manual_source_edit(&mut self, source: &str) {
@@ -393,6 +396,7 @@ impl Session {
         self.active = Some(tool);
         self.selected = None;
         self.drag_start = None;
+        self.alt_selection_capture = false;
         self.draft = Draft::for_tool(tool);
         self.help = true;
     }
@@ -677,6 +681,37 @@ mod tests {
         assert!(source.contains("% opaque user material\r\n\\myMacro{x}\r\n"));
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
+    }
+
+    #[test]
+    fn n2_direct_imports_stay_confirmed_after_fontspec_and_opaque_macro() {
+        let added = concat!(
+            "\\usepackage{fontspec}\n",
+            "\\usepackage{unicode-math}\n",
+            "\\setmainfont{DejaVu Serif}\n",
+            "\\setmathfont{Latin Modern Math}\n",
+            "\\newcommand{\\myLabel}{x}\n",
+        );
+        let original = SOURCE.replacen(
+            "\\begin{document}\n",
+            &(added.to_owned() + "\\begin{document}\n"),
+            1,
+        );
+        assert_eq!(requirements_status(&original, Tool::Arrow), Evidence::Confirmed);
+        assert!(tikz_loaded(&original));
+        assert!(Session::propose_dependencies(&original, Tool::Arrow).is_err());
+        for tool in TOOLS {
+            let mut source = original.clone();
+            let mut session = Session::default();
+            session.reset(&source);
+            session
+                .insert(&mut source, tool, Draft::for_tool(tool))
+                .unwrap();
+            assert_eq!(owned(&source).len(), 1);
+            assert!(source.contains(r"\newcommand{\myLabel}{x}"));
+            session.undo(&mut source).unwrap();
+            assert_eq!(source, original);
+        }
     }
 
     #[test]

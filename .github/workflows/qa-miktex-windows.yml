@@ -1,6 +1,26 @@
 name: D06 distinct MiKTeX Windows Server XeLaTeX proof
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-miktex-windows.yml
+      - scripts/tools/qa_miktex_vertical.py
+      - scripts/tools/test_qa_miktex_vertical.py
+      - scripts/tools/qa_setup_miktex.ps1
+      - scripts/tools/qa_miktex_config.ps1
+      - scripts/tools/test_qa_miktex_config.ps1
+      - scripts/tools/qa_miktex_inventory.ps1
+      - scripts/tools/test_qa_miktex_inventory.ps1
+      - fixtures/qa/d06-native-primitives/**
+      - scripts/tools/qa_smoke.py
+      - crates/tikzarium-core/**
+      - crates/tikzarium-cli/**
+      - crates/tikzarium-app/**
+      - crates/tikzarium-extensions/**
+      - extensions/**
+      - Cargo.toml
+      - Cargo.lock
   pull_request:
     branches: [main]
     paths:
@@ -16,6 +36,11 @@ on:
       - scripts/tools/qa_smoke.py
       - crates/tikzarium-core/**
       - crates/tikzarium-cli/**
+      - crates/tikzarium-app/**
+      - crates/tikzarium-extensions/**
+      - extensions/**
+      - Cargo.toml
+      - Cargo.lock
   workflow_dispatch:
 
 permissions:

@@ -74,6 +74,36 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertFalse(n1_state_contract({**state, "gui_pointer_clicks": "PASS"}, source, math))
         self.assertFalse(n1_state_contract(state, source, source))
 
+
+    def test_miktex_proof_is_retriggered_for_real_n1_source_and_merged_main(self):
+        # Structural guard only: an event still needs its own exact-SHA live job.
+        workflow = (Path(__file__).resolve().parents[2] /
+                    ".github/workflows/qa-miktex-windows.yml").read_text(encoding="utf-8")
+        paths = (
+            ".github/workflows/qa-miktex-windows.yml",
+            "scripts/tools/qa_miktex_vertical.py",
+            "scripts/tools/test_qa_miktex_vertical.py",
+            "fixtures/qa/d06-native-primitives/**",
+            "crates/tikzarium-core/**",
+            "crates/tikzarium-cli/**",
+            "crates/tikzarium-app/**",
+            "crates/tikzarium-extensions/**",
+            "extensions/**",
+            "Cargo.toml",
+            "Cargo.lock",
+        )
+        for event in ("pull_request", "push"):
+            marker = f"  {event}:\n    branches: [main]\n    paths:\n"
+            self.assertIn(marker, workflow)
+            following_event = "pull_request" if event == "push" else "workflow_dispatch"
+            event_body = workflow.split(marker, 1)[1].split(f"\n  {following_event}:", 1)[0]
+            for path in paths:
+                with self.subTest(event=event, path=path):
+                    self.assertIn(f"      - {path}\n", event_body + "\n")
+        self.assertIn("n1-authoring-proof", workflow)
+        self.assertIn("qa_miktex_vertical.py", workflow)
+        self.assertIn("packages-after.txt", workflow)
+
     def test_source_fixture_covers_six_native_primitives(self):
         root = Path(__file__).resolve().parents[2]
         tex = (root / "fixtures/qa/d06-native-primitives/main.tex").read_text(encoding="utf-8")

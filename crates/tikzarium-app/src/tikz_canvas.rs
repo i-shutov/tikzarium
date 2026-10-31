@@ -282,26 +282,44 @@ fn show_guide_frame(
             let _ = paint_draft(&painter, rect, tool, &session.draft, true);
         }
     }
-    // Read-only selection works even if compiler/dependencies are unavailable.
-    // An Alt click must not fall through to insert a new primitive.
-    if response.clicked() && ui.input(|input| input.modifiers.alt) {
+    // Read-only selection is allowed without confirmed packages/compiler.
+    // Alt starts a selection-only pointer capture; dragging or releasing Alt
+    // before the mouse must NEVER create an unintended source command.
+    let alt_press_on_guide = ui.input(|input| {
+        input.modifiers.alt
+            && (input.pointer.primary_down() || response.clicked())
+            && input
+                .pointer
+                .press_origin()
+                .is_some_and(|origin| rect.contains(origin))
+    });
+    if alt_press_on_guide {
+        session.alt_selection_capture = true;
+    }
+    if session.alt_selection_capture {
         session.drag_start = None;
-        if let Some(pos) = response.interact_pointer_pos() {
-            match hit_authored_anchor(source, rect, pos) {
-                Ok(Some(id)) => match session.choose(source, id) {
-                    Ok(line) => {
-                        session.status = "Команда выбрана; код выделяется рядом".into();
-                        return (Some(line), rect);
+        let mut jump = None;
+        if response.clicked() {
+            if let Some(pos) = response.interact_pointer_pos() {
+                match hit_authored_anchor(source, rect, pos) {
+                    Ok(Some(id)) => match session.choose(source, id) {
+                        Ok(line) => {
+                            session.status = "Команда выбрана; код выделяется рядом".into();
+                            jump = Some(line);
+                        }
+                        Err(error) => session.status = error,
+                    },
+                    Ok(None) => {
+                        session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
                     }
-                    Err(error) => session.status = error,
-                },
-                Ok(None) => {
-                    session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
+                    Err(error) => session.status = error.into(),
                 }
-                Err(error) => session.status = error.into(),
             }
         }
-        return (None, rect);
+        if ui.input(|input| !input.pointer.primary_down()) {
+            session.alt_selection_capture = false;
+        }
+        return (jump, rect);
     }
     if !ready {
         session.drag_start = None;
@@ -978,6 +996,78 @@ mod tests {
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
         assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+    }
+
+    #[test]
+    fn alt_drag_cannot_insert_even_if_alt_is_released_before_mouse() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Line);
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let start = screen_point(rect, Point::new(1.0, 1.0));
+        let end = screen_point(rect, Point::new(3.0, 2.0));
+        let alt = egui::Modifiers {
+            alt: true,
+            ..Default::default()
+        };
+        let _ = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![
+                egui::Event::PointerMoved(start),
+                egui::Event::PointerButton {
+                    pos: start,
+                    button: egui::PointerButton::Primary,
+                    pressed: true,
+                    modifiers: alt,
+                },
+            ],
+            alt,
+        );
+        let _ = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(end)],
+            alt,
+        );
+        let _ = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let (jump, _) = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerButton {
+                pos: end,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: egui::Modifiers::default(),
+            }],
+        );
+        assert_eq!(jump, None);
+        assert_eq!(source, original);
+        assert!(!session.alt_selection_capture);
+        assert!(session.drag_start.is_none());
+
+        // The same pointer can draw normally after the Alt capture is released.
+        let _ = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(start), primary(start, true)],
+        );
+        let _ = event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(end)],
+        );
+        let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
+        assert!(jump.is_some());
+        assert_eq!(tikz_authoring::owned(&source).len(), 1);
     }
 
     #[test]
