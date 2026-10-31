@@ -330,7 +330,10 @@ fn runner_symlink_parent_dotdot_is_not_falsely_fresh() {
     assert_eq!(artifact.pdf, b"%PDF-1.4\n");
     assert!(artifact.project_dependencies.recorder_complete());
     assert!(!artifact.project_dependencies.is_project_fresh());
-    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 1);
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        1
+    );
     assert!(
         artifact
             .dependencies

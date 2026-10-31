@@ -77,3 +77,8 @@ Integrator reproduced actual XeLaTeX .fls records INPUT ./link/../data.tex and I
 The new A code retains recorded filesystem traversal and canonicalizes the actual existing path before project boundary checks. For missing inputs it canonicalizes the nearest existing prefix before appending missing names. A project-spelled path that physically escapes root now fails closed. Ordinary external TeX installation paths remain explicitly untracked. Public canonical BuildArtifact.dependencies and build/error/undo API stay unchanged; sources and unknown TeX macros are not rewritten.
 
 Regressions: Unix local link/.. tracks correct local target and detects same-size edits; external escape fails closed; .fls parser and fake-XeLaTeX runner cover both actual INPUT spellings and CRLF/opaque source without modification. Exact-head Rust fmt/check/test/Clippy, D QA and hosted MiKTeX required. Physical Win10 user/shared, Mac M1/M4 and GUI = NOT_RUN. No D-owned workflow changes.
+
+
+### First exact-HEAD formatter check
+
+Source f7e6e52200b0ea1e78d9821f4af96d63df4e6153: hosted Rust CI 41227754186 and D QA 41227754222 FAILED rustfmt in three A-only hunks (condition wrapping, excess blank line and end-to-end assert wrapping). Corrected exactly those differences on this subsequent commit; the failed predecessor must not be reported as PASS. New exact-head CI remains mandatory.

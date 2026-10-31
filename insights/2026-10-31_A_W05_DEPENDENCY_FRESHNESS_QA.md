@@ -111,3 +111,8 @@ Exact SHA `dd4ba30251c36af32dbd70ce3b03da4f350376fb` hosted Rust [41224231621](h
 Integrator demonstrated a real successful XeLaTeX build reading outside/data.tex from INPUT link/../data.tex through a directory symlink, whereas the old lexical normalization incorrectly hashed project/data.tex. Corrected physical-path resolution and added a fail-closed flag for any project-spelled INPUT resolving outside the project root. Three unit-level local/external/parser regressions and one fake-XeLaTeX end-to-end test preserve Unicode, CRLF, unknown macros and source bytes. The canonical public dependency API and MiKTeX doctor/build behavior remain unchanged.
 
 This commit has **NOT_RUN local Rust checks** (rustc/cargo absent), and prior 14/14 PASS on b94473bb cannot certify this altered code. Exact SHA CI is required; independent real MiKTeX doctor via findtexmf, network-isolated download rejection, physical Win10/M1/M4 and GUI acceptance remain NOT_RUN. Work remains in existing A PR #28; no new PR.
+
+
+### Actual formatter logs from first symlink-parent correction
+
+At f7e6e52200b0ea1e78d9821f4af96d63df4e6153, hosted macOS job 124615362827 and Linux QA job 124615362958 FAILED Rust formatting. Logs showed exactly three new A-only differences: one inline condition wrapping, one extra blank line, one integration test assert_eq wrapping. Corrected with the formatter's exact requested shape; only fresh CI can certify the correction. Existing previous 14/14 PASS stays historical, not proof of new functional path.

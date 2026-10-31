@@ -43,7 +43,8 @@ pub struct ProjectDependencySnapshot {
 impl ProjectDependencySnapshot {
     /// The author source is mandatory even if the recorder omits it. If it
     /// resolves outside root, freshness fails closed rather than silently
-    /// ignoring the source. Recorded input spellings are normalized and deduplicated without losing link identity.
+    /// ignoring the source. Recorder spelling is retained for filesystem-aware
+    /// checks, while equivalent path components are deduplicated.
     pub fn capture(
         root: &Path,
         source: &Path,
@@ -80,8 +81,7 @@ impl ProjectDependencySnapshot {
             let resolved = canonicalize_existing_prefix(&recorded_path);
             let is_local = resolved.starts_with(&root);
             if !is_local
-                && (recorded_path.starts_with(&root_spelling)
-                    || recorded_path.starts_with(&root))
+                && (recorded_path.starts_with(&root_spelling) || recorded_path.starts_with(&root))
             {
                 escaped_project_input = true;
             }
@@ -504,7 +504,6 @@ mod root_alias_dedup_regression {
         assert_eq!(fs::read(&source).unwrap(), original);
     }
 }
-
 
 #[cfg(all(test, unix))]
 mod symlinked_parent_component_regression {
