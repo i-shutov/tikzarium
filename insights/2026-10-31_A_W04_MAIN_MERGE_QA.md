@@ -53,3 +53,28 @@ reported cargo fmt --check FAIL on A-owned diagnostics.rs, lib.rs and
 runner_unix.rs. The actual rustfmt diff from macOS hosted job 124473126086
 was applied verbatim. This is a **formatting failure**, not a proven Rust
 compile or runtime failure; a new exact-head run is required for any PASS.
+
+## Hosted Windows Server real-tool regression after formatter fix
+
+Exact SHA `f957a3de08932934f9fbe758680dd390591c898f`:
+D QA run [41179340000](https://github.com/i-shutov/tikzarium/actions/runs/41179340000), job 124473345828,
+failed **real Windows Server XeLaTeX fixture suite**:
+five expected-valid sources returned CLI exit 3, while the intentional
+malformed-TeX G08 case returned the expected failing result. This is a
+real CI FAILURE; the previously-green Windows Rust fmt/tests do not
+substitute for real Windows XeLaTeX. The log summary alone does not expose
+per-document compiler diagnostics (artifact 13034172752 holds the report).
+
+**Concrete A-owned portability defect identified in review:** the XeLaTeX
+operand used `Path::new(".").join(filename)`, which produces
+`.\\quickstart.tex` on Windows instead of TeX-friendly
+`./quickstart.tex`. XeTeX may interpret the backslash as a TeX escape.
+Remediation now constructs the direct process operand using an `OsString`
+literal `./` prefix and appends the original `OsStr` filename without
+lossy UTF-8 conversion. A cross-platform unit test asserts the exact
+operand for normal, leading-dash and Unicode names.
+
+**The root-cause hypothesis is not yet independently confirmed from the
+uploaded fixture JSON**, and the correction is **NOT PASS** until
+new exact-head Windows real-tool QA succeeds. No D-owned CI harness was
+modified. Mac M1/M4 and physical Windows 10 still NOT_RUN.
