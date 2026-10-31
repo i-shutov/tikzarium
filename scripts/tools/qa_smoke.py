@@ -88,7 +88,7 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
         # exit 3 without publishing a PDF, and must never pass G08.
         if case["expect"] == "tex-error":
             marker = case.get("error_expect")
-            if (not isinstance(marker, str) or not re.fullmatch(r"\\\\[A-Za-z@]+", marker)
+            if (not isinstance(marker, str) or not re.fullmatch(r"\\[A-Za-z@]+", marker)
                     or len(marker) > 128):
                 raise ValueError(f"Missing or invalid error_expect for {fixture_id}")
             if marker not in source.read_text(encoding="utf-8"):
