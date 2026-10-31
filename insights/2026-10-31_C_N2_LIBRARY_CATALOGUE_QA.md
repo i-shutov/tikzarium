@@ -1,10 +1,10 @@
 # C/N2 library catalogue — QA ledger
 
-2026-10-31; base main \`b7c8e993b9da64060dfd3261833e4be3a1d280ba\`. Work limited to C-owned Rust, extensions/, docs/EXTENSIONS.md, C plans/insights.
+2026-10-31; base main `b7c8e993b9da64060dfd3261833e4be3a1d280ba`. Work limited to C-owned Rust, extensions/, docs/EXTENSIONS.md, C plans/insights.
 
 ## Engineering changes
 
-The library panel can consume four versioned declarative records, including original Russian help, actual native import syntax and complete XeLaTeX examples, without duplicating knowledge in egui. All four library imports remain ordinary source patches. The six primitive generators and all parameter help are untouched. A library may be present in the installation, not loaded in the project, compatible with XeLaTeX, lack a dedicated tool, and still have documented help: five axes are deliberately not collapsed. \`arrows.meta\` has one narrow generator (arrow), other three have no dedicated visual generator; generic \`visual_editable\` stays false. No package is installed or silently connected.
+The library panel can consume four versioned declarative records, including original Russian help, actual native import syntax and complete XeLaTeX examples, without duplicating knowledge in egui. All four library imports remain ordinary source patches. The six primitive generators and all parameter help are untouched. A library may be present in the installation, not loaded in the project, compatible with XeLaTeX, lack a dedicated tool, and still have documented help: five axes are deliberately not collapsed. `arrows.meta` has one narrow generator (arrow), other three have no dedicated visual generator; generic `visual_editable` stays false. No package is installed or silently connected.
 
 Primary manuals checked on 2026-10-31: tikz.dev/tikz-arrows §16.5, tikz.dev/tikz-shapes §17.5.3, tikz.dev/tikz-coordinates §13.5, tikz.dev/library-fit §54. No full manual copied; unsupported PGF minimum is UNKNOWN.
 
