@@ -1,6 +1,9 @@
 \documentclass{article}
 \usepackage{fontspec}
 \usepackage{tikz}
+% Latin Modern previously dropped Cyrillic. Require a known Cyrillic-capable font.
+% DejaVu Serif must be installed in the OS font catalogue for this test fixture.
+\setmainfont{DejaVu Serif}
 \begin{document}
 Тест XeLaTeX и Unicode. Кириллица.
 \begin{tikzpicture}
