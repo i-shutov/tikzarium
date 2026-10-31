@@ -321,13 +321,30 @@ fn unescaped_comment(line: &str) -> &str {
     line
 }
 
-pub fn tikz_loaded(source: &str) -> bool {
+/// Macro-generated imports are UNKNOWN. Only literal project declarations
+/// grant a visual tool permission to insert its package-dependent source.
+fn has_declaration(line: &str, command: &str, name: &str) -> bool {
+    let Some(mut rest) = line.strip_prefix(command) else { return false; };
+    if let Some(options) = rest.strip_prefix('[') {
+        let Some((_, remaining)) = options.split_once(']') else { return false; };
+        rest = remaining;
+    }
+    let Some((names, _)) = rest.strip_prefix('{').and_then(|body| body.split_once('}')) else {
+        return false;
+    };
+    names.split(',').any(|entry| entry == name)
+}
+fn literal_loaded(source: &str, commands: &[&str], name: &str) -> bool {
     source.lines().map(unescaped_comment).any(|line| {
         let compact: String = line.chars().filter(|c| !c.is_whitespace()).collect();
-        [r"\usepackage{tikz}", r"\RequirePackage{tikz}"]
-            .iter()
-            .any(|token| compact.starts_with(token))
+        commands.iter().any(|command| has_declaration(&compact, command, name))
     })
+}
+pub fn tikz_loaded(source: &str) -> bool {
+    literal_loaded(source, &[r"\usepackage", r"\RequirePackage"], "tikz")
+}
+pub fn library_loaded(source: &str, library: &str) -> bool {
+    literal_loaded(source, &[r"\usetikzlibrary"], library)
 }
 
 fn unique_line_start(source: &str, needle: &str, anchored: bool) -> Result<usize, String> {
@@ -370,10 +387,44 @@ fn eol(source: &str) -> &'static str {
     }
 }
 
+fn source_fingerprint(source: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    source.hash(&mut hasher);
+    hasher.finish()
+}
+
+/// The inverse is an exact source-range patch from C. A whole-source
+/// fingerprint refuses undo after manual changes (without restoring a file).
 #[derive(Clone, Debug)]
 struct Patch {
-    before: String,
-    after: String,
+    inverse: SourcePatch,
+    after_fingerprint: u64,
+}
+fn minimal_changed_span(before: &str, after: &str, at: usize, rev: u64) -> Result<SourcePatch, String> {
+    if before == after {
+        return Err("No parameter change".into());
+    }
+    let prefix: usize = before
+        .chars()
+        .zip(after.chars())
+        .take_while(|(a, b)| a == b)
+        .map(|(c, _)| c.len_utf8())
+        .sum();
+    let mut old_end = before.len();
+    let mut new_end = after.len();
+    while old_end > prefix && new_end > prefix {
+        let a = before[..old_end].chars().next_back().ok_or("Invalid old UTF-8")?;
+        let b = after[..new_end].chars().next_back().ok_or("Invalid new UTF-8")?;
+        if a != b { break; }
+        old_end -= a.len_utf8();
+        new_end -= b.len_utf8();
+    }
+    Ok(SourcePatch {
+        range: at + prefix .. at + old_end,
+        expected_old: before[prefix..old_end].to_owned(),
+        replacement: after[prefix..new_end].to_owned(),
+        source_revision: rev,
+    })
 }
 
 #[derive(Default)]
@@ -385,9 +436,10 @@ pub struct Session {
     pub status: String,
     pub help: bool,
     next_id: u64,
+    revision: u64,
+    source_fingerprint: u64,
     undo: Vec<Patch>,
 }
-
 impl Session {
     pub fn reset(&mut self, source: &str) {
         self.active = None;
@@ -395,38 +447,58 @@ impl Session {
         self.draft = Draft::default();
         self.drag_start = None;
         self.undo.clear();
-        self.next_id = owned(source)
-            .iter()
-            .map(|item| item.id)
-            .max()
-            .unwrap_or(0)
-            .saturating_add(1)
-            .max(1);
-        self.status = "Source-first: arbitrary macros remain untouched".into();
+        self.revision = 0;
+        self.source_fingerprint = source_fingerprint(source);
+        self.next_id = owned(source).iter().map(|item| item.id)
+            .max().unwrap_or(0).saturating_add(1).max(1);
+        self.status = "Source-first: unknown TeX and macros remain unchanged".into();
     }
-
+    /// Direct Source edits never get rewritten; they invalidate transient undo.
+    fn adopt_external(&mut self, source: &str) {
+        let current = source_fingerprint(source);
+        if current != self.source_fingerprint {
+            self.revision = self.revision.saturating_add(1);
+            self.source_fingerprint = current;
+            self.undo.clear();
+            self.selected = None;
+            self.next_id = owned(source).iter().map(|item| item.id)
+                .max().unwrap_or(0).saturating_add(1).max(1);
+            self.status = "Source edited manually; previous visual undo invalidated".into();
+        }
+    }
+    pub fn note_manual_edit(&mut self, source: &str) {
+        self.adopt_external(source);
+    }
+    fn apply_patch(&mut self, source: &mut String, patch: SourcePatch) -> Result<(), String> {
+        if self.source_fingerprint != source_fingerprint(source) {
+            return Err("Source changed after visual inspection; patch refused".into());
+        }
+        let inverse = patch.apply(source, &mut self.revision)
+            .map_err(|e| e.to_string())?;
+        self.source_fingerprint = source_fingerprint(source);
+        self.undo.push(Patch { inverse, after_fingerprint: self.source_fingerprint });
+        Ok(())
+    }
     pub fn undo_available(&self) -> bool {
         !self.undo.is_empty()
     }
-
     pub fn choose(&mut self, source: &str, id: u64) -> Result<usize, String> {
+        self.adopt_external(source);
         let item = one_owned(source, id)?;
         self.selected = Some(id);
         self.active = Some(item.tool);
         self.draft = item.draft;
         Ok(item.line)
     }
-
-    pub fn insert(
-        &mut self,
-        source: &mut String,
-        tool: Tool,
-        draft: Draft,
-    ) -> Result<usize, String> {
+    pub fn insert(&mut self, source: &mut String, tool: Tool, draft: Draft) -> Result<usize, String> {
+        self.adopt_external(source);
         if !tikz_loaded(source) {
-            return Err(
-                "TikZ not explicitly loaded; use the proposed \\usepackage diff first".into(),
-            );
+            return Err("TikZ not explicitly loaded; approve the visible \\usepackage diff".into());
+        }
+        for library in &spec(tool).requirements.libraries {
+            if !library_loaded(source, library) {
+                return Err(format!("Missing project \\usetikzlibrary{{{library}}}; review source diff first"));
+            }
         }
         let at = insertion_offset(source)?;
         let id = self.next_id.max(1);
@@ -436,70 +508,78 @@ impl Session {
         let line = generate(tool, &draft, id)?;
         let after = format!("{}{}", line, eol(source));
         let number = source[..at].bytes().filter(|b| *b == b'\n').count() + 1;
-        source.insert_str(at, &after);
-        self.undo.push(Patch {
-            before: String::new(),
-            after,
-        });
+        self.apply_patch(source, SourcePatch {
+            range: at..at,
+            expected_old: String::new(),
+            replacement: after,
+            source_revision: self.revision,
+        })?;
         self.next_id = id.saturating_add(1);
         self.active = Some(tool);
         self.selected = Some(id);
         self.draft = draft;
-        self.status = format!(
-            "Inserted native TikZ {} · Build XeLaTeX to update exact PDF",
-            tool.id()
-        );
+        self.status = format!("Created {} with C catalogue · Build XeLaTeX for exact PDF", tool.id());
         Ok(number)
     }
-
     pub fn apply_parameters(&mut self, source: &mut String) -> Result<usize, String> {
-        let id = self.selected.ok_or("Select one B07-owned command first")?;
+        self.adopt_external(source);
+        let id = self.selected.ok_or("Select a C-backed B08 command first")?;
         let old = one_owned(source, id)?;
         let after = generate(old.tool, &self.draft, id)?;
         if old.text != after {
-            source.replace_range(old.range, &after);
-            self.undo.push(Patch {
-                before: old.text,
-                after,
-            });
+            let patch = minimal_changed_span(&old.text, &after, old.range.start, self.revision)?;
+            self.apply_patch(source, patch)?;
         }
-        self.status =
-            "Changed only selected B07-owned source line; exact PDF requires XeLaTeX Build".into();
+        self.status = "Edited only generated command parameters; PDF requires XeLaTeX Build".into();
         Ok(old.line)
     }
-
     pub fn propose_usepackage(source: &str) -> Result<String, String> {
-        if tikz_loaded(source) {
-            return Err("TikZ is already explicitly loaded".into());
-        }
+        if tikz_loaded(source) { return Err("TikZ is already explicitly loaded".into()); }
         unique_line_start(source, r"\begin{document}", true)?;
         Ok(format!("+ \\usepackage{{tikz}}{}", eol(source)))
     }
-
     pub fn add_usepackage(&mut self, source: &mut String) -> Result<(), String> {
+        self.adopt_external(source);
         Self::propose_usepackage(source)?;
         let at = unique_line_start(source, r"\begin{document}", true)?;
         let after = format!("\\usepackage{{tikz}}{}", eol(source));
-        source.insert_str(at, &after);
-        self.undo.push(Patch {
-            before: String::new(),
-            after,
-        });
-        self.status = "Added \\usepackage{tikz}; Undo visual restores it. Build to verify.".into();
+        self.apply_patch(source, SourcePatch {
+            range: at..at, expected_old: String::new(), replacement: after,
+            source_revision: self.revision,
+        })?;
+        self.status = "Added \\usepackage{tikz} via visible diff; Undo available".into();
         Ok(())
     }
-
+    pub fn propose_library(source: &str, library: &str) -> Result<String, String> {
+        if library != "arrows.meta" {
+            return Err("Only C-catalogue arrows.meta is supported in this B visual adapter".into());
+        }
+        if library_loaded(source, library) {
+            return Err(format!("Library {library} already loaded"));
+        }
+        unique_line_start(source, r"\begin{document}", true)?;
+        Ok(format!("+ \\usetikzlibrary{{{library}}}{}", eol(source)))
+    }
+    pub fn add_library(&mut self, source: &mut String, library: &str) -> Result<(), String> {
+        self.adopt_external(source);
+        Self::propose_library(source, library)?;
+        let at = unique_line_start(source, r"\begin{document}", true)?;
+        let after = format!("\\usetikzlibrary{{{library}}}{}", eol(source));
+        self.apply_patch(source, SourcePatch {
+            range: at..at, expected_old: String::new(), replacement: after,
+            source_revision: self.revision,
+        })?;
+        self.status = format!("Added \\usetikzlibrary{{{library}}}; Undo available");
+        Ok(())
+    }
     pub fn undo(&mut self, source: &mut String) -> Result<(), String> {
         let patch = self.undo.last().ok_or("No visual patch to undo")?.clone();
-        let mut hits = source.match_indices(&patch.after);
-        let Some((at, _)) = hits.next() else {
-            return Err("Undo refused: owned source was edited since patch".into());
-        };
-        if hits.next().is_some() {
-            return Err("Undo refused: ambiguous source match".into());
+        if source_fingerprint(source) != patch.after_fingerprint {
+            return Err("Undo refused: source edited since visual patch".into());
         }
-        source.replace_range(at..at + patch.after.len(), &patch.before);
+        patch.inverse.apply(source, &mut self.revision).map_err(|e| e.to_string())?;
         self.undo.pop();
+        self.source_fingerprint = source_fingerprint(source);
         if let Some(id) = self.selected {
             if let Ok(current) = one_owned(source, id) {
                 self.active = Some(current.tool);
@@ -509,7 +589,7 @@ impl Session {
                 self.draft = Draft::default();
             }
         }
-        self.status = "Undo: reverted only the exact B07 source patch".into();
+        self.status = "Undo: reverted exact C-validated source range".into();
         Ok(())
     }
 }
