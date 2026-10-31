@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-31: A/W06 external MiKTeX offline build integrated (#38)
+- Merged verified core/CLI code at main `013720ee6f0e1dc29f487124499ed9469d86b089` from PR head `74ca61c6aff408d92286f91e0b49143e9b7e72b1`: read-only `doctor` package lookup with explicit PRESENT/MISSING/NOT_CHECKED; selected XeLaTeX identity validation and fail-closed invalid user path; per-process MiKTeX `--disable-installer` without persistent package/settings mutation; no embedded TeX distro or implicit fallback.
+- Changed nine A-owned code/test/fixture/plan/insight files. Branch-head 16/16 checks SUCCESS including actual hosted Windows Server MiKTeX 25.12; independently audited artifact [13041745718](https://github.com/i-shutov/tikzarium/actions/runs/41197706754/artifacts/13041745718), ZIP SHA-256 `59debcf6045fcc1d4cfba8c221712a602412eb3c8023f1a3994a5be702e0bb2a`, 6 PDFs with extractable Cyrillic/math and embedded fonts, Lua-only/missing-library negative results, and byte-identical package inventory. Main Rust CI [41198781494](https://github.com/i-shutov/tikzarium/actions/runs/41198781494) plus D QA [41198781586](https://github.com/i-shutov/tikzarium/actions/runs/41198781586) both SUCCESS on exact merge SHA.
+- Physical Win10 x64 MiKTeX and Mac M1/M4 GUI acceptance remain NOT_RUN. D07 real MiKTeX **post-main** job is not automatically proven by branch-head checks; #52 follow-up triggered and its initial external installer download failed. Linux/X11 desktop gestures 5/6 on #48 but cubic + GUI PDF/export still FAIL/NOT_RUN. B10 #50 still fails actual N1 generated-authoring proof because C imports scanner mistakes unrelated font/user macro lines for unknown loaded status; no unsafe workaround. No release declared.
+
+
 ## Unreleased — 2026-10-31: I07 bounded initial XeLaTeX PDF preview
 
 - Protect the **first-page** Poppler renderer (`tikzarium-core::preview`), previously missing time and allocation budgets despite B05 navigation and B06 PNG decoding protections: 45-second subprocess deadline with kill/wait; 64MiB compressed PNG read cap.
