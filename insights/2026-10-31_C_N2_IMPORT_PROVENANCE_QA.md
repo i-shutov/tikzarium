@@ -37,3 +37,9 @@ automatic patch planners refuse such a document. No user source is mutated.
   M1/M4: not exercised by this source-attribution change.
 - B inspector focus/highlight and visible diff/undo are **not** implemented by
   this C PR; project source remains the sole authority.
+
+## Exact first-head CI and corrective action
+
+Initial implementation SHA `2d81c9c38b005ab1256e7610df414cc43659beb5`:
+[Native CI run 41205816101](https://github.com/i-shutov/tikzarium/actions/runs/41205816101) **FAIL**: hosted macOS job 124550569605 and hosted Windows Server job 124550569730 stopped at `cargo fmt --check`, *before tests*. Retrieved the complete macOS log and applied the nine exact Rustfmt hunks, covering only the C-owned recognizer and new provenance integration test. The failed initial HEAD is not a PASS.
+[N1 app-state→XeLaTeX run 41205816169](https://github.com/i-shutov/tikzarium/actions/runs/41205816169) and [font PDF integrity run 41205816106](https://github.com/i-shutov/tikzarium/actions/runs/41205816106) finished SUCCESS on that **older** exact SHA, but do not establish a green subsequent HEAD. Revised exact-head Rust, N1, D QA and hosted MiKTeX outcomes require separate verification. Physical Windows 10 MiKTeX and physical Mac M1/M4 remain NOT_RUN.

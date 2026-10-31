@@ -284,7 +284,10 @@ pub fn inspect(source: &str) -> ProjectImports {
             offset += raw.len();
             continue;
         }
-        let token_start = offset + line.find(trimmed).expect("trimmed literal is in source line");
+        let token_start = offset
+            + line
+                .find(trimmed)
+                .expect("trimmed literal is in source line");
         if trimmed == BEGIN_DOCUMENT {
             let local = line.find(BEGIN_DOCUMENT).expect("literal begin token");
             let start = offset + local;
