@@ -107,8 +107,18 @@ fn candidate_for_line(
         // Delete first token and its following comma and spaces.
         offset + open + 1..offset + entries[1].1.start
     } else {
-        // Delete preceding comma/spaces plus just this token.
-        offset + entries[index - 1].1.end..offset + entries[index].1.end
+        // Delete preceding comma and this token, including its trailing
+        // whitespace. Keep the NEXT comma and all surviving names unchanged.
+        let right = if index + 1 < entries.len() {
+            let between = &line[entries[index].1.end..entries[index + 1].1.start];
+            let next_comma = between
+                .find(',')
+                .ok_or("library list has no safe separator")?;
+            entries[index].1.end + next_comma
+        } else {
+            close
+        };
+        offset + entries[index - 1].1.end..offset + right
     };
     Ok(Some(Candidate {
         range,
