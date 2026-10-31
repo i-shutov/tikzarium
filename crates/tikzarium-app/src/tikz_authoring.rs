@@ -65,7 +65,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "TikZ defaults зависят от picture/options — UNKNOWN; B07 задаёт только новые координаты.",
         effect: "Создаёт stroke без наконечника.",
         example: r"\draw (0,0) -- (2,1);",
-        source: "PGF/TikZ Manual, Part III: TikZ ist kein Zeichenprogramm; Paths and Actions.",
+        source: "PGF/TikZ Manual §14.2.1 Straight Lines: https://tikz.dev/tikz-paths",
     },
     ToolSpec {
         tool: Tool::Arrow,
@@ -76,7 +76,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "Конкретный тип наконечника зависит от текущих стилей — UNKNOWN.",
         effect: "Рисует путь с наконечником в конце.",
         example: r"\draw[->] (0,0) -- (2,1);",
-        source: "PGF/TikZ Manual, TikZ Paths and Actions; Arrows.",
+        source: "PGF/TikZ Manual §16.2 Arrow Tips: https://tikz.dev/tikz-arrows",
     },
     ToolSpec {
         tool: Tool::Rectangle,
@@ -87,7 +87,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "Толщина/цвет линий наследуются от стилей — UNKNOWN.",
         effect: "Замкнутый прямоугольный путь.",
         example: r"\draw (0,0) rectangle (2,1);",
-        source: "PGF/TikZ Manual, Paths and Actions: Rectangle Path Operation.",
+        source: "PGF/TikZ Manual §14.4 Rectangle Operation: https://tikz.dev/tikz-paths",
     },
     ToolSpec {
         tool: Tool::Circle,
@@ -98,7 +98,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "B07: radius=1cm при одиночном клике; это НЕ документированный default TikZ.",
         effect: "Рисует окружность, без заливки.",
         example: r"\draw (1,1) circle[radius=1cm];",
-        source: "PGF/TikZ Manual, Paths and Actions: Circle and Ellipse Path Operations.",
+        source: "PGF/TikZ Manual §14.6 Circle and Ellipse: https://tikz.dev/tikz-paths",
     },
     ToolSpec {
         tool: Tool::Node,
@@ -109,7 +109,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "B07: text=Text; якорь/шрифт/внутренние отступы наследуются из TeX — UNKNOWN.",
         effect: "Создаёт текстовый TikZ node.",
         example: r"\node at (1,1) {Text};",
-        source: "PGF/TikZ Manual, Nodes and Edges: Nodes.",
+        source: "PGF/TikZ Manual §17.2.1 Node Syntax: https://tikz.dev/tikz-shapes",
     },
     ToolSpec {
         tool: Tool::Cubic,
@@ -120,7 +120,7 @@ pub const SPECS: [ToolSpec; 6] = [
         defaults: "B07 bend=0.8cm (локальная настройка генератора, не default TikZ).",
         effect: "Кубическая кривая между двумя точками; контрольные точки явно записаны в источнике.",
         example: r"\draw (0,0) .. controls (1,1) and (2,1) .. (3,0);",
-        source: "PGF/TikZ Manual, Paths and Actions: The Curve-to Path Operation.",
+        source: "PGF/TikZ Manual §14.3 Cubic Curve-To: https://tikz.dev/tikz-paths",
     },
 ];
 
@@ -351,7 +351,7 @@ pub fn tikz_loaded(source: &str) -> bool {
         let compact: String = line.chars().filter(|c| !c.is_whitespace()).collect();
         [r"\usepackage{tikz}", r"\RequirePackage{tikz}"]
             .iter()
-            .any(|token| compact.contains(token))
+            .any(|token| compact.starts_with(token))
     })
 }
 
@@ -379,7 +379,7 @@ fn unique_line_start(source: &str, needle: &str, anchored: bool) -> Result<usize
 }
 
 fn insertion_offset(source: &str) -> Result<usize, String> {
-    let _begin = unique_line_start(source, r"\begin{tikzpicture}", false)?;
+    let _begin = unique_line_start(source, r"\begin{tikzpicture}", true)?;
     let end = unique_line_start(source, r"\end{tikzpicture}", true)?;
     if end <= _begin {
         return Err("Invalid TikZ picture order".into());
