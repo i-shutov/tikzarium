@@ -1,4 +1,6 @@
 //! Small, testable UI state transitions. No dependency on the compiler or OS.
+use eframe::egui::{Key, Modifiers};
+use std::path::Path;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkspaceMode {
     Source,
@@ -51,10 +53,41 @@ pub fn line_start_char_index(source: &str, one_based_line: usize) -> Option<usiz
 pub fn preview_is_stale(
     has_pdf: bool,
     last_build_failed: bool,
+    build_in_progress: bool,
     built_source: Option<&str>,
     current_source: &str,
+    built_path: Option<&Path>,
+    current_path: Option<&Path>,
 ) -> bool {
-    has_pdf && (last_build_failed || built_source != Some(current_source))
+    has_pdf
+        && (last_build_failed
+            || build_in_progress
+            || built_source != Some(current_source)
+            || built_path.is_none()
+            || built_path != current_path)
+}
+
+/// Use the platform's Command/Ctrl shortcut abstraction, not raw Ctrl on macOS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EditorCommand {
+    Open,
+    Save,
+    SaveAs,
+    Build,
+}
+
+#[must_use]
+pub fn editor_command(key: Key, modifiers: Modifiers) -> Option<EditorCommand> {
+    if !modifiers.command {
+        return None;
+    }
+    match (key, modifiers.shift) {
+        (Key::O, false) => Some(EditorCommand::Open),
+        (Key::S, false) => Some(EditorCommand::Save),
+        (Key::S, true) => Some(EditorCommand::SaveAs),
+        (Key::Enter, false) => Some(EditorCommand::Build),
+        _ => None,
+    }
 }
 
 /// Keep zoom finite and inside a user-visible range, including corrupt state.
@@ -93,11 +126,103 @@ mod tests {
 
     #[test]
     fn last_good_pdf_never_masquerades_as_current_after_failure_or_edit() {
-        assert!(!preview_is_stale(false, true, Some("x"), "y"));
-        assert!(!preview_is_stale(true, false, Some("x"), "x"));
-        assert!(preview_is_stale(true, true, Some("x"), "x"));
-        assert!(preview_is_stale(true, false, Some("x"), "changed"));
-        assert!(preview_is_stale(true, false, None, "x"));
+        let path = Path::new("fig.tex");
+        let moved = Path::new("fig-copy.tex");
+        // An in-flight XeLaTeX run renders the retained prior PDF non-exportable.
+        assert!(preview_is_stale(
+            true,
+            false,
+            true,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
+        ));
+        assert!(!preview_is_stale(
+            false,
+            true,
+            false,
+            Some("x"),
+            "y",
+            None,
+            None
+        ));
+        assert!(!preview_is_stale(
+            true,
+            false,
+            false,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
+        ));
+        assert!(preview_is_stale(
+            true,
+            true,
+            false,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
+        ));
+        assert!(preview_is_stale(
+            true,
+            false,
+            false,
+            Some("x"),
+            "changed",
+            Some(path),
+            Some(path),
+        ));
+        assert!(preview_is_stale(
+            true,
+            false,
+            false,
+            None,
+            "x",
+            Some(path),
+            Some(path),
+        ));
+        assert!(preview_is_stale(
+            true,
+            false,
+            false,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(moved),
+        ));
+        assert!(preview_is_stale(
+            true,
+            false,
+            false,
+            Some("x"),
+            "x",
+            None,
+            Some(path),
+        ));
+    }
+
+    #[test]
+    fn command_shortcuts_respect_platform_command_and_shift() {
+        let command = Modifiers {
+            command: true,
+            ..Default::default()
+        };
+        let save_as = Modifiers {
+            command: true,
+            shift: true,
+            ..Default::default()
+        };
+        assert_eq!(editor_command(Key::S, command), Some(EditorCommand::Save));
+        assert_eq!(editor_command(Key::S, save_as), Some(EditorCommand::SaveAs));
+        assert_eq!(editor_command(Key::O, command), Some(EditorCommand::Open));
+        assert_eq!(
+            editor_command(Key::Enter, command),
+            Some(EditorCommand::Build)
+        );
+        assert_eq!(editor_command(Key::O, save_as), None);
+        assert_eq!(editor_command(Key::S, Modifiers::default()), None);
     }
 
     #[test]
