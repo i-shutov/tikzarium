@@ -410,7 +410,7 @@ fn parse_fls_with_cwd_preserving_links(log: &str, cwd: &Path) -> Vec<PathBuf> {
     let base = log
         .lines()
         .find_map(|line| line.strip_prefix("PWD "))
-        .map(|value| PathBuf::from(value.trim_end_matches('\\r')))
+        .map(|value| PathBuf::from(value.trim_end_matches('\r')))
         .filter(|path| !path.as_os_str().is_empty())
         .map(|path| {
             if path.is_absolute() {
@@ -494,7 +494,6 @@ mod tests {
         assert_eq!(paths, vec![source.canonicalize().unwrap()]);
     }
 
-
     #[cfg(unix)]
     #[test]
     fn recorder_preserves_link_spelling_without_changing_public_resolved_paths() {
@@ -504,7 +503,7 @@ mod tests {
         let alias = dir.path().join("alias.tex");
         fs::write(&target, "target").unwrap();
         symlink(&target, &alias).unwrap();
-        let fls = format!("PWD {}\\nINPUT ./alias.tex\\n", dir.path().display());
+        let fls = format!("PWD {}\nINPUT ./alias.tex\n", dir.path().display());
         assert_eq!(
             parse_fls_with_cwd_preserving_links(&fls, dir.path()),
             vec![dir.path().join("./alias.tex")]

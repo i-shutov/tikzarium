@@ -320,7 +320,6 @@ mod tests {
         assert!(snapshot.is_project_fresh());
     }
 
-
     #[cfg(unix)]
     #[test]
     fn retargeted_project_symlink_invalidates_even_when_previous_target_is_unchanged() {
@@ -330,7 +329,7 @@ mod tests {
         let first = project.path().join("first.tex");
         let second = project.path().join("second.tex");
         let link = project.path().join("asset.tex");
-        let original = b"% user source\\r\\n\\\\unknownmacro{opaque}\\r\\n";
+        let original = b"% user source\r\n\\unknownmacro{opaque}\r\n";
         fs::write(&source, original).unwrap();
         fs::write(&first, b"AAA").unwrap();
         fs::write(&second, b"BBB").unwrap();
