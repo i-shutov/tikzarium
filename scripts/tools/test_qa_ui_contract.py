@@ -3,7 +3,7 @@ from subprocess import CompletedProcess
 from unittest.mock import patch
 import unittest
 
-from qa_ui_contract import REQUIRED, listed_tests, run_gate, test_result_pass_count
+from qa_ui_contract import REQUIRED, listed_tests, run_gate, run_cargo, test_result_pass_count
 
 
 def fake_result(stdout: str, code: int = 0):
@@ -11,6 +11,14 @@ def fake_result(stdout: str, code: int = 0):
 
 
 class UiContractTests(unittest.TestCase):
+    def test_binary_target_is_explicit_when_headless_proof_binary_is_present(self):
+        with patch("qa_ui_contract.subprocess.run", return_value=fake_result("test result: ok. 3 passed; 0 failed;")) as run:
+            result = run_cargo("ui_theme::tests", "--", "--nocapture")
+        self.assertEqual(result.returncode, 0)
+        argv = run.call_args.args[0]
+        self.assertEqual(argv[:6], ["cargo", "test", "-p", "tikzarium-app", "--bin", "tikzarium-app"])
+        self.assertEqual(argv[6:], ["ui_theme::tests", "--", "--nocapture"])
+
     def test_parse_rust_test_listing(self):
         listing = "    Running unittests src/main.rs\n" + "\n".join(
             f"{name}: test" for tests in REQUIRED.values() for name in sorted(tests)

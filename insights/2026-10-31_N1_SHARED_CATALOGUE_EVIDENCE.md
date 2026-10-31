@@ -32,3 +32,9 @@ Current container has git, XeLaTeX and Poppler, but no cargo/rustc/rustfmt; outb
 - Existing B07 comments remain preserved opaque source; migration is not silently performed.
 - Literal preamble checks are bounded and not a full TeX parser. Macro-defined/conditional requirements are not proven loaded.
 - Continuous DPI, keyboard, native dialog, theme persistence and physical desktop checks remain NOT_RUN.
+
+## Exact-head CI finding and regression repair — 2026-10-31
+
+On PR #44 head `1ffa195f8ca54805e021e87028fa91c117b7bf63`, the Ubuntu D QA matrix executed actual app/extension Rust tests successfully, but the existing `scripts/tools/qa_ui_contract.py` returned FAIL. N1 added a second binary (`n1-authoring-proof`), while the pre-existing theme/font proof used an unconstrained `cargo test -p tikzarium-app` and parsed only the first `test result` stanza. With multiple binary test harnesses this could record zero tests although the named GUI binary tests passed. The fix **does not weaken the required test names/count**: it scopes both listing and execution to `--bin tikzarium-app`; a dedicated Python negative/provenance test asserts this exact target selection. Repeat exact-head matrix and inspect uploaded JSON before PASS. This is NOT a physical GUI acceptance.
+
+Removed the one-time autoformat workflow after its corrective commit to avoid redundant push-triggered formatting jobs. No code, compiler, TeX source or package behavior is silently relaxed.

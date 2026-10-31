@@ -35,3 +35,7 @@ A: MiKTeX/core (#38); B: egui/source visibility (#37); C: shared catalogue/gener
 ## Boundaries
 
 The cm guide is not registered to a PDF coordinate system and does not interpret TikZ transformations. Other legal units remain source/property editable and are rendered by XeLaTeX. Literal preamble recognition is not macro expansion; absence of confirmation means UNKNOWN. Arbitrary existing TeX remains editable in the source pane and compileable. The product does not install or replace TeX, fonts or packages. New work must be a user-visible vertical result, not an indefinite series of defensive micro-PRs.
+
+## Exact-head integration gate update
+
+PR #44 provides the full N1 code to main via one draft integration PR. The first actual D matrix detected a deterministic *test harness selection* regression because N1 adds another Cargo binary. The narrowly scoped fix targets only `--bin tikzarium-app` while retaining every mandatory theme/font unit test. Previous checks for PR #44 at `1ffa195f8ca54805e021e87028fa91c117b7bf63` are not reused as post-fix PASS. The one-shot formatter workflow is removed from the integration branch after its completed formatting commit; regular fmt/check/test/clippy and real XeLaTeX workflows remain mandatory. No merge until **new** exact-head CI, N1 artifacts and main reconciliation are checked.
