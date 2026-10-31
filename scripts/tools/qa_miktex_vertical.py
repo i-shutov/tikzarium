@@ -49,6 +49,20 @@ def miktex_engine(version: str) -> bool:
     return "miktex" in version.casefold() and "xetex" in version.casefold()
 
 
+def setup_stage_complete(stage: dict, setup: dict) -> bool:
+    """Require terminal, provenance-matched setup; never accept stale INCOMPLETE."""
+    installer = setup.get("installer_sha256")
+    engine = setup.get("xelatex_path")
+    return (isinstance(stage, dict) and stage.get("schema_version") == 1
+            and stage.get("stage") == "setup-complete"
+            and stage.get("status") == "SETUP_COMPLETE"
+            and isinstance(installer, str) and bool(installer)
+            and isinstance(engine, str) and bool(engine)
+            and stage.get("installer_sha256") == installer
+            and stage.get("xelatex_path") == engine
+            and stage.get("auto_install_config_readback") == "0")
+
+
 def poppler_version(tool: str, transcript: str) -> bool:
     """A real Poppler auditor, not MiKTeX's same-named TeX shim."""
     return bool(re.search(rf"(?m)^{re.escape(tool)} version [0-9]+(?:[.][0-9]+)+", transcript))
@@ -336,7 +350,11 @@ def main(argv: list[str] | None = None) -> int:
                 or setup.get("auto_install_disabled") is not True
                 or Path(setup.get("user_install", "")).resolve() != prefix):
             raise RuntimeError("Isolated MiKTeX setup provenance or auto-install-off proof absent")
+        stage = json.loads(args.setup_record.with_name("setup-stage.json").read_text(encoding="utf-8-sig"))
+        if not setup_stage_complete(stage, setup):
+            raise RuntimeError("MiKTeX private setup-stage is incomplete or provenance-mismatched")
         report["setup"] = setup
+        report["setup_stage"] = stage
         report["pdf_tools"] = select_poppler(args.poppler_dir)
         if os.environ.get("TIKZARIUM_XELATEX", "").casefold() != str(engine).casefold():
             raise RuntimeError("CLI must be explicitly pointed to this MiKTeX XeLaTeX binary")
@@ -348,7 +366,7 @@ def main(argv: list[str] | None = None) -> int:
             root / "extensions/fixtures/graphdrawing-lua.tex",
             "lua-only", "lua-only", output, engine))
         report["results"].append(n1_positive(root, output, engine, cli, args.n1_proof.resolve()))
-    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+    except (OSError, RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
         report["fatal"] = f"{type(exc).__name__}: {exc}"
     finally:
         report["accepted"] = not report.get("fatal") and len(report["results"]) == 4 and all(

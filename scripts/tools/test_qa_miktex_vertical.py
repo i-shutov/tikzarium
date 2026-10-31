@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, poppler_version, tex_failure
+from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, poppler_version, setup_stage_complete, tex_failure
 
 
 class MiKTeXVerticalContract(unittest.TestCase):
@@ -20,6 +20,22 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertTrue(miktex_engine("MiKTeX-XeTeX 4.0 (MiKTeX 25.12)"))
         self.assertFalse(miktex_engine("XeTeX 3.14159 (TeX Live 2026)"))
         self.assertFalse(miktex_engine("MiKTeX-pdfTeX 4.0"))
+
+    def test_terminal_setup_provenance_rejects_stale_or_mismatched_checkpoint(self):
+        setup = {"installer_sha256": "0" * 64, "xelatex_path": r"D:\private\xelatex.exe"}
+        stage = {"schema_version": 1, "stage": "setup-complete",
+                 "status": "SETUP_COMPLETE", "installer_sha256": setup["installer_sha256"],
+                 "xelatex_path": setup["xelatex_path"], "auto_install_config_readback": "0"}
+        self.assertTrue(setup_stage_complete(stage, setup))
+        for changed in (
+            {"status": "INCOMPLETE"}, {"stage": "package-metadata-validated"},
+            {"installer_sha256": "1" * 64}, {"xelatex_path": r"C:\TeXLive\xelatex.exe"},
+            {"auto_install_config_readback": "1"}, {"schema_version": 0},
+        ):
+            with self.subTest(changed=changed):
+                self.assertFalse(setup_stage_complete({**stage, **changed}, setup))
+        self.assertFalse(setup_stage_complete({}, setup))
+        self.assertFalse(setup_stage_complete(stage, {**setup, "xelatex_path": ""}))
 
     def test_lua_negative_requires_complete_message_and_absence_pdf(self):
         message = "You need to run LuaTeX to use the grap\nh drawing library."
@@ -53,6 +69,8 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertIn("package-metadata-before-install.txt", setup)
         self.assertIn("private-package-index-refreshed", setup)
         self.assertNotIn("packages update @packages", setup)
+        self.assertIn("MiKTeX declared package $package is not confirmed installed", setup)
+        self.assertIn("stage = 'setup-complete'; status = 'SETUP_COMPLETE'", setup)
 
     def test_n1_session_contract_rejects_missing_ownership_and_undo(self):
         source = (r"\newcommand{\UserPath}{\path (0,0);}"
