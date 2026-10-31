@@ -493,6 +493,24 @@ impl Session {
             "Преамбула изменена через проверенный C/N2 patch; доступна отмена. TeX-пакеты не устанавливались".into();
         Ok(line)
     }
+    /// The inspector may navigate to the exact inverse-patch anchor after a
+    /// successful Undo. A stale source revision still fails in undo() without
+    /// modifying user text. Line numbers are physical, one-based and UTF-8 safe.
+    pub fn undo_and_focus_line(&mut self, source: &mut String) -> Result<usize, String> {
+        let start = self
+            .undo
+            .last()
+            .ok_or("Нет изменений для отмены")?
+            .range
+            .start;
+        let line = source
+            .get(..start)
+            .map(|prefix| prefix.bytes().filter(|byte| *byte == b'\\n').count() + 1)
+            .unwrap_or(1);
+        self.undo(source)?;
+        Ok(line)
+    }
+
     pub fn undo(&mut self, source: &mut String) -> Result<(), String> {
         if self.sync(source)? {
             return Err("Undo отменён: исходник изменён вне этой транзакции".into());

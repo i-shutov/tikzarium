@@ -1007,6 +1007,15 @@ impl eframe::App for TikzariumApp {
                 .default_width(250.0)
                 .min_width(210.0)
                 .show(ctx, |ui| {
+                    if let Some(line) = tikz_canvas::show_inspector_action_bar(
+                        ui,
+                        &mut self.authoring,
+                        &mut self.document.source,
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    ui.separator();
                     egui::ScrollArea::vertical()
                         .auto_shrink([false, false])
                         .show(ui, |ui| self.show_authoring_inspector(ui));
