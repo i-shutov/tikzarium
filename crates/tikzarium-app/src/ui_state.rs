@@ -53,6 +53,7 @@ pub fn line_start_char_index(source: &str, one_based_line: usize) -> Option<usiz
 pub fn preview_is_stale(
     has_pdf: bool,
     last_build_failed: bool,
+    build_in_progress: bool,
     built_source: Option<&str>,
     current_source: &str,
     built_path: Option<&Path>,
@@ -60,6 +61,7 @@ pub fn preview_is_stale(
 ) -> bool {
     has_pdf
         && (last_build_failed
+            || build_in_progress
             || built_source != Some(current_source)
             || built_path.is_none()
             || built_path != current_path)
@@ -126,9 +128,20 @@ mod tests {
     fn last_good_pdf_never_masquerades_as_current_after_failure_or_edit() {
         let path = Path::new("fig.tex");
         let moved = Path::new("fig-copy.tex");
-        assert!(!preview_is_stale(false, true, Some("x"), "y", None, None));
+        // An in-flight XeLaTeX run renders the retained prior PDF non-exportable.
+        assert!(preview_is_stale(
+            true,
+            false,
+            true,
+            Some("x"),
+            "x",
+            Some(path),
+            Some(path),
+        ));
+        assert!(!preview_is_stale(false, true, false, Some("x"), "y", None, None));
         assert!(!preview_is_stale(
             true,
+            false,
             false,
             Some("x"),
             "x",
@@ -138,6 +151,7 @@ mod tests {
         assert!(preview_is_stale(
             true,
             true,
+            false,
             Some("x"),
             "x",
             Some(path),
@@ -145,6 +159,7 @@ mod tests {
         ));
         assert!(preview_is_stale(
             true,
+            false,
             false,
             Some("x"),
             "changed",
@@ -154,6 +169,7 @@ mod tests {
         assert!(preview_is_stale(
             true,
             false,
+            false,
             None,
             "x",
             Some(path),
@@ -162,6 +178,7 @@ mod tests {
         assert!(preview_is_stale(
             true,
             false,
+            false,
             Some("x"),
             "x",
             Some(path),
@@ -169,6 +186,7 @@ mod tests {
         ));
         assert!(preview_is_stale(
             true,
+            false,
             false,
             Some("x"),
             "x",
