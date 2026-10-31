@@ -29,3 +29,7 @@ Follow-up after CI: inspect exact-run Rust test logs; fix formatting/compiler is
 ## First hosted CI finding (not PASS)
 
 Exact first head `f0bc0e2e0b3041c999f610eaedf8afeb892570ee`, [GitHub Actions 41183770626](https://github.com/i-shutov/tikzarium/actions/runs/41183770626), Windows Server + hosted macOS formatting gate **FAILED**. Rustfmt requested only two A-owned formatting changes: collapse the `item.digest.is_none() || ...` line and expand one long assert in `runner_unix.rs`. Both are applied in this follow-up commit; initial head is explicitly not PASS. All other jobs on that old SHA cannot certify the corrected head. Await fresh exact-head CI.
+
+## Self-review correction
+
+Identified and addressed an initially uncovered failure mode: if XeLaTeX emits a PDF but the `.fls` recorder is missing, the earlier snapshot would have contained only the source and returned `is_project_fresh=true`. This would mislabel an untracked project as fresh. Snapshot capture now requires an explicit recorder-completeness input, which is false for unreadable or absent `.fls` or no `INPUT`. New portable and Unix integration negative tests cover the condition. This is an engineering fix, not CI PASS.

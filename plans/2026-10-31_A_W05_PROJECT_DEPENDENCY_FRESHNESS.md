@@ -21,3 +21,7 @@ Open independent B #25, C #26 and D #27 are out of scope.
 This is **project-scope post-build freshness**, not a global TeX cache, file watcher, or provenance attestation. Outside-root files and symlinks to external targets are listed but are not hashed; changing them does not invalidate `is_project_fresh()`. Build-time changes (TOCTOU) and font/TeX-installation drift are not yet verified. SHA-256 hashing on a UI thread should be debounced or moved to a worker by lane B; lane A does not alter GUI files. Next A-owned workpack: explicitly select a project root and record external includes, or pre/post source fingerprint reconciliation to reject a PDF compiled from a concurrently changed source.
 
 No declaration of PASS until exact-head CI is observed.
+
+## Recorder completeness: fail-closed extension
+
+A successful engine exit plus PDF is insufficient if `.fls` is absent, unreadable or contains no `INPUT`. The runner now passes an explicit `recorder_complete` flag to the snapshot. Its `is_project_fresh` returns false with no usable recorder, but the PDF remains accessible to avoid incorrectly failing the build itself. A fake engine test covers this failure mode.

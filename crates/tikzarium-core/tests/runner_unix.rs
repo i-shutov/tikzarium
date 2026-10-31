@@ -29,6 +29,11 @@ case "$name" in
         printf 'simulated engine failure\n' >&2
         exit 1
         ;;
+    no-recorder.tex)
+        printf 'Engine intentionally omitted fls\n' > "$out/$stem.log"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
     slow.tex)
         printf 'Starting slow compilation\n' > "$out/$stem.log"
         printf 'ready\n' > "$PWD/fake-engine-ready"
@@ -213,4 +218,19 @@ fn real_runner_snapshot_invalidates_after_included_asset_change() {
         vec![asset.canonicalize().unwrap()]
     );
     assert_eq!(fs::read(&source).unwrap(), source_bytes);
+}
+
+#[test]
+fn missing_fls_does_not_claim_project_freshness() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("no-recorder.tex");
+    let original = b"% no recorder input\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(!artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(source).unwrap(), original);
 }

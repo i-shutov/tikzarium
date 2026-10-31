@@ -29,12 +29,18 @@ pub struct ProjectDependencySnapshot {
     root: PathBuf,
     project_inputs: Vec<ProjectInput>,
     ignored_external: Vec<PathBuf>,
+    recorder_complete: bool,
 }
 
 impl ProjectDependencySnapshot {
     /// The original TeX source is always included, even if the recorder
     /// omits it. Inputs are deduplicated after canonicalization.
-    pub fn capture(root: &Path, source: &Path, dependencies: &[PathBuf]) -> io::Result<Self> {
+    pub fn capture(
+        root: &Path,
+        source: &Path,
+        dependencies: &[PathBuf],
+        recorder_complete: bool,
+    ) -> io::Result<Self> {
         let root = root.canonicalize()?;
         let mut seen = HashSet::new();
         let mut project_inputs = Vec::new();
@@ -67,7 +73,15 @@ impl ProjectDependencySnapshot {
             root,
             project_inputs,
             ignored_external,
+            recorder_complete,
         })
+    }
+
+    /// False when the runner could not read a usable .fls INPUT record.
+    /// An incomplete recorder never certifies a fresh project.
+    #[must_use]
+    pub fn recorder_complete(&self) -> bool {
+        self.recorder_complete
     }
 
     #[must_use]
@@ -108,7 +122,7 @@ impl ProjectDependencySnapshot {
     /// can change without affecting this result; inspect ignored_external_paths.
     #[must_use]
     pub fn is_project_fresh(&self) -> bool {
-        self.invalidated_project_paths().is_empty()
+        self.recorder_complete && self.invalidated_project_paths().is_empty()
     }
 }
 
@@ -170,7 +184,7 @@ mod tests {
         let before_source = fs::read(&source).unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[asset.clone()]).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[asset.clone()], true).unwrap();
         assert!(snapshot.is_project_fresh());
         assert_eq!(snapshot.tracked_project_paths().len(), 2);
 
@@ -188,11 +202,11 @@ mod tests {
         fs::write(&source, "original").unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()]).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[absent.clone()], true).unwrap();
         assert!(!snapshot.is_project_fresh());
         assert_eq!(snapshot.invalidated_project_paths(), vec![absent]);
 
-        let plain = ProjectDependencySnapshot::capture(project.path(), &source, &[]).unwrap();
+        let plain = ProjectDependencySnapshot::capture(project.path(), &source, &[], true).unwrap();
         fs::remove_file(&source).unwrap();
         assert_eq!(plain.invalidated_project_paths(), vec![source]);
     }
@@ -206,7 +220,7 @@ mod tests {
         fs::write(&source, "source").unwrap();
         fs::write(&external, "external").unwrap();
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[external.clone()])
+            ProjectDependencySnapshot::capture(project.path(), &source, &[external.clone()], true)
                 .unwrap();
         assert!(snapshot.is_project_fresh());
         assert_eq!(snapshot.ignored_external_paths(), &[external]);
@@ -224,7 +238,7 @@ mod tests {
         file.flush().unwrap();
 
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()]).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[big.clone()], true).unwrap();
         assert_eq!(snapshot.invalidated_project_paths(), vec![big]);
         assert!(!snapshot.is_project_fresh());
     }
@@ -238,6 +252,7 @@ mod tests {
             project.path(),
             &source,
             &[PathBuf::from("./main.tex"), source.clone()],
+            true,
         )
         .unwrap();
         assert_eq!(snapshot.tracked_project_paths().len(), 1);
@@ -257,7 +272,24 @@ mod tests {
         fs::write(&target, "foreign").unwrap();
         symlink(&target, &link).unwrap();
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[link]).unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &source, &[link], true).unwrap();
         assert_eq!(snapshot.ignored_external_paths(), &[target]);
+    }
+}
+
+#[cfg(test)]
+mod recorder_completeness_regression {
+    use super::*;
+
+    #[test]
+    fn missing_recorder_cannot_certify_unchanged_source_as_fresh() {
+        let project = tempfile::tempdir().unwrap();
+        let source = project.path().join("main.tex");
+        fs::write(&source, "valid TeX").unwrap();
+        let snapshot =
+            ProjectDependencySnapshot::capture(project.path(), &source, &[], false).unwrap();
+        assert!(!snapshot.recorder_complete());
+        assert!(!snapshot.is_project_fresh());
+        assert!(snapshot.invalidated_project_paths().is_empty());
     }
 }

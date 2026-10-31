@@ -228,12 +228,19 @@ impl BuildService {
             return Err(BuildError::MissingPdf(pdf_path));
         }
         let pdf = fs::read(&pdf_path)?;
+        let recorder = fs::read_to_string(&fls_path);
+        // A valid PDF without a usable recorder is not a trustworthy
+        // dependency snapshot. Keep the PDF but report freshness as unknown.
+        let recorder_complete = recorder.as_ref().is_ok_and(|contents| {
+            contents.lines().any(|line| line.starts_with("INPUT "))
+        });
         let dependencies =
-            parse_fls_with_cwd(&fs::read_to_string(&fls_path).unwrap_or_default(), cwd)
+            parse_fls_with_cwd(recorder.as_deref().unwrap_or_default(), cwd)
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
-        let project_dependencies = ProjectDependencySnapshot::capture(cwd, &source, &dependencies)?;
+        let project_dependencies =
+            ProjectDependencySnapshot::capture(cwd, &source, &dependencies, recorder_complete)?;
         let preview = if request.options.rasterize_first_page {
             match &request.pdf_renderer {
                 Some(renderer) => render_first_page(renderer, &pdf_path)
