@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-31: I07 bounded initial XeLaTeX PDF preview
+
+- Protect the **first-page** Poppler renderer (`tikzarium-core::preview`), previously missing time and allocation budgets despite B05 navigation and B06 PNG decoding protections: 45-second subprocess deadline with kill/wait; 64MiB compressed PNG read cap.
+- Source and canonical compiled PDF are never modified by the guard. On missing/stalled/oversized raster, retain the valid PDF and report a preview-specific error instead of hanging indefinitely.
+- Add five small Rust tests (portable and Unix mock-tool paths), separate physical Windows 10 and M1/M4 QA protocol, plan, insight. Existing full workspace CI exercises the tests; exact new-head results PENDING at authoring. No package capability changes.
+
 ## Unreleased — 2026-10-31: N1 native TikZ visual authoring merged (#44)
 
 - **Implemented and merged**, not merely proposed: six Rust/egui TikZ-native input tools (line, arrow with explicit `arrows.meta`, rectangle, circle, text/math node, cubic Bézier). Main after [PR #44](https://github.com/i-shutov/tikzarium/pull/44): `6b0fe3551cb6ded5cf737e28a7a74326f0b4fe49`; validated source HEAD `1a274485ca8e728643bc0cf0ed79a18c6b4d5c34`.
