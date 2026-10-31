@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, poppler_version, setup_stage_complete, tex_failure
+from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, miktex_tex_log_identity, n1_state_contract, poppler_version, setup_stage_complete, tex_failure
 
 
 class MiKTeXVerticalContract(unittest.TestCase):
@@ -20,6 +20,29 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertTrue(miktex_engine("MiKTeX-XeTeX 4.0 (MiKTeX 25.12)"))
         self.assertFalse(miktex_engine("XeTeX 3.14159 (TeX Live 2026)"))
         self.assertFalse(miktex_engine("MiKTeX-pdfTeX 4.0"))
+
+    def test_actual_compiler_logs_require_pinned_miktex_banner_on_first_line(self):
+        real_banner = ("This is XeTeX, Version 3.141592653-2.6-0.999997 "
+                       "(MiKTeX 25.12) (preloaded format=xelatex 2026.10.31)")
+        self.assertTrue(miktex_tex_log_identity(real_banner + "\nentering extended mode"))
+        self.assertTrue(miktex_tex_log_identity("\ufeff" + real_banner))
+        for bad_log in (
+            "",
+            "This is XeTeX, Version 3.141592653 (TeX Live 2026)",
+            "This is XeTeX, Version 3.14 (TeX Live 2026) (MiKTeX 25.12)",
+            "This is pdfTeX, Version 3.14 (MiKTeX 25.12)",
+            "This is XeTeX, Version 3.14 (MiKTeX 26.1)",
+            "engine diagnostic\n" + real_banner,
+        ):
+            with self.subTest(bad_log=bad_log):
+                self.assertFalse(miktex_tex_log_identity(bad_log))
+
+    def test_both_positive_routes_gate_on_real_cli_and_direct_tex_logs(self):
+        code = (Path(__file__).resolve().parent / "qa_miktex_vertical.py").read_text(encoding="utf-8")
+        self.assertGreaterEqual(code.count("and miktex_tex_log_identity(cli_log_text)"), 2)
+        self.assertIn("and miktex_tex_log_identity(direct_log_text)", code)
+        self.assertIn("and miktex_tex_log_identity(log_text)", code)
+        self.assertIn('str(pdf), "--log", str(cli_log)', code)
 
     def test_terminal_setup_provenance_rejects_stale_or_mismatched_checkpoint(self):
         setup = {"installer_sha256": "0" * 64, "xelatex_path": r"D:\private\xelatex.exe"}
