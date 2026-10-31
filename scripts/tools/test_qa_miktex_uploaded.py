@@ -36,8 +36,9 @@ class RealEvidenceTamper(unittest.TestCase):
     def setUpClass(cls):
         cls.original = Path(os.environ['TIKZARIUM_MIKTEX_ARTIFACT'])
         cls.sha = os.environ['TIKZARIUM_SOURCE_SHA']
+        cls.checkout_sha = os.environ['TIKZARIUM_CHECKOUT_SHA']
         # Baseline must pass before negative mutations count as useful tests.
-        assert qa.audit(cls.original, cls.sha)['status'] == 'PASS'
+        assert qa.audit(cls.original, cls.sha, cls.checkout_sha)['status'] == 'PASS'
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -47,7 +48,11 @@ class RealEvidenceTamper(unittest.TestCase):
 
     def expect_reject(self):
         with self.assertRaises((ValueError, OSError)):
-            qa.audit(self.root, self.sha)
+            qa.audit(self.root, self.sha, self.checkout_sha)
+
+    def test_wrong_checkout_commit(self):
+        with self.assertRaises((ValueError, OSError)):
+            qa.audit(self.root, self.sha, '0' * 40)
 
     def test_change_pdf_bytes(self):
         p = self.root / 'N1 project Кириллица with spaces/PDF math/math.pdf'

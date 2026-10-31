@@ -80,11 +80,12 @@ def same_hash(path: Path, expected: str | None, label: str) -> None:
     require(path.is_file() and sha256(path) == expected, f'Bytes differ: {label}')
 
 
-def audit(root: Path, source_sha: str) -> dict:
+def audit(root: Path, source_sha: str, checkout_sha: str) -> dict:
     require(re.fullmatch(r'[0-9a-f]{40}', source_sha) is not None, 'Invalid source commit SHA')
+    require(re.fullmatch(r'[0-9a-f]{40}', checkout_sha) is not None, 'Invalid checkout commit SHA')
     setup, stage, q = (json_file(root / f) for f in ('setup.json', 'setup-stage.json', 'miktex-qa.json'))
-    require(q.get('accepted') is True and q.get('commit_sha') == source_sha
-            and q.get('source_head_sha') == source_sha, 'Unexpected report status/commit')
+    require(q.get('accepted') is True and q.get('commit_sha') == checkout_sha
+            and q.get('source_head_sha') == source_sha, 'Unexpected report status/commit binding')
     require(q.get('physical_win10') == 'NOT_RUN' and q.get('physical_mac_m1_m4') == 'NOT_RUN'
             and q.get('mouse_authoring') == 'NOT_RUN', 'False target-host acceptance')
     require(q.get('runner') == 'Windows' and q.get('runner_arch') == 'X64'
@@ -173,7 +174,7 @@ def audit(root: Path, source_sha: str) -> dict:
         if case == 'missing-library':
             require('notfound' in contents or 'didnotfind' in contents or "can'tfindfile" in contents,
                     'Missing library error lacks file-not-found context')
-    return {'status': 'PASS', 'scope': 'hosted Windows Server MiKTeX only', 'source_sha': source_sha,
+    return {'status': 'PASS', 'scope': 'hosted Windows Server MiKTeX only', 'source_sha': source_sha, 'checkout_sha': checkout_sha,
             'pdfs': checked, 'negative_cases': 2, 'n1_session_sources': 2,
             'package_rows': len(before.splitlines()), 'private_roots': 3}
 
@@ -182,10 +183,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact-dir', type=Path, required=True)
     parser.add_argument('--expected-source-sha', required=True)
+    parser.add_argument('--expected-checkout-sha', required=True)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
     try:
-        result = audit(args.artifact_dir, args.expected_source_sha)
+        result = audit(args.artifact_dir, args.expected_source_sha, args.expected_checkout_sha)
     except (ValueError, OSError, subprocess.SubprocessError, UnicodeError, KeyError, TypeError) as exc:
         result = {'status': 'FAIL', 'source_sha': args.expected_source_sha,
                   'error': str(exc)}
