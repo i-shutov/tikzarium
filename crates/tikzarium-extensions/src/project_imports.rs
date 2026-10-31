@@ -36,9 +36,7 @@ impl ProjectImports {
     /// Absent means no such declaration in a safely recognized preamble.
     /// UNKNOWN is mandatory for macro/conditional/indirect or malformed imports.
     pub fn status(&self, kind: ImportKind, name: &str) -> Evidence {
-        if self.uncertain_reason.is_some()
-            || !self.class_declared
-            || self.begin_document.is_none()
+        if self.uncertain_reason.is_some() || !self.class_declared || self.begin_document.is_none()
         {
             return Evidence::Unknown;
         }
@@ -101,9 +99,10 @@ fn literal_names(line: &str, command: &str, options_allowed: bool) -> Option<Vec
         }
         let end = rest.find(']')?;
         let options = &rest[1..end];
-        if !options.bytes().all(|b| {
-            b.is_ascii_alphanumeric() || b" .,=_:-/".contains(&b)
-        }) {
+        if !options
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b" .,=_:-/".contains(&b))
+        {
             return None;
         }
         rest = rest[end + 1..].trim_start();

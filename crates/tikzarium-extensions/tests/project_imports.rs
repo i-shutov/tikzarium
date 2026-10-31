@@ -1,9 +1,7 @@
 use tikzarium_extensions::{
     primitive_edit::SourceTarget,
     primitives::{Catalog, Evidence},
-    project_imports::{
-        capabilities_for_tool, inspect, plan_import, ImportDecision, ImportKind,
-    },
+    project_imports::{ImportDecision, ImportKind, capabilities_for_tool, inspect, plan_import},
 };
 
 fn preamble() -> String {
@@ -20,10 +18,7 @@ fn explicit_package_and_library_lists_are_not_installation_evidence() {
     let p = inspect(src);
     assert_eq!(p.uncertain_reason, None);
     assert_eq!(p.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
-    assert_eq!(
-        p.status(ImportKind::Package, "xcolor"),
-        Evidence::Confirmed
-    );
+    assert_eq!(p.status(ImportKind::Package, "xcolor"), Evidence::Confirmed);
     assert_eq!(
         p.status(ImportKind::TikzLibrary, "arrows.meta"),
         Evidence::Confirmed
@@ -51,10 +46,7 @@ fn commented_declarations_are_not_loaded_and_escaped_percent_is_not_a_comment() 
         p.status(ImportKind::TikzLibrary, "arrows.meta"),
         Evidence::Absent
     );
-    assert_eq!(
-        p.status(ImportKind::TikzLibrary, "fit"),
-        Evidence::Absent
-    );
+    assert_eq!(p.status(ImportKind::TikzLibrary, "fit"), Evidence::Absent);
     assert_eq!(p.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
 }
 
@@ -74,14 +66,8 @@ fn mixed_indirect_macro_or_conditional_imports_are_unknown_not_missing() {
     for source in cases {
         let p = inspect(source);
         assert!(p.uncertain_reason.is_some(), "case: {source:?}");
-        assert_eq!(
-            p.status(ImportKind::Package, "tikz"),
-            Evidence::Unknown
-        );
-        assert_eq!(
-            p.status(ImportKind::TikzLibrary, "calc"),
-            Evidence::Unknown
-        );
+        assert_eq!(p.status(ImportKind::Package, "tikz"), Evidence::Unknown);
+        assert_eq!(p.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
         assert!(p.begin_document_target(2).is_none());
         assert!(matches!(
             plan_import(
@@ -125,8 +111,7 @@ fn crlf_proposal_is_visible_then_undo_restores_every_original_byte() {
 
 #[test]
 fn literal_package_is_added_only_when_tikz_is_truly_absent() {
-    let mut source =
-        "\\documentclass{article}\n% unrelated\n\\begin{document}\nHi\n".to_owned();
+    let mut source = "\\documentclass{article}\n% unrelated\n\\begin{document}\nHi\n".to_owned();
     let before = source.clone();
     let mut revision = 0;
     let proposed = plan_import(
@@ -207,12 +192,7 @@ fn stale_revision_wrong_anchor_and_manual_anchor_edits_are_rejected() {
     assert_eq!(wrong_anchor, before);
     let wrong_range = SourceTarget::new(0..0, 7);
     assert!(matches!(
-        plan_import(
-            &original,
-            wrong_range,
-            ImportKind::TikzLibrary,
-            "fit"
-        ),
+        plan_import(&original, wrong_range, ImportKind::TikzLibrary, "fit"),
         ImportDecision::Refused { .. }
     ));
 }
@@ -239,12 +219,7 @@ fn unsupported_names_refuse_without_touching_source_or_installation() {
         ImportDecision::Refused { .. }
     ));
     assert!(matches!(
-        plan_import(
-            &source,
-            target(&source, 0),
-            ImportKind::Package,
-            "tikz"
-        ),
+        plan_import(&source, target(&source, 0), ImportKind::Package, "tikz"),
         ImportDecision::AlreadyLoaded
     ));
 }
@@ -253,38 +228,19 @@ fn unsupported_names_refuse_without_touching_source_or_installation() {
 fn generated_primitive_requirements_keep_five_independent_states() {
     let c = Catalog::bundled().unwrap();
     let p = inspect(&preamble());
-    let arrow = capabilities_for_tool(
-        &c,
-        "tikz.arrow",
-        &p,
-        Evidence::Confirmed,
-        Some("xelatex"),
-    )
-    .unwrap();
+    let arrow =
+        capabilities_for_tool(&c, "tikz.arrow", &p, Evidence::Confirmed, Some("xelatex")).unwrap();
     assert_eq!(arrow.installed, Evidence::Confirmed);
     assert_eq!(arrow.project_loaded, Evidence::Absent);
     assert_eq!(arrow.engine_compatible, Evidence::Confirmed);
     assert_eq!(arrow.tool_implemented, Evidence::Confirmed);
     assert_eq!(arrow.help_available, Evidence::Confirmed);
     assert!(!arrow.visual_editable);
-    let line = capabilities_for_tool(
-        &c,
-        "tikz.line",
-        &p,
-        Evidence::Unknown,
-        Some("xelatex"),
-    )
-    .unwrap();
+    let line =
+        capabilities_for_tool(&c, "tikz.line", &p, Evidence::Unknown, Some("xelatex")).unwrap();
     assert_eq!(line.installed, Evidence::Unknown);
     assert_eq!(line.project_loaded, Evidence::Confirmed);
-    let math = capabilities_for_tool(
-        &c,
-        "tikz.node",
-        &p,
-        Evidence::Confirmed,
-        None,
-    )
-    .unwrap();
+    let math = capabilities_for_tool(&c, "tikz.node", &p, Evidence::Confirmed, None).unwrap();
     assert_eq!(math.engine_compatible, Evidence::Unknown);
 }
 
@@ -306,10 +262,7 @@ fn library_before_tikz_is_unknown_and_refused_not_silently_reordered() {
     let before = source.clone();
     let p = inspect(&source);
     assert!(p.uncertain_reason.is_some());
-    assert_eq!(
-        p.status(ImportKind::TikzLibrary, "calc"),
-        Evidence::Unknown
-    );
+    assert_eq!(p.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
     assert!(matches!(
         plan_import(
             &source,
@@ -338,7 +291,10 @@ fn standalone_usepackage_import_is_a_reversible_literal_patch() {
     };
     assert_eq!(plan.declarations, ["\\usepackage{tikz}"]);
     let inverse = plan.apply(&mut source, &mut revision).unwrap();
-    assert_eq!(inspect(&source).status(ImportKind::Package, "tikz"), Evidence::Confirmed);
+    assert_eq!(
+        inspect(&source).status(ImportKind::Package, "tikz"),
+        Evidence::Confirmed
+    );
     inverse.apply(&mut source, &mut revision).unwrap();
     assert_eq!(source, before);
 }

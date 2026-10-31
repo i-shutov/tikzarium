@@ -6,8 +6,8 @@
 
 pub mod evidence;
 pub mod primitive_edit;
-pub mod project_imports;
 pub mod primitives;
+pub mod project_imports;
 
 use serde::Deserialize;
 use std::{

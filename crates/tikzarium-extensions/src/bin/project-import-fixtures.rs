@@ -2,9 +2,7 @@
 //! Usage: cargo run -q -p tikzarium-extensions --bin project-import-fixtures -- arrows.meta
 //! Redirect stdout to a .tex file; this utility never compiles or installs TeX.
 
-use tikzarium_extensions::project_imports::{
-    inspect, plan_import, ImportDecision, ImportKind,
-};
+use tikzarium_extensions::project_imports::{ImportDecision, ImportKind, inspect, plan_import};
 
 fn main() {
     let name = std::env::args().nth(1).unwrap_or_default();
@@ -18,7 +16,8 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let prefix = "\\documentclass{article}\n\\pagestyle{empty}\n\\begin{document}\n\\begin{tikzpicture}\n";
+    let prefix =
+        "\\documentclass{article}\n\\pagestyle{empty}\n\\begin{document}\n\\begin{tikzpicture}\n";
     let suffix = "\n\\end{tikzpicture}\n\\end{document}\n";
     let mut source = format!("{prefix}{drawing}{suffix}");
     let mut revision = 0;
