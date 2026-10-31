@@ -1,0 +1,21 @@
+# D06 — separate MiKTeX XeLaTeX CI and native TikZ primitive baseline
+
+Date: 2026-10-31. Exact main base at branch creation: 08c376523e133ad1fa7994203a6442955740c64a. Initial read: c5c8c1576b6288e1d125d558d0d4872b321efb86. Main advanced via B05 #25. Read AGENTS, D plans/insights and target-host protocols before implementation. Scope is D only; A/B/C, integration files and FlowBridge/WhereIsIt not touched.
+
+## Implemented workpack
+
+New separate .github/workflows/qa-miktex-windows.yml exercises **real MiKTeX** on hosted Windows Server 2022 x64, never treating old Windows TeX Live CI as MiKTeX proof. Download official Basic MiKTeX 25.12 Windows x64 installer pinned to SHA-256 14b42dd9f4b4a7813a8bfd69c8f99316c2888cc4ee26f631f397e163d85d6c62. Use --private --no-registry --unattended and runner-temp user install/config/data. Install explicit TeX dependencies using MiKTeX packages command. Set and read back private [MPM]AutoInstall=0 and capture package inventory before/after compile. No product installation of TeX, no changes to user TeX configuration and no implicit package installs during builds.
+
+Run actual Rust CLI using explicitly selected private MiKTeX xelatex.exe, prove MiKTeX XeTeX version and path. Hand-authored fixture covers native TikZ line, arrow, rectangle, circle, node, Bézier, fontspec/unicode-math, literal Cyrillic/Greek and opaque macro/comment. Require one page via pdfinfo, real UTF-8 text via pdftotext, embedded DejaVuSerif/LatinModernMath via pdffonts, no Missing character diagnostics, and unchanged source bytes/SHA after building inside Unicode/spaces paths. Real source-specific negatives: missing library tikzarium_qa_nonexistent_8f7d41 and Lua-only graphdrawing, with nonzero exit, TeX log, complete error (including XeTeX grap + newline + h wrap), no PDF and original source bytes. Persist setup JSON, versions, flags, commands, logs, PDF and compiler hashes. Fail closed on missing prerequisites; never weaken tests for a green check.
+
+## Ownership and honest acceptance boundary
+
+This source is authored directly, NOT by mouse UI. A owns source-preserving XeLaTeX runtime; B owns palette pointer drawing, always-visible editable code pane, Save/Reopen/Undo and GUI themes (independent PR #37); C owns primitive catalogue, contextual hover/F1/inspector help and library status. Do not write new TeX/PGF/CAS/solver or block first drawing on CST/DAG. After their exact SHA implementation, independently test pointer drawing for all six primitives, parameter edit → ordinary TikZ code → native MiKTeX PDF → Save/Reopen/Undo, preserving unknown macros. Help completeness contract: syntax, type, units, constraints, default with source, example, required library and manual section. Distinguish project loaded, installed, compatible, tool available and UNKNOWN. GUI themes must not mutate source/figure PDF. Physical screenshot proof remains mandatory.
+
+## Results and blockers
+
+D06 Python unit tests and TeX Live local PDF proof described in corresponding D06 insight; these are explicitly NOT MiKTeX results. Hosted MiKTeX CI verdict **PENDING its own exact D06 SHA and artifact inspection**. Physical Windows 10 x64 with independently user-installed MiKTeX, Mac M1/M4 native XeLaTeX, mouse-driven GUI and persistence smoke are **NOT_RUN**. Hosted Windows Server is CI_ONLY, not physical Windows 10. R4 corpus not imported; licenses unchecked; O027/O028/O030/O047 warnings remain unresolved. Do not declare physical PASS without real GUI action/screenshots.
+
+Official vendor references: https://docs.miktex.org/manual/setupwiz.html ; https://docs.miktex.org/manual/miktex-packages.html ; https://docs.miktex.org/manual/initexmf.html ; https://docs.miktex.org/manual/miktex-xetex.html ; https://miktex.org/download
+
+Next: review exact-head MiKTeX Action and setup artifact. On installer or font failure, preserve failure evidence and correct only D setup, not the test expectations. After B/A/C merge, extend real mouse GUI contract at their exact SHA.
