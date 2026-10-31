@@ -33,6 +33,23 @@ case "$name" in
         printf 'simulated engine failure\n' >&2
         exit 1
         ;;
+    external-only.tex)
+        printf 'Foreign-only INPUT recorder\n' > "$out/$stem.log"
+        printf 'PWD %s\nINPUT ./assets/shape.tex\n' "$PWD" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
+    no-recorder.tex)
+        printf 'Engine intentionally omitted fls\n' > "$out/$stem.log"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
+    symlink-parent.tex)
+        printf 'Recorded filesystem-traversed INPUT\n' > "$out/$stem.log"
+        printf 'PWD %s\nINPUT ./%s\nINPUT ./link/../data.tex\nINPUT link/../data.tex\n' "$PWD" "$name" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
     slow.tex)
         printf 'Starting slow compilation\n' > "$out/$stem.log"
         printf 'ready\n' > "$PWD/fake-engine-ready"
@@ -233,4 +250,183 @@ fn unrecognized_engine_refuses_compilation_without_modifying_source() {
         .unwrap_err();
     assert!(matches!(failure, BuildError::UnverifiedEngine { .. }));
     assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn real_runner_snapshot_invalidates_after_included_asset_change() {
+    let directory = tempfile::tempdir().unwrap();
+    fs::create_dir_all(directory.path().join("assets")).unwrap();
+    let asset = directory.path().join("assets/shape.tex");
+    fs::write(&asset, "abcdef").unwrap();
+    let source = directory.path().join("figure.v2.tex");
+    let source_bytes = b"% include untouched\r\n";
+    fs::write(&source, source_bytes).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        2
+    );
+
+    // Same-length edit: metadata size cannot be used as a freshness guarantee.
+    fs::write(&asset, "abcXef").unwrap();
+    assert_eq!(
+        artifact.project_dependencies.invalidated_project_paths(),
+        vec![asset.canonicalize().unwrap()]
+    );
+    assert_eq!(fs::read(&source).unwrap(), source_bytes);
+}
+
+#[test]
+fn missing_fls_does_not_claim_project_freshness() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("no-recorder.tex");
+    let original = b"% no recorder input\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(!artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[test]
+fn external_only_recorder_cannot_certify_source_freshness() {
+    let directory = tempfile::tempdir().unwrap();
+    fs::create_dir_all(directory.path().join("assets")).unwrap();
+    fs::write(directory.path().join("assets/shape.tex"), "shape").unwrap();
+    let source = directory.path().join("external-only.tex");
+    let original = b"% original source\r\n\\opaque{contents}\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(!artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[test]
+fn runner_symlink_parent_dotdot_is_not_falsely_fresh() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    fs::create_dir_all(outside.path().join("subdir")).unwrap();
+    fs::write(project.path().join("data.tex"), b"LOCAL").unwrap();
+    let external = outside.path().join("data.tex");
+    fs::write(&external, b"EXTERNAL").unwrap();
+    symlink(outside.path().join("subdir"), project.path().join("link")).unwrap();
+    let source = project.path().join("symlink-parent.tex");
+    let original = b"% source CRLF\r\n\\unknownmacro{opaque}\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        1
+    );
+    assert!(
+        artifact
+            .dependencies
+            .contains(&external.canonicalize().unwrap())
+    );
+    assert_eq!(
+        artifact.project_dependencies.ignored_external_paths(),
+        &[external.canonicalize().unwrap()]
+    );
+    fs::write(&external, b"CHANGED!").unwrap();
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(project.path().join("data.tex")).unwrap(), b"LOCAL");
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[test]
+fn recorded_symlink_retarget_invalidates_real_runner_snapshot_and_preserves_source() {
+    use std::os::unix::fs::symlink;
+    let directory = tempfile::tempdir().unwrap();
+    let assets = directory.path().join("assets");
+    fs::create_dir_all(&assets).unwrap();
+    let first = assets.join("alpha.tex");
+    let second = assets.join("beta.tex");
+    let link = assets.join("shape.tex");
+    fs::write(&first, "AAA").unwrap();
+    fs::write(&second, "BBB").unwrap();
+    symlink(&first, &link).unwrap();
+    let source = directory.path().join("рисунок с пробелом.tex");
+    let original = b"% user source\r\n\\opaque{value}\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert!(
+        artifact
+            .dependencies
+            .contains(&first.canonicalize().unwrap())
+    );
+
+    fs::remove_file(&link).unwrap();
+    symlink(&second, &link).unwrap();
+    assert_eq!(
+        artifact.project_dependencies.invalidated_project_paths(),
+        vec![first.canonicalize().unwrap()]
+    );
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(&first).unwrap(), b"AAA");
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn symlinked_project_root_keeps_one_author_source_in_snapshot() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    let alias_owner = tempfile::tempdir().unwrap();
+    let alias = alias_owner.path().join("project-link");
+    symlink(project.path(), &alias).unwrap();
+    fs::create_dir_all(project.path().join("assets")).unwrap();
+    fs::write(project.path().join("assets/shape.tex"), b"asset").unwrap();
+    let source = alias.join("figure.v2.tex");
+    let original = b"% opaque source\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert_eq!(
+        artifact.project_dependencies.tracked_project_paths().len(),
+        2
+    );
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn retargeted_author_file_symlink_invalidates_compiled_snapshot() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    fs::create_dir_all(project.path().join("assets")).unwrap();
+    fs::write(project.path().join("assets/shape.tex"), b"asset").unwrap();
+    let first = project.path().join("first.tex");
+    let second = project.path().join("second.tex");
+    let link = project.path().join("source-link.tex");
+    fs::write(&first, b"% original\r\n").unwrap();
+    fs::write(&second, b"% different\r\n").unwrap();
+    symlink(&first, &link).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&link, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    fs::remove_file(&link).unwrap();
+    symlink(&second, &link).unwrap();
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(&first).unwrap(), b"% original\r\n");
 }

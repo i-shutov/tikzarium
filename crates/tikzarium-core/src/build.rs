@@ -1,5 +1,6 @@
 //! Direct XeLaTeX runner. -no-shell-escape is not an OS sandbox.
 use crate::{
+    dependencies::ProjectDependencySnapshot,
     diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
     discovery::{TexDistribution, inspect_xelatex},
     preview::{Preview, render_first_page},
@@ -51,6 +52,8 @@ pub struct BuildArtifact {
     pub pdf: Vec<u8>,
     pub log: String,
     pub dependencies: Vec<PathBuf>,
+    /// Read-only SHA-256 project-local source/dependency snapshot, not a global TeX cache.
+    pub project_dependencies: ProjectDependencySnapshot,
     pub diagnostics: Vec<BuildDiagnostic>,
     pub preview: Result<Option<Preview>, String>,
     pub elapsed: Duration,
@@ -245,11 +248,44 @@ impl BuildService {
             return Err(BuildError::MissingPdf(pdf_path));
         }
         let pdf = fs::read(&pdf_path)?;
-        let dependencies =
-            parse_fls_with_cwd(&fs::read_to_string(&fls_path).unwrap_or_default(), cwd)
+        let recorder = fs::read_to_string(&fls_path);
+        // Any INPUT line is insufficient: a truncated or foreign-only .fls
+        // could miss actual project dependencies. Require a recorder that
+        // explicitly includes this author source as an input.
+        // The public dependency list stays canonical. The snapshot separately
+        // retains original .fls INPUT paths so a moved symlink cannot look fresh.
+        let dependencies: Vec<PathBuf> =
+            parse_fls_with_cwd(recorder.as_deref().unwrap_or_default(), cwd)
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
+        let recorded_inputs: Vec<PathBuf> =
+            parse_fls_with_cwd_preserving_links(recorder.as_deref().unwrap_or_default(), cwd)
+                .into_iter()
+                .filter(|path| !path.starts_with(&out_dir))
+                .collect();
+        let recorder_complete = recorder.is_ok() && dependencies.contains(&source);
+        // Keep a genuine source-file symlink so retargeting invalidates it.
+        // For an ordinary file, prefer the canonical compiler source: macOS
+        // /var and /private/var are aliases and must not duplicate the source.
+        let authored_source = if fs::symlink_metadata(&request.source)
+            .map(|metadata| metadata.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            if request.source.is_absolute() {
+                request.source.clone()
+            } else {
+                std::env::current_dir()?.join(&request.source)
+            }
+        } else {
+            source.clone()
+        };
+        let project_dependencies = ProjectDependencySnapshot::capture(
+            cwd,
+            &authored_source,
+            &recorded_inputs,
+            recorder_complete,
+        )?;
         let preview = if request.options.rasterize_first_page {
             match &request.pdf_renderer {
                 Some(renderer) => render_first_page(renderer, &pdf_path)
@@ -265,6 +301,7 @@ impl BuildService {
             pdf,
             log,
             dependencies,
+            project_dependencies,
             diagnostics,
             preview,
             elapsed: started.elapsed(),
@@ -365,6 +402,20 @@ pub fn parse_fls(log: &str) -> Vec<PathBuf> {
 /// This does not claim that external TeX packages are project-local files.
 #[must_use]
 pub fn parse_fls_with_cwd(log: &str, cwd: &Path) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    let mut seen = HashSet::new();
+    for absolute in parse_fls_with_cwd_preserving_links(log, cwd) {
+        let resolved = absolute.canonicalize().unwrap_or(absolute);
+        if seen.insert(resolved.clone()) {
+            paths.push(resolved);
+        }
+    }
+    paths
+}
+
+/// Preserve original INPUT paths for snapshot identity checks.
+/// The public parse_fls_with_cwd API continues returning canonical targets.
+fn parse_fls_with_cwd_preserving_links(log: &str, cwd: &Path) -> Vec<PathBuf> {
     let base = log
         .lines()
         .find_map(|line| line.strip_prefix("PWD "))
@@ -379,20 +430,16 @@ pub fn parse_fls_with_cwd(log: &str, cwd: &Path) -> Vec<PathBuf> {
         })
         .unwrap_or_else(|| cwd.to_path_buf());
 
-    let mut paths = Vec::new();
-    let mut seen = HashSet::new();
-    for path in parse_fls(log) {
-        let absolute = if path.is_absolute() {
-            path
-        } else {
-            base.join(path)
-        };
-        let resolved = absolute.canonicalize().unwrap_or(absolute);
-        if seen.insert(resolved.clone()) {
-            paths.push(resolved);
-        }
-    }
-    paths
+    parse_fls(log)
+        .into_iter()
+        .map(|path| {
+            if path.is_absolute() {
+                path
+            } else {
+                base.join(path)
+            }
+        })
+        .collect()
 }
 
 fn read_capped(path: &Path, cap: usize) -> io::Result<String> {
@@ -454,6 +501,50 @@ mod tests {
         );
         let paths = parse_fls_with_cwd(&contents, directory.path());
         assert_eq!(paths, vec![source.canonicalize().unwrap()]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn recorder_preserves_link_spelling_without_changing_public_resolved_paths() {
+        use std::os::unix::fs::symlink;
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("target.tex");
+        let alias = dir.path().join("alias.tex");
+        fs::write(&target, "target").unwrap();
+        symlink(&target, &alias).unwrap();
+        let fls = format!("PWD {}\nINPUT ./alias.tex\n", dir.path().display());
+        assert_eq!(
+            parse_fls_with_cwd_preserving_links(&fls, dir.path()),
+            vec![dir.path().join("./alias.tex")]
+        );
+        assert_eq!(
+            parse_fls_with_cwd(&fls, dir.path()),
+            vec![target.canonicalize().unwrap()]
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn recorder_preserves_symlink_parent_dotdot_without_collapsing_it() {
+        use std::os::unix::fs::symlink;
+        let project = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::create_dir_all(outside.path().join("subdir")).unwrap();
+        fs::write(project.path().join("data.tex"), b"LOCAL").unwrap();
+        let foreign = outside.path().join("data.tex");
+        fs::write(&foreign, b"EXTERNAL").unwrap();
+        symlink(outside.path().join("subdir"), project.path().join("link")).unwrap();
+
+        let fls = format!(
+            "PWD {}\nINPUT ./link/../data.tex\nINPUT link/../data.tex\n",
+            project.path().display()
+        );
+        let raw = parse_fls_with_cwd_preserving_links(&fls, project.path());
+        assert!(raw.contains(&project.path().join("./link/../data.tex")));
+        assert_eq!(
+            parse_fls_with_cwd(&fls, project.path()),
+            vec![foreign.canonicalize().unwrap()]
+        );
     }
 
     #[test]
