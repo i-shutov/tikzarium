@@ -35,6 +35,23 @@
       "unicode_path": true
     },
     {
+      "id": "g02-tikz-fonts",
+      "project_dir": "fixtures/qa/g02-tikz-fonts",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "check_no_missing_glyphs": true,
+      "text_expect": [
+        "Оптика и квантовая яма",
+        "Греческие символы αβγ"
+      ],
+      "font_expect": [
+        "DejaVuSerif",
+        "LatinModernMath"
+      ],
+      "note": "Text and math must be actual Unicode/XeLaTeX fontspec+unicode-math content within TikZ nodes. pdffonts evidence is separately marked NOT_CHECKED when tool is absent."
+    },
+    {
       "id": "g08-intentional-tex-error",
       "project_dir": "fixtures/qa/g08-error",
       "source": "main.tex",
