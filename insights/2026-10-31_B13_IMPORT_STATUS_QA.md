@@ -13,3 +13,7 @@ Source test cases: ordinary `\\usepackage{tikz}` -> CONFIRMED; valid `\\document
 Before B13, exact B12 `99cff2e19e87274590156cda2c1d3c43c5b97bee` had 5/5 workflows SUCCESS: Rust (3 jobs), D QA (7), N1 application-state→XeLaTeX (1), D06 real hosted Windows Server MiKTeX (1), font integrity (1). B13's exact-head checks must be read after the new code/docs commits; **PENDING** as recorded at authoring time, not inherited PASS. C #55 provenance API remains draft, not consumed.
 
 Physical Win10/MiKTeX and Mac M1/M4, screenshots/IME/native dialogs: NOT_RUN. No claim of GUI integration PASS or PDF coordinate registration. Review C #55 after independent merge and decide whether to add source-token focus in a subsequent meaningful B vertical block.
+
+## QA correction — exact initial HEAD failed formatter
+
+Initial B13 source+docs HEAD `5fc2ebd1d48e5aa2f3564f745399d536131a12f2` **FAILED** `cargo fmt --all -- --check`, reproduced independently in [Windows Rust CI 41207631169](https://github.com/i-shutov/tikzarium/actions/runs/41207631169), job 124555857740, and [Ubuntu D QA 41207631067](https://github.com/i-shutov/tikzarium/actions/runs/41207631067), job 124555857559. Only diff: format `loaded: project_imports::inspect(...).status(...)` in app main.rs. No actual app Rust unit/event test or Clippy PASS is inferred from this failed job. Applied the exact four-line replacement requested by rustfmt at code commit `3673e3df9d3705292a92ea6c8a6f3e8447a8b99e`. The final docs HEAD after this note needs NEW exact-head workflows. Previous B12 PASS does not roll over.
