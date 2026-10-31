@@ -136,7 +136,7 @@ impl TikzariumApp {
                 .add_filter("TeX / TikZ", &["tex", "tikz"])
                 .set_file_name(filename)
                 .save_file();
-            return match path {
+            match path {
                 Some(path) => self.save_to_path(path),
                 None => {
                     self.status = "Save cancelled".into();
@@ -368,10 +368,9 @@ impl TikzariumApp {
             if ui
                 .add_enabled(fit.is_some(), egui::Button::new("Fit width"))
                 .clicked()
+                && let Some(fit) = fit
             {
-                if let Some(fit) = fit {
-                    self.zoom = fit;
-                }
+                self.zoom = fit;
             }
         });
         if preview_is_stale(
