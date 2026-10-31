@@ -257,9 +257,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let file = dir.path().join("read-only.tex");
         fs::write(&file, "unchanged\n").unwrap();
-        let mut permissions = fs::metadata(&file).unwrap().permissions();
-        permissions.set_readonly(true);
-        fs::set_permissions(&file, permissions).unwrap();
+        let original_permissions = fs::metadata(&file).unwrap().permissions();
+        let mut locked_permissions = original_permissions.clone();
+        locked_permissions.set_readonly(true);
+        fs::set_permissions(&file, locked_permissions).unwrap();
 
         let mut doc = Document::load(&file).unwrap();
         assert!(doc.save().is_ok());
@@ -267,9 +268,7 @@ mod tests {
         assert_eq!(doc.save().unwrap_err().kind(), io::ErrorKind::PermissionDenied);
         assert_eq!(fs::read_to_string(&file).unwrap(), "unchanged\n");
         // Restore write permissions before TempDir cleanup on Windows.
-        let mut permissions = fs::metadata(&file).unwrap().permissions();
-        permissions.set_readonly(false);
-        fs::set_permissions(&file, permissions).unwrap();
+        fs::set_permissions(&file, original_permissions).unwrap();
     }
 
 }
