@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use tikzarium_extensions::primitive_edit::{plan_parameter_edit, SourceTarget};
+use tikzarium_extensions::primitive_edit::{SourceTarget, plan_parameter_edit};
 use tikzarium_extensions::primitives::{Catalog, PrimitiveError};
 
 fn enclosed_command(

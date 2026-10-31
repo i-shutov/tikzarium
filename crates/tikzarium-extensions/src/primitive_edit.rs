@@ -6,12 +6,7 @@
 use crate::primitives::{Catalog, PrimitiveError, SourcePatch};
 use std::{collections::BTreeMap, ops::Range};
 
-/// Plan one property change without modifying the source.
-///
-/// The full document, unknown user macros, comments, and adjacent commands are
-/// never regenerated. The returned patch changes only the shortest differing
-/// UTF-8 span inside an exactly matched, generated command. The caller applies
-/// this patch through SourcePatch::apply with the authoritative revision.
+/// Caller-confirmed source command span and monotone revision belong together.
 /// The caller-verified byte span and monotone revision are one source snapshot.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceTarget {
@@ -25,6 +20,12 @@ impl SourceTarget {
     }
 }
 
+/// Plan one property change without modifying the source.
+///
+/// The full document, unknown user macros, comments, and adjacent commands are
+/// never regenerated. The returned patch changes only the shortest differing
+/// UTF-8 span inside an exactly matched, generated command. The caller applies
+/// this patch through SourcePatch::apply with the authoritative revision.
 pub fn plan_parameter_edit(
     catalog: &Catalog,
     tool_id: &str,
