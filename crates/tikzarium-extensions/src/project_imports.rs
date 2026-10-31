@@ -71,7 +71,7 @@ fn first_reason(slot: &mut Option<&'static str>, reason: &'static str) {
 fn uncommented(line: &str) -> &str {
     let mut slashes = 0usize;
     for (index, ch) in line.char_indices() {
-        if ch == '%' && slashes % 2 == 0 {
+        if ch == '%' && slashes.is_multiple_of(2) {
             return &line[..index];
         }
         if ch == '\\' {
@@ -160,7 +160,7 @@ pub fn inspect(source: &str) -> ProjectImports {
         if result.begin_document.is_some() {
             break;
         }
-        let line = raw.trim_end_matches(|c| c == '\r' || c == '\n');
+        let line = raw.trim_end_matches(['\r', '\n']);
         let active = uncommented(line);
         let active = if offset == 0 {
             active.strip_prefix('\u{feff}').unwrap_or(active)
