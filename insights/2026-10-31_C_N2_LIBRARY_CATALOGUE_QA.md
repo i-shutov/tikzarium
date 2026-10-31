@@ -28,3 +28,7 @@ On Debian TeX Live 2025/dev XeTeX 0.999996, four *literal full-document catalogu
 - fit: `667d6e765d359890e30a870c1db758d79a722025fd415a7e98e6538e297f832e`
 
 These verify the individual TikZ examples on ONE local Linux XeLaTeX installation. They do not prove the binary `n2-library-fixture` ran or validate Rust, hosted Windows Server/MiKTeX or physical Win10/M1/M4. The `fit` and `positioning` PDF pages were also rasterized and inspected; no content clipping observed. Full physical GUI validation remains NOT_RUN.
+
+## Hosted Windows regression and precise fix
+
+Exact SHA `23003dabebf99eabe39457b10b326e45d281fa31`: [native Rust Windows Server job 124566322698](https://github.com/i-shutov/tikzarium/actions/runs/41211177456) **FAIL**, 5/6 new library tests passed; only `four_libraries_are_in_the_same_schema_as_six_native_tools` failed because Git checked out `all-six.tex` with CRLF while the generator deliberately emits LF. The complete assertion diff showed identical TikZ commands and a pure line-ending difference. Ubuntu D QA at the same head [41211177404](https://github.com/i-shutov/tikzarium/actions/runs/41211177404) passed rustfmt/workspace tests/Clippy including 6/6 new library tests; macOS native Rust had passed tests at the check. Fix **only the test** to compare an LF-normalized fixture; never change the generator to host-dependent CRLF or alter any user source. This is a content-equivalence assertion only; separate CRLF/Undo byte-identity checks remain exact. Subsequent exact-head CI required before PASS.

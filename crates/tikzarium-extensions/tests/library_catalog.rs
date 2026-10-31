@@ -35,9 +35,10 @@ fn four_libraries_are_in_the_same_schema_as_six_native_tools() {
         assert!(record.example.contains("\\end{tikzpicture}"));
     }
     // Shared library additions never rewrite the original N1 source output.
+    let original_fixture = include_str!("../../../extensions/primitives/fixtures/all-six.tex");
     assert_eq!(
         catalog.fixture_document().unwrap(),
-        include_str!("../../../extensions/primitives/fixtures/all-six.tex")
+        original_fixture.replace("\r\n", "\n")
     );
     for tool in &catalog.tools {
         assert_eq!(
