@@ -19,3 +19,7 @@ Date: 2026-10-31. Target: i-shutov/tikzarium, lane B. Parent SHA `7b62d725cb11c0
 ## Next evidence gate
 
 On new branch HEAD check Rust fmt/test/Clippy, D QA, N1 actual TeX/PDF, hosted Windows Server real MiKTeX, font integrity. Inspect log steps; record status by exact SHA in PR comment. Physical Win10/M1/M4, native dialogs, F1 screenshot UX, IME, Retina: **NOT_RUN**. B14 currently has **no claimed PASS**.
+
+## Exact-head first run — actual rustfmt failure
+
+Code HEAD `e79ea18b0536c37a33d23adb56bc82a5b207b2ee` **FAILED** `cargo fmt --all -- --check` in [D QA 41209544841](https://github.com/i-shutov/tikzarium/actions/runs/41209544841), Ubuntu job `124561457635`; hosted macOS Rust also flagged formatting. GitHub rustfmt reported exactly three differences: both `assert_eq!` expressions in `tikz_authoring.rs` must be multiline, and Escape condition in `tikz_canvas.rs` one line. Applied those three literal formatter changes without suppressions or test edits. New commit needs **fresh exact-HEAD** CI; do not inherit a PASS from the failed head. The previous Clippy failure `tikz_loaded` is independently repaired in B14 but remains subject to new CI.

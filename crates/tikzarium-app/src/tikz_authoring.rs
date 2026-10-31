@@ -609,9 +609,15 @@ mod tests {
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
         let multi_package = SOURCE.replace("\\usepackage{tikz}", "\\usepackage[demo]{foo, tikz}");
-        assert_eq!(requirements_status(&multi_package, Tool::Line), Evidence::Confirmed);
+        assert_eq!(
+            requirements_status(&multi_package, Tool::Line),
+            Evidence::Confirmed
+        );
         let commented = SOURCE.replace("\\usepackage{tikz}", "% \\usepackage{tikz}");
-        assert_eq!(requirements_status(&commented, Tool::Line), Evidence::Absent);
+        assert_eq!(
+            requirements_status(&commented, Tool::Line),
+            Evidence::Absent
+        );
     }
     #[test]
     fn hand_edits_or_duplicate_objects_do_not_gain_write_authority() {

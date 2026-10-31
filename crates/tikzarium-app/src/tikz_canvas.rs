@@ -345,8 +345,7 @@ fn show_guide_frame(
     }
     // Escape cancels the active provisional gesture, including a key event in
     // the same frame as drag-stop. Never turn a cancelled drag into TeX source.
-    if ui.input(|input| input.key_pressed(egui::Key::Escape))
-        && session.drag_start.take().is_some()
+    if ui.input(|input| input.key_pressed(egui::Key::Escape)) && session.drag_start.take().is_some()
     {
         session.status = "Жест отменён Esc; исходный TeX не изменён".into();
         return (None, rect);
