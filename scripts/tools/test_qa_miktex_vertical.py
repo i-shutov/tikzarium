@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, miktex_engine, tex_failure
+from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, tex_failure
 
 
 class MiKTeXVerticalContract(unittest.TestCase):
@@ -45,6 +45,26 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertIn("package-metadata-before-install.txt", setup)
         self.assertIn("private-package-index-refreshed", setup)
         self.assertNotIn("packages update @packages", setup)
+
+    def test_n1_session_contract_rejects_missing_ownership_and_undo(self):
+        source = (r"\newcommand{\UserPath}{\path (0,0);}"
+                  + "\n" + r"\UserPath \begin{tikzpicture} \node rectangle circle controls"
+                  + (" % tikzarium:n1:marker\n" * 6) + "Геометрия")
+        math = source.replace("Геометрия", r"\hbar + \alpha")
+        state = {
+            "status": "PASS_AUTHORING_STATE_ONLY",
+            "generator": "tikzarium_extensions::primitives::Catalog",
+            "tools": list(N1_TOOLS),
+            "command_count": 6,
+            "save_reopen": "PASS", "parameter_undo": "PASS",
+            "math_undo": "PASS", "opaque_source_preservation": "PASS",
+            "manual_edit_conflict": "PASS", "gui_pointer_clicks": "NOT_RUN",
+        }
+        self.assertTrue(n1_state_contract(state, source, math))
+        self.assertFalse(n1_state_contract(state, source[:-23], math))
+        self.assertFalse(n1_state_contract({**state, "math_undo": "NOT_RUN"}, source, math))
+        self.assertFalse(n1_state_contract({**state, "gui_pointer_clicks": "PASS"}, source, math))
+        self.assertFalse(n1_state_contract(state, source, source))
 
     def test_source_fixture_covers_six_native_primitives(self):
         root = Path(__file__).resolve().parents[2]

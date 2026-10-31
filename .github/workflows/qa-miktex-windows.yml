@@ -53,8 +53,14 @@ jobs:
         shell: pwsh
         run: |
           & $env:TIKZARIUM_XELATEX --version
-          $engineHelp = (& $env:TIKZARIUM_XELATEX --help 2>&1 | Out-String)
-          if ($LASTEXITCODE -ne 0 -or -not $engineHelp.Contains('--disable-installer')) { throw 'No MiKTeX disable-installer argument' }
+          # MiKTeX 25.12 --help may exit nonzero / omit the switch. Its official
+          # XeTeX manual documents the switch; probe the REAL binary with it.
+          $flagProbe = (& $env:TIKZARIUM_XELATEX --disable-installer --version 2>&1 | Out-String)
+          $probeExit = $LASTEXITCODE
+          $flagProbe | Set-Content .qa-artifacts/miktex-windows-server/disable-installer-version.log -Encoding utf8
+          if ($probeExit -ne 0 -or $flagProbe -notmatch 'MiKTeX-XeTeX\s+[0-9]') {
+            throw 'Real MiKTeX XeLaTeX rejected --disable-installer version probe'
+          }
           foreach ($name in @('standalone.cls','tikz.sty','fontspec.sty','unicode-math.sty','DejaVuSerif.ttf','latinmodern-math.otf')) {
             $found = & kpsewhich $name
             if ($LASTEXITCODE -ne 0 -or -not $found) { throw "Missing declared MiKTeX dependency $name" }
@@ -67,17 +73,27 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Cannot collect MiKTeX baseline inventory' }
       - name: Build native Rust CLI (uses explicitly selected MiKTeX executable)
         run: cargo build -p tikzarium-cli
-      - name: Actual native TikZ primitives + Unicode/PDF + strict negatives
+      - name: Build merged N1 app Session authoring-source producer (not GUI event QA)
+        run: cargo build -p tikzarium-app --bin n1-authoring-proof
+      - name: Actual N1 Session-generated TikZ + hand-authored baseline + strict negatives
         shell: pwsh
-        run: python scripts/tools/qa_miktex_vertical.py --cli target/debug/tikzarium-cli.exe --xelatex "$env:TIKZARIUM_XELATEX" --miktex-prefix "$env:TIKZARIUM_MIKTEX_PREFIX" --setup-record .qa-artifacts/miktex-windows-server/setup.json --output .qa-artifacts/miktex-windows-server
-      - name: Require zero implicit MiKTeX package installs during compilation
-        if: success()
+        run: python scripts/tools/qa_miktex_vertical.py --cli target/debug/tikzarium-cli.exe --n1-proof target/debug/n1-authoring-proof.exe --xelatex "$env:TIKZARIUM_XELATEX" --miktex-prefix "$env:TIKZARIUM_MIKTEX_PREFIX" --setup-record .qa-artifacts/miktex-windows-server/setup.json --output .qa-artifacts/miktex-windows-server
+      - name: Require zero implicit MiKTeX package installs during compilation, even after failures
+        if: always()
         shell: pwsh
         run: |
-          & $env:TIKZARIUM_MIKTEX_EXE packages list --template '{id}|{isInstalled}' | Sort-Object | Set-Content .qa-artifacts/miktex-windows-server/packages-after.txt -Encoding utf8
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot collect MiKTeX postcompile inventory' }
-          $diff = Compare-Object (Get-Content .qa-artifacts/miktex-windows-server/packages-before.txt) (Get-Content .qa-artifacts/miktex-windows-server/packages-after.txt)
-          if ($diff) { throw 'MiKTeX package inventory changed during supposedly offline compiler run' }
+          $baseline = '.qa-artifacts/miktex-windows-server/packages-before.txt'
+          if (-not (Test-Path -LiteralPath $baseline)) {
+            Write-Host 'NOT_RUN: package baseline was not obtained (earlier setup failed)'
+          } else {
+            if (-not $env:TIKZARIUM_MIKTEX_EXE) { throw 'Missing MiKTeX executable for postcompile inventory' }
+            $inventory = & $env:TIKZARIUM_MIKTEX_EXE packages list --template '{id}|{isInstalled}' 2>&1
+            $inventoryExit = $LASTEXITCODE
+            $inventory | Sort-Object | Set-Content .qa-artifacts/miktex-windows-server/packages-after.txt -Encoding utf8
+            if ($inventoryExit -ne 0) { throw 'Cannot collect MiKTeX postcompile inventory' }
+            $diff = Compare-Object (Get-Content $baseline) (Get-Content .qa-artifacts/miktex-windows-server/packages-after.txt)
+            if ($diff) { throw 'MiKTeX package inventory changed during supposedly offline compiler run' }
+          }
       - name: Upload evidence also on failure; CI_ONLY is not physical Win10 PASS
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

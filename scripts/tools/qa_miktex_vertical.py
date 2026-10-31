@@ -133,9 +133,137 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
         return {"id": "native-primitives", "status": "FAIL", "error": str(exc)}
 
 
+
+N1_TOOLS = (
+    "tikz.line", "tikz.arrow", "tikz.rectangle",
+    "tikz.circle", "tikz.node", "tikz.bezier-cubic",
+)
+
+
+def n1_state_contract(state: dict, plain: str, math: str) -> bool:
+    """Require the genuine merged N1 Session proof and preserved TeX ownership."""
+    return (
+        state.get("status") == "PASS_AUTHORING_STATE_ONLY"
+        and state.get("generator") == "tikzarium_extensions::primitives::Catalog"
+        and state.get("tools") == list(N1_TOOLS)
+        and state.get("command_count") == 6
+        and all(state.get(name) == "PASS" for name in (
+            "save_reopen", "parameter_undo", "math_undo",
+            "opaque_source_preservation", "manual_edit_conflict",
+        ))
+        and state.get("gui_pointer_clicks") == "NOT_RUN"
+        and all(src.count(" % tikzarium:n1:") == 6 for src in (plain, math))
+        and all(r"\newcommand{\UserPath}{\path (0,0);}" in src
+                and r"\UserPath" in src
+                and r"\begin{tikzpicture}" in src
+                and "rectangle" in src
+                and "circle" in src
+                and "controls" in src
+                and r"\node" in src for src in (plain, math))
+        and "Геометрия" in plain
+        and r"\hbar" in math and r"\alpha" in math
+        and plain != math
+    )
+
+
+def n1_positive(root: Path, output: Path, engine: Path, cli: Path, proof: Path) -> dict:
+    """Compile actual C-catalogue app Session output, not another authored fixture.
+
+    The N1 binary exercises programmatic authoring transactions; no mouse/egui
+    screenshot or physical target-host claim is inferred from it.
+    """
+    from qa_smoke import inspect_pdf
+    result = {"id": "n1-app-session-generated", "status": "FAIL", "variants": []}
+    workspace = output / "N1 project Кириллица with spaces"
+    generated = workspace / "session output"
+    try:
+        if not proof.is_file():
+            raise RuntimeError("Merged N1 n1-authoring-proof binary is absent")
+        workspace.mkdir(parents=True, exist_ok=False)
+        producer = [str(proof), str(generated)]
+        run_proof = run(producer, cwd=root)
+        (workspace / "producer.stdout.log").write_bytes(run_proof.stdout)
+        (workspace / "producer.stderr.log").write_bytes(run_proof.stderr)
+        result["producer_command"] = producer
+        result["producer_exit_code"] = run_proof.returncode
+        if run_proof.returncode:
+            raise RuntimeError("Real N1 Session/extension catalogue source generation failed")
+        state = json.loads((generated / "authoring-state.json").read_text(encoding="utf-8-sig"))
+        plain_source = generated / "authoring.tex"
+        math_source = generated / "math-authoring.tex"
+        plain = plain_source.read_text(encoding="utf-8")
+        math = math_source.read_text(encoding="utf-8")
+        if not n1_state_contract(state, plain, math):
+            raise RuntimeError("N1 Session did not prove six source-owned commands/save/reopen/undo")
+        result["session_state"] = state
+        for source, name, wanted, font in (
+            (plain_source, "text", ["Геометрия", "оптика"], ["DejaVuSerif"]),
+            (math_source, "math", ["α", "β"], ["LatinModernMath"]),
+        ):
+            original = sha(source)
+            dest = workspace / f"PDF {name}"
+            dest.mkdir()
+            pdf = dest / f"{name}.pdf"
+            log = dest / f"{name}.log"
+            cli_command = [str(cli), "build", str(source), str(pdf), "--log", str(log)]
+            cli_proc = run(cli_command, cwd=root)
+            (dest / "cli.stdout.log").write_bytes(cli_proc.stdout)
+            (dest / "cli.stderr.log").write_bytes(cli_proc.stderr)
+            direct = dest / "direct"
+            direct.mkdir()
+            direct_command = [
+                str(engine), "--disable-installer", "-interaction=nonstopmode",
+                "-halt-on-error", "-file-line-error", "-no-shell-escape",
+                f"-output-directory={direct}", source.name,
+            ]
+            direct_proc = run(direct_command, cwd=generated)
+            direct_pdf = direct / source.with_suffix(".pdf").name
+            direct_log = direct / source.with_suffix(".log").name
+            cli_ok, cli_pdf = inspect_pdf(pdf, 1, wanted, font) if pdf.is_file() else (False, {})
+            direct_ok, direct_details = (
+                inspect_pdf(direct_pdf, 1, wanted, font)
+                if direct_pdf.is_file() else (False, {})
+            )
+            cli_log_text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+            direct_log_text = (
+                direct_log.read_text(encoding="utf-8", errors="replace")
+                if direct_log.is_file() else ""
+            )
+            passed = (
+                cli_proc.returncode == 0 and direct_proc.returncode == 0
+                and cli_ok and direct_ok and bool(cli_log_text) and bool(direct_log_text)
+                and "Missing character:" not in cli_log_text
+                and "Missing character:" not in direct_log_text
+                and original == sha(source)
+            )
+            result["variants"].append({
+                "name": name, "status": "PASS" if passed else "FAIL",
+                "source_sha256_before": original, "source_sha256_after": sha(source),
+                "cli_command": cli_command, "cli_exit_code": cli_proc.returncode,
+                "direct_command": direct_command, "direct_exit_code": direct_proc.returncode,
+                "cli_pdf": cli_pdf, "direct_pdf": direct_details,
+                "cli_pdf_sha256": sha(pdf) if pdf.is_file() else None,
+                "direct_pdf_sha256": sha(direct_pdf) if direct_pdf.is_file() else None,
+                "cli_log_sha256": sha(log) if log.is_file() else None,
+                "direct_log_sha256": sha(direct_log) if direct_log.is_file() else None,
+                "missing_character": (
+                    "Missing character:" in cli_log_text or "Missing character:" in direct_log_text
+                ),
+            })
+        result["status"] = (
+            "PASS" if len(result["variants"]) == 2
+            and all(v["status"] == "PASS" for v in result["variants"]) else "FAIL"
+        )
+    except (OSError, RuntimeError, ValueError, UnicodeError, json.JSONDecodeError,
+            subprocess.TimeoutExpired) as exc:
+        result["error"] = f"{type(exc).__name__}: {exc}"
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--cli", type=Path, required=True)
+    p.add_argument("--n1-proof", type=Path, required=True)
     p.add_argument("--xelatex", type=Path, required=True)
     p.add_argument("--miktex-prefix", type=Path, required=True)
     p.add_argument("--setup-record", type=Path, required=True)
@@ -190,10 +318,11 @@ def main(argv: list[str] | None = None) -> int:
         report["results"].append(negative(
             root / "extensions/fixtures/graphdrawing-lua.tex",
             "lua-only", "lua-only", output, engine))
+        report["results"].append(n1_positive(root, output, engine, cli, args.n1_proof.resolve()))
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
         report["fatal"] = f"{type(exc).__name__}: {exc}"
     finally:
-        report["accepted"] = not report.get("fatal") and len(report["results"]) == 3 and all(
+        report["accepted"] = not report.get("fatal") and len(report["results"]) == 4 and all(
             result["status"] == "PASS" for result in report["results"])
         (output / "miktex-qa.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
