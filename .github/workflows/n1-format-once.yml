@@ -17,23 +17,45 @@ jobs:
         with:
           toolchain: '1.91.0'
           components: rustfmt
-      - name: Format only this isolated integration branch without force
+      - name: Repair observed malformed upstream character literals and format
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('crates/tikzarium-extensions/src/primitives.rs')
+          text = path.read_text(encoding='utf-8')
+          old_math = '''Some("math") => format!("{}{}{}", ', v, '),'''
+          new_math = '''Some("math") => format!("{}{}{}", '\\u{24}', v, '\\u{24}'),'''
+          old_escape = '''            ' => out.push_str("\\\\$"),'''
+          new_escape = '''            '\\u{24}' => out.push_str("\\\\$"),'''
+          for before, after in ((old_math, new_math), (old_escape, new_escape)):
+              if before in text:
+                  assert text.count(before) == 1, repr(before)
+                  text = text.replace(before, after)
+              else:
+                  assert after in text, 'Unexpected upstream content; no guessed replacement'
+          path.write_text(text, encoding='utf-8')
+          PY
           cargo fmt --all
           if ! git diff --quiet -- crates/; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add crates/
-            git commit -m 'style(N1): format shared-catalogue native authoring integration'
+            git commit -m 'fix(N1): restore upstream dollar literals and format catalogue integration'
             git push origin HEAD:integration/n1-tikz-native-authoring
           fi
+      - name: Archive exact head even when formatting fails
+        if: always()
+        shell: bash
+        run: |
           git rev-parse HEAD > /tmp/n1-source-sha.txt
           git archive --format=zip HEAD -o /tmp/n1-source-snapshot.zip
           sha256sum /tmp/n1-source-snapshot.zip > /tmp/n1-source-snapshot.sha256
-      - name: Preserve exact formatted source for independent inspection
+          git diff -- crates/ > /tmp/n1-working-diff.patch
+      - name: Preserve source snapshot for independent inspection
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: n1-formatted-source-snapshot
@@ -41,5 +63,6 @@ jobs:
             /tmp/n1-source-snapshot.zip
             /tmp/n1-source-snapshot.sha256
             /tmp/n1-source-sha.txt
+            /tmp/n1-working-diff.patch
           if-no-files-found: error
           retention-days: 7
