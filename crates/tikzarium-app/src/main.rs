@@ -12,7 +12,7 @@ use tikzarium_core::{
 use tikzarium_extensions::{ExtensionStatus, Registry};
 
 mod ui_state;
-use ui_state::{BottomView, WorkspaceMode, line_start_char_index, scaled_zoom};
+use ui_state::{BottomView, WorkspaceMode, line_start_char_index, preview_is_stale, scaled_zoom};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 
@@ -349,6 +349,7 @@ impl TikzariumApp {
     }
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
+        let canvas_width = ui.available_width();
         ui.horizontal_wrapped(|ui| {
             ui.heading("Canvas · exact PDF (read-only)");
             if ui.button("−").clicked() {
@@ -362,7 +363,7 @@ impl TikzariumApp {
                 self.zoom = 1.0;
             }
             let fit = self.preview_texture.as_ref().map(|texture| {
-                (ui.available_width().max(80.0) / texture.size_vec2().x).clamp(0.2, 5.0)
+                ((canvas_width - 24.0).max(80.0) / texture.size_vec2().x).clamp(0.2, 5.0)
             });
             if ui
                 .add_enabled(fit.is_some(), egui::Button::new("Fit width"))
@@ -373,13 +374,12 @@ impl TikzariumApp {
                 }
             }
         });
-        if self.pdf.is_some()
-            && (self.last_build_failed
-                || self
-                    .built_source
-                    .as_ref()
-                    .is_some_and(|built| built != &self.document.source))
-        {
+        if preview_is_stale(
+            self.pdf.is_some(),
+            self.last_build_failed,
+            self.built_source.as_deref(),
+            &self.document.source,
+        ) {
             ui.colored_label(
                 egui::Color32::YELLOW,
                 "STALE · last successful PDF, not current source",
@@ -483,11 +483,12 @@ impl eframe::App for TikzariumApp {
                 if self.document.dirty() {
                     ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
                 }
-                if self
-                    .built_source
-                    .as_ref()
-                    .is_some_and(|built| built != &self.document.source)
-                {
+                if preview_is_stale(
+                    self.pdf.is_some(),
+                    self.last_build_failed,
+                    self.built_source.as_deref(),
+                    &self.document.source,
+                ) {
                     ui.colored_label(egui::Color32::YELLOW, "PDF stale");
                 }
                 ui.label(&self.status);
@@ -547,7 +548,7 @@ impl eframe::App for TikzariumApp {
                                     ui.label("No diagnostics captured from the most recent build.");
                                 }
                                 for item in &self.diagnostics {
-                                    let severity = match item.severity {
+                                    let severity = match &item.severity {
                                         Severity::Error => "ERROR",
                                         Severity::Warning => "WARNING",
                                     };
