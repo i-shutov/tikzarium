@@ -82,13 +82,29 @@ jobs:
             collection-latexrecommended
             collection-pictures
             standalone
+            unicode-math
+            lm-math
             dejavu
             lm
-      - name: Verify XeLaTeX and selected font available
+      - name: Install PDF text/font verification tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y poppler-utils
+      - name: Install PDF text/font verification tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install poppler
+      - name: Verify XeLaTeX and selected fonts
         run: |
           xelatex --version
           tlmgr --version
           kpsewhich DejaVuSerif.ttf
+          kpsewhich unicode-math.sty
+          kpsewhich latinmodern-math.otf
+      - name: Record PDF inspection executables
+        run: python -c "import shutil; print({tool: shutil.which(tool) for tool in ('pdfinfo', 'pdftotext', 'pdffonts')})"
+      - name: Require PDF-to-text for Unicode gating
+        run: python -c "import shutil,sys; sys.exit(0 if shutil.which('pdftotext') else 1)"
       - name: Build real Rust CLI
         run: cargo build -p tikzarium-cli
       - name: Execute fixture suite with machine-readable evidence
