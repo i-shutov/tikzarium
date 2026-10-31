@@ -231,9 +231,11 @@ pub fn show_guide(
         finish = Some((start, Point::new(start.x + 1.0, start.y + 1.0)));
     }
     if let (Some(tool), Some((start, end))) = (session.active, finish) {
-        let mut draft = Draft::default();
-        draft.start = start;
-        draft.end = end;
+        let draft = Draft {
+            start,
+            end,
+            ..Default::default()
+        };
         match session.insert(source, tool, draft) {
             Ok(line) => return Some(line),
             Err(error) => session.status = error,
@@ -358,10 +360,10 @@ pub fn show_inspector(
         match Session::propose_usepackage(source) {
             Ok(diff) => {
                 ui.code(diff);
-                if ui.button("Принять diff").clicked() {
-                    if let Err(error) = session.add_usepackage(source) {
-                        session.status = error;
-                    }
+                if ui.button("Принять diff").clicked()
+                    && let Err(error) = session.add_usepackage(source)
+                {
+                    session.status = error;
                 }
             }
             Err(error) => {
@@ -375,10 +377,9 @@ pub fn show_inspector(
             egui::Button::new("↶ Undo visual patch"),
         )
         .clicked()
+        && let Err(error) = session.undo(source)
     {
-        if let Err(error) = session.undo(source) {
-            session.status = error;
-        }
+        session.status = error;
     }
     ui.separator();
     ui.small(&session.status);
