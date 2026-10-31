@@ -33,10 +33,10 @@ fn run_poppler(
     let dir = tempfile::tempdir().map_err(|e| format!("{name} capture directory: {e}"))?;
     let stdout_path = dir.path().join("stdout.txt");
     let stderr_path = dir.path().join("stderr.txt");
-    let stdout = fs::File::create(&stdout_path)
-        .map_err(|e| format!("{name} stdout capture: {e}"))?;
-    let stderr = fs::File::create(&stderr_path)
-        .map_err(|e| format!("{name} stderr capture: {e}"))?;
+    let stdout =
+        fs::File::create(&stdout_path).map_err(|e| format!("{name} stdout capture: {e}"))?;
+    let stderr =
+        fs::File::create(&stderr_path).map_err(|e| format!("{name} stderr capture: {e}"))?;
     command
         .stdin(Stdio::null())
         .stdout(Stdio::from(stdout))
@@ -115,7 +115,11 @@ fn inspect_pages(pdf: &[u8]) -> Result<usize, String> {
     let dir = tempfile::tempdir().map_err(|e| format!("Temporary PDF directory: {e}"))?;
     let input = dir.path().join("tikzarium-preview.pdf");
     fs::write(&input, pdf).map_err(|e| format!("Temporary PDF write: {e}"))?;
-    let output = run_poppler(Command::new(pdfinfo).arg(&input), "pdfinfo", PDFINFO_TIMEOUT)?;
+    let output = run_poppler(
+        Command::new(pdfinfo).arg(&input),
+        "pdfinfo",
+        PDFINFO_TIMEOUT,
+    )?;
     if !output.status.success() {
         return Err(format!(
             "pdfinfo failed ({}): {}",
@@ -215,7 +219,10 @@ mod tests {
         let (_dir, path) = fake_poppler("printf 'Pages: 2\n'; printf 'warning\n' >&2");
         let output = run_poppler(Command::new(path), "fixture", Duration::from_secs(2)).unwrap();
         assert!(output.status.success());
-        assert_eq!(parse_page_count(&String::from_utf8_lossy(&output.stdout)), Some(2));
+        assert_eq!(
+            parse_page_count(&String::from_utf8_lossy(&output.stdout)),
+            Some(2)
+        );
         assert!(String::from_utf8_lossy(&output.stderr).contains("warning"));
     }
 
@@ -224,8 +231,8 @@ mod tests {
     fn poppler_worker_kills_hung_process_and_reports_not_checked() {
         let (_dir, path) = fake_poppler("while :; do :; done");
         let start = Instant::now();
-        let error = run_poppler(Command::new(path), "fixture", Duration::from_millis(150))
-            .unwrap_err();
+        let error =
+            run_poppler(Command::new(path), "fixture", Duration::from_millis(150)).unwrap_err();
         assert!(error.contains("timed out"));
         assert!(start.elapsed() < Duration::from_secs(5));
     }
