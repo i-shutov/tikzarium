@@ -15,6 +15,8 @@ mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod source_fonts;
+mod tikz_authoring;
+mod tikz_canvas;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
@@ -64,6 +66,8 @@ struct TikzariumApp {
     show_log: bool,
     pending_open: Option<PathBuf>,
     prefs: UiPreferences,
+    authoring: tikz_authoring::Session,
+    highlight_generated_line: bool,
     font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
     font_proof_status: String,
     font_proof_report: String,
@@ -112,6 +116,12 @@ impl TikzariumApp {
             show_log: true,
             pending_open: None,
             prefs,
+            authoring: {
+                let mut state = tikz_authoring::Session::default();
+                state.reset(QUICKSTART);
+                state
+            },
+            highlight_generated_line: false,
             font_proof_rx: None,
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
@@ -140,6 +150,8 @@ impl TikzariumApp {
             Ok(document) => {
                 self.file_field = path.display().to_string();
                 self.document = document;
+                self.authoring.reset(&self.document.source);
+                self.highlight_generated_line = false;
                 self.built_source = None;
                 self.built_path = None;
                 self.building_source = None;
@@ -517,7 +529,16 @@ impl TikzariumApp {
                         output
                             .state
                             .cursor
-                            .set_char_range(Some(CCursorRange::one(CCursor::new(position))));
+                            .set_char_range(Some(if self.highlight_generated_line {
+                                let count = self.document.source.lines()
+                                    .nth(line.saturating_sub(1))
+                                    .map(|text| text.trim_end_matches('\r').chars().count())
+                                    .unwrap_or(0);
+                                CCursorRange::two(CCursor::new(position), CCursor::new(position + count))
+                            } else {
+                                CCursorRange::one(CCursor::new(position))
+                            }));
+                        self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
                         output.response.request_focus();
                         let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
@@ -535,6 +556,40 @@ impl TikzariumApp {
                     }
                 }
             });
+    }
+
+    fn primitive_capabilities(&self) -> tikz_canvas::Capabilities {
+        let core = self.package_statuses.iter().find(|status| status.manifest.id == "org.tikzarium.core");
+        tikz_canvas::Capabilities {
+            installed: core.is_some_and(|status| status.installed),
+            loaded: tikz_authoring::tikz_loaded(&self.document.source),
+            engine_compatible: self.tex.xelatex.is_some()
+                && core.is_some_and(|status| status.compilation
+                    != tikzarium_extensions::CompilationState::IncompatibleEngine),
+            implemented: true, // Only B07's six explicitly narrow built-in primitives.
+        }
+    }
+
+    fn show_authoring_inspector(&mut self, ui: &mut egui::Ui) {
+        let caps = self.primitive_capabilities();
+        if let Some(line) = tikz_canvas::show_inspector(
+            ui, &mut self.authoring, &mut self.document.source, caps,
+        ) {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
+        if self.show_packages {
+            ui.separator();
+            ui.collapsing("Library inventory · from C registry", |ui| {
+                for item in &self.package_statuses {
+                    ui.strong(&item.manifest.display_name);
+                    ui.small(format!(
+                        "installed={:?}, compilation={:?}, inspectable={}, editable={}",
+                        item.installation, item.compilation, item.inspectable, item.visual_editable,
+                    ));
+                }
+            });
+        }
     }
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
@@ -597,7 +652,14 @@ impl TikzariumApp {
         }
         ui.label(&self.preview_status);
         ui.small(&self.page_navigation_status);
-        ui.small("Pages are rasterized from the original PDF by Poppler, without changing TeX. Canvas edits are not implemented.");
+        ui.small("Only the guide pad below makes B07-owned source patches. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
+        let caps = self.primitive_capabilities();
+        if let Some(line) = tikz_canvas::show_guide(
+            ui, &mut self.authoring, &mut self.document.source, caps,
+        ) {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         ui.separator();
         egui::ScrollArea::both()
             .auto_shrink([false, false])
@@ -793,6 +855,9 @@ impl eframe::App for TikzariumApp {
         self.poll_pages(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
+        if ctx.input(|input| input.key_pressed(egui::Key::F1)) {
+            self.authoring.help = !self.authoring.help;
+        }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
                 editor_command(egui::Key::S, input.modifiers)
@@ -897,7 +962,7 @@ impl eframe::App for TikzariumApp {
                 if ui.button("Figure fonts").clicked() {
                     self.prefs.show_font_lab = !self.prefs.show_font_lab;
                 }
-                ui.checkbox(&mut self.show_packages, "Packages");
+                ui.checkbox(&mut self.show_packages, "Library inventory");
                 ui.checkbox(&mut self.show_log, "Diagnostics / log");
                 if self.document.dirty() {
                     ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
@@ -908,29 +973,15 @@ impl eframe::App for TikzariumApp {
                 ui.label(&self.status);
             });
         });
-        if self.show_packages {
-            egui::SidePanel::right("packages")
+        if self.workspace.show_canvas() {
+            egui::SidePanel::right("tikz-source-inspector")
                 .resizable(true)
-                .default_width(245.0)
+                .default_width(250.0)
+                .min_width(210.0)
                 .show(ctx, |ui| {
-                    ui.heading("Libraries");
-                    ui.small("Package detection ≠ verified compilation ≠ visual editing");
-                    ui.separator();
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        for item in &self.package_statuses {
-                            let state = if item.installed {
-                                "Installed"
-                            } else {
-                                "Missing"
-                            };
-                            ui.strong(format!("{} — {state}", item.manifest.display_name));
-                            if !item.missing_files.is_empty() {
-                                ui.small(format!("Needed: {}", item.missing_files.join(", ")));
-                            }
-                            ui.small("Visual editing: not yet implemented");
-                            ui.separator();
-                        }
-                    });
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| self.show_authoring_inspector(ui));
                 });
         }
         if self.show_log {
@@ -982,6 +1033,7 @@ impl eframe::App for TikzariumApp {
                                             && ui.button(&label).clicked()
                                         {
                                             self.jump_to_line = Some(line);
+                                            self.highlight_generated_line = false;
                                             if !self.workspace.show_source() {
                                                 self.workspace = WorkspaceMode::Split;
                                             }
