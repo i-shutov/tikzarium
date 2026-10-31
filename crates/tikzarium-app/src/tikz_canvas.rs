@@ -302,9 +302,7 @@ fn show_guide_frame(
     if session.alt_selection_capture {
         session.drag_start = None;
         let mut jump = None;
-        if clicked
-            && let Some(pos) = response.interact_pointer_pos()
-        {
+        if clicked && let Some(pos) = response.interact_pointer_pos() {
             match hit_authored_anchor(source, rect, pos) {
                 Ok(Some(id)) => match session.choose(source, id) {
                     Ok(line) => {
