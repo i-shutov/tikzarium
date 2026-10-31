@@ -2,17 +2,20 @@
   "schema": 1,
   "profile": "N1 Linux X11 1366x740 compact Dark",
   "reviewed_app_source": "6b0fe3551cb6ded5cf737e28a7a74326f0b4fe49",
-  "calibration_run": 41192581511,
-  "calibration_png_sha256": "a1a72ba7c8e5b5f156d52f2a1c34d701e9e893b52111ccd9340b5896f66b63af",
+  "calibration_runs": [41192581511, 41193030547],
+  "initial_png_sha256": "a1a72ba7c8e5b5f156d52f2a1c34d701e9e893b52111ccd9340b5896f66b63af",
+  "selected_png_sha256": "5e984019c816835adb601c65e86daad7d73499e2fc05d5e5f7f44dbe35db138a",
+  "layout_note": "Selecting first tool expands inspector; PDF header wraps and tool row moves down 36 pixels. Coordinates are observed, not inferred geometry.",
   "path_click": [310, 18],
   "source_click": [120, 190],
   "export_click": [837, 13],
+  "fit_click": [538, 98],
   "gestures": [
     {"tool": "line", "tool_click": [648, 142], "start": [550, 335], "end": [610, 300]},
-    {"tool": "arrow", "tool_click": [704, 142], "start": [650, 335], "end": [710, 300]},
-    {"tool": "rectangle", "tool_click": [789, 142], "start": [740, 335], "end": [800, 285]},
-    {"tool": "circle", "tool_click": [888, 142], "start": [850, 310], "end": [878, 310]},
-    {"tool": "node", "tool_click": [611, 168], "start": [580, 240], "end": [581, 241]},
-    {"tool": "cubic", "tool_click": [798, 168], "start": [710, 240], "end": [820, 240]}
+    {"tool": "arrow", "tool_click": [704, 178], "start": [650, 335], "end": [710, 300]},
+    {"tool": "rectangle", "tool_click": [789, 178], "start": [740, 335], "end": [800, 285]},
+    {"tool": "circle", "tool_click": [888, 178], "start": [850, 310], "end": [878, 310]},
+    {"tool": "node", "tool_click": [611, 204], "start": [580, 260], "end": [581, 261]},
+    {"tool": "cubic", "tool_click": [798, 204], "start": [710, 260], "end": [820, 260]}
   ]
 }

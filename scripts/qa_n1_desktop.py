@@ -166,6 +166,7 @@ def main() -> int:
             before = source.read_bytes()
             before_owners = owners(before)
             click(case["tool_click"])
+            screenshot("selected-" + case["tool"] + ".png")
             start, end = case["start"], case["end"]
             run(["xdotool", "mousemove", "--sync", "--window", window,
                  str(start[0]), str(start[1]), "mousedown", "1"])
@@ -175,15 +176,26 @@ def main() -> int:
             time.sleep(0.2)
             run(["xdotool", "mouseup", "1"])
             time.sleep(0.3)
-            key("ctrl+s")
-            after = source.read_bytes()
-            found = owners(after)
-            if len(found) != len(before_owners) + 1 or found[-1]["tool"] != case["tool"]:
-                raise RuntimeError(f"Pointer gesture did not create {case['tool']}")
+            # X11 event delivery and egui frames are asynchronous. Keep the
+            # exact source/count assertion; retry only Save, never the gesture.
+            deadline = time.monotonic() + 8
+            save_attempts = 0
+            found = []
+            while time.monotonic() < deadline:
+                save_attempts += 1
+                key("ctrl+s")
+                time.sleep(0.2)
+                after = source.read_bytes()
+                found = owners(after)
+                if len(found) == len(before_owners) + 1 and found[-1]["tool"] == case["tool"]:
+                    break
+            else:
+                raise RuntimeError(f"Pointer {case['tool']} was not saved after {save_attempts} attempts")
             if not original_preserved(FIXTURE.encode("utf-8"), after):
                 raise RuntimeError("Pointer authoring changed unrelated user TeX")
             report["steps"].append({"case": "pointer_" + case["tool"], "status": "PASS",
-                                    "sha256": sha256(source), "id": found[-1]["id"]})
+                                    "sha256": sha256(source), "id": found[-1]["id"],
+                                    "save_attempts": save_attempts})
             screenshot("pointer-" + case["tool"] + ".png")
         if profile.get("gestures"):
             report["pointer_authoring"] = "PASS_RECORDED_GESTURES"
@@ -191,6 +203,7 @@ def main() -> int:
         screenshot("03-f1-panel.png")
         report["steps"].append({"case": "F1_event_sent", "status": "SENT_NOT_VISUALLY_VERIFIED"})
         key("F1")
+        screenshot("03b-f1-second-toggle.png")
         if "export_click" in profile:
             key("ctrl+Return")
             pdf = source.with_suffix("pdf")
@@ -205,6 +218,10 @@ def main() -> int:
             if "Не менять" not in report["pdf_text"]:
                 raise RuntimeError("GUI PDF lost original Cyrillic macro text")
             report["steps"].append({"case": "gui_build_export", "status": "PASS", "sha256": sha256(pdf)})
+            if not original_preserved(FIXTURE.encode("utf-8"), source.read_bytes()):
+                raise RuntimeError("GUI compilation changed original source bytes")
+            if "fit_click" in profile:
+                click(profile["fit_click"])
             screenshot("04-exact-pdf.png")
         report["status"] = "PASS_POINTER" if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY"
     except Exception as exc:
