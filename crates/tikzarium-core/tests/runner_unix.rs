@@ -9,7 +9,7 @@ use std::{
 };
 use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, Severity};
 
-fn fake_xelatex(directory: &Path) -> PathBuf {
+fn fake_xelatex_with_version(directory: &Path, version: &str) -> PathBuf {
     let executable = directory.join("fake xelatex");
     let script = r#"#!/bin/sh
 set -eu
@@ -43,11 +43,18 @@ printf 'LaTeX Warning: Integration fixture.\nCommand: %s\n' "$*" > "$out/$stem.l
 printf 'PWD %s\nINPUT ./%s\nINPUT ./assets/shape.tex\nINPUT %s/%s.aux\n' "$PWD" "$name" "$out" "$stem" > "$out/$stem.fls"
 printf '%%PDF-1.4\n' > "$out/$stem.pdf"
 "#;
+    // Write the executable only once. Rewriting a runnable script in place
+    // can race execve() on Linux and intermittently yield ETXTBSY.
+    let script = script.replace("XeTeX 0.999996 (TeX Live 2025)", version);
     fs::write(&executable, script).unwrap();
     let mut permissions = fs::metadata(&executable).unwrap().permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&executable, permissions).unwrap();
     executable
+}
+
+fn fake_xelatex(directory: &Path) -> PathBuf {
+    fake_xelatex_with_version(directory, "XeTeX 0.999996 (TeX Live 2025)")
 }
 
 fn request(source: &Path, engine: &Path) -> BuildRequest {
@@ -201,16 +208,8 @@ fn fake_miktex_compiler_receives_no_auto_installer_override() {
     let source = directory.path().join("примитив с пробелом.tex");
     let original = b"% Do not modify source bytes\r\n\x5C\x5Copaque{content}\r\n";
     fs::write(&source, original).unwrap();
-    let engine = fake_xelatex(directory.path());
-    let script = fs::read_to_string(&engine).unwrap();
-    fs::write(
-        &engine,
-        script.replace(
-            "XeTeX 0.999996 (TeX Live 2025)",
-            "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)",
-        ),
-    )
-    .unwrap();
+    let engine =
+        fake_xelatex_with_version(directory.path(), "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)");
 
     let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
     assert!(artifact.log.contains("--disable-installer"));
@@ -225,16 +224,7 @@ fn unrecognized_engine_refuses_compilation_without_modifying_source() {
     let source = directory.path().join("drawing.tex");
     let original = b"% opaque source\r\n";
     fs::write(&source, original).unwrap();
-    let engine = fake_xelatex(directory.path());
-    let script = fs::read_to_string(&engine).unwrap();
-    fs::write(
-        &engine,
-        script.replace(
-            "XeTeX 0.999996 (TeX Live 2025)",
-            "Custom Engine Unidentified",
-        ),
-    )
-    .unwrap();
+    let engine = fake_xelatex_with_version(directory.path(), "Custom Engine Unidentified");
     let failure = BuildService::new()
         .run(&request(&source, &engine))
         .unwrap_err();

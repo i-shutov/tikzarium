@@ -72,3 +72,7 @@ Corrective changes: native PGF filename in CLI doctor and fake-MiKTeX doctor tes
 ### W06.2 hosted regression disclosure
 
 W06.1 exact-head [D QA 41191703287](https://github.com/i-shutov/tikzarium/actions/runs/41191703287) Linux real XeLaTeX fixture **PASS**, while the Rust suite showed **3/4 PASS, 1/4 FAIL** in `doctor_unix`: fake `findtexmf` `case` still allowed only the obsolete TikZ filename. The production mapping is correct; the test stub rejected the corrected PGF filename. Changed only the A-owned fake helper whitelist and enriched the test's error output, preserving fail-closed semantics. The new SHA's full Rust/TeX/QA evidence is **PENDING**. Hosted MiKTeX #40 and physical Windows 10/M1/M4 remain separate.
+
+### W06.3 independent CI failure and targeted correction
+
+[QA 41191856961](https://github.com/i-shutov/tikzarium/actions/runs/41191856961) real XeLaTeX CLI on Linux and Windows + fake doctor `4/4` passed on corrected PGF library mapping. Linux `runner_unix::fake_miktex_compiler_receives_no_auto_installer_override` failed with `UnverifiedEngine { ... details: "Text file busy (os error 26)" }` when `execve` raced a fake shell script overwritten in-place after it was made executable. This is a **test harness race**, not a MiKTeX offline flag failure. Removed the rewrite: fake version is substituted into the script before single write. Same improvement for unknown-distribution test. Physical MiKTeX and Win10/M1/M4 remain NOT_RUN. New exact-head QA pending.
