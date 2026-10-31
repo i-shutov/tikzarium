@@ -11,3 +11,5 @@ First exact-head CI result: NOT_RUN. Whole-page preview and F1 content: NOT_RUN.
 ## I19 first source-head hosted failure
 
 Exact QA `0739e81a`, run 41250529679: source-tree pin PASS, seven Python evidence predicates PASS, runtime prerequisites installed; `cargo build --locked` stopped at Cargo.lock because Cargo 1.91 requested a lockfile update. Real egui GUI/Saved TeX/PDF **NOT_RUN**, artifact empty. New QA source follows preexisting B23 CI build semantics without `--locked` while archiving the exact lockfile diff as warning/evidence; do not treat dependency drift as accepted until reviewed. Re-run at new SHA.
+
+**Source-truth correction:** B23 Git root tree explicitly lacks `Cargo.lock`; `.gitignore` does not hide an existing tracked file. New QA compiles with Cargo's existing resolution behavior, saves generated `Cargo.lock` in uploaded ZIP and warns that reproducible dependency pinning remains open. The earlier diagnosis 'tracked lock drift' is withdrawn.

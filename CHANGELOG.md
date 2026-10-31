@@ -113,3 +113,5 @@ Unreleased development state; no production release.
 - Independent QA PR #9 documented the missing-Cyrillic-glyph false positive.
 
 - I05 QA found TeX Live 2026/PGF 3.1.12 wraps the required LuaTeX graphdrawing diagnostic **inside the word graph**; narrowed negative-control matching to the full phrase with allowed TeX line wraps, with targeted regression tests. Previous TeX Live 2023 five-fixture artifact audit remained green. Fresh head CI pending.
+
+- **I19 lockfile diagnosis correction:** checked B23 Git root tree and `.gitignore`: the repository does **not** contain `Cargo.lock` at all; `--locked` failed because no lockfile existed, not because a tracked file changed. The X11 workflow now captures generated `Cargo.lock` in its evidence and warns that exact dependency resolution is not yet version-controlled. This is separate from all TeX package offline guarantees and a reproducibility item for release acceptance.
