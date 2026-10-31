@@ -24,6 +24,12 @@ cargo run -p tikzarium-cli -- build examples/quickstart.tex quickstart.pdf
 cargo run -p tikzarium-app
 ```
 
+## Figure fonts and GUI themes (F01/U01, experimental)
+
+New figure typography panel: validated fontspec/unicode-math text and math families, isolated XeLaTeX proof, optional Poppler pdftotext/pdffonts glyph and embedding audits. Theme menu: Light, Dark, Midnight, Paper and compact/comfortable density; settings persist locally. This feature is implemented on a stacked **draft** PR and is not yet a Windows 10/M1/M4 release claim. GUI theme selection never changes the exported TikZ figure.
+
+See [Figure typography and GUI appearance](docs/FONTS_THEMES.md), [plan](plans/2026-10-31_F01_U01_FONTS_THEMES.md), [QA evidence](insights/2026-10-31_F01_U01_FONT_THEME_QA.md).
+
 ## Product direction and contracts
 
 - [Requirements](docs/PRODUCT_SPEC.md)
