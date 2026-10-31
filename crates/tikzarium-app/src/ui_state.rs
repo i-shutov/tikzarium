@@ -90,6 +90,28 @@ pub fn editor_command(key: Key, modifiers: Modifiers) -> Option<EditorCommand> {
     }
 }
 
+/// Only navigate an error when the logged source can be identified as the open file.
+/// Relative TeX paths are resolved against the current document directory.
+/// For an unknown file we deliberately refuse to jump to a possibly wrong line.
+#[must_use]
+pub fn diagnostic_targets_current_file(source: Option<&Path>, current: Option<&Path>) -> bool {
+    let (Some(source), Some(current)) = (source, current) else {
+        return false;
+    };
+    let absolute = if source.is_absolute() {
+        source.to_path_buf()
+    } else {
+        current
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join(source)
+    };
+    match (absolute.canonicalize(), current.canonicalize()) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => absolute == current,
+    }
+}
+
 /// Keep zoom finite and inside a user-visible range, including corrupt state.
 #[must_use]
 pub fn scaled_zoom(current: f32, factor: f32) -> f32 {
@@ -102,6 +124,32 @@ pub fn scaled_zoom(current: f32, factor: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn failed_build_diagnostics_never_jump_to_an_included_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let main = dir.path().join("main.tex");
+        let include = dir.path().join("included.tex");
+        std::fs::write(&main, "% main").unwrap();
+        std::fs::write(&include, "% included").unwrap();
+        assert!(diagnostic_targets_current_file(
+            Some(Path::new("./main.tex")),
+            Some(&main)
+        ));
+        assert!(!diagnostic_targets_current_file(
+            Some(Path::new("included.tex")),
+            Some(&main)
+        ));
+        assert!(!diagnostic_targets_current_file(
+            Some(&include),
+            Some(&main)
+        ));
+        assert!(!diagnostic_targets_current_file(None, Some(&main)));
+        assert!(!diagnostic_targets_current_file(
+            Some(Path::new("main.tex")),
+            None
+        ));
+    }
 
     #[test]
     fn source_canvas_and_split_have_explicit_boundaries() {

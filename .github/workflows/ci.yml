@@ -118,6 +118,14 @@ jobs:
             --output-dir /tmp/tikzarium-ci/multipage \
             --expect-first 'Привет' \
             --expect-second 'Геометрия'
+      - name: Audit XeLaTeX PGF/TikZ extension fixtures with actual artifacts
+        run: |
+          python3 -m unittest discover -s extensions/qa -p 'test_run_smoke.py' -v
+          python3 -m unittest discover -s extensions/qa -p 'test_verify_smoke.py' -v
+          python3 extensions/qa/run_smoke.py --output /tmp/tikzarium-ci/extensions-c03
+          python3 extensions/qa/verify_smoke.py \
+            --output /tmp/tikzarium-ci/extensions-c03 \
+            --report /tmp/tikzarium-ci/extensions-c03/audit.json
       - name: Upload smoke PDFs and Unicode evidence
         if: always()
         uses: actions/upload-artifact@v4

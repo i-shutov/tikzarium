@@ -102,6 +102,9 @@ jobs:
             collection-xetex
             collection-latexrecommended
             collection-pictures
+            pgfplots
+            circuitikz
+            tikz-cd
             standalone
             unicode-math
             lm-math
@@ -135,6 +138,12 @@ jobs:
         run: cargo build -p tikzarium-cli
       - name: Execute fixture suite with machine-readable evidence
         run: python scripts/tools/qa_smoke.py --cli "target/debug/${{ matrix.cli }}" --output ".qa-artifacts/${{ matrix.label }}"
+      - name: "Extension smoke — record and audit five exact XeLaTeX fixtures"
+        run: |
+          python -m unittest discover -s extensions/qa -p "test_run_smoke.py" -v
+          python -m unittest discover -s extensions/qa -p "test_verify_smoke.py" -v
+          python extensions/qa/run_smoke.py --output ".qa-artifacts/${{ matrix.label }}/extensions"
+          python extensions/qa/verify_smoke.py --output ".qa-artifacts/${{ matrix.label }}/extensions" --report ".qa-artifacts/${{ matrix.label }}/extensions/audit.json"
       - name: Capture TeX installer failure log, if present
         if: failure() && steps.texlive_install.outcome == 'failure'
         run: python -c "from pathlib import Path; import shutil; d=Path('.qa-artifacts/${{ matrix.label }}'); d.mkdir(parents=True,exist_ok=True); s=Path('install-tl.log'); shutil.copyfile(s,d/'install-tl.log') if s.is_file() else (d/'installer-log-unavailable.txt').write_text('TeX installation failed before producing install-tl.log', encoding='utf-8')"
