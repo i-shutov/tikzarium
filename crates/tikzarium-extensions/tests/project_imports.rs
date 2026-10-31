@@ -427,7 +427,6 @@ fn direct_package_before_conditional_remains_known_but_conditional_library_unkno
     ));
 }
 
-
 #[test]
 fn real_late_calc_import_is_unknown_without_false_absence_or_unsafe_patch() {
     // Compiles under real external XeLaTeX; the preamble-only inspection
@@ -447,8 +446,15 @@ fn real_late_calc_import_is_unknown_without_false_absence_or_unsafe_patch() {
         Evidence::Unknown
     );
     assert!(project.uncertain_reason.unwrap().contains("document body"));
-    assert!(project.declaration_sites(ImportKind::TikzLibrary, "calc").is_empty());
-    assert_eq!(project.declaration_sites(ImportKind::Package, "tikz").len(), 1);
+    assert!(
+        project
+            .declaration_sites(ImportKind::TikzLibrary, "calc")
+            .is_empty()
+    );
+    assert_eq!(
+        project.declaration_sites(ImportKind::Package, "tikz").len(),
+        1
+    );
     assert!(project.begin_document_target(19).is_none());
     assert!(matches!(
         plan_import(
