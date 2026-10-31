@@ -29,3 +29,10 @@ A successful engine exit plus PDF is insufficient if `.fls` is absent, unreadabl
 ## Platform path canonicalization gate
 
 macOS `/var` → `/private/var` alias demonstrated a dangerous false-fresh classification when a missing input is under an aliased project root. Missing paths now resolve through the nearest existing canonical ancestor before root-boundary checks. Regression tests require macOS and Unix symlink-root parity.
+
+
+## 2026-10-31 · A-only integration after accepted #38/#44/#51/#56
+
+Existing PR #28 reconciled with main `b2a1299d5660d04614c78ca696189dfab10e4f43`. Keep native MiKTeX `--disable-installer`, explicit XeLaTeX, source diagnostics and B/C/D work unchanged. Add source-boundary fail-closed: if the mandatory TeX author source resolves outside the project root (including symlink escapes), `is_project_fresh` is false even if no local inputs remain. External dependencies remain explicitly unverified and do not form a global TeX cache guarantee. Portable Unicode/CRLF/opaque source and Unix source-symlink regressions accompany existing file-recorder tests.
+
+Require fresh exact-head fmt/check/test/clippy, D QA and hosted real MiKTeX CI; all PENDING at commit. Physical Win10/M1/M4 and GUI NOT_RUN.

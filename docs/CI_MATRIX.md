@@ -22,3 +22,20 @@ The integration workpack selects DejaVu Serif, installs it on the Linux runner a
 - PR #16 added an independent Linux `fontspec`/`unicode-math` proof, extracted Cyrillic phrases and `pdffonts` embedding checks: https://github.com/i-shutov/tikzarium/actions/runs/41173786603. That test does not prove comprehensive installed-font discovery or a physical GUI session.
 - PRs #7/#13 added `extensions/PACKAGE_MATRIX.csv` and fixture observation parsing. Default `NOT_PROBED` / `NOT_TESTED` is intentional; the existence of a TOML manifest or local package does not prove XeLaTeX compilation or egui visual editing. LuaTeX-only graphdrawing remains `INCOMPATIBLE_ENGINE`.
 - Integrated main after C02: `f2a55fa13fd9a1e0af2718bc328ed16786975184`. Verify post-merge workflow on **this exact SHA** before claiming integrated PASS. Missing physical smoke blocks release acceptance.
+
+## I06 — source-preserving clean Save / Build (proposed, unmerged)
+
+Both the native build CI and 3-host D Rust QA matrix explicitly run `cargo test -p tikzarium-core document::tests -- --nocapture`. Tests reject external source changes and deleted source, preserve clean source file bytes and Unix inode, reject replacing symlink and read-only paths, and allow explicit Save As to a new path. This does **not** attest an actual egui Save dialog, a real Windows 10 machine, or physical M1/M4; record native screenshots and hashes separately. Rust CI statuses are PENDING until exact I06 branch-head jobs complete. The tests do not assert race-free inter-process save semantics.
+
+
+## I10 — exact-main MiKTeX / C/N2 integration ledger (2026-10-31)
+
+| Gate | Positive evidence | Explicit limitation |
+| --- | --- | --- |
+| D07 real MiKTeX 25.12 on hosted Windows Server 2022 | Exact D head `69387a23`: [41201660165](https://github.com/i-shutov/tikzarium/actions/runs/41201660165), artifact `13043002420`, real installer, AutoInstall=0, 9,130 identical inventory rows, six real PDFs, Cyrillic/math/embedded fonts | Hosted Windows Server is NOT Windows 10 x64; no native GUI or physical hardware |
+| C/N2 import/disconnect code | Exact C head `3d64c608`: [Rust 41202090696](https://github.com/i-shutov/tikzarium/actions/runs/41202090696), [D QA 41202090692](https://github.com/i-shutov/tikzarium/actions/runs/41202090692), reversible byte-range tests with unknown macros/CRLF | Removal is a proposed source edit, not TeX package uninstallation or executed GUI confirm/undo |
+| N1 generated source + XeLaTeX | [41202090704](https://github.com/i-shutov/tikzarium/actions/runs/41202090704), artifact `13043022726`, original-source SHA and actual rendered PDF checked | App Session proof, not pointer actions or Windows 10/M1/M4 GUI |
+| Post-merge main `6d15d86344ab1281391d3ea1b458dc18ae443985` | [Rust 41203529736](https://github.com/i-shutov/tikzarium/actions/runs/41203529736), [D QA 41203529679](https://github.com/i-shutov/tikzarium/actions/runs/41203529679), [real MiKTeX 41203529698](https://github.com/i-shutov/tikzarium/actions/runs/41203529698) | All three completed SUCCESS on exact merged SHA; reviewed artifact 13044230534 (SHA-256 0c6f7a1a...), six genuine MiKTeX PDFs, 9,130 identical packages. No physical GUI proof |
+| Physical target desktop | None | Win10 x64 MiKTeX, Mac M1/M4 external XeLaTeX: NOT_RUN |
+
+The five dimensions *package installed*, *project loaded*, *engine-compatible*, *tool implemented*, and *help available* must remain separately reported. External `\usetikzlibrary` changes must appear in a visible, undoable TeX diff. Figure fontspec/unicode-math is independent of persistent GUI themes. No Lua-only compatibility is inferred.

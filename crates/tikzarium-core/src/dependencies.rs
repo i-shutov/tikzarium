@@ -21,21 +21,24 @@ struct ProjectInput {
 
 /// A read-only snapshot of inputs inside a selected project root.
 ///
-/// Every source inside `root` is hashed after a successful build. TeX
-/// installation files and other paths outside `root` are explicitly listed
-/// as ignored; their freshness is **not** asserted by this type. Missing,
-/// unreadable and oversized project inputs invalidate the snapshot.
+/// Local author sources are hashed; a source resolving outside `root`
+/// (including a symlink escape) fails closed. External TeX installation
+/// dependencies are listed but not checked. Missing, unreadable and oversized
+/// local inputs also invalidate the snapshot.
 #[derive(Debug, Clone)]
 pub struct ProjectDependencySnapshot {
     root: PathBuf,
     project_inputs: Vec<ProjectInput>,
     ignored_external: Vec<PathBuf>,
     recorder_complete: bool,
+    /// An external/symlinked-away author source cannot certify freshness.
+    source_is_project_local: bool,
 }
 
 impl ProjectDependencySnapshot {
-    /// The original TeX source is always included, even if the recorder
-    /// omits it. Inputs are deduplicated after canonicalization.
+    /// The author source is mandatory even if the recorder omits it. If it
+    /// resolves outside root, freshness fails closed rather than silently
+    /// ignoring the source. Inputs are canonicalized and deduplicated.
     pub fn capture(
         root: &Path,
         source: &Path,
@@ -46,8 +49,12 @@ impl ProjectDependencySnapshot {
         let mut seen = HashSet::new();
         let mut project_inputs = Vec::new();
         let mut ignored_external = Vec::new();
+        let mut source_is_project_local = false;
 
-        for input in std::iter::once(source).chain(dependencies.iter().map(PathBuf::as_path)) {
+        for (index, input) in std::iter::once(source)
+            .chain(dependencies.iter().map(PathBuf::as_path))
+            .enumerate()
+        {
             let absolute = if input.is_absolute() {
                 input.to_path_buf()
             } else {
@@ -56,10 +63,14 @@ impl ProjectDependencySnapshot {
             // A missing file cannot be canonicalized; collapse .. components
             // before applying the root boundary.
             let resolved = canonicalize_existing_prefix(&absolute);
+            let is_local = resolved.starts_with(&root);
+            if index == 0 {
+                source_is_project_local = is_local;
+            }
             if !seen.insert(resolved.clone()) {
                 continue;
             }
-            if resolved.starts_with(&root) {
+            if is_local {
                 project_inputs.push(ProjectInput {
                     digest: file_digest(&resolved).ok().flatten(),
                     path: resolved,
@@ -73,6 +84,7 @@ impl ProjectDependencySnapshot {
             project_inputs,
             ignored_external,
             recorder_complete,
+            source_is_project_local,
         })
     }
 
@@ -117,11 +129,13 @@ impl ProjectDependencySnapshot {
             .collect()
     }
 
-    /// Freshness is limited to recorded project-root paths. External files
-    /// can change without affecting this result; inspect ignored_external_paths.
+    /// Project-only freshness requires the author source inside root.
+    /// External dependencies are not tracked; inspect ignored_external_paths.
     #[must_use]
     pub fn is_project_fresh(&self) -> bool {
-        self.recorder_complete && self.invalidated_project_paths().is_empty()
+        self.recorder_complete
+            && self.source_is_project_local
+            && self.invalidated_project_paths().is_empty()
     }
 }
 
@@ -366,5 +380,53 @@ mod missing_symlink_root_regression {
                     .join("nested/absent.tex")
             ]
         );
+    }
+}
+
+
+#[cfg(test)]
+mod source_boundary_regression {
+    use super::*;
+
+    #[test]
+    fn external_author_source_never_certifies_freshness() {
+        let project = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let source = outside.path().join("рисунок с пробелом.tex");
+        let original = b"% preserve CRLF\r\n\\unknownmacro{value}\r\n";
+        fs::write(&source, original).unwrap();
+        let snapshot =
+            ProjectDependencySnapshot::capture(project.path(), &source, &[], true).unwrap();
+        assert!(snapshot.recorder_complete());
+        assert!(!snapshot.is_project_fresh());
+        assert!(snapshot.tracked_project_paths().is_empty());
+        assert_eq!(
+            snapshot.ignored_external_paths(),
+            &[source.canonicalize().unwrap()]
+        );
+        assert_eq!(fs::read(source).unwrap(), original);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_author_source_escaping_root_is_never_fresh() {
+        use std::os::unix::fs::symlink;
+        let project = tempfile::tempdir().unwrap();
+        let external = tempfile::tempdir().unwrap();
+        let real_source = external.path().join("original.tex");
+        fs::write(&real_source, b"% original\r\n").unwrap();
+        let symlink_source = project.path().join("main.tex");
+        symlink(&real_source, &symlink_source).unwrap();
+        let snapshot =
+            ProjectDependencySnapshot::capture(project.path(), &symlink_source, &[], true)
+                .unwrap();
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(
+            snapshot.ignored_external_paths(),
+            &[real_source.canonicalize().unwrap()]
+        );
+        fs::write(&real_source, b"% changed!\r\n").unwrap();
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(fs::read(&symlink_source).unwrap(), b"% changed!\r\n");
     }
 }

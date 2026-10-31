@@ -15,7 +15,10 @@ pub use build::{
 };
 pub use dependencies::{MAX_TRACKED_FILE_BYTES, ProjectDependencySnapshot};
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
-pub use discovery::{TexEnvironment, find_executable};
+pub use discovery::{
+    PackageProbe, TexDistribution, TexEngineIdentity, TexEnvironment, find_executable,
+    inspect_xelatex,
+};
 pub use document::Document;
 pub use font_audit::{FontIssue, FontIssueKind, FontLogAudit, audit_font_log};
 pub use fonts::{

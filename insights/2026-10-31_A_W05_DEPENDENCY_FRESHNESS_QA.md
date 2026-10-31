@@ -53,3 +53,12 @@ The macOS hosted fmt gate for `377cf455e0e04691137a9be68ee20433747e98a9`, [CI 41
 ## Windows Server clippy — exact `fc09ad32` run is FAIL
 
 [GitHub CI 41184185958](https://github.com/i-shutov/tikzarium/actions/runs/41184185958), Windows Server job 124487593011: Rust fmt and workspace tests PASSED, strict Clippy FAILED with four `clippy::cloned_ref_to_slice_refs` findings in new A unit tests (local variables `asset`, `absent`, `external`, `big`). Replaced all four unnecessary `&[path.clone()]` with `std::slice::from_ref(&path)`, preserving each original test assertion. Corrected SHA must rerun checks before any PASS assertion. Hosted Windows Server is CI-only, not Win10 acceptance.
+
+
+## 2026-10-31 · A-only integration after accepted #38/#44/#51/#56
+
+Existing PR #28 reconciled with main `b2a1299d5660d04614c78ca696189dfab10e4f43`. Keep native MiKTeX `--disable-installer`, explicit XeLaTeX, source diagnostics and B/C/D work unchanged. Add source-boundary fail-closed: if the mandatory TeX author source resolves outside the project root (including symlink escapes), `is_project_fresh` is false even if no local inputs remain. External dependencies remain explicitly unverified and do not form a global TeX cache guarantee. Portable Unicode/CRLF/opaque source and Unix source-symlink regressions accompany existing file-recorder tests.
+
+Require fresh exact-head fmt/check/test/clippy, D QA and hosted real MiKTeX CI; all PENDING at commit. Physical Win10/M1/M4 and GUI NOT_RUN.
+
+Integrator review caught a real false-fresh: `root/main.tex` symlink to external source was classified in ignored_external, so an empty project snapshot could claim true. Fixed by mandatory source-locality flag, preserving original input bytes and project-only scope. Existing #28 base was 183 commits behind; this merge makes main a parent rather than rewriting other lanes. No Rust toolchain in execution container; old W05 PASS must not be inherited.

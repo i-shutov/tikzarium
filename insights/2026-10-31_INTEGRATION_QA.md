@@ -1,5 +1,22 @@
 # Integration QA ledger — 2026-10-31
 
+## I08 evidence — 2026-10-31: A/W06 genuine MiKTeX integration and unclosed GUI gates
+
+| Item | Evidence | Classification |
+| --- | --- | --- |
+| Integrated A/W06 #38 | head `74ca61c6aff408d92286f91e0b49143e9b7e72b1`; main merge `013720ee6f0e1dc29f487124499ed9469d86b089`; GitHub head checks 16/16 SUCCESS | MERGED, automated CI PASS |
+| Hosted actual MiKTeX 25.12 | run [41197706754](https://github.com/i-shutov/tikzarium/actions/runs/41197706754), artifact [13041745718](https://github.com/i-shutov/tikzarium/actions/runs/41197706754/artifacts/13041745718), ZIP SHA256 `59debcf6045fcc1d4cfba8c221712a602412eb3c8023f1a3994a5be702e0bb2a`; CRC clean; `miktex-qa.json.source_head_sha` exact; four cases PASS | Windows Server 2022 hosted, NOT Win10 |
+| Real PDF inspection | Six MiKTeX-dvipdfmx one-page PDFs, Poppler text Cyrillic/Greek/Unicode math and DejaVuSerif/LatinModernMath embedded; one screenshot rendered/read; negative two inputs exit nonzero without PDF | PASS for hosted fixture only |
+| Offline package inventory | `packages-before.txt` and `packages-after.txt` byte identical, SHA256 `d212f1bc5bcb93bd2fec0e06911e3a7d5a40373c3186eb0f27f3c31e9beda469`; AutoInstall readback 0, per-command `--disable-installer` | PASS for hosted test, not network-isolated physical |
+| Post-merge main | [Rust CI 41198781494](https://github.com/i-shutov/tikzarium/actions/runs/41198781494) SUCCESS and [D QA 41198781586](https://github.com/i-shutov/tikzarium/actions/runs/41198781586) SUCCESS on exact merge SHA | PASS, no post-merge D07 MiKTeX claim |
+| I06 actual X11 GUI #48 | artifact [13040181801](https://github.com/i-shutov/tikzarium/actions/runs/41193713529/artifacts/13040181801), ZIP SHA256 `ed6ce7a3aeff2ad6a28b65785038426a1a980aecdcdc06d40bbd074c2abc869c`; five saved gestures PASS, cubic FAIL due to wrong Node tool button; Build/Export not reached | 5 partial real pointer PASS, whole I06 FAIL |
+| B10 #50 | [N1 run 41197494077](https://github.com/i-shutov/tikzarium/actions/runs/41197494077) FAIL after Rust/D QA pass, because C status for literal imports becomes UNKNOWN on unrelated figure-font/user macro lines | FAIL until C/B reconciliation |
+| D07 #52 | [hosted MiKTeX run 41197737467](https://github.com/i-shutov/tikzarium/actions/runs/41197737467) failed at `Invoke-WebRequest` for pinned MiKTeX installer; package baseline absent; no compiler invoked | Infrastructure FAIL; exact head incomplete |
+| Physical Win10 x64 / Mac M1 / Mac M4 | No on-device UI screenshots, driver/input/IME/Retina and independently installed XeLaTeX acceptance | NOT_RUN |
+
+The existing integration ledger entries below are intentionally retained as historical evidence. In particular, historical claims that TikZ visual editing or multipage navigation are NOT_IMPLEMENTED and that A #10 remains blocking are outdated after later merged PRs. Do not reinterpret old checkpoint labels as the current status. No source files were altered by the evidence review.
+
+
 ## Verified provenance
 
 GitHub repository: https://github.com/i-shutov/tikzarium

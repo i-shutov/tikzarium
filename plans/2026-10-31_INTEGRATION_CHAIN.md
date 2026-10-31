@@ -1,5 +1,14 @@
 # Integrated desktop chain: W01 → B01 → B02 → F01/U01
 
+## Latest I08 checkpoint — 2026-10-31, supersedes historical stage labels below
+- Repository `i-shutov/tikzarium` main `013720ee6f0e1dc29f487124499ed9469d86b089`; A/W06 PR #38 merged via exact expected-head lease `74ca61c6aff408d92286f91e0b49143e9b7e72b1`, the 16/16 exact-head checks and independently validated real MiKTeX-hosted PDF/JSON artifact. Post-merge Rust CI 41198781494 and D QA 41198781586 SUCCESS. The source-first six-primitive N1 #44, its shared C help, fonts/themes and existing merged #24+ PRs remain intact.
+- Immediate complete vertical gate: I06 #48 Linux/X11 real egui process 5/6 pointer gestures saved; cubic FAIL due obsolete tool coordinate (actual Cubic button ~[585,229] vs selected Node at [798,204]). Correct test profile, rerun actual six + F1 + GUI XeLaTeX PDF, review screenshots/text/fonts/source; no coordinate-only bootstrap PASS.
+- B10 #50 has actual Rust/D QA PASS but N1 source->PDF FAIL: C N2 project import scanner invalidates explicit loaded `tikz`/`arrows.meta` on unrelated fontspec/`newcommand`. C #51 asked to correct source-owned evidence without optimistic Absent and without a B duplicate parser; complete B disconnect UI after C revised API. #51 remains draft and currently has no accepted GUI disconnect.
+- D07 #52 must extend real MiKTeX PR filters to app/C source changes and run on actual post-merge main; latest draft run 41197737467 FAILED before TeX at external pinned installer download. One targeted failed-job retry is in progress; no acceptance relaxation and no code edits on D branch by integrator.
+- Keep a common Russian TikZ command/parameter catalogue with verified manual provenance, normal Split with editable code beside true PDF, preservation of arbitrary TeX/CRLF, and five separate installed/loaded/compatible/tool/help states. Externally installed MiKTeX is mandatory on Windows 10; physical Windows 10 and Mac ARM GUI tests NOT_RUN. No Lua-only XeLaTeX claim.
+- This checkpoint is evidence, **not** a release; old W01/B01 stages and old #10 conflict notes below are historical and are not current blockers. Refer to issue #35 for SHA-evidence ledger and PR-specific reviews.
+
+
 Date: 2026-10-31. Scope: `i-shutov/tikzarium` ONLY.
 
 ## Integrated Git ancestry

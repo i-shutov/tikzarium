@@ -1,0 +1,12 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+% Дублированные команды и неизвестные конструкции
+\def\opaque#1{\textbf{#1}}
+\begin{document}
+\begin{tikzpicture}
+\draw (0cm,0cm) -- (2cm,1cm);
+\opaque{сохраняем}
+\draw (0cm,0cm) -- (2cm,1cm);
+\end{tikzpicture}
+\end{document}

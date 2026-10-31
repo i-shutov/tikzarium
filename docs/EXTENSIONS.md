@@ -40,11 +40,13 @@ Rules enforced by the crate:
 - Unknown TOML keys, unsupported schema versions and malformed version triplets are rejected.
 - IDs are lower-case dotted names. Duplicate IDs, duplicate or unsafe TeX filenames, parent traversal and path separators are rejected.
 - TeX requirements are simple filenames with .sty/.cls/.tex/.def extensions, never arbitrary paths or shell arguments.
-- Files in a selected directory load **atomically** in sorted order. A malformed file rolls back the whole directory load. Symlinks and non-regular .toml entries are rejected. Other file types are ignored.
+- Files in a selected directory load **atomically** in sorted order. A malformed file rolls back the whole directory load. Symlinks and non-regular .toml entries are rejected. The selected directory itself must be a real directory (a symlink or dangling symlink is rejected); a genuinely missing optional directory is accepted as empty. Other file types are ignored.
 - Additional metadata cannot launch scripts, postprocessors, DLLs, dylibs, network requests or WASM.
 - visual_features is forward-looking declarative metadata. It does not make a feature selectable or editable without a separately verified source adapter.
 
 Only built-in manifests are enabled by Registry::new(); optional user directories must be explicitly loaded. No automatic execution or installation of third-party code occurs.
+
+The directory check rejects a symlink at the **final directory component** but is not a race-free filesystem sandbox: symlinked ancestor directories and concurrent filesystem replacement require a platform-specific handle-relative API. Configure optional catalogue roots in a trusted, non-writable location; do not use untrusted concurrently mutated directories.
 
 ## 4. Initial built-in catalogue
 
@@ -104,3 +106,14 @@ The C03 tool [extensions/qa/verify_smoke.py](../extensions/qa/verify_smoke.py) i
 ## I05 real package evidence integration
 
 The fixed five-fixture C02 runner is followed by the independent C03 auditor in CI. An observation is bound to a source SHA, exact TeX and log/PDF artifacts, the host/TeX engine, a pdfinfo page count and an explicit incompatible-Lua negative. This is **not** a whitelist of all CTAN libraries, nor an editable scene model. See `plans/2026-10-31_I05_XELATEX_CORE_EXTENSION_AUDIT.md` and `insights/2026-10-31_I05_INTEGRATION_QA.md`. The packages on real Windows 10 and physical M1/M4 are not yet accepted.
+
+
+## 11. C07 — native TikZ tool catalogue (six generators, no CAD)
+
+The versioned [single source of truth](../extensions/primitives/catalog-v1.toml) defines the IDs, literal parameter types/units/choices, explicit editor-preset provenance (not inferred PGF defaults), requirements and Russian help for **line, arrow, rectangle, circle, node and cubic Bézier**. The same schema drives an executable generator and can be consumed by future egui toolbar, inspector, completion and contextual help. Each tool emits an ordinary TikZ command; see [the C-owned contract and fixtures](../extensions/primitives/README.md).
+
+Only the arrow tool needs `\\usetikzlibrary{arrows.meta}`; all six require `\\usepackage{tikz}`. The standalone package-installed status, the actual project-loaded declaration, XeLaTeX compatibility, source-tool implementation and help availability are five separate dimensions. The bundled source generator is implemented; **GUI visual interaction and range discovery are not**. An installed MiKTeX package must never be treated as loaded source; unknown user macros imply unknown dependency evidence, not missing packages. The minimum PGF version is reported UNKNOWN; syntax was checked against the v3.1.12 manual, not an invented compatibility floor.
+
+The `SourcePatch` contract changes one caller-owned known byte span with an expected previous substring and source revision; it emits its inverse for undo. It neither decompiles a PDF nor rewrites unknown TeX. Raw mathematical TeX in a node is user-authored and intentionally not blocked by the literal coordinate validator. XeLaTeX remains an external prerequisite: MiKTeX on actual Windows 10, user-installed XeLaTeX on physical macOS ARM64. Lua-only graphdrawing is still incompatible with XeLaTeX, and existing installed compatible packages remain source-compilable without a GUI adapter.
+
+Review primary PGF/TikZ 3.1.12 manual sections [14 — paths](https://tikz.dev/tikz-paths), [16 — arrows](https://tikz.dev/tikz-arrows) and [17 — nodes](https://tikz.dev/tikz-shapes); linked descriptions here are original summaries, not copied manual pages.
