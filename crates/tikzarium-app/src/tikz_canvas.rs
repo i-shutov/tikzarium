@@ -1887,15 +1887,13 @@ mod tests {
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
     }
 
-
     #[test]
     fn b23_external_tex_absence_warns_but_does_not_block_native_c_source_gestures() {
         // 6 catalogue tools × 2 widths × 3 distinct external-runtime gaps.
         // Actual egui RawInput pointer frames exercise the production handler.
         for width in [820.0, 1366.0] {
             for tool in TOOLS {
-                for (installed, engine_compatible) in
-                    [(false, false), (true, false), (false, true)]
+                for (installed, engine_compatible) in [(false, false), (true, false), (false, true)]
                 {
                     let caps = Capabilities {
                         installed,
