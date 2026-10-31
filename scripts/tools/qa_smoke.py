@@ -179,7 +179,7 @@ def inspect_pdf(
                 # Typical subset prefix: ABCDEF+DejaVuSerif-Bold. A font
                 # merely containing 'DejaVuSerif' in its name is not proof.
                 family_pattern = re.compile(
-                    r"^(?:[A-Z]{6}\\+)?" + re.escape(family) + r"(?:[-+,]|$)",
+                    r"^(?:[A-Z]{6}\+)?" + re.escape(family) + r"(?:[-+,]|$)",
                     re.IGNORECASE,
                 )
                 checks[family] = any(
