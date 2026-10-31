@@ -6,12 +6,11 @@
 
 use crate::{
     primitive_edit::SourceTarget,
-    primitives::{Capabilities, Catalog, Evidence, PrimitiveError, SourcePatch},
+    primitives::{Capabilities, Catalog, Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
 };
 use std::{collections::BTreeSet, ops::Range};
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
-const SUPPORTED_LIBRARIES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {
@@ -446,6 +445,58 @@ pub fn capabilities_for_tool(
     catalog.capabilities(tool_id, installed, loaded, engine)
 }
 
+/// N2 library panel status from the *same* declarative catalogue as the six
+/// primitive tools. Installation is caller-provided, never inferred from TeX
+/// declarations; visual_editable stays false for arbitrary library constructs.
+/// tool_implemented means at least one listed native generator depends on this
+/// library (currently arrows.meta only), not full library editing coverage.
+pub fn capabilities_for_library(
+    catalog: &Catalog,
+    name: &str,
+    project: &ProjectImports,
+    installed: Evidence,
+    engine: Option<&str>,
+) -> Result<Capabilities, PrimitiveError> {
+    let library = catalog
+        .library(name)
+        .ok_or_else(|| PrimitiveError::UnknownLibrary(name.to_owned()))?;
+    let package = project.status(ImportKind::Package, "tikz");
+    let loaded_library = project.status(ImportKind::TikzLibrary, name);
+    let project_loaded =
+        if package == Evidence::Confirmed && loaded_library == Evidence::Confirmed {
+            Evidence::Confirmed
+        } else if package == Evidence::Unknown || loaded_library == Evidence::Unknown {
+            Evidence::Unknown
+        } else {
+            Evidence::Absent
+        };
+    let tool_implemented = if catalog.tools.iter().any(|tool| {
+        tool.requirements
+            .libraries
+            .iter()
+            .any(|required| required == name)
+    }) {
+        Evidence::Confirmed
+    } else {
+        Evidence::Absent
+    };
+    let engine_compatible = match engine {
+        Some(actual) if actual.eq_ignore_ascii_case(&library.requirements.engine) => {
+            Evidence::Confirmed
+        }
+        Some(_) => Evidence::Absent,
+        None => Evidence::Unknown,
+    };
+    Ok(Capabilities {
+        installed,
+        project_loaded,
+        engine_compatible,
+        tool_implemented,
+        help_available: Evidence::Confirmed,
+        visual_editable: false,
+    })
+}
+
 /// An explicit source proposal; B must show the diff and request the user action.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportPlan {
@@ -492,7 +543,7 @@ pub fn plan_import(
                 reason: "only the tikz package has an N2 automatic source adapter",
             };
         }
-        ImportKind::TikzLibrary if !SUPPORTED_LIBRARIES.contains(&name) => {
+        ImportKind::TikzLibrary if !N2_LIBRARY_NAMES.contains(&name) => {
             return ImportDecision::Refused {
                 reason: "library has no N2 literal import adapter; use source",
             };
