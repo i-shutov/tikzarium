@@ -163,7 +163,7 @@ impl TexEnvironment {
             .map(TexDistribution::from_version)
             .unwrap_or(TexDistribution::Unknown);
         let tool = match distribution {
-            TexDistribution::MiKTeX => tool_near_engine(self.xelatex.as_deref(), "findtexmf"),
+            TexDistribution::MiKTeX => tool_next_to_engine(self.xelatex.as_deref(), "findtexmf"),
             TexDistribution::TeXLive => tool_near_engine(self.xelatex.as_deref(), "kpsewhich")
                 .or_else(|| self.kpsewhich.clone()),
             TexDistribution::Unknown => None,
@@ -202,19 +202,19 @@ impl TexEnvironment {
     }
 }
 
-/// Prefer the selected engine's bin directory to avoid mixing an explicitly
-/// configured user MiKTeX with an unrelated shared/TeX Live PATH installation.
+/// Only use the helper from the selected MiKTeX installation: a helper
+/// from another PATH entry could inspect the wrong user/shared package tree.
+fn tool_next_to_engine(engine: Option<&Path>, name: &str) -> Option<PathBuf> {
+    let directory = engine?.parent()?;
+    #[cfg(windows)]
+    let filename = format!("{name}.exe");
+    #[cfg(not(windows))]
+    let filename = name;
+    candidate(&directory.join(filename))
+}
+
 fn tool_near_engine(engine: Option<&Path>, name: &str) -> Option<PathBuf> {
-    if let Some(directory) = engine.and_then(Path::parent) {
-        #[cfg(windows)]
-        let filename = format!("{name}.exe");
-        #[cfg(not(windows))]
-        let filename = name;
-        if let Some(found) = candidate(&directory.join(filename)) {
-            return Some(found);
-        }
-    }
-    find_executable(name)
+    tool_next_to_engine(engine, name).or_else(|| find_executable(name))
 }
 
 #[cfg(test)]
