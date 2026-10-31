@@ -8,7 +8,7 @@
 2. Windows 10 x64: independently installed **MiKTeX**, from user or shared installation. Mac M1/M4: independently installed XeLaTeX. Never bundle TeX, install missing packages, modify MiKTeX settings, or turn on shell escape.
 3. The CLI doctor must report actual executable path, actual version/distribution, read-only status of required files and uncertainty. Missing fonts/glyphs are diagnosed by a real build and XeLaTeX log; presence of fontspec.sty alone is not a font coverage test.
 4. The build service must pass MiKTeX's documented **--disable-installer** on each compilation, overriding "always install" and "ask first" for that process without writing configuration. Unknown engine versions fail closed; TeX Live retains its regular argument syntax.
-5. Safe MiKTeX package discovery uses native **findtexmf** *without --must-exist*. Do not call MiKTeX kpsewhich for missing packages: its past behavior included on-the-fly install. Prefer findtexmf alongside the selected xelatex, then PATH. TeX Live uses kpsewhich. Missing and NOT_CHECKED are distinct.
+5. Safe MiKTeX package discovery uses native **findtexmf** *without --must-exist*. Do not call MiKTeX kpsewhich for missing packages: its past behavior included on-the-fly install. Require findtexmf **beside the selected MiKTeX xelatex**, without PATH fallback (prevents mixing user/shared installations); otherwise NOT_CHECKED. TeX Live prefers sibling kpsewhich, then PATH. Missing and NOT_CHECKED are distinct.
 6. Source Unicode and spaces are handled as path arguments, never shell strings. Known macros, raw TeX bytes, user preambles and packages stay untouched. GUI package/library additions will be user-visible undoable source changes in lane B, not modifications to MiKTeX.
 
 ## Vertical implementation and gates
@@ -16,7 +16,7 @@
 - [x] Recheck base SHA, open PRs, AGENTS.md, previous A and integration work.
 - [x] Introduce distribution-aware engine probe, conservative package lookup and CLI doctor exit codes (0 requirements present, 2 unknown/unavailable, 3 missing file).
 - [x] Runner: known TeX Live/ MiKTeX identity before compilation, MiKTeX --disable-installer, no shell, existing cancellation/logs/diagnostics intact.
-- [x] Regression tests: unknown distribution fail closed, fake MiKTeX argv contains --disable-installer, source SHA unchanged, Unicode/spaces, sibling findtexmf never receives --must-exist.
+- [x] Core + CLI regression tests authored: unknown distribution fails closed, fake MiKTeX argv contains --disable-installer, byte-for-byte source preservation, Unicode/spaces and user/shared paths; sibling findtexmf lookup without --must-exist; CLI doctor returns 0 for present packages and 3 for missing packages.
 - [x] New actual TeX primitive fixture with owner-controlled preamble, fontspec, unicode-math and TikZ calc/positioning/arrows.meta.
 - [x] Linux TeX Live real fixture compile; inspect pdfinfo, pdftotext and pdffonts (record evidence in insights).
 - [ ] **Exact PR HEAD CI:** Rust fmt/check/test/Clippy and real XeLaTeX hosted matrix; record exact Actions runs and amend this plan after completion.

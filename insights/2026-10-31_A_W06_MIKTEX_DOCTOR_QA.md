@@ -8,10 +8,10 @@ Starting main SHA: c5c8c1576b6288e1d125d558d0d4872b321efb86 (2026-10-31T08:54:43
 
 1. Read-only xelatex --version probe; classify MiKTeX, TeXLive, Unknown and reject an unidentifiable engine before build.
 2. Per-invocation MiKTeX --disable-installer via direct argv; no global configuration mutations. Existing -no-shell-escape, logging and diagnostics retained.
-3. MiKTeX native findtexmf file lookup without --must-exist; never invoke bare MiKTeX kpsewhich to detect missing packages. Prefer helper next to explicitly selected xelatex path, supporting either private or shared installations. TeX Live kpsewhich remains.
+3. MiKTeX native findtexmf file lookup without --must-exist; never invoke bare MiKTeX kpsewhich to detect missing packages. Use ONLY the helper beside the selected XeLaTeX, without PATH fallback, to prevent mixing user/shared package trees; if absent report NOT_CHECKED. TeX Live kpsewhich remains.
 4. Doctor reports path/version/distribution, read-only presence status for standalone.cls, tikz.sty, fontspec.sty and unicode-math.sty; missing vs unavailable distinguished. Fonts and glyphs require actual builds.
 5. New pure TikZ/PGF reference with user-owned preamble, calc/positioning/arrows.meta, fontspec/unicode-math, Cyrillic, Greek, math, and opaque custom macro; source not rewritten.
-6. Rust regression tests added for identity, unknown/fail-closed, Unicode/spaces, fake MiKTeX offline CLI argv, no source mutations and fake sibling findtexmf with no installation options.
+6. Core and CLI Rust tests authored for identity, unknown/fail-closed, Unicode/spaces, distinct user/shared lookup roots, fake MiKTeX offline argv, unchanged CRLF/opaque macro bytes, safe findtexmf with no install options, and doctor present/missing package exit codes. These tests are not yet counted as PASS until executed at the exact PR HEAD.
 
 ## Actual Linux fixture compilation (TeX Live, NOT MiKTeX)
 
