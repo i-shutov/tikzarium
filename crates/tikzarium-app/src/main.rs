@@ -152,7 +152,7 @@ impl TikzariumApp {
                     self.status = "Save cancelled".into();
                     false
                 }
-            };
+            }
         }
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         {
