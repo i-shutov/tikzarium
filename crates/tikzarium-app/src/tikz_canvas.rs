@@ -1245,6 +1245,12 @@ mod tests {
         event_frame_mod_with_palette(ctx, session, source, events, modifiers, None, 820.0)
     }
 
+    #[derive(Clone, Copy)]
+    struct EventFrameOptions {
+        width: f32,
+        caps: Capabilities,
+    }
+
     fn event_frame_mod_with_palette(
         ctx: &egui::Context,
         session: &mut Session,
@@ -1261,8 +1267,10 @@ mod tests {
             events,
             modifiers,
             palette_rects,
-            viewport_width,
-            READY,
+            EventFrameOptions {
+                width: viewport_width,
+                caps: READY,
+            },
         )
     }
 
@@ -1273,8 +1281,7 @@ mod tests {
         events: Vec<egui::Event>,
         modifiers: egui::Modifiers,
         mut palette_rects: Option<&mut [Rect; 6]>,
-        viewport_width: f32,
-        caps: Capabilities,
+        options: EventFrameOptions,
     ) -> (Option<usize>, Rect) {
         let mut observed = None;
         let mut guide_rect = Rect::NOTHING;
@@ -1282,7 +1289,7 @@ mod tests {
             egui::RawInput {
                 screen_rect: Some(Rect::from_min_size(
                     Pos2::ZERO,
-                    Vec2::new(viewport_width, 480.0),
+                    Vec2::new(options.width, 480.0),
                 )),
                 modifiers,
                 events,
@@ -1295,7 +1302,7 @@ mod tests {
                         ui,
                         session,
                         source,
-                        caps,
+                        options.caps,
                         palette_rects.as_deref_mut(),
                     );
                 });
@@ -1914,8 +1921,7 @@ mod tests {
                         vec![],
                         egui::Modifiers::default(),
                         None,
-                        width,
-                        caps,
+                        EventFrameOptions { width, caps },
                     );
                     let at = screen_point(rect, Point::new(1.0, 1.0));
                     let _ = event_frame_mod_with_palette_caps(
@@ -1925,8 +1931,7 @@ mod tests {
                         vec![egui::Event::PointerMoved(at), primary(at, true)],
                         egui::Modifiers::default(),
                         None,
-                        width,
-                        caps,
+                        EventFrameOptions { width, caps },
                     );
                     let (line, _) = event_frame_mod_with_palette_caps(
                         &ctx,
@@ -1935,8 +1940,7 @@ mod tests {
                         vec![primary(at, false)],
                         egui::Modifiers::default(),
                         None,
-                        width,
-                        caps,
+                        EventFrameOptions { width, caps },
                     );
                     assert!(
                         line.is_some(),
@@ -1985,8 +1989,7 @@ mod tests {
                 vec![],
                 egui::Modifiers::default(),
                 None,
-                820.0,
-                caps,
+                EventFrameOptions { width: 820.0, caps },
             );
             let at = screen_point(rect, Point::new(1.0, 1.0));
             let _ = event_frame_mod_with_palette_caps(
@@ -1996,8 +1999,7 @@ mod tests {
                 vec![egui::Event::PointerMoved(at), primary(at, true)],
                 egui::Modifiers::default(),
                 None,
-                820.0,
-                caps,
+                EventFrameOptions { width: 820.0, caps },
             );
             let (line, _) = event_frame_mod_with_palette_caps(
                 &ctx,
@@ -2006,8 +2008,7 @@ mod tests {
                 vec![primary(at, false)],
                 egui::Modifiers::default(),
                 None,
-                820.0,
-                caps,
+                EventFrameOptions { width: 820.0, caps },
             );
             assert!(line.is_none());
             assert_eq!(source, original);
