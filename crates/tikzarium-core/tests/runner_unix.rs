@@ -129,6 +129,14 @@ fn failure_reports_source_line_and_retains_full_log_on_request() {
     assert!(matches!(failure, BuildError::TeXFailure { .. }));
     assert!(failure.to_string().contains("line 9"));
     assert!(failure.to_string().contains("simulated engine failure"));
+    assert!(failure.log_excerpt().unwrap().contains("Undefined control sequence"));
+    assert!(
+        failure
+            .diagnostics()
+            .iter()
+            .any(|diagnostic| diagnostic.severity == Severity::Error
+                && diagnostic.line == Some(9))
+    );
     assert!(
         fs::read_to_string(&log_path)
             .unwrap()

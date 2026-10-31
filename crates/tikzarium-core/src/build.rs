@@ -65,7 +65,13 @@ pub enum BuildError {
     #[error("XeLaTeX exceeded timeout of {0:?}")]
     Timeout(Duration),
     #[error("XeLaTeX exited with {code:?}: {details}")]
-    TeXFailure { code: Option<i32>, details: String },
+    TeXFailure {
+        code: Option<i32>,
+        details: String,
+        /// Bounded in-memory TeX log for GUI error navigation (not the full persistent log).
+        log_excerpt: String,
+        diagnostics: Vec<BuildDiagnostic>,
+    },
     #[error("Compiled PDF missing: {0}")]
     MissingPdf(PathBuf),
     #[error("Build log path would overwrite the TeX source: {0}")]
@@ -78,6 +84,28 @@ pub enum BuildError {
     },
     #[error("I/O: {0}")]
     Io(#[from] io::Error),
+}
+
+impl BuildError {
+    /// Structured diagnostics for failed XeLaTeX runs, ready for source navigation.
+    /// Other errors have no TeX diagnostics.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[BuildDiagnostic] {
+        match self {
+            Self::TeXFailure { diagnostics, .. } => diagnostics,
+            _ => &[],
+        }
+    }
+
+    /// A bounded text excerpt from the engine's log, if the engine exited in error.
+    /// Use BuildOptions::log_path to retain the entire .log file.
+    #[must_use]
+    pub fn log_excerpt(&self) -> Option<&str> {
+        match self {
+            Self::TeXFailure { log_excerpt, .. } => Some(log_excerpt),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Default)]
@@ -176,6 +204,7 @@ impl BuildService {
         let stderr = read_capped(&stderr_file, 8_000).unwrap_or_default();
         let log_saved = save_log(&log_path, &stdout_file, request.options.log_path.as_deref());
         if !status.success() {
+            let diagnostics = extract_diagnostics(&log);
             let mut details = failure_details(&log, &stderr);
             if let Err(error) = log_saved {
                 details.push_str(&format!("\nLog persistence also failed: {error}"));
@@ -183,6 +212,8 @@ impl BuildService {
             return Err(BuildError::TeXFailure {
                 code: status.code(),
                 details,
+                log_excerpt: log,
+                diagnostics,
             });
         }
         log_saved?;

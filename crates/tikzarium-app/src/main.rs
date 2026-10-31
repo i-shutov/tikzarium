@@ -283,10 +283,9 @@ impl eframe::App for TikzariumApp {
                 if ui
                     .add_enabled(self.receiver.is_some(), egui::Button::new("Cancel"))
                     .clicked()
+                    && let Some(cancel) = &self.cancellation
                 {
-                    if let Some(cancel) = &self.cancellation {
-                        cancel.cancel();
-                    }
+                    cancel.cancel();
                 }
                 if ui
                     .add_enabled(self.pdf.is_some(), egui::Button::new("Export PDF"))

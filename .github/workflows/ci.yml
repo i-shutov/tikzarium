@@ -78,27 +78,40 @@ jobs:
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            texlive-xetex texlive-pictures texlive-latex-extra poppler-utils
+            texlive-xetex texlive-pictures texlive-latex-extra poppler-utils fonts-dejavu-core
       - name: Record environment
         run: |
           xelatex --version | head -n 2
           kpsewhich tikz.sty
           kpsewhich standalone.cls
           pdftoppm -v
+      - name: Offline unit tests for PDF Unicode gate
+        run: python3 -m unittest discover -s scripts/tests -p 'test_qa_unicode_pdf.py' -v
       - name: Test CLI build against actual XeLaTeX
         run: |
           cargo run -p tikzarium-cli -- doctor
           mkdir -p /tmp/tikzarium-ci
+          sha256sum examples/quickstart.tex examples/cyrillic.tex > /tmp/tikzarium-ci/source-before.sha256
           cargo run -p tikzarium-cli -- build examples/quickstart.tex /tmp/tikzarium-ci/quickstart.pdf
           cargo run -p tikzarium-cli -- build examples/cyrillic.tex /tmp/tikzarium-ci/cyrillic.pdf
           pdfinfo /tmp/tikzarium-ci/quickstart.pdf | grep -E '^Pages: *1$'
           pdfinfo /tmp/tikzarium-ci/cyrillic.pdf | grep -E '^Pages: *1$'
+          python3 scripts/qa_unicode_pdf.py /tmp/tikzarium-ci/cyrillic.pdf --expect 'Тест' --expect 'Кириллица.' --expect 'Точка' --extracted-out /tmp/tikzarium-ci/cyrillic-extracted.txt
+          sha256sum -c /tmp/tikzarium-ci/source-before.sha256
+          {
+            rustc -vV
+            xelatex --version | head -n 2
+            pdftotext -v 2>&1 | head -n 1
+            fc-match 'DejaVu Serif'
+          } > /tmp/tikzarium-ci/environment.txt
+          sha256sum /tmp/tikzarium-ci/quickstart.pdf /tmp/tikzarium-ci/cyrillic.pdf target/debug/tikzarium-cli > /tmp/tikzarium-ci/output.sha256
           pdftoppm -f 1 -singlefile -png -scale-to 1200 \
             /tmp/tikzarium-ci/quickstart.pdf /tmp/tikzarium-ci/preview
           test -s /tmp/tikzarium-ci/preview.png
-      - name: Upload smoke PDFs
+      - name: Upload smoke PDFs and Unicode evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tikzarium-xelatex-linux-fixtures
           path: /tmp/tikzarium-ci/
-          if-no-files-found: error
+          if-no-files-found: warn
