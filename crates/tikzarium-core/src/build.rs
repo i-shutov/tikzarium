@@ -265,11 +265,20 @@ impl BuildService {
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
         let recorder_complete = recorder.is_ok() && dependencies.contains(&source);
-        // Canonical compilation paths must not hide the user's source symlink.
-        let authored_source = if request.source.is_absolute() {
-            request.source.clone()
+        // Keep a genuine source-file symlink so retargeting invalidates it.
+        // For an ordinary file, prefer the canonical compiler source: macOS
+        // /var and /private/var are aliases and must not duplicate the source.
+        let authored_source = if fs::symlink_metadata(&request.source)
+            .map(|metadata| metadata.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            if request.source.is_absolute() {
+                request.source.clone()
+            } else {
+                std::env::current_dir()?.join(&request.source)
+            }
         } else {
-            std::env::current_dir()?.join(&request.source)
+            source.clone()
         };
         let project_dependencies = ProjectDependencySnapshot::capture(
             cwd,

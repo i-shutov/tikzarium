@@ -64,3 +64,7 @@ At branch reconciliation main `5f5a805005430ff26d3e3dd9c17c3ca3d7af9fa3` include
 ### W05 cross-host root spelling correction
 
 The first full regression pass on head `aaea74074c2272fed100268a8879e00ba148e456` exposed macOS `/var` → `/private/var` alias duplication: original source retained `/var` spelling but relative `.fls` INPUT was joined to already canonical `/private/var` root, yielding two tracked paths for the same author source. Preserve the caller's original absolute project root spelling when joining relative recorder inputs, while continuing to use the canonical root for security boundary checks. Add a deterministic Unix symlink-root dedup regression. This does not weaken per-input symlink-retarget detection. Exact corrected-head CI mandatory; no old PASS inherited.
+
+### Exact source-symlink vs macOS root-alias selection
+
+Use canonical compiler source spelling for an ordinary author file to avoid duplicate project inputs across /var and /private/var, but retain the original author path when the file itself is a symlink (its retargeting changes the requested document). Added two Unix fake-engine regressions: symlinked project-root creates only source+asset fingerprints, and changing a symlinked author file invalidates freshness. This is an A-only runner change; does not affect canonical public dependencies, source bytes, CLI output or GUI undo contract. New exact-head CI required.

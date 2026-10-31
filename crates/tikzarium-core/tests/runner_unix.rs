@@ -341,3 +341,45 @@ fn recorded_symlink_retarget_invalidates_real_runner_snapshot_and_preserves_sour
     assert_eq!(fs::read(&first).unwrap(), b"AAA");
     assert_eq!(fs::read(&source).unwrap(), original);
 }
+
+#[test]
+fn symlinked_project_root_keeps_one_author_source_in_snapshot() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    let alias_owner = tempfile::tempdir().unwrap();
+    let alias = alias_owner.path().join("project-link");
+    symlink(project.path(), &alias).unwrap();
+    fs::create_dir_all(project.path().join("assets")).unwrap();
+    fs::write(project.path().join("assets/shape.tex"), b"asset").unwrap();
+    let source = alias.join("figure.v2.tex");
+    let original = b"% opaque source\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 2);
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn retargeted_author_file_symlink_invalidates_compiled_snapshot() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    fs::create_dir_all(project.path().join("assets")).unwrap();
+    fs::write(project.path().join("assets/shape.tex"), b"asset").unwrap();
+    let first = project.path().join("first.tex");
+    let second = project.path().join("second.tex");
+    let link = project.path().join("source-link.tex");
+    fs::write(&first, b"% original\r\n").unwrap();
+    fs::write(&second, b"% different\r\n").unwrap();
+    symlink(&first, &link).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&link, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    fs::remove_file(&link).unwrap();
+    symlink(&second, &link).unwrap();
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(&first).unwrap(), b"% original\r\n");
+}
