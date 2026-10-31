@@ -77,3 +77,27 @@ Next bounded block: confirm new Actions run, inspect all fixture artifacts
 for exact commit and glyph/text/font results; fix CI/install failures only
 within D-owned files. If tool installation is unavailable, record BLOCKED
 with runner, tool, step and log and retain a runnable next action.
+
+## Second observed runner result and triage
+
+At exact D SHA \`a4fbf6b36e6a0b38421e19710804beb74c1fc009\`,
+[run 41173646446](https://github.com/i-shutov/tikzarium/actions/runs/41173646446)
+produced hosted macOS ARM64 G02 PASS with zero Missing character
+warnings, required Cyrillic and literal Greek extraction true,
+\`pdffonts\` reporting embedded DejaVuSerif and LatinModernMath true.
+Poppler tools now resolve from \`/opt/homebrew/bin\`. Separate legacy
+W01 G00 \`examples/cyrillic.tex\` was red because
+\`fontspec\` cannot find OS family "DejaVu Serif" (source uses a family
+name, unlike the new filename-based G02 fixture). This is a real
+portability limitation of the upstream example, not a Rust core
+regression, and has been escalated to [PR #6](https://github.com/i-shutov/tikzarium/pull/6).
+Subsequent D-only code creates a tightly scoped \`KNOWN_LIMITATION\`
+verdict preserving raw exit, stderr and input hashes; it cannot hide
+unrelated errors or source mutation.
+
+The current QA workflow additionally installs pinned Chocolatey
+\`poppler 26.9.0\` on hosted Windows Server so PDF page count, exact
+Unicode text and PDF embedded font checks have the same fail-closed
+policy as Linux and macOS. This package is a CI test dependency and
+is not bundled with TikZarium. A new exact-head Actions rerun must be
+read before declaring cross-platform PASS.

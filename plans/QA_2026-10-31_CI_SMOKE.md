@@ -135,3 +135,27 @@ Outstanding release gates:
 failure by step and tool; patch *only* D-owned files, rerun and record
 exact SHA + artifacts. Track any Windows font package/Poppler issues as
 reproducible D fixtures; escalate non-D code to A/B owners.
+
+## Fail-closed PDF proof (supersedes optional-tool paragraph above)
+
+By exact D head \`eceb20ca7f\`, all three PDF inspectors
+(\`pdfinfo\`, \`pdftotext\`, \`pdffonts\`) are required for QA CI on each host.
+Install Poppler from Ubuntu packages, Homebrew on macOS ARM and
+Chocolatey \`poppler 26.9.0\` on hosted Windows Server. A required page
+count, Unicode string or embedded-font check without its tool makes the
+fixture **FAIL**, while the report still identifies the subcheck as
+\`NOT_CHECKED\`; never promote a missing check to PASS. TeX Live package
+versions remain rolling (major version 2026), despite pinned tool versions.
+
+The upstream W01 \`examples/cyrillic.tex\` uses
+\`\\setmainfont{DejaVu Serif}\`, an OS-registered family. Hosted macOS
+reported \`fontspec: The font "DejaVu Serif" cannot be found\`
+([run 41173646446](https://github.com/i-shutov/tikzarium/actions/runs/41173646446)),
+although TeX Live provides \`DejaVuSerif.ttf\` by filename. This case
+is **KNOWN_LIMITATION** only when its PDF checks succeed or the exact
+font-not-found error occurs, source inputs unchanged; all unrelated
+failures stay red. It is not counted as a Unicode PASS or release
+acceptance. Upstream PR #6 was notified. On the same hosted Mac,
+the new G02 figure-font fixture passed extracted Russian/Greek strings,
+no missing glyphs, and both embedded font checks. This is **CI_ONLY**
+and remains distinct from physical M1/M4 acceptance.

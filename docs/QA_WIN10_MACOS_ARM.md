@@ -95,3 +95,16 @@ the TeX source SHA-256 and figure PDF semantics before/after changing
 the GUI theme. GUI presentation MUST NOT alter the embedded fonts,
 stroke colors, geometry or source of a TikZ figure. Until feature
 availability and physical screenshots are recorded: **NOT_RUN**.
+
+### Portable Poppler prerequisite for a complete acceptance
+
+Before invoking the harness on a target machine, ensure that
+\`pdfinfo\`, \`pdftotext\` and \`pdffonts\` are on \`PATH\`. As of the
+D QA fail-closed gate, missing page/text/embedded-font inspectors make
+their corresponding required fixture **FAIL** with the subcheck
+reported \`NOT_CHECKED\`; this supersedes older optional-tool notes.
+On a Windows test host Poppler may be installed separately, for example
+using an appropriately reviewed package-manager source; on a macOS
+ARM64 test host use a native ARM64 Poppler build. Record exact version.
+This document neither installs system utilities automatically on the
+user's machine nor proves a physical-host smoke.
