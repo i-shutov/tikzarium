@@ -1,0 +1,14 @@
+/target/
+/.idea/
+/.vscode/
+.DS_Store
+*.log
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.toc
+*.out
+*.run.xml
+*.bcf
