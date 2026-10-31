@@ -7,7 +7,7 @@ Do **not** merge B02 straight to main. Review W01 -> B01 -> B02 prerequisite cha
 ## Scope and acceptance
 - [x] Track the source pathname alongside source text for *last successful* XeLaTeX artifact. A Save As that changes pathname makes the last-good PDF stale even when bytes do not change.
 - [x] Keep the originating source/path snapshot per in-flight build; edits while compiling cannot promote stale preview to current.
-- [x] Refuse **Export PDF** for stale builds, both in disabled toolbar action and in direct method call. Retain and visibly label last-good preview.
+- [x] Refuse **Export PDF** for stale builds, including a *new build still running*, both in disabled toolbar action and in direct method call. Retain and visibly label last-good preview.
 - [x] Disable file open/save, Save As and TeX discovery actions while a worker is running. Cancel remains available.
 - [x] Desktop bindings: Command/Ctrl+O open, Command/Ctrl+S save, Command/Ctrl+Shift+S Save As, Command/Ctrl+Enter XeLaTeX build. Shortcut actions are ignored while active build or unsaved-changes modal is open. All actual native dialogs still use `rfd` on Win/macOS.
 - [x] App unit tests for path mismatch/failed build/edits and shortcut modifier dispatch.
