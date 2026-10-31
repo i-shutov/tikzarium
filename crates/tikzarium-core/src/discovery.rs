@@ -22,10 +22,10 @@ pub fn find_executable(program: &str) -> Option<PathBuf> {
             return Some(found);
         }
         #[cfg(windows)]
-        if Path::new(program).extension().is_none() {
-            if let Some(found) = candidate(&dir.join(format!("{program}.exe"))) {
-                return Some(found);
-            }
+        if Path::new(program).extension().is_none()
+            && let Some(found) = candidate(&dir.join(format!("{program}.exe")))
+        {
+            return Some(found);
         }
     }
     None

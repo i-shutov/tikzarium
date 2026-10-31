@@ -108,10 +108,11 @@ impl BuildService {
 
         let started = Instant::now();
         let source = request.source.canonicalize()?;
-        if let Some(destination) = request.options.log_path.as_deref() {
-            if destination.exists() && destination.canonicalize()? == source {
-                return Err(BuildError::UnsafeLogPath(destination.to_path_buf()));
-            }
+        if let Some(destination) = request.options.log_path.as_deref()
+            && destination.exists()
+            && destination.canonicalize()? == source
+        {
+            return Err(BuildError::UnsafeLogPath(destination.to_path_buf()));
         }
 
         let cwd = source.parent().unwrap_or_else(|| Path::new("."));
@@ -339,10 +340,10 @@ fn read_capped(path: &Path, cap: usize) -> io::Result<String> {
     file.seek(SeekFrom::Start(start))?;
     let mut contents = Vec::new();
     file.take(cap as u64).read_to_end(&mut contents)?;
-    if start > 0 {
-        if let Some(newline) = contents.iter().position(|byte| *byte == b'\n') {
-            contents.drain(..=newline);
-        }
+    if start > 0
+        && let Some(newline) = contents.iter().position(|byte| *byte == b'\n')
+    {
+        contents.drain(..=newline);
     }
     Ok(String::from_utf8_lossy(&contents).into_owned())
 }

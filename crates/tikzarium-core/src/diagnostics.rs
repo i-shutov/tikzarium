@@ -23,15 +23,14 @@ pub fn extract_diagnostics(log: &str) -> Vec<BuildDiagnostic> {
         if let Some((source, number, message)) = file_line_error(trimmed) {
             // The TeX log may repeat the preceding "! ..." message in
             // -file-line-error format. Keep one diagnostic with a location.
-            if let Some(previous) = items.last_mut() {
-                if previous.severity == Severity::Error
-                    && previous.line.is_none()
-                    && (message.contains(&previous.message) || previous.message.contains(&message))
-                {
-                    previous.source = Some(source);
-                    previous.line = Some(number);
-                    continue;
-                }
+            if let Some(previous) = items.last_mut()
+                && previous.severity == Severity::Error
+                && previous.line.is_none()
+                && (message.contains(&previous.message) || previous.message.contains(&message))
+            {
+                previous.source = Some(source);
+                previous.line = Some(number);
+                continue;
             }
             items.push(BuildDiagnostic {
                 severity: Severity::Error,
