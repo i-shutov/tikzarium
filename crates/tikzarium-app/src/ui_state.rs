@@ -138,7 +138,15 @@ mod tests {
             Some(path),
             Some(path),
         ));
-        assert!(!preview_is_stale(false, true, false, Some("x"), "y", None, None));
+        assert!(!preview_is_stale(
+            false,
+            true,
+            false,
+            Some("x"),
+            "y",
+            None,
+            None
+        ));
         assert!(!preview_is_stale(
             true,
             false,
