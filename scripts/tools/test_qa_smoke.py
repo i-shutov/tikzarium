@@ -1,5 +1,7 @@
 """Pure-stdlib tests of fixture validation without TeX or Rust toolchains."""
 import json
+from subprocess import CompletedProcess
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
 import unittest
@@ -56,6 +58,73 @@ class FixtureHarnessTests(unittest.TestCase):
             manifest = root / "manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "cases": [case, case]}), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Duplicate"):
+                load_manifest(root, manifest)
+
+
+    def test_windows_pdf_text_is_explicit_utf8_not_ansi_codepage(self):
+        """Reproduce Windows Server D#9 red: correct PDF, wrong implicit cp1252 decode."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "unicode.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            text = "Тест XeLaTeX и Unicode. Кириллица."
+            response = CompletedProcess(["pdftotext"], 0, text.encode("utf-8"), b"")
+            with patch("qa_smoke.shutil.which", side_effect=lambda x: "pdftotext.exe" if x == "pdftotext" else None):
+                with patch("qa_smoke.subprocess.run", return_value=response) as invoked:
+                    valid, info = inspect_pdf(path, None, [text, "Кириллица."])
+            self.assertTrue(valid)
+            self.assertTrue(info["text_found"])
+            self.assertEqual(info["text_extraction_preview"], text)
+            args, kwargs = invoked.call_args
+            self.assertEqual(args[0][1:3], ["-enc", "UTF-8"])
+            self.assertNotIn("text", kwargs)  # byte-mode, never locale-dependent
+
+    def test_unicode_check_fails_closed_without_pdftotext(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "no-tool.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            with patch("qa_smoke.shutil.which", return_value=None):
+                valid, info = inspect_pdf(path, None, "Кириллица")
+            self.assertFalse(valid)
+            self.assertFalse(info["text_found"])
+            self.assertFalse(info["text_extraction_checked"])
+
+    def test_invalid_utf8_extraction_is_a_failure_not_a_glyph_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "invalid.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            response = CompletedProcess(["pdftotext"], 0, b"\xff\xfe", b"")
+            with patch("qa_smoke.shutil.which", side_effect=lambda x: "pdftotext.exe" if x == "pdftotext" else None):
+                with patch("qa_smoke.subprocess.run", return_value=response):
+                    valid, info = inspect_pdf(path, None, "Кириллица")
+            self.assertFalse(valid)
+            self.assertIn("text_decode_error", info)
+
+    def test_font_embedding_probe_does_not_call_unavailable_tools(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "embedded.pdf"
+            path.write_bytes(b"%PDF-1.7\n" + b"x" * 160 + b"\n%%EOF\n")
+            sample = (
+                "name type encoding emb sub uni object ID\n"
+                "-------------------------------------------\n"
+                "XYZ+DejaVuSerif CID TrueType Identity-H yes yes yes 5 0\n"
+                "XYZ+LatinModernMath-Regular-Identity-H CID Type 0C Identity-H yes yes yes 7 0\n"
+            ).encode("utf-8")
+            response = CompletedProcess(["pdffonts"], 0, sample, b"")
+            with patch("qa_smoke.shutil.which", side_effect=lambda x: "pdffonts" if x == "pdffonts" else None):
+                with patch("qa_smoke.subprocess.run", return_value=response):
+                    valid, info = inspect_pdf(path, None, font_expect=["DejaVuSerif", "LatinModernMath"])
+            self.assertTrue(valid)
+            self.assertEqual(info["font_embedded"], {"DejaVuSerif": True, "LatinModernMath": True})
+
+    def test_manifest_rejects_unchecked_glyph_options(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "main.tex").write_text("Hello", encoding="utf-8")
+            case = {"id": "g00-font", "project_dir": ".", "source": "main.tex",
+                    "expect": "pdf", "text_expect": [], "font_expect": "not-a-list"}
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"schema_version": 1, "cases": [case]}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Invalid text_expect"):
                 load_manifest(root, manifest)
 
 
