@@ -73,3 +73,65 @@ TeX diagnostic bundles.
 - Runner actions/checkout@v4 and setup-python@v5 emitted Node20 EOL warnings
   under forced Node24. Their pinned revisions work, but migration to newer
   Node24-native major versions must be evaluated separately.
+
+
+## Second QA cycle — regression gate F01, 2026-10-31
+
+Re-read before modifications: \`main\` = \`4ceca871fc2c3b661f92d64f9c6b39b473cebd0a\`,
+W01 PR #6 = \`3e3de6a1eeb5a268f296cf9aa6a4e93b2d215f7e\`,
+D PR #9 pre-fix head = \`116ccc3f6779dbdaa15bbf4fbbfb550619b74008\`.
+No A/B/C, GUI or core files modified.
+
+**Exact failed CI evidence:** [D run 41169926128](https://github.com/i-shutov/tikzarium/actions/runs/41169926128)
+on D head \`116ccc3f\` finished 5/6 jobs green: Rust quality on Linux,
+Windows Server and macOS ARM64 all green, XeLaTeX fixtures Linux/macOS green
+under the *old permissive harness*, Windows Server red on G00 glyph-audit.
+On Windows, CLI returned 0, emitted a valid 10,020-byte PDF, independent TeX
+log had **0 missing glyphs**, but the Python \`pdftotext\` result was false.
+Downloaded CI PDF was independently inspected with \`pdftotext -enc UTF-8\`
+on Linux and contains the exact Cyrillic text. The earlier Python
+\`subprocess.run(text=True)\` decoded Poppler UTF-8 according to Windows
+default ANSI codepage, corrupting the comparison: **test harness defect**.
+This does not prove Windows 10 behavior (Windows Server runner only).
+
+On Linux and hosted Mac, previous **5/5 fixture PASS was insufficient**:
+their reports explicitly said \`pdftotext unavailable / NOT_CHECKED\`.
+The new harness fails closed for fixtures declaring required \`text_expect\`.
+Workflow now installs Poppler on Linux and macOS and requires extraction
+tool presence before fixtures run. \`pdfinfo\` and \`pdffonts\` give separate
+\`checked\` evidence; unavailable optional checks are **NOT_CHECKED**, never
+silently promoted to full release acceptance.
+
+Added in this workpack:
+- G02 real TikZ-node typography fixture: UTF-8 Russian, Greek and
+  \`unicode-math\` formulas using \`fontspec\` (DejaVu Serif)
+  and Latin Modern Math. Verify required extracted Cyrillic/Greek strings,
+  no missing-glyph log diagnostics, and actual embedding when \`pdffonts\`
+  exists. Do not bundle font binaries.
+- Five additional Python unit cases, including raw UTF-8 extraction
+  under mocked Windows locale behavior, missing Poppler, invalid UTF-8,
+  embedded font probe and invalid fixture metadata.
+- Structured evidence for Poppler paths, UTF-8 decoding, glyph checks
+  and font embedding. No claims of automated GUI theme acceptance.
+
+**Local evidence (environment-specific):** direct XeLaTeX 2025/dev on
+Linux compiled G02 (exit 0), no Missing character diagnostics; extracted
+both expected Russian/Greek phrases and \`pdffonts\` showed DejaVuSerif and
+LatinModernMath embedded (\`emb=yes\`). It is NOT real TikZarium CLI
+integration, nor a Win10/macOS acceptance.
+
+Outstanding release gates:
+- [ ] CI rerun for exact new D branch head: all 6 jobs, verify reports
+  rather than carrying old green results.
+- [ ] Decide whether \`pdffonts\` and \`pdfinfo\` become mandatory on every
+  platform; do not mask absent utilities as validated checks.
+- [ ] Real Windows 10 x64 GUI+TeX and M1/M4 physical GUI+TeX smoke,
+  including font availability, Unicode file paths and PDF extraction.
+- [ ] GUI theme persistence and source/PDF invariance in real GUI once
+  B/U01 implements themes; D must not implement B code.
+- [ ] Curated R4 provenance/license gate before importing any assets.
+
+**Small next block:** examine the current Actions run, classify every
+failure by step and tool; patch *only* D-owned files, rerun and record
+exact SHA + artifacts. Track any Windows font package/Poppler issues as
+reproducible D fixtures; escalate non-D code to A/B owners.
