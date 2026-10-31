@@ -228,7 +228,12 @@ pub fn show_guide(
         && let Some(pointer) = response.interact_pointer_pos()
     {
         let start = snap(pointer, rect);
-        finish = Some((start, Point::new(start.x + 1.0, start.y + 1.0)));
+        let end = if session.active == Some(Tool::Circle) {
+            Point::new(start.x + 1.0, start.y)
+        } else {
+            Point::new(start.x + 1.0, start.y + 1.0)
+        };
+        finish = Some((start, end));
     }
     if let (Some(tool), Some((start, end))) = (session.active, finish) {
         let draft = Draft {
@@ -293,11 +298,27 @@ pub fn show_inspector(
             ui.label("y1");
             ui.add(egui::DragValue::new(&mut session.draft.start.y).speed(0.1));
         });
-        if tool != Tool::Node {
+        if tool == Tool::Circle {
+            let mut radius = (session.draft.end.x - session.draft.start.x)
+                .hypot(session.draft.end.y - session.draft.start.y);
             ui.horizontal(|ui| {
-                ui.label(if tool == Tool::Circle { "r→x" } else { "x2" });
+                ui.label("radius (cm)");
+                if ui
+                    .add(egui::DragValue::new(&mut radius).speed(0.1))
+                    .changed()
+                {
+                    let radius = radius.clamp(0.1, 1000.0);
+                    session.draft.end = Point::new(
+                        session.draft.start.x + radius,
+                        session.draft.start.y,
+                    );
+                }
+            });
+        } else if tool != Tool::Node {
+            ui.horizontal(|ui| {
+                ui.label("x2");
                 ui.add(egui::DragValue::new(&mut session.draft.end.x).speed(0.1));
-                ui.label(if tool == Tool::Circle { "r→y" } else { "y2" });
+                ui.label("y2");
                 ui.add(egui::DragValue::new(&mut session.draft.end.y).speed(0.1));
             });
         }
