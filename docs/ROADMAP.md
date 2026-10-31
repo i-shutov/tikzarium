@@ -1,87 +1,37 @@
-# Incremental development roadmap (2026-10-31)
+# Roadmap — TikZ-native visual authoring
 
-## Strategy
+Owner-corrected scope, 2026-10-31. Replaces the earlier S0–S7 universal-CAD plan and its unsupported calendar forecast. Existing useful runtime/GUI/font/QA work is retained.
 
-Shipping is **Core → reliable XeLaTeX workbench → visual editing → semantic geometry → extensible adapters → professional beta → 1.0**. Do not delay all releases while attempting to replicate every TikZ/PGF internal in Rust.
+**Product loop:** TikZ primitive or library tool → properties and explanations → ordinary editable code shown beside the figure → independently installed XeLaTeX → exact PDF. Windows uses external MiKTeX; macOS ARM uses the user's external XeLaTeX. No new TeX interpreter, general geometry solver or PDF decompiler is on the critical path.
 
-Each release requires compilable Windows/macOS artifacts, tested user journeys, provenance to commit SHA, documented known limits and a verified checkpoint. A release without both platform checks is not accepted.
+## Large delivery blocks
 
-## M0 — Bootstrap / requirements / engineering baseline
-
-**Deliver:** Rust workspace scaffold, ADRs, architecture boundaries, command/event pattern, lint/test/rustfmt setup, sample project profiles, CI skeleton, inventory of R4 fixtures by license/provenance and PGF package catalogue.
-
-**Exit:** `cargo fmt --check`, `cargo clippy`, unit tests on both cross-platform CI jobs; one minimal egui window launches locally on **Windows 10 x64** and **macOS ARM64**. No “GUI compiles in CI” substituted for actual smoke.
-
-## v0.1 — XeLaTeX Workbench Core
-
-**Vertical slice:** open existing `.tex`/`.tikz` → choose project/preamble → find XeLaTeX → compile → exact PDF preview → navigate error log → edit source → rerun → save/export.
-
-**Deliver:** robust project roots; XeLaTeX path/config/version discovery; build process/cancellation; last-good PDF; dependency recorder; PDF preview; editor with syntax and basic navigation; basic release artifacts.
-
-**Exit:** ordinary full documents, standalone figures and multifile projects survive round-trip; Unicode/Cyrillic/fontspec smoke; compile failures leave last-good view; no shell escape by default; works offline on both primary OSes.
-
-## v0.2 — Visually editable TikZ Core
-
-**Deliver:** path/node/edge/label/style/scope recognition, object tree, canvas selection, move/resize/rotate controls, anchors, snapping, undo/redo, reversible minimal source patches; explicit unsupported/opaque segments.
-
-**Exit:** 30+ bounded visual round-trip fixtures; comments and unknown macros unchanged, repeated edits do not produce formatting churn; edit/undo restores original byte representation when expected.
-
-## v0.3 — GeoGebra-style semantic geometry
-
-**Deliver:** named points, segments, lines, circles, intersections, dependency DAG, formula/constraint evaluation, parameter sliders, incremental recomputation, geometry-aware pick/hit testing.
-
-**Exit:** intersection degeneracies, directed dependencies, cycles and undo covered; modifying parents updates child geometry and conservative source expressions; all errors visible.
-
-## v0.4 — Extension framework core
-
-**Deliver:** manifest discovery/validation; library/feature statuses; built-in adapter registration; versioned serializable SDK; templates/snippets/inspector contributions; dependency warnings; conflicts and version handling.
-
-**Exit:** ≥2 independently built adapters (one core, one subject-specific) register through one host contract; disabled adapter leaves documents unchanged; metadata-only packages work offline; no unsafe binary plugin loading.
-
-## v0.5 — Scientific diagrams and PGFPlots
-
-**Deliver:** PGFPlots axes/options/plots preview-aware tools, data import workflows, tick/legend inspector; supported transforms/decoration/style panels; reusable scientific templates.
-
-**Exit:** valid source and exact XeLaTeX preview for verified PGFPlots fixtures; safe visual edit subset explicitly enumerated.
-
-## v0.6 — Domain pack I
-
-**Deliver:** graph/automata/petri adapters, circuitikz symbols/net connectors, tikz-cd grids/arrows and tkz-euclide geometry as appropriate for proven XeLaTeX compatibility.
-
-**Exit:** graph semantics and source/preview synchronization verified; no false claims about simulation, commutativity proofs or Lua-only features.
-
-## v0.7 — Advanced ecosystem and optional isolated plugins
-
-**Deliver:** searchable extension catalogue for all inventoried installed packages; optional templates/styles for forest, quantikz, chemfig, other scientific packages; investigate WASM component plugins with capability sandbox and a concrete example.
-
-**Exit:** an unknown third-party XeLaTeX package compiles without a visual adapter; extension errors cannot damage original source; WASM milestone ships only when isolated host passes security tests.
-
-## v0.8 — Professional beta
-
-**Deliver:** usability polish, workspace restore, batch build, diagnostics and object/search navigation, import/export UX, performance profiling and cache controls, documentation and installers.
-
-**Exit:** five complete workflows on each target machine; R4 tests integrated with honest warning/visual verdicts; no P0/P1 blockers, known issues listed.
-
-## v1.0 — Personal production release
-
-**Deliver:** stable public app/adapter contract within the declared 1.x profile, offline dependable editor, versioned artifact bundles, source-preserving visuals, reliable documentation, recovery/backup, reproducible builds.
-
-**Exit:** acceptance matrix fully signed off on Win10 and physical M1/M4; release notes per SHA; installer smoke, reopen, save, TeX compile, PDF export, error recovery, upgrade path and regression suite green or exceptions explicitly approved.
-
-## Parallel work streams (single integrator)
-
-| Stream | Deliverable | Depends on |
+| Block | Delivered user workflow | Exit criterion |
 | --- | --- | --- |
-| A: Build/XeLaTeX | Profiles, runner, logs, recorder, package inventory | M0 |
-| B: UI/preview | egui panels, PDF canvas, keyboard and high-DPI | M0 |
-| C: Source/model | lossless CST, patches, undo, geometry DAG | M0 |
-| D: Extensions/fixtures | R4 registry, manifests, package compatibility matrix | M0 |
+| N1 — Native primitive authoring | Draw line/arrow/rectangle/circle/node/Bézier, edit parameters, immediately see the changed TikZ command and its explanation, compile via external XeLaTeX | Six real tool workflows: canvas/input → source → PDF → save/reopen/undo; no unrelated source damage |
+| N2 — Connected libraries | Project library panel; positioning/calc/arrows.meta/fit/shapes tool contributions; explicit preamble changes; installed/loaded/compatible/tool/help states | Connect and disconnect a library with visible diff/undo; correct tool state; raw code remains usable without an adapter |
+| N3 — Full authoring assistance | F1/hover, parameter explanations, syntax hints, completion, examples and manual navigation from the same catalogue used by tools | Every exposed control has verified semantic help, requirement and example; no invented defaults; works offline for shipped help |
+| N4 — Domain tool packs | PGFPlots axes/series, CircuitikZ components, tikz-cd arrows/grids; then geometry/graphs/Petri/trees/physics/chemistry packages using their native commands | Each pack has a concrete end-to-end drawing workflow, generated-source tests and real XeLaTeX fixtures, with explicit limits |
+| N5 — Everyday-use acceptance | Compact layout, typography/themes, project recovery, safe exports, package diagnostics, packaging, R4 regression where licensed | Physical Win10+MiKTeX and Mac ARM smoke, exact-SHA evidence, no critical defects; release scope explicitly listed |
 
-A and B can deliver v0.1 together; C supports v0.2/v0.3; D guards v0.4+. Independent streams work in branches/PRs with common contracts, one integration owner, full CI and no silent concurrent edits to the same file.
+N1 includes basic help from the first tool; N3 deepens assistance, it is not permission to postpone explanations. Native prerequisite work and QA proceed in parallel with N1. Broader package adapters need not wait for a generic WASM SDK. Version labels are assigned to accepted functional slices, not used to delay basic authoring until a speculative architecture is complete.
 
-## First two engineering workpacks after approval
+## Parallel ownership
 
-1. **W01:** Cargo workspace + egui window + XeLaTeX executable discovery and project profile CLI, two platform builds, 1-page minimal working figure exact PDF.
-2. **W02:** source editor + compile cancellation/log parser + PDF preview + last-good/stale state; Windows 10 and Apple Silicon acceptance runs.
+- A: core/CLI, MiKTeX detection and invocation, project/prelude configuration, diagnostics and dependency freshness.
+- B: egui tools and gestures, permanent code pane, properties/help UI, exact preview and native interaction.
+- C: one command/parameter/help catalogue, generators, declared source-edit contracts and package requirements.
+- D: independent generated-source/MiKTeX/TeX/GUI regression evidence and physical-target runbooks.
+- Integrator: shared contract review, source compatibility, substantial vertical merges and plans/insights synchronization.
 
-Avoid unreviewed plugin ABI decisions or huge parser work before the first cross-platform XeLaTeX vertical slice is functional.
+Do not replace this with four independent incompatible prototypes. C publishes the small shared contract; B uses it, A remains the compiler host and D checks actual outcomes. Read active branches before editing and group commits to avoid redundant full CI for each file.
+
+## Progress vocabulary
+
+The existing XeLaTeX source workbench, PDF navigation, font/theme support and package audits are reusable infrastructure. The six-primitives mouse-authoring workflow, library-driven tool palette and integrated explanatory UI are new acceptance targets, not already accepted functionality. Code in a PR, green hosted CI and physical desktop acceptance are separate states.
+
+## Forecast correction
+
+The earlier 2–4 weeks / 4–7 months / 9–15 months forecast is **withdrawn**, not a schedule for this corrected product. Initial PR lead-time measurements are not development-effort benchmarks for these workflows. Re-estimation must use actual completion of N1/N2 and shared catalogue reuse; do not manufacture a new calendar from PR count.
+
+Detailed execution contract: `plans/2026-10-31_FULL_SCOPE_ROADMAP.md`. Research and correction log: `insights/2026-10-31_DELIVERY_VELOCITY_BENCHMARK.md`.

@@ -1,0 +1,32 @@
+schema_version = 1
+# These input literals must fail C generator validation; they are NOT TeX fixtures to execute.
+[[case]]
+id = "literal-injection"
+tool_id = "tikz.line"
+parameter = "start_x"
+value = "1cm] \\input{evil}"
+[[case]]
+id = "no-unit"
+tool_id = "tikz.line"
+parameter = "start_x"
+value = "1"
+[[case]]
+id = "exponent"
+tool_id = "tikz.line"
+parameter = "start_y"
+value = "1e9cm"
+[[case]]
+id = "bad-radius"
+tool_id = "tikz.circle"
+parameter = "radius"
+value = "0cm"
+[[case]]
+id = "bad-tip"
+tool_id = "tikz.arrow"
+parameter = "tip"
+value = "shell"
+[[case]]
+id = "bad-mode"
+tool_id = "tikz.node"
+parameter = "mode"
+value = "exec"

@@ -1,95 +1,65 @@
-# Architecture — XeLaTeX-first, extensible, source-preserving
+# Architecture — TikZ-native authoring, external XeLaTeX
 
-## 1. Responsibility boundaries
+Owner correction: 2026-10-31. Supersedes the universal CAD/geometry-engine dependency chain. This is the target architecture, not a claim that all authoring tools are already implemented.
 
-```text
-egui Desktop Shell
-  ├── Source Editor + Project Navigator + Command Palette
-  ├── Canvas / Selection / Properties / Layers
-  └── PDF Preview + Build/Problem Panels
-              │ stable application commands/events
-          Application Services
-   ┌──────────┼────────────┬───────────────┐
-   │          │            │               │
-Source Store  Build Host   Semantic Core  Extension Host
-+ CST/ranges  + XeLaTeX    + geometry DAG + package manifests
-+ edits       + PDF view   + constraints  + visual adapters
-+ undo        + log parse  + tool commands+ future WASM
-```
-
-The **source is authoritative**. The XeLaTeX-produced PDF is the authoritative **rendering**. Rust canvas geometry is an optional working model and must never pretend to render arbitrary PGF macros exactly.
-
-## 2. Proposed Cargo workspace
+## 1. Responsibilities
 
 ```text
-crates/
-  tikzarium-app/          # eframe startup, application state, docked UI
-  tikzarium-project/      # project roots, config, sessions, dependency paths
-  tikzarium-source/       # text storage, lexing/CST, source maps, patches, undo
-  tikzarium-build/        # XeLaTeX detection, process, recorder, logs, cache
-  tikzarium-preview/      # PDF pages, zoom, pan, overlays; platform bindings
-  tikzarium-geometry/     # expressions, exact-ish predicates, DAG, constraints
-  tikzarium-scene/        # selectable/editable domain objects and commands
-  tikzarium-extensions/   # manifests, discovery, capability registration
-  tikzarium-sdk/          # stable serializable contracts (no ABI commitment)
-  tikzarium-cli/          # headless build/inspect/QA entrypoints
-adapters/
-  core-tikz/              # simple nodes/paths/scopes/labels
-  pgfplots/               # opt-in visual adapter later
-  circuitikz/
-  tikz-cd/
-docs/ fixtures/ tools/ .github/workflows/
+Project: ordinary .tex/.tikz + preamble + included resources
+                         ↕ minimal revision-checked edits / undo
+  egui: TikZ tools + parameter inspector | editable code | contextual help
+                         ↓ native command generation
+                  Existing source document
+                         ↓ external build service
+ Windows: separately installed MiKTeX/XeLaTeX | macOS: external XeLaTeX
+                         ↓
+             Exact PDF → preview / export / diagnostics
 ```
 
-Naming may be simplified at bootstrap; crate boundaries should follow actual ownership, not create empty packages for their own sake. UI must not own TeX invocation, parsing or geometry algorithms.
+A shared catalogue supplies command syntax, parameter metadata, required packages/libraries, Russian explanations, examples and manual locators. It drives tool availability, inspector controls, source completion and help. Rust manages interaction, source edits and processes; TeX/PGF and their packages perform typesetting, expression evaluation, layout and final drawing.
 
-## 3. Source preservation: three-level parser
+## 2. Reuse the current workspace
 
-1. **Lossless lexical/CST layer:** tokens, trivia/comments, macros, braces, environments, source spans and opaque regions; unsupported syntax stays byte-for-byte unchanged.
-2. **Partial semantic recognizer:** recognize bounded PGF/TikZ commands, `\tikzset`, paths, nodes, coordinate expressions and known adapter schemas, with errors and confidence.
-3. **Optional scene projection:** typed objects representing only constructs owned by adapters; every object tracks source origin, revision and supported operations.
+Keep `tikzarium-app` (egui), `tikzarium-core` (documents/build/diagnostics/fonts), `tikzarium-cli` (doctor/build) and `tikzarium-extensions` (catalogue and requirements). Add a small authoring module only when needed; do not create empty crates for a speculative universal scene/CAS/geometry platform.
 
-Editing is a transaction: check source revision → compute *minimal* range edit → validate affected syntax and round-trip invariants → apply as one undo entry → build asynchronously → signal exact/approx status. Reject edits on stale ranges or opaque macro-generated objects.
+A typed authored-command instance needs a catalogue ID, parameter bindings, source range/revision and optional edit handles. Literal geometry for pointer interaction is allowed. TikZ expressions, anchors, transforms, loops and macro evaluation remain with TeX unless a specific safe edit is supported. No universal PDF reverse mapping is assumed.
 
-Do **not** implement “parse → serialize whole source” for arbitrary existing documents. Restrict canonical code generation to new blocks or explicitly user-opted managed regions.
+## 3. Shared command contract
 
-## 4. Build execution and safety
+The catalogue owner C proposes a versioned serializable contract and B consumes it rather than maintaining competing schemas. Minimum fields: command ID and syntax; label/summary in Russian; package/library requirements and engine constraints; parameter type, units, allowed values, documented default versus editor preset; parameter explanation and examples; manual/version/section locator; source-generation rule; supported edit operations.
 
-- Detect XeLaTeX executable using configured path and local installation; record `xelatex --version`. Discover `kpsewhich` and `texdoc` independently.
-- Invoke executable directly with argument vector (not through a shell), fixed working directory and a temporary output directory. Start with `-interaction=nonstopmode -halt-on-error -file-line-error -recorder -no-shell-escape` (verify flags in installed distribution).
-- A **project profile** stores main file, preamble mode, include roots, font/asset lookup policy, build arguments and allowed helpers.
-- Maintain last-good PDF; stamp preview with SHA/input versions. On build errors, show stale indicator and scrollable log.
-- Parse `.log` and `.fls` to capture source locations, included assets, generated outputs and dependency hashes.
-- Restrict resource usage through time limits and cancellation; avoid running untrusted user projects with elevated rights. Note that `-no-shell-escape` is NOT a full OS sandbox: file reads, writes, arbitrary TeX macros and package scripts can still be risky.
-- Shell escape and external commands are disabled by default. Any relaxation requires explicit per-project trust and audited, narrow helper policies; do not silently enable unrestricted shell escape.
-- Avoid assuming all successful projects are `standalone`: support full documents, fragments with project preamble and multi-file projects.
-- Missing packages are diagnostic states, not triggers to silently mutate the TeX installation.
+Help-only entries are permitted for constructs without a graphical adapter. Default values without a verified manual source must remain UNKNOWN. Explanations are authored summaries, not bulk redistribution of manuals. A later plugin adds tools/help/generation metadata without changing the TeX compiler.
 
-## 5. Preview and geometry
+## 4. Library activation and source editing
 
-PDF raster/selection backend is an implementation decision to benchmark (e.g. PDFium binding with packaging/licence checks), not a requirement that ties the whole architecture to one renderer. Preview must handle high DPI, zoom, panning, vector export and precise cropping. A fast Rust canvas may render editable primitives separately; an explicit “exact preview” button invokes XeLaTeX.
+Keep independent states for installation, project loading, engine compatibility, graphical tool implementation and help availability. Scan explicit `\usepackage`/`\usetikzlibrary` declarations and includes conservatively; macro-dependent activation may be UNKNOWN. Compiler observations may provide additional evidence, not a universal static parser.
 
-Semantic geometry tracks dependency edges (parent-to-derived), immutable object IDs, formula/parameter evaluation, incremental recomputation, cycles, multiple intersection solutions, invalid constraints and consistent undo. It borrows GeoGebra's architectural separation, **not** its implementation.
+New commands are inserted at an explicit authoring location. Editing a recognized command checks its source revision, applies the smallest edit and creates one undo step. Connecting a library produces a visible, undoable preamble patch. Comments, unknown macros and unrelated bytes remain intact. Manual code edits invalidate stale handles and trigger targeted re-recognition, not whole-document regeneration.
 
-## 6. Incremental compilation
+The normal drawing mode always shows code beside the canvas. Highlight the affected source after an action. Unsupported scopes remain source-first; do not claim accurate coordinate mapping where the editor cannot establish it. Temporary interaction overlays are clearly different from the last exact compiled PDF.
 
-A cache key combines the document revision, preamble, build profile, actual compiler/package versions and discovered dependencies. File watcher invalidation plus `.fls` dependency closure triggers rebuild. Never use cache output of a different TeX package environment without an explicit compatibility decision.
+## 5. External runtime and builds
 
-## 7. Platform and packaging
+Windows 10 uses the user's independently installed MiKTeX. Detect distribution/executable/version and permit explicit configuration; do not install another TeX distribution. MiKTeX documents `--disable-installer` for its XeTeX implementation; A must verify the actual XeLaTeX invocation and use distribution-specific options rather than assuming TeX Live compatibility. Package downloads/updates and global settings remain external.
 
-- Windows target: `x86_64-pc-windows-msvc`, Windows 10 22H2 native smoke test. CI Windows Server is a build signal, not Win10 acceptance.
-- Mac target: `aarch64-apple-darwin`, physical Apple Silicon smoke test including text, fonts, preview, file chooser, clipboard, menus, high-DPI.
-- Non-x64 ARM Windows and x86 macOS are outside first-line acceptance.
-- Reproducible installers/portable artifacts, unsigned local test builds first; notarization/signing is a later distribution concern.
-- Native plugin code is not loaded from arbitrary DLL/dylib files in Core. Plugin code execution follows a separately reviewed sandboxed host.
+Preserve direct process invocation, safe filenames, no shell escape by default, cancellation, time/resource bounds, optional persistent logs, `.fls` dependency tracking and structured source/line diagnostics. No-shell-escape is not an OS sandbox. Project profiles support full documents and fragments with explicit preambles, not implicit destructive wrapping.
 
-## 8. Architectural decisions to keep documented
+Keep the last-good PDF stale/nonexportable after failure or dependency change. Only navigate a logged diagnostic when its file is established, never jump to an included file's line in the wrong buffer. Retain the existing typed font audit. A zero exit code does not prove complete glyph coverage.
 
-ADR-001 primary XeLaTeX, explicit and visible incompatibilities.
-ADR-002 source-preserving edits and opaque regions, not forced full-AST rewriting.
-ADR-003 TeX packages ≠ visual adapters ≠ executable tool plugins.
-ADR-004 release proof from both CI and physical primary desktop smoke tests.
+## 6. Rendering, fonts and cache
 
-## I05 source-linked errors and protected preview
+XeLaTeX PDF is authoritative; Poppler or another reviewed PDF backend displays it. The Rust overlay is not a PGF replacement. Bound worker duration and image decoding. Record renderer/tool versions and cache keys containing source, project profile, dependencies and relevant environment. Figure fontspec/unicode-math choices are independent of egui fonts and theme palettes.
 
-On compilation failure the Rust build service preserves the optional durable XeLaTeX log and exposes typed diagnostics with optional filename/line. The egui diagnostic panel distinguishes current-file diagnostics from included-file diagnostics: it navigates only the former to avoid an incorrect source jump. The previous successful PDF remains stale/nonexportable after an error. `font_audit` and text/math glyph warnings remain independent checked signals; no success is inferred solely from XeLaTeX exit code zero.
+## 7. Platform and evidence boundaries
+
+Native Windows 10 x64 + MiKTeX and physical Mac ARM64 M1/M4 remain acceptance targets. Hosted Windows Server and TeX Live checks are supplementary, not substitutes. Installable/portable application artifacts do not include a private TeX distribution or user font binaries. Offline runtime, unknown-source preservation, code visibility, contextual help and font/theme invariance must be tested as whole user workflows.
+
+## Sources for runtime/language contracts
+
+- PGF/TikZ path syntax: https://tikz.dev/tikz-paths
+- Path actions: https://tikz.dev/tikz-actions
+- Nodes/edges: https://tikz.dev/tikz-shapes
+- MiKTeX independent Windows installation: https://miktex.org/howto/install-miktex
+- MiKTeX XeTeX options: https://docs.miktex.org/manual/miktex-xetex.html
+
+These sources explain upstream behavior. They do not establish that the corresponding TikZarium GUI implementation has passed testing.

@@ -39,7 +39,7 @@ def test_result_pass_count(output: str) -> int | None:
 
 def run_cargo(*arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["cargo", "test", "-p", "tikzarium-app", *arguments],
+        ["cargo", "test", "-p", "tikzarium-app", "--bin", "tikzarium-app", *arguments],
         capture_output=True,
         text=True,
         encoding="utf-8",

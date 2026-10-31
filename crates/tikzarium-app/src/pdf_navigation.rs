@@ -2,11 +2,90 @@
 //! No PDF content, page geometry, font or TeX source is modified here.
 use std::{
     fs,
-    path::PathBuf,
-    process::Command,
+    io::Read,
+    path::{Path, PathBuf},
+    process::{Command, ExitStatus, Stdio},
     sync::mpsc::{self, Receiver},
+    time::{Duration, Instant},
 };
 use tikzarium_core::find_executable;
+
+/// Fail closed when an external PDF tool stalls. These are worker-side budgets, not GUI timeouts.
+const PDFINFO_TIMEOUT: Duration = Duration::from_secs(12);
+const PDF_RENDER_TIMEOUT: Duration = Duration::from_secs(45);
+const MAX_CAPTURE_BYTES: u64 = 64 * 1024;
+const MAX_PREVIEW_PNG_BYTES: u64 = 64 * 1024 * 1024;
+
+#[derive(Debug)]
+struct ProcessOutput {
+    status: ExitStatus,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+}
+
+/// Direct invocation, bounded lifetime and bounded log memory on all three OSes.
+/// Redirect both streams to files so a verbose Poppler error cannot deadlock a pipe.
+fn run_poppler(
+    command: &mut Command,
+    name: &str,
+    timeout: Duration,
+) -> Result<ProcessOutput, String> {
+    let dir = tempfile::tempdir().map_err(|e| format!("{name} capture directory: {e}"))?;
+    let stdout_path = dir.path().join("stdout.txt");
+    let stderr_path = dir.path().join("stderr.txt");
+    let stdout =
+        fs::File::create(&stdout_path).map_err(|e| format!("{name} stdout capture: {e}"))?;
+    let stderr =
+        fs::File::create(&stderr_path).map_err(|e| format!("{name} stderr capture: {e}"))?;
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::from(stdout))
+        .stderr(Stdio::from(stderr));
+    let mut child = command
+        .spawn()
+        .map_err(|e| format!("{name} invocation failed: {e}"))?;
+    let started = Instant::now();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if started.elapsed() >= timeout => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!("{name} timed out after {}s", timeout.as_secs()));
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(25)),
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!("{name} process monitoring failed: {error}"));
+            }
+        }
+    };
+    Ok(ProcessOutput {
+        status,
+        stdout: read_capture(&stdout_path, name)?,
+        stderr: read_capture(&stderr_path, name)?,
+    })
+}
+
+fn check_png_budget(page: usize, bytes: u64) -> Result<(), String> {
+    if bytes > MAX_PREVIEW_PNG_BYTES {
+        return Err(format!(
+            "pdftoppm page {page} exceeds 64 MiB preview budget ({bytes} bytes)"
+        ));
+    }
+    Ok(())
+}
+
+fn read_capture(path: &Path, name: &str) -> Result<Vec<u8>, String> {
+    let mut data = Vec::new();
+    fs::File::open(path)
+        .map_err(|e| format!("{name} capture open: {e}"))?
+        .take(MAX_CAPTURE_BYTES)
+        .read_to_end(&mut data)
+        .map_err(|e| format!("{name} capture read: {e}"))?;
+    Ok(data)
+}
 
 /// Worker replies carry the PDF identity epoch, avoiding stale cross-document updates.
 pub type PageCountReceiver = Receiver<(u64, Result<usize, String>)>;
@@ -45,10 +124,11 @@ fn inspect_pages(pdf: &[u8]) -> Result<usize, String> {
     let dir = tempfile::tempdir().map_err(|e| format!("Temporary PDF directory: {e}"))?;
     let input = dir.path().join("tikzarium-preview.pdf");
     fs::write(&input, pdf).map_err(|e| format!("Temporary PDF write: {e}"))?;
-    let output = Command::new(pdfinfo)
-        .arg(&input)
-        .output()
-        .map_err(|e| format!("pdfinfo invocation failed: {e}"))?;
+    let output = run_poppler(
+        Command::new(pdfinfo).arg(&input),
+        "pdfinfo",
+        PDFINFO_TIMEOUT,
+    )?;
     if !output.status.success() {
         return Err(format!(
             "pdfinfo failed ({}): {}",
@@ -88,19 +168,21 @@ fn rasterize_page(pdf: &[u8], page: usize, renderer: Option<PathBuf>) -> Result<
     let output_prefix = dir.path().join("page");
     fs::write(&input, pdf).map_err(|e| format!("Temporary PDF write: {e}"))?;
     // Direct process invocation (no shell). The output filename is controlled by us.
-    let output = Command::new(renderer)
-        .arg("-f")
-        .arg(page.to_string())
-        .arg("-l")
-        .arg(page.to_string())
-        .arg("-singlefile")
-        .arg("-png")
-        .arg("-r")
-        .arg("120")
-        .arg(&input)
-        .arg(&output_prefix)
-        .output()
-        .map_err(|e| format!("pdftoppm invocation failed: {e}"))?;
+    let output = run_poppler(
+        Command::new(renderer)
+            .arg("-f")
+            .arg(page.to_string())
+            .arg("-l")
+            .arg(page.to_string())
+            .arg("-singlefile")
+            .arg("-png")
+            .arg("-r")
+            .arg("120")
+            .arg(&input)
+            .arg(&output_prefix),
+        "pdftoppm",
+        PDF_RENDER_TIMEOUT,
+    )?;
     if !output.status.success() {
         return Err(format!(
             "pdftoppm page {page} failed ({}): {}",
@@ -112,13 +194,70 @@ fn rasterize_page(pdf: &[u8], page: usize, renderer: Option<PathBuf>) -> Result<
                 .collect::<String>()
         ));
     }
-    fs::read(output_prefix.with_extension("png"))
-        .map_err(|e| format!("pdftoppm page {page} returned no PNG: {e}"))
+    let png = output_prefix.with_extension("png");
+    let bytes = fs::metadata(&png)
+        .map_err(|e| format!("pdftoppm page {page} returned no PNG: {e}"))?
+        .len();
+    check_png_budget(page, bytes)?;
+    fs::read(&png).map_err(|e| format!("pdftoppm page {page} PNG read: {e}"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    fn fake_poppler(script: &str) -> (tempfile::TempDir, PathBuf) {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("fake-poppler.sh");
+        fs::write(&path, format!("#!/bin/sh\n{script}\n")).unwrap();
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&path, permissions).unwrap();
+        (dir, path)
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn poppler_worker_captures_stdout_and_stderr_without_pipes() {
+        let (_dir, path) = fake_poppler("printf 'Pages: 2\n'; printf 'warning\n' >&2");
+        let output =
+            run_poppler(&mut Command::new(path), "fixture", Duration::from_secs(2)).unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            parse_page_count(&String::from_utf8_lossy(&output.stdout)),
+            Some(2)
+        );
+        assert!(String::from_utf8_lossy(&output.stderr).contains("warning"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn poppler_worker_kills_hung_process_and_reports_not_checked() {
+        let (_dir, path) = fake_poppler("while :; do :; done");
+        let start = Instant::now();
+        let error = run_poppler(
+            &mut Command::new(path),
+            "fixture",
+            Duration::from_millis(150),
+        )
+        .unwrap_err();
+        assert!(error.contains("timed out"));
+        assert!(start.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn resource_budgets_fail_closed_at_known_boundaries() {
+        let dir = tempfile::tempdir().unwrap();
+        let capture = dir.path().join("capture.txt");
+        fs::write(&capture, vec![b'X'; (MAX_CAPTURE_BYTES + 100) as usize]).unwrap();
+        let captured = read_capture(&capture, "fixture").unwrap();
+        assert_eq!(captured.len(), MAX_CAPTURE_BYTES as usize);
+        assert!(check_png_budget(1, MAX_PREVIEW_PNG_BYTES).is_ok());
+        let error = check_png_budget(2, MAX_PREVIEW_PNG_BYTES + 1).unwrap_err();
+        assert!(error.contains("page 2"));
+    }
 
     #[test]
     fn page_count_requires_exact_positive_pages_field() {

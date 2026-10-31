@@ -5,6 +5,9 @@
 //! No manifest field is interpreted as a command, shared library, or script.
 
 pub mod evidence;
+pub mod primitive_edit;
+pub mod primitives;
+pub mod project_imports;
 
 use serde::Deserialize;
 use std::{

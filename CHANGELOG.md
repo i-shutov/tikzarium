@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — 2026-10-31: I07 bounded initial XeLaTeX PDF preview
+
+- Protect the **first-page** Poppler renderer (`tikzarium-core::preview`), previously missing time and allocation budgets despite B05 navigation and B06 PNG decoding protections: 45-second subprocess deadline with kill/wait; 64MiB compressed PNG read cap.
+- Source and canonical compiled PDF are never modified by the guard. On missing/stalled/oversized raster, retain the valid PDF and report a preview-specific error instead of hanging indefinitely.
+- Add five small Rust tests (portable and Unix mock-tool paths), separate physical Windows 10 and M1/M4 QA protocol, plan, insight. Existing full workspace CI exercises the tests; exact new-head results PENDING at authoring. No package capability changes.
+
+## Unreleased — 2026-10-31: N1 native TikZ visual authoring merged (#44)
+
+- **Implemented and merged**, not merely proposed: six Rust/egui TikZ-native input tools (line, arrow with explicit `arrows.meta`, rectangle, circle, text/math node, cubic Bézier). Main after [PR #44](https://github.com/i-shutov/tikzarium/pull/44): `6b0fe3551cb6ded5cf737e28a7a74326f0b4fe49`; validated source HEAD `1a274485ca8e728643bc0cf0ed79a18c6b4d5c34`.
+- A single C-owned declarative schema drives six code generators, 28 editable parameters and Russian syntax/unit/allowed values/editor preset warnings/help/manual links, shared by toolbar, inspector and F1/hover. The normal Split workspace shows editable TeX adjacent to PDF and visually separate, approximate input guide; the authoritative figure is rendered by external XeLaTeX, **not Rust**.
+- Generated commands use owned metadata in TeX comments, source-range + monotone revision preconditions and undo; unknown author TeX is not parsed/rewritten. Visible `\\usepackage` / `\\usetikzlibrary` patches require an explicit user action; no automatic MiKTeX or package installs. Figure fonts and four persisted egui themes remain independent.
+- Independent exact-source-head CI: [Rust CI 3/3](https://github.com/i-shutov/tikzarium/actions/runs/41190945419), [D QA 7/7 incl. 3 hosted OS](https://github.com/i-shutov/tikzarium/actions/runs/41190945357), [real N1 app-state → XeLaTeX/PDF 1/1](https://github.com/i-shutov/tikzarium/actions/runs/41190945352), [Cyrillic+math+embedded fonts 1/1](https://github.com/i-shutov/tikzarium/actions/runs/41190945413). The N1 artifact `13037984941` ZIP SHA-256 `a86d8bf24338105f6b9519323b761dab4d55c9a24ef0798abef307d33ff0d800` was downloaded: 34 CRC-clean members, 9 manifest hashes, actual 3 PDF pages (3 one-page PDFs), embedded fonts and extractable Cyrillic/math. Crosshost verification artifact `13038961920` ZIP SHA-256 `22863f21bae9472f6ff19ceeccd32f54d416a6c35da22ae209150c504d302b12`, accepted for hosted Linux/Windows Server/macOS ARM.
+- **Remaining NOT_RUN**: true GUI mouse/drag/restart screenshot acceptance on Windows 10 x64 MiKTeX and physical Mac M1/M4. Separate MiKTeX-specific Windows Server D06 #40 is not included or claimed PASS. PGF Lua-only graphdrawing is not XeLaTeX compatible. Post-merge main CI still pending on initial integration ledger; N1 is not a release.
+
+## Unreleased — 2026-10-31: I06 source-saving integrity (draft until CI)
+
+- Normal Build/Save of an **unchanged** TeX buffer now checks the bound file's bytes, then performs a **true no-op**: preserves file identity, symlink/hardlink relationship, timestamps and user content rather than replacing it with a temporary file.
+- Reject externally changed/deleted open files instead of silently overwriting the external edits; dirty save of symlink and read-only file fails with a descriptive error and leaves original bytes unchanged. Explicit Save As to a new regular path remains possible.
+- Added 6 source integrity tests (including Unix symlink and inode regression); both hosted Rust workflows now run the source-integrity subset explicitly, in addition to workspace tests. **PR exact-head CI PENDING**, physical Windows 10 and M1/M4 GUI NOT_RUN.
+- This is a preflight protection, not an inter-process lock or race-free compare-and-swap. No editable TikZ capabilities or XeLaTeX package statuses are promoted; `extensions/PACKAGE_MATRIX.csv` deliberately unchanged.
+
 ## Unreleased — 2026-10-31: I05 hardened XeLaTeX runner and extension evidence
 
 - Correct the Windows-hosted XeLaTeX `./filename.tex` source operand: never construct it using Windows-native `Path::join` (`.\\filename.tex` is a TeX control-sequence hazard). Use an `OsString` literal `./` prefix and regression-test ordinary, leading-dash and Cyrillic filenames. Re-run cross-host CI against the exact new SHA; no Win10 acceptance claim.

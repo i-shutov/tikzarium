@@ -1,0 +1,68 @@
+name: N1 actual app state to TikZ to XeLaTeX
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'extensions/primitives/**'
+      - '.github/workflows/n1-authoring.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: n1-authoring-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  authoring-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt, clippy
+      - name: Install external XeLaTeX and independent PDF inspectors
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-pictures texlive-latex-extra texlive-fonts-recommended fonts-dejavu-core poppler-utils
+      - name: Exercise the real egui authoring state and catalogue (NOT GUI pointer smoke)
+        run: |
+          cargo test -p tikzarium-extensions --all-targets
+          cargo test -p tikzarium-app tikz_authoring::tests
+          cargo test -p tikzarium-app tikz_canvas::tests
+          cargo run -p tikzarium-app --bin n1-authoring-proof -- "$RUNNER_TEMP/n1-authoring"
+          cargo run -p tikzarium-extensions --bin primitive-fixtures > "$RUNNER_TEMP/n1-authoring/catalogue-fixture.tex"
+          cmp extensions/primitives/fixtures/all-six.tex "$RUNNER_TEMP/n1-authoring/catalogue-fixture.tex"
+      - name: Compile actual generated source and verify glyphs, embedding and unchanged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/n1-authoring"
+          sha256sum authoring.tex math-authoring.tex catalogue-fixture.tex > source-before.sha256
+          for name in authoring math-authoring catalogue-fixture; do
+            xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder "$name.tex" > "$name.console.log"
+            test -s "$name.pdf"
+            ! grep -F 'Missing character:' "$name.log"
+            pdfinfo "$name.pdf" > "$name.pdfinfo.txt"
+            grep -E '^Pages: *1$' "$name.pdfinfo.txt"
+            pdftotext -enc UTF-8 "$name.pdf" "$name.extracted.txt"
+            pdffonts "$name.pdf" > "$name.fonts.txt"
+            awk 'NR>2 && NF { if ($(NF-4)!="yes") exit 1; count++ } END { if (count<1) exit 1 }' "$name.fonts.txt"
+            pdftoppm -f 1 -singlefile -scale-to 1600 -png "$name.pdf" "$name"
+          done
+          grep -F 'Геометрия' authoring.extracted.txt
+          grep -F 'оптика' authoring.extracted.txt
+          sha256sum -c source-before.sha256
+          sha256sum *.tex *.pdf *.png > artifacts.sha256
+          { xelatex --version; pdftoppm -v 2>&1; } > environment.txt
+      - name: Preserve actual source and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n1-app-authoring-linux
+          path: ${{ runner.temp }}/n1-authoring/
+          if-no-files-found: warn
+          retention-days: 14
