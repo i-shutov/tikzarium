@@ -6,12 +6,11 @@
 
 use crate::{
     primitive_edit::SourceTarget,
-    primitives::{Capabilities, Catalog, Evidence, PrimitiveError, SourcePatch},
+    primitives::{Capabilities, Catalog, Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
 };
 use std::{collections::BTreeSet, ops::Range};
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
-const SUPPORTED_LIBRARIES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {
@@ -239,8 +238,47 @@ fn literal_flat_font_assignment(line: &str, command: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b" ._+-".contains(&b))
 }
 
+/// A *hint* that source after \begin{document} might import packages or
+/// libraries. This never grants Confirmed evidence: verbatim and macro scopes
+/// cannot be resolved by a lexical scanner. False positives fail closed.
+fn contains_control_word(line: &str, command: &str) -> bool {
+    line.match_indices(command).any(|(start, _)| {
+        // A preceding escaped backslash is a TeX \\ control symbol, not
+        // the start of this control word. Handle longer backslash runs too.
+        let previous_slashes = line[..start]
+            .bytes()
+            .rev()
+            .take_while(|byte| *byte == b'\\')
+            .count();
+        previous_slashes.is_multiple_of(2)
+            && !line[start + command.len()..]
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_alphabetic() || ch == '@')
+    })
+}
+
+fn document_body_may_import(body: &str) -> bool {
+    const IMPORT_LIKE_COMMANDS: [&str; 6] = [
+        "\\usetikzlibrary",
+        "\\usepackage",
+        "\\RequirePackage",
+        "\\input",
+        "\\include",
+        "\\csname",
+    ];
+    body.split_inclusive('\n').any(|raw| {
+        let line = raw.trim_end_matches(['\r', '\n']);
+        let active = uncommented(line);
+        IMPORT_LIKE_COMMANDS
+            .iter()
+            .any(|command| contains_control_word(active, command))
+    })
+}
+
 /// Recognize only complete, literal preamble lines. Never expand arbitrary macros.
-/// Text after begin(document) is left entirely opaque to this scanner.
+/// After begin(document), detect only possible late import hints: these never
+/// establish positive evidence or authorize a source edit.
 #[must_use]
 pub fn inspect(source: &str) -> ProjectImports {
     let has_crlf = source.contains("\r\n");
@@ -402,6 +440,20 @@ pub fn inspect(source: &str) -> ProjectImports {
         }
         offset += raw.len();
     }
+    // Direct library loading after \begin{document} is supported by TeX.
+    // Likewise, body-side \input/\include can pull in external imports. Do
+    // not turn a preamble-only absence into a false NOT_LOADED verdict or
+    // silently add an earlier duplicate. Existing trusted sites stay known.
+    if result
+        .begin_document
+        .as_ref()
+        .is_some_and(|begin| document_body_may_import(&source[begin.end..]))
+    {
+        first_reason(
+            &mut result.uncertain_reason,
+            "possible late import or external source in document body",
+        );
+    }
     if result.begin_document.is_none() {
         first_reason(
             &mut result.uncertain_reason,
@@ -444,6 +496,59 @@ pub fn capabilities_for_tool(
         Evidence::Absent
     };
     catalog.capabilities(tool_id, installed, loaded, engine)
+}
+
+/// N2 library panel status from the *same* declarative catalogue as the six
+/// primitive tools. Installation is caller-provided, never inferred from TeX
+/// declarations; visual_editable stays false for arbitrary library constructs.
+/// tool_implemented means at least one listed native generator depends on this
+/// library (currently arrows.meta only), not full library editing coverage.
+pub fn capabilities_for_library(
+    catalog: &Catalog,
+    name: &str,
+    project: &ProjectImports,
+    installed: Evidence,
+    engine: Option<&str>,
+) -> Result<Capabilities, PrimitiveError> {
+    let library = catalog
+        .library(name)
+        .ok_or_else(|| PrimitiveError::UnknownLibrary(name.to_owned()))?;
+    let package = project.status(ImportKind::Package, "tikz");
+    let loaded_library = project.status(ImportKind::TikzLibrary, name);
+    let project_loaded = if package == Evidence::Confirmed && loaded_library == Evidence::Confirmed
+    {
+        Evidence::Confirmed
+    } else if package == Evidence::Unknown || loaded_library == Evidence::Unknown {
+        Evidence::Unknown
+    } else {
+        Evidence::Absent
+    };
+    let tool_implemented = if catalog.tools.iter().any(|tool| {
+        tool.requirements
+            .libraries
+            .iter()
+            .any(|required| required == name)
+    }) {
+        Evidence::Confirmed
+    } else {
+        Evidence::Absent
+    };
+    let engine_compatible = match engine {
+        Some(actual) if actual.eq_ignore_ascii_case(&library.requirements.engine) => {
+            Evidence::Confirmed
+        }
+        // The catalogue records an XeLaTeX proof target, not a claim that
+        // other engines reject this PGF/TikZ library.
+        _ => Evidence::Unknown,
+    };
+    Ok(Capabilities {
+        installed,
+        project_loaded,
+        engine_compatible,
+        tool_implemented,
+        help_available: Evidence::Confirmed,
+        visual_editable: false,
+    })
 }
 
 /// An explicit source proposal; B must show the diff and request the user action.
@@ -492,7 +597,7 @@ pub fn plan_import(
                 reason: "only the tikz package has an N2 automatic source adapter",
             };
         }
-        ImportKind::TikzLibrary if !SUPPORTED_LIBRARIES.contains(&name) => {
+        ImportKind::TikzLibrary if !N2_LIBRARY_NAMES.contains(&name) => {
             return ImportDecision::Refused {
                 reason: "library has no N2 literal import adapter; use source",
             };

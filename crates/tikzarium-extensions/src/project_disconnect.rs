@@ -6,13 +6,12 @@
 
 use crate::{
     primitive_edit::SourceTarget,
-    primitives::{Evidence, PrimitiveError, SourcePatch},
+    primitives::{Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
     project_imports::{ImportKind, inspect, literal_names, uncommented},
 };
 use std::ops::Range;
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
-const SUPPORTED_LIBRARIES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
 
 /// A proposed, source-visible deletion. B owns confirmation and Undo UI.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -140,7 +139,7 @@ pub fn plan_library_disconnect(
     target: SourceTarget,
     name: &str,
 ) -> DisconnectDecision {
-    if !SUPPORTED_LIBRARIES.contains(&name) {
+    if !N2_LIBRARY_NAMES.contains(&name) {
         return DisconnectDecision::Refused {
             reason: "library has no N2 disconnect adapter; use source",
         };

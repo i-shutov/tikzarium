@@ -124,3 +124,36 @@ evidence, but it must still show explicit diffs and obtain consent before
 applying N2 `SourcePatch`. No automatic package download, engine change,
 source rewrite or GUI implementation is implied. D/E/F remain responsible
 for independent compiled fixtures/help/source-integrity tests respectively.
+
+
+## N2 document-body / external-file import ambiguity
+
+A *complete preamble scan is not a complete TeX document dependency scan*.
+External XeLaTeX can load a TikZ library after \begin{document}. The C-owned
+executable fixture [late-library-in-body.tex](fixtures/late-library-in-body.tex)
+loads calc after the preamble and uses its coordinate syntax successfully.
+
+The targeted inspect() recognizer therefore looks for possible late
+\usetikzlibrary, \usepackage, \RequirePackage, \input, \include or
+dynamic \csname control words **after** the confirmed begin-document
+anchor. It ignores ordinary % comments and escaped backslashes, and
+does not confuse longer command names with exact control words. This
+is **ambiguity detection**, not execution or complete TeX parsing.
+Source text in a verbatim-like environment can conservatively produce
+UNKNOWN: the scanner cannot prove the runtime scope.
+
+When such a hint is found, existing trusted preamble declarations and
+their exact source ranges remain Confirmed; missing requirements become
+Unknown, never Absent. begin_document_target() returns None,
+and both source-add and source-disconnect planners refuse with
+uncertain_reason = "possible late import or external source in document body".
+The entire source remains untouched. B displays the reason and offers
+manual raw TeX editing; it does not silently add a duplicate or install
+a TeX package. Indirect unknown macros which do not resemble these
+control words remain outside this bounded recognizer, not a claim of
+complete dependency discovery.
+
+Regression gates: cargo test -p tikzarium-extensions --test project_imports,
+the original six tool/help tests, and an *independent* external XeLaTeX
+compile of the fixture (source text and PDF proof are separate from
+GUI authoring). Physical Win10/MiKTeX and Mac M1/M4 remain NOT_RUN.
