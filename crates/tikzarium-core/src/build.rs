@@ -5,6 +5,7 @@ use crate::{
 };
 use std::{
     collections::HashSet,
+    ffi::{OsStr, OsString},
     fs::{self, File},
     io::{self, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
@@ -153,8 +154,9 @@ impl BuildService {
         let out_dir = temp.path().join("out");
         fs::create_dir_all(&out_dir)?;
 
-        // A relative ./ prefix prevents a source named -shell-escape.tex from
-        // being interpreted as another XeLaTeX command-line option.
+        // A literal forward-slash ./ prefix protects a leading-dash filename.
+        // Path::new(".").join(filename) creates a backslash on Windows that
+        // XeTeX interprets as a TeX control sequence instead of a path.
         let mut child = Command::new(&request.xelatex)
             .current_dir(cwd)
             .arg("-interaction=nonstopmode")
@@ -163,7 +165,7 @@ impl BuildService {
             .arg("-recorder")
             .arg("-no-shell-escape")
             .arg(format!("-output-directory={}", out_dir.display()))
-            .arg(Path::new(".").join(filename))
+            .arg(tex_source_operand(filename))
             .stdin(Stdio::null())
             .stdout(Stdio::from(File::create(&stdout_file)?))
             .stderr(Stdio::from(File::create(&stderr_file)?))
@@ -247,6 +249,14 @@ impl BuildService {
             elapsed: started.elapsed(),
         })
     }
+}
+
+/// Preserve native filename bytes while using an unambiguous TeX operand on
+/// Windows and Unix. Do not normalize or rewrite the user's TeX source.
+fn tex_source_operand(filename: &OsStr) -> OsString {
+    let mut operand = OsString::from("./");
+    operand.push(filename);
+    operand
 }
 
 fn terminate_child(child: &mut Child) {
@@ -387,6 +397,22 @@ fn tail(text: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_operand_is_portable_and_protects_dash_prefixed_names() {
+        assert_eq!(
+            tex_source_operand(OsStr::new("quickstart.tex")),
+            OsString::from("./quickstart.tex")
+        );
+        assert_eq!(
+            tex_source_operand(OsStr::new("-shell-escape.tex")),
+            OsString::from("./-shell-escape.tex")
+        );
+        assert_eq!(
+            tex_source_operand(OsStr::new("тест v2.tex")),
+            OsString::from("./тест v2.tex")
+        );
+    }
 
     #[test]
     fn dependencies_are_deduplicated() {

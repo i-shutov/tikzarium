@@ -32,3 +32,9 @@ Integrate A's standalone #10 changes without force-merging its conflicting `diag
 - [x] Observed real TeX Live **2026 / PGF 3.1.12** failure text wraps inside “graph” (`grap\n h`), unlike TeX Live 2023. Four other extension fixtures compiled successfully.
 - [x] Keep Lua-required message semantics exact; tolerate intra-word TeX log line wraps; added unit regression examples for graph/drawing/library word splits.
 - [ ] Re-run I05 exact-head 3-host CI and inspect **actual** negative observation + independent auditor JSON. A previous Linux D job failed despite valid expected engine failure because the old recognizer missed the wrapped word — not a successful 5/5 until rerun.
+
+## Windows XeLaTeX regression — integration repair
+- [x] At I05 head `1db951c02d7aa7a896a661d7f2c17bd7de91c973`, D QA [41180076260](https://github.com/i-shutov/tikzarium/actions/runs/41180076260) failed 5/6 jobs, specifically real XeLaTeX on Windows Server 2022: five valid fixtures produced exit 3. The old negative fixture PASS is not a trustworthy result (D04 #27 tracks fail-closed assertions).
+- [x] Reconcile the already CI-tested A #10 fix: build the filename operand as a lossless `OsString` starting with literal `./`; `Path::new(".").join(filename)` emits `.\\` on Windows which TeX parses as a command. Add cross-platform operand unit regression tests.
+- [ ] Require **fresh I05 SHA** CI 3/3, D QA 6/6, font proof 1/1, C03 extension JSON on all 3 hosted platforms; check source hashes/expected Lua-only failure. Do not merge failed head.
+- [ ] Follow with D04 fail-closed negative source-specific gate; assess PR #27 separately after I05 stabilization.
