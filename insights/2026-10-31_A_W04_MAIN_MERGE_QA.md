@@ -43,3 +43,13 @@ No native physical smoke or GUI screenshots were performed here.
 If CI reports a regression, change only A-owned paths and rerun the exact
 SHA. Then request integrator independent review/merge of PR #10; B may wire
 diagnostic source navigation in its own future PR. Do not mark v0.1 accepted.
+
+## First exact-head CI and bounded correction
+
+Initial merge SHA `f9f67ab8927f37ffc180993525f372d0010b4578`:
+GitHub Actions main CI [41179264969](https://github.com/i-shutov/tikzarium/actions/runs/41179264969)
+and 3-OS QA [41179265027](https://github.com/i-shutov/tikzarium/actions/runs/41179265027)
+reported cargo fmt --check FAIL on A-owned diagnostics.rs, lib.rs and
+runner_unix.rs. The actual rustfmt diff from macOS hosted job 124473126086
+was applied verbatim. This is a **formatting failure**, not a proven Rust
+compile or runtime failure; a new exact-head run is required for any PASS.

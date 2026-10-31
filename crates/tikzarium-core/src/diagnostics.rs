@@ -82,12 +82,9 @@ pub fn extract_located_diagnostics(log: &str) -> Vec<LocatedBuildDiagnostic> {
                 source: None,
             });
         } else if let Some(number) = tex_line_marker(trimmed) {
-            if let Some(previous) = items
-                .iter_mut()
-                .rev()
-                .find(|item| item.diagnostic.severity == Severity::Error
-                    && item.diagnostic.line.is_none())
-            {
+            if let Some(previous) = items.iter_mut().rev().find(|item| {
+                item.diagnostic.severity == Severity::Error && item.diagnostic.line.is_none()
+            }) {
                 previous.diagnostic.line = Some(number);
             }
         } else if (trimmed.starts_with("LaTeX Warning:")
@@ -228,7 +225,12 @@ mod tests {
         assert_eq!(items[0].diagnostic.severity, Severity::Error);
         assert_eq!(items[0].diagnostic.line, Some(4));
         assert_eq!(items[0].source, Some(PathBuf::from("./figure.tex")));
-        assert!(items[0].diagnostic.message.contains("Definitely Nonexistent"));
+        assert!(
+            items[0]
+                .diagnostic
+                .message
+                .contains("Definitely Nonexistent")
+        );
     }
 
     #[test]

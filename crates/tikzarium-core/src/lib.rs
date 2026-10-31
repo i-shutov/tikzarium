@@ -8,7 +8,10 @@ pub mod font_audit;
 pub mod fonts;
 pub mod preview;
 
-pub use build::{BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls, parse_fls_with_cwd};
+pub use build::{
+    BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls,
+    parse_fls_with_cwd,
+};
 pub use diagnostics::{
     BuildDiagnostic, LocatedBuildDiagnostic, Severity, extract_diagnostics,
     extract_located_diagnostics,

@@ -7,7 +7,9 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, FontIssueKind, Severity};
+use tikzarium_core::{
+    BuildError, BuildOptions, BuildRequest, BuildService, FontIssueKind, Severity,
+};
 
 fn fake_xelatex(directory: &Path) -> PathBuf {
     let executable = directory.join("fake xelatex");
@@ -201,7 +203,11 @@ fn cancelling_active_compilation_stops_the_child() {
 fn failed_fontspec_run_reports_family_and_preserves_source_and_full_log() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("missing-font.tex");
-    fs::write(&source, b"\\setmainfont{Definitely Nonexistent Font 424242}\n").unwrap();
+    fs::write(
+        &source,
+        b"\\setmainfont{Definitely Nonexistent Font 424242}\n",
+    )
+    .unwrap();
     let before = fs::read(&source).unwrap();
     let engine = fake_xelatex(directory.path());
     let persistent_log = directory.path().join("missing-font-run.log");
@@ -216,10 +222,18 @@ fn failed_fontspec_run_reports_family_and_preserves_source_and_full_log() {
         failure.font_issues()[0].font_name.as_deref(),
         Some("Definitely Nonexistent Font 424242")
     );
-    assert!(failure.diagnostics().iter().any(|d|
-        d.severity == Severity::Error && d.line == Some(4)));
+    assert!(
+        failure
+            .diagnostics()
+            .iter()
+            .any(|d| d.severity == Severity::Error && d.line == Some(4))
+    );
     assert!(failure.log_excerpt().unwrap().contains("cannot be found"));
-    assert!(fs::read_to_string(&persistent_log).unwrap().contains("fontspec Error"));
+    assert!(
+        fs::read_to_string(&persistent_log)
+            .unwrap()
+            .contains("fontspec Error")
+    );
     assert_eq!(before, fs::read(&source).unwrap());
 }
 
