@@ -37,12 +37,7 @@ pub enum PreviewError {
 /// PNG returns a preview error rather than blocking the editor/build forever.
 /// The PDF itself and the author's source are never modified.
 pub fn render_first_page(pdftoppm: &Path, pdf: &Path) -> Result<Preview, PreviewError> {
-    render_first_page_with_limits(
-        pdftoppm,
-        pdf,
-        FIRST_PAGE_TIMEOUT,
-        FIRST_PAGE_MAX_PNG_BYTES,
-    )
+    render_first_page_with_limits(pdftoppm, pdf, FIRST_PAGE_TIMEOUT, FIRST_PAGE_MAX_PNG_BYTES)
 }
 
 fn render_first_page_with_limits(
@@ -131,7 +126,10 @@ mod tests {
         assert_eq!(read_bounded_png(&png, 11).unwrap(), b"PNG fixture");
         assert!(matches!(
             read_bounded_png(&png, 10),
-            Err(PreviewError::OversizedPng { bytes: 11, limit: 10 })
+            Err(PreviewError::OversizedPng {
+                bytes: 11,
+                limit: 10
+            })
         ));
         assert_eq!(fs::read(&png).unwrap(), b"PNG fixture");
     }
@@ -162,13 +160,10 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn fake_poppler_success_preserves_pdf_source_and_returns_png() {
-        let (_dir, tool, pdf) = fake_poppler(
-            "for last; do :; done\nprintf 'PNG' > \"$last.png\"",
-        );
+        let (_dir, tool, pdf) = fake_poppler("for last; do :; done\nprintf 'PNG' > \"$last.png\"");
         let original = fs::read(&pdf).unwrap();
-        let preview = render_first_page_with_limits(
-            &tool, &pdf, Duration::from_secs(2), 3
-        ).unwrap();
+        let preview =
+            render_first_page_with_limits(&tool, &pdf, Duration::from_secs(2), 3).unwrap();
         assert_eq!(preview.png, b"PNG");
         assert_eq!(fs::read(&pdf).unwrap(), original);
         assert!(matches!(
