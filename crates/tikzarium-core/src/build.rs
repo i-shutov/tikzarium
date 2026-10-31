@@ -523,6 +523,30 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn recorder_preserves_symlink_parent_dotdot_without_collapsing_it() {
+        use std::os::unix::fs::symlink;
+        let project = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::create_dir_all(outside.path().join("subdir")).unwrap();
+        fs::write(project.path().join("data.tex"), b"LOCAL").unwrap();
+        let foreign = outside.path().join("data.tex");
+        fs::write(&foreign, b"EXTERNAL").unwrap();
+        symlink(outside.path().join("subdir"), project.path().join("link")).unwrap();
+
+        let fls = format!(
+            "PWD {}\nINPUT ./link/../data.tex\nINPUT link/../data.tex\n",
+            project.path().display()
+        );
+        let raw = parse_fls_with_cwd_preserving_links(&fls, project.path());
+        assert!(raw.contains(&project.path().join("./link/../data.tex")));
+        assert_eq!(
+            parse_fls_with_cwd(&fls, project.path()),
+            vec![foreign.canonicalize().unwrap()]
+        );
+    }
+
     #[test]
     fn missing_source_is_reported() {
         let dir = tempfile::tempdir().unwrap();

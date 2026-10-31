@@ -68,3 +68,12 @@ The first full regression pass on head `aaea74074c2272fed100268a8879e00ba148e456
 ### Exact source-symlink vs macOS root-alias selection
 
 Use canonical compiler source spelling for an ordinary author file to avoid duplicate project inputs across /var and /private/var, but retain the original author path when the file itself is a symlink (its retargeting changes the requested document). Added two Unix fake-engine regressions: symlinked project-root creates only source+asset fingerprints, and changing a symlinked author file invalidates freshness. This is an A-only runner change; does not affect canonical public dependencies, source bytes, CLI output or GUI undo contract. New exact-head CI required.
+
+
+## 2026-10-31 — W05 filesystem path semantics, integrator HOLD resolution
+
+Integrator reproduced actual XeLaTeX .fls records INPUT ./link/../data.tex and INPUT link/../data.tex: when project/link points to outside/subdir, Unix reads outside/data.tex, **not** project/data.tex. Lexical removal of link/.. caused the snapshot to hash a different file and could falsely certify freshness.
+
+The new A code retains recorded filesystem traversal and canonicalizes the actual existing path before project boundary checks. For missing inputs it canonicalizes the nearest existing prefix before appending missing names. A project-spelled path that physically escapes root now fails closed. Ordinary external TeX installation paths remain explicitly untracked. Public canonical BuildArtifact.dependencies and build/error/undo API stay unchanged; sources and unknown TeX macros are not rewritten.
+
+Regressions: Unix local link/.. tracks correct local target and detects same-size edits; external escape fails closed; .fls parser and fake-XeLaTeX runner cover both actual INPUT spellings and CRLF/opaque source without modification. Exact-head Rust fmt/check/test/Clippy, D QA and hosted MiKTeX required. Physical Win10 user/shared, Mac M1/M4 and GUI = NOT_RUN. No D-owned workflow changes.

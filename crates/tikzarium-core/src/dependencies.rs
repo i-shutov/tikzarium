@@ -6,7 +6,7 @@ use std::{
     ffi::OsString,
     fs::{self, File},
     io::{self, Read},
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
 };
 
 /// Per-input cap avoids unbounded hashing of huge included resources on the UI thread.
@@ -36,6 +36,8 @@ pub struct ProjectDependencySnapshot {
     recorder_complete: bool,
     /// An external/symlinked-away author source cannot certify freshness.
     source_is_project_local: bool,
+    /// A project-spelled .fls input resolving outside root is unverifiable.
+    escaped_project_input: bool,
 }
 
 impl ProjectDependencySnapshot {
@@ -61,6 +63,7 @@ impl ProjectDependencySnapshot {
         let mut project_inputs = Vec::new();
         let mut ignored_external = Vec::new();
         let mut source_is_project_local = false;
+        let mut escaped_project_input = false;
 
         for (index, input) in std::iter::once(source)
             .chain(dependencies.iter().map(PathBuf::as_path))
@@ -71,11 +74,17 @@ impl ProjectDependencySnapshot {
             } else {
                 root_spelling.join(input)
             };
-            // A missing file cannot be canonicalized; collapse .. components
-            // before applying the root boundary.
-            let recorded_path = lexical_normalize(&absolute);
+            // Preserve filesystem traversal: link/../file may resolve outside
+            // this project after following a directory symlink.
+            let recorded_path = absolute;
             let resolved = canonicalize_existing_prefix(&recorded_path);
             let is_local = resolved.starts_with(&root);
+            if !is_local
+                && (recorded_path.starts_with(&root_spelling)
+                    || recorded_path.starts_with(&root))
+            {
+                escaped_project_input = true;
+            }
             if index == 0 {
                 source_is_project_local = is_local;
             }
@@ -98,6 +107,7 @@ impl ProjectDependencySnapshot {
             ignored_external,
             recorder_complete,
             source_is_project_local,
+            escaped_project_input,
         })
     }
 
@@ -150,16 +160,17 @@ impl ProjectDependencySnapshot {
     pub fn is_project_fresh(&self) -> bool {
         self.recorder_complete
             && self.source_is_project_local
+            && !self.escaped_project_input
             && self.invalidated_project_paths().is_empty()
     }
 }
 
 /// Canonicalize the nearest existing parent when the leaf has disappeared.
-/// On macOS /var may alias /private/var; normalizing only the lexical
-/// absolute path would mistakenly classify missing local inputs as external.
+/// Do not lexically simplify "..": a directory symlink changes its meaning.
+/// For a missing leaf, resolve the real existing prefix before appending the
+/// unresolved suffix. This also handles macOS /var -> /private/var aliases.
 fn canonicalize_existing_prefix(path: &Path) -> PathBuf {
-    let normalized = lexical_normalize(path);
-    let mut ancestor = normalized.as_path();
+    let mut ancestor = path;
     let mut missing_components: Vec<OsString> = Vec::new();
     loop {
         if let Ok(mut existing) = ancestor.canonicalize() {
@@ -169,28 +180,14 @@ fn canonicalize_existing_prefix(path: &Path) -> PathBuf {
             return existing;
         }
         let Some(name) = ancestor.file_name() else {
-            return normalized;
+            return path.to_path_buf();
         };
         missing_components.push(name.to_os_string());
         let Some(parent) = ancestor.parent() else {
-            return normalized;
+            return path.to_path_buf();
         };
         ancestor = parent;
     }
-}
-
-fn lexical_normalize(path: &Path) -> PathBuf {
-    let mut normalized = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::CurDir => {}
-            Component::ParentDir => {
-                normalized.pop();
-            }
-            other => normalized.push(other.as_os_str()),
-        }
-    }
-    normalized
 }
 
 /// Return None for an oversized or non-regular file, and Err for an I/O error.
@@ -381,6 +378,7 @@ mod tests {
             snapshot.ignored_external_paths(),
             &[target.canonicalize().unwrap()]
         );
+        assert!(!snapshot.is_project_fresh());
     }
 }
 
@@ -504,5 +502,85 @@ mod root_alias_dedup_regression {
         assert_eq!(snapshot.tracked_project_paths().len(), 1);
         assert!(snapshot.is_project_fresh());
         assert_eq!(fs::read(&source).unwrap(), original);
+    }
+}
+
+
+#[cfg(all(test, unix))]
+mod symlinked_parent_component_regression {
+    use super::*;
+    use std::os::unix::fs::symlink;
+
+    #[test]
+    fn parent_after_symlink_hashes_the_real_local_target() {
+        let project = tempfile::tempdir().unwrap();
+        let nested = project.path().join("alternate/deep");
+        fs::create_dir_all(&nested).unwrap();
+        let local = project.path().join("data.tex");
+        let real = project.path().join("alternate/data.tex");
+        let link = project.path().join("link");
+        let source = project.path().join("рисунок.tex");
+        let original = b"% keep CRLF\r\n\\unknownmacro{opaque}\r\n";
+        fs::write(&source, original).unwrap();
+        fs::write(&local, b"LOCAL").unwrap();
+        fs::write(&real, b"FIRST").unwrap();
+        symlink(&nested, &link).unwrap();
+
+        let input = link.join("../data.tex");
+        assert_eq!(fs::read(&input).unwrap(), b"FIRST");
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&input),
+            true,
+        )
+        .unwrap();
+        assert!(snapshot.is_project_fresh());
+        assert_eq!(snapshot.tracked_project_paths().len(), 2);
+        let real = real.canonicalize().unwrap();
+        assert!(snapshot.tracked_project_paths().contains(&real.as_path()));
+
+        fs::write(&real, b"OTHER").unwrap();
+        assert_eq!(snapshot.invalidated_project_paths(), vec![real]);
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(fs::read(local).unwrap(), b"LOCAL");
+        assert_eq!(fs::read(source).unwrap(), original);
+    }
+
+    #[test]
+    fn symlinked_ancestor_then_parent_is_not_falsely_fresh() {
+        let project = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::create_dir_all(outside.path().join("subdir")).unwrap();
+        let source = project.path().join("рисунок с пробелом.tex");
+        let original = b"% keep CRLF\r\n\\unknownmacro{opaque}\r\n";
+        fs::write(&source, original).unwrap();
+        fs::write(project.path().join("data.tex"), b"LOCAL").unwrap();
+        let foreign = outside.path().join("data.tex");
+        fs::write(&foreign, b"EXTERNAL").unwrap();
+        let link = project.path().join("link");
+        symlink(outside.path().join("subdir"), &link).unwrap();
+        let input = link.join("../data.tex");
+        assert_eq!(fs::read(&input).unwrap(), b"EXTERNAL");
+
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&input),
+            true,
+        )
+        .unwrap();
+        assert!(snapshot.recorder_complete());
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(snapshot.tracked_project_paths().len(), 1);
+        assert_eq!(
+            snapshot.ignored_external_paths(),
+            &[foreign.canonicalize().unwrap()]
+        );
+
+        fs::write(&foreign, b"CHANGED!").unwrap();
+        assert!(!snapshot.is_project_fresh());
+        assert_eq!(fs::read(project.path().join("data.tex")).unwrap(), b"LOCAL");
+        assert_eq!(fs::read(source).unwrap(), original);
     }
 }

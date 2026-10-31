@@ -44,6 +44,12 @@ case "$name" in
         printf '%%PDF-1.4\n' > "$out/$stem.pdf"
         exit 0
         ;;
+    symlink-parent.tex)
+        printf 'Recorded filesystem-traversed INPUT\n' > "$out/$stem.log"
+        printf 'PWD %s\nINPUT ./%s\nINPUT ./link/../data.tex\nINPUT link/../data.tex\n' "$PWD" "$name" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
     slow.tex)
         printf 'Starting slow compilation\n' > "$out/$stem.log"
         printf 'ready\n' > "$PWD/fake-engine-ready"
@@ -302,6 +308,41 @@ fn external_only_recorder_cannot_certify_source_freshness() {
     assert_eq!(artifact.pdf, b"%PDF-1.4\n");
     assert!(!artifact.project_dependencies.recorder_complete());
     assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[test]
+fn runner_symlink_parent_dotdot_is_not_falsely_fresh() {
+    use std::os::unix::fs::symlink;
+    let project = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    fs::create_dir_all(outside.path().join("subdir")).unwrap();
+    fs::write(project.path().join("data.tex"), b"LOCAL").unwrap();
+    let external = outside.path().join("data.tex");
+    fs::write(&external, b"EXTERNAL").unwrap();
+    symlink(outside.path().join("subdir"), project.path().join("link")).unwrap();
+    let source = project.path().join("symlink-parent.tex");
+    let original = b"% source CRLF\r\n\\unknownmacro{opaque}\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 1);
+    assert!(
+        artifact
+            .dependencies
+            .contains(&external.canonicalize().unwrap())
+    );
+    assert_eq!(
+        artifact.project_dependencies.ignored_external_paths(),
+        &[external.canonicalize().unwrap()]
+    );
+    fs::write(&external, b"CHANGED!").unwrap();
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(project.path().join("data.tex")).unwrap(), b"LOCAL");
     assert_eq!(fs::read(source).unwrap(), original);
 }
 
