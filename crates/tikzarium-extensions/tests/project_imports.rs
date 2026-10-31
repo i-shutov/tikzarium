@@ -299,7 +299,6 @@ fn standalone_usepackage_import_is_a_reversible_literal_patch() {
     assert_eq!(source, before);
 }
 
-
 #[test]
 fn n1_fontspec_source_keeps_direct_import_evidence_and_all_six_tools() {
     // Exact direct-import structure from the app's N1 authoring proof.
@@ -322,11 +321,26 @@ fn n1_fontspec_source_keeps_direct_import_evidence_and_all_six_tools() {
     for text in [source.to_owned(), source.replace('\n', "\r\n")] {
         let project = inspect(&text);
         assert!(project.uncertain_reason.is_some());
-        assert_eq!(project.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
-        assert_eq!(project.status(ImportKind::Package, "fontspec"), Evidence::Confirmed);
-        assert_eq!(project.status(ImportKind::TikzLibrary, "arrows.meta"), Evidence::Confirmed);
-        assert_eq!(project.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
-        assert!(project.begin_document_target(8).is_none(), "no unsafe auto import");
+        assert_eq!(
+            project.status(ImportKind::Package, "tikz"),
+            Evidence::Confirmed
+        );
+        assert_eq!(
+            project.status(ImportKind::Package, "fontspec"),
+            Evidence::Confirmed
+        );
+        assert_eq!(
+            project.status(ImportKind::TikzLibrary, "arrows.meta"),
+            Evidence::Confirmed
+        );
+        assert_eq!(
+            project.status(ImportKind::TikzLibrary, "calc"),
+            Evidence::Unknown
+        );
+        assert!(
+            project.begin_document_target(8).is_none(),
+            "no unsafe auto import"
+        );
         let catalog = Catalog::bundled().unwrap();
         for id in [
             "tikz.line",
@@ -336,14 +350,9 @@ fn n1_fontspec_source_keeps_direct_import_evidence_and_all_six_tools() {
             "tikz.node",
             "tikz.bezier-cubic",
         ] {
-            let state = capabilities_for_tool(
-                &catalog,
-                id,
-                &project,
-                Evidence::Unknown,
-                Some("xelatex"),
-            )
-            .unwrap();
+            let state =
+                capabilities_for_tool(&catalog, id, &project, Evidence::Unknown, Some("xelatex"))
+                    .unwrap();
             assert_eq!(state.project_loaded, Evidence::Confirmed, "{id}");
             assert_eq!(state.installed, Evidence::Unknown, "{id}");
             assert_eq!(state.engine_compatible, Evidence::Confirmed, "{id}");
@@ -395,9 +404,18 @@ fn direct_package_before_conditional_remains_known_but_conditional_library_unkno
 \begin{document}
 ";
     let state = inspect(source);
-    assert_eq!(state.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
-    assert_eq!(state.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
-    assert_eq!(state.status(ImportKind::TikzLibrary, "fit"), Evidence::Unknown);
+    assert_eq!(
+        state.status(ImportKind::Package, "tikz"),
+        Evidence::Confirmed
+    );
+    assert_eq!(
+        state.status(ImportKind::TikzLibrary, "calc"),
+        Evidence::Unknown
+    );
+    assert_eq!(
+        state.status(ImportKind::TikzLibrary, "fit"),
+        Evidence::Unknown
+    );
     assert!(matches!(
         plan_import(
             source,
