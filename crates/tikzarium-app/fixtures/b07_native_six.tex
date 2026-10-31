@@ -1,0 +1,15 @@
+\documentclass{standalone}
+\usepackage{fontspec}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}
+  % Existing opaque user content must stay byte-for-byte unchanged.
+  \path (0,0);
+  \draw (0.00,0.00) -- (2.00,1.00); % tikzarium:b07:1:line
+  \draw[->] (0.00,1.00) -- (2.00,2.00); % tikzarium:b07:2:arrow
+  \draw (2.00,0.00) rectangle (4.00,1.00); % tikzarium:b07:3:rectangle
+  \draw (4.00,2.00) circle[radius=0.75cm]; % tikzarium:b07:4:circle
+  \node at (1.00,2.50) {Text}; % tikzarium:b07:5:node
+  \draw (0.00,3.00) .. controls (0.67,3.80) and (1.33,3.80) .. (2.00,3.00); % tikzarium:b07:6:cubic
+\end{tikzpicture}
+\end{document}
