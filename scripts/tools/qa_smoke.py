@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from datetime import datetime, timezone
 
 
@@ -72,10 +73,26 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
             raise ValueError(f"Missing fixture source: {source}")
         if case.get("pages") is not None and (type(case["pages"]) is not int or case["pages"] < 1):
             raise ValueError(f"Invalid expected page count: {fixture_id}")
+        for key in ("text_expect", "font_expect"):
+            if key not in case:
+                continue
+            value = case[key]
+            entries = [value] if key == "text_expect" and isinstance(value, str) else value
+            if (not isinstance(entries, list) or not entries
+                    or any(not isinstance(v, str) or not v.strip() for v in entries)):
+                raise ValueError(f"Invalid {key} for {fixture_id}")
+        if "check_no_missing_glyphs" in case and type(case["check_no_missing_glyphs"]) is not bool:
+            raise ValueError(f"Invalid check_no_missing_glyphs for {fixture_id}")
     return cases
 
 
-def inspect_pdf(path: Path, expected_pages: int | None, text_expect: str | None = None) -> tuple[bool, dict]:
+def inspect_pdf(
+    path: Path,
+    expected_pages: int | None,
+    text_expect: str | list[str] | None = None,
+    font_expect: list[str] | None = None,
+) -> tuple[bool, dict]:
+    """Check an actual PDF. Required Unicode evidence must fail closed."""
     info: dict = {"bytes": path.stat().st_size, "sha256": sha256(path)}
     with path.open("rb") as stream:
         head = stream.read(8)
@@ -88,7 +105,10 @@ def inspect_pdf(path: Path, expected_pages: int | None, text_expect: str | None 
     if expected_pages is not None:
         pdfinfo = shutil.which("pdfinfo")
         if pdfinfo:
-            proc = subprocess.run([pdfinfo, str(path)], capture_output=True, text=True, errors="replace", timeout=30)
+            proc = subprocess.run(
+                [pdfinfo, str(path)], capture_output=True,
+                text=True, encoding="utf-8", errors="replace", timeout=30,
+            )
             match = re.search(r"(?m)^Pages:\s*(\d+)\s*$", proc.stdout)
             info["pages_checked"] = True
             info["pages_actual"] = int(match.group(1)) if proc.returncode == 0 and match else None
@@ -96,21 +116,65 @@ def inspect_pdf(path: Path, expected_pages: int | None, text_expect: str | None 
             valid = valid and info["pages_actual"] == expected_pages
         else:
             info["pages_note"] = "NOT_CHECKED: pdfinfo unavailable; PDF byte integrity only"
-    if text_expect:
+
+    expected = [text_expect] if isinstance(text_expect, str) else (text_expect or [])
+    if expected:
         pdftotext = shutil.which("pdftotext")
+        info["text_expected"] = expected
+        info["text_extraction_checked"] = pdftotext is not None
+        info["text_encoding"] = "UTF-8 (explicit, independent of Windows console codepage)"
         if pdftotext:
-            proc = subprocess.run([pdftotext, str(path), "-"], capture_output=True,
-                                  text=True, errors="replace", timeout=30)
-            normalized = " ".join(proc.stdout.split())
-            info["text_extraction_checked"] = True
-            info["text_expected"] = text_expect
-            info["text_found"] = proc.returncode == 0 and " ".join(text_expect.split()) in normalized
+            # Poppler writes UTF-8 bytes. subprocess text=True uses the current
+            # Windows ANSI codepage unless an encoding is given, corrupting Cyrillic.
+            proc = subprocess.run(
+                [pdftotext, "-enc", "UTF-8", str(path), "-"],
+                capture_output=True, timeout=30,
+            )
+            try:
+                extracted = proc.stdout.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                extracted = ""
+                info["text_decode_error"] = str(exc)
+            normalized = unicodedata.normalize("NFC", " ".join(extracted.split()))
+            info["text_extraction_preview"] = normalized[:280]
+            info["text_matches"] = {
+                item: unicodedata.normalize("NFC", " ".join(item.split())) in normalized
+                for item in expected
+            }
+            info["text_found"] = proc.returncode == 0 and all(info["text_matches"].values())
             valid = valid and info["text_found"]
         else:
-            info["text_extraction_checked"] = False
-            info["text_extraction_note"] = "NOT_CHECKED: pdftotext unavailable"
-    return valid, info
+            info["text_found"] = False
+            info["text_extraction_note"] = (
+                "FAIL: pdftotext unavailable; required Unicode text cannot be proved"
+            )
+            valid = False
 
+    if font_expect:
+        info["font_expected"] = font_expect
+        tool = shutil.which("pdffonts")
+        info["embedded_fonts_checked"] = tool is not None
+        if tool:
+            proc = subprocess.run([tool, str(path)], capture_output=True, timeout=30)
+            table = proc.stdout.decode("utf-8", errors="replace").splitlines()[2:]
+            checks = {}
+            for family in font_expect:
+                matched = [
+                    line for line in table
+                    if family.casefold() in line.casefold()
+                ]
+                # pdffonts columns end with emb/sub/uni/obj/ID. Require "emb=yes".
+                checks[family] = any(
+                    len(line.split()) >= 6 and line.split()[-5].lower() == "yes"
+                    for line in matched
+                )
+            info["font_embedded"] = checks
+            valid = valid and proc.returncode == 0 and all(checks.values())
+        else:
+            info["font_embedding_note"] = (
+                "NOT_CHECKED: pdffonts unavailable; embedded-font release gate remains open"
+            )
+    return valid, info
 
 def command(args: list[str], timeout: int = 180, cwd: Path | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(args, cwd=cwd, capture_output=True, text=True, errors="replace", timeout=timeout)
@@ -164,14 +228,14 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
                 result["status"] = "PASS" if passed else "FAIL"
                 result["assertion"] = "TeXFailure / no exported PDF"
             elif proc.returncode == 0 and pdf.is_file():
-                valid, details = inspect_pdf(pdf, case.get("pages"), case.get("text_expect"))
+                valid, details = inspect_pdf(pdf, case.get("pages"), case.get("text_expect"), case.get("font_expect"))
                 result.update(details)
                 if case.get("check_no_missing_glyphs"):
                     glyph_ok, glyph_details = check_missing_glyphs(source, output, fixture_id)
                     result.update(glyph_details)
                     valid = valid and glyph_ok
                 result["status"] = "PASS" if valid else "FAIL"
-                result["assertion"] = "PDF magic, EOF, size; page count when pdfinfo installed"
+                result["assertion"] = "PDF integrity; required Unicode text; embedded fonts if tool available; pages if tool available"
             else:
                 result["error"] = "CLI returned nonzero or did not create a PDF"
         except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
@@ -217,6 +281,7 @@ def main() -> int:
         "python": platform.python_version(),
         "cli": str(executable),
         "xelatex": shutil.which("xelatex"),
+        "pdf_tools": {name: shutil.which(name) for name in ("pdfinfo", "pdftotext", "pdffonts")},
         "manifest_sha256": sha256(manifest) if manifest.is_file() else None,
         "cases": [],
         "summary": {"PASS": 0, "FAIL": 0, "SKIP": 0},
