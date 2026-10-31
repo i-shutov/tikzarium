@@ -11,6 +11,12 @@
 - Duplicate import is no-op; wrong anchor range, stale revision and modified anchor refuse mutation.
 - Existing six-tool fixture and five distinct tool capability dimensions get regression assertions.
 
+## Supplemental local external XeLaTeX evidence
+
+Four small source fixtures using the exact TikZ syntax emitted by the Rust fixture CLI were manually reconstructed, compiled with local Debian TeX Live XeLaTeX and inspected as raster output. Command: xelatex -no-shell-escape -halt-on-error -interaction=nonstopmode -file-line-error <file>. Result: arrows.meta 1-page PDF PASS, positioning 1-page PASS, calc 1-page PASS, fit 1-page PASS. TeX SHA-256: arrows.meta 415f3e7a7b3ce4ab4b44c62b8a9503f60e9d92c55ad14ed23e7119377816f23f; calc 34e9c7c23b9484da50de713a4b4a2e94dc7b6201130f4adf8b77f1f2064c172f; fit 46af75958910cd48322db536d76216ce0850ee6df7fe5278753a57b671d4b03f; positioning c0b9dbb92d8c941f7e5e12edb40444acde962b4b19d593e3c3620a5d5a89220e. This proves **these TeX examples compile and display** on that Debian installation. It does NOT prove that the Rust generator binary emitted byte-identical source (cargo unavailable), does not prove Windows MiKTeX, and does not test GUI editing.
+
+An additional import-order risk was found during review: an already-present usetikzlibrary appearing before any explicit usepackage{tikz} cannot safely be repaired by appending tikz before begin-document. The scanner now classifies this as UNKNOWN and refuses automatic edits instead of generating a broken preamble. Added regression test. No user source is mutated when refused.
+
 ## Runtime evidence and risks
 
 Current sandbox has no usable Rust cargo toolchain and external git clone DNS fails; format/check/test/clippy must be read from GitHub Actions at exact PR head. No local Rust PASS is claimed. This source recognizer does not run XeLaTeX, raster preview or GUI pointer interactions. Existing N1 compiler evidence is not an N2 compiler test.
