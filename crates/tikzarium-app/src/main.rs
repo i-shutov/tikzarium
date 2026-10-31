@@ -179,6 +179,7 @@ impl TikzariumApp {
         preview_is_stale(
             self.pdf.is_some(),
             self.last_build_failed,
+            self.receiver.is_some(),
             self.built_source.as_deref(),
             &self.document.source,
             self.built_path.as_deref(),
