@@ -160,12 +160,20 @@ impl Registry {
     /// propagate. Symlinks and non-regular TOML entries are rejected to avoid
     /// following unexpected paths outside the selected directory.
     pub fn load_directory(&mut self, dir: &Path) -> Result<usize, RegistryError> {
-        let entries = match fs::read_dir(dir) {
-            Ok(entries) => entries,
+        // read_dir follows a symlink at the catalogue root. A missing optional
+        // directory is acceptable, but a symlink (including a dangling one) or
+        // a non-directory root must never be treated as an empty catalogue.
+        match fs::symlink_metadata(dir) {
+            Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
+                return Err(RegistryError::UnsafeEntry(dir.display().to_string()));
+            }
+            Ok(_) => {}
             Err(error) if error.kind() == ErrorKind::NotFound => return Ok(0),
             Err(error) => return Err(error.into()),
         };
-        let mut entries = entries.collect::<Result<Vec<_>, _>>()?;
+        // A disappearance after the preflight is an IO error, not a silent
+        // success. Concurrent mutation is not an OS-level sandbox guarantee.
+        let mut entries = fs::read_dir(dir)?.collect::<Result<Vec<_>, _>>()?;
         entries.sort_by_key(|entry| entry.file_name());
         let candidates: Vec<_> = entries
             .iter()
@@ -494,6 +502,47 @@ visual_features = []
             Err(RegistryError::TooLarge(_))
         ));
         assert!(registry.manifests.is_empty());
+    }
+
+    #[test]
+    fn regular_file_is_not_an_optional_catalogue_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let not_a_dir = dir.path().join("catalogue.toml");
+        fs::write(&not_a_dir, VALID).unwrap();
+        let mut registry = Registry::new().unwrap();
+        let original = registry.manifests.len();
+        assert!(matches!(
+            registry.load_directory(&not_a_dir),
+            Err(RegistryError::UnsafeEntry(_))
+        ));
+        assert_eq!(registry.manifests.len(), original);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn directory_root_symlinks_are_rejected_without_mutation() {
+        use std::os::unix::fs::symlink;
+        let dir = tempfile::tempdir().unwrap();
+        let real = dir.path().join("real");
+        fs::create_dir(&real).unwrap();
+        fs::write(real.join("a.toml"), VALID).unwrap();
+        let alias = dir.path().join("alias");
+        symlink(&real, &alias).unwrap();
+        let dangling = dir.path().join("dangling");
+        symlink(dir.path().join("does-not-exist"), &dangling).unwrap();
+
+        let mut registry = Registry::new().unwrap();
+        let original = registry.manifests.len();
+        for path in [&alias, &dangling] {
+            assert!(matches!(
+                registry.load_directory(path),
+                Err(RegistryError::UnsafeEntry(_))
+            ));
+            assert_eq!(registry.manifests.len(), original);
+        }
+        // Direct, non-symlinked access still loads the original manifest.
+        assert_eq!(registry.load_directory(&real).unwrap(), 1);
+        assert_eq!(registry.manifests.len(), original + 1);
     }
 
     #[cfg(unix)]
