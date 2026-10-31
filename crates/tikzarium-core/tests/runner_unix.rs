@@ -5,7 +5,7 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tikzarium_core::{BuildError, BuildOptions, BuildRequest, BuildService, Severity};
 
@@ -31,6 +31,7 @@ case "$name" in
         ;;
     slow.tex)
         printf 'Starting slow compilation\n' > "$out/$stem.log"
+        printf 'ready\n' > "$PWD/fake-engine-ready"
         while :; do :; done
         ;;
 esac
@@ -55,6 +56,15 @@ fn request(source: &Path, engine: &Path) -> BuildRequest {
             ..BuildOptions::default()
         },
     }
+}
+
+fn wait_for_engine_start(directory: &Path) {
+    let marker = directory.join("fake-engine-ready");
+    let started = Instant::now();
+    while !marker.exists() && started.elapsed() < Duration::from_secs(5) {
+        thread::sleep(Duration::from_millis(25));
+    }
+    assert!(marker.exists(), "fake engine did not start");
 }
 
 #[test]
@@ -128,20 +138,21 @@ fn failure_reports_source_line_and_retains_full_log_on_request() {
 }
 
 #[test]
-fn timeout_retains_partial_log_and_cannot_replace_a_previous_pdf() {
+fn timeout_retains_partial_log() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("slow.tex");
     fs::write(&source, "% wait").unwrap();
     let engine = fake_xelatex(directory.path());
     let log_path = directory.path().join("slow-run.log");
     let mut build = request(&source, &engine);
-    build.options.timeout = Duration::from_millis(250);
+    build.options.timeout = Duration::from_secs(2);
     build.options.log_path = Some(log_path.clone());
 
     assert!(matches!(
         BuildService::new().run(&build),
         Err(BuildError::Timeout(_))
     ));
+    assert!(directory.path().join("fake-engine-ready").exists());
     assert!(
         fs::read_to_string(log_path)
             .unwrap()
@@ -160,7 +171,7 @@ fn cancelling_active_compilation_stops_the_child() {
     let service = BuildService::new();
     let worker = service.clone();
     let thread = thread::spawn(move || worker.run(&build));
-    thread::sleep(Duration::from_millis(250));
+    wait_for_engine_start(directory.path());
     service.cancel();
     assert!(matches!(thread.join().unwrap(), Err(BuildError::Cancelled)));
 }
