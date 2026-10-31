@@ -77,3 +77,8 @@ Windows 10 x64 physical acceptance and physical Apple Silicon macOS acceptance r
 R4 research set dated 2026-10-29: [Drive folder](https://drive.google.com/drive/folders/1wZ9CmzWz4OmrZzwDeWibve27O3REvImn) contains 135 active source→PDF builds, 158 rendered pages, and 18 semantic tests in its original environment. Previously reported 135/135 clean compilations and 131/135 strict-warning cases are historical reference evidence, **not** TikZarium tests. Preserve the four unresolved warning-gate defects O027, O028, O030 and O047. The historical inventory included 125 PGF/TikZ and 24 tikz-ext library files on one installation; it is not an exhaustive global package inventory.
 
 Fixture import requires provenance/licensing checks. No historical alternate-render-engine result can establish XeLaTeX-native support.
+
+
+## 8. Reproducible XeLaTeX smoke fixtures
+
+Five minimal original TeX documents and a local Linux/macOS verification script live in [extensions/fixtures](../extensions/fixtures) and [extensions/qa](../extensions/qa). An observed Debian 13 x86_64 TeX Live 2025/dev local test compiled four XeLaTeX examples into one-page PDFs (core, PGFPlots, circuitikz, tikz-cd), and confirmed that Lua-driven graphdrawing fails with its explicit LuaTeX-required diagnostic. This is **fixture-level local evidence only**: not Windows 10/macOS acceptance or package-wide compatibility. The broader package matrix remains environment-agnostic and NOT_TESTED until per-environment evidence is aggregated.

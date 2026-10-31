@@ -27,3 +27,10 @@ R4 original historical corpus (135 TeX build reports, 131 strict warning results
 
 ## Integration limitations
 A/C can keep Registry::new/status(&TexEnvironment), ExtensionStatus.installed/missing_files/compilation_verified. B's existing UI only prints Installed/Missing from the compatibility bool; it cannot yet display Unknown. Request UI follow-up in B's own branch rather than editing B-owned files in this PR.
+
+
+## Additional real engine smoke (2026-10-31, Linux only)
+
+Executed XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian) on Debian GNU/Linux 13 x86_64, with -no-shell-escape, -recorder, -halt-on-error, -file-line-error and -interaction=nonstopmode against five minimal TeX sources. Four positive fixtures produced a **one-page PDF**, compiler exit 0: core, pgfplots, circuitikz and tikz-cd. The deliberate negative graphdrawing-lua fixture returned exit 1 with the message "Package pgf Error: You need to run LuaTeX to use the graph drawing library". This is not generic package-wide or visual-edit compatibility.
+
+For source SHA-256, observed PDF SHA-256, exit codes and environment see extensions/qa/2026-10-31_DEBIAN_LOCAL.csv and reproducible extensions/qa/run-smoke.sh. The full TeX logs remain only in the local testing sandbox and are not claimed as GitHub artifacts. Rust QA still depends on actual GitHub Rust jobs. No Windows 10 or physical Mac smoke was performed.
