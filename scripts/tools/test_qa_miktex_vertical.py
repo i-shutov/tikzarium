@@ -231,6 +231,9 @@ class MiKTeXVerticalContract(unittest.TestCase):
             self.assertEqual(good["status"], "PASS")
             self.assertTrue(good["tex_identity"])
             self.assertFalse(good["pdf_exists"])
+            self.assertEqual(good["source_artifact"], "missing-library.tex")
+            self.assertEqual((output / "miktex" / "missing-library.tex").read_bytes(),
+                             source.read_bytes())
 
 
 if __name__ == "__main__":

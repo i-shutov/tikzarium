@@ -159,12 +159,23 @@ def audit(root: Path, source_sha: str, checkout_sha: str) -> dict:
         require(banner(root / texlog), f'Wrong actual MiKTeX log: {texlog}')
         require('Missing character:' not in (root / texlog).read_text(errors='replace'), f'Lost glyph warning: {texlog}')
         checked[pdf] = evidence
-    for case, logfile, error in [
-        ('missing-library', 'missing-library.log', 'tikzarium_qa_nonexistent_8f7d41'),
-        ('lua-only', 'graphdrawing-lua.log', 'needtorunluatextousethegraphdrawinglibrary')]:
+    for case, logfile, source_file, error in [
+        ('missing-library', 'missing-library.log', 'missing-library.tex', 'tikzarium_qa_nonexistent_8f7d41'),
+        ('lua-only', 'graphdrawing-lua.log', 'graphdrawing-lua.tex', 'needtorunluatextousethegraphdrawinglibrary')]:
         rec = byid[case]
         dest = root / case
         log = dest / logfile
+        require(rec.get('source_artifact') == source_file, f'Missing negative source provenance: {case}')
+        input_tex = dest / source_file
+        same_hash(input_tex, rec.get('source_sha256_before'), case + ' source')
+        input_text = input_tex.read_text(encoding='utf-8')
+        if case == 'missing-library':
+            require(r'\usetikzlibrary{tikzarium_qa_nonexistent_8f7d41}' in input_text,
+                    'Missing-library negative source does not request the missing library')
+        else:
+            require(r'\usetikzlibrary{graphs,graphdrawing}' in input_text
+                    and r'\usegdlibrary{trees}' in input_text,
+                    'Lua-only negative source does not request graphdrawing')
         same_hash(log, rec.get('log_sha256'), case + ' log')
         require(banner(log) and rec.get('tex_identity') is True and rec.get('exit_code') != 0
                 and rec.get('pdf_exists') is False and rec.get('source_sha256_before') == rec.get('source_sha256_after')

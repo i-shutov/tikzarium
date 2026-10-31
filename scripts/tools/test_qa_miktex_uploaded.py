@@ -83,6 +83,15 @@ class RealEvidenceTamper(unittest.TestCase):
         (self.root / 'missing-library/missing-library.pdf').write_bytes(b'%PDF-FAKE')
         self.expect_reject()
 
+    def test_change_negative_input_bytes(self):
+        p = self.root / 'missing-library/missing-library.tex'
+        p.write_bytes(p.read_bytes() + b'\n% corrupted input')
+        self.expect_reject()
+
+    def test_remove_lua_negative_input(self):
+        (self.root / 'lua-only/graphdrawing-lua.tex').unlink()
+        self.expect_reject()
+
 
 if __name__ == '__main__':
     unittest.main()

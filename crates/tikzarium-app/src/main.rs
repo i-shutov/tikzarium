@@ -85,6 +85,20 @@ fn show_split_source_panel(
         .show(ctx, add_contents);
 }
 
+/// Screen-space caret region from the real egui text galley. Never estimate
+/// source-line positions from a fixed logical row height: soft wrapping,
+/// font metrics and horizontal scroll invalidate that estimate.
+fn source_caret_target(
+    galley: &egui::Galley,
+    galley_pos: egui::Pos2,
+    char_index: usize,
+) -> egui::Rect {
+    galley
+        .pos_from_cursor(egui::text::CCursor::new(char_index))
+        .translate(galley_pos.to_vec2())
+        .expand2(egui::vec2(2.0, 2.0))
+}
+
 struct TikzariumApp {
     document: Document,
     file_field: String,
@@ -604,14 +618,11 @@ impl TikzariumApp {
                         self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
                         output.response.request_focus();
-                        let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
-                        let y = output.response.rect.top()
-                            + (line.saturating_sub(1) as f32) * row_height;
+                        // The galley, not physical line count * font height,
+                        // owns TextEdit's geometry (wrapping, padding, DPI,
+                        // unicode and font layout). Scroll to the actual cursor.
                         ui.scroll_to_rect(
-                            egui::Rect::from_min_size(
-                                egui::pos2(output.response.rect.left(), y),
-                                egui::vec2(1.0, row_height),
-                            ),
+                            source_caret_target(&output.galley, output.galley_pos, position),
                             Some(egui::Align::Center),
                         );
                     } else {
@@ -1208,6 +1219,51 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b21_source_navigation_targets_actual_textedit_galley_for_long_unicode_lines() {
+        let ctx = egui::Context::default();
+        let original = format!(
+            "\\documentclass{{standalone}}\\n% {}\\n\\begin{{tikzpicture}}\\n  \\draw (0,0) -- (1,1);\\n\\end{{tikzpicture}}\\n",
+            "длинный_пользовательский_макрос_".repeat(40)
+        );
+        let mut source = original.clone();
+        let index = line_start_char_index(&source, 4).expect("source line");
+        // Two genuine egui layout frames, including a narrow window and a
+        // widened window, exercise the same caret helper used in production.
+        for viewport in [340.0, 820.0] {
+            let mut inspected = false;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(viewport, 400.0),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let output = egui::TextEdit::multiline(&mut source)
+                            .code_editor()
+                            .desired_width(180.0)
+                            .desired_rows(10)
+                            .show(ui);
+                        let caret =
+                            source_caret_target(&output.galley, output.galley_pos, index);
+                        let relative = caret.center() - output.galley_pos;
+                        let actual = output.galley.cursor_from_pos(relative);
+                        assert_eq!(actual.index, index, "galley cursor drift at {viewport}");
+                        assert!(caret.is_finite());
+                        // The source jump is a read-only navigation operation.
+                        ui.scroll_to_rect(caret, Some(egui::Align::Center));
+                        inspected = true;
+                    });
+                },
+            );
+            assert!(inspected);
+            assert_eq!(source, original);
+        }
+    }
 
     #[test]
     fn actual_egui_frames_keep_source_inspector_and_guide_at_minimum_and_resized_widths() {

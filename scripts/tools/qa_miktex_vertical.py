@@ -117,6 +117,9 @@ def negative(source: Path, label: str, kind: str, output: Path, engine: Path) ->
     destination = output / label
     destination.mkdir(parents=True, exist_ok=False)
     original = sha(source)
+    # Upload the exact negative input bytes as evidence, not just a claimed hash.
+    source_snapshot = destination / source.name
+    source_snapshot.write_bytes(source.read_bytes())
     command = [str(engine), "--disable-installer", "-interaction=nonstopmode",
                "-halt-on-error", "-file-line-error", "-no-shell-escape",
                f"-output-directory={destination}", source.name]
@@ -130,16 +133,18 @@ def negative(source: Path, label: str, kind: str, output: Path, engine: Path) ->
         (destination / "console.log").write_text(text, encoding="utf-8")
         pdf = destination / f"{source.stem}.pdf"
         passed = (tex_failure(kind, proc.returncode, text, pdf.exists())
-                  and sha(source) == original and logfile.is_file()
-                  and miktex_tex_log_identity(log_text))
+                  and sha(source) == original and sha(source_snapshot) == original
+                  and logfile.is_file() and miktex_tex_log_identity(log_text))
         return {"id": label, "status": "PASS" if passed else "FAIL",
                 "exit_code": proc.returncode, "pdf_exists": pdf.exists(),
+                "source_artifact": source.name,
                 "source_sha256_before": original, "source_sha256_after": sha(source),
                 "log_sha256": sha(logfile) if logfile.is_file() else None,
                 "tex_identity": miktex_tex_log_identity(log_text),
                 "command": command, "required_error": kind}
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {"id": label, "status": "FAIL", "error": str(exc),
+                "source_artifact": source.name,
                 "source_sha256_before": original, "source_sha256_after": sha(source)}
 
 
