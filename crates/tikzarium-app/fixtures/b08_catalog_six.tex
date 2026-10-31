@@ -1,0 +1,17 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\pagestyle{empty}
+\newcommand{\usersymbol}{Original user macro}
+\begin{document}
+\begin{tikzpicture}
+  \draw (0.00cm,0.00cm) -- (2.00cm,1.00cm); % tikzarium:b08:1:line
+  \draw[-{Stealth}] (0.00cm,1.00cm) -- (2.00cm,1.00cm); % tikzarium:b08:2:arrow
+  \draw (0.00cm,0.00cm) rectangle (2.00cm,1.00cm); % tikzarium:b08:3:rectangle
+  \draw (1.00cm,1.00cm) circle[radius=0.80cm]; % tikzarium:b08:4:circle
+  \node at (3.00cm,1.00cm) {Text}; % tikzarium:b08:5:node
+  \draw (0.00cm,0.00cm) .. controls (1.00cm,1.60cm) and (2.00cm,1.60cm) .. (3.00cm,1.00cm); % tikzarium:b08:6:cubic
+  \node at (3.00cm,0.00cm) {$\alpha+\beta$};
+  \node at (3.00cm,-1.00cm) {\usersymbol};
+\end{tikzpicture}
+\end{document}
