@@ -223,21 +223,23 @@ def main() -> int:
             time.sleep(0.2)
             run(["xdotool", "mouseup", "1"])
             time.sleep(0.3)
-            # X11 event delivery and egui frames are asynchronous. Keep the
-            # exact source/count assertion; retry only Save, never the gesture.
+            # The editor TextEdit can own Ctrl+S after source line focus.
+            # Initial Ctrl+S was tested above. For each actual pointer gesture
+            # explicitly click the visible GUI Save button; only retry Save,
+            # never a gesture, and inspect bytes the app really persisted.
             deadline = time.monotonic() + 8
             save_attempts = 0
             found = []
             while time.monotonic() < deadline:
                 save_attempts += 1
-                key("ctrl+s")
-                time.sleep(0.2)
+                click(profile["save_click"])
+                time.sleep(0.3)
                 after = source.read_bytes()
                 found = owners(after)
                 if len(found) == len(before_owners) + 1 and found[-1]["tool"] == case["tool"]:
                     break
             else:
-                raise RuntimeError(f"Pointer {case['tool']} was not saved after {save_attempts} attempts")
+                raise RuntimeError(f"Pointer {case['tool']} not persisted by GUI Save button after {save_attempts} attempts")
             if not original_preserved(FIXTURE.encode("utf-8"), after):
                 raise RuntimeError("Pointer authoring changed unrelated user TeX")
             if case["tool"] == "cubic" and b".. controls " not in after:
