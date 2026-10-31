@@ -39,3 +39,7 @@ Both the native build CI and 3-host D Rust QA matrix explicitly run `cargo test 
 | Physical target desktop | None | Win10 x64 MiKTeX, Mac M1/M4 external XeLaTeX: NOT_RUN |
 
 The five dimensions *package installed*, *project loaded*, *engine-compatible*, *tool implemented*, and *help available* must remain separately reported. External `\usetikzlibrary` changes must appear in a visible, undoable TeX diff. Figure fontspec/unicode-math is independent of persistent GUI themes. No Lua-only compatibility is inferred.
+
+## I11 — missing C04/C06 catalogue gate restored (PENDING)
+
+Main before I11 had `run_smoke.py` / `verify_smoke.py` but lacked `verify_catalog.py` and its 14 tamper tests, despite historical PR #26/#34. This additive integration runs the actual static manifest/matrix/fixture verifier in Linux XeLaTeX CI and 3 hosted D Rust-quality jobs; all three publish `qa-catalog-metadata-<OS>` JSON. An accepted static report does not prove package installation, XeLaTeX compilation of all extensions, GUI editability, physical Win10/MiKTeX or Mac M1/M4. Validate this branch's exact-HEAD CI and JSON before accepting, then main post-merge independently.
