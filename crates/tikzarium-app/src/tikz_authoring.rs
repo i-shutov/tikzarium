@@ -2,9 +2,15 @@
 //! This is NOT a TeX parser, a PDF coordinate mapper, or a geometry engine.
 //! The source owns every generated object; unknown code is never rewritten.
 
-use std::ops::Range;
+use std::{
+    collections::{BTreeMap, hash_map::DefaultHasher},
+    hash::{Hash, Hasher},
+    ops::Range,
+    sync::OnceLock,
+};
+use tikzarium_extensions::primitives::{Catalog, SourcePatch};
 
-pub const MARKER: &str = " % tikzarium:b07:";
+pub const MARKER: &str = " % tikzarium:b08:";
 pub const TOOLS: [Tool; 6] = [
     Tool::Line,
     Tool::Arrow,
@@ -35,100 +41,29 @@ impl Tool {
             Self::Cubic => "cubic",
         }
     }
+    pub const fn catalog_id(self) -> &'static str {
+        match self {
+            Self::Line => "tikz.line",
+            Self::Arrow => "tikz.arrow",
+            Self::Rectangle => "tikz.rectangle",
+            Self::Circle => "tikz.circle",
+            Self::Node => "tikz.node",
+            Self::Cubic => "tikz.bezier-cubic",
+        }
+    }
     fn from_id(id: &str) -> Option<Self> {
         TOOLS.into_iter().find(|tool| tool.id() == id)
     }
 }
 
-/// Transitional B-side view until C publishes a versioned primitive schema.
-/// One entry drives toolbar, inspector, hints and help; never infer from a
-/// package being installed that an arbitrary TikZ expression is editable.
-pub struct ToolSpec {
-    pub tool: Tool,
-    pub title: &'static str,
-    pub explanation: &'static str,
-    pub syntax: &'static str,
-    pub parameters: &'static str,
-    pub defaults: &'static str,
-    pub effect: &'static str,
-    pub example: &'static str,
-    pub source: &'static str,
+/// The C-owned TOML catalogue is the sole source for tool names, requirements,
+/// executable generation, parameter semantics, examples and F1/hover text.
+pub fn catalog() -> &'static Catalog {
+    static CATALOG: OnceLock<Catalog> = OnceLock::new();
+    CATALOG.get_or_init(|| Catalog::bundled().expect("bundled primitive catalogue must validate"))
 }
-
-pub const SPECS: [ToolSpec; 6] = [
-    ToolSpec {
-        tool: Tool::Line,
-        title: "Линия",
-        explanation: "Прямой отрезок TikZ: путь из двух декартовых координат.",
-        syntax: r"\draw (x1,y1) -- (x2,y2);",
-        parameters: "x1, y1, x2, y2: decimal, сантиметры в примере; координаты TikZ без явной единицы используют текущие x/y-векторы.",
-        defaults: "TikZ defaults зависят от picture/options — UNKNOWN; B07 задаёт только новые координаты.",
-        effect: "Создаёт stroke без наконечника.",
-        example: r"\draw (0,0) -- (2,1);",
-        source: "PGF/TikZ Manual §14.2.1 Straight Lines: https://tikz.dev/tikz-paths",
-    },
-    ToolSpec {
-        tool: Tool::Arrow,
-        title: "Стрелка",
-        explanation: "Прямая линия с наконечником, выбранным стилем TikZ.",
-        syntax: r"\draw[->] (x1,y1) -- (x2,y2);",
-        parameters: "x1, y1, x2, y2: decimal, базовые единицы координат; ->: arrow-tip shorthand.",
-        defaults: "Конкретный тип наконечника зависит от текущих стилей — UNKNOWN.",
-        effect: "Рисует путь с наконечником в конце.",
-        example: r"\draw[->] (0,0) -- (2,1);",
-        source: "PGF/TikZ Manual §16.2 Arrow Tips: https://tikz.dev/tikz-arrows",
-    },
-    ToolSpec {
-        tool: Tool::Rectangle,
-        title: "Прямоугольник",
-        explanation: "TikZ rectangle между противоположными углами.",
-        syntax: r"\draw (x1,y1) rectangle (x2,y2);",
-        parameters: "x1, y1, x2, y2: decimal, относительные координаты выбранной picture.",
-        defaults: "Толщина/цвет линий наследуются от стилей — UNKNOWN.",
-        effect: "Замкнутый прямоугольный путь.",
-        example: r"\draw (0,0) rectangle (2,1);",
-        source: "PGF/TikZ Manual §14.4 Rectangle Operation: https://tikz.dev/tikz-paths",
-    },
-    ToolSpec {
-        tool: Tool::Circle,
-        title: "Окружность",
-        explanation: "Окружность TikZ вокруг центра с явным радиусом.",
-        syntax: r"\draw (x,y) circle[radius=r cm];",
-        parameters: "x,y: координаты; radius: положительное число с единицей cm (B07).",
-        defaults: "B07: radius=1cm при одиночном клике; это НЕ документированный default TikZ.",
-        effect: "Рисует окружность, без заливки.",
-        example: r"\draw (1,1) circle[radius=1cm];",
-        source: "PGF/TikZ Manual §14.6 Circle and Ellipse: https://tikz.dev/tikz-paths",
-    },
-    ToolSpec {
-        tool: Tool::Node,
-        title: "Узел",
-        explanation: "Текстовый узел \node с опорной точкой at.",
-        syntax: r"\node at (x,y) {text};",
-        parameters: "x,y: координаты; text: простой Unicode-текст без TeX-спецсимволов в B07.",
-        defaults: "B07: text=Text; якорь/шрифт/внутренние отступы наследуются из TeX — UNKNOWN.",
-        effect: "Создаёт текстовый TikZ node.",
-        example: r"\node at (1,1) {Text};",
-        source: "PGF/TikZ Manual §17.2.1 Node Syntax: https://tikz.dev/tikz-shapes",
-    },
-    ToolSpec {
-        tool: Tool::Cubic,
-        title: "Кривая Bézier",
-        explanation: "Кубический путь TikZ с двумя контрольными точками.",
-        syntax: r"\draw (x1,y1) .. controls (c1x,c1y) and (c2x,c2y) .. (x2,y2);",
-        parameters: "Четыре пары координат; B07 bend (cm) лишь задаёт обе контрольные точки по шаблону.",
-        defaults: "B07 bend=0.8cm (локальная настройка генератора, не default TikZ).",
-        effect: "Кубическая кривая между двумя точками; контрольные точки явно записаны в источнике.",
-        example: r"\draw (0,0) .. controls (1,1) and (2,1) .. (3,0);",
-        source: "PGF/TikZ Manual §14.3 Cubic Curve-To: https://tikz.dev/tikz-paths",
-    },
-];
-
-pub fn spec(tool: Tool) -> &'static ToolSpec {
-    SPECS
-        .iter()
-        .find(|item| item.tool == tool)
-        .expect("built-in tool")
+pub fn spec(tool: Tool) -> &'static tikzarium_extensions::primitives::ToolSpec {
+    catalog().tool(tool.catalog_id()).expect("six stable C tool IDs")
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -148,6 +83,8 @@ pub struct Draft {
     pub end: Point,
     pub bend: f32,
     pub text: String,
+    pub tip: String,
+    pub mode: String,
 }
 impl Default for Draft {
     fn default() -> Self {
@@ -156,6 +93,8 @@ impl Default for Draft {
             end: Point::new(3.0, 2.0),
             bend: 0.8,
             text: "Text".into(),
+            tip: "Stealth".into(),
+            mode: "text".into(),
         }
     }
 }
@@ -164,19 +103,15 @@ fn safe_number(value: f32) -> bool {
     value.is_finite() && value.abs() <= 1000.0
 }
 fn safe_text(text: &str) -> bool {
-    !text.is_empty()
-        && text.chars().count() <= 80
-        && !text
-            .chars()
-            .any(|c| c.is_control() || "#$%&_{}~^\\".contains(c))
+    !text.is_empty() && text.chars().count() <= 80 && !text.chars().any(char::is_control)
 }
-pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
+fn literal_cm(value: f32) -> String {
+    format!("{value:.2}cm")
+}
+/// B retains only pointer geometry. C owns the syntax, units and validation.
+pub fn parameter_values(tool: Tool, draft: &Draft) -> Result<BTreeMap<String, String>, String> {
     if ![
-        draft.start.x,
-        draft.start.y,
-        draft.end.x,
-        draft.end.y,
-        draft.bend,
+        draft.start.x, draft.start.y, draft.end.x, draft.end.y, draft.bend,
     ]
     .into_iter()
     .all(safe_number)
@@ -184,52 +119,60 @@ pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
         return Err("Coordinates must be finite and within ±1000".into());
     }
     if tool == Tool::Node && !safe_text(&draft.text) {
-        return Err("Node text must be plain Unicode (1–80 chars; TeX special characters require source editing)".into());
+        return Err("Node content must be 1–80 Unicode characters without control characters".into());
     }
+    let mut p = BTreeMap::new();
     let a = draft.start;
     let b = draft.end;
-    let source = match tool {
-        Tool::Line => format!(
-            r"  \draw ({:.2},{:.2}) -- ({:.2},{:.2});",
-            a.x, a.y, b.x, b.y
-        ),
-        Tool::Arrow => format!(
-            r"  \draw[->] ({:.2},{:.2}) -- ({:.2},{:.2});",
-            a.x, a.y, b.x, b.y
-        ),
-        Tool::Rectangle => format!(
-            r"  \draw ({:.2},{:.2}) rectangle ({:.2},{:.2});",
-            a.x, a.y, b.x, b.y
-        ),
+    match tool {
+        Tool::Line | Tool::Arrow | Tool::Rectangle | Tool::Cubic => {
+            for (key, value) in [
+                ("start_x", a.x), ("start_y", a.y),
+                ("end_x", b.x), ("end_y", b.y),
+            ] {
+                p.insert(key.to_owned(), literal_cm(value));
+            }
+        }
         Tool::Circle => {
-            let radius = ((b.x - a.x).hypot(b.y - a.y)).max(0.1);
-            format!(
-                r"  \draw ({:.2},{:.2}) circle[radius={:.2}cm];",
-                a.x, a.y, radius
-            )
+            p.insert("center_x".into(), literal_cm(a.x));
+            p.insert("center_y".into(), literal_cm(a.y));
+            p.insert("radius".into(), literal_cm((b.x - a.x).hypot(b.y - a.y).max(0.1)));
         }
-        Tool::Node => format!(r"  \node at ({:.2},{:.2}) {{{}}};", a.x, a.y, draft.text),
-        Tool::Cubic => {
-            let dx = (b.x - a.x) / 3.0;
-            format!(
-                r"  \draw ({:.2},{:.2}) .. controls ({:.2},{:.2}) and ({:.2},{:.2}) .. ({:.2},{:.2});",
-                a.x,
-                a.y,
-                a.x + dx,
-                a.y + draft.bend,
-                b.x - dx,
-                b.y + draft.bend,
-                b.x,
-                b.y
-            )
+        Tool::Node => {
+            p.insert("x".into(), literal_cm(a.x));
+            p.insert("y".into(), literal_cm(a.y));
+            p.insert("content".into(), draft.text.clone());
+            p.insert("mode".into(), draft.mode.clone());
         }
-    };
-    Ok(format!("{source}{MARKER}{id}:{}", tool.id()))
+    }
+    if tool == Tool::Arrow {
+        p.insert("tip".into(), draft.tip.clone());
+    }
+    if tool == Tool::Cubic {
+        let dx = (b.x - a.x) / 3.0;
+        for (key, value) in [
+            ("control1_x", a.x + dx),
+            ("control1_y", a.y + draft.bend),
+            ("control2_x", b.x - dx),
+            ("control2_y", b.y + draft.bend),
+        ] {
+            p.insert(key.to_owned(), literal_cm(value));
+        }
+    }
+    Ok(p)
+}
+pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
+    let params = parameter_values(tool, draft)?;
+    let command = catalog()
+        .generate(tool.catalog_id(), &params)
+        .map_err(|error| error.to_string())?;
+    Ok(format!("  {}{MARKER}{id}:{}", command.source, tool.id()))
 }
 
 fn read_point(raw: &str) -> Option<Point> {
     let (x, y) = raw.split_once(',')?;
-    let point = Point::new(x.parse().ok()?, y.parse().ok()?);
+    let read = |v: &str| -> Option<f32> { v.strip_suffix("cm")?.parse().ok() };
+    let point = Point::new(read(x)?, read(y)?);
     (safe_number(point.x) && safe_number(point.y)).then_some(point)
 }
 
@@ -257,17 +200,43 @@ pub struct Owned {
 
 /// An owned line is editable only if it still exactly matches B07's generator.
 /// A hand-modified command, even with the marker left in place, is opaque.
+/// Reverse only C's known text escaping, never TeX macro expansion.
+fn decode_generated_text(raw: &str) -> String {
+    let mut value = raw.to_owned();
+    for (encoded, literal) in [
+        (r"\textbackslash{}", r"\"),
+        (r"\textasciicircum{}", "^"),
+        (r"\textasciitilde{}", "~"),
+        (r"\{", "{"), (r"\}", "}"), (r"\$", "$"),
+        (r"\&", "&"), (r"\%", "%"), (r"\#", "#"),
+        (r"\_", "_"),
+    ] {
+        value = value.replace(encoded, literal);
+    }
+    value
+}
+
 fn parse_line(line: &str, start: usize, number: usize) -> Option<Owned> {
     let (command, tag) = line.split_once(MARKER)?;
     let (id, kind) = tag.split_once(':')?;
     let id: u64 = id.parse().ok()?;
     let tool = Tool::from_id(kind)?;
-    let coords = points(command)?;
+    // Node content can contain parentheses; only the native coordinate prefix
+    // is recognized. Generated source must still round-trip byte-for-byte.
+    let coordinate_part = if tool == Tool::Node {
+        command.split_once(" {")?.0
+    } else {
+        command
+    };
+    let coords = points(coordinate_part)?;
     let mut draft = Draft::default();
     match tool {
         Tool::Line | Tool::Arrow | Tool::Rectangle if coords.len() == 2 => {
             draft.start = coords[0];
             draft.end = coords[1];
+            if tool == Tool::Arrow {
+                draft.tip = command.split_once("[-{")?.1.split_once("}]")?.0.to_owned();
+            }
         }
         Tool::Circle if coords.len() == 1 => {
             let radius: f32 = command
@@ -280,9 +249,15 @@ fn parse_line(line: &str, start: usize, number: usize) -> Option<Owned> {
             draft.end = Point::new(coords[0].x + radius, coords[0].y);
         }
         Tool::Node if coords.len() == 1 => {
-            let text = command.split(" {").nth(1)?.strip_suffix("};")?;
+            let text = command.split_once(" {")?.1.strip_suffix("};")?;
             draft.start = coords[0];
-            draft.text = text.into();
+            if let Some(math) = text.strip_prefix('$').and_then(|v| v.strip_suffix('$')) {
+                draft.mode = "math".into();
+                draft.text = math.into();
+            } else {
+                draft.mode = "text".into();
+                draft.text = decode_generated_text(text);
+            }
         }
         Tool::Cubic if coords.len() == 4 => {
             draft.start = coords[0];
