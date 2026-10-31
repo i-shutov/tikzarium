@@ -1,0 +1,97 @@
+name: D QA matrix - Rust and XeLaTeX
+
+on:
+  push:
+    branches: ['qa/**']
+  pull_request:
+    branches: [main, feat/w01-xelatex-egui-core]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-quality:
+    name: Rust fmt/clippy/test + QA harness / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Record toolchain and architecture
+        run: |
+          rustc -vV
+          cargo --version
+          python -c "import platform; print(platform.platform(), platform.machine())"
+      - name: Require native Apple Silicon runner
+        if: runner.os == 'macOS'
+        run: python -c "import platform,sys; print(platform.machine()); sys.exit(0 if platform.machine().lower() in ('arm64','aarch64') else 1)"
+      - name: Python fixture harness unit tests
+        run: python -m unittest discover -s scripts/tools -p "test_qa_*.py" -v
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Rust full workspace tests
+        run: cargo test --workspace --all-targets
+      - name: Rust clippy (warnings are errors)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  xelatex-smoke:
+    name: Actual XeLaTeX CLI / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            label: linux-x64
+            cli: tikzarium-cli
+          - os: windows-2022
+            label: windows-server-x64
+            cli: tikzarium-cli.exe
+          - os: macos-15
+            label: macos-arm64
+            cli: tikzarium-cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.91.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install reproducible TeX Live 2026 fixture subset
+        uses: zauguin/install-texlive@v4
+        with:
+          texlive_version: '2026'
+          packages: >
+            scheme-basic
+            collection-xetex
+            collection-latexrecommended
+            collection-pictures
+            standalone
+            lm
+      - name: Verify XeLaTeX available
+        run: xelatex --version
+      - name: Build real Rust CLI
+        run: cargo build -p tikzarium-cli
+      - name: Execute fixture suite with machine-readable evidence
+        run: python scripts/tools/qa_smoke.py --cli "target/debug/${{ matrix.cli }}" --output ".qa-artifacts/${{ matrix.label }}"
+      - name: Upload fixture evidence and failure logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-evidence-${{ matrix.label }}
+          path: .qa-artifacts/${{ matrix.label }}/
+          if-no-files-found: warn
+          retention-days: 14

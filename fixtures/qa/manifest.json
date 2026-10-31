@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "provenance": "Project-authored QA cases; examples/ fixtures are from TikZarium W01. R4 corpus not imported.",
+  "cases": [
+    {
+      "id": "g00-quickstart",
+      "project_dir": "examples",
+      "source": "quickstart.tex",
+      "expect": "pdf",
+      "pages": 1
+    },
+    {
+      "id": "g00-cyrillic",
+      "project_dir": "examples",
+      "source": "cyrillic.tex",
+      "expect": "pdf",
+      "pages": 1
+    },
+    {
+      "id": "g01-multifile-unicode-path",
+      "project_dir": "fixtures/qa/g01-multifile",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "unicode_path": true
+    },
+    {
+      "id": "g08-intentional-tex-error",
+      "project_dir": "fixtures/qa/g08-error",
+      "source": "main.tex",
+      "expect": "tex-error"
+    }
+  ]
+}
