@@ -1,5 +1,8 @@
 //! UTF-8 source documents. Unsupported TeX constructs are left unchanged.
-use std::{fs, io, path::{Path, PathBuf}};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug)]
 pub struct Document {
@@ -11,21 +14,33 @@ pub struct Document {
 impl Document {
     #[must_use]
     pub fn scratch(source: impl Into<String>) -> Self {
-        Self { path: None, source: source.into(), saved_source: String::new() }
+        Self {
+            path: None,
+            source: source.into(),
+            saved_source: String::new(),
+        }
     }
 
     pub fn load(path: impl AsRef<Path>) -> io::Result<Self> {
         let path = path.as_ref().to_path_buf();
         let source = fs::read_to_string(&path)?;
-        Ok(Self { path: Some(path), saved_source: source.clone(), source })
+        Ok(Self {
+            path: Some(path),
+            saved_source: source.clone(),
+            source,
+        })
     }
 
     #[must_use]
-    pub fn dirty(&self) -> bool { self.source != self.saved_source }
+    pub fn dirty(&self) -> bool {
+        self.source != self.saved_source
+    }
 
     pub fn save_to(&mut self, path: impl AsRef<Path>) -> io::Result<()> {
         let target = path.as_ref();
-        let dir = target.parent().filter(|p| !p.as_os_str().is_empty())
+        let dir = target
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or_else(|| Path::new("."));
         fs::create_dir_all(dir)?;
         let mut temp = tempfile::NamedTempFile::new_in(dir)?;
@@ -40,7 +55,10 @@ impl Document {
     }
 
     pub fn save(&mut self) -> io::Result<()> {
-        let path = self.path.clone().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Document has no path"))?;
+        let path = self
+            .path
+            .clone()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Document has no path"))?;
         self.save_to(path)
     }
 }
