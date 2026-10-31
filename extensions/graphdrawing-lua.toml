@@ -1,0 +1,9 @@
+schema_version = 1
+id = "org.tikzarium.graphdrawing-lua"
+display_name = "TikZ graphdrawing (Lua-driven algorithms)"
+version = "0.1.0"
+category = "Graphs"
+engine = "lualatex"
+requires_files = ["tikzlibrarygraphdrawing.code.tex"]
+visual_features = []
+notes = "Lua-driven graphdrawing algorithms are NOT XeLaTeX-native. Do not silently change the engine."

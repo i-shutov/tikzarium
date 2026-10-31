@@ -1,7 +1,9 @@
+schema_version = 1
 id = "org.tikzarium.tikz-cd"
 display_name = "TikZ commutative diagrams"
 version = "0.1.0"
 category = "Mathematics"
+engine = "xelatex"
 requires_files = ["tikz-cd.sty"]
 visual_features = []
-notes = "XeLaTeX package discovery only; adapter planned for v0.6."
+notes = "Metadata-only discovery; diagram visual tools planned for v0.6."
