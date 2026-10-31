@@ -8,6 +8,8 @@ on:
       - scripts/tools/qa_miktex_vertical.py
       - scripts/tools/test_qa_miktex_vertical.py
       - scripts/tools/qa_setup_miktex.ps1
+      - scripts/tools/qa_miktex_config.ps1
+      - scripts/tools/test_qa_miktex_config.ps1
       - fixtures/qa/d06-native-primitives/**
       - scripts/tools/qa_smoke.py
       - crates/tikzarium-core/**
@@ -39,6 +41,9 @@ jobs:
           Write-Host "OS=$([System.Environment]::OSVersion.VersionString); architecture=$env:RUNNER_ARCH"
       - name: D06 stdlib negative contract tests
         run: python -m unittest discover -s scripts/tools -p test_qa_miktex_vertical.py -v
+      - name: D06 MiKTeX configuration readback parser regression
+        shell: pwsh
+        run: ./scripts/tools/test_qa_miktex_config.ps1
       - name: Isolated private MiKTeX installation with pinned installer and declared packages
         shell: pwsh
         run: ./scripts/tools/qa_setup_miktex.ps1

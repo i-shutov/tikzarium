@@ -11,6 +11,10 @@ $userConfig = Join-Path $root 'config'
 $userData = Join-Path $root 'data'
 $recordDir = Join-Path (Get-Location) '.qa-artifacts/miktex-windows-server'
 New-Item -ItemType Directory -Force -Path $root, $userInstall, $userConfig, $userData, $recordDir | Out-Null
+# Persist a record even if the installer, config probe or package provision fails.
+@{ schema_version = 1; stage = 'installer-start'; status = 'INCOMPLETE'; host = 'windows-2022'; physical_windows10 = 'NOT_RUN' } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
+. (Join-Path $PSScriptRoot 'qa_miktex_config.ps1')
 
 Invoke-WebRequest -Uri $download -OutFile $installer -MaximumRedirection 10
 $downloadedHash = (Get-FileHash -Path $installer -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -34,10 +38,14 @@ $env:PATH = "$bin;$env:PATH"
 # An explicit packages install is allowed; a compile-time surprise install is not.
 & $initexmf '--set-config-value=[MPM]AutoInstall=0'
 if ($LASTEXITCODE -ne 0) { throw "Could not disable private MiKTeX auto-install ($LASTEXITCODE)" }
-$configValue = (& $initexmf '--show-config-value=[MPM]AutoInstall' 2>&1 | Out-String).Trim()
-if ($LASTEXITCODE -ne 0 -or $configValue -ne '0') {
-    throw "Private MiKTeX AutoInstall config was not verified off: $configValue"
-}
+# MiKTeX 25.12 emits INFO lines and an elevated-runner warning around the
+# standalone value 0. Compare ONLY the exact numeric output line, not the
+# entire diagnostic transcript; fail on duplicate/ambiguous numeric lines.
+$configTranscript = (& $initexmf '--show-config-value=[MPM]AutoInstall' 2>&1 | Out-String)
+$configExitCode = $LASTEXITCODE
+$configValue = Assert-MiKTeXAutoInstallDisabled -Transcript $configTranscript -ExitCode $configExitCode
+@{ schema_version = 1; stage = 'autoinstall-off-verified'; status = 'INCOMPLETE'; config_readback = $configValue; installer_sha256 = $downloadedHash } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
 
 # Explicitly resolve the declared fixture dependencies; no engine auto-installs.
 # IDs are official MiKTeX package names, not TeX Live tlmgr names.
