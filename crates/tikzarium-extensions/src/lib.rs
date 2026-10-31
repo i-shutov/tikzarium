@@ -545,6 +545,35 @@ visual_features = []
         assert_eq!(registry.manifests.len(), original + 1);
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn windows_directory_symlink_is_rejected_if_host_allows_creation() {
+        use std::os::windows::fs::symlink_dir;
+        let dir = tempfile::tempdir().unwrap();
+        let real = dir.path().join("real");
+        fs::create_dir(&real).unwrap();
+        fs::write(real.join("a.toml"), VALID).unwrap();
+        let alias = dir.path().join("alias");
+
+        match symlink_dir(&real, &alias) {
+            Ok(()) => {}
+            Err(error) if error.kind() == ErrorKind::PermissionDenied => {
+                eprintln!("SKIP: Windows host lacks symlink creation privilege");
+                return;
+            }
+            Err(error) => panic!("unexpected symlink setup failure: {error}"),
+        }
+
+        let mut registry = Registry::new().unwrap();
+        let original = registry.manifests.len();
+        assert!(matches!(
+            registry.load_directory(&alias),
+            Err(RegistryError::UnsafeEntry(_))
+        ));
+        assert_eq!(registry.manifests.len(), original);
+        assert_eq!(registry.load_directory(&real).unwrap(), 1);
+    }
+
     #[cfg(unix)]
     #[test]
     fn directory_does_not_follow_symlinked_manifest() {
