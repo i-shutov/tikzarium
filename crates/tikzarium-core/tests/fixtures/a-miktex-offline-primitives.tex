@@ -1,0 +1,17 @@
+% A/W06 reference. Modify this preamble, not the TeX installation.
+\documentclass[border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{calc,positioning,arrows.meta}
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{DejaVuSerif.ttf}
+\setmathfont{latinmodern-math.otf}
+\newcommand{\UserLabel}[1]{#1}
+\begin{document}
+\begin{tikzpicture}[>=Stealth]
+  \node[draw,rounded corners,fill=blue!10] (A) at (0,0) {\UserLabel{Точка А}};
+  \coordinate (B) at ($(A.east)+(3.0,0)$);
+  \draw[->,thick,blue] (A.east) -- (B) node[right] {$\alpha+\beta=\gamma$};
+  \node[below=9mm of A] {Оптика: $\omega_0^2$, αβγ};
+\end{tikzpicture}
+\end{document}
