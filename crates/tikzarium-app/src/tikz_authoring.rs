@@ -697,7 +697,10 @@ mod tests {
             &(added.to_owned() + "\\begin{document}\n"),
             1,
         );
-        assert_eq!(requirements_status(&original, Tool::Arrow), Evidence::Confirmed);
+        assert_eq!(
+            requirements_status(&original, Tool::Arrow),
+            Evidence::Confirmed
+        );
         assert!(tikz_loaded(&original));
         assert!(Session::propose_dependencies(&original, Tool::Arrow).is_err());
         for tool in TOOLS {
