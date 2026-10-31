@@ -858,7 +858,7 @@ mod tests {
             if tool == Tool::Node {
                 assert!(metadata.contains("Привет"), "Unicode must remain readable");
             }
-            let doc = tikzarium_core::Document::scratch(&source);
+            let doc = tikzarium_core::Document::scratch(source.clone());
             let tmp = tempfile::tempdir().unwrap();
             let file = tmp.path().join("b20-русский.tex");
             doc.save_to(&file).unwrap();
@@ -891,7 +891,7 @@ mod tests {
         let old = generate_legacy(Tool::Circle, &draft, 7).unwrap();
         let mut source = SOURCE.replacen(
             "\\end{tikzpicture}",
-            &format!("{old}\\n\\end{{tikzpicture}}"),
+            &format!("{old}\n\\end{{tikzpicture}}"),
             1,
         );
         let before = source.clone();
