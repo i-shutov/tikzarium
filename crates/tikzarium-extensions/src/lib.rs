@@ -4,6 +4,8 @@
 //! establish successful compilation, inspection, or safe visual editing.
 //! No manifest field is interpreted as a command, shared library, or script.
 
+pub mod evidence;
+
 use serde::Deserialize;
 use std::{
     collections::HashSet,
@@ -224,12 +226,12 @@ impl Registry {
                         None => indeterminate = true,
                     }
                 }
-                let installation = if indeterminate {
-                    InstallationState::Unknown
-                } else if missing_files.is_empty() {
-                    InstallationState::Present
-                } else {
+                let installation = if !missing_files.is_empty() {
                     InstallationState::NotLocated
+                } else if indeterminate {
+                    InstallationState::Unknown
+                } else {
+                    InstallationState::Present
                 };
                 let compilation = match manifest.engine {
                     EngineRequirement::Xelatex => CompilationState::NotTested,
@@ -335,6 +337,7 @@ fn is_semver_triplet(version: &str) -> bool {
 fn is_tex_filename(file: &str) -> bool {
     file.len() <= 128
         && !file.starts_with('.')
+        && !file.starts_with('-')
         && !file.contains("..")
         && file
             .bytes()
@@ -506,5 +509,29 @@ visual_features = []
             registry.load_directory(dir.path()),
             Err(RegistryError::UnsafeEntry(_))
         ));
+    }
+
+    #[test]
+    fn known_missing_beats_indeterminate_and_option_name_is_unsafe() {
+        let registry = Registry::new().unwrap();
+        let statuses = registry.status_with_lookup(|name| {
+            if name == "tikz.sty" {
+                Some(false)
+            } else {
+                None
+            }
+        });
+        let core = statuses
+            .iter()
+            .find(|s| s.manifest.id == "org.tikzarium.core")
+            .unwrap();
+        assert_eq!(core.installation, InstallationState::NotLocated);
+        assert_eq!(core.missing_files, vec!["tikz.sty".to_owned()]);
+        let mut empty = Registry::default();
+        assert!(
+            empty
+                .add("option.toml", &VALID.replace("tikz.sty", "-help.sty"))
+                .is_err()
+        );
     }
 }
