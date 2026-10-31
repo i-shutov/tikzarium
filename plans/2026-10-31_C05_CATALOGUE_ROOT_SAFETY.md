@@ -13,7 +13,7 @@ Date: 2026-10-31. Owner: isolated lane C; issue #4.
 ## Changes
 1. Check the final directory component with `symlink_metadata` before reading it.
 2. Preserve `Ok(0)` for genuinely absent optional directories, reject symlinked or non-directory roots as `UnsafeEntry`, and propagate deletion/race errors rather than returning an empty success.
-3. Add platform-neutral ordinary-file rejection and Unix tests for valid alias, broken alias, unchanged registry, and subsequent direct-path success.
+3. Add platform-neutral ordinary-file rejection; Unix tests for valid alias, broken alias, unchanged registry and direct-path success; and Windows symlink regression when the host grants creation privilege (otherwise explicit test skip).
 4. Clarify limitation: this is a narrow defense, *not* race-free `openat/O_NOFOLLOW` path resolution or a complete adversarial filesystem sandbox.
 
 ## QA and acceptance
