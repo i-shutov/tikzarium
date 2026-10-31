@@ -34,10 +34,16 @@ pub fn find_executable(program: &str) -> Option<PathBuf> {
 }
 
 fn candidate(path: &Path) -> Option<PathBuf> {
-    if path.is_file() {
+    if !path.is_file() {
+        return None;
+    }
+    // XeLaTeX builds run with the source directory as their cwd. Resolve
+    // explicit relative engine paths and relative PATH entries *at discovery*
+    // so the selected installation cannot change during that cwd switch.
+    if path.is_absolute() {
         Some(path.to_path_buf())
     } else {
-        None
+        env::current_dir().ok().map(|cwd| cwd.join(path))
     }
 }
 

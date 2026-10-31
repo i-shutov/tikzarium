@@ -119,3 +119,20 @@ On exact merged-tree SHA `43f22c0482319f88c2c827c508c54a34ae283d75`, [D QA 41195
 - [N1 authoring 41196247010](https://github.com/i-shutov/tikzarium/actions/runs/41196247010): 1/1 PASS.
 
 **Evidence boundary:** true MiKTeX production *build* has passed, but D's existing genuine MiKTeX workflow does NOT invoke A CLI `doctor` with the real sibling `findtexmf`; only fake-MiKTeX and static doctor cases are covered. The independent D owner has received a precise SHA handoff and this gap. Hosted Windows Server/MiKTeX and hosted macOS ARM64 are **not** physical Windows 10 user/shared MiKTeX or user Mac M1/M4 acceptance; these and actual GUI pointer/F1 flow remain **NOT_RUN**. Release readiness is NOT claimed. This documentation checkpoint does not change executable code; a new commit containing documentation must be checked at its own exact SHA before final PR status is upgraded.
+
+## W06.7 — relative explicit XeLaTeX path, same selected executable through build
+
+A valid `TIKZARIUM_XELATEX=./MiKTeX/bin/xelatex` was previously discovered relative to
+the caller's working directory, but `BuildService` deliberately changes the compiler
+working directory to the TeX source folder. That made the same valid selected engine fail
+to spawn from a different directory. Discovery now anchors relative engine candidates
+to the original process cwd before handing the path to the runner. The engine and nearby
+`findtexmf` remain bound to the selected installation; there is no PATH fallback.
+
+- [x] A-owned discovery implementation and CLI end-to-end regression for a relative
+  MiKTeX binary path with Cyrillic/spaces, different TeX source cwd, read-only doctor,
+  offline build, opaque TeX macro, CRLF and byte-for-byte source preservation.
+- [ ] Inspect exact-W06.7-HEAD Rust/QA/real MiKTeX CI after publishing the code.
+- [ ] D-owned genuine MiKTeX `doctor` with real `findtexmf` requires a separate
+  independent verification; A must not edit D's workflow.
+- [ ] Physical Windows 10 private/shared MiKTeX and M1/M4: NOT_RUN.

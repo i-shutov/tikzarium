@@ -98,3 +98,16 @@ All GitHub Actions runs for source `2cd4d70088d48338f2bda08fe493c7363734d802` co
 Downloaded exact [MiKTeX evidence artifact 13040967925](https://github.com/i-shutov/tikzarium/actions/runs/41196247018/artifacts/13040967925) and inspected its 44 entries: report `source_head_sha` matches `2cd4d7`, `accepted=true`, native-primitives/missing-library/lua-only/n1-app-session-generated all PASS, real MiKTeX-XeTeX 4.16 (MiKTeX 25.12) on Windows Server 2022 x64, six real single-page PDFs with Cyrillic/math and DejaVu Serif/LatinModernMath font embedding, source bytes unchanged. Package inventory before and after runtime execution identically 9130 rows, 188273 bytes, SHA-256 `d212f1bc5bcb93bd2fec0e06911e3a7d5a40373c3186eb0f27f3c31e9beda469`. The D CI configuration and packet setup were owned by D; A changed zero D paths.
 
 **Unverified:** genuine MiKTeX CLI `doctor` (D's real-MiKTeX workflow calls CLI `build` but no CLI `doctor` command), physical Windows 10 MiKTeX private/shared install, on-device Mac M1/M4 XeLaTeX, egui pointer/help and isolated network observation. These are NOT_RUN, not PASS. The new QA documentation commit is not itself a tested source SHA until its own fresh CI completes.
+
+### W06.7 — relative selected-engine resolution regression
+
+The selected user-provided path could be valid when discovered, yet fail at build time
+because the runner changes cwd to the TeX document directory. Anchored relative
+candidate paths at discovery time, including relative PATH entries, without changing
+the selected TeX engine or falling back to another distribution. The new A-owned CLI
+regression exercises doctor then build on a different source cwd with a Unicode/spaced
+relative fake MiKTeX path, verifies `--disable-installer` via the existing fake engine,
+and checks byte-identical CRLF/opaque macro source preservation. This is *simulated
+MiKTeX*, not a native MiKTeX acceptance. Exact new-head Rust/QA/real-MiKTeX checks
+must be read before PASS. Existing genuine hosted Windows Server MiKTeX build proof
+is distinct from a real `doctor`/findtexmf proof and from physical Win10/M1/M4.

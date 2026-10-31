@@ -227,3 +227,74 @@ fn invalid_selected_engine_never_uses_path_fallback_for_doctor_or_build() {
     assert!(!pdf.exists());
     assert_eq!(fs::read(&source).unwrap(), original);
 }
+
+#[test]
+fn relative_selected_engine_survives_source_directory_switch() {
+    let directory = tempfile::tempdir().unwrap();
+    let bin = directory.path().join("MiKTeX local с пробелом");
+    fs::create_dir_all(&bin).unwrap();
+    fake_engine(&bin);
+
+    let packages = directory.path().join("installed packages");
+    fs::create_dir_all(&packages).unwrap();
+    fake_findtexmf(
+        &bin,
+        &directory.path().join("read-only lookups.txt"),
+        &packages,
+    );
+    for name in [
+        "standalone.cls",
+        "tikz.sty",
+        "tikzlibrarycalc.code.tex",
+        "tikzlibrarypositioning.code.tex",
+        "pgflibraryarrows.meta.code.tex",
+        "fontspec.sty",
+        "unicode-math.sty",
+    ] {
+        fs::write(packages.join(name), b"installed").unwrap();
+    }
+
+    let project = directory.path().join("Другой каталог / source files");
+    fs::create_dir_all(&project).unwrap();
+    let source = project.join("точка β.tex");
+    let pdf = project.join("result.pdf");
+    let original = b"% Keep CRLF and opaque code\r\n\\unknownmacro{do not alter}\r\n";
+    fs::write(&source, original).unwrap();
+
+    // Both processes begin in the parent of the relative MiKTeX binary,
+    // but the build subprocess moves to the TeX source directory.
+    let selected = Path::new("MiKTeX local с пробелом").join("xelatex");
+    let run = |arguments: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_tikzarium-cli"))
+            .current_dir(directory.path())
+            .env("TIKZARIUM_XELATEX", &selected)
+            .args(arguments)
+            .output()
+            .unwrap()
+    };
+
+    let doctor = run(&["doctor"]);
+    assert_eq!(
+        doctor.status.code(),
+        Some(0),
+        "stdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&doctor.stdout),
+        String::from_utf8_lossy(&doctor.stderr)
+    );
+    assert!(String::from_utf8_lossy(&doctor.stdout).contains("Distribution: MiKTeX"));
+
+    let build = run(&[
+        "build",
+        source.to_str().unwrap(),
+        pdf.to_str().unwrap(),
+    ]);
+    assert_eq!(
+        build.status.code(),
+        Some(0),
+        "stdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&build.stdout),
+        String::from_utf8_lossy(&build.stderr)
+    );
+    assert_eq!(fs::read(&pdf).unwrap(), b"%PDF-1.4\n");
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
