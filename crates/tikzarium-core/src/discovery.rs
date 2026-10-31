@@ -117,23 +117,25 @@ impl TexEnvironment {
         let xelatex = env::var_os("TIKZARIUM_XELATEX")
             .and_then(|path| candidate(Path::new(&path)))
             .or_else(|| find_executable("xelatex"));
-        let xelatex_version = xelatex
-            .as_ref()
-            .and_then(|p| inspect_xelatex(p).ok())
-            .map(|identity| {
-                if TexDistribution::from_version(&identity.version) != TexDistribution::Unknown {
-                    identity.version
-                } else {
-                    // Preserve the identity if the distributor only named itself
-                    // after the first version line, without adding a struct field.
-                    let suffix = match identity.distribution {
-                        TexDistribution::MiKTeX => "MiKTeX",
-                        TexDistribution::TeXLive => "TeX Live",
-                        TexDistribution::Unknown => "unknown",
-                    };
-                    format!("{} [{suffix}]", identity.version)
-                }
-            });
+        let xelatex_version =
+            xelatex
+                .as_ref()
+                .and_then(|p| inspect_xelatex(p).ok())
+                .map(|identity| {
+                    if TexDistribution::from_version(&identity.version) != TexDistribution::Unknown
+                    {
+                        identity.version
+                    } else {
+                        // Preserve the identity if the distributor only named itself
+                        // after the first version line, without adding a struct field.
+                        let suffix = match identity.distribution {
+                            TexDistribution::MiKTeX => "MiKTeX",
+                            TexDistribution::TeXLive => "TeX Live",
+                            TexDistribution::Unknown => "unknown",
+                        };
+                        format!("{} [{suffix}]", identity.version)
+                    }
+                });
         Self {
             xelatex,
             xelatex_version,

@@ -235,7 +235,9 @@ fn unrecognized_engine_refuses_compilation_without_modifying_source() {
         ),
     )
     .unwrap();
-    let failure = BuildService::new().run(&request(&source, &engine)).unwrap_err();
+    let failure = BuildService::new()
+        .run(&request(&source, &engine))
+        .unwrap_err();
     assert!(matches!(failure, BuildError::UnverifiedEngine { .. }));
     assert_eq!(fs::read(&source).unwrap(), original);
 }

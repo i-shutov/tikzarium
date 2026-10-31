@@ -142,12 +142,11 @@ impl BuildService {
         // MiKTeX can silently download missing packages even in nonstopmode.
         // Refuse an unidentifiable engine, and override MiKTeX's user/shared
         // AutoInstall setting only for this invocation (never persist it).
-        let identity = inspect_xelatex(&request.xelatex).map_err(|error| {
-            BuildError::UnverifiedEngine {
+        let identity =
+            inspect_xelatex(&request.xelatex).map_err(|error| BuildError::UnverifiedEngine {
                 path: request.xelatex.clone(),
                 details: error.to_string(),
-            }
-        })?;
+            })?;
         if identity.distribution == TexDistribution::Unknown {
             return Err(BuildError::UnverifiedEngine {
                 path: request.xelatex.clone(),
