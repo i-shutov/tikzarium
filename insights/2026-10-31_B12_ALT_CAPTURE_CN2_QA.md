@@ -15,3 +15,9 @@ Code/diff review: performed. Local cargo/rustfmt: NOT_RUN (toolchain unavailable
 ## Integration
 
 The branch is updated by a non-forced Git merge commit with the old B head and current main as parents. The resulting PR compare with main must list only B app sources and B-owned plan/insight files. Verify main/branch lease before publishing and tell integrator exact SHA/checks. Never merge legacy #37/#43.
+
+## New exact-head regression and corrective change
+
+At B SHA `bec367a72e25a3bd18a397296cd4fd5ffd97a997`, hosted Windows Server Rust job [124550444744](https://github.com/i-shutov/tikzarium/actions/runs/41205773967) and macOS ARM job [124550444755](https://github.com/i-shutov/tikzarium/actions/runs/41205773967) compiled and executed 42/43 and 44/45 app tests respectively; `alt_pointer_event_selects_existing_marker_for_c_patch_and_undo` FAILED with epaint 0.33.3 `RwLock write after 10s. Deadlock?`. All six gesture tests, new Alt-drag test, new C/N2 regression, TextEdit, F1, file round-trip and C tests passed on those hosts. The failure is real and is not classified PASS.
+
+Likely nested egui lock: the Alt-click test evaluates `Response::clicked()` inside `ui.input(|input| ...)` only on pointer release; Alt-drag never evaluates that OR branch while held down. The correction snapshots `Response::clicked()` **before** the `InputState` lock and reuses the immutable bool. This is a diagnosed hypothesis until the next exact-head event tests complete; no test disabled, no assertion relaxed, no global mutex hacks or foreign code modified.

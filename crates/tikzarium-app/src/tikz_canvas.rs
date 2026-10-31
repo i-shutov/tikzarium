@@ -285,9 +285,12 @@ fn show_guide_frame(
     // Read-only selection is allowed without confirmed packages/compiler.
     // Alt starts a selection-only pointer capture; dragging or releasing Alt
     // before the mouse must NEVER create an unintended source command.
+    // Snapshot Response flags *before* locking egui InputState. Calling
+    // Response methods from inside ui.input can recurse into the context lock.
+    let clicked = response.clicked();
     let alt_press_on_guide = ui.input(|input| {
         input.modifiers.alt
-            && (input.pointer.primary_down() || response.clicked())
+            && (input.pointer.primary_down() || clicked)
             && input
                 .pointer
                 .press_origin()
@@ -299,7 +302,7 @@ fn show_guide_frame(
     if session.alt_selection_capture {
         session.drag_start = None;
         let mut jump = None;
-        if response.clicked()
+        if clicked
             && let Some(pos) = response.interact_pointer_pos()
         {
             match hit_authored_anchor(source, rect, pos) {
