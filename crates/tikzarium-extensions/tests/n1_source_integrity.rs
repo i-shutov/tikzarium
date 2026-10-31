@@ -124,7 +124,7 @@ fn bad_ranges_and_utf8_mid_codepoint_offsets_fail_without_panicking() {
     let len = source.len();
     let invalid = [
         unicode_start + 1..unicode_start + 2,
-        10..3,
+        len..0,
         len + 1..len + 5,
     ];
     for range in invalid {
