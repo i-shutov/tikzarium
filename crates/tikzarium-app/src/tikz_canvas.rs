@@ -468,7 +468,7 @@ fn show_inspector_action_bar_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
-    mut undo_rect: Option<&mut Rect>,
+    undo_rect: Option<&mut Rect>,
 ) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
@@ -478,7 +478,7 @@ fn show_inspector_action_bar_frame(
                 egui::Button::new("↶ Отменить правку"),
             )
             .on_hover_text("Undo точной TikZ/source-правки; перейти к изменённой строке");
-        if let Some(rect) = undo_rect.as_deref_mut() {
+        if let Some(rect) = undo_rect {
             *rect = button.rect;
         }
         if button.clicked() {
@@ -748,7 +748,7 @@ mod tests {
             session: &mut Session,
             source: &mut String,
             events: Vec<egui::Event>,
-            mut rect: Option<&mut Rect>,
+            rect: Option<&mut Rect>,
         ) -> Option<usize> {
             let mut jump = None;
             let _output = ctx.run(
@@ -763,7 +763,7 @@ mod tests {
                             ui,
                             session,
                             source,
-                            rect.as_deref_mut(),
+                            rect,
                         );
                     });
                 },
