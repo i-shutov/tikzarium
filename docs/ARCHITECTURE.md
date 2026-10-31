@@ -89,3 +89,7 @@ ADR-001 primary XeLaTeX, explicit and visible incompatibilities.
 ADR-002 source-preserving edits and opaque regions, not forced full-AST rewriting.
 ADR-003 TeX packages ≠ visual adapters ≠ executable tool plugins.
 ADR-004 release proof from both CI and physical primary desktop smoke tests.
+
+## I05 source-linked errors and protected preview
+
+On compilation failure the Rust build service preserves the optional durable XeLaTeX log and exposes typed diagnostics with optional filename/line. The egui diagnostic panel distinguishes current-file diagnostics from included-file diagnostics: it navigates only the former to avoid an incorrect source jump. The previous successful PDF remains stale/nonexportable after an error. `font_audit` and text/math glyph warnings remain independent checked signals; no success is inferred solely from XeLaTeX exit code zero.
