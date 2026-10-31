@@ -57,7 +57,8 @@ pub struct ToolSpec {
 
 pub const SPECS: [ToolSpec; 6] = [
     ToolSpec {
-        tool: Tool::Line, title: "Линия",
+        tool: Tool::Line,
+        title: "Линия",
         explanation: "Прямой отрезок TikZ: путь из двух декартовых координат.",
         syntax: r"\draw (x1,y1) -- (x2,y2);",
         parameters: "x1, y1, x2, y2: decimal, сантиметры в примере; координаты TikZ без явной единицы используют текущие x/y-векторы.",
@@ -67,7 +68,8 @@ pub const SPECS: [ToolSpec; 6] = [
         source: "PGF/TikZ Manual, Part III: TikZ ist kein Zeichenprogramm; Paths and Actions.",
     },
     ToolSpec {
-        tool: Tool::Arrow, title: "Стрелка",
+        tool: Tool::Arrow,
+        title: "Стрелка",
         explanation: "Прямая линия с наконечником, выбранным стилем TikZ.",
         syntax: r"\draw[->] (x1,y1) -- (x2,y2);",
         parameters: "x1, y1, x2, y2: decimal, базовые единицы координат; ->: arrow-tip shorthand.",
@@ -77,7 +79,8 @@ pub const SPECS: [ToolSpec; 6] = [
         source: "PGF/TikZ Manual, TikZ Paths and Actions; Arrows.",
     },
     ToolSpec {
-        tool: Tool::Rectangle, title: "Прямоугольник",
+        tool: Tool::Rectangle,
+        title: "Прямоугольник",
         explanation: "TikZ rectangle между противоположными углами.",
         syntax: r"\draw (x1,y1) rectangle (x2,y2);",
         parameters: "x1, y1, x2, y2: decimal, относительные координаты выбранной picture.",
@@ -87,7 +90,8 @@ pub const SPECS: [ToolSpec; 6] = [
         source: "PGF/TikZ Manual, Paths and Actions: Rectangle Path Operation.",
     },
     ToolSpec {
-        tool: Tool::Circle, title: "Окружность",
+        tool: Tool::Circle,
+        title: "Окружность",
         explanation: "Окружность TikZ вокруг центра с явным радиусом.",
         syntax: r"\draw (x,y) circle[radius=r cm];",
         parameters: "x,y: координаты; radius: положительное число с единицей cm (B07).",
@@ -97,7 +101,8 @@ pub const SPECS: [ToolSpec; 6] = [
         source: "PGF/TikZ Manual, Paths and Actions: Circle and Ellipse Path Operations.",
     },
     ToolSpec {
-        tool: Tool::Node, title: "Узел",
+        tool: Tool::Node,
+        title: "Узел",
         explanation: "Текстовый узел \node с опорной точкой at.",
         syntax: r"\node at (x,y) {text};",
         parameters: "x,y: координаты; text: простой Unicode-текст без TeX-спецсимволов в B07.",
@@ -107,7 +112,8 @@ pub const SPECS: [ToolSpec; 6] = [
         source: "PGF/TikZ Manual, Nodes and Edges: Nodes.",
     },
     ToolSpec {
-        tool: Tool::Cubic, title: "Кривая Bézier",
+        tool: Tool::Cubic,
+        title: "Кривая Bézier",
         explanation: "Кубический путь TikZ с двумя контрольными точками.",
         syntax: r"\draw (x1,y1) .. controls (c1x,c1y) and (c2x,c2y) .. (x2,y2);",
         parameters: "Четыре пары координат; B07 bend (cm) лишь задаёт обе контрольные точки по шаблону.",
@@ -119,7 +125,10 @@ pub const SPECS: [ToolSpec; 6] = [
 ];
 
 pub fn spec(tool: Tool) -> &'static ToolSpec {
-    SPECS.iter().find(|item| item.tool == tool).expect("built-in tool")
+    SPECS
+        .iter()
+        .find(|item| item.tool == tool)
+        .expect("built-in tool")
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -128,7 +137,9 @@ pub struct Point {
     pub y: f32,
 }
 impl Point {
-    pub const fn new(x: f32, y: f32) -> Self { Self { x, y } }
+    pub const fn new(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -140,37 +151,76 @@ pub struct Draft {
 }
 impl Default for Draft {
     fn default() -> Self {
-        Self { start: Point::new(1.0, 1.0), end: Point::new(3.0, 2.0), bend: 0.8, text: "Text".into() }
+        Self {
+            start: Point::new(1.0, 1.0),
+            end: Point::new(3.0, 2.0),
+            bend: 0.8,
+            text: "Text".into(),
+        }
     }
 }
 
-fn safe_number(value: f32) -> bool { value.is_finite() && value.abs() <= 1000.0 }
+fn safe_number(value: f32) -> bool {
+    value.is_finite() && value.abs() <= 1000.0
+}
 fn safe_text(text: &str) -> bool {
-    !text.is_empty() && text.chars().count() <= 80
-        && !text.chars().any(|c| c.is_control() || "#$%&_{}~^\\".contains(c))
+    !text.is_empty()
+        && text.chars().count() <= 80
+        && !text
+            .chars()
+            .any(|c| c.is_control() || "#$%&_{}~^\\".contains(c))
 }
 pub fn generate(tool: Tool, draft: &Draft, id: u64) -> Result<String, String> {
-    if ![draft.start.x, draft.start.y, draft.end.x, draft.end.y, draft.bend]
-        .into_iter().all(safe_number) { return Err("Coordinates must be finite and within ±1000".into()); }
+    if ![
+        draft.start.x,
+        draft.start.y,
+        draft.end.x,
+        draft.end.y,
+        draft.bend,
+    ]
+    .into_iter()
+    .all(safe_number)
+    {
+        return Err("Coordinates must be finite and within ±1000".into());
+    }
     if tool == Tool::Node && !safe_text(&draft.text) {
         return Err("Node text must be plain Unicode (1–80 chars; TeX special characters require source editing)".into());
     }
     let a = draft.start;
     let b = draft.end;
     let source = match tool {
-        Tool::Line => format!(r"  \draw ({:.2},{:.2}) -- ({:.2},{:.2});", a.x, a.y, b.x, b.y),
-        Tool::Arrow => format!(r"  \draw[->] ({:.2},{:.2}) -- ({:.2},{:.2});", a.x, a.y, b.x, b.y),
-        Tool::Rectangle => format!(r"  \draw ({:.2},{:.2}) rectangle ({:.2},{:.2});", a.x, a.y, b.x, b.y),
+        Tool::Line => format!(
+            r"  \draw ({:.2},{:.2}) -- ({:.2},{:.2});",
+            a.x, a.y, b.x, b.y
+        ),
+        Tool::Arrow => format!(
+            r"  \draw[->] ({:.2},{:.2}) -- ({:.2},{:.2});",
+            a.x, a.y, b.x, b.y
+        ),
+        Tool::Rectangle => format!(
+            r"  \draw ({:.2},{:.2}) rectangle ({:.2},{:.2});",
+            a.x, a.y, b.x, b.y
+        ),
         Tool::Circle => {
             let radius = ((b.x - a.x).hypot(b.y - a.y)).max(0.1);
-            format!(r"  \draw ({:.2},{:.2}) circle[radius={:.2}cm];", a.x, a.y, radius)
+            format!(
+                r"  \draw ({:.2},{:.2}) circle[radius={:.2}cm];",
+                a.x, a.y, radius
+            )
         }
         Tool::Node => format!(r"  \node at ({:.2},{:.2}) {{{}}};", a.x, a.y, draft.text),
         Tool::Cubic => {
             let dx = (b.x - a.x) / 3.0;
             format!(
                 r"  \draw ({:.2},{:.2}) .. controls ({:.2},{:.2}) and ({:.2},{:.2}) .. ({:.2},{:.2});",
-                a.x, a.y, a.x + dx, a.y + draft.bend, b.x - dx, b.y + draft.bend, b.x, b.y
+                a.x,
+                a.y,
+                a.x + dx,
+                a.y + draft.bend,
+                b.x - dx,
+                b.y + draft.bend,
+                b.x,
+                b.y
             )
         }
     };
@@ -216,26 +266,43 @@ fn parse_line(line: &str, start: usize, number: usize) -> Option<Owned> {
     let mut draft = Draft::default();
     match tool {
         Tool::Line | Tool::Arrow | Tool::Rectangle if coords.len() == 2 => {
-            draft.start = coords[0]; draft.end = coords[1];
+            draft.start = coords[0];
+            draft.end = coords[1];
         }
         Tool::Circle if coords.len() == 1 => {
-            let radius: f32 = command.split("radius=")
-                .nth(1)?.strip_suffix("cm];")?.parse().ok()?;
-            draft.start = coords[0]; draft.end = Point::new(coords[0].x + radius, coords[0].y);
+            let radius: f32 = command
+                .split("radius=")
+                .nth(1)?
+                .strip_suffix("cm];")?
+                .parse()
+                .ok()?;
+            draft.start = coords[0];
+            draft.end = Point::new(coords[0].x + radius, coords[0].y);
         }
         Tool::Node if coords.len() == 1 => {
             let text = command.split(" {").nth(1)?.strip_suffix("};")?;
-            draft.start = coords[0]; draft.text = text.into();
+            draft.start = coords[0];
+            draft.text = text.into();
         }
         Tool::Cubic if coords.len() == 4 => {
-            draft.start = coords[0]; draft.end = coords[3];
+            draft.start = coords[0];
+            draft.end = coords[3];
             draft.bend = ((coords[1].y - coords[0].y) * 100.0).round() / 100.0;
         }
         _ => return None,
     }
     // Exact round-trip is the guard against styling or user macro changes.
-    if generate(tool, &draft, id).ok()?.as_str() != line { return None; }
-    Some(Owned { id, tool, draft, line: number, text: line.into(), range: start..start + line.len() })
+    if generate(tool, &draft, id).ok()?.as_str() != line {
+        return None;
+    }
+    Some(Owned {
+        id,
+        tool,
+        draft,
+        line: number,
+        text: line.into(),
+        range: start..start + line.len(),
+    })
 }
 
 pub fn owned(source: &str) -> Vec<Owned> {
@@ -243,18 +310,27 @@ pub fn owned(source: &str) -> Vec<Owned> {
     let mut found = Vec::new();
     for (index, line) in source.split_inclusive('\n').enumerate() {
         let body = line.trim_end_matches(&['\r', '\n'][..]);
-        if let Some(item) = parse_line(body, offset, index + 1) { found.push(item); }
+        if let Some(item) = parse_line(body, offset, index + 1) {
+            found.push(item);
+        }
         offset += line.len();
     }
     found
 }
 
 fn one_owned(source: &str, id: u64) -> Result<Owned, String> {
-    let matches: Vec<_> = owned(source).into_iter().filter(|item| item.id == id).collect();
-    if matches.len() != 1 { return Err("Owned command absent, duplicated or manually changed: source-first".into()); }
+    let matches: Vec<_> = owned(source)
+        .into_iter()
+        .filter(|item| item.id == id)
+        .collect();
+    if matches.len() != 1 {
+        return Err("Owned command absent, duplicated or manually changed: source-first".into());
+    }
     let marker = format!("{MARKER}{id}:");
     if source.matches(&marker).count() != 1 {
-        return Err("Conflicting or modified ownership marker: manual source stays untouched".into());
+        return Err(
+            "Conflicting or modified ownership marker: manual source stays untouched".into(),
+        );
     }
     Ok(matches[0].clone())
 }
@@ -262,7 +338,9 @@ fn one_owned(source: &str, id: u64) -> Result<Owned, String> {
 fn unescaped_comment(line: &str) -> &str {
     let mut backslashes = 0usize;
     for (i, c) in line.char_indices() {
-        if c == '%' && backslashes % 2 == 0 { return &line[..i]; }
+        if c == '%' && backslashes % 2 == 0 {
+            return &line[..i];
+        }
         backslashes = if c == '\\' { backslashes + 1 } else { 0 };
     }
     line
@@ -271,7 +349,8 @@ fn unescaped_comment(line: &str) -> &str {
 pub fn tikz_loaded(source: &str) -> bool {
     source.lines().map(unescaped_comment).any(|line| {
         let compact: String = line.chars().filter(|c| !c.is_whitespace()).collect();
-        [r"\usepackage{tikz}", r"\RequirePackage{tikz}"].iter()
+        [r"\usepackage{tikz}", r"\RequirePackage{tikz}"]
+            .iter()
             .any(|token| compact.contains(token))
     })
 }
@@ -281,9 +360,17 @@ fn unique_line_start(source: &str, needle: &str, anchored: bool) -> Result<usize
     let mut result = None;
     for line in source.split_inclusive('\n') {
         let code = unescaped_comment(line).trim();
-        let found = if anchored { code.starts_with(needle) } else { code.contains(needle) };
+        let found = if anchored {
+            code.starts_with(needle)
+        } else {
+            code.contains(needle)
+        };
         if found {
-            if result.is_some() { return Err(format!("Multiple {needle} occurrences; edit source explicitly")); }
+            if result.is_some() {
+                return Err(format!(
+                    "Multiple {needle} occurrences; edit source explicitly"
+                ));
+            }
             result = Some(offset);
         }
         offset += line.len();
@@ -294,16 +381,25 @@ fn unique_line_start(source: &str, needle: &str, anchored: bool) -> Result<usize
 fn insertion_offset(source: &str) -> Result<usize, String> {
     let _begin = unique_line_start(source, r"\begin{tikzpicture}", false)?;
     let end = unique_line_start(source, r"\end{tikzpicture}", true)?;
-    if end <= _begin { return Err("Invalid TikZ picture order".into()); }
+    if end <= _begin {
+        return Err("Invalid TikZ picture order".into());
+    }
     Ok(end)
 }
 
 fn eol(source: &str) -> &'static str {
-    if source.contains("\r\n") { "\r\n" } else { "\n" }
+    if source.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    }
 }
 
 #[derive(Clone, Debug)]
-struct Patch { before: String, after: String }
+struct Patch {
+    before: String,
+    after: String,
+}
 
 #[derive(Default)]
 pub struct Session {
@@ -324,11 +420,19 @@ impl Session {
         self.draft = Draft::default();
         self.drag_start = None;
         self.undo.clear();
-        self.next_id = owned(source).iter().map(|item| item.id).max().unwrap_or(0).saturating_add(1).max(1);
+        self.next_id = owned(source)
+            .iter()
+            .map(|item| item.id)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1)
+            .max(1);
         self.status = "Source-first: arbitrary macros remain untouched".into();
     }
 
-    pub fn undo_available(&self) -> bool { !self.undo.is_empty() }
+    pub fn undo_available(&self) -> bool {
+        !self.undo.is_empty()
+    }
 
     pub fn choose(&mut self, source: &str, id: u64) -> Result<usize, String> {
         let item = one_owned(source, id)?;
@@ -338,19 +442,38 @@ impl Session {
         Ok(item.line)
     }
 
-    pub fn insert(&mut self, source: &mut String, tool: Tool, draft: Draft) -> Result<usize, String> {
-        if !tikz_loaded(source) { return Err("TikZ not explicitly loaded; use the proposed \\usepackage diff first".into()); }
+    pub fn insert(
+        &mut self,
+        source: &mut String,
+        tool: Tool,
+        draft: Draft,
+    ) -> Result<usize, String> {
+        if !tikz_loaded(source) {
+            return Err(
+                "TikZ not explicitly loaded; use the proposed \\usepackage diff first".into(),
+            );
+        }
         let at = insertion_offset(source)?;
         let id = self.next_id.max(1);
-        if source.contains(&format!("{MARKER}{id}:")) { return Err("Ownership ID conflict".into()); }
+        if source.contains(&format!("{MARKER}{id}:")) {
+            return Err("Ownership ID conflict".into());
+        }
         let line = generate(tool, &draft, id)?;
         let after = format!("{}{}", line, eol(source));
         let number = source[..at].bytes().filter(|b| *b == b'\n').count() + 1;
         source.insert_str(at, &after);
-        self.undo.push(Patch { before: String::new(), after });
+        self.undo.push(Patch {
+            before: String::new(),
+            after,
+        });
         self.next_id = id.saturating_add(1);
-        self.active = Some(tool); self.selected = Some(id); self.draft = draft;
-        self.status = format!("Inserted native TikZ {} · Build XeLaTeX to update exact PDF", tool.id());
+        self.active = Some(tool);
+        self.selected = Some(id);
+        self.draft = draft;
+        self.status = format!(
+            "Inserted native TikZ {} · Build XeLaTeX to update exact PDF",
+            tool.id()
+        );
         Ok(number)
     }
 
@@ -360,14 +483,20 @@ impl Session {
         let after = generate(old.tool, &self.draft, id)?;
         if old.text != after {
             source.replace_range(old.range, &after);
-            self.undo.push(Patch { before: old.text, after });
+            self.undo.push(Patch {
+                before: old.text,
+                after,
+            });
         }
-        self.status = "Changed only selected B07-owned source line; exact PDF requires XeLaTeX Build".into();
+        self.status =
+            "Changed only selected B07-owned source line; exact PDF requires XeLaTeX Build".into();
         Ok(old.line)
     }
 
     pub fn propose_usepackage(source: &str) -> Result<String, String> {
-        if tikz_loaded(source) { return Err("TikZ is already explicitly loaded".into()); }
+        if tikz_loaded(source) {
+            return Err("TikZ is already explicitly loaded".into());
+        }
         unique_line_start(source, r"\begin{document}", true)?;
         Ok(format!("+ \\usepackage{{tikz}}{}", eol(source)))
     }
@@ -377,7 +506,10 @@ impl Session {
         let at = unique_line_start(source, r"\begin{document}", true)?;
         let after = format!("\\usepackage{{tikz}}{}", eol(source));
         source.insert_str(at, &after);
-        self.undo.push(Patch { before: String::new(), after });
+        self.undo.push(Patch {
+            before: String::new(),
+            after,
+        });
         self.status = "Added \\usepackage{tikz}; Undo visual restores it. Build to verify.".into();
         Ok(())
     }
@@ -425,7 +557,9 @@ mod tests {
         let mut src = SOURCE.to_owned();
         let mut session = Session::default();
         session.reset(&src);
-        session.insert(&mut src, Tool::Rectangle, Draft::default()).unwrap();
+        session
+            .insert(&mut src, Tool::Rectangle, Draft::default())
+            .unwrap();
         let inserted = src.clone();
         session.draft.end.x = 5.25;
         session.apply_parameters(&mut src).unwrap();
@@ -442,7 +576,9 @@ mod tests {
         let mut src = SOURCE.to_owned();
         let mut session = Session::default();
         session.reset(&src);
-        session.insert(&mut src, Tool::Circle, Draft::default()).unwrap();
+        session
+            .insert(&mut src, Tool::Circle, Draft::default())
+            .unwrap();
         let before = src.clone();
         let mut reopened = Session::default();
         reopened.reset(&src);
@@ -456,13 +592,17 @@ mod tests {
         let mut src = SOURCE.to_owned();
         let mut session = Session::default();
         session.reset(&src);
-        session.insert(&mut src, Tool::Line, Draft::default()).unwrap();
+        session
+            .insert(&mut src, Tool::Line, Draft::default())
+            .unwrap();
         src = src.replace(r"\draw (1.00,1.00)", r"\draw[red] (1.00,1.00)");
         assert!(session.apply_parameters(&mut src).is_err());
         assert!(session.undo(&mut src).is_err());
         let mut clean = SOURCE.to_owned();
         session.reset(&clean);
-        session.insert(&mut clean, Tool::Line, Draft::default()).unwrap();
+        session
+            .insert(&mut clean, Tool::Line, Draft::default())
+            .unwrap();
         let line = owned(&clean)[0].text.clone();
         clean.push_str(&format!("{line}\n"));
         assert!(session.apply_parameters(&mut clean).is_err());
@@ -470,14 +610,25 @@ mod tests {
 
     #[test]
     fn source_with_two_pictures_or_no_preamble_never_gets_rewritten() {
-        let mut src = SOURCE.replace("\\end{document}", "\\begin{tikzpicture}\n\\end{tikzpicture}\n\\end{document}");
+        let mut src = SOURCE.replace(
+            "\\end{document}",
+            "\\begin{tikzpicture}\n\\end{tikzpicture}\n\\end{document}",
+        );
         let before = src.clone();
         let mut session = Session::default();
-        assert!(session.insert(&mut src, Tool::Node, Draft::default()).is_err());
+        assert!(
+            session
+                .insert(&mut src, Tool::Node, Draft::default())
+                .is_err()
+        );
         assert_eq!(src, before);
         let mut unknown = "\\begin{document}\n\\myMacro\n\\end{document}\n".to_owned();
         let original = unknown.clone();
-        assert!(session.insert(&mut unknown, Tool::Line, Draft::default()).is_err());
+        assert!(
+            session
+                .insert(&mut unknown, Tool::Line, Draft::default())
+                .is_err()
+        );
         assert_eq!(unknown, original);
     }
 
@@ -486,7 +637,11 @@ mod tests {
         let mut src = "\\documentclass{standalone}\r\n\\begin{document}\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n\\end{document}\r\n".to_owned();
         let before = src.clone();
         let mut session = Session::default();
-        assert!(Session::propose_usepackage(&src).unwrap().contains("+ \\usepackage{tikz}"));
+        assert!(
+            Session::propose_usepackage(&src)
+                .unwrap()
+                .contains("+ \\usepackage{tikz}")
+        );
         session.add_usepackage(&mut src).unwrap();
         assert!(tikz_loaded(&src));
         assert!(src.contains("\\usepackage{tikz}\r\n"));
