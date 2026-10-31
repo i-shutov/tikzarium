@@ -260,7 +260,12 @@ mod tests {
         assert_eq!(audit.issues.len(), 2);
         assert!(!audit.has_font_errors());
         assert!(!audit.has_missing_fonts());
-        assert!(audit.issues.iter().all(|issue| issue.kind == FontIssueKind::FontWarning));
+        assert!(
+            audit
+                .issues
+                .iter()
+                .all(|issue| issue.kind == FontIssueKind::FontWarning)
+        );
     }
 
     #[test]
