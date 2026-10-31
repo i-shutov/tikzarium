@@ -32,12 +32,13 @@ pub struct ProjectImports {
 }
 
 impl ProjectImports {
-    /// Confirmed means an unambiguous literal preamble declaration, NOT installed.
-    /// Absent means no such declaration in a safely recognized preamble.
-    /// UNKNOWN is mandatory for macro/conditional/indirect or malformed imports.
+    /// Confirmed means a direct literal declaration in a trusted preamble
+    /// prefix, NOT installation or a TeX execution result. Unknown commands
+    /// *after* that declaration cannot erase the textual positive evidence.
+    /// Absent requires a fully recognized preamble; opaque macros or imports
+    /// encountered earlier prevent later declarations being called confirmed.
     pub fn status(&self, kind: ImportKind, name: &str) -> Evidence {
-        if self.uncertain_reason.is_some() || !self.class_declared || self.begin_document.is_none()
-        {
+        if !self.class_declared || self.begin_document.is_none() {
             return Evidence::Unknown;
         }
         let names = match kind {
@@ -46,6 +47,8 @@ impl ProjectImports {
         };
         if names.contains(name) {
             Evidence::Confirmed
+        } else if self.uncertain_reason.is_some() {
+            Evidence::Unknown
         } else {
             Evidence::Absent
         }
@@ -137,6 +140,26 @@ pub(crate) fn literal_names(
     Some(names)
 }
 
+/// Only flat, literal fontspec/unicode-math font choices are import-neutral.
+/// Options, TeX commands, nested braces and other opaque forms remain UNKNOWN.
+/// This does not test font installation or override the XeLaTeX compiler.
+fn literal_flat_font_assignment(line: &str, command: &str) -> bool {
+    let Some(rest) = line.strip_prefix(command) else {
+        return false;
+    };
+    let Some(font) = rest
+        .trim_start()
+        .strip_prefix('{')
+        .and_then(|content| content.strip_suffix('}'))
+    else {
+        return false;
+    };
+    !font.trim().is_empty()
+        && font
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b" ._+-".contains(&b))
+}
+
 /// Recognize only complete, literal preamble lines. Never expand arbitrary macros.
 /// Text after begin(document) is left entirely opaque to this scanner.
 #[must_use]
@@ -160,6 +183,10 @@ pub fn inspect(source: &str) -> ProjectImports {
         );
     }
     let mut offset = 0usize;
+    // Any opaque/conditional command before an import can hide its meaning.
+    // Keep direct literal declarations observed *before* uncertainty, but
+    // never report a later declaration as loaded through guessed control flow.
+    let mut literal_prefix_trusted = true;
     for raw in source.split_inclusive('\n') {
         if result.begin_document.is_some() {
             break;
@@ -188,27 +215,39 @@ pub fn inspect(source: &str) -> ProjectImports {
                 &mut result.uncertain_reason,
                 "begin-document line is not a standalone literal",
             );
+            literal_prefix_trusted = false;
         } else if trimmed.starts_with("\\documentclass") {
             match literal_names(trimmed, "\\documentclass", true) {
                 Some(names) if names.len() == 1 && !result.class_declared => {
                     result.class_declared = true;
                 }
-                _ => first_reason(
-                    &mut result.uncertain_reason,
-                    "opaque or duplicate documentclass declaration",
-                ),
+                _ => {
+                    first_reason(
+                        &mut result.uncertain_reason,
+                        "opaque or duplicate documentclass declaration",
+                    );
+                    literal_prefix_trusted = false;
+                }
             }
         } else if trimmed.starts_with("\\pagestyle")
             && literal_names(trimmed, "\\pagestyle", false).is_some()
         {
             // A literal page-style setting cannot inject package imports.
+        } else if literal_flat_font_assignment(trimmed, "\\setmainfont")
+            || literal_flat_font_assignment(trimmed, "\\setmathfont")
+        {
+            // These exact forms only select fonts; they do not import TikZ.
         } else if trimmed.starts_with("\\usepackage") {
             match literal_names(trimmed, "\\usepackage", true) {
-                Some(names) => result.packages.extend(names),
-                None => first_reason(
-                    &mut result.uncertain_reason,
-                    "opaque usepackage declaration",
-                ),
+                Some(names) if literal_prefix_trusted => result.packages.extend(names),
+                Some(_) => {}
+                None => {
+                    first_reason(
+                        &mut result.uncertain_reason,
+                        "opaque usepackage declaration",
+                    );
+                    literal_prefix_trusted = false;
+                }
             }
         } else if trimmed.starts_with("\\usetikzlibrary") {
             match literal_names(trimmed, "\\usetikzlibrary", false) {
@@ -218,13 +257,19 @@ pub fn inspect(source: &str) -> ProjectImports {
                             &mut result.uncertain_reason,
                             "usetikzlibrary precedes explicit tikz package",
                         );
+                        literal_prefix_trusted = false;
                     }
-                    result.libraries.extend(names);
+                    if literal_prefix_trusted {
+                        result.libraries.extend(names);
+                    }
                 }
-                None => first_reason(
-                    &mut result.uncertain_reason,
-                    "opaque usetikzlibrary declaration",
-                ),
+                None => {
+                    first_reason(
+                        &mut result.uncertain_reason,
+                        "opaque usetikzlibrary declaration",
+                    );
+                    literal_prefix_trusted = false;
+                }
             }
         } else {
             // An unknown preamble macro can hide imports or alter their meaning.
@@ -233,6 +278,7 @@ pub fn inspect(source: &str) -> ProjectImports {
                 &mut result.uncertain_reason,
                 "opaque preamble command or conditional",
             );
+            literal_prefix_trusted = false;
         }
         offset += raw.len();
     }

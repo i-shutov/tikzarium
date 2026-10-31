@@ -298,3 +298,113 @@ fn standalone_usepackage_import_is_a_reversible_literal_patch() {
     inverse.apply(&mut source, &mut revision).unwrap();
     assert_eq!(source, before);
 }
+
+
+#[test]
+fn n1_fontspec_source_keeps_direct_import_evidence_and_all_six_tools() {
+    // Exact direct-import structure from the app's N1 authoring proof.
+    // The user macro is opaque; it does not invalidate already-observed
+    // literal imports, but any *missing* import remains UNKNOWN.
+    let source = r"\documentclass{standalone}
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{DejaVu Serif}
+\setmathfont{latinmodern-math.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\newcommand{\UserPath}{\path (0,0);}
+\begin{document}
+\begin{tikzpicture}
+\UserPath
+\end{tikzpicture}
+\end{document}
+";
+    for text in [source.to_owned(), source.replace('\n', "\r\n")] {
+        let project = inspect(&text);
+        assert!(project.uncertain_reason.is_some());
+        assert_eq!(project.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
+        assert_eq!(project.status(ImportKind::Package, "fontspec"), Evidence::Confirmed);
+        assert_eq!(project.status(ImportKind::TikzLibrary, "arrows.meta"), Evidence::Confirmed);
+        assert_eq!(project.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
+        assert!(project.begin_document_target(8).is_none(), "no unsafe auto import");
+        let catalog = Catalog::bundled().unwrap();
+        for id in [
+            "tikz.line",
+            "tikz.arrow",
+            "tikz.rectangle",
+            "tikz.circle",
+            "tikz.node",
+            "tikz.bezier-cubic",
+        ] {
+            let state = capabilities_for_tool(
+                &catalog,
+                id,
+                &project,
+                Evidence::Unknown,
+                Some("xelatex"),
+            )
+            .unwrap();
+            assert_eq!(state.project_loaded, Evidence::Confirmed, "{id}");
+            assert_eq!(state.installed, Evidence::Unknown, "{id}");
+            assert_eq!(state.engine_compatible, Evidence::Confirmed, "{id}");
+            assert_eq!(state.tool_implemented, Evidence::Confirmed, "{id}");
+            assert_eq!(state.help_available, Evidence::Confirmed, "{id}");
+        }
+        let before = text.clone();
+        assert!(matches!(
+            plan_import(
+                &text,
+                SourceTarget::new(0..0, 8),
+                ImportKind::TikzLibrary,
+                "calc"
+            ),
+            ImportDecision::Refused { .. }
+        ));
+        assert_eq!(text, before, "refused proposals never change user source");
+    }
+}
+
+#[test]
+fn unknown_macro_or_conditional_before_direct_import_is_not_positive_evidence() {
+    for prefix in [
+        r"\iftrue",
+        r"\newcommand{\UserPath}{\usetikzlibrary{arrows.meta}}",
+        r"\setmainfont{\CustomFontMacro}",
+    ] {
+        let source = format!(
+            "\\documentclass{{article}}\n{prefix}\n\\usepackage{{tikz}}\n\\usetikzlibrary{{arrows.meta}}\n\\begin{{document}}\n"
+        );
+        let state = inspect(&source);
+        assert!(state.uncertain_reason.is_some());
+        assert_eq!(state.status(ImportKind::Package, "tikz"), Evidence::Unknown);
+        assert_eq!(
+            state.status(ImportKind::TikzLibrary, "arrows.meta"),
+            Evidence::Unknown
+        );
+        assert!(state.begin_document_target(4).is_none());
+    }
+}
+
+#[test]
+fn direct_package_before_conditional_remains_known_but_conditional_library_unknown() {
+    let source = r"\documentclass{article}
+\usepackage{tikz}
+\iftrue
+\usetikzlibrary{calc}
+\fi
+\begin{document}
+";
+    let state = inspect(source);
+    assert_eq!(state.status(ImportKind::Package, "tikz"), Evidence::Confirmed);
+    assert_eq!(state.status(ImportKind::TikzLibrary, "calc"), Evidence::Unknown);
+    assert_eq!(state.status(ImportKind::TikzLibrary, "fit"), Evidence::Unknown);
+    assert!(matches!(
+        plan_import(
+            source,
+            SourceTarget::new(0..0, 3),
+            ImportKind::TikzLibrary,
+            "calc"
+        ),
+        ImportDecision::Refused { .. }
+    ));
+}

@@ -32,3 +32,8 @@ Test file crates/tikzarium-extensions/tests/project_disconnect.rs:
 ## B/D handoff
 
 The additive proposal was posted to B PR #50 before implementation. It changes no existing project_imports types or app/core code. B must provide visible removal diff, confirmation, verified apply and inverse Undo. D retains independent fixture execution and negative source cases; E/F-owned tests/docs remain untouched. CI results and exact head will be appended after verifying real workflow outcomes.
+
+
+## C/N2 integration bug and targeted correction (same PR)
+
+Reviewed current main \`9b20edcd2e1dedab228a4d0d96e969b0bf139a95\`, AGENTS, open B #50 and D #52, plans/insights and N1 proof source. B reported real N1 app→TeX workflow FAIL because global UNKNOWN masked **positive direct literal** \`tikz\` and \`arrows.meta\` declarations whenever later unrelated \`\\newcommand\` or flat font selections occurred. The C-owned scanner now differentiates (1) unambiguous positive declaration observed before any unsafe command and (2) missing or opaque-dependent declaration, remaining UNKNOWN. Flat literal fontspec/unicode-math font assignment lines are import-neutral; macro-valued font names and earlier conditionals taint later imports. Import/disconnect proposals retain full fail-closed uncertainty guard. Test fixtures model the N1 document with LF/CRLF, six tool capabilities and unsafe examples. No GUI or installed package evidence is inferred. Exact new SHA CI has to be checked independently; previous PR #51 CI success only covers its former HEAD.
