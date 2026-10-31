@@ -1853,7 +1853,6 @@ mod tests {
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
     }
 
-
     #[test]
     fn b22_escape_cancels_click_and_drag_on_release_or_before_release_all_six_tools() {
         let escape = || egui::Event::Key {
@@ -1969,7 +1968,10 @@ mod tests {
                         None,
                         viewport_width,
                     );
-                    assert!(inserted.is_some(), "{tool:?} mode {mode}: next click blocked");
+                    assert!(
+                        inserted.is_some(),
+                        "{tool:?} mode {mode}: next click blocked"
+                    );
                     assert_eq!(tikz_authoring::owned(&source).len(), 1);
                     session.undo(&mut source).unwrap();
                     assert_eq!(source, original);
@@ -2003,12 +2005,15 @@ mod tests {
             &ctx,
             &mut session,
             &mut source,
-            vec![egui::Event::PointerMoved(point), egui::Event::PointerButton {
-                pos: point,
-                button: egui::PointerButton::Primary,
-                pressed: true,
-                modifiers: alt,
-            }],
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::PointerButton {
+                    pos: point,
+                    button: egui::PointerButton::Primary,
+                    pressed: true,
+                    modifiers: alt,
+                },
+            ],
             alt,
         );
         assert!(session.alt_selection_capture);
@@ -2027,12 +2032,8 @@ mod tests {
         );
         assert_eq!(cancelled, None);
         assert!(session.cancelled_pointer_capture);
-        let (released, _) = event_frame(
-            &ctx,
-            &mut session,
-            &mut source,
-            vec![primary(point, false)],
-        );
+        let (released, _) =
+            event_frame(&ctx, &mut session, &mut source, vec![primary(point, false)]);
         assert_eq!(released, None);
         assert_eq!(session.selected, None);
         assert_eq!(source, original);
