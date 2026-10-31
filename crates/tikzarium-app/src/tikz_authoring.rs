@@ -597,7 +597,7 @@ impl Session {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const SOURCE: &str = "\\documentclass{standalone}\n\\usepackage{tikz}\n\\begin{document}\n\\begin{tikzpicture}\n% user opaque code\n\\myMacro{x}\n\\end{tikzpicture}\n\\end{document}\n";
+    const SOURCE: &str = "\\documentclass{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta}\n\\begin{document}\n\\begin{tikzpicture}\n% user opaque code\n\\myMacro{x}\n\\end{tikzpicture}\n\\end{document}\n";
 
     #[test]
     fn all_six_tools_generate_reparse_and_preserve_other_source() {
@@ -606,7 +606,7 @@ mod tests {
             let mut session = Session::default();
             session.reset(&src);
             let line = session.insert(&mut src, tool, Draft::default()).unwrap();
-            assert_eq!(line, 7);
+            assert_eq!(line, 8);
             assert!(src.contains("% user opaque code\n\\myMacro{x}\n"));
             assert_eq!(owned(&src).len(), 1, "failed to roundtrip {}", tool.id());
             assert!(src.contains(spec(tool).syntax.split_whitespace().next().unwrap()));
@@ -626,7 +626,7 @@ mod tests {
         let inserted = src.clone();
         session.draft.end.x = 5.25;
         session.apply_parameters(&mut src).unwrap();
-        assert!(src.contains("rectangle (5.25,2.00)"));
+        assert!(src.contains("rectangle (5.25cm,2.00cm)"));
         assert!(src.contains("\\myMacro{x}"));
         session.undo(&mut src).unwrap();
         assert_eq!(src, inserted);
@@ -660,7 +660,7 @@ mod tests {
         session
             .insert(&mut src, Tool::Line, Draft::default())
             .unwrap();
-        src = src.replace(r"\draw (1.00,1.00)", r"\draw[red] (1.00,1.00)");
+        src = src.replace(r"\draw (1.00cm,1.00cm)", r"\draw[red] (1.00cm,1.00cm)");
         assert!(session.apply_parameters(&mut src).is_err());
         assert!(session.undo(&mut src).is_err());
         let mut clean = SOURCE.to_owned();
@@ -721,15 +721,108 @@ mod tests {
     }
 
     #[test]
-    fn unsafe_node_text_and_invalid_numbers_are_refused() {
+    fn node_text_escaping_and_invalid_numbers_are_checked() {
         let mut draft = Draft {
             text: r"a_b".to_owned(),
             ..Default::default()
         };
-        assert!(generate(Tool::Node, &draft, 1).is_err());
+        assert!(generate(Tool::Node, &draft, 1).unwrap().contains(r"a\_b"));
         draft.text = "Привет".into();
         assert!(generate(Tool::Node, &draft, 1).is_ok());
         draft.start.x = f32::NAN;
         assert!(generate(Tool::Line, &draft, 1).is_err());
     }
+    #[test]
+    fn c_catalog_is_only_source_of_tool_commands_and_help() {
+        let cat = catalog();
+        for tool in TOOLS {
+            let draft = Draft::default();
+            let values = parameter_values(tool, &draft).unwrap();
+            let command = cat.generate(tool.catalog_id(), &values).unwrap();
+            assert_eq!(
+                generate(tool, &draft, 9).unwrap(),
+                format!("  {}{MARKER}9:{}", command.source, tool.id())
+            );
+            let help = spec(tool);
+            assert!(!help.help_ru.is_empty());
+            assert!(!help.manual_section.is_empty());
+            assert!(!help.parameter.is_empty());
+            assert!(help.requirements.packages.iter().any(|x| x == "tikz"));
+        }
+    }
+
+    #[test]
+    fn arrow_needs_explicit_arrows_meta_and_diff_is_reversible() {
+        let mut source = SOURCE.replace("\\usetikzlibrary{arrows.meta}\n", "");
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        assert!(!library_loaded(&source, "arrows.meta"));
+        assert!(session.insert(&mut source, Tool::Arrow, Draft::default()).is_err());
+        let diff = Session::propose_library(&source, "arrows.meta").unwrap();
+        assert!(diff.contains("+ \\usetikzlibrary{arrows.meta}"));
+        session.add_library(&mut source, "arrows.meta").unwrap();
+        assert!(library_loaded(&source, "arrows.meta"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original);
+    }
+
+    #[test]
+    fn literal_imports_and_opaque_macro_imports_remain_distinct() {
+        assert!(tikz_loaded(r"\usepackage[utf8]{graphics,tikz,amsmath}"));
+        assert!(library_loaded(r"\usetikzlibrary{calc,arrows.meta}", "arrows.meta"));
+        assert!(!library_loaded("% \\usetikzlibrary{arrows.meta}", "arrows.meta"));
+        assert!(!tikz_loaded(r"\myLoadTikZ"));
+    }
+
+    #[test]
+    fn c_owned_node_math_and_cyrillic_roundtrip_through_source() {
+        let mut source = SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let math = Draft { text: r"\alpha+\beta".into(), mode: "math".into(), ..Default::default() };
+        session.insert(&mut source, Tool::Node, math).unwrap();
+        assert!(source.contains("$\\alpha+\\beta$"));
+        assert_eq!(owned(&source).len(), 1);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, SOURCE);
+        let text = Draft { text: "Привет_мир".into(), ..Default::default() };
+        session.insert(&mut source, Tool::Node, text).unwrap();
+        assert!(source.contains(r"Привет\_мир"));
+        assert_eq!(owned(&source).len(), 1);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, SOURCE);
+    }
+
+    #[test]
+    fn shortest_parameter_patch_changes_no_unrelated_coordinates() {
+        let mut source = SOURCE.replace("% user opaque code\n", "% user opaque code\nx=5.25cm\n");
+        let mut session = Session::default();
+        session.reset(&source);
+        session.insert(&mut source, Tool::Rectangle, Draft::default()).unwrap();
+        let created = source.clone();
+        session.draft.end.x = 5.25;
+        session.apply_parameters(&mut source).unwrap();
+        assert!(source.contains("rectangle (5.25cm,2.00cm)"));
+        assert!(source.contains("x=5.25cm\n"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, created);
+        session.undo(&mut source).unwrap();
+        assert!(source.contains("% user opaque code\nx=5.25cm\n"));
+    }
+
+    #[test]
+    fn manual_source_edit_invalidates_visual_undo_without_rewriting_it() {
+        let mut source = SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.insert(&mut source, Tool::Circle, Draft::default()).unwrap();
+        source.push_str("% user's final source edit\n");
+        assert!(session.undo(&mut source).is_err());
+        let edited = source.clone();
+        session.note_manual_edit(&source);
+        assert!(!session.undo_available());
+        assert_eq!(source, edited);
+    }
+
 }
