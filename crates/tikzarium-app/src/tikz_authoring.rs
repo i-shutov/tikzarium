@@ -614,9 +614,12 @@ mod tests {
             Evidence::Confirmed
         );
         let commented = SOURCE.replace("\\usepackage{tikz}", "% \\usepackage{tikz}");
+        // A direct arrows.meta declaration with a commented tikz package
+        // has unresolved dependencies: C/N2 correctly reports UNKNOWN,
+        // never a confirmed loaded TikZ package.
         assert_eq!(
             requirements_status(&commented, Tool::Line),
-            Evidence::Absent
+            Evidence::Unknown
         );
     }
     #[test]
