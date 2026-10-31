@@ -3,6 +3,7 @@
 use crate::tikz_authoring::{self, Draft, Point, Session, TOOLS, Tool};
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Stroke, Vec2};
 use tikzarium_extensions::primitives::{Evidence, ParameterSpec};
+use tikzarium_extensions::project_imports::{self, ImportKind};
 
 #[derive(Clone, Copy)]
 pub struct Capabilities {
@@ -36,6 +37,41 @@ fn evidence_label(value: Evidence) -> &'static str {
         Evidence::Unknown => "UNKNOWN",
     }
 }
+/// Highlight only literal preamble import lines proven by C/N2. Byte offsets
+/// come from the C catalogue's read-only declaration-site API, not a B TeX
+/// scanner or an edit authorization. UNKNOWN and absent imports have no links.
+fn confirmed_import_lines(source: &str, tool: Tool) -> Vec<(ImportKind, String, usize)> {
+    let project = project_imports::inspect(source);
+    let requirements = &tikz_authoring::spec(tool).requirements;
+    let mut locations = Vec::new();
+    for (kind, names) in [
+        (ImportKind::Package, &requirements.packages),
+        (ImportKind::TikzLibrary, &requirements.libraries),
+    ] {
+        for name in names {
+            if project.status(kind, name) != Evidence::Confirmed {
+                continue;
+            }
+            for site in project.declaration_sites(kind, name) {
+                if site.line_range.start > site.name_range.start
+                    || site.name_range.end > site.line_range.end
+                    || site.line_range.end > source.len()
+                    || source.get(site.name_range.clone()) != Some(name.as_str())
+                {
+                    continue;
+                }
+                let line = source.as_bytes()[..site.line_range.start]
+                    .iter()
+                    .filter(|byte| **byte == b'\n')
+                    .count()
+                    + 1;
+                locations.push((kind, name.clone(), line));
+            }
+        }
+    }
+    locations
+}
+
 const SCALE: f32 = 29.0;
 const MARGIN: f32 = 14.0;
 const HEIGHT: f32 = 170.0;
@@ -520,6 +556,29 @@ pub fn show_inspector(
             },
             evidence_label(import_state)
         ));
+        let source_locations = confirmed_import_lines(source, tool);
+        if !source_locations.is_empty() {
+            ui.small("Явные подключения C/N2 · открыть код (не проверка установки):");
+            ui.horizontal_wrapped(|ui| {
+                for (kind, name, line) in source_locations {
+                    let label = match kind {
+                        ImportKind::Package => "Пакет",
+                        ImportKind::TikzLibrary => "Библиотека",
+                    };
+                    if ui
+                        .small_button(format!("{label} {name} · стр. {line}"))
+                        .on_hover_text(
+                            "Проверенная C/N2 строка исходника; выделение всей строки. Не установка TeX-пакета и не доказательство успешной компиляции.",
+                        )
+                        .clicked()
+                    {
+                        jump = Some(line);
+                        session.status =
+                            format!("Строка {line}: прямое подключение {name} в исходнике");
+                    }
+                }
+            });
+        }
         for parameter in &info.parameter {
             let value = session
                 .draft
@@ -690,6 +749,57 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn c_n2_verified_import_links_use_exact_utf8_source_sites_and_keep_source_unchanged() {
+        let source = concat!(
+            "\u{feff}\\documentclass{standalone}\r\n",
+            "% русская строка\r\n",
+            "  \\usepackage[demo]{foo, tikz} % Cyrillic: подключено\r\n",
+            "  \\usetikzlibrary{arrows.meta,calc} % ещё библиотека\r\n",
+            "\\newcommand{\\myUnknown}{a}\r\n",
+            "\\begin{document}\r\n"
+        );
+        let original = source.to_owned();
+        assert_eq!(
+            confirmed_import_lines(source, Tool::Arrow),
+            vec![
+                (ImportKind::Package, "tikz".into(), 3),
+                (ImportKind::TikzLibrary, "arrows.meta".into(), 4),
+            ]
+        );
+        assert_eq!(
+            confirmed_import_lines(source, Tool::Line),
+            vec![(ImportKind::Package, "tikz".into(), 3)]
+        );
+        assert_eq!(source, original);
+        // A macro before the literal imports makes their provenance UNKNOWN.
+        let opaque = source.replace(
+            "% русская строка\r\n",
+            "\\myUnexpandedPackageMacro\r\n",
+        );
+        assert!(confirmed_import_lines(&opaque, Tool::Arrow).is_empty());
+        // No fabricated positive site for an invalid pre-class package.
+        let preclass = "\\usepackage{tikz}\n\\documentclass{article}\n\\begin{document}\n";
+        assert!(confirmed_import_lines(preclass, Tool::Line).is_empty());
+    }
+
+    #[test]
+    fn c_n2_duplicate_import_sites_remain_individually_selectable() {
+        let source = concat!(
+            "\\documentclass{standalone}\n",
+            "\\usepackage{tikz}\n",
+            "\\usepackage{tikz}\n",
+            "\\begin{document}\n",
+        );
+        assert_eq!(
+            confirmed_import_lines(source, Tool::Line),
+            vec![
+                (ImportKind::Package, "tikz".into(), 2),
+                (ImportKind::Package, "tikz".into(), 3),
+            ]
+        );
+    }
+
     #[test]
     fn gesture_mapping_uses_explicit_cm_not_fake_pdf_coordinates() {
         let rect = Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(300.0, 170.0));
