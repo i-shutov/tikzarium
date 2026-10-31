@@ -266,9 +266,7 @@ fn show_guide_frame_with_palette(
     if !ready || !caps.exact_build_prerequisites_verified() {
         ui.colored_label(
             ui.visuals().warn_fg_color,
-            if !caps.source_authoring_supported() {
-                caps.explanation()
-            } else if ready {
+            if !caps.source_authoring_supported() || ready {
                 caps.explanation()
             } else {
                 match project_state {
