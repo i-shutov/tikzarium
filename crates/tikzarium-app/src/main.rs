@@ -125,7 +125,10 @@ impl TikzariumApp {
     fn save_as(&mut self) -> bool {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         {
-            let filename = self.document.path.as_ref()
+            let filename = self
+                .document
+                .path
+                .as_ref()
                 .and_then(|path| path.file_name())
                 .and_then(|name| name.to_str())
                 .unwrap_or("figure.tex");
@@ -144,7 +147,8 @@ impl TikzariumApp {
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         {
             if self.file_field.trim().is_empty() {
-                self.status = "Enter a destination .tex path (no native dialog on this host)".into();
+                self.status =
+                    "Enter a destination .tex path (no native dialog on this host)".into();
                 return false;
             }
             self.save_to_path(PathBuf::from(self.file_field.trim()))
@@ -321,9 +325,10 @@ impl TikzariumApp {
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
-                        output.state.cursor.set_char_range(Some(
-                            CCursorRange::one(CCursor::new(position)),
-                        ));
+                        output
+                            .state
+                            .cursor
+                            .set_char_range(Some(CCursorRange::one(CCursor::new(position))));
                         output.state.store(ui.ctx(), output.response.id);
                         output.response.request_focus();
                         let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
@@ -407,7 +412,6 @@ impl TikzariumApp {
                 }
             });
     }
-
 }
 
 impl eframe::App for TikzariumApp {
@@ -537,44 +541,42 @@ impl eframe::App for TikzariumApp {
                     ui.separator();
                     egui::ScrollArea::both()
                         .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            match self.bottom_view {
-                                BottomView::Issues => {
-                                    if self.diagnostics.is_empty() {
-                                        ui.label("No diagnostics captured from the most recent build.");
+                        .show(ui, |ui| match self.bottom_view {
+                            BottomView::Issues => {
+                                if self.diagnostics.is_empty() {
+                                    ui.label("No diagnostics captured from the most recent build.");
+                                }
+                                for item in &self.diagnostics {
+                                    let severity = match item.severity {
+                                        Severity::Error => "ERROR",
+                                        Severity::Warning => "WARNING",
+                                    };
+                                    let label = match item.line {
+                                    Some(line) => {
+                                        format!("{severity} · line {line} · {}", item.message)
                                     }
-                                    for item in &self.diagnostics {
-                                        let severity = match item.severity {
-                                            Severity::Error => "ERROR",
-                                            Severity::Warning => "WARNING",
-                                        };
-                                        let label = match item.line {
-                                            Some(line) => format!(
-                                                "{severity} · line {line} · {}", item.message
-                                            ),
-                                            None => format!("{severity} · {}", item.message),
-                                        };
-                                        if let Some(line) = item.line {
-                                            if ui.button(label).clicked() {
-                                                self.jump_to_line = Some(line);
-                                                if !self.workspace.show_source() {
-                                                    self.workspace = WorkspaceMode::Split;
-                                                }
+                                        None => format!("{severity} · {}", item.message),
+                                    };
+                                    if let Some(line) = item.line {
+                                        if ui.button(label).clicked() {
+                                            self.jump_to_line = Some(line);
+                                            if !self.workspace.show_source() {
+                                                self.workspace = WorkspaceMode::Split;
                                             }
-                                        } else {
-                                            ui.label(label);
                                         }
+                                    } else {
+                                        ui.label(label);
                                     }
                                 }
-                                BottomView::Log => {
-                                    ui.add(
-                                        egui::TextEdit::multiline(&mut self.log)
-                                            .font(egui::TextStyle::Monospace)
-                                            .desired_width(f32::INFINITY)
-                                            .desired_rows(6)
-                                            .interactive(false),
-                                    );
-                                }
+                            }
+                            BottomView::Log => {
+                                ui.add(
+                                    egui::TextEdit::multiline(&mut self.log)
+                                        .font(egui::TextStyle::Monospace)
+                                        .desired_width(f32::INFINITY)
+                                        .desired_rows(6)
+                                        .interactive(false),
+                                );
                             }
                         });
                 });
