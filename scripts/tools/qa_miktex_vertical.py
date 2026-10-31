@@ -124,16 +124,19 @@ def negative(source: Path, label: str, kind: str, output: Path, engine: Path) ->
         proc = run(command, cwd=source.parent)
         text = (proc.stdout + b"\n" + proc.stderr).decode("utf-8", errors="replace")
         logfile = destination / f"{source.stem}.log"
-        if logfile.is_file():
-            text += "\n" + logfile.read_text(encoding="utf-8", errors="replace")
+        log_text = logfile.read_text(encoding="utf-8", errors="replace") if logfile.is_file() else ""
+        if log_text:
+            text += "\n" + log_text
         (destination / "console.log").write_text(text, encoding="utf-8")
         pdf = destination / f"{source.stem}.pdf"
         passed = (tex_failure(kind, proc.returncode, text, pdf.exists())
-                  and sha(source) == original and logfile.is_file())
+                  and sha(source) == original and logfile.is_file()
+                  and miktex_tex_log_identity(log_text))
         return {"id": label, "status": "PASS" if passed else "FAIL",
                 "exit_code": proc.returncode, "pdf_exists": pdf.exists(),
                 "source_sha256_before": original, "source_sha256_after": sha(source),
                 "log_sha256": sha(logfile) if logfile.is_file() else None,
+                "tex_identity": miktex_tex_log_identity(log_text),
                 "command": command, "required_error": kind}
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {"id": label, "status": "FAIL", "error": str(exc),
@@ -157,13 +160,12 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
         proc = run(command, cwd=root)
         (target / "cli.stdout.log").write_bytes(proc.stdout)
         (target / "cli.stderr.log").write_bytes(proc.stderr)
+        expected_text = ["Примитивы TikZ", "Кривая Безье αβγ"]
+        expected_fonts = ["DejaVuSerif", "LatinModernMath"]
         details = {}
         valid = False
         if proc.returncode == 0 and pdf.is_file():
-            valid, details = inspect_pdf(
-                pdf, 1, ["Примитивы TikZ", "Кривая Безье αβγ"],
-                ["DejaVuSerif", "LatinModernMath"],
-            )
+            valid, details = inspect_pdf(pdf, 1, expected_text, expected_fonts)
         # Compare both actual compiler logs; a valid PDF does not prove which
         # engine the production CLI used.
         cli_log_text = cli_log.read_text(encoding="utf-8", errors="replace") if cli_log.is_file() else ""
@@ -173,13 +175,18 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
                        "-halt-on-error", "-no-shell-escape", f"-output-directory={direct}", "main.tex"]
         direct_proc = run(direct_args, cwd=target)
         direct_log = direct / "main.log"
+        direct_pdf = direct / "main.pdf"
+        direct_valid, direct_details = (
+            inspect_pdf(direct_pdf, 1, expected_text, expected_fonts)
+            if direct_pdf.is_file() else (False, {})
+        )
         if direct_log.is_file():
             log_text = direct_log.read_text(encoding="utf-8", errors="replace")
             (target / "direct-tex.log").write_text(log_text, encoding="utf-8")
         else:
             log_text = ""
         good = (proc.returncode == 0 and valid and all(tokens.values())
-                and direct_proc.returncode == 0 and (direct / "main.pdf").is_file()
+                and direct_proc.returncode == 0 and direct_valid
                 and miktex_tex_log_identity(cli_log_text)
                 and miktex_tex_log_identity(log_text)
                 and "Missing character:" not in cli_log_text
@@ -197,7 +204,9 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
                 "direct_missing_character": "Missing character:" in log_text,
                 "cli_log_sha256": sha(cli_log) if cli_log.is_file() else None,
                 "direct_log_sha256": sha(direct_log) if direct_log.is_file() else None,
-                "pdf": details}
+                "pdf": details, "direct_pdf": direct_details,
+                "cli_pdf_sha256": sha(pdf) if pdf.is_file() else None,
+                "direct_pdf_sha256": sha(direct_pdf) if direct_pdf.is_file() else None}
     except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         return {"id": "native-primitives", "status": "FAIL", "error": str(exc)}
 
