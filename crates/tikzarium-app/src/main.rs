@@ -18,7 +18,7 @@ mod ui_state;
 mod ui_theme;
 use ui_state::{
     BottomView, EditorCommand, WorkspaceMode, editor_command, line_start_char_index,
-    preview_is_stale, scaled_zoom,
+    preview_is_stale, scaled_zoom, diagnostic_targets_current_file,
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
@@ -345,20 +345,25 @@ impl TikzariumApp {
                 }
                 Err(error) => {
                     self.last_build_failed = true;
-                    self.diagnostics = vec![BuildDiagnostic {
-                        severity: Severity::Error,
-                        message: error.to_string(),
-                        line: None,
-                    }];
+                    self.diagnostics = error.diagnostics().to_vec();
+                    if self.diagnostics.is_empty() {
+                        self.diagnostics = vec![BuildDiagnostic {
+                            severity: Severity::Error,
+                            message: error.to_string(),
+                            source: None,
+                            line: None,
+                        }];
+                    }
                     self.bottom_view = BottomView::Issues;
-                    self.show_log = true;
-                    self.log = error.to_string();
+                    self.show_log = error.log_excerpt().map(str::to_owned).unwrap_or_else(|| error.to_string());
                     self.preview_status = if self.pdf.is_some() {
                         "Build failed — last good PDF retained (stale)".into()
                     } else {
                         "Build failed — no PDF available".into()
                     };
-                    self.status = format!("Build failed: {error}");
+                    let summary = error.to_string();
+                    let first_line = summary.lines().next().unwrap_or("XeLaTeX error");
+                    self.status = format!("Build failed: {}", first_line.chars().take(160).collect::<String>());
                 }
             }
         }
@@ -957,21 +962,29 @@ impl eframe::App for TikzariumApp {
                                         Severity::Error => "ERROR",
                                         Severity::Warning => "WARNING",
                                     };
-                                    let label = match item.line {
-                                        Some(line) => {
-                                            format!("{severity} · line {line} · {}", item.message)
-                                        }
-                                        None => format!("{severity} · {}", item.message),
+                                    let location = match (item.source.as_ref(), item.line) {
+                                        (Some(source), Some(line)) => format!("{}:{line}", source.display()),
+                                        (Some(source), None) => source.display().to_string(),
+                                        (None, Some(line)) => format!("line {line}, file unknown"),
+                                        (None, None) => "location unknown".to_owned(),
                                     };
-                                    if let Some(line) = item.line {
-                                        if ui.button(label).clicked() {
+                                    let label = format!("{severity} · {location} · {}", item.message);
+                                    let active_source = diagnostic_targets_current_file(
+                                        item.source.as_deref(),
+                                        self.document.path.as_deref(),
+                                    );
+                                    if active_source {
+                                        if let Some(line) = item.line
+                                            && ui.button(&label).clicked()
+                                        {
                                             self.jump_to_line = Some(line);
                                             if !self.workspace.show_source() {
                                                 self.workspace = WorkspaceMode::Split;
                                             }
                                         }
                                     } else {
-                                        ui.label(label);
+                                        ui.label(label)
+                                            .on_hover_text("Open the referenced file to navigate; unknown source is not guessed.");
                                     }
                                 }
                             }
