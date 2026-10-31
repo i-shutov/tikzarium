@@ -150,20 +150,12 @@ impl BuildService {
         let status = loop {
             if self.cancelled.load(Ordering::SeqCst) {
                 terminate_child(&mut child);
-                let _ = save_log(
-                    &log_path,
-                    &stdout_file,
-                    request.options.log_path.as_deref(),
-                );
+                let _ = save_log(&log_path, &stdout_file, request.options.log_path.as_deref());
                 return Err(BuildError::Cancelled);
             }
             if started.elapsed() > request.options.timeout {
                 terminate_child(&mut child);
-                let _ = save_log(
-                    &log_path,
-                    &stdout_file,
-                    request.options.log_path.as_deref(),
-                );
+                let _ = save_log(&log_path, &stdout_file, request.options.log_path.as_deref());
                 return Err(BuildError::Timeout(request.options.timeout));
             }
             match child.try_wait() {
@@ -181,11 +173,7 @@ impl BuildService {
             log = read_capped(&stdout_file, 1_000_000).unwrap_or_default();
         }
         let stderr = read_capped(&stderr_file, 8_000).unwrap_or_default();
-        let log_saved = save_log(
-            &log_path,
-            &stdout_file,
-            request.options.log_path.as_deref(),
-        );
+        let log_saved = save_log(&log_path, &stdout_file, request.options.log_path.as_deref());
         if !status.success() {
             let mut details = failure_details(&log, &stderr);
             if let Err(error) = log_saved {
@@ -202,13 +190,11 @@ impl BuildService {
             return Err(BuildError::MissingPdf(pdf_path));
         }
         let pdf = fs::read(&pdf_path)?;
-        let dependencies = parse_fls_with_cwd(
-            &fs::read_to_string(&fls_path).unwrap_or_default(),
-            cwd,
-        )
-        .into_iter()
-        .filter(|path| !path.starts_with(&out_dir))
-        .collect();
+        let dependencies =
+            parse_fls_with_cwd(&fs::read_to_string(&fls_path).unwrap_or_default(), cwd)
+                .into_iter()
+                .filter(|path| !path.starts_with(&out_dir))
+                .collect();
         let preview = if request.options.rasterize_first_page {
             match &request.pdf_renderer {
                 Some(renderer) => render_first_page(renderer, &pdf_path)
@@ -321,7 +307,13 @@ pub fn parse_fls_with_cwd(log: &str, cwd: &Path) -> Vec<PathBuf> {
         .find_map(|line| line.strip_prefix("PWD "))
         .map(|value| PathBuf::from(value.trim_end_matches('\r')))
         .filter(|path| !path.as_os_str().is_empty())
-        .map(|path| if path.is_absolute() { path } else { cwd.join(path) })
+        .map(|path| {
+            if path.is_absolute() {
+                path
+            } else {
+                cwd.join(path)
+            }
+        })
         .unwrap_or_else(|| cwd.to_path_buf());
 
     let mut paths = Vec::new();

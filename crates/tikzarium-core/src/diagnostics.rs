@@ -26,8 +26,7 @@ pub fn extract_diagnostics(log: &str) -> Vec<BuildDiagnostic> {
             if let Some(previous) = items.last_mut() {
                 if previous.severity == Severity::Error
                     && previous.line.is_none()
-                    && (message.contains(&previous.message)
-                        || previous.message.contains(&message))
+                    && (message.contains(&previous.message) || previous.message.contains(&message))
                 {
                     previous.source = Some(source);
                     previous.line = Some(number);
@@ -130,7 +129,10 @@ mod tests {
         let log = "C:\\research project\\fig.v2.tex:73: Undefined control sequence.\n! Missing $ inserted.\nl.41 \\foo\n";
         let diagnostics = extract_diagnostics(log);
         assert_eq!(diagnostics.len(), 2);
-        assert_eq!(diagnostics[0].source, Some(PathBuf::from("C:\\research project\\fig.v2.tex")));
+        assert_eq!(
+            diagnostics[0].source,
+            Some(PathBuf::from("C:\\research project\\fig.v2.tex"))
+        );
         assert_eq!(diagnostics[0].line, Some(73));
         assert_eq!(diagnostics[1].line, Some(41));
     }

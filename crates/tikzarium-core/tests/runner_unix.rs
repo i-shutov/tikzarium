@@ -72,9 +72,22 @@ fn dotted_job_name_dependencies_and_direct_argv_are_preserved() {
     assert_eq!(artifact.pdf, b"%PDF-1.4\n");
     assert_eq!(fs::read(&source).unwrap(), original);
     assert!(artifact.log.contains("-no-shell-escape"));
-    assert!(artifact.diagnostics.iter().any(|item| item.severity == Severity::Warning));
-    assert!(artifact.dependencies.contains(&source.canonicalize().unwrap()));
-    assert!(artifact.dependencies.contains(&assets.join("shape.tex").canonicalize().unwrap()));
+    assert!(
+        artifact
+            .diagnostics
+            .iter()
+            .any(|item| item.severity == Severity::Warning)
+    );
+    assert!(
+        artifact
+            .dependencies
+            .contains(&source.canonicalize().unwrap())
+    );
+    assert!(
+        artifact
+            .dependencies
+            .contains(&assets.join("shape.tex").canonicalize().unwrap())
+    );
     assert_eq!(artifact.dependencies.len(), 2);
 }
 
@@ -106,7 +119,11 @@ fn failure_reports_source_line_and_retains_full_log_on_request() {
     assert!(matches!(failure, BuildError::TeXFailure { .. }));
     assert!(failure.to_string().contains("line 9"));
     assert!(failure.to_string().contains("simulated engine failure"));
-    assert!(fs::read_to_string(&log_path).unwrap().contains("Undefined control sequence"));
+    assert!(
+        fs::read_to_string(&log_path)
+            .unwrap()
+            .contains("Undefined control sequence")
+    );
     assert_eq!(fs::read_to_string(&source).unwrap(), "\\badmacro\n");
 }
 
@@ -125,7 +142,11 @@ fn timeout_retains_partial_log_and_cannot_replace_a_previous_pdf() {
         BuildService::new().run(&build),
         Err(BuildError::Timeout(_))
     ));
-    assert!(fs::read_to_string(log_path).unwrap().contains("Starting slow compilation"));
+    assert!(
+        fs::read_to_string(log_path)
+            .unwrap()
+            .contains("Starting slow compilation")
+    );
 }
 
 #[test]

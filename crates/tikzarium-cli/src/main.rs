@@ -7,7 +7,9 @@ use std::{
 use tikzarium_core::{BuildOptions, BuildRequest, BuildService, TexEnvironment};
 
 fn usage() {
-    eprintln!("Usage: tikzarium-cli doctor | build <source.tex> <output.pdf> [--log <logfile.log>]");
+    eprintln!(
+        "Usage: tikzarium-cli doctor | build <source.tex> <output.pdf> [--log <logfile.log>]"
+    );
 }
 
 fn safe_pdf_target(source: &Path, destination: &Path) -> bool {
@@ -34,7 +36,9 @@ fn write_pdf(destination: &Path, pdf: &[u8]) -> io::Result<()> {
     temporary.write_all(pdf)?;
     temporary.flush()?;
     temporary.as_file().sync_all()?;
-    temporary.persist(destination).map_err(|error| error.error)?;
+    temporary
+        .persist(destination)
+        .map_err(|error| error.error)?;
     Ok(())
 }
 
