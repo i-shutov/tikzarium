@@ -249,16 +249,15 @@ impl BuildService {
         }
         let pdf = fs::read(&pdf_path)?;
         let recorder = fs::read_to_string(&fls_path);
-        // Preserve a successful PDF, but never certify freshness without
-        // a readable XeLaTeX dependency recorder.
-        let recorder_complete = recorder
-            .as_ref()
-            .is_ok_and(|contents| contents.lines().any(|line| line.starts_with("INPUT ")));
+        // Any INPUT line is insufficient: a truncated or foreign-only .fls
+        // could miss actual project dependencies. Require a recorder that
+        // explicitly includes this author source as an input.
         let dependencies: Vec<PathBuf> =
             parse_fls_with_cwd(recorder.as_deref().unwrap_or_default(), cwd)
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
+        let recorder_complete = recorder.is_ok() && dependencies.contains(&source);
         let project_dependencies =
             ProjectDependencySnapshot::capture(cwd, &source, &dependencies, recorder_complete)?;
         let preview = if request.options.rasterize_first_page {

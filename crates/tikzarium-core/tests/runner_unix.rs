@@ -33,6 +33,12 @@ case "$name" in
         printf 'simulated engine failure\n' >&2
         exit 1
         ;;
+    external-only.tex)
+        printf 'Foreign-only INPUT recorder\n' > "$out/$stem.log"
+        printf 'PWD %s\nINPUT ./assets/shape.tex\n' "$PWD" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
     no-recorder.tex)
         printf 'Engine intentionally omitted fls\n' > "$out/$stem.log"
         printf '%%PDF-1.4\n' > "$out/$stem.pdf"
@@ -272,6 +278,24 @@ fn missing_fls_does_not_claim_project_freshness() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("no-recorder.tex");
     let original = b"% no recorder input\r\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(!artifact.project_dependencies.recorder_complete());
+    assert!(!artifact.project_dependencies.is_project_fresh());
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+
+#[test]
+fn external_only_recorder_cannot_certify_source_freshness() {
+    let directory = tempfile::tempdir().unwrap();
+    fs::create_dir_all(directory.path().join("assets")).unwrap();
+    fs::write(directory.path().join("assets/shape.tex"), "shape").unwrap();
+    let source = directory.path().join("external-only.tex");
+    let original = b"% original source\r\n\\opaque{contents}\r\n";
     fs::write(&source, original).unwrap();
     let engine = fake_xelatex(directory.path());
 

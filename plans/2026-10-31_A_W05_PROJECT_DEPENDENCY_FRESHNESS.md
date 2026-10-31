@@ -36,3 +36,8 @@ macOS `/var` → `/private/var` alias demonstrated a dangerous false-fresh class
 Existing PR #28 reconciled with main `b2a1299d5660d04614c78ca696189dfab10e4f43`. Keep native MiKTeX `--disable-installer`, explicit XeLaTeX, source diagnostics and B/C/D work unchanged. Add source-boundary fail-closed: if the mandatory TeX author source resolves outside the project root (including symlink escapes), `is_project_fresh` is false even if no local inputs remain. External dependencies remain explicitly unverified and do not form a global TeX cache guarantee. Portable Unicode/CRLF/opaque source and Unix source-symlink regressions accompany existing file-recorder tests.
 
 Require fresh exact-head fmt/check/test/clippy, D QA and hosted real MiKTeX CI; all PENDING at commit. Physical Win10/M1/M4 and GUI NOT_RUN.
+
+
+### Recorder source-membership gate
+
+A nonempty `.fls` with only external/foreign `INPUT` lines cannot certify full project inputs. Freshness now requires the XeLaTeX recorder to contain the canonical original author source; a source-omitting file yields `recorder_complete=false` and `is_project_fresh=false` while preserving the successfully produced PDF. Added a real fake-engine integration test with a foreign-only recorder and untouched CRLF/opaque TeX. This extends the existing missing-recorder test and closes the integrator's second false-fresh scenario. Exact new-head CI pending; no host PASS inherited.

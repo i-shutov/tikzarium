@@ -66,3 +66,8 @@ Integrator review caught a real false-fresh: `root/main.tex` symlink to external
 ## Exact-head formatter follow-up (not PASS)
 
 Source HEAD `ba6922a2b05b37e3fcbc071c7f45e0c3d67a7862`: [Rust CI 41208967201](https://github.com/i-shutov/tikzarium/actions/runs/41208967201) **FAIL** on hosted macOS and Windows Rustfmt; [D QA 41208967241](https://github.com/i-shutov/tikzarium/actions/runs/41208967241) Rustfmt FAIL on Linux/Windows/macOS. Actual rustfmt diff changes only one extra blank line and joins a two-line `ProjectDependencySnapshot::capture` assertion. No behavior/API altered. Linux XeLaTeX job SUCCESS on old HEAD, but no final-HEAD PASS inherited. Re-run final exact SHA across all hosts, including real MiKTeX.
+
+
+### Recorder source-membership gate
+
+A nonempty `.fls` with only external/foreign `INPUT` lines cannot certify full project inputs. Freshness now requires the XeLaTeX recorder to contain the canonical original author source; a source-omitting file yields `recorder_complete=false` and `is_project_fresh=false` while preserving the successfully produced PDF. Added a real fake-engine integration test with a foreign-only recorder and untouched CRLF/opaque TeX. This extends the existing missing-recorder test and closes the integrator's second false-fresh scenario. Exact new-head CI pending; no host PASS inherited.
