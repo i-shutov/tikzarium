@@ -326,7 +326,10 @@ pub fn plan_import(
     if let Some(reason) = project.uncertain_reason {
         return ImportDecision::Refused { reason };
     }
-    if project.status(kind, name) == Evidence::Confirmed {
+    let declaration_exists = project.status(kind, name) == Evidence::Confirmed;
+    let tikz_missing = kind == ImportKind::TikzLibrary
+        && project.status(ImportKind::Package, "tikz") == Evidence::Absent;
+    if declaration_exists && !tikz_missing {
         return ImportDecision::AlreadyLoaded;
     }
     if Some(&target.range) != project.begin_document.as_ref() {
@@ -345,7 +348,9 @@ pub fn plan_import(
             }
             Evidence::Confirmed => {}
         }
-        declarations.push(format!("\\usetikzlibrary{{{name}}}"));
+        if !declaration_exists {
+            declarations.push(format!("\\usetikzlibrary{{{name}}}"));
+        }
     } else {
         declarations.push("\\usepackage{tikz}".to_owned());
     }
