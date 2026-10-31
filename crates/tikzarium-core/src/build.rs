@@ -1,5 +1,6 @@
 //! Direct XeLaTeX runner. -no-shell-escape is not an OS sandbox.
 use crate::{
+    dependencies::ProjectDependencySnapshot,
     diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
     preview::{Preview, render_first_page},
 };
@@ -50,6 +51,9 @@ pub struct BuildArtifact {
     pub pdf: Vec<u8>,
     pub log: String,
     pub dependencies: Vec<PathBuf>,
+    /// Content snapshot of source and recorded dependencies within the source directory.
+    /// External TeX files are listed, not fingerprinted; this is not a global cache key.
+    pub project_dependencies: ProjectDependencySnapshot,
     pub diagnostics: Vec<BuildDiagnostic>,
     pub preview: Result<Option<Preview>, String>,
     pub elapsed: Duration,
@@ -229,6 +233,7 @@ impl BuildService {
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
+        let project_dependencies = ProjectDependencySnapshot::capture(cwd, &source, &dependencies)?;
         let preview = if request.options.rasterize_first_page {
             match &request.pdf_renderer {
                 Some(renderer) => render_first_page(renderer, &pdf_path)
@@ -244,6 +249,7 @@ impl BuildService {
             pdf,
             log,
             dependencies,
+            project_dependencies,
             diagnostics,
             preview,
             elapsed: started.elapsed(),

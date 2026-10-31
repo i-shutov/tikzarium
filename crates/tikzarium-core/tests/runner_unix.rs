@@ -187,3 +187,27 @@ fn cancelling_active_compilation_stops_the_child() {
     service.cancel();
     assert!(matches!(thread.join().unwrap(), Err(BuildError::Cancelled)));
 }
+
+#[test]
+fn real_runner_snapshot_invalidates_after_included_asset_change() {
+    let directory = tempfile::tempdir().unwrap();
+    fs::create_dir_all(directory.path().join("assets")).unwrap();
+    let asset = directory.path().join("assets/shape.tex");
+    fs::write(&asset, "abcdef").unwrap();
+    let source = directory.path().join("figure.v2.tex");
+    let source_bytes = b"% include untouched\r\n";
+    fs::write(&source, source_bytes).unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert_eq!(artifact.project_dependencies.tracked_project_paths().len(), 2);
+
+    // Same-length edit: metadata size cannot be used as a freshness guarantee.
+    fs::write(&asset, "abcXef").unwrap();
+    assert_eq!(
+        artifact.project_dependencies.invalidated_project_paths(),
+        vec![asset.canonicalize().unwrap()]
+    );
+    assert_eq!(fs::read(&source).unwrap(), source_bytes);
+}

@@ -1,6 +1,7 @@
 //! Platform independent XeLaTeX build, project and preview services.
 //! No GUI dependency, no implicit remote services and no implicit compiler fallback.
 pub mod build;
+pub mod dependencies;
 pub mod diagnostics;
 pub mod discovery;
 pub mod document;
@@ -12,6 +13,7 @@ pub use build::{
     BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls,
     parse_fls_with_cwd,
 };
+pub use dependencies::{MAX_TRACKED_FILE_BYTES, ProjectDependencySnapshot};
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
 pub use discovery::{TexEnvironment, find_executable};
 pub use document::Document;
