@@ -16,3 +16,11 @@ D06's engine `--version` and CLI environment controls are necessary but not suff
 Local regex exercise against **five actual archived MiKTeX logs** and spoofed TeX Live/pdfTeX/wrong-version/log-later-diagnostic samples behaved as expected; this is not a substitute for exact-SHA hosted CI. D09 modified SHA, Rust/QA/MiKTeX outcomes: **PENDING** until new jobs and evidence are checked.
 
 Physical Windows 10 external MiKTeX, macOS M1/M4, pointer authoring, F1/hover, live code pane and GUI theme semantics: `NOT_RUN`.
+
+## 2026-10-31 D09 post-merge audit and D10 newly found gap
+
+The original D09 `PENDING` statement above is historical. Exact `main` `ab5705d4dd7e3dcefd3ef6ddfd695f6d0ee4dfd1` has 3/3 Rust, 7/7 D QA and 1/1 [hosted MiKTeX CI](https://github.com/i-shutov/tikzarium/actions/runs/41212533893) SUCCESS. Independently unpacked [44-file artifact 13046926819](https://github.com/i-shutov/tikzarium/actions/runs/41212533893/artifacts/13046926819), ZIP SHA-256 `a9c5a1b59ba448923a01caa89d95a852c21ff98f359db2bd75059fab54a9c4da`; all six one-page PDF files extracted correct Cyrillic/math Unicode and showed required embedded fonts with Poppler. 9130/9130 package rows identical; N1 source hashes unchanged, two true errors without PDF, actual positive TeX logs identify MiKTeX 25.12.
+
+**New independent code-review finding, not an observed bad PDF:** current `positive()` audits handwritten baseline CLI output but direct baseline only by file existence and engine return code. The latter can hide a PDF text/font failure; negative cases also lack a real-log MiKTeX banner gate. Manually extracted direct baseline PDF does contain `Примитивы TikZ`, `Кривая Безье αβγ` and embedded DejaVuSerif + LatinModernMath, so historical result is not invalidated. D10 makes automatic acceptance as strict as the manual evidence, plus new regressions rejecting corrupt baseline direct PDF and foreign-engine negative logs. D10 exact new commit CI remains UNVERIFIED until run/artifact inspection.
+
+Windows Server CI does not constitute physical Win10 x64 MiKTeX or Mac M1/M4 acceptance. Mouse authoring, F1/hover, themes, target-host screenshots: `NOT_RUN`.
