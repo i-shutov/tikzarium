@@ -1,0 +1,13 @@
+{
+  "catalog_path": "extensions/primitives/catalog-v1.toml",
+  "catalog_sha256": "4e0fb99fa1f716ed44497a8c662b9ea21ceacb49878d104c04005b04249ad637",
+  "errors": [],
+  "limits": "No network fetch, XeLaTeX execution, UI inspection, or proof of real PGF defaults",
+  "manual_inventory": "PGF/TikZ 3.1.12 (offline verified chapter/section map)",
+  "manual_references": 36,
+  "parameters": 28,
+  "scope": "N1-six-tools",
+  "status": "PASS",
+  "tools": 6,
+  "validator": "tikzarium-help-qa/v1"
+}

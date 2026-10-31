@@ -1,0 +1,39 @@
+{
+  "findings": [
+    {
+      "code": "EDITOR_LITERAL_SCOPE_UNCLEAR",
+      "detail": "Dimension controls accept restricted literals only; raw TikZ/TeX source accepts a richer expression language.",
+      "locator": "extensions/primitives/catalog-v1.toml::tikz.circle.parameter.radius",
+      "severity": "REVIEW",
+      "source": "https://tikz.dev/tikz-paths"
+    },
+    {
+      "code": "EDITOR_MODE_MISLABELED_AS_TIKZ_KEY",
+      "detail": "text/math is an editor selector, not a native TikZ key; describe emitted escaped text versus $...$ math instead.",
+      "locator": "extensions/primitives/catalog-v1.toml::tikz.node.parameter.mode",
+      "severity": "REVIEW",
+      "source": "https://tikz.dev/tikz-shapes#sec-17.4"
+    },
+    {
+      "code": "NODE_MODE_NOT_BOTH_EXPLAINED",
+      "detail": "Explain both editor modes text and math explicitly.",
+      "locator": "extensions/primitives/catalog-v1.toml::tikz.node.parameter.mode",
+      "severity": "REVIEW",
+      "source": "https://tikz.dev/tikz-shapes#sec-17.4"
+    }
+  ],
+  "parameter_count": 28,
+  "primary_sources": [
+    "https://tikz.dev/tikz-arrows",
+    "https://tikz.dev/tikz-paths",
+    "https://tikz.dev/tikz-paths",
+    "https://tikz.dev/tikz-paths",
+    "https://tikz.dev/tikz-shapes",
+    "https://tikz.dev/tikz-paths"
+  ],
+  "scope": "N1 selected semantic claims; not a proof of all TeX semantics or GUI interaction",
+  "source_path": "extensions/primitives/catalog-v1.toml",
+  "source_sha256": "4e0fb99fa1f716ed44497a8c662b9ea21ceacb49878d104c04005b04249ad637",
+  "status": "REVIEW",
+  "tool_count": 6
+}
