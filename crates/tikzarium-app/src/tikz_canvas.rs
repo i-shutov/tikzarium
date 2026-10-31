@@ -343,6 +343,14 @@ fn show_guide_frame(
             session.drag_start = Some(snap(pointer, rect));
         }
     }
+    // Escape cancels the active provisional gesture, including a key event in
+    // the same frame as drag-stop. Never turn a cancelled drag into TeX source.
+    if ui.input(|input| input.key_pressed(egui::Key::Escape))
+        && session.drag_start.take().is_some()
+    {
+        session.status = "Жест отменён Esc; исходный TeX не изменён".into();
+        return (None, rect);
+    }
     let finish = if response.drag_stopped() {
         session.drag_start.take().map(|start| {
             let end = response
@@ -864,6 +872,73 @@ mod tests {
             "F1 did not reach the production handler"
         );
         assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+    }
+
+    #[test]
+    fn escape_cancels_real_egui_drag_without_source_patch_then_allows_next_gesture() {
+        for tool in TOOLS {
+            let ctx = egui::Context::default();
+            let mut source = EVENT_SOURCE.to_owned();
+            let original = source.clone();
+            let mut session = Session::default();
+            session.reset(&source);
+            session.select_tool(tool);
+            let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+            let start = screen_point(rect, Point::new(1.0, 1.0));
+            let end = screen_point(rect, Point::new(3.0, 2.0));
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(start), primary(start, true)],
+            );
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(end)],
+            );
+            assert!(session.drag_start.is_some(), "{tool:?}: no active drag");
+            let (cancelled, _) = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::Key {
+                    key: egui::Key::Escape,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::default(),
+                }],
+            );
+            assert_eq!(cancelled, None);
+            assert!(session.drag_start.is_none());
+            let (released, _) =
+                event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
+            assert_eq!(released, None, "{tool:?}: cancelled drag inserted source");
+            assert_eq!(source, original);
+            assert!(!session.undo_available());
+            // The next ordinary pointer gesture must still work.
+            let _ = event_frame(&ctx, &mut session, &mut source, vec![]);
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(start), primary(start, true)],
+            );
+            let _ = event_frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(end)],
+            );
+            let (inserted, _) =
+                event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
+            assert!(inserted.is_some(), "{tool:?}: next gesture was blocked");
+            assert_eq!(tikz_authoring::owned(&source).len(), 1);
+            session.undo(&mut source).unwrap();
+            assert_eq!(source, original);
+        }
     }
 
     #[test]

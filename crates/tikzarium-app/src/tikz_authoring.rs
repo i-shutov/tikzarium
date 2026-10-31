@@ -233,12 +233,6 @@ fn unescaped_comment(line: &str) -> &str {
     }
     line
 }
-/// One C-owned preamble scanner drives the enabled state, help and import
-/// proposal. An opaque preamble is UNKNOWN, never guessed as loaded.
-pub fn tikz_loaded(source: &str) -> bool {
-    let project = project_imports::inspect(source);
-    project.status(ImportKind::Package, "tikz") == Evidence::Confirmed
-}
 pub fn requirements_status(source: &str, tool: Tool) -> Evidence {
     let project = project_imports::inspect(source);
     let r = &spec(tool).requirements;
@@ -615,9 +609,9 @@ mod tests {
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
         let multi_package = SOURCE.replace("\\usepackage{tikz}", "\\usepackage[demo]{foo, tikz}");
-        assert!(tikz_loaded(&multi_package));
+        assert_eq!(requirements_status(&multi_package, Tool::Line), Evidence::Confirmed);
         let commented = SOURCE.replace("\\usepackage{tikz}", "% \\usepackage{tikz}");
-        assert!(!tikz_loaded(&commented));
+        assert_eq!(requirements_status(&commented, Tool::Line), Evidence::Absent);
     }
     #[test]
     fn hand_edits_or_duplicate_objects_do_not_gain_write_authority() {
@@ -701,7 +695,7 @@ mod tests {
             requirements_status(&original, Tool::Arrow),
             Evidence::Confirmed
         );
-        assert!(tikz_loaded(&original));
+        assert!(requirements_loaded(&original, Tool::Line));
         assert!(Session::propose_dependencies(&original, Tool::Arrow).is_err());
         for tool in TOOLS {
             let mut source = original.clone();
