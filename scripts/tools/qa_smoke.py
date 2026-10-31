@@ -83,6 +83,18 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
                 raise ValueError(f"Invalid {key} for {fixture_id}")
         if "check_no_missing_glyphs" in case and type(case["check_no_missing_glyphs"]) is not bool:
             raise ValueError(f"Invalid check_no_missing_glyphs for {fixture_id}")
+        # A negative fixture must identify the *specific* intended error.
+        # A broken TeX invocation (notably Windows '.\\main.tex') can also
+        # exit 3 without publishing a PDF, and must never pass G08.
+        if case["expect"] == "tex-error":
+            marker = case.get("error_expect")
+            if (not isinstance(marker, str) or not re.fullmatch(r"\\\\[A-Za-z@]+", marker)
+                    or len(marker) > 128):
+                raise ValueError(f"Missing or invalid error_expect for {fixture_id}")
+            if marker not in source.read_text(encoding="utf-8"):
+                raise ValueError(f"error_expect not present in source for {fixture_id}")
+        elif "error_expect" in case:
+            raise ValueError(f"error_expect is only allowed for tex-error: {fixture_id}")
         if "known_limitation" in case:
             reason = case["known_limitation"]
             if (fixture_id != "g00-legacy-cyrillic-pdf-only"
@@ -242,10 +254,20 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
             (output / f"{fixture_id}.stdout.log").write_text(proc.stdout, encoding="utf-8")
             (output / f"{fixture_id}.stderr.log").write_text(proc.stderr, encoding="utf-8")
             if case["expect"] == "tex-error":
-                # Demand the actual TeX failure signature, not a generic nonzero exit.
-                passed = proc.returncode == 3 and not pdf.exists() and "XeLaTeX exited" in proc.stderr
-                result["status"] = "PASS" if passed else "FAIL"
-                result["assertion"] = "TeXFailure / no exported PDF"
+                # A generic XeLaTeX exit=3 is not evidence that the *source*
+                # triggered its intended failure. On Windows, a broken '.\\main'
+                # command line previously made this negative test falsely PASS.
+                marker = case["error_expect"]
+                checks = {
+                    "expected_command": marker in proc.stderr,
+                    "undefined_control_sequence": "Undefined control sequence" in proc.stderr,
+                    "tex_failure": "XeLaTeX exited" in proc.stderr and proc.returncode == 3,
+                    "no_pdf": not pdf.exists(),
+                }
+                result["error_expect"] = marker
+                result["error_checks"] = checks
+                result["status"] = "PASS" if all(checks.values()) else "FAIL"
+                result["assertion"] = "Expected source-specific TeX error plus no exported PDF"
             elif proc.returncode == 0 and pdf.is_file():
                 valid, details = inspect_pdf(pdf, case.get("pages"), case.get("text_expect"), case.get("font_expect"))
                 result.update(details)
