@@ -86,6 +86,9 @@ jobs:
             lm-math
             dejavu
             lm
+      - name: Install PDF text/font verification tools (Windows Server)
+        if: runner.os == 'Windows'
+        run: choco install poppler --version=26.9.0 --yes --no-progress
       - name: Install PDF text/font verification tools (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -104,8 +107,9 @@ jobs:
       - name: Record PDF inspection executables
         run: |
           python -c "import shutil; print({tool: shutil.which(tool) for tool in ('pdfinfo', 'pdftotext', 'pdffonts')})"
-      - name: Require PDF-to-text for Unicode gating
-        run: python -c "import shutil,sys; sys.exit(0 if shutil.which('pdftotext') else 1)"
+      - name: Require PDF text, page and embedded-font inspectors
+        run: |
+          python -c "import shutil,sys; names=('pdfinfo','pdftotext','pdffonts'); missing=[x for x in names if not shutil.which(x)]; print('Missing required QA inspectors:', missing); sys.exit(bool(missing))"
       - name: Build real Rust CLI
         run: cargo build -p tikzarium-cli
       - name: Execute fixture suite with machine-readable evidence
