@@ -1,0 +1,45 @@
+name: N1 one-time integration formatting
+on:
+  push:
+    branches: [integration/n1-tikz-native-authoring]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/n1-tikz-native-authoring
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt
+      - name: Format only this isolated integration branch without force
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cargo fmt --all
+          if ! git diff --quiet -- crates/; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add crates/
+            git commit -m 'style(N1): format shared-catalogue native authoring integration'
+            git push origin HEAD:integration/n1-tikz-native-authoring
+          fi
+          git rev-parse HEAD > /tmp/n1-source-sha.txt
+          git archive --format=zip HEAD -o /tmp/n1-source-snapshot.zip
+          sha256sum /tmp/n1-source-snapshot.zip > /tmp/n1-source-snapshot.sha256
+      - name: Preserve exact formatted source for independent inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: n1-formatted-source-snapshot
+          path: |
+            /tmp/n1-source-snapshot.zip
+            /tmp/n1-source-snapshot.sha256
+            /tmp/n1-source-sha.txt
+          if-no-files-found: error
+          retention-days: 7
