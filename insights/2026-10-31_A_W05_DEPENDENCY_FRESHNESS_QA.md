@@ -33,3 +33,7 @@ Exact first head `f0bc0e2e0b3041c999f610eaedf8afeb892570ee`, [GitHub Actions 411
 ## Self-review correction
 
 Identified and addressed an initially uncovered failure mode: if XeLaTeX emits a PDF but the `.fls` recorder is missing, the earlier snapshot would have contained only the source and returned `is_project_fresh=true`. This would mislabel an untracked project as fresh. Snapshot capture now requires an explicit recorder-completeness input, which is false for unreadable or absent `.fls` or no `INPUT`. New portable and Unix integration negative tests cover the condition. This is an engineering fix, not CI PASS.
+
+## Compile blocker discovered from hosted W05 predecessor
+
+The **older** `7b322c8c00a58b10e3a36a68c97b07695716a1f8` head failed hosted macOS and Linux Rust compilation: [main CI 41183832561](https://github.com/i-shutov/tikzarium/actions/runs/41183832561), [D QA 41183832301](https://github.com/i-shutov/tikzarium/actions/runs/41183832301). Compiler E0277/E0308 inferred the collected dependencies as an unsized `[PathBuf]` when passed to `capture(&[PathBuf])`. Add an explicit `Vec<PathBuf>` type in `build.rs`; not PASS until this new commit is compiled.

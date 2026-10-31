@@ -234,7 +234,7 @@ impl BuildService {
         let recorder_complete = recorder.as_ref().is_ok_and(|contents| {
             contents.lines().any(|line| line.starts_with("INPUT "))
         });
-        let dependencies =
+        let dependencies: Vec<PathBuf> =
             parse_fls_with_cwd(recorder.as_deref().unwrap_or_default(), cwd)
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
