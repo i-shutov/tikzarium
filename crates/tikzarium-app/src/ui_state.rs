@@ -101,7 +101,10 @@ pub fn diagnostic_targets_current_file(source: Option<&Path>, current: Option<&P
     let absolute = if source.is_absolute() {
         source.to_path_buf()
     } else {
-        current.parent().unwrap_or_else(|| Path::new(".")).join(source)
+        current
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join(source)
     };
     match (absolute.canonicalize(), current.canonicalize()) {
         (Ok(a), Ok(b)) => a == b,
@@ -129,11 +132,23 @@ mod tests {
         let include = dir.path().join("included.tex");
         std::fs::write(&main, "% main").unwrap();
         std::fs::write(&include, "% included").unwrap();
-        assert!(diagnostic_targets_current_file(Some(Path::new("./main.tex")), Some(&main)));
-        assert!(!diagnostic_targets_current_file(Some(Path::new("included.tex")), Some(&main)));
-        assert!(!diagnostic_targets_current_file(Some(&include), Some(&main)));
+        assert!(diagnostic_targets_current_file(
+            Some(Path::new("./main.tex")),
+            Some(&main)
+        ));
+        assert!(!diagnostic_targets_current_file(
+            Some(Path::new("included.tex")),
+            Some(&main)
+        ));
+        assert!(!diagnostic_targets_current_file(
+            Some(&include),
+            Some(&main)
+        ));
         assert!(!diagnostic_targets_current_file(None, Some(&main)));
-        assert!(!diagnostic_targets_current_file(Some(Path::new("main.tex")), None));
+        assert!(!diagnostic_targets_current_file(
+            Some(Path::new("main.tex")),
+            None
+        ));
     }
 
     #[test]

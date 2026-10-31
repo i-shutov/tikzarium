@@ -17,8 +17,8 @@ mod source_fonts;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
-    BottomView, EditorCommand, WorkspaceMode, editor_command, line_start_char_index,
-    preview_is_stale, scaled_zoom, diagnostic_targets_current_file,
+    BottomView, EditorCommand, WorkspaceMode, diagnostic_targets_current_file, editor_command,
+    line_start_char_index, preview_is_stale, scaled_zoom,
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
@@ -355,7 +355,10 @@ impl TikzariumApp {
                         }];
                     }
                     self.bottom_view = BottomView::Issues;
-                    self.show_log = error.log_excerpt().map(str::to_owned).unwrap_or_else(|| error.to_string());
+                    self.show_log = error
+                        .log_excerpt()
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| error.to_string());
                     self.preview_status = if self.pdf.is_some() {
                         "Build failed — last good PDF retained (stale)".into()
                     } else {
@@ -363,7 +366,10 @@ impl TikzariumApp {
                     };
                     let summary = error.to_string();
                     let first_line = summary.lines().next().unwrap_or("XeLaTeX error");
-                    self.status = format!("Build failed: {}", first_line.chars().take(160).collect::<String>());
+                    self.status = format!(
+                        "Build failed: {}",
+                        first_line.chars().take(160).collect::<String>()
+                    );
                 }
             }
         }
