@@ -278,7 +278,8 @@ fn document_body_may_import(body: &str) -> bool {
 }
 
 /// Recognize only complete, literal preamble lines. Never expand arbitrary macros.
-/// Text after begin(document) is left entirely opaque to this scanner.
+/// After begin(document), detect only possible late import hints: these never
+/// establish positive evidence or authorize a source edit.
 #[must_use]
 pub fn inspect(source: &str) -> ProjectImports {
     let has_crlf = source.contains("\r\n");
