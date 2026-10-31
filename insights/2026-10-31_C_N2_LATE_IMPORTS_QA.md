@@ -24,3 +24,9 @@ Added source regression tests for literal late library, external body input/incl
 ## Remaining limitation
 
 Body-side arbitrary macro expansion cannot be resolved without executing TeX; unsupported cases remain source-only. The conservative scanner cannot distinguish runtime literal from verbatim text; it may refuse safe automatic edits rather than produce a false definite "not loaded". E help and F source tests belong to independent streams. B owns visible diff/confirmation/Undo; D owns independent native CI coverage.
+
+
+## Initial exact-head CI failure and correction
+
+PR #61 initial HEAD 9045b56d4f2c843454809606ac8531e624118236:
+[Native Rust CI run 41212945414](https://github.com/i-shutov/tikzarium/actions/runs/41212945414) **FAILED** macOS and Windows Server at cargo fmt --check, before Rust tests. Retrieved job log 124571547263. Formatter requested only: remove one excess blank line ahead of the first new test, and wrap two long declaration_sites() assertions. Those exact changes were applied in C test code (commit 6e3173eca2896c3557c0e283b4e4ac9a78393d64). This is a correction, **not a PASS** until the subsequent exact-head CI is checked. TeX compilation evidence remains the independent local fixture proof, not the initial failed Rust CI.
