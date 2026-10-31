@@ -93,12 +93,12 @@ class MiKTeXVerticalContract(unittest.TestCase):
             "Cargo.lock",
         )
         for event in ("pull_request", "push"):
-            marker = f"  {event}:\\n    branches: [main]\\n    paths:\\n"
+            marker = f"  {event}:\n    branches: [main]\n    paths:\n"
             self.assertIn(marker, workflow)
-            event_body = workflow.split(marker, 1)[1].split("\\n  ", 1)[0]
+            event_body = workflow.split(marker, 1)[1].split("\n  ", 1)[0]
             for path in paths:
                 with self.subTest(event=event, path=path):
-                    self.assertIn(f"      - {path}\\n", event_body + "\\n")
+                    self.assertIn(f"      - {path}\n", event_body + "\n")
         self.assertIn("n1-authoring-proof", workflow)
         self.assertIn("qa_miktex_vertical.py", workflow)
         self.assertIn("packages-after.txt", workflow)
