@@ -299,3 +299,43 @@ fn core_existing_fixture_does_not_regress_to_unknown_for_pagestyle() {
         Evidence::Confirmed
     );
 }
+
+#[test]
+fn existing_library_without_tikz_proposes_only_missing_base_package() {
+    let mut source = "\\documentclass{article}\n\\usetikzlibrary{calc}\n\\begin{document}\n".to_owned();
+    let mut revision = 3;
+    let plan = match plan_import(
+        &source,
+        target(&source, revision),
+        ImportKind::TikzLibrary,
+        "calc",
+    ) {
+        ImportDecision::Proposed(p) => p,
+        other => panic!("expected missing-base-package proposal, got {other:?}"),
+    };
+    assert_eq!(plan.declarations, ["\\usepackage{tikz}"]);
+    plan.apply(&mut source, &mut revision).unwrap();
+    assert_eq!(source.matches("\\usetikzlibrary{calc}").count(), 1);
+    assert_eq!(source.matches("\\usepackage{tikz}").count(), 1);
+}
+
+#[test]
+fn standalone_usepackage_import_is_a_reversible_literal_patch() {
+    let mut source = "\\documentclass{article}\n\\begin{document}\n".to_owned();
+    let before = source.clone();
+    let mut revision = 15;
+    let plan = match plan_import(
+        &source,
+        target(&source, revision),
+        ImportKind::Package,
+        "tikz",
+    ) {
+        ImportDecision::Proposed(p) => p,
+        other => panic!("expected package proposal, got {other:?}"),
+    };
+    assert_eq!(plan.declarations, ["\\usepackage{tikz}"]);
+    let inverse = plan.apply(&mut source, &mut revision).unwrap();
+    assert_eq!(inspect(&source).status(ImportKind::Package, "tikz"), Evidence::Confirmed);
+    inverse.apply(&mut source, &mut revision).unwrap();
+    assert_eq!(source, before);
+}
