@@ -575,7 +575,11 @@ impl TikzariumApp {
                 && core.is_some_and(|status| {
                     status.compilation != tikzarium_extensions::CompilationState::IncompatibleEngine
                 }),
-            implemented: true, // Only B07's six explicitly narrow built-in primitives.
+            implemented: true, // The six B mouse gestures are backed by C07 generators.
+            arrows_loaded: tikz_authoring::library_loaded(
+                &self.document.source,
+                "arrows.meta",
+            ),
         }
     }
 

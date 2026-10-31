@@ -10,13 +10,15 @@ pub struct Capabilities {
     pub loaded: bool,
     pub engine_compatible: bool,
     pub implemented: bool,
+    pub arrows_loaded: bool,
 }
 
 impl Capabilities {
-    pub fn can_draw(self) -> bool {
+    pub fn can_draw(self, tool: Tool) -> bool {
         self.installed && self.loaded && self.engine_compatible && self.implemented
+            && (tool != Tool::Arrow || self.arrows_loaded)
     }
-    pub fn explanation(self) -> &'static str {
+    pub fn explanation(self, tool: Tool) -> &'static str {
         if !self.engine_compatible {
             "XeLaTeX unavailable or incompatible (configure an external engine)."
         } else if !self.installed {
@@ -25,6 +27,8 @@ impl Capabilities {
             "TikZ located, but \\usepackage{tikz} not explicitly loaded. Review the proposed source diff."
         } else if !self.implemented {
             "No reviewed B visual source adapter available."
+        } else if tool == Tool::Arrow && !self.arrows_loaded {
+            "arrows.meta is not explicitly loaded. Review the proposed \\usetikzlibrary source diff."
         } else {
             "Six native TikZ core source adapters are available; package compilation is still NOT_VERIFIED."
         }
@@ -132,12 +136,12 @@ pub fn show_guide(
             let info = tikz_authoring::spec(tool);
             let response = ui
                 .add_enabled(
-                    caps.can_draw(),
-                    egui::Button::new(info.title).selected(session.active == Some(tool)),
+                    caps.installed && caps.engine_compatible && caps.implemented,
+                    egui::Button::new(&info.title_ru).selected(session.active == Some(tool)),
                 )
                 .on_hover_text(format!(
                     "{}\n{}\n{}",
-                    info.explanation, info.syntax, info.source
+                    info.help_ru, info.syntax, info.manual_url
                 ));
             if response.clicked() {
                 session.active = Some(tool);
@@ -146,8 +150,10 @@ pub fn show_guide(
             }
         }
     });
-    if !caps.can_draw() {
-        ui.colored_label(ui.visuals().warn_fg_color, caps.explanation());
+    if let Some(active) = session.active {
+        if !caps.can_draw(active) {
+            ui.colored_label(ui.visuals().warn_fg_color, caps.explanation(active));
+        }
     }
     ui.small("СКЕТЧ-СЕТКА · приблизительные координаты 0.25 cm, НЕ совмещена с PDF и не отражает arbitrary scopes/transforms.");
     let width = ui.available_width().max(180.0);
@@ -207,9 +213,8 @@ pub fn show_guide(
         }
     }
 
-    if !caps.can_draw() || session.active.is_none() {
-        return None;
-    }
+    let Some(active_tool) = session.active else { return None; };
+    if !caps.can_draw(active_tool) { return None; }
     if response.drag_started()
         && let Some(pointer) = response.interact_pointer_pos()
     {
@@ -259,10 +264,10 @@ pub fn show_inspector(
     ui.heading("TikZ · свойства");
     ui.small("Только собственные B07-команды. Любые макросы остаются в Source.");
     ui.small(format!(
-        "PGF/TikZ: installed={} · loaded={} · XeLaTeX-compatible={} · B-implemented={}",
-        caps.installed, caps.loaded, caps.engine_compatible, caps.implemented,
+        "PGF/TikZ: installed={} · loaded={} · arrows.meta={} · XeLaTeX-compatible={} · B-implemented={}",
+        caps.installed, caps.loaded, caps.arrows_loaded, caps.engine_compatible, caps.implemented,
     ));
-    ui.label(caps.explanation());
+    ui.label(caps.explanation(session.active.unwrap_or(Tool::Line)));
     ui.separator();
 
     let choices = tikz_authoring::owned(source);
@@ -276,7 +281,7 @@ pub fn show_inspector(
                 let label = format!(
                     "#{} {} · line {}",
                     item.id,
-                    tikz_authoring::spec(item.tool).title,
+                    tikz_authoring::spec(item.tool).title_ru,
                     item.line
                 );
                 if ui
@@ -294,7 +299,7 @@ pub fn show_inspector(
     if let Some(tool) = session.active {
         let info = tikz_authoring::spec(tool);
         ui.separator();
-        ui.strong(info.title);
+        ui.strong(&info.title_ru);
         ui.label("Точки (условные TikZ x/y, cm для обычной picture):");
         ui.horizontal(|ui| {
             ui.label("x1");
@@ -333,8 +338,20 @@ pub fn show_inspector(
                 ui.label("cm");
             });
         }
+        if tool == Tool::Arrow {
+            if let Some(param) = info.parameter.iter().find(|p| p.id == "tip") {
+                egui::ComboBox::from_id_salt("b08-c07-arrow-tip")
+                    .selected_text(&session.draft.tip)
+                    .show_ui(ui, |ui| {
+                        for tip in &param.allowed_values {
+                            ui.selectable_value(&mut session.draft.tip, tip.clone(), tip);
+                        }
+                    });
+            }
+        }
         if tool == Tool::Node {
-            ui.label("Node text (plain Unicode):");
+            ui.label("Node content (Unicode text or user-authored TeX math):");
+            ui.checkbox(&mut session.draft.math, "Math mode: source TeX, not evaluated by Rust");
             ui.text_edit_singleline(&mut session.draft.text);
         }
         if let Some(id) = session.selected {
@@ -364,16 +381,38 @@ pub fn show_inspector(
         }
         if session.help {
             ui.separator();
-            ui.strong("Контекстная справка");
-            ui.label(info.explanation);
+            ui.strong("Контекстная справка · единый C07-каталог");
+            ui.label(&info.help_ru);
             ui.small(format!("Синтаксис: {}", info.syntax));
-            ui.small(format!("Параметры: {}", info.parameters));
-            ui.small(format!("Default: {}", info.defaults));
-            ui.small(format!("Эффект: {}", info.effect));
-            ui.code(info.example);
-            ui.small("Зависимость: \\usepackage{tikz}; library: core (дополнительная не нужна).");
-            ui.small(format!("Первичный источник: {}", info.source));
-            ui.small("Состояния: installed / loaded / XeLaTeX-compatible / B adapter are separate; compiled state NOT_VERIFIED.");
+            ui.small(format!("Действие: {}", info.interaction_ru));
+            ui.small(format!("Предупреждение: {}", info.warning_ru));
+            ui.code(&info.example);
+            ui.small(format!(
+                "Требования: packages={:?}, libraries={:?}, engine={}, PGF min={}; manual v{}",
+                info.requirements.packages, info.requirements.libraries,
+                info.requirements.engine, info.requirements.pgf_version_min,
+                info.requirements.documented_against
+            ));
+            ui.small(format!("Руководство §{} · {}", info.manual_section, info.manual_url));
+            for parameter in &info.parameter {
+                ui.collapsing(format!("{} · {}", parameter.id, parameter.kind), |ui| {
+                    ui.label(&parameter.help_ru);
+                    ui.small(format!("Syntax: {}", parameter.syntax));
+                    ui.small(format!(
+                        "Units: {:?}; choices: {:?}; magnitude: {}",
+                        parameter.units, parameter.allowed_values, parameter.max_abs
+                    ));
+                    ui.small(format!(
+                        "Preset/default: {} ({}; not a claimed PGF default)",
+                        parameter.default, parameter.default_provenance
+                    ));
+                    ui.small(&parameter.interaction_ru);
+                    ui.small(&parameter.warning_ru);
+                    ui.code(&parameter.example);
+                    ui.small(format!("Manual §{} · {}", parameter.manual_section, parameter.manual_url));
+                });
+            }
+            ui.small("installed / project-loaded / engine-compatible / source-generator / help / GUI-editable are independent observations.");
         }
     } else {
         ui.small("Выберите инструмент над координатным полем, затем click/drag. F1 показывает справку для выбранной команды.");
@@ -394,6 +433,21 @@ pub fn show_inspector(
             Err(error) => {
                 ui.small(error);
             }
+        }
+    }
+    if session.active == Some(Tool::Arrow) && caps.installed && caps.loaded && !caps.arrows_loaded {
+        ui.separator();
+        ui.strong("Required TikZ library · explicit source change");
+        match Session::propose_library(source, "arrows.meta") {
+            Ok(diff) => {
+                ui.code(diff);
+                if ui.button("Подключить arrows.meta · Undo").clicked() {
+                    if let Err(error) = session.add_library(source, "arrows.meta") {
+                        session.status = error;
+                    }
+                }
+            }
+            Err(error) => { ui.small(error); }
         }
     }
     if ui
