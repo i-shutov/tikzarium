@@ -1,48 +1,41 @@
 # TikZarium
 
-**Local, extensible scientific graphics workbench for PGF/TikZ.**
+Native scientific graphics workbench: **Rust + egui + XeLaTeX**.
 
-**Primary typesetting engine:** XeLaTeX. **Desktop:** Windows 10 x64, macOS Apple Silicon (ARM64). **Implementation:** Rust + egui/eframe.
+**Main targets:** Windows 10 x64 and macOS Apple Silicon. No browser, sign-in or cloud service required. The source of truth is the user's ordinary `.tex` or `.tikz` source. Exact rendering comes from XeLaTeX, never a guessed Rust reconstruction.
 
-TikZarium combines faithful TeX rendering with a progressively richer visual editor, semantic geometry, and domain-specific tools. **The original TeX source remains authoritative.** Unknown or unsupported visual constructs must survive round-trips intact.
+## Work in progress: W01 XeLaTeX workbench
 
-## Core product contract
+An initial workspace is being implemented:
+- `tikzarium-core`: UTF-8 source I/O, cancellable XeLaTeX builds, TeX tool discovery, .fls dependencies, log diagnostics and PDF/PNG preview.
+- `tikzarium-cli`: `doctor` and `build source.tex output.pdf`.
+- `tikzarium-app`: egui desktop shell with text editor, local build, preview, zoom, log and PDF export.
+- `tikzarium-extensions`: declarative packages catalogue; presence does not imply validated compilation or visual editing.
 
-- Open and save ordinary `.tex` and `.tikz` projects without proprietary conversion.
-- Discover an existing local TeX installation; use **XeLaTeX** for actual rendering, including project preambles, local files and installed XeLaTeX-compatible packages.
-- Provide exact PDF preview, source editing, reproducible builds, diagnostics and clear package/engine compatibility status.
-- Start with source/preview, then add safe visual edits, a dependency-based geometry engine and opt-in library adapters.
-- Offline-first: no cloud service, telemetry or sign-in required.
-- Windows 10 x64 and macOS ARM64 are **release gates**, not stretch goals.
+**Not yet production-ready.** Core GUI visual object editing, robust arbitrary TikZ fragment preambles and packaged multi-page PDF rendering are future stages. For now the GUI's preview needs optional Poppler `pdftoppm` installed locally.
 
-## Important compatibility distinction
+Start at [Developer setup](docs/DEV_SETUP.md), [W01 workpack](plans/2026-10-31_W01_WORKBENCH.md) and [W01 evidence](insights/2026-10-31_W01_EVIDENCE.md).
 
-1. **Compile**: XeLaTeX can compile the project if the required packages and dependencies are installed and compatible.
-2. **Inspect**: TikZarium recognizes constructs sufficiently for highlighting, navigation, diagnostics and limited selection.
-3. **Visually edit**: a versioned adapter can safely modify specific constructs while preserving unrelated source.
+### Local commands
 
-An extension may support level 1 without levels 2 or 3. LuaTeX-only features such as Lua-driven graphdrawing are **not** claimed as available through XeLaTeX.
+```sh
+cargo run -p tikzarium-cli -- doctor
+cargo run -p tikzarium-cli -- build examples/quickstart.tex quickstart.pdf
+cargo run -p tikzarium-app
+```
 
-## Development documents
+## Product direction and contracts
 
-- [Product requirements](docs/PRODUCT_SPEC.md)
+- [Requirements](docs/PRODUCT_SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Extensions and capability model](docs/EXTENSIONS.md)
-- [Incremental releases](docs/ROADMAP.md)
-- [QA and acceptance](docs/QA_ACCEPTANCE.md)
-- [Working conventions](AGENTS.md)
+- [Extensibility and TeX package compatibility](docs/EXTENSIONS.md)
+- [Progressive releases](docs/ROADMAP.md)
+- [QA acceptance](docs/QA_ACCEPTANCE.md)
+- [CI matrix](docs/CI_MATRIX.md)
+- [Agent and contributor instructions](AGENTS.md)
 
-## Current stage
+**Compatibility:** every installed XeLaTeX-compatible TeX package is accessible via the canonical compiler, but GUI recognition and safe visual editing require explicit adapters. LuaTeX-only code is not advertised as XeLaTeX-native. We intend to grow capabilities release by release, not rewrite TeX in Rust.
 
-Planning / architecture baseline. No production-ready Rust application is implied by this documentation.
+Research reference corpus: user's R4 TikZ/PGF graphics skills (2026-10-29), with 135 active fixture builds in its original environment; these tests are not yet run on this repository's targets.
 
-Initial research corpus: the user's TikZ/PGF scientific graphics skills R4 (2026-10-29) with 135 active build fixtures and additional semantic tests. The corpus is **referenced, not copied** into this repository until provenance/licensing and artifact-size checks have been completed.
-
-## References
-
-- PGF/TikZ manual: https://tikz.dev/
-- CTAN PGF: https://ctan.org/pkg/pgf
-- GeoGebra: https://github.com/geogebra/geogebra (architectural study; do not copy code without license review)
-- egui: https://github.com/emilk/egui
-
-See [ROADMAP](docs/ROADMAP.md) for the first executable milestone.
+Project owner: [i-shutov/tikzarium](https://github.com/i-shutov/tikzarium).

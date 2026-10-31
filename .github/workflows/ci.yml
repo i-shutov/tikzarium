@@ -1,0 +1,103 @@
+name: TikZarium CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-native:
+    name: Rust native / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target_name: windows-x64
+            executable_suffix: .exe
+          - os: macos-15
+            target_name: macos-arm64
+            executable_suffix: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91.0
+          components: rustfmt, clippy
+      - name: Toolchain and native target
+        run: rustc -vV
+      - name: Verify physical architecture of hosted runner
+        if: runner.os == 'macOS'
+        shell: bash
+        run: rustc -vV | grep -F 'host: aarch64-apple-darwin'
+      - name: Check source formatting
+        run: cargo fmt --all -- --check
+      - name: Check crates compile
+        run: cargo check --workspace --all-targets
+      - name: Tests
+        run: cargo test --workspace
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Release binary
+        run: cargo build --release -p tikzarium-app -p tikzarium-cli
+      - name: Upload Windows binaries
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-windows-server-build
+          path: |
+            target/release/tikzarium-app.exe
+            target/release/tikzarium-cli.exe
+          if-no-files-found: error
+      - name: Upload macOS ARM64 binaries
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-macos-arm64-build
+          path: |
+            target/release/tikzarium-app
+            target/release/tikzarium-cli
+          if-no-files-found: error
+
+  xelatex-linux-smoke:
+    name: XeLaTeX real fixtures / Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91.0
+      - name: Install local TeX + PDF tools
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            texlive-xetex texlive-pictures texlive-latex-extra poppler-utils
+      - name: Record environment
+        run: |
+          xelatex --version | head -n 2
+          kpsewhich tikz.sty
+          kpsewhich standalone.cls
+          pdftoppm -v
+      - name: Test CLI build against actual XeLaTeX
+        run: |
+          cargo run -p tikzarium-cli -- doctor
+          mkdir -p /tmp/tikzarium-ci
+          cargo run -p tikzarium-cli -- build examples/quickstart.tex /tmp/tikzarium-ci/quickstart.pdf
+          cargo run -p tikzarium-cli -- build examples/cyrillic.tex /tmp/tikzarium-ci/cyrillic.pdf
+          pdfinfo /tmp/tikzarium-ci/quickstart.pdf | grep -E '^Pages: *1$'
+          pdfinfo /tmp/tikzarium-ci/cyrillic.pdf | grep -E '^Pages: *1$'
+          pdftoppm -f 1 -singlefile -png -scale-to 1200 \
+            /tmp/tikzarium-ci/quickstart.pdf /tmp/tikzarium-ci/preview
+          test -s /tmp/tikzarium-ci/preview.png
+      - name: Upload smoke PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-xelatex-linux-fixtures
+          path: /tmp/tikzarium-ci/
+          if-no-files-found: error
