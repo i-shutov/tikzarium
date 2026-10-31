@@ -523,6 +523,9 @@ impl TikzariumApp {
                     .desired_width(f32::INFINITY)
                     .desired_rows(36)
                     .show(ui);
+                if output.response.changed() {
+                    self.authoring.note_manual_edit(&self.document.source);
+                }
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
@@ -575,7 +578,11 @@ impl TikzariumApp {
                 && core.is_some_and(|status| {
                     status.compilation != tikzarium_extensions::CompilationState::IncompatibleEngine
                 }),
-            implemented: true, // Only B07's six explicitly narrow built-in primitives.
+            implemented: true, // B handles scoped interaction; C owns syntax and generation.
+            arrow_library_loaded: tikz_authoring::library_loaded(
+                &self.document.source,
+                "arrows.meta",
+            ),
         }
     }
 
@@ -661,7 +668,7 @@ impl TikzariumApp {
         }
         ui.label(&self.preview_status);
         ui.small(&self.page_navigation_status);
-        ui.small("Only the guide pad below makes B07-owned source patches. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
+        ui.small("Only the guide pad below makes B08 C-catalogue source patches. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
         let caps = self.primitive_capabilities();
         if let Some(line) =
             tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)

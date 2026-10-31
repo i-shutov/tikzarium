@@ -283,7 +283,7 @@ pub fn show_inspector(
     ui.separator();
 
     let choices = tikz_authoring::owned(source);
-    egui::ComboBox::from_id_salt("tikz-b07-owned")
+    egui::ComboBox::from_id_salt("tikz-b08-owned")
         .selected_text(match session.selected {
             Some(id) => format!("Primitive #{id}"),
             None => "Выберите примитив".into(),
@@ -348,8 +348,30 @@ pub fn show_inspector(
                 ui.label("cm");
             });
         }
+        if tool == Tool::Arrow {
+            if let Some(tip) = info.parameter.iter().find(|p| p.id == "tip") {
+                ui.label(&tip.help_ru);
+                egui::ComboBox::from_id_salt("c-arrow-tip")
+                    .selected_text(&session.draft.tip)
+                    .show_ui(ui, |ui| {
+                        for option in &tip.allowed_values {
+                            ui.selectable_value(&mut session.draft.tip, option.clone(), option);
+                        }
+                    });
+            }
+        }
         if tool == Tool::Node {
-            ui.label("Node text (plain Unicode):");
+            if let Some(mode) = info.parameter.iter().find(|p| p.id == "mode") {
+                ui.label(&mode.help_ru);
+                egui::ComboBox::from_id_salt("c-node-mode")
+                    .selected_text(&session.draft.mode)
+                    .show_ui(ui, |ui| {
+                        for option in &mode.allowed_values {
+                            ui.selectable_value(&mut session.draft.mode, option.clone(), option);
+                        }
+                    });
+            }
+            ui.label("Содержимое: text экранируется C, math — исходное TeX-выражение");
             ui.text_edit_singleline(&mut session.draft.text);
         }
         if let Some(id) = session.selected {
@@ -379,16 +401,31 @@ pub fn show_inspector(
         }
         if session.help {
             ui.separator();
-            ui.strong("Контекстная справка");
-            ui.label(info.explanation);
+            ui.strong("Контекстная справка · каталог C");
+            ui.label(&info.help_ru);
             ui.small(format!("Синтаксис: {}", info.syntax));
-            ui.small(format!("Параметры: {}", info.parameters));
-            ui.small(format!("Default: {}", info.defaults));
-            ui.small(format!("Эффект: {}", info.effect));
-            ui.code(info.example);
-            ui.small("Зависимость: \\usepackage{tikz}; library: core (дополнительная не нужна).");
-            ui.small(format!("Первичный источник: {}", info.source));
-            ui.small("Состояния: installed / loaded / XeLaTeX-compatible / B adapter are separate; compiled state NOT_VERIFIED.");
+            ui.small(format!("Интерактивно: {}", info.interaction_ru));
+            ui.small(format!("Предупреждение: {}", info.warning_ru));
+            ui.code(&info.example);
+            ui.small(format!(
+                "Зависимости: пакеты {:?}, библиотеки {:?}, движок {}, documented PGF {}, минимальная версия {}",
+                info.requirements.packages, info.requirements.libraries,
+                info.requirements.engine, info.requirements.documented_against,
+                info.requirements.pgf_version_min
+            ));
+            ui.small(format!("Первоисточник: {} · {}", info.manual_section, info.manual_url));
+            for parameter in &info.parameter {
+                ui.collapsing(format!("{} · {}", parameter.id, parameter.kind), |ui| {
+                    ui.label(&parameter.help_ru);
+                    ui.small(format!("Синтаксис: {}", parameter.syntax));
+                    ui.small(format!("Единицы {:?}; допустимые значения {:?}", parameter.units, parameter.allowed_values));
+                    ui.small(format!("Default: {} ({})", parameter.default, parameter.default_provenance));
+                    ui.small(format!("Предупреждение: {}", parameter.warning_ru));
+                    ui.small(format!("Взаимодействие: {}", parameter.interaction_ru));
+                    ui.code(&parameter.example);
+                    ui.small(format!("PGF Manual: {} · {}", parameter.manual_section, parameter.manual_url));
+                });
+            }
         }
     } else {
         ui.small("Выберите инструмент над координатным полем, затем click/drag. F1 показывает справку для выбранной команды.");
@@ -409,6 +446,21 @@ pub fn show_inspector(
             Err(error) => {
                 ui.small(error);
             }
+        }
+    }
+    if caps.installed && caps.loaded && !caps.arrow_library_loaded {
+        ui.separator();
+        ui.strong("arrows.meta · явная правка преамбулы с Undo");
+        match Session::propose_library(source, "arrows.meta") {
+            Ok(diff) => {
+                ui.code(diff);
+                if ui.button("Подключить arrows.meta").clicked()
+                    && let Err(error) = session.add_library(source, "arrows.meta")
+                {
+                    session.status = error;
+                }
+            }
+            Err(error) => { ui.small(error); }
         }
     }
     if ui
