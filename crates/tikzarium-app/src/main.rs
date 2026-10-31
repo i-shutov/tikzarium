@@ -523,12 +523,13 @@ impl TikzariumApp {
                     .desired_width(f32::INFINITY)
                     .desired_rows(36)
                     .show(ui);
-                if output.response.changed() {
-                    // A real TextEdit event, not an attempt to undo old B-owned
-                    // patches over newer user-authored TeX.
-                    self.authoring
-                        .note_manual_source_edit(&self.document.source);
-                }
+                // Both the desktop and UNIT_EVENT frames handle the same
+                // TextEdit change signal before visual Undo can be offered.
+                tikz_canvas::observe_source_text_edit(
+                    &output.response,
+                    &mut self.authoring,
+                    &self.document.source,
+                );
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
@@ -675,6 +676,10 @@ impl TikzariumApp {
             {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
+                // The source SidePanel has already been rendered this frame.
+                // Schedule a second frame so the created TikZ command is focused
+                // and highlighted without requiring another mouse interaction.
+                ui.ctx().request_repaint();
             }
         } else {
             ui.label("Canvas: только просмотр. Рисование требует кода рядом.");

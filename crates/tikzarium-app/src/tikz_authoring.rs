@@ -2,7 +2,8 @@
 //! We do not interpret TeX, replace PGF, or rewrite unrecognised source.
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, ops::Range, sync::LazyLock};
-use tikzarium_extensions::primitives::{Catalog, SourcePatch, ToolSpec};
+use tikzarium_extensions::primitives::{Catalog, Evidence, SourcePatch, ToolSpec};
+use tikzarium_extensions::project_imports::{self, ImportDecision, ImportKind, ImportPlan};
 
 static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
     Catalog::bundled().expect("bundled primitive catalogue must pass its own validation")
@@ -232,49 +233,37 @@ fn unescaped_comment(line: &str) -> &str {
     }
     line
 }
-/// Confirm explicit literal declarations only, without pretending to expand TeX macros.
-fn declared(source: &str, command: &str, wanted: &str) -> bool {
-    let uncommented = source
-        .lines()
-        .map(unescaped_comment)
-        .collect::<Vec<_>>()
-        .join("\n");
-    let mut rest = uncommented.as_str();
-    while let Some(at) = rest.find(command) {
-        let before = rest[..at].chars().next_back();
-        rest = &rest[at + command.len()..];
-        if before == Some('\\') || rest.starts_with(|c: char| c.is_ascii_alphabetic()) {
-            continue;
-        }
-        rest = rest.trim_start();
-        if rest.starts_with('[') {
-            let Some(end) = rest.find(']') else {
-                return false;
-            };
-            rest = rest[end + 1..].trim_start();
-        }
-        if let Some(body) = rest.strip_prefix('{')
-            && let Some(end) = body.find('}')
-            && !body[..end].contains(['{', '\\'])
-            && body[..end].split(',').any(|name| name.trim() == wanted)
-        {
-            return true;
-        }
-    }
-    false
-}
+/// One C-owned preamble scanner drives the enabled state, help and import
+/// proposal. An opaque preamble is UNKNOWN, never guessed as loaded.
 pub fn tikz_loaded(source: &str) -> bool {
-    declared(source, "\\usepackage", "tikz") || declared(source, "\\RequirePackage", "tikz")
+    let project = project_imports::inspect(source);
+    project.status(ImportKind::Package, "tikz") == Evidence::Confirmed
+}
+pub fn requirements_status(source: &str, tool: Tool) -> Evidence {
+    let project = project_imports::inspect(source);
+    let r = &spec(tool).requirements;
+    let states = r
+        .packages
+        .iter()
+        .map(|name| project.status(ImportKind::Package, name))
+        .chain(
+            r.libraries
+                .iter()
+                .map(|name| project.status(ImportKind::TikzLibrary, name)),
+        )
+        .collect::<Vec<_>>();
+    if states.iter().all(|state| *state == Evidence::Confirmed) {
+        Evidence::Confirmed
+    } else if states.contains(&Evidence::Unknown) {
+        Evidence::Unknown
+    } else {
+        Evidence::Absent
+    }
 }
 pub fn requirements_loaded(source: &str, tool: Tool) -> bool {
-    let r = &spec(tool).requirements;
-    r.packages
-        .iter()
-        .all(|p| declared(source, "\\usepackage", p) || declared(source, "\\RequirePackage", p))
-        && r.libraries
-            .iter()
-            .all(|p| declared(source, "\\usetikzlibrary", p))
+    requirements_status(source, tool) == Evidence::Confirmed
 }
+
 fn unique_line(source: &str, needle: &str) -> Result<usize, String> {
     let mut offset = 0;
     let mut result = None;
@@ -319,19 +308,42 @@ fn eol(source: &str) -> &'static str {
         "\n"
     }
 }
-fn import_text(source: &str, tool: Tool) -> String {
-    let mut out = String::new();
-    for name in &spec(tool).requirements.packages {
-        if !declared(source, "\\usepackage", name) && !declared(source, "\\RequirePackage", name) {
-            out.push_str(&format!("\\usepackage{{{name}}}{}", eol(source)));
+/// The C N2 import planner owns preamble recognition, exact insertion point
+/// and revision/anchor checks; B only chooses the requirements from the C tool.
+fn dependency_plan(source: &str, tool: Tool, revision: u64) -> Result<ImportPlan, String> {
+    let project = project_imports::inspect(source);
+    let required = &spec(tool).requirements;
+    let mut missing = None;
+    // Library-first is deliberate: C N2 inserts tikz itself when necessary,
+    // making an arrow's package+arrows.meta import ONE reversible transaction.
+    for name in &required.libraries {
+        if project.status(ImportKind::TikzLibrary, name) != Evidence::Confirmed {
+            missing = Some((ImportKind::TikzLibrary, name.as_str()));
+            break;
         }
     }
-    for name in &spec(tool).requirements.libraries {
-        if !declared(source, "\\usetikzlibrary", name) {
-            out.push_str(&format!("\\usetikzlibrary{{{name}}}{}", eol(source)));
+    if missing.is_none() {
+        for name in &required.packages {
+            if project.status(ImportKind::Package, name) != Evidence::Confirmed {
+                missing = Some((ImportKind::Package, name.as_str()));
+                break;
+            }
         }
     }
-    out
+    let (kind, name) = missing.ok_or("Все требуемые подключения уже явно присутствуют")?;
+    let target = project.begin_document_target(revision).ok_or_else(|| {
+        project
+            .uncertain_reason
+            .unwrap_or("нет однозначной преамбулы для безопасной вставки")
+            .to_owned()
+    })?;
+    match project_imports::plan_import(source, target, kind, name) {
+        ImportDecision::Proposed(plan) => Ok(plan),
+        ImportDecision::AlreadyLoaded => {
+            Err("Все требуемые подключения уже явно присутствуют".into())
+        }
+        ImportDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
+    }
 }
 
 #[derive(Default)]
@@ -459,21 +471,29 @@ impl Session {
         Ok(old.line)
     }
     pub fn propose_dependencies(source: &str, tool: Tool) -> Result<String, String> {
-        let text = import_text(source, tool);
-        if text.is_empty() {
-            return Err("Все требуемые подключения уже явно присутствуют".into());
+        let plan = dependency_plan(source, tool, 0)?;
+        let mut preview = String::from("@@ перед \\begin{document} @@\n");
+        for declaration in &plan.declarations {
+            preview.push_str("+ ");
+            preview.push_str(declaration);
+            preview.push('\n');
         }
-        unique_line(source, "\\begin{document}")?;
-        Ok(text)
+        Ok(preview)
     }
-    pub fn add_dependencies(&mut self, source: &mut String, tool: Tool) -> Result<(), String> {
+    pub fn add_dependencies(&mut self, source: &mut String, tool: Tool) -> Result<usize, String> {
         self.sync(source)?;
-        let text = Self::propose_dependencies(source, tool)?;
-        let at = unique_line(source, "\\begin{document}")?;
-        self.patch(source, at..at, String::new(), text)?;
+        let plan = dependency_plan(source, tool, self.revision)?;
+        let at = plan.patch.range.start;
+        let line = source[..at].bytes().filter(|byte| *byte == b'\n').count() + 1;
+        // C N2 re-checks the begin-document anchor and source revision on apply.
+        let inverse = plan
+            .apply(source, &mut self.revision)
+            .map_err(|e| e.to_string())?;
+        self.observed_source.clone_from(source);
+        self.undo.push(inverse);
         self.status =
-            "Преамбула изменена явно; доступна отмена. TeX-пакеты не устанавливались".into();
-        Ok(())
+            "Преамбула изменена через проверенный C/N2 patch; доступна отмена. TeX-пакеты не устанавливались".into();
+        Ok(line)
     }
     pub fn undo(&mut self, source: &mut String) -> Result<(), String> {
         if self.sync(source)? {
@@ -590,8 +610,10 @@ mod tests {
         assert!(requirements_loaded(&source, Tool::Arrow));
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
-        assert!(tikz_loaded("\\usepackage[demo]{foo, tikz}"));
-        assert!(!tikz_loaded("% \\usepackage{tikz}\n"));
+        let multi_package = SOURCE.replace("\\usepackage{tikz}", "\\usepackage[demo]{foo, tikz}");
+        assert!(tikz_loaded(&multi_package));
+        let commented = SOURCE.replace("\\usepackage{tikz}", "% \\usepackage{tikz}");
+        assert!(!tikz_loaded(&commented));
     }
     #[test]
     fn hand_edits_or_duplicate_objects_do_not_gain_write_authority() {
@@ -633,6 +655,83 @@ mod tests {
         session.draft.values.insert("start_x".into(), "2cm".into());
         session.apply_parameters(&mut source).unwrap();
         assert!(source.contains("% изменение вручную"));
+    }
+
+    #[test]
+    fn n2_package_and_arrows_library_are_one_visible_undoable_crlf_patch() {
+        let mut source = SOURCE
+            .replace("\\usepackage{tikz}\n", "")
+            .replace("\\usetikzlibrary{arrows.meta}\n", "")
+            .replace('\n', "\r\n");
+        let original = source.clone();
+        assert_eq!(requirements_status(&source, Tool::Arrow), Evidence::Absent);
+        let preview = Session::propose_dependencies(&source, Tool::Arrow).unwrap();
+        assert!(preview.contains("+ \\usepackage{tikz}"));
+        assert!(preview.contains("+ \\usetikzlibrary{arrows.meta}"));
+        let mut session = Session::default();
+        session.reset(&source);
+        let at_line = session.add_dependencies(&mut source, Tool::Arrow).unwrap();
+        assert_eq!(at_line, 2);
+        assert!(source.contains("\\usepackage{tikz}\r\n\\usetikzlibrary{arrows.meta}\r\n"));
+        assert!(requirements_loaded(&source, Tool::Arrow));
+        assert!(source.contains("% opaque user material\r\n\\myMacro{x}\r\n"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original);
+    }
+
+    #[test]
+    fn n2_unknown_preamble_never_claims_loaded_or_overwrites_source() {
+        let mut source = SOURCE.replace(
+            "\\usepackage{tikz}\n",
+            "\\myOpaquePreambleMacro\n\\usepackage{tikz}\n",
+        );
+        let original = source.clone();
+        assert_eq!(requirements_status(&source, Tool::Arrow), Evidence::Unknown);
+        assert!(!requirements_loaded(&source, Tool::Arrow));
+        assert!(Session::propose_dependencies(&source, Tool::Arrow).is_err());
+        let mut session = Session::default();
+        session.reset(&source);
+        assert!(session.add_dependencies(&mut source, Tool::Arrow).is_err());
+        assert!(
+            session
+                .insert(&mut source, Tool::Arrow, Draft::for_tool(Tool::Arrow))
+                .is_err()
+        );
+        assert_eq!(source, original);
+        assert!(!session.undo_available());
+    }
+
+    #[test]
+    fn generated_command_survives_document_save_and_reopen_using_real_document_api() {
+        let mut doc = tikzarium_core::Document::scratch(SOURCE);
+        let mut session = Session::default();
+        session.reset(&doc.source);
+        session
+            .insert(
+                &mut doc.source,
+                Tool::Rectangle,
+                Draft::for_tool(Tool::Rectangle),
+            )
+            .unwrap();
+        let temp = tempfile::tempdir().unwrap();
+        let file = temp.path().join("n2-authoring.tex");
+        doc.save_to(&file).unwrap();
+        let reopened = tikzarium_core::Document::load(&file).unwrap();
+        assert_eq!(reopened.source, doc.source);
+        assert!(reopened.source.contains(r"\myMacro{x}"));
+        let mut reopened_session = Session::default();
+        reopened_session.reset(&reopened.source);
+        let line = reopened_session.choose(&reopened.source, 1).unwrap();
+        assert_eq!(line, owned(&reopened.source)[0].line);
+        reopened_session
+            .draft
+            .values
+            .insert("end_x".into(), "4cm".into());
+        let mut edited = reopened.source.clone();
+        reopened_session.apply_parameters(&mut edited).unwrap();
+        assert!(edited.contains("4cm"));
+        reopened_session.undo(&mut edited).unwrap();
+        assert_eq!(edited, reopened.source);
     }
 
     #[test]
