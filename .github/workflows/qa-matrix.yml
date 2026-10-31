@@ -102,7 +102,8 @@ jobs:
           kpsewhich unicode-math.sty
           kpsewhich latinmodern-math.otf
       - name: Record PDF inspection executables
-        run: python -c "import shutil; print({tool: shutil.which(tool) for tool in ('pdfinfo', 'pdftotext', 'pdffonts')})"
+        run: |
+          python -c "import shutil; print({tool: shutil.which(tool) for tool in ('pdfinfo', 'pdftotext', 'pdffonts')})"
       - name: Require PDF-to-text for Unicode gating
         run: python -c "import shutil,sys; sys.exit(0 if shutil.which('pdftotext') else 1)"
       - name: Build real Rust CLI
