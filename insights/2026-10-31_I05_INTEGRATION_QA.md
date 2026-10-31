@@ -22,3 +22,10 @@ This document records submitted changes, **NOT** a passed integration until exac
 - Main Egui preview's stale detection still ignores changes in included assets unless the top-level source changes.
 - C03 audited results bind hashes to a checkout and host, not signatures or licensing. CTAN package coverage is not the entire extension universe.
 - Lua-only graphdrawing must remain engine-incompatible and cannot be advertised as a XeLaTeX feature.
+
+## Discovered with downloaded GitHub Windows/Linux QA artifacts
+I05 D QA run 41179678610, Linux XeTeX 2026 / PGF 3.1.12: 4 positive fixtures output valid PDF with exit 0, but the Lua-only fixture exited 1 with the **correct** message split midword: `You need to run LuaTeX to use the grap\nh drawing library.` The old C02 regex expected an unbroken `graph` and classified it `failed`; C03 auditor thus did not run for that attempt. Raw `graphdrawing-lua.log` and `console.log` were inspected from artifact 13034367975, with exact error. The failure was **test recognition**, not a XeLaTeX success or justification to weaken the engine compatibility rule.
+
+I05 now matches the *full canonical LuaTeX requirement phrase* while allowing XeTeX line wraps within words; tests cover graph/drawing/library internal breaks and unrelated errors. Status **PENDING a fresh exact-head CI**.
+
+Earlier Linux CLI workflow run 41179660717 succeeded: artifact 13033669833 was downloaded and independently inspected. Its `extensions-c03/audit.json` recorded `accepted=true`, `complete_suite=true`, `verified_fixtures=5`, `errors=[]`, source/tool TeX Live **2023/Debian**. Individual console, TeX and positive PDF SHA-256 were independently recomputed from all five ZIP members and matched observation TOML. That evidence is **Linux TeX Live 2023 only**, not a 2026/Windows/macOS verdict.

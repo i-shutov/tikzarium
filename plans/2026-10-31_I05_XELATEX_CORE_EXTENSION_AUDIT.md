@@ -27,3 +27,8 @@ Integrate A's standalone #10 changes without force-merging its conflicting `diag
 - File watcher: dependency fingerprints for included resources, not only open document source.
 - Process-tree termination for TeX helpers; `-no-shell-escape` is not an OS sandbox.
 - Real native 1366×768/Retina visual acceptance before internal v0.1. No geometry-aware direct drawing yet.
+
+## New cross-version negative control
+- [x] Observed real TeX Live **2026 / PGF 3.1.12** failure text wraps inside “graph” (`grap\n h`), unlike TeX Live 2023. Four other extension fixtures compiled successfully.
+- [x] Keep Lua-required message semantics exact; tolerate intra-word TeX log line wraps; added unit regression examples for graph/drawing/library word splits.
+- [ ] Re-run I05 exact-head 3-host CI and inspect **actual** negative observation + independent auditor JSON. A previous Linux D job failed despite valid expected engine failure because the old recognizer missed the wrapped word — not a successful 5/5 until rerun.
