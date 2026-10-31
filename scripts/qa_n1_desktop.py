@@ -195,9 +195,15 @@ def main() -> int:
         key("ctrl+v")
         click(profile["path_click"])
         key("ctrl+a")
-        run(["xdotool", "type", "--clearmodifiers", "--delay", "1", str(source)])
+        run(["xdotool", "type", "--clearmodifiers", "--delay", "5", str(source)])
+        time.sleep(0.4)
+        screenshot("02a-path-typed.png")
+        # A path TextEdit may consume the shortcut while it owns keyboard
+        # focus. Leave the path editor explicitly before triggering actual
+        # global Save; never synthesize a file from this test driver.
+        click(profile["source_click"])
         key("ctrl+s")
-        wait_for(source.is_file, 10, "Ctrl+S did not save the entered path")
+        wait_for(source.is_file, 10, "Ctrl+S after source focus did not save the entered path")
         if source.read_bytes() != FIXTURE.encode("utf-8"):
             raise RuntimeError("Saved buffer differs from actual pasted Unicode source")
         report["steps"].append({"case": "keyboard_paste_save", "status": "PASS",

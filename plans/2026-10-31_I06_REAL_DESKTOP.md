@@ -24,3 +24,7 @@ New source parser checks both legacy v1 hex and B20 compact v2 JSON (strict sche
 ## I18 actual B22 desktop calibration attempt 1 (evidence, not acceptance)
 
 Actual [run 41246209257](https://github.com/i-shutov/tikzarium/actions/runs/41246209257) compiled B22 exact `3c6d7689` from its own Git worktree, successfully ran six offline metadata predicates, opened real egui/X11, pasted Unicode and saved unchanged source. It **FAILED on gesture #1**: old line click (648,142) selected Arrow, as the real source and selected screenshot prove. Archived screenshot shows B22's responsive toolbar in row1 Line (599,142), Arrow (653,142), Rectangle (737,142), Circle (832,142) and row2 Node (559,168), Cubic (742,168). Coordinates are now based on that actual image, not old N1; rerun and check new source/PDF artifacts. This attempt is not evidence of a passed tool gesture or GUI export.
+
+### I18-B — real GUI Save focus regression (2026-11-01)
+
+[Run 41246572973](https://github.com/i-shutov/tikzarium/actions/runs/41246572973) again built the exact B22 executable and passed offline tests, but failed **before any gesture**: real X11 screenshot shows the path TextEdit retained focus and Ctrl+S did not write the destination file. No pointer PASS can be attributed to this attempt. The driver now types the exact path at a paced key delay, captures a path-field screenshot, explicitly re-focuses the real source editor, then sends Ctrl+S and requires an on-disk exact Unicode source; it never writes the document directly. Fresh CI/real screenshot review required.
