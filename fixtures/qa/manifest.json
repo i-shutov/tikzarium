@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "provenance": "Project-authored QA cases; examples/ fixtures are from TikZarium W01. R4 corpus not imported.",
+  "cases": [
+    {
+      "id": "g00-quickstart",
+      "project_dir": "examples",
+      "source": "quickstart.tex",
+      "expect": "pdf",
+      "pages": 1
+    },
+    {
+      "id": "g00-legacy-cyrillic-pdf-only",
+      "project_dir": "examples",
+      "source": "cyrillic.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "note": "W01 OS-font-family-name example is nonportable on hosted Mac (CoreText has no DejaVu Serif family despite TeX package filename availability); PDF-only, NOT Unicode proof.",
+      "known_limitation": "W01 uses OS-registered font family DejaVu Serif; hosted macOS ARM TeX Live supplies DejaVuSerif.ttf but cannot resolve family name. Upstream PR #6 needs repair. This case cannot count as a Unicode PASS or a release acceptance."
+    },
+    {
+      "id": "g00-cyrillic-glyph-audit",
+      "project_dir": "fixtures/qa/g00-cyrillic-glyph-audit",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "check_no_missing_glyphs": true,
+      "text_expect": "Тест XeLaTeX и Unicode. Кириллица."
+    },
+    {
+      "id": "g01-multifile-unicode-path",
+      "project_dir": "fixtures/qa/g01-multifile",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "unicode_path": true
+    },
+    {
+      "id": "g02-tikz-fonts",
+      "project_dir": "fixtures/qa/g02-tikz-fonts",
+      "source": "main.tex",
+      "expect": "pdf",
+      "pages": 1,
+      "check_no_missing_glyphs": true,
+      "text_expect": [
+        "Оптика и квантовая яма",
+        "Греческие символы αβγ"
+      ],
+      "font_expect": [
+        "DejaVuSerif",
+        "LatinModernMath"
+      ],
+      "note": "Text and math must be actual Unicode/XeLaTeX fontspec+unicode-math content within TikZ nodes. pdffonts evidence is separately marked NOT_CHECKED when tool is absent."
+    },
+    {
+      "id": "g08-intentional-tex-error",
+      "project_dir": "fixtures/qa/g08-error",
+      "source": "main.tex",
+      "expect": "tex-error"
+    }
+  ]
+}

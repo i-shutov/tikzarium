@@ -1,0 +1,127 @@
+name: D QA matrix - Rust and XeLaTeX
+
+on:
+  pull_request:
+    branches: [main, feat/w01-xelatex-egui-core]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-quality:
+    name: Rust fmt/clippy/test + QA harness / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt, clippy
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Record toolchain and architecture
+        run: |
+          rustc -vV
+          cargo --version
+          python -c "import platform; print(platform.platform(), platform.machine())"
+      - name: Require native Apple Silicon runner
+        if: runner.os == 'macOS'
+        run: python -c "import platform,sys; print(platform.machine()); sys.exit(0 if platform.machine().lower() in ('arm64','aarch64') else 1)"
+      - name: Python fixture harness unit tests
+        run: python -m unittest discover -s scripts/tools -p "test_qa_*.py" -v
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Rust full workspace tests
+        run: cargo test --workspace --all-targets
+      - name: Rust clippy (warnings are errors)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  xelatex-smoke:
+    name: Actual XeLaTeX CLI / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 55
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            label: linux-x64
+            cli: tikzarium-cli
+          - os: windows-2022
+            label: windows-server-x64
+            cli: tikzarium-cli.exe
+          - os: macos-15
+            label: macos-arm64
+            cli: tikzarium-cli
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install TeX Live 2026 fixture subset (rolling CTAN)
+        id: texlive_install
+        uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60
+        with:
+          texlive_version: '2026'
+          repository: ${{ runner.os == 'Windows' && 'https://mirrors.rit.edu/CTAN/systems/texlive/tlnet' || 'https://mirror.math.princeton.edu/pub/CTAN/systems/texlive/tlnet' }}
+          packages: >
+            scheme-basic
+            collection-xetex
+            collection-latexrecommended
+            collection-pictures
+            standalone
+            unicode-math
+            lm-math
+            dejavu
+            lm
+      - name: Install PDF text/font verification tools (Windows Server)
+        if: runner.os == 'Windows'
+        run: choco install poppler --version=26.9.0 --yes --no-progress
+      - name: Install PDF text/font verification tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y poppler-utils
+      - name: Install PDF text/font verification tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install poppler
+      - name: Verify XeLaTeX and selected fonts
+        run: |
+          xelatex --version
+          tlmgr --version
+          kpsewhich DejaVuSerif.ttf
+          kpsewhich unicode-math.sty
+          kpsewhich latinmodern-math.otf
+      - name: Record PDF inspection executables
+        run: |
+          python -c "import shutil; print({tool: shutil.which(tool) for tool in ('pdfinfo', 'pdftotext', 'pdffonts')})"
+      - name: Require PDF text, page and embedded-font inspectors
+        run: |
+          python -c "import shutil,sys; names=('pdfinfo','pdftotext','pdffonts'); missing=[x for x in names if not shutil.which(x)]; print('Missing required QA inspectors:', missing); sys.exit(bool(missing))"
+      - name: Build real Rust CLI
+        run: cargo build -p tikzarium-cli
+      - name: Execute fixture suite with machine-readable evidence
+        run: python scripts/tools/qa_smoke.py --cli "target/debug/${{ matrix.cli }}" --output ".qa-artifacts/${{ matrix.label }}"
+      - name: Capture TeX installer failure log, if present
+        if: failure() && steps.texlive_install.outcome == 'failure'
+        run: python -c "from pathlib import Path; import shutil; d=Path('.qa-artifacts/${{ matrix.label }}'); d.mkdir(parents=True,exist_ok=True); s=Path('install-tl.log'); shutil.copyfile(s,d/'install-tl.log') if s.is_file() else (d/'installer-log-unavailable.txt').write_text('TeX installation failed before producing install-tl.log', encoding='utf-8')"
+      - name: Upload fixture evidence and failure logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-evidence-${{ matrix.label }}
+          path: .qa-artifacts/${{ matrix.label }}/
+          if-no-files-found: warn
+          retention-days: 14
