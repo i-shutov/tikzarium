@@ -288,6 +288,39 @@ mod tests {
     }
 
     #[test]
+    fn user_and_shared_miktex_roots_do_not_mix_lookup_helpers() {
+        let directory = tempfile::tempdir().unwrap();
+        let helper_name = if cfg!(windows) {
+            "findtexmf.exe"
+        } else {
+            "findtexmf"
+        };
+        let user = directory.path().join("User MiKTeX Юникод");
+        let shared = directory.path().join("Shared MiKTeX с пробелом");
+        std::fs::create_dir_all(&user).unwrap();
+        std::fs::create_dir_all(&shared).unwrap();
+        let user_helper = user.join(helper_name);
+        let shared_helper = shared.join(helper_name);
+        std::fs::write(&user_helper, b"fake helper").unwrap();
+        std::fs::write(&shared_helper, b"fake helper").unwrap();
+        let user_engine = user.join("xelatex.exe");
+        let shared_engine = shared.join("xelatex.exe");
+        assert_eq!(
+            tool_next_to_engine(Some(&user_engine), "findtexmf"),
+            Some(user_helper.clone())
+        );
+        assert_eq!(
+            tool_next_to_engine(Some(&shared_engine), "findtexmf"),
+            Some(shared_helper)
+        );
+        std::fs::remove_file(user_helper).unwrap();
+        assert_eq!(
+            tool_next_to_engine(Some(&user_engine), "findtexmf"),
+            None
+        );
+    }
+
+    #[test]
     fn traversal_is_not_accepted_as_package_name() {
         let env = TexEnvironment {
             xelatex: None,
