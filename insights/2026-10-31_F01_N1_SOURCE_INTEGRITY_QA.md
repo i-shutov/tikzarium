@@ -29,3 +29,7 @@ If exact-head F suite is green, stop F at this bounded gate, hand SHA + check UR
 ## Later main/ancestry observation
 
 Before final F handoff, main changed from merged #44 `6b0fe3551cb6ded5cf737e28a7a74326f0b4fe49` to docs-only #45 `ca90c2ee685e0c997d2d90a3ac60dab9e31fdb87`; no F-owned or shared generator/runtime files changed in this delta. Rebase the F-only six-file tree onto that updated main. This observation is not an F Rust PASS; CI of the final exact commit is authoritative.
+
+## Exact-head CI, first attempt
+
+At F-only commit `31c816636d752d65a407abbfe5b32f755ba2b29a` on top of accepted main #45, hosted [TikZarium CI 41192203534](https://github.com/i-shutov/tikzarium/actions/runs/41192203534) Windows and [D QA 41192203539](https://github.com/i-shutov/tikzarium/actions/runs/41192203539) Linux/Windows report **FAIL at `cargo fmt --check` before F Rust tests**. Read exact hosted diff from jobs `124511096787` and `124511096942`: one extra blank line and two one-line `format!` layouts in F-owned test only. Corrected precisely those three fragments, without disabling formatting or changing any test expectations. On this first SHA macOS and Linux TeX fixture jobs may pass independently; they are not F test acceptance. The next F-only head and its own CI must be inspected before PASS.

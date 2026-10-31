@@ -311,7 +311,6 @@ fn successive_edits_same_range_require_revision_rebase_to_undo_older_changes() {
     assert_eq!(source.as_bytes(), original.as_bytes());
 }
 
-
 #[test]
 fn typed_source_target_plans_all_six_parameter_edits_without_touching_crlf_opaque_tex() {
     let catalog = Catalog::bundled().unwrap();
@@ -419,9 +418,8 @@ fn typed_targets_reject_non_utf8_boundaries_invalid_offsets_and_false_full_docum
 fn identical_generated_commands_edit_the_exact_second_target_not_the_first_match() {
     let catalog = Catalog::bundled().unwrap();
     let command = generated("tikz.line", &[]);
-    let original = format!(
-        "\\documentclass{{article}}\n{command}\n\\unknown{{не трогать}}\n{command}\n"
-    );
+    let original =
+        format!("\\documentclass{{article}}\n{command}\n\\unknown{{не трогать}}\n{command}\n");
     let second = nth_span(&original, &command, 1);
     let mut source = original.clone();
     let mut revision = 14;
@@ -448,9 +446,7 @@ fn identical_generated_commands_edit_the_exact_second_target_not_the_first_match
 fn moved_generated_fragment_inside_unknown_macro_cannot_be_undone_by_global_search() {
     let catalog = Catalog::bundled().unwrap();
     let before_command = generated("tikz.circle", &[]);
-    let original = format!(
-        "\\documentclass{{article}}\n{before_command}\n\\unknown{{keep}}\n"
-    );
+    let original = format!("\\documentclass{{article}}\n{before_command}\n\\unknown{{keep}}\n");
     let mut source = original.clone();
     let mut revision = 91;
     let change = plan_parameter_edit(
