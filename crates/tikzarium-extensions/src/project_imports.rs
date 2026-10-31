@@ -161,7 +161,7 @@ pub fn inspect(source: &str) -> ProjectImports {
         if result.begin_document.is_some() {
             break;
         }
-        let line = raw.trim_end_matches(['\r', '\n']);
+        let line = raw.trim_end_matches(|c| c == '\r' || c == '\n');
         let active = uncommented(line);
         let active = if offset == 0 {
             active.strip_prefix('\u{feff}').unwrap_or(active)
@@ -195,6 +195,10 @@ pub fn inspect(source: &str) -> ProjectImports {
                     "opaque or duplicate documentclass declaration",
                 ),
             }
+        } else if trimmed.starts_with("\\pagestyle")
+            && literal_names(trimmed, "\\pagestyle", false).is_some()
+        {
+            // A literal page-style setting cannot inject package imports.
         } else if trimmed.starts_with("\\usepackage") {
             match literal_names(trimmed, "\\usepackage", true) {
                 Some(names) => result.packages.extend(names),
