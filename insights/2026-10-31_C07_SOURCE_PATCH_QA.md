@@ -11,3 +11,7 @@ B handoff: direct usage example and revision/range ownership contract in extensi
 ## C07 completion evidence — 2026-10-31
 
 The previous `f5e31c5` C07 run 41189291638 remained **FAIL at Rust formatting** on hosted Windows/macOS; TeX Live fixture checks did pass. C now aligns its own Rust files with the formatted N1 integration `SourceTarget` contract and U+0024 character escapes. The original catalogue had a semantic documentation error claiming node `mode` becomes a TikZ key; corrected. A new *isolated* gallery was compiled with local external XeLaTeX (TeX Live 2025/dev on Debian x86_64): exit 0, one PDF page, no `Missing character:` messages, and a raster inspection shows six non-overlapping labelled tools. Gallery source SHA-256 `eb3e43c19ee3f5a632be8ae67f03a2b7b3000748abb3edf0e18b5d71e3060da6`; local PDF SHA-256 `e2d0757e0895f95806a0b55a8143deac09dd3765e49a2488c6340d8aa4f5e6f1`. Generated Rust code parity, latest cargo fmt/test/clippy and CI status remain NOT_VERIFIED until hosted runs finish; local Rust toolchain is unavailable. Native Windows 10 MiKTeX and physical Mac M1/M4 GUI are NOT_RUN. Original six-source fixture preserved.
+
+### Hosted Rust formatting feedback
+
+Exact-head GitHub Actions run `41191110158`, macOS `124507915818`, exposed a single `rustfmt` diff at `primitives.rs:216`: the gallery caption `format!` call must wrap to three lines. Reproduced the requested diff byte-for-byte in this C-only follow-up; no release or test PASS claimed prior to new exact-head CI.

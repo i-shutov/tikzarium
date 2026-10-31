@@ -216,7 +216,9 @@ impl Catalog {
             let y = if i < 3 { 0 } else { -4 };
             s.push_str(&format!("\\begin{{scope}}[shift={{({x}cm,{y}cm)}}]\n"));
             s.push_str("\\draw[gray!30] (-0.25cm,-0.25cm) rectangle (3.5cm,3cm);\n");
-            s.push_str(&format!("\\node[anchor=west] at (0cm,2.65cm) {{\\small {caption}}};\n"));
+            s.push_str(&format!(
+                "\\node[anchor=west] at (0cm,2.65cm) {{\\small {caption}}};\n"
+            ));
             s.push_str(&self.generate(&tool.id, &BTreeMap::new())?.source);
             s.push_str("\n\\end{scope}\n");
         }
