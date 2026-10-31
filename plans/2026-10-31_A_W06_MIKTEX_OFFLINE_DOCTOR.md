@@ -60,3 +60,14 @@ Inspect PDF text/font embedding with external Poppler (separately installed). If
 ## Remaining design limits
 
 The engine --version probe currently uses ordinary process output without its own timeout. MiKTeX cannot guarantee strict OS-level offline isolation: the no-installer flag disables MiKTeX's package installer, not every conceivable TeX macro or executable, and -no-shell-escape is not an OS sandbox. A network-isolated physical-host smoke remains mandatory. An external font file may be absent even when .sty files are present. No automatic GUI preamble patching, no TeX distribution mutation, no physical-host PASS in this PR.
+
+
+## Additional prerequisite safety: no silent PATH compiler fallback
+
+A user-selected TIKZARIUM_XELATEX override is strictly authoritative: an
+invalid configured executable reports INVALID and exit code 2 even when a
+different xelatex binary exists on PATH. Neither doctor nor build is allowed
+to silently switch to TeX Live or another MiKTeX installation. The CLI
+child-process regression puts a valid fake XeLaTeX on PATH, selects a missing
+Unicode MiKTeX path, and checks no PDF appears and custom TeX/CRLF bytes stay
+unchanged. This test is authored; exact-head CI is required before PASS.

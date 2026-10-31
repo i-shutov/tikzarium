@@ -181,3 +181,42 @@ fn successful_pdf_with_missing_glyph_reports_explicit_cli_warning() {
     assert!(warning.contains("MissingGlyph"));
     assert!(warning.contains("U+0416"));
 }
+
+// Regression: a broken explicit MiKTeX path must never select a different
+// xelatex found on PATH; the engine is a user-selected prerequisite.
+#[test]
+fn invalid_selected_engine_never_uses_path_fallback_for_doctor_or_build() {
+    let directory = tempfile::tempdir().unwrap();
+    let bin = directory.path().join("fallback TeX Live");
+    fs::create_dir_all(&bin).unwrap();
+    let path_engine = fake_engine(&bin);
+    assert!(path_engine.is_file());
+
+    let selected = directory.path().join("missing MiKTeX ユニコード/xelatex");
+    let source = directory.path().join("original.tex");
+    let pdf = directory.path().join("would-be-output.pdf");
+    let original = b"% leave custom TeX untouched\r\n\\opaque{source}\r\n";
+    fs::write(&source, original).unwrap();
+
+    for args in [
+        vec!["doctor".to_owned()],
+        vec![
+            "build".to_owned(),
+            source.display().to_string(),
+            pdf.display().to_string(),
+        ],
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_tikzarium-cli"))
+            .env("TIKZARIUM_XELATEX", &selected)
+            .env("PATH", &bin)
+            .args(args)
+            .output()
+            .unwrap();
+        assert_eq!(result.status.code(), Some(2));
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(stderr.contains("INVALID TIKZARIUM_XELATEX"), "{stderr}");
+        assert!(stderr.contains("no fallback"), "{stderr}");
+    }
+    assert!(!pdf.exists());
+    assert_eq!(fs::read(&source).unwrap(), original);
+}

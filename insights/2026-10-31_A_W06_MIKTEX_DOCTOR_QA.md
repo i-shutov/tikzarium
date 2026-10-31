@@ -45,3 +45,18 @@ Source placed under a Unicode-and-space directory, copied verbatim from the new 
 The version subprocess currently has no independent deadline. MiKTeX --disable-installer governs its package installer, not arbitrary TeX I/O or all network behaviors; no OS sandbox guarantee. Existing fonts may differ between distributions; the fixture explicitly requires DejaVuSerif.ttf and latinmodern-math.otf. Real native MiKTeX evidence and exact-head hosted Rust CI must be collected before any Windows-specific PASS claim.
 
 Vendor reference: https://docs.miktex.org/manual/miktex-xetex.html ; https://docs.miktex.org/manual/texfeatures.html ; https://docs.miktex.org/manual/findtexmf.html .
+
+
+## Additional QA: a real silent compiler substitution defect
+
+Review found the pre-W06 TexEnvironment::discover() would fall back to the
+PATH XeLaTeX when TIKZARIUM_XELATEX was configured but invalid; this could
+silently pick TeX Live instead of independently installed MiKTeX. Fixed:
+configured override selects only its exact path (or no engine); PATH lookup
+is permitted only when TIKZARIUM_XELATEX is unset. Both CLI commands now
+report the offending override as INVALID and return exit code 2.
+
+Regression authored: working fake engine on PATH, explicitly selected missing
+Unicode MiKTeX path, no created PDF, byte-identical CRLF plus opaque macro.
+New branch SHA tests remain PENDING until exact-head hosted Rust CI finishes.
+Physical Win10 MiKTeX user/shared and Mac M1/M4 remain NOT_RUN.

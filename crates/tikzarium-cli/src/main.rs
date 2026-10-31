@@ -45,15 +45,24 @@ fn write_pdf(destination: &Path, pdf: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
+fn report_missing_engine() {
+    if let Some(configured) = env::var_os("TIKZARIUM_XELATEX") {
+        eprintln!(
+            "XeLaTeX: INVALID TIKZARIUM_XELATEX={} (no fallback to another PATH engine)",
+            Path::new(&configured).display()
+        );
+    } else {
+        eprintln!("XeLaTeX: MISSING (install external MiKTeX on Windows or XeLaTeX on macOS)");
+    }
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("doctor") if args.len() == 2 => {
             let environment = TexEnvironment::discover();
             let Some(xelatex) = environment.xelatex.as_deref() else {
-                eprintln!(
-                    "XeLaTeX: MISSING (install external MiKTeX on Windows or XeLaTeX on macOS)"
-                );
+                report_missing_engine();
                 return ExitCode::from(2);
             };
             let identity = match inspect_xelatex(xelatex) {
@@ -146,7 +155,7 @@ fn main() -> ExitCode {
 
             let env = TexEnvironment::discover();
             let Some(xelatex) = env.xelatex else {
-                eprintln!("XeLaTeX missing. Install TeX Live/MiKTeX, or set TIKZARIUM_XELATEX.");
+                report_missing_engine();
                 return ExitCode::from(2);
             };
             let req = BuildRequest {

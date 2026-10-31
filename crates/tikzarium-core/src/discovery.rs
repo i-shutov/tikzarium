@@ -114,9 +114,13 @@ pub struct TexEnvironment {
 impl TexEnvironment {
     #[must_use]
     pub fn discover() -> Self {
-        let xelatex = env::var_os("TIKZARIUM_XELATEX")
-            .and_then(|path| candidate(Path::new(&path)))
-            .or_else(|| find_executable("xelatex"));
+        // An explicitly selected MiKTeX/XeLaTeX installation is authoritative.
+        // A typo or removed installation must NOT silently switch to a different
+        // PATH engine (including a different TeX distribution).
+        let xelatex = match env::var_os("TIKZARIUM_XELATEX") {
+            Some(path) => candidate(Path::new(&path)),
+            None => find_executable("xelatex"),
+        };
         let xelatex_version =
             xelatex
                 .as_ref()
