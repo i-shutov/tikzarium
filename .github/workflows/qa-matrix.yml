@@ -138,7 +138,7 @@ jobs:
         run: cargo build -p tikzarium-cli
       - name: Execute fixture suite with machine-readable evidence
         run: python scripts/tools/qa_smoke.py --cli "target/debug/${{ matrix.cli }}" --output ".qa-artifacts/${{ matrix.label }}"
-      - name: Extension smoke: record and audit five exact XeLaTeX fixtures
+      - name: "Extension smoke — record and audit five exact XeLaTeX fixtures"
         run: |
           python -m unittest discover -s extensions/qa -p "test_run_smoke.py" -v
           python -m unittest discover -s extensions/qa -p "test_verify_smoke.py" -v
