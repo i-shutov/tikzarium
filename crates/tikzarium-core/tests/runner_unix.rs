@@ -13,6 +13,10 @@ fn fake_xelatex(directory: &Path) -> PathBuf {
     let executable = directory.join("fake xelatex");
     let script = r#"#!/bin/sh
 set -eu
+if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
+    printf 'XeTeX 0.999996 (TeX Live 2025)\\n'
+    exit 0
+fi
 out=""
 last=""
 for arg in "$@"; do
@@ -186,4 +190,52 @@ fn cancelling_active_compilation_stops_the_child() {
     wait_for_engine_start(directory.path());
     service.cancel();
     assert!(matches!(thread.join().unwrap(), Err(BuildError::Cancelled)));
+}
+
+#[test]
+fn fake_miktex_compiler_receives_no_auto_installer_override() {
+    let directory = tempfile::tempdir().unwrap();
+    let assets = directory.path().join("assets");
+    fs::create_dir_all(&assets).unwrap();
+    fs::write(assets.join("shape.tex"), "% shape").unwrap();
+    let source = directory.path().join("примитив с пробелом.tex");
+    let original = b"% Do not modify source bytes\\r\\n\\x5C\\x5Copaque{content}\\r\\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+    let script = fs::read_to_string(&engine).unwrap();
+    fs::write(
+        &engine,
+        script.replace(
+            "XeTeX 0.999996 (TeX Live 2025)",
+            "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)",
+        ),
+    )
+    .unwrap();
+
+    let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
+    assert!(artifact.log.contains("--disable-installer"));
+    assert!(artifact.log.contains("-no-shell-escape"));
+    assert!(artifact.log.contains("./примитив с пробелом.tex"));
+    assert_eq!(fs::read(&source).unwrap(), original);
+}
+
+#[test]
+fn unrecognized_engine_refuses_compilation_without_modifying_source() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("drawing.tex");
+    let original = b"% opaque source\\r\\n";
+    fs::write(&source, original).unwrap();
+    let engine = fake_xelatex(directory.path());
+    let script = fs::read_to_string(&engine).unwrap();
+    fs::write(
+        &engine,
+        script.replace(
+            "XeTeX 0.999996 (TeX Live 2025)",
+            "Custom Engine Unidentified",
+        ),
+    )
+    .unwrap();
+    let failure = BuildService::new().run(&request(&source, &engine)).unwrap_err();
+    assert!(matches!(failure, BuildError::UnverifiedEngine { .. }));
+    assert_eq!(fs::read(&source).unwrap(), original);
 }
