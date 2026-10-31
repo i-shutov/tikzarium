@@ -1,0 +1,47 @@
+name: I06 real egui X11 desktop evidence
+on:
+  push:
+    branches: [qa/i06-n1-desktop-pointer]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i06-desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.sha }}
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Install isolated hosted GUI and TeX prerequisites
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+      - name: Offline evidence predicates
+        run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
+      - name: Build actual egui app executable
+        run: cargo build -p tikzarium-app --bin tikzarium-app
+      - name: Launch real X11 display and exercise keyboard save
+        run: |
+          mkdir -p "$RUNNER_TEMP/i06-runtime"
+          chmod 700 "$RUNNER_TEMP/i06-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i06-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i06-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app target/debug/tikzarium-app --output "$RUNNER_TEMP/i06-evidence"'
+      - name: Upload real screenshots and source/JSON proof, also on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: n1-desktop-x11-${{ github.sha }}
+          path: ${{ runner.temp }}/i06-evidence/
+          if-no-files-found: warn
