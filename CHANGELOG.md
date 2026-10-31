@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — 2026-10-31: N1 six TikZ-native primitives (draft integration)
+
+- New real Rust/egui Split authoring vertical: line, arrow, rectangle, circle, text/math node and cubic Bézier gesture/parameter input generates **ordinary editable TikZ source** through ONE C-owned 6-tool/28-parameter Russian help catalogue. Generated commands, inspector, F1/hover and source highlighting share this catalogue; the provisional approximate guide is not the exact compiled PDF.
+- Only explicitly owned generated commands get revision- and previous-bytes-checked source edits and LIFO undo; save/reopen and manual-buffer-conflict tests protect comments, macros and unrelated TeX bytes. `arrows.meta` activation is an explicit visible undoable preamble edit; no TeX package installation or compiler substitution.
+- Added a headless same-Session N1 proof executable and real external Linux XeLaTeX source→PDF/font/glyph/PNG+SHA workflow; this is not physical mouse/GUI acceptance. Original N1 proof run 41190253165 produced a checked six-command PDF and JSON; final integrated exact-head CI remains a separate gate.
+- Fixed a real regression in the existing GUI font/theme QA harness: after adding a second app binary, `cargo test -p tikzarium-app` had multiple `test result` outputs and confused test selection. The proof now explicitly uses `--bin tikzarium-app` without lowering required test coverage; added a targeted Python regression. Removed temporary one-shot autoformat workflow after its formatter commit.
+- Current state in PR #44: **DRAFT / NOT RELEASED**, full exact-head hosted CI and isolated real MiKTeX verification pending. Physical Windows 10 x64 and macOS M1/M4 GUI are **NOT_RUN**. All Lua-only extensions remain incompatible with default XeLaTeX unless individually proven otherwise.
+
+## Unreleased — 2026-10-31: I06 source-saving integrity (draft until CI)
+
+- Normal Build/Save of an **unchanged** TeX buffer now checks the bound file's bytes, then performs a **true no-op**: preserves file identity, symlink/hardlink relationship, timestamps and user content rather than replacing it with a temporary file.
+- Reject externally changed/deleted open files instead of silently overwriting the external edits; dirty save of symlink and read-only file fails with a descriptive error and leaves original bytes unchanged. Explicit Save As to a new regular path remains possible.
+- Added 6 source integrity tests (including Unix symlink and inode regression); both hosted Rust workflows now run the source-integrity subset explicitly, in addition to workspace tests. **PR exact-head CI PENDING**, physical Windows 10 and M1/M4 GUI NOT_RUN.
+- This is a preflight protection, not an inter-process lock or race-free compare-and-swap. No editable TikZ capabilities or XeLaTeX package statuses are promoted; `extensions/PACKAGE_MATRIX.csv` deliberately unchanged.
+
 ## Unreleased — 2026-10-31: I05 hardened XeLaTeX runner and extension evidence
 
 - Correct the Windows-hosted XeLaTeX `./filename.tex` source operand: never construct it using Windows-native `Path::join` (`.\\filename.tex` is a TeX control-sequence hazard). Use an `OsString` literal `./` prefix and regression-test ordinary, leading-dash and Cyrillic filenames. Re-run cross-host CI against the exact new SHA; no Win10 acceptance claim.
