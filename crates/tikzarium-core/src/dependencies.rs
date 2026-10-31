@@ -383,7 +383,6 @@ mod missing_symlink_root_regression {
     }
 }
 
-
 #[cfg(test)]
 mod source_boundary_regression {
     use super::*;
@@ -418,8 +417,7 @@ mod source_boundary_regression {
         let symlink_source = project.path().join("main.tex");
         symlink(&real_source, &symlink_source).unwrap();
         let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &symlink_source, &[], true)
-                .unwrap();
+            ProjectDependencySnapshot::capture(project.path(), &symlink_source, &[], true).unwrap();
         assert!(!snapshot.is_project_fresh());
         assert_eq!(
             snapshot.ignored_external_paths(),

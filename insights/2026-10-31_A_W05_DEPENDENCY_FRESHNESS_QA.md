@@ -62,3 +62,7 @@ Existing PR #28 reconciled with main `b2a1299d5660d04614c78ca696189dfab10e4f43`.
 Require fresh exact-head fmt/check/test/clippy, D QA and hosted real MiKTeX CI; all PENDING at commit. Physical Win10/M1/M4 and GUI NOT_RUN.
 
 Integrator review caught a real false-fresh: `root/main.tex` symlink to external source was classified in ignored_external, so an empty project snapshot could claim true. Fixed by mandatory source-locality flag, preserving original input bytes and project-only scope. Existing #28 base was 183 commits behind; this merge makes main a parent rather than rewriting other lanes. No Rust toolchain in execution container; old W05 PASS must not be inherited.
+
+## Exact-head formatter follow-up (not PASS)
+
+Source HEAD `ba6922a2b05b37e3fcbc071c7f45e0c3d67a7862`: [Rust CI 41208967201](https://github.com/i-shutov/tikzarium/actions/runs/41208967201) **FAIL** on hosted macOS and Windows Rustfmt; [D QA 41208967241](https://github.com/i-shutov/tikzarium/actions/runs/41208967241) Rustfmt FAIL on Linux/Windows/macOS. Actual rustfmt diff changes only one extra blank line and joins a two-line `ProjectDependencySnapshot::capture` assertion. No behavior/API altered. Linux XeLaTeX job SUCCESS on old HEAD, but no final-HEAD PASS inherited. Re-run final exact SHA across all hosts, including real MiKTeX.
