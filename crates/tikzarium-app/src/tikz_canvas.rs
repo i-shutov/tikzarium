@@ -364,6 +364,11 @@ fn show_guide_frame_with_palette(
                 .is_some_and(|origin| rect.contains(origin)),
         )
     });
+    // A short click has no drag_start. Remember the press independently so
+    // TextEdit changes or a tool switch cannot silently re-arm its release.
+    if primary_down && origin_on_guide && !session.cancelled_pointer_capture {
+        session.guide_pointer_armed = true;
+    }
     if escape
         && (session.drag_start.is_some()
             || session.alt_selection_capture
@@ -379,8 +384,12 @@ fn show_guide_frame_with_palette(
         if !primary_down {
             session.cancelled_pointer_capture = false;
             session.alt_selection_capture = false;
+            session.guide_pointer_armed = false;
         }
         return (None, rect);
+    }
+    if !primary_down {
+        session.guide_pointer_armed = false;
     }
     let alt_press_on_guide = ui.input(|input| {
         input.modifiers.alt
@@ -2014,6 +2023,150 @@ mod tests {
             assert_eq!(source, original);
             assert!(!session.undo_available());
         }
+    }
+
+    #[test]
+    fn b24_manual_utf8_source_edit_cancels_held_click_and_drag_before_mouse_up() {
+        // The source TextEdit change hook and this production pointer handler
+        // share Session::note_manual_source_edit. A click is not a drag, so
+        // clearing only drag_start would let its mouse-up create a ghost line.
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(session.guide_pointer_armed);
+                    if dragged {
+                        event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    // Equivalent to TextEdit's changed() hook (not an N1
+                    // generator/patch): an unrelated Cyrillic source edit.
+                    let at = source.find(r"\begin{tikzpicture}").unwrap();
+                    source.insert_str(at, "% ручной UTF-8 комментарий\n");
+                    session.note_manual_source_edit(&source);
+                    let hand_edited = source.clone();
+                    assert!(session.cancelled_pointer_capture);
+                    assert!(session.drag_start.is_none());
+                    assert!(!session.undo_available());
+                    let release = if dragged { end } else { start };
+                    let (jump, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(release, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert_eq!(jump, None, "{tool:?} {width} dragged={dragged}");
+                    assert_eq!(source, hand_edited);
+                    assert_eq!(tikz_authoring::owned(&source).len(), 0);
+                    assert!(!session.cancelled_pointer_capture);
+                    assert!(!session.guide_pointer_armed);
+                    // A later intentional gesture still creates one ordinary
+                    // C-authored command and its Undo restores manual source.
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let (line, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(start, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(line.is_some(), "{tool:?}: new click was blocked");
+                    assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, hand_edited);
+                    assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                    let file_dir = tempfile::tempdir().unwrap();
+                    let file = file_dir.path().join("b24-manual-utf8.tex");
+                    std::fs::write(&file, &source).unwrap();
+                    let reopened = std::fs::read_to_string(&file).unwrap();
+                    assert_eq!(reopened, hand_edited);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b24_switching_tool_during_armed_pointer_keeps_release_inert() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Line);
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let at = screen_point(rect, Point::new(1.0, 1.0));
+        event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+        );
+        assert!(session.guide_pointer_armed);
+        session.select_tool(Tool::Cubic);
+        assert!(session.cancelled_pointer_capture);
+        assert_eq!(event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0, None);
+        assert_eq!(source, original);
+        assert!(!session.cancelled_pointer_capture);
+        assert_eq!(session.active, Some(Tool::Cubic));
+        event_frame(&ctx, &mut session, &mut source, vec![primary(at, true)]);
+        assert!(event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0.is_some());
+        assert_eq!(tikz_authoring::owned(&source)[0].tool, Tool::Cubic);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original);
     }
 
     #[test]
