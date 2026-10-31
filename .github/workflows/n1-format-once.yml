@@ -17,33 +17,67 @@ jobs:
         with:
           toolchain: '1.91.0'
           components: rustfmt
-      - name: Repair observed malformed upstream character literals and format
+      - name: Apply exact integration patches and format
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('crates/tikzarium-extensions/src/primitives.rs')
+          root = Path('crates/tikzarium-app')
+          path = root / 'src/main.rs'
           text = path.read_text(encoding='utf-8')
-          old_math = '''Some("math") => format!("{}{}{}", ', v, '),'''
-          new_math = '''Some("math") => format!("{}{}{}", '\\u{24}', v, '\\u{24}'),'''
-          old_escape = '''            ' => out.push_str("\\\\$"),'''
-          new_escape = '''            '\\u{24}' => out.push_str("\\\\$"),'''
-          for before, after in ((old_math, new_math), (old_escape, new_escape)):
-              if before in text:
-                  assert text.count(before) == 1, repr(before)
-                  text = text.replace(before, after)
-              else:
-                  assert after in text, 'Unexpected upstream content; no guessed replacement'
+          before = '''        let caps = self.primitive_capabilities();
+                  if let Some(line) =
+                      tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
+                  {
+                      self.jump_to_line = Some(line);
+                      self.highlight_generated_line = true;
+                  }'''
+          after = '''        if self.workspace == WorkspaceMode::Split {
+                      let caps = self.primitive_capabilities();
+                      if let Some(line) = tikz_canvas::show_guide(
+                          ui, &mut self.authoring, &mut self.document.source, caps,
+                      ) {
+                          self.jump_to_line = Some(line);
+                          self.highlight_generated_line = true;
+                      }
+                  } else {
+                      ui.label("Canvas: только просмотр. Рисование требует кода рядом.");
+                      if ui.button("Рисовать TikZ — показать код рядом").clicked() {
+                          self.workspace = WorkspaceMode::Split;
+                      }
+                  }'''
+          # Dedent the YAML-embedded literal by the exact extra eight spaces.
+          before = before.replace('\n        ', '\n')
+          after = after.replace('\n        ', '\n')
+          assert text.count(before) == 1, 'Guide anchor changed; refuse guessed edit'
+          text = text.replace(before, after)
+          anchor = '''        if self.workspace.show_canvas() {
+                      egui::SidePanel::right("tikz-source-inspector")'''.replace('\n        ', '\n')
+          replacement = '''        if self.workspace == WorkspaceMode::Split {
+                      egui::SidePanel::right("tikz-source-inspector")'''.replace('\n        ', '\n')
+          assert text.count(anchor) == 1, 'Inspector anchor changed'
+          text = text.replace(anchor, replacement)
+          text = text.replace('Only the guide pad below makes B07-owned source patches.', 'The guide pad edits N1-owned source through the shared TikZ catalogue.')
           path.write_text(text, encoding='utf-8')
+          cargo = root / 'Cargo.toml'
+          text = cargo.read_text(encoding='utf-8')
+          assert 'default-run' not in text
+          text = text.replace('name = "tikzarium-app"\n', 'name = "tikzarium-app"\ndefault-run = "tikzarium-app"\n', 1)
+          cargo.write_text(text, encoding='utf-8')
+          canvas = root / 'src/tikz_canvas.rs'
+          text = canvas.read_text(encoding='utf-8')
+          text = text.replace('            paint_draft(&painter, rect, tool, &draft);', '            let _ = paint_draft(&painter, rect, tool, &draft);')
+          text = text.replace('            paint_draft(&painter, rect, tool, &session.draft);', '            let _ = paint_draft(&painter, rect, tool, &session.draft);')
+          canvas.write_text(text, encoding='utf-8')
           PY
           cargo fmt --all
           if ! git diff --quiet -- crates/; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add crates/
-            git commit -m 'fix(N1): restore upstream dollar literals and format catalogue integration'
+            git commit -m 'fix(N1): require code-visible Split for authoring and keep default GUI binary'
             git push origin HEAD:integration/n1-tikz-native-authoring
           fi
       - name: Archive exact head even when formatting fails
