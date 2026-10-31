@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/tikzarium-core",
+  "crates/tikzarium-cli",
+  "crates/tikzarium-app",
+  "crates/tikzarium-extensions"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/i-shutov/tikzarium"
+
+[workspace.dependencies]
+tempfile = "3.23"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
