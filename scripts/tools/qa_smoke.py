@@ -83,6 +83,11 @@ def load_manifest(root: Path, manifest: Path) -> list[dict]:
                 raise ValueError(f"Invalid {key} for {fixture_id}")
         if "check_no_missing_glyphs" in case and type(case["check_no_missing_glyphs"]) is not bool:
             raise ValueError(f"Invalid check_no_missing_glyphs for {fixture_id}")
+        if "known_limitation" in case:
+            reason = case["known_limitation"]
+            if (fixture_id != "g00-legacy-cyrillic-pdf-only"
+                    or not isinstance(reason, str) or not reason.strip()):
+                raise ValueError(f"Unapproved known_limitation for {fixture_id}")
     return cases
 
 
@@ -250,6 +255,18 @@ def run_case(root: Path, output: Path, case: dict, executable: Path) -> dict:
                     "after": source_after,
                 }
                 result["error"] = "Source/project inputs modified by CLI or XeLaTeX"
+    # Narrowly quarantined W01 example: OS font name lookup is a known
+    # upstream prerequisite, not a proof that Cyrillic is rendered.
+    # Never quarantine source changes, unrelated errors or invalid PDF output.
+    if case.get("known_limitation") and result.get("source_unchanged"):
+        expected_missing_font = (
+            result.get("exit_code") == 3
+            and 'The font "DejaVu Serif" cannot be found' in result.get("stderr_tail", "")
+        )
+        if result["status"] == "PASS" or expected_missing_font:
+            result["observed_status"] = result["status"]
+            result["status"] = "KNOWN_LIMITATION"
+            result["known_limitation"] = case["known_limitation"]
     return result
 
 
@@ -284,7 +301,7 @@ def main() -> int:
         "pdf_tools": {name: shutil.which(name) for name in ("pdfinfo", "pdftotext", "pdffonts")},
         "manifest_sha256": sha256(manifest) if manifest.is_file() else None,
         "cases": [],
-        "summary": {"PASS": 0, "FAIL": 0, "SKIP": 0},
+        "summary": {"PASS": 0, "FAIL": 0, "SKIP": 0, "KNOWN_LIMITATION": 0},
     }
     try:
         if not executable.is_file():
