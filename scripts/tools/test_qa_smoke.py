@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from qa_smoke import checked_child, inspect_pdf, load_manifest, source_snapshot
+from qa_smoke import checked_child, inspect_pdf, load_manifest, run_case, source_snapshot
 
 
 class FixtureHarnessTests(unittest.TestCase):
@@ -127,6 +127,45 @@ class FixtureHarnessTests(unittest.TestCase):
             manifest.write_text(json.dumps({"schema_version": 1, "cases": [case]}), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Invalid text_expect"):
                 load_manifest(root, manifest)
+
+
+    def test_known_font_limit_is_visible_not_a_false_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "legacy"
+            output = root / "artifacts"
+            project.mkdir()
+            output.mkdir()
+            (project / "main.tex").write_text("fontspec", encoding="utf-8")
+            case = {"id": "g00-legacy-cyrillic-pdf-only", "project_dir": "legacy",
+                    "source": "main.tex", "expect": "pdf",
+                    "known_limitation": "Upstream OS font family absent"}
+            stderr = 'The font "DejaVu Serif" cannot be found'
+            proc = CompletedProcess(["tikzarium-cli"], 3, "", stderr)
+            with patch("qa_smoke.command", return_value=proc):
+                result = run_case(root, output, case, Path("dummy-cli"))
+            self.assertEqual(result["status"], "KNOWN_LIMITATION")
+            self.assertEqual(result["observed_status"], "FAIL")
+            self.assertEqual(result["exit_code"], 3)
+            self.assertTrue(result["source_unchanged"])
+
+    def test_known_font_limit_cannot_mask_unrelated_tex_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "legacy"
+            output = root / "artifacts"
+            project.mkdir()
+            output.mkdir()
+            (project / "main.tex").write_text("fontspec", encoding="utf-8")
+            case = {"id": "g00-legacy-cyrillic-pdf-only", "project_dir": "legacy",
+                    "source": "main.tex", "expect": "pdf",
+                    "known_limitation": "Upstream OS font family absent"}
+            proc = CompletedProcess(["tikzarium-cli"], 3, "", "Unexpected undefined control sequence")
+            with patch("qa_smoke.command", return_value=proc):
+                result = run_case(root, output, case, Path("dummy-cli"))
+            self.assertEqual(result["status"], "FAIL")
+            self.assertNotIn("observed_status", result)
+
 
 
 if __name__ == "__main__":
