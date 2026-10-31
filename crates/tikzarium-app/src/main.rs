@@ -12,6 +12,7 @@ use tikzarium_core::{
 use tikzarium_extensions::{ExtensionStatus, Registry};
 
 mod font_proof;
+mod pdf_navigation;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
@@ -20,6 +21,7 @@ use ui_state::{
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
+use pdf_navigation::{can_navigate, spawn_page_count, spawn_page_render};
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
@@ -44,6 +46,12 @@ struct TikzariumApp {
     building_source: Option<String>,
     building_path: Option<PathBuf>,
     zoom: f32,
+    preview_epoch: u64,
+    page_index: usize,
+    page_count: Option<usize>,
+    page_count_rx: Option<Receiver<(u64, Result<usize, String>)>>,
+    page_render_rx: Option<Receiver<(u64, usize, Result<Vec<u8>, String>)>>,
+    page_navigation_status: String,
     receiver: Option<Receiver<Result<BuildArtifact, BuildError>>>,
     cancellation: Option<BuildService>,
     show_packages: bool,
@@ -86,6 +94,12 @@ impl TikzariumApp {
             building_source: None,
             building_path: None,
             zoom: 1.0,
+            preview_epoch: 0,
+            page_index: 1,
+            page_count: None,
+            page_count_rx: None,
+            page_render_rx: None,
+            page_navigation_status: "Page count NOT_CHECKED".into(),
             receiver: None,
             cancellation: None,
             show_packages: true,
@@ -130,6 +144,12 @@ impl TikzariumApp {
                 self.last_build_failed = false;
                 self.preview_texture = None;
                 self.pdf = None;
+                self.preview_epoch = self.preview_epoch.wrapping_add(1);
+                self.page_index = 1;
+                self.page_count = None;
+                self.page_count_rx = None;
+                self.page_render_rx = None;
+                self.page_navigation_status = "Page count NOT_CHECKED".into();
                 self.preview_status = "Not built".into();
                 self.status = format!("Opened {}", path.display());
             }
@@ -271,6 +291,13 @@ impl TikzariumApp {
             let build_path = self.building_path.take();
             match result {
                 Ok(artifact) => {
+                    self.preview_epoch = self.preview_epoch.wrapping_add(1);
+                    self.page_index = 1;
+                    self.page_count = None;
+                    self.page_render_rx = None;
+                    self.page_navigation_status = "Checking PDF page count via pdfinfo …".into();
+                    self.page_count_rx =
+                        Some(spawn_page_count(artifact.pdf.clone(), self.preview_epoch));
                     self.diagnostics = artifact.diagnostics.clone();
                     self.last_build_failed = false;
                     self.preview_texture = None;
@@ -332,6 +359,88 @@ impl TikzariumApp {
             }
         }
         if self.receiver.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(75));
+        }
+    }
+
+    fn request_page(&mut self, page: usize) {
+        if self.receiver.is_some()
+            || self.page_render_rx.is_some()
+            || !can_navigate(self.page_count, self.page_index, page)
+        {
+            return;
+        }
+        let Some(pdf) = self.pdf.clone() else {
+            return;
+        };
+        self.page_navigation_status = format!("Rendering PDF page {page} …");
+        self.page_render_rx = Some(spawn_page_render(
+            pdf,
+            page,
+            self.tex.pdf_renderer.clone(),
+            self.preview_epoch,
+        ));
+    }
+
+    fn poll_pages(&mut self, ctx: &egui::Context) {
+        let count_result = self.page_count_rx.as_ref().and_then(|rx| match rx.try_recv() {
+            Ok(result) => Some(result),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => Some((
+                self.preview_epoch,
+                Err("Page-count worker disconnected".into()),
+            )),
+        });
+        if let Some((epoch, result)) = count_result {
+            self.page_count_rx = None;
+            if epoch == self.preview_epoch {
+                match result {
+                    Ok(total) => {
+                        self.page_count = Some(total);
+                        self.page_navigation_status = format!("PDF page count: {total}");
+                    }
+                    Err(error) => {
+                        self.page_count = None;
+                        self.page_navigation_status = format!("{error}; navigation NOT_CHECKED");
+                    }
+                }
+            }
+        }
+        let render_result = self.page_render_rx.as_ref().and_then(|rx| match rx.try_recv() {
+            Ok(result) => Some(result),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => Some((
+                self.preview_epoch,
+                self.page_index,
+                Err("Page-render worker disconnected".into()),
+            )),
+        });
+        if let Some((epoch, page, result)) = render_result {
+            self.page_render_rx = None;
+            if epoch == self.preview_epoch {
+                match result.and_then(|png| {
+                    image::load_from_memory(&png).map_err(|error| format!("PNG decode: {error}"))
+                }) {
+                    Ok(image) => {
+                        let rgba = image.to_rgba8();
+                        let size = [rgba.width() as usize, rgba.height() as usize];
+                        let color = egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
+                        self.preview_texture = Some(ctx.load_texture(
+                            format!("exact-pdf-page-{epoch}-{page}"),
+                            color,
+                            egui::TextureOptions::LINEAR,
+                        ));
+                        self.page_index = page;
+                        self.page_navigation_status = format!("Showing page {page}");
+                    }
+                    Err(error) => {
+                        self.page_navigation_status =
+                            format!("Page {page} preview failed: {error}; previous page retained");
+                    }
+                }
+            }
+        }
+        if self.page_count_rx.is_some() || self.page_render_rx.is_some() {
             ctx.request_repaint_after(Duration::from_millis(75));
         }
     }
@@ -412,6 +521,33 @@ impl TikzariumApp {
         let canvas_width = ui.available_width();
         ui.horizontal_wrapped(|ui| {
             ui.heading("Canvas · exact PDF (read-only)");
+            let page_controls = self.receiver.is_none()
+                && self.page_render_rx.is_none()
+                && self.tex.pdf_renderer.is_some();
+            let previous = self.page_index.saturating_sub(1);
+            if ui
+                .add_enabled(
+                    page_controls && can_navigate(self.page_count, self.page_index, previous),
+                    egui::Button::new("◀ Prev"),
+                )
+                .clicked()
+            {
+                self.request_page(previous);
+            }
+            ui.strong(match self.page_count {
+                Some(total) => format!("Page {} / {total}", self.page_index),
+                None => format!("Page {} / ?", self.page_index),
+            });
+            let next = self.page_index.saturating_add(1);
+            if ui
+                .add_enabled(
+                    page_controls && can_navigate(self.page_count, self.page_index, next),
+                    egui::Button::new("Next ▶"),
+                )
+                .clicked()
+            {
+                self.request_page(next);
+            }
             if ui.button("−").clicked() {
                 self.zoom = scaled_zoom(self.zoom, 1.0 / 1.2);
             }
@@ -440,9 +576,8 @@ impl TikzariumApp {
             );
         }
         ui.label(&self.preview_status);
-        ui.small(
-            "Showing page 1 only; multi-page navigation and source-linked canvas edits are pending.",
-        );
+        ui.small(&self.page_navigation_status);
+        ui.small("Pages are rasterized from the original PDF by Poppler, without changing TeX. Canvas edits are not implemented.");
         ui.separator();
         egui::ScrollArea::both()
             .auto_shrink([false, false])
@@ -609,6 +744,7 @@ impl eframe::App for TikzariumApp {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_build(ctx);
+        self.poll_pages(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
         let shortcut = ctx.input(|input| {
