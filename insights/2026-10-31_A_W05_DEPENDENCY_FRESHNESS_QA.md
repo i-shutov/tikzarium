@@ -71,3 +71,7 @@ Source HEAD `ba6922a2b05b37e3fcbc071c7f45e0c3d67a7862`: [Rust CI 41208967201](ht
 ### Recorder source-membership gate
 
 A nonempty `.fls` with only external/foreign `INPUT` lines cannot certify full project inputs. Freshness now requires the XeLaTeX recorder to contain the canonical original author source; a source-omitting file yields `recorder_complete=false` and `is_project_fresh=false` while preserving the successfully produced PDF. Added a real fake-engine integration test with a foreign-only recorder and untouched CRLF/opaque TeX. This extends the existing missing-recorder test and closes the integrator's second false-fresh scenario. Exact new-head CI pending; no host PASS inherited.
+
+### Latest recorder test formatting
+
+HEAD `e0f78eec4c1e56112477e7747ac17a9c54ea0e7e`, [Rust CI 41209317672](https://github.com/i-shutov/tikzarium/actions/runs/41209317672) and [D QA 41209317661](https://github.com/i-shutov/tikzarium/actions/runs/41209317661) **FAIL Rustfmt** in one A test blank line before `external_only_recorder_cannot_certify_source_freshness`. Applied exact observed formatter removal; behavior unchanged. New SHA must pass independently.

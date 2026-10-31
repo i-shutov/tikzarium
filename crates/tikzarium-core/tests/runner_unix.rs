@@ -288,7 +288,6 @@ fn missing_fls_does_not_claim_project_freshness() {
     assert_eq!(fs::read(source).unwrap(), original);
 }
 
-
 #[test]
 fn external_only_recorder_cannot_certify_source_freshness() {
     let directory = tempfile::tempdir().unwrap();
