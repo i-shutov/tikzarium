@@ -26,7 +26,7 @@ impl Capabilities {
         } else if !self.implemented {
             "No reviewed B visual source adapter available."
         } else {
-            "Native TikZ line adapter available; package compilation is still NOT_VERIFIED."
+            "Six native TikZ core source adapters are available; package compilation is still NOT_VERIFIED."
         }
     }
 }
@@ -258,6 +258,10 @@ pub fn show_inspector(
     let mut jump = None;
     ui.heading("TikZ · свойства");
     ui.small("Только собственные B07-команды. Любые макросы остаются в Source.");
+    ui.small(format!(
+        "PGF/TikZ: installed={} · loaded={} · XeLaTeX-compatible={} · B-implemented={}",
+        caps.installed, caps.loaded, caps.engine_compatible, caps.implemented,
+    ));
     ui.label(caps.explanation());
     ui.separator();
 
