@@ -95,7 +95,8 @@ class MiKTeXVerticalContract(unittest.TestCase):
         for event in ("pull_request", "push"):
             marker = f"  {event}:\n    branches: [main]\n    paths:\n"
             self.assertIn(marker, workflow)
-            event_body = workflow.split(marker, 1)[1].split("\n  ", 1)[0]
+            following_event = "pull_request" if event == "push" else "workflow_dispatch"
+            event_body = workflow.split(marker, 1)[1].split(f"\n  {following_event}:", 1)[0]
             for path in paths:
                 with self.subTest(event=event, path=path):
                     self.assertIn(f"      - {path}\n", event_body + "\n")
