@@ -24,7 +24,7 @@ fn mask_comments(source: &str) -> Vec<u8> {
             masked[index] = b' ';
             continue;
         }
-        if byte == b'%' && slashes.is_multiple_of(2) {
+        if byte == b'%' && slashes % 2 == 0 {
             in_comment = true;
             masked[index] = b' ';
         }
@@ -192,10 +192,10 @@ mod tests {
 
     #[test]
     fn handles_escaped_percent_multiline_nested_options_and_crlf() {
-        let source = "\\% still active \\setsansfont{A}\\r\\n\
-                      \\setmathfont[Scale=[1.0]]\\r\\n\
-                      {latinmodern-math.otf}\\r\\n\
-                      \\setmainfontfeature{not a font family}\\r\\n";
+        let source = "\\% still active \\setsansfont{A}\r\n\
+                      \\setmathfont[Scale=[1.0]]\r\n\
+                      {latinmodern-math.otf}\r\n\
+                      \\setmainfontfeature{not a font family}\r\n";
         let found = scan_explicit_font_hints(source);
         assert_eq!(found.len(), 2);
         assert_eq!(found[0].line, 1);
