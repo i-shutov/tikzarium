@@ -19,6 +19,12 @@ pub struct SourceTarget {
     pub revision: u64,
 }
 
+impl SourceTarget {
+    pub fn new(range: Range<usize>, revision: u64) -> Self {
+        Self { range, revision }
+    }
+}
+
 pub fn plan_parameter_edit(
     catalog: &Catalog,
     tool_id: &str,
