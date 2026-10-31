@@ -32,3 +32,8 @@ Date: 2026-10-31. Branch `feat/c07-tikz-native-six-primitives-20261031`. Baselin
 | Package inventory / MiKTeX installed = source loaded | FALSE | explicitly independent flags |
 
 Integration watch: C04 #26 and C06 #34 remain independent pending changes; do not conflate C07 schema with the older 5-manifest / 14-family package matrix verifier. No B/A/D-owned code changed.
+
+## C07 CI triage and correction
+- Hosted exact-head Actions for cc0e478 (CI and D QA) **FAILED** at `cargo fmt --all -- --check` in newly added C-only Rust files; font and real TeX fixture workflows passed separately. Failure evidence: https://github.com/i-shutov/tikzarium/actions/runs/41187354708 and https://github.com/i-shutov/tikzarium/actions/runs/41187354705.
+- Applied the **exact rustfmt patch produced by the failed hosted run** to C generator/tests, without changing A/B/D. Explicit non-XeLaTeX engine selection now records `Evidence::Absent`, not `Unknown`; unknown only means unobserved engine.
+- New commit is **QA_PENDING** until all exact-SHA cargo fmt/test/clippy and Rust binary fixture parity run. No local rustfmt available; a mechanically recovered rustfmt diff is not itself an executed check.

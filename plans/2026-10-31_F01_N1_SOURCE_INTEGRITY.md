@@ -19,3 +19,6 @@ SourcePatch checks the *caller-supplied byte range*, original substring and u64 
 - Fixture originals exact bytes, no preamble rewriting or XeLaTeX macros interpretation.
 - Independent GUI pointer tests, MiKTeX/Windows 10, M1/M4 and PDF visual review are NOT_RUN in this lane.
 - When tests pass, handoff the bounded suite to integration; do not turn this lane into speculative CST/DAG/solver development.
+
+## C07 ancestry refresh
+The F01 test branch was subsequently merged locally in Git history (no C PR merge to main) with C07 commit f5e31c54604d567bcfd8c84eb84cbc7c1ad821ac, keeping C's latest generator/SourcePatch plus newly published primitive_edit contract. This was a clean union of C-owned changes and F-owned additions. The separate F integration PR remains based on the moving C07 feature branch; ownership remains independent. The F tests continue to target the original documented public SourcePatch/generator contract and leave C production unmodified.

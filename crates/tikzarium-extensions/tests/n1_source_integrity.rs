@@ -7,8 +7,7 @@ use std::{collections::BTreeMap, fs, ops::Range};
 use tikzarium_extensions::primitives::{Catalog, PrimitiveError, SourcePatch};
 
 const CRLF: &str = include_str!("../../../fixtures/n1-source-integrity/opaque-crlf.tex");
-const DUPLICATES: &str =
-    include_str!("../../../fixtures/n1-source-integrity/duplicate-lf.tex");
+const DUPLICATES: &str = include_str!("../../../fixtures/n1-source-integrity/duplicate-lf.tex");
 const ORIGINAL_LINE: &str = r"\draw (0cm,0cm) -- (2cm,1cm);";
 
 fn generated(tool: &str, values: &[(&str, &str)]) -> String {
@@ -47,11 +46,7 @@ fn patch(
     }
 }
 
-fn assert_conflict_without_mutation(
-    patch: &SourcePatch,
-    source: &mut String,
-    revision: &mut u64,
-) {
+fn assert_conflict_without_mutation(patch: &SourcePatch, source: &mut String, revision: &mut u64) {
     let before = source.as_bytes().to_vec();
     let old_revision = *revision;
     assert!(matches!(
@@ -75,10 +70,7 @@ fn six_generator_results_replace_only_one_span_in_cyrillic_crlf_tex() {
         let region = nth_span(&source, ORIGINAL_LINE, 0);
         let prefix = original[..region.start].to_owned();
         let suffix = original[region.end..].to_owned();
-        let replacement = catalog
-            .generate(&tool.id, &BTreeMap::new())
-            .unwrap()
-            .source;
+        let replacement = catalog.generate(&tool.id, &BTreeMap::new()).unwrap().source;
         let change = patch(&source, ORIGINAL_LINE, 0, replacement.clone(), 41);
         let mut revision = 41;
         let inverse = change.apply(&mut source, &mut revision).unwrap();
@@ -101,13 +93,7 @@ fn six_generator_results_replace_only_one_span_in_cyrillic_crlf_tex() {
 fn stale_revision_rejects_even_if_expected_text_is_identical() {
     let mut source = CRLF.to_owned();
     let mut revision = 8;
-    let change = patch(
-        &source,
-        ORIGINAL_LINE,
-        0,
-        generated("tikz.circle", &[]),
-        7,
-    );
+    let change = patch(&source, ORIGINAL_LINE, 0, generated("tikz.circle", &[]), 7);
     assert_conflict_without_mutation(&change, &mut source, &mut revision);
 }
 
@@ -179,7 +165,10 @@ fn an_explicit_empty_range_inserts_a_command_without_touching_preamble() {
         source_revision: revision,
     };
     let inverse = change.apply(&mut source, &mut revision).unwrap();
-    assert_eq!(source, format!("{}{}{}", &original[..at], inserted, &original[at..]));
+    assert_eq!(
+        source,
+        format!("{}{}{}", &original[..at], inserted, &original[at..])
+    );
     assert_eq!(&source[..at], &original[..at]);
     assert_eq!(&source[at + inserted.len()..], &original[at..]);
     inverse.apply(&mut source, &mut revision).unwrap();
@@ -239,10 +228,7 @@ fn two_edits_need_fresh_spans_and_undo_revisions_are_not_automatically_rebased()
 
 #[test]
 fn text_nodes_escape_tex_metacharacters_but_math_is_deliberate_raw_tex() {
-    let literal = generated(
-        "tikz.node",
-        &[("content", r"Привет #$%&_{}~^\")],
-    );
+    let literal = generated("tikz.node", &[("content", r"Привет #$%&_{}~^\")]);
     assert_eq!(
         literal,
         r"\node at (0cm,0cm) {Привет \#\$\%\&\_\{\}\textasciitilde{}\textasciicircum{}\textbackslash{}};"

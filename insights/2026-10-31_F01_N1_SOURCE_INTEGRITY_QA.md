@@ -12,3 +12,6 @@ B07 Session::undo() in PR #37 finds the unique occurrence of patch.after using s
 
 ## Evidence vocabulary
 Tests are independent compilation contracts for C public generator/patch API. They are not GUI tests and cannot certify direct mouse authoring, exact PDF or MiKTeX installation. Rust was not available in the execution container at authoring time, so no local Rust PASS is claimed. CI exact SHA must be inspected before acceptance. No Windows 10 / Apple M1 / M4 interactive session was conducted (NOT_RUN).
+
+## F01 follow-up: hosted format check
+GitHub Actions run 41188523198 on exact F commit 37ecaf06e06e00de155486ed5ffb271a011345e7: hosted macOS ARM64 and Windows Server fmt/check step FAILED because the original parent C07 at cc0e478 was unformatted and F test had six rustfmt differences. The independent C author formatted C07 in 5193f2, then added primitive_edit in f5e31; F adopted the C branch as a second Git parent without modifying its implementation. All six F-only formatting diffs are corrected according to the hosted rustfmt log. This is a format fix, **not** a Rust tests PASS; new exact SHA CI required.
