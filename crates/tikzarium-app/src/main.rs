@@ -1248,8 +1248,7 @@ mod split_layout_tests {
                             .desired_width(180.0)
                             .desired_rows(10)
                             .show(ui);
-                        let caret =
-                            source_caret_target(&output.galley, output.galley_pos, index);
+                        let caret = source_caret_target(&output.galley, output.galley_pos, index);
                         let relative = caret.center() - output.galley_pos;
                         let actual = output.galley.cursor_from_pos(relative);
                         assert_eq!(actual.index, index, "galley cursor drift at {viewport}");
