@@ -87,7 +87,7 @@ fn installation_loaded_engine_tool_and_help_remain_five_independent_states() {
     )
     .unwrap();
     assert_eq!(different_engine.installed, Evidence::Confirmed);
-    assert_eq!(different_engine.engine_compatible, Evidence::Absent);
+    assert_eq!(different_engine.engine_compatible, Evidence::Unknown);
     assert_eq!(different_engine.project_loaded, Evidence::Absent);
     assert!(
         capabilities_for_library(

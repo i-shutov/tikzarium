@@ -484,8 +484,9 @@ pub fn capabilities_for_library(
         Some(actual) if actual.eq_ignore_ascii_case(&library.requirements.engine) => {
             Evidence::Confirmed
         }
-        Some(_) => Evidence::Absent,
-        None => Evidence::Unknown,
+        // The catalogue records an XeLaTeX proof target, not a claim that
+        // other engines reject this PGF/TikZ library.
+        _ => Evidence::Unknown,
     };
     Ok(Capabilities {
         installed,
