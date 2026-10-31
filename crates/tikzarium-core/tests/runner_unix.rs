@@ -14,7 +14,7 @@ fn fake_xelatex(directory: &Path) -> PathBuf {
     let script = r#"#!/bin/sh
 set -eu
 if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
-    printf 'XeTeX 0.999996 (TeX Live 2025)\\n'
+    printf 'XeTeX 0.999996 (TeX Live 2025)\n'
     exit 0
 fi
 out=""
@@ -199,7 +199,7 @@ fn fake_miktex_compiler_receives_no_auto_installer_override() {
     fs::create_dir_all(&assets).unwrap();
     fs::write(assets.join("shape.tex"), "% shape").unwrap();
     let source = directory.path().join("примитив с пробелом.tex");
-    let original = b"% Do not modify source bytes\\r\\n\\x5C\\x5Copaque{content}\\r\\n";
+    let original = b"% Do not modify source bytes\r\n\x5C\x5Copaque{content}\r\n";
     fs::write(&source, original).unwrap();
     let engine = fake_xelatex(directory.path());
     let script = fs::read_to_string(&engine).unwrap();
@@ -223,7 +223,7 @@ fn fake_miktex_compiler_receives_no_auto_installer_override() {
 fn unrecognized_engine_refuses_compilation_without_modifying_source() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("drawing.tex");
-    let original = b"% opaque source\\r\\n";
+    let original = b"% opaque source\r\n";
     fs::write(&source, original).unwrap();
     let engine = fake_xelatex(directory.path());
     let script = fs::read_to_string(&engine).unwrap();
