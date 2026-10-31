@@ -68,6 +68,15 @@ fn run_poppler(
     })
 }
 
+fn check_png_budget(page: usize, bytes: u64) -> Result<(), String> {
+    if bytes > MAX_PREVIEW_PNG_BYTES {
+        return Err(format!(
+            "pdftoppm page {page} exceeds 64 MiB preview budget ({bytes} bytes)"
+        ));
+    }
+    Ok(())
+}
+
 fn read_capture(path: &Path, name: &str) -> Result<Vec<u8>, String> {
     let mut data = Vec::new();
     fs::File::open(path)
@@ -189,11 +198,7 @@ fn rasterize_page(pdf: &[u8], page: usize, renderer: Option<PathBuf>) -> Result<
     let bytes = fs::metadata(&png)
         .map_err(|e| format!("pdftoppm page {page} returned no PNG: {e}"))?
         .len();
-    if bytes > MAX_PREVIEW_PNG_BYTES {
-        return Err(format!(
-            "pdftoppm page {page} exceeds 64 MiB preview budget ({bytes} bytes)"
-        ));
-    }
+    check_png_budget(page, bytes)?;
     fs::read(&png).map_err(|e| format!("pdftoppm page {page} PNG read: {e}"))
 }
 
@@ -235,6 +240,19 @@ mod tests {
             run_poppler(&mut Command::new(path), "fixture", Duration::from_millis(150)).unwrap_err();
         assert!(error.contains("timed out"));
         assert!(start.elapsed() < Duration::from_secs(5));
+    }
+
+    #[test]
+    fn resource_budgets_fail_closed_at_known_boundaries() {
+        let dir = tempfile::tempdir().unwrap();
+        let capture = dir.path().join("capture.txt");
+        fs::write(&capture, vec![b'X'; (MAX_CAPTURE_BYTES + 100) as usize]).unwrap();
+        let captured = read_capture(&capture, "fixture").unwrap();
+        assert_eq!(captured.len(), MAX_CAPTURE_BYTES as usize);
+        assert!(check_png_budget(1, MAX_PREVIEW_PNG_BYTES).is_ok());
+        assert!(check_png_budget(2, MAX_PREVIEW_PNG_BYTES + 1)
+            .unwrap_err()
+            .contains("page 2"));
     }
 
     #[test]
