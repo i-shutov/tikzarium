@@ -28,3 +28,10 @@ Open QA: verify source edit cursor/focus/undo after typing, native Save/Open wit
 ## Next gate
 
 Review final B08 exact-head CI logs, fix only B app ownership failures, request C fixes for C07 compilation faults, then integrator cherry-pick/merge chain without duplicating B07. Keep app's own plans/insights in this PR.
+
+
+## B08 repository fixture — targeted local XeLaTeX proof
+
+An exact textual copy of crates/tikzarium-app/fixtures/b08_catalog_six.tex (ASCII/portable, six primitives, Stealth via arrows.meta, math node and an independent user-defined macro) was compiled under the existing external Linux XeLaTeX with -no-shell-escape/-interaction=nonstopmode/-halt-on-error/-file-line-error. **PASS exit 0**, 1 page, pdftoppm raster visually inspected. Input SHA-256: 278c9219a27d4e49bf9178de3d238fe3fdcaf5f6b6c8e78dae53ade7f1fe5eba; PDF SHA-256: ece7edf94a03bfd445427813a59244276d9ab77b016b0c610c004e1154db9883. The tested file is a manually copied source, not a downloaded readback of the GitHub blob. Visual shows the six simple forms overlapping by the intentional literal coordinates. This does NOT establish Rust generator parity, app pointer input, or physical Windows/Mac acceptance.
+
+GitHub hosted B08 Rust CI on ceab19a9ed96d62e2311da1a3e39b606f4c825c2 still fails at shared C07 dependency: rustfmt cannot parse C primitives.rs line 176 malformed math char literals, and C tests/primitive_edit.rs has formatting diff. The *B* rustfmt reconstruction on ceab19a9 produces **zero B-file differences** (verified from hosted macOS job logs). Comment sent to C PR #39; B does not edit C code. All B compile/tests remain unverified until C fix.

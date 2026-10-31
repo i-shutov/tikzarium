@@ -25,3 +25,6 @@ Check Light/Dark/Midnight/Paper and compact/comfortable persistence separately f
 - Screenshots, actual GUI drag + save/reopen/undo and accessibility at both densities: NOT_RUN.
 
 Do not label the B08 PR merge-ready until exact-head tests and integration review pass.
+
+
+A local exact-text copy of the B08 checked-in six-primitives ASCII fixture was separately compiled by Linux XeLaTeX with no-shell-escape: PASS exit 0, one-page PDF and visual raster inspection. Source SHA-256 278c9219a27d4e49bf9178de3d238fe3fdcaf5f6b6c8e78dae53ade7f1fe5eba; PDF SHA-256 ece7edf94a03bfd445427813a59244276d9ab77b016b0c610c004e1154db9883. This is source-level verification, not GUI acceptance or compiled C generator parity. B08 Rust CI on ceab19a9 is blocked by C07 malformed source; no app CI PASS or physical GUI PASS claimed.
