@@ -295,8 +295,9 @@ fn show_guide_frame(
                     }
                     Err(error) => session.status = error,
                 },
-                Ok(None) => session.status =
-                    "Нет маркера #ID поблизости; используйте список свойств".into(),
+                Ok(None) => {
+                    session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
+                }
                 Err(error) => session.status = error.into(),
             }
         }
@@ -928,12 +929,16 @@ mod tests {
         let mut session = Session::default();
         session.reset(&source);
         let draft = Draft::from_gesture(
-            Tool::Line, Point::new(1.0, 1.0), Point::new(2.0, 1.5),
+            Tool::Line,
+            Point::new(1.0, 1.0),
+            Point::new(2.0, 1.5),
             &Draft::for_tool(Tool::Line),
         );
         let line = session.insert(&mut source, Tool::Line, draft).unwrap();
         let other = Draft::from_gesture(
-            Tool::Circle, Point::new(4.0, 2.0), Point::new(5.0, 2.0),
+            Tool::Circle,
+            Point::new(4.0, 2.0),
+            Point::new(5.0, 2.0),
             &Draft::for_tool(Tool::Circle),
         );
         session.insert(&mut source, Tool::Circle, other).unwrap();
@@ -941,19 +946,33 @@ mod tests {
         session.select_tool(Tool::Rectangle);
         let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
         let pos = screen_point(rect, Point::new(1.0, 1.0));
-        let alt = egui::Modifiers { alt: true, ..Default::default() };
-        let event = |pressed| egui::Event::PointerButton {
-            pos, button: egui::PointerButton::Primary, pressed, modifiers: alt,
+        let alt = egui::Modifiers {
+            alt: true,
+            ..Default::default()
         };
-        event_frame_mod(&ctx, &mut session, &mut source,
-            vec![egui::Event::PointerMoved(pos), event(true)], alt);
-        let (selected, _) = event_frame_mod(&ctx, &mut session, &mut source,
-            vec![event(false)], alt);
+        let event = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: alt,
+        };
+        event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(pos), event(true)],
+            alt,
+        );
+        let (selected, _) =
+            event_frame_mod(&ctx, &mut session, &mut source, vec![event(false)], alt);
         assert_eq!(selected, Some(line));
         assert_eq!(source, original);
         assert_eq!(session.selected, Some(1));
         assert_eq!(session.active, Some(Tool::Line));
-        session.draft.values.insert("start_x".into(), "1.25cm".into());
+        session
+            .draft
+            .values
+            .insert("start_x".into(), "1.25cm".into());
         session.apply_parameters(&mut source).unwrap();
         assert!(source.contains("1.25cm"));
         session.undo(&mut source).unwrap();
@@ -969,7 +988,9 @@ mod tests {
         session.reset(&source);
         for tool in [Tool::Line, Tool::Circle] {
             let draft = Draft::from_gesture(
-                tool, Point::new(1.0, 1.0), Point::new(2.0, 2.0),
+                tool,
+                Point::new(1.0, 1.0),
+                Point::new(2.0, 2.0),
                 &Draft::for_tool(tool),
             );
             session.insert(&mut source, tool, draft).unwrap();
@@ -977,9 +998,10 @@ mod tests {
         let before = source.clone();
         let marker = screen_point(rect, Point::new(1.0, 1.0));
         assert!(hit_authored_anchor(&source, rect, marker).is_err());
-        assert_eq!(hit_authored_anchor(
-            &source, rect, screen_point(rect, Point::new(5.0, 4.0))
-        ), Ok(None));
+        assert_eq!(
+            hit_authored_anchor(&source, rect, screen_point(rect, Point::new(5.0, 4.0))),
+            Ok(None)
+        );
         assert_eq!(source, before);
     }
 
