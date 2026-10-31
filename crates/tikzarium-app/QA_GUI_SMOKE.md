@@ -14,6 +14,9 @@ Record: Git SHA; OS build and CPU; Rust app version; XeLaTeX/TeX Live or MiKTeX 
 | WIN10-06 / MAC-06 | Build a valid PDF, then start a long rebuild; try Open, Open path, Save, Save As, Discover TeX and Export PDF | Actions and old-PDF export disabled while rebuilding; Cancel terminates active job; no file identity switch |
 | WIN10-07 / MAC-07 | Trigger unsaved changes via Open of another file, test Save and open / Discard and open / Cancel | Modal protects current edits; no source loss in cancel path |
 | WIN10-08 / MAC-08 | Type Cyrillic and compose Unicode input with OS IME, check CRLF source diagnostic navigation if available | No broken UTF-8 caret positioning; document reproducibility; no imaginary PASS while #10 not integrated |
+| WIN10-09 / MAC-09 | Build the B03 two-page TeX fixture; navigate Page 1/2 → 2/2 → 1/2; edit source and browse the stale last-good PDF | Each page differs; bounds disable invalid Next/Prev; old-page render results cannot replace a newer build; stale export blocked; screenshots of both pages, SHA of PDF and original source; explicit NOT_CHECKED if pdfinfo missing |
+| WIN10-10 / MAC-10 | Switch Light/Dark/Midnight/Paper and compact/comfortable at 1366×768/Retina; restart after each theme | Saved theme/density restored; UI legible, source and output-PDF SHA-256 unchanged; eight screenshots per platform (4 themes × 2 densities) |
+| WIN10-11 / MAC-11 | Open Figure typography panel, choose installed and nonexistent XeLaTeX family, run independent font proof | Missing font visibly fails, no silent substitute; proof screenshot and report; active document source/PDF remains byte-identical; source-aware inspector still pending |
 
 Manual evidence template:
 ```text
@@ -26,6 +29,9 @@ XeLaTeX version:
 Renderer (pdftoppm) version:
 Resolution / DPI:
 Screenshot file + SHA-256:
+Source .tex SHA-256 before/after UI appearance changes:
+Compiled PDF SHA-256 before/after UI appearance changes:
+PDF page count verification (pdfinfo version and output):
 Observed result and exception:
 ```
 
