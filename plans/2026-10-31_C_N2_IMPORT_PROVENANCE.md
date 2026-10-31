@@ -10,8 +10,8 @@ TikZ package/library. An inspector can highlight the real \usepackage or
 location. This is additive to N2 and preserves all six source-first generators,
 one catalogue and the existing revision-checked connect/disconnect APIs.
 
-1. Introduce C-owned \`DeclarationSite\` with name and physical-line UTF-8
-   byte ranges; \`ProjectImports::declaration_sites(kind,name)\` has no side effects.
+1. Introduce C-owned `DeclarationSite` with name and physical-line UTF-8
+   byte ranges; `ProjectImports::declaration_sites(kind,name)` has no side effects.
 2. Attach only trusted literal declarations; support comma lists, package
    options, indentation, BOM, CRLF and UTF-8 comments. Sites after opaque
    commands or inside conditionals must not be invented.
