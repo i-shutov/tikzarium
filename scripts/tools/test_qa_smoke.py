@@ -106,8 +106,8 @@ class FixtureHarnessTests(unittest.TestCase):
             sample = (
                 "name type encoding emb sub uni object ID\n"
                 "-------------------------------------------\n"
-                "XYZ+DejaVuSerif CID TrueType Identity-H yes yes yes 5 0\n"
-                "XYZ+LatinModernMath-Regular-Identity-H CID Type 0C Identity-H yes yes yes 7 0\n"
+                "ABCDEF+DejaVuSerif CID TrueType Identity-H yes yes yes 5 0\n"
+                "GHIJKL+LatinModernMath-Regular-Identity-H CID Type 0C Identity-H yes yes yes 7 0\n"
             ).encode("utf-8")
             response = CompletedProcess(["pdffonts"], 0, sample, b"")
             with patch("qa_smoke.shutil.which", side_effect=lambda x: "pdffonts" if x == "pdffonts" else None):
