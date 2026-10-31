@@ -317,7 +317,9 @@ mod tests {
         let engine = directory.path().join("MiKTeX with spaces");
         fs::write(
             &engine,
-            "#!/bin/sh\\nprintf 'MiKTeX-XeTeX 4.20 (MiKTeX 25.12)\\n'\\n",
+            r#"#!/bin/sh
+echo 'MiKTeX-XeTeX 4.20 (MiKTeX 25.12)'
+"#,
         )
         .unwrap();
         let mut permissions = fs::metadata(&engine).unwrap().permissions();
