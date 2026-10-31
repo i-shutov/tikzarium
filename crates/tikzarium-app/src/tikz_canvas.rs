@@ -10,11 +10,22 @@ pub struct Capabilities {
     pub loaded: bool,
     pub engine_compatible: bool,
     pub implemented: bool,
+    pub arrow_library_loaded: bool,
 }
 
 impl Capabilities {
     pub fn can_draw(self) -> bool {
         self.installed && self.loaded && self.engine_compatible && self.implemented
+    }
+    pub fn can_draw_tool(self, tool: Tool) -> bool {
+        self.can_draw() && (tool != Tool::Arrow || self.arrow_library_loaded)
+    }
+    pub fn explanation_for(self, tool: Tool) -> &'static str {
+        if tool == Tool::Arrow && !self.arrow_library_loaded {
+            "arrows.meta is not explicitly loaded in this project; approve its visible preamble diff."
+        } else {
+            self.explanation()
+        }
     }
     pub fn explanation(self) -> &'static str {
         if !self.engine_compatible {
@@ -132,12 +143,12 @@ pub fn show_guide(
             let info = tikz_authoring::spec(tool);
             let response = ui
                 .add_enabled(
-                    caps.can_draw(),
-                    egui::Button::new(info.title).selected(session.active == Some(tool)),
+                    caps.can_draw_tool(tool),
+                    egui::Button::new(&info.title_ru).selected(session.active == Some(tool)),
                 )
                 .on_hover_text(format!(
                     "{}\n{}\n{}",
-                    info.explanation, info.syntax, info.source
+                    info.help_ru, info.syntax, info.manual_section
                 ));
             if response.clicked() {
                 session.active = Some(tool);
@@ -207,7 +218,13 @@ pub fn show_guide(
         }
     }
 
-    if !caps.can_draw() || session.active.is_none() {
+    if session.active.is_none() {
+        return None;
+    }
+    if let Some(tool) = session.active
+        && !caps.can_draw_tool(tool)
+    {
+        ui.colored_label(ui.visuals().warn_fg_color, caps.explanation_for(tool));
         return None;
     }
     if response.drag_started()
@@ -257,10 +274,10 @@ pub fn show_inspector(
 ) -> Option<usize> {
     let mut jump = None;
     ui.heading("TikZ · свойства");
-    ui.small("Только собственные B07-команды. Любые макросы остаются в Source.");
+    ui.small("Только собственные B08-команды каталога C. Чужой TeX остаётся в Source.");
     ui.small(format!(
-        "PGF/TikZ: installed={} · loaded={} · XeLaTeX-compatible={} · B-implemented={}",
-        caps.installed, caps.loaded, caps.engine_compatible, caps.implemented,
+        "PGF/TikZ: installed={} · project-loaded={} · XeLaTeX-compatible={} · B-adapter={} · arrows.meta-loaded={}",
+        caps.installed, caps.loaded, caps.engine_compatible, caps.implemented, caps.arrow_library_loaded,
     ));
     ui.label(caps.explanation());
     ui.separator();
@@ -276,7 +293,7 @@ pub fn show_inspector(
                 let label = format!(
                     "#{} {} · line {}",
                     item.id,
-                    tikz_authoring::spec(item.tool).title,
+                    tikz_authoring::spec(item.tool).title_ru,
                     item.line
                 );
                 if ui
@@ -294,7 +311,7 @@ pub fn show_inspector(
     if let Some(tool) = session.active {
         let info = tikz_authoring::spec(tool);
         ui.separator();
-        ui.strong(info.title);
+        ui.strong(&info.title_ru);
         ui.label("Точки (условные TikZ x/y, cm для обычной picture):");
         ui.horizontal(|ui| {
             ui.label("x1");
@@ -312,10 +329,8 @@ pub fn show_inspector(
                     .changed()
                 {
                     let radius = radius.clamp(0.1, 1000.0);
-                    session.draft.end = Point::new(
-                        session.draft.start.x + radius,
-                        session.draft.start.y,
-                    );
+                    session.draft.end =
+                        Point::new(session.draft.start.x + radius, session.draft.start.y);
                 }
             });
         } else if tool != Tool::Node {
@@ -344,7 +359,7 @@ pub fn show_inspector(
                     Err(error) => session.status = error,
                 }
             }
-            ui.small(format!("Source-owned marker: B07 #{id}"));
+            ui.small(format!("C-catalogue source marker: B08 #{id}"));
         }
         if let Ok(command) =
             tikz_authoring::generate(tool, &session.draft, session.selected.unwrap_or(0))
