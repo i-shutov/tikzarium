@@ -552,9 +552,9 @@ impl eframe::App for TikzariumApp {
                                         Severity::Warning => "WARNING",
                                     };
                                     let label = match item.line {
-                                    Some(line) => {
-                                        format!("{severity} · line {line} · {}", item.message)
-                                    }
+                                        Some(line) => {
+                                            format!("{severity} · line {line} · {}", item.message)
+                                        }
                                         None => format!("{severity} · {}", item.message),
                                     };
                                     if let Some(line) = item.line {
