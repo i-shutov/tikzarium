@@ -83,7 +83,11 @@ pub(crate) fn uncommented(line: &str) -> &str {
     line
 }
 
-pub(crate) fn literal_names(line: &str, command: &str, options_allowed: bool) -> Option<Vec<String>> {
+pub(crate) fn literal_names(
+    line: &str,
+    command: &str,
+    options_allowed: bool,
+) -> Option<Vec<String>> {
     let rest = line.strip_prefix(command)?;
     if !rest
         .chars()
