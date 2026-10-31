@@ -119,8 +119,9 @@ class FixtureHarnessTests(unittest.TestCase):
     def test_manifest_rejects_unchecked_glyph_options(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "main.tex").write_text("Hello", encoding="utf-8")
-            case = {"id": "g00-font", "project_dir": ".", "source": "main.tex",
+            (root / "fixture").mkdir()
+            (root / "fixture" / "main.tex").write_text("Hello", encoding="utf-8")
+            case = {"id": "g00-font", "project_dir": "fixture", "source": "main.tex",
                     "expect": "pdf", "text_expect": [], "font_expect": "not-a-list"}
             manifest = root / "manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "cases": [case]}), encoding="utf-8")
