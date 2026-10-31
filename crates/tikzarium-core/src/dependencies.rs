@@ -343,9 +343,13 @@ mod tests {
         fs::write(&second, b"BBB").unwrap();
         symlink(&first, &link).unwrap();
 
-        let snapshot =
-            ProjectDependencySnapshot::capture(project.path(), &source, &[link.clone()], true)
-                .unwrap();
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&link),
+            true,
+        )
+        .unwrap();
         assert!(snapshot.is_project_fresh());
         fs::remove_file(&link).unwrap();
         symlink(&second, &link).unwrap();
