@@ -262,8 +262,14 @@ def main() -> int:
         key("F1")
         screenshot("03b-f1-second-toggle.png")
         if "export_click" in profile:
-            key("ctrl+Return")
-            pdf = source.with_suffix("pdf")
+            # Exercise the production GUI Build control (not a direct
+            # xelatex invocation or an unverified shortcut while TextEdit is
+            # focused); then the GUI Export PDF control once it is enabled.
+            click(profile["build_click"])
+            report["steps"].append({"case": "gui_build_button_clicked",
+                                    "status": "SENT_NOT_PDF_VERIFIED"})
+            screenshot("03c-build-triggered.png")
+            pdf = source.with_suffix(".pdf")
             deadline = time.monotonic() + 150
             while time.monotonic() < deadline and not pdf.is_file():
                 time.sleep(2)
