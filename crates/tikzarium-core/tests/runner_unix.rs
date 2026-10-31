@@ -208,8 +208,7 @@ fn fake_miktex_compiler_receives_no_auto_installer_override() {
     let source = directory.path().join("примитив с пробелом.tex");
     let original = b"% Do not modify source bytes\r\n\x5C\x5Copaque{content}\r\n";
     fs::write(&source, original).unwrap();
-    let engine =
-        fake_xelatex_with_version(directory.path(), "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)");
+    let engine = fake_xelatex_with_version(directory.path(), "MiKTeX-XeTeX 4.20 (MiKTeX 25.12)");
 
     let artifact = BuildService::new().run(&request(&source, &engine)).unwrap();
     assert!(artifact.log.contains("--disable-installer"));
