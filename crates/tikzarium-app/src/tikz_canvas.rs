@@ -2158,12 +2158,19 @@ mod tests {
         assert!(session.guide_pointer_armed);
         session.select_tool(Tool::Cubic);
         assert!(session.cancelled_pointer_capture);
-        assert_eq!(event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0, None);
+        assert_eq!(
+            event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0,
+            None
+        );
         assert_eq!(source, original);
         assert!(!session.cancelled_pointer_capture);
         assert_eq!(session.active, Some(Tool::Cubic));
         event_frame(&ctx, &mut session, &mut source, vec![primary(at, true)]);
-        assert!(event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0.is_some());
+        assert!(
+            event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)])
+                .0
+                .is_some()
+        );
         assert_eq!(tikz_authoring::owned(&source)[0].tool, Tool::Cubic);
         session.undo(&mut source).unwrap();
         assert_eq!(source, original);
