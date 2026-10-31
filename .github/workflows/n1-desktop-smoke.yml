@@ -1,0 +1,86 @@
+name: I19 real B23 egui desktop source and PDF evidence
+on:
+  push:
+    branches:
+      - qa/i19-b23-real-x11-acceptance
+      - feat/b16-egui-live-palette-six-gesture-20261031
+      - main
+    paths:
+      - '.github/workflows/n1-desktop-smoke.yml'
+      - 'scripts/qa_n1_desktop.py'
+      - 'scripts/tests/test_qa_n1_desktop.py'
+      - 'fixtures/qa/n1-desktop-x11-1366.json'
+      - 'crates/tikzarium-app/**'
+      - 'crates/tikzarium-extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches:
+      - feat/b16-egui-live-palette-six-gesture-20261031
+      - main
+    paths:
+      - '.github/workflows/n1-desktop-smoke.yml'
+      - 'scripts/qa_n1_desktop.py'
+      - 'scripts/tests/test_qa_n1_desktop.py'
+      - 'fixtures/qa/n1-desktop-x11-1366.json'
+      - 'crates/tikzarium-app/**'
+      - 'crates/tikzarium-extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i19-desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TIKZARIUM_QA_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TIKZARIUM_SOURCE_SHA }}
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Verify tested checkout and exact screenshot-reviewed app tree
+        run: |
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0fbea02a14a08e568da831d78c562cd20dedb8d9'
+      - name: Install isolated hosted GUI and external XeLaTeX prerequisites
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+      - name: Offline evidence predicate tests, never called desktop acceptance
+        run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
+      - name: Build actual exact-checkout egui application
+        run: cargo build --locked -p tikzarium-app --bin tikzarium-app
+      - name: Real X11 pointer gestures, application Save, GUI XeLaTeX Build/Export
+        run: |
+          mkdir -p "$RUNNER_TEMP/i19-runtime"
+          chmod 700 "$RUNNER_TEMP/i19-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i19-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i19-openbox.log 2>&1 & python3 scripts/qa_n1_desktop.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --output "$RUNNER_TEMP/i19-evidence" --profile fixtures/qa/n1-desktop-x11-1366.json'
+      - name: Upload complete real evidence, including original clipboard bytes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: i19-b23-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
+          path: |
+            ${{ runner.temp }}/i19-evidence/*.json
+            ${{ runner.temp }}/i19-evidence/*.png
+            ${{ runner.temp }}/i19-evidence/*.tex
+            ${{ runner.temp }}/i19-evidence/*.pdf
+            ${{ runner.temp }}/i19-evidence/*.log
+            ${{ runner.temp }}/i19-evidence/*.txt
+          if-no-files-found: warn
