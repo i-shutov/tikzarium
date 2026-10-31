@@ -1,0 +1,12 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+% Кириллица и CRLF: \mysterious{\input{unknown}}
+\newcommand{\userMacro}[1]{\textit{#1}}
+\begin{document}
+\begin{tikzpicture}
+% Кириллица: пользовательская подпись не должна измениться
+\draw (0cm,0cm) -- (2cm,1cm);
+\unknownUserMacro{ничего не трогать}
+\end{tikzpicture}
+\end{document}
