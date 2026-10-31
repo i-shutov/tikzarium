@@ -299,9 +299,10 @@ fn show_guide_frame(
     if session.alt_selection_capture {
         session.drag_start = None;
         let mut jump = None;
-        if response.clicked() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                match hit_authored_anchor(source, rect, pos) {
+        if response.clicked()
+            && let Some(pos) = response.interact_pointer_pos()
+        {
+            match hit_authored_anchor(source, rect, pos) {
                     Ok(Some(id)) => match session.choose(source, id) {
                         Ok(line) => {
                             session.status = "Команда выбрана; код выделяется рядом".into();
@@ -312,8 +313,7 @@ fn show_guide_frame(
                     Ok(None) => {
                         session.status = "Нет маркера #ID поблизости; используйте список свойств".into()
                     }
-                    Err(error) => session.status = error.into(),
-                }
+                Err(error) => session.status = error.into(),
             }
         }
         if ui.input(|input| !input.pointer.primary_down()) {
