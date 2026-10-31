@@ -96,28 +96,32 @@ fn changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal() {
         ),
         Err(PrimitiveError::SourceConflict)
     ));
-    assert!(plan_parameter_edit(
-        &catalog,
-        "tikz.circle",
-        &values,
-        "radius",
-        "2cm",
-        &source,
-        0..source.len(),
-        12,
-    )
-    .is_err());
-    assert!(plan_parameter_edit(
-        &catalog,
-        "tikz.circle",
-        &values,
-        "radius",
-        "0cm",
-        &source,
-        command_range,
-        12,
-    )
-    .is_err());
+    assert!(
+        plan_parameter_edit(
+            &catalog,
+            "tikz.circle",
+            &values,
+            "radius",
+            "2cm",
+            &source,
+            0..source.len(),
+            12,
+        )
+        .is_err()
+    );
+    assert!(
+        plan_parameter_edit(
+            &catalog,
+            "tikz.circle",
+            &values,
+            "radius",
+            "0cm",
+            &source,
+            command_range,
+            12,
+        )
+        .is_err()
+    );
 }
 
 #[test]

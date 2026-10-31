@@ -173,7 +173,7 @@ impl Catalog {
             let rendered = if p.kind == "node_content" {
                 match effective.get("mode").map(String::as_str) {
                     Some("text") => escape_text(v),
-                    Some("math") => format!("{}{}{}", ', v, '),
+                    Some("math") => format!("{}{}{}", '\u{24}', v, '\u{24}'),
                     _ => {
                         return Err(PrimitiveError::Literal {
                             parameter: "mode".into(),
@@ -344,7 +344,7 @@ fn escape_text(v: &str) -> String {
             '\\' => out.push_str("\\textbackslash{}"),
             '{' => out.push_str("\\{"),
             '}' => out.push_str("\\}"),
-            ' => out.push_str("\\$"),
+            '\u{24}' => out.push_str("\\$"),
             '&' => out.push_str("\\&"),
             '%' => out.push_str("\\%"),
             '#' => out.push_str("\\#"),
