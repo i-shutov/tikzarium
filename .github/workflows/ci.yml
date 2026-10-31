@@ -43,6 +43,8 @@ jobs:
         run: cargo check --workspace --all-targets
       - name: Tests
         run: cargo test --workspace
+      - name: I06 source-save integrity (no-op, external change and symlink)
+        run: cargo test -p tikzarium-core document::tests -- --nocapture
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Release binary
