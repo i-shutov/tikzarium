@@ -6,6 +6,7 @@ use std::{
 };
 use thiserror::Error;
 pub const SCHEMA_VERSION: u32 = 1;
+pub const N2_LIBRARY_NAMES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
 const IDS: [&str; 6] = [
     "tikz.line",
     "tikz.arrow",
@@ -23,6 +24,8 @@ pub enum PrimitiveError {
     Toml(#[from] toml::de::Error),
     #[error("Unknown tool: {0}")]
     UnknownTool(String),
+    #[error("Unknown TikZ library: {0}")]
+    UnknownLibrary(String),
     #[error("Unknown parameter: {0}")]
     UnknownParameter(String),
     #[error("Missing parameter: {0}")]
@@ -41,6 +44,8 @@ pub struct Catalog {
     pub schema_version: u32,
     pub id: String,
     pub tools: Vec<ToolSpec>,
+    #[serde(default)]
+    pub libraries: Vec<LibrarySpec>,
 }
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -56,6 +61,21 @@ pub struct ToolSpec {
     pub manual_url: String,
     pub requirements: Requirements,
     pub parameter: Vec<ParameterSpec>,
+}
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LibrarySpec {
+    pub id: String,
+    pub name: String,
+    pub title_ru: String,
+    pub syntax: String,
+    pub help_ru: String,
+    pub example: String,
+    pub warning_ru: String,
+    pub interaction_ru: String,
+    pub manual_section: String,
+    pub manual_url: String,
+    pub requirements: Requirements,
 }
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -118,6 +138,10 @@ impl Catalog {
     }
     pub fn tool(&self, id: &str) -> Option<&ToolSpec> {
         self.tools.iter().find(|t| t.id == id)
+    }
+    /// Declarative N2 help/requirements only; not proof of installed packages.
+    pub fn library(&self, name: &str) -> Option<&LibrarySpec> {
+        self.libraries.iter().find(|library| library.name == name)
     }
     /// Installation status and project-loaded status are independent observations.
     pub fn capabilities(
@@ -295,6 +319,48 @@ impl Catalog {
             if self.generate(&t.id, &BTreeMap::new())?.source != t.example {
                 return Err(invalid("example mismatches executable schema"));
             }
+        }
+        if self.libraries.len() != N2_LIBRARY_NAMES.len() {
+            return Err(invalid("incomplete N2 TikZ library help"));
+        }
+        let mut seen_libraries = HashSet::new();
+        for library in &self.libraries {
+            let expected_syntax = format!("\\usetikzlibrary{{{}}}", library.name);
+            let expected_id = format!("tikz.library.{}", library.name.replace('.', "-"));
+            if !N2_LIBRARY_NAMES.contains(&library.name.as_str())
+                || !seen_libraries.insert(library.name.as_str())
+                || library.id != expected_id
+                || library.syntax != expected_syntax
+                || library.requirements.packages != ["tikz"]
+                || library.requirements.libraries != [library.name.as_str()]
+                || library.requirements.engine != "xelatex"
+                || library.requirements.pgf_version_min != "UNKNOWN"
+                || library.requirements.documented_against != "3.1.12"
+                || [
+                    library.title_ru.as_str(),
+                    &library.help_ru,
+                    &library.warning_ru,
+                    &library.interaction_ru,
+                    &library.manual_section,
+                ]
+                .iter()
+                .any(|value| value.trim().is_empty())
+                || !library.manual_url.starts_with("https://tikz.dev/")
+                || !library.example.contains("\\usepackage{tikz}")
+                || !library.example.contains(&expected_syntax)
+                || !library.example.contains("\\begin{document}")
+                || !library.example.contains("\\end{document}")
+            {
+                return Err(invalid("invalid or incomplete N2 library record"));
+            }
+        }
+        if self.tools.iter().any(|tool| {
+            tool.requirements
+                .libraries
+                .iter()
+                .any(|name| !self.libraries.iter().any(|library| library.name == *name))
+        }) {
+            return Err(invalid("tool requirement lacks shared library help"));
         }
         Ok(())
     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 2026-10-31: I11 C04/C06 catalogue gate restoration and C/N2 integration
+
+- Merged C/N2 source attribution [#55](https://github.com/i-shutov/tikzarium/pull/55) at main `b7c8e993b9da64060dfd3261833e4be3a1d280ba`, exact head `0cc7427cbbdee8b5ffe5fa63dcc8737ae5781cba`; seven new provenance tests and no opaque source changes. All five source-head workflow families SUCCESS. Independently inspected hosted real MiKTeX artifact `13045161386` (SHA-256 `6970bdfb252bc07d854d544bbf801db6b24285ed672345108d0995b0692d9368`; 44 ZIP members, six PDFs, 9,130 identical package rows) and Linux N1 PDF artifact `13044543886` (SHA-256 `0ed343667fc89acf2967193d2dcc6f0f2fa1a3e2dc5cfdf7cc145a0d59707191`, 9/9 manifest hashes, embedded fonts and Unicode text). No physical GUI claim.
+- Recover **previously unmerged** C04/C06 #26/#34 code: static `verify_catalog.py`, 14 tamper tests, bounded input validation and machine-readable JSON on Linux XeLaTeX fixture CI plus three hosted QA Rust jobs. Source old head `2fad1ab90b56a749ceceeb1725e82804c2b0597d`; adapt workflow steps without replacing modern workflows. Metadata is not installation, compilation of all packages or visual-edit evidence. Lua-only remains incompatible with XeLaTeX.
+- This I11 branch CI is PENDING until exact-HEAD jobs plus artifact inspection. Post-merge main CI required. Physical Windows 10 x64/MiKTeX and Mac M1/M4 native GUI remain NOT_RUN. No release.
+
+
 ## Unreleased — 2026-10-31: I10 D07 exact-main MiKTeX proof and C/N2 reversible library imports
 
 - Integrated [D07 #52](https://github.com/i-shutov/tikzarium/pull/52) into main at `1e3a1e7131bd6e8d9c9d9d9c93ae5c9203c0f455` from exact C-independent D head `69387a230d746a0af16bc46593ca21b1dfe882d5`. Real MiKTeX Windows Server 2022 CI now covers BOTH pull requests and filtered pushes to main, including changes confined to the N1 app, extension library, catalogue, fixtures and Cargo manifests. A structural Python regression checks the trigger contract.

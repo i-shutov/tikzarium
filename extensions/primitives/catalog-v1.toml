@@ -613,3 +613,117 @@ manual_section = "14.3"
 manual_url = "https://tikz.dev/tikz-paths"
 requirements_inherit = "tool"
 
+
+
+# N2 shared library panel catalogue — source imports, NOT executed plugins.
+# Requirements describe explicit project declarations, not package installation.
+[[libraries]]
+id = "tikz.library.arrows-meta"
+name = "arrows.meta"
+title_ru = "Наконечники arrows.meta"
+syntax = '\usetikzlibrary{arrows.meta}'
+help_ru = "Добавляет настраиваемые виды наконечников стрелок, в том числе Stealth и Latex. Это библиотека PGF/TikZ, а не отдельный редактор."
+warning_ru = "Наличие файла в MiKTeX не означает подключение проекта. Установка пакета, подключение и редактируемость — разные статусы."
+interaction_ru = "Нативный инструмент «Стрелка» использует Stealth/Latex; другие свойства и стили доступны через исходный TeX."
+manual_section = "16.5"
+manual_url = "https://tikz.dev/tikz-arrows"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\begin{document}
+\begin{tikzpicture}
+\draw[-{Stealth}] (0,0) -- (2,0);
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["arrows.meta"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[libraries]]
+id = "tikz.library.positioning"
+name = "positioning"
+title_ru = "Взаимное расположение узлов"
+syntax = '\usetikzlibrary{positioning}'
+help_ru = "Позволяет задавать положение узла относительно другого, например right=of a; сам TikZ рассчитывает смещение и якоря."
+warning_ru = "Библиотека меняет смысл некоторых ключей размещения. Не конвертировать формулы пользователя в приближённые координаты Rust."
+interaction_ru = "Используется в ручных узлах TikZ; отдельный инструмент позиционирования пока не реализован."
+manual_section = "17.5.3"
+manual_url = "https://tikz.dev/tikz-shapes"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\begin{document}
+\begin{tikzpicture}
+\node (a) {A};
+\node[right=of a] {B};
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["positioning"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[libraries]]
+id = "tikz.library.calc"
+name = "calc"
+title_ru = "Вычисление координат TikZ"
+syntax = '\usetikzlibrary{calc}'
+help_ru = "Разрешает выражения над координатами: суммы, доли отрезка и проекции вычисляет TikZ при компиляции."
+warning_ru = "Выражения TeX могут содержать пользовательские макросы. Их нельзя заменять вычисленным результатом без согласия автора."
+interaction_ru = "Подключение разрешает исходный синтаксис TikZ; вычислитель/solver в редакторе не реализован."
+manual_section = "13.5; 46"
+manual_url = "https://tikz.dev/tikz-coordinates"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\begin{document}
+\begin{tikzpicture}
+\draw (0,0) -- ($(0,0)+(2cm,1cm)$);
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["calc"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[libraries]]
+id = "tikz.library.fit"
+name = "fit"
+title_ru = "Охватывающий узел fit"
+syntax = '\usetikzlibrary{fit}'
+help_ru = "Позволяет охватить набор названных узлов или координат отдельным узлом с опцией fit; размеры вычисляет TikZ."
+warning_ru = "Габариты зависят от текста, шрифтов и других узлов. Нельзя объявлять геометрию точной до запуска XeLaTeX."
+interaction_ru = "Доступно в обычном исходнике; специальный GUI-инструмент охвата пока не реализован."
+manual_section = "54"
+manual_url = "https://tikz.dev/library-fit"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{fit}
+\begin{document}
+\begin{tikzpicture}
+\node (a) at (0,0) {A};
+\node (b) at (2,0) {B};
+\node[draw,fit=(a)(b)] {};
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["fit"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"

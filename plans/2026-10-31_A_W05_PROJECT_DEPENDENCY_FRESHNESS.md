@@ -41,3 +41,16 @@ Require fresh exact-head fmt/check/test/clippy, D QA and hosted real MiKTeX CI; 
 ### Recorder source-membership gate
 
 A nonempty `.fls` with only external/foreign `INPUT` lines cannot certify full project inputs. Freshness now requires the XeLaTeX recorder to contain the canonical original author source; a source-omitting file yields `recorder_complete=false` and `is_project_fresh=false` while preserving the successfully produced PDF. Added a real fake-engine integration test with a foreign-only recorder and untouched CRLF/opaque TeX. This extends the existing missing-recorder test and closes the integrator's second false-fresh scenario. Exact new-head CI pending; no host PASS inherited.
+
+
+## 2026-10-31 — current main integration after C/N2 #58 and D10 #63
+
+At integration, current main was **`aa6d1d08caee984d5f31ac13396e346fc451c8fe`**. PR #38 MiKTeX doctor/build is already merged (merge `013720ee6f0e1dc29f487124499ed9469d86b089`); this existing #28 is still **OPEN**, not merged. Verified current AGENTS and open PRs before updating. From W05's previous merge base `b2a1299d5660d04614c78ca696189dfab10e4f43` to this main, **no files in A core/CLI or A plans/insights have changed**. Merge current main into the existing A branch, retaining precisely five production/test blob contents and only appending these two A docs. Other B/C/D/I source files are inherited unchanged from main.
+
+Previous exact A source `bd18d1b94ca2c76516f3bb3d85ef3ebe87ce9c63` completed its five hosted workflow families (Rust, D QA, real Windows Server MiKTeX, fonts and N1 authoring). Their SUCCESS is historical, **not** evidence for the new combined merge commit; demand new exact-HEAD CI. This merge does not add another TeX engine, geometry solver, shell invocation or package installer; the build/source/undo API surface is unchanged from W05's pre-merge head.
+
+- [ ] Exact merged-head Rust fmt/check/test/Clippy and D QA complete.
+- [ ] Exact merged-head real MiKTeX build and native primitives/Unicode/fonts checks complete.
+- [ ] Integrator reviews core `BuildArtifact.project_dependencies` compatibility with B UI and freshness semantics; no automatic GUI stale marker claimed.
+- [ ] Genuine CLI `doctor` using actual MiKTeX sibling `findtexmf.exe` remains a separately identified D evidence gap, **NOT_RUN**; hosted MiKTeX build cannot certify it.
+- [ ] Physical Windows 10 x64 user/shared MiKTeX and physical Mac M1/M4 and full GUI acceptance: **NOT_RUN**.

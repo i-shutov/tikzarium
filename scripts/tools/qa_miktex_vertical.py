@@ -49,6 +49,19 @@ def miktex_engine(version: str) -> bool:
     return "miktex" in version.casefold() and "xetex" in version.casefold()
 
 
+def miktex_tex_log_identity(log_text: str) -> bool:
+    """Require the *actual TeX run* to identify pinned MiKTeX XeTeX.
+
+    A verified --version probe is not proof the Rust CLI invoked that engine.
+    Only the opening TeX log banner counts, not later diagnostic text.
+    """
+    lines = log_text.lstrip("\ufeff").splitlines()
+    return bool(lines and re.match(
+        r"^This is XeTeX, Version [^()\r\n]+ \(MiKTeX 25\.12\)(?:\s|$)",
+        lines[0],
+    ))
+
+
 def setup_stage_complete(stage: dict, setup: dict) -> bool:
     """Require terminal, provenance-matched setup; never accept stale INCOMPLETE."""
     installer = setup.get("installer_sha256")
@@ -111,16 +124,19 @@ def negative(source: Path, label: str, kind: str, output: Path, engine: Path) ->
         proc = run(command, cwd=source.parent)
         text = (proc.stdout + b"\n" + proc.stderr).decode("utf-8", errors="replace")
         logfile = destination / f"{source.stem}.log"
-        if logfile.is_file():
-            text += "\n" + logfile.read_text(encoding="utf-8", errors="replace")
+        log_text = logfile.read_text(encoding="utf-8", errors="replace") if logfile.is_file() else ""
+        if log_text:
+            text += "\n" + log_text
         (destination / "console.log").write_text(text, encoding="utf-8")
         pdf = destination / f"{source.stem}.pdf"
         passed = (tex_failure(kind, proc.returncode, text, pdf.exists())
-                  and sha(source) == original and logfile.is_file())
+                  and sha(source) == original and logfile.is_file()
+                  and miktex_tex_log_identity(log_text))
         return {"id": label, "status": "PASS" if passed else "FAIL",
                 "exit_code": proc.returncode, "pdf_exists": pdf.exists(),
                 "source_sha256_before": original, "source_sha256_after": sha(source),
                 "log_sha256": sha(logfile) if logfile.is_file() else None,
+                "tex_identity": miktex_tex_log_identity(log_text),
                 "command": command, "required_error": kind}
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {"id": label, "status": "FAIL", "error": str(exc),
@@ -138,33 +154,43 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
     local = target / "main.tex"
     local.write_bytes(original_bytes)
     pdf = target / "main.pdf"
-    command = [str(cli), "build", str(local), str(pdf)]
+    cli_log = target / "cli-main.log"
+    command = [str(cli), "build", str(local), str(pdf), "--log", str(cli_log)]
     try:
         proc = run(command, cwd=root)
         (target / "cli.stdout.log").write_bytes(proc.stdout)
         (target / "cli.stderr.log").write_bytes(proc.stderr)
+        expected_text = ["Примитивы TikZ", "Кривая Безье αβγ"]
+        expected_fonts = ["DejaVuSerif", "LatinModernMath"]
         details = {}
         valid = False
         if proc.returncode == 0 and pdf.is_file():
-            valid, details = inspect_pdf(
-                pdf, 1, ["Примитивы TikZ", "Кривая Безье αβγ"],
-                ["DejaVuSerif", "LatinModernMath"],
-            )
-        # Independent direct TeX log catches missing glyphs; PDF alone is insufficient.
+            valid, details = inspect_pdf(pdf, 1, expected_text, expected_fonts)
+        # Compare both actual compiler logs; a valid PDF does not prove which
+        # engine the production CLI used.
+        cli_log_text = cli_log.read_text(encoding="utf-8", errors="replace") if cli_log.is_file() else ""
         direct = target / "direct"
         direct.mkdir()
         direct_args = [str(engine), "--disable-installer", "-interaction=nonstopmode",
                        "-halt-on-error", "-no-shell-escape", f"-output-directory={direct}", "main.tex"]
         direct_proc = run(direct_args, cwd=target)
         direct_log = direct / "main.log"
+        direct_pdf = direct / "main.pdf"
+        direct_valid, direct_details = (
+            inspect_pdf(direct_pdf, 1, expected_text, expected_fonts)
+            if direct_pdf.is_file() else (False, {})
+        )
         if direct_log.is_file():
             log_text = direct_log.read_text(encoding="utf-8", errors="replace")
             (target / "direct-tex.log").write_text(log_text, encoding="utf-8")
         else:
             log_text = ""
         good = (proc.returncode == 0 and valid and all(tokens.values())
-                and direct_proc.returncode == 0 and (direct / "main.pdf").is_file()
-                and bool(log_text) and "Missing character:" not in log_text
+                and direct_proc.returncode == 0 and direct_valid
+                and miktex_tex_log_identity(cli_log_text)
+                and miktex_tex_log_identity(log_text)
+                and "Missing character:" not in cli_log_text
+                and "Missing character:" not in log_text
                 and sha(local) == hashlib.sha256(original_bytes).hexdigest()
                 and src.read_bytes() == original_bytes)
         return {"id": "native-primitives", "status": "PASS" if good else "FAIL",
@@ -172,9 +198,15 @@ def positive(root: Path, output: Path, engine: Path, cli: Path) -> dict:
                 "cli_command": command, "direct_command": direct_args,
                 "primitive_tokens": tokens, "source_sha256": hashlib.sha256(original_bytes).hexdigest(),
                 "source_unchanged": sha(local) == hashlib.sha256(original_bytes).hexdigest(),
+                "cli_tex_identity": miktex_tex_log_identity(cli_log_text),
+                "direct_tex_identity": miktex_tex_log_identity(log_text),
+                "cli_missing_character": "Missing character:" in cli_log_text,
                 "direct_missing_character": "Missing character:" in log_text,
+                "cli_log_sha256": sha(cli_log) if cli_log.is_file() else None,
                 "direct_log_sha256": sha(direct_log) if direct_log.is_file() else None,
-                "pdf": details}
+                "pdf": details, "direct_pdf": direct_details,
+                "cli_pdf_sha256": sha(pdf) if pdf.is_file() else None,
+                "direct_pdf_sha256": sha(direct_pdf) if direct_pdf.is_file() else None}
     except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         return {"id": "native-primitives", "status": "FAIL", "error": str(exc)}
 
@@ -277,7 +309,9 @@ def n1_positive(root: Path, output: Path, engine: Path, cli: Path, proof: Path) 
             )
             passed = (
                 cli_proc.returncode == 0 and direct_proc.returncode == 0
-                and cli_ok and direct_ok and bool(cli_log_text) and bool(direct_log_text)
+                and cli_ok and direct_ok
+                and miktex_tex_log_identity(cli_log_text)
+                and miktex_tex_log_identity(direct_log_text)
                 and "Missing character:" not in cli_log_text
                 and "Missing character:" not in direct_log_text
                 and original == sha(source)
@@ -292,6 +326,8 @@ def n1_positive(root: Path, output: Path, engine: Path, cli: Path, proof: Path) 
                 "direct_pdf_sha256": sha(direct_pdf) if direct_pdf.is_file() else None,
                 "cli_log_sha256": sha(log) if log.is_file() else None,
                 "direct_log_sha256": sha(direct_log) if direct_log.is_file() else None,
+                "cli_tex_identity": miktex_tex_log_identity(cli_log_text),
+                "direct_tex_identity": miktex_tex_log_identity(direct_log_text),
                 "missing_character": (
                     "Missing character:" in cli_log_text or "Missing character:" in direct_log_text
                 ),

@@ -96,3 +96,64 @@ transaction separately; neither proves physical Win10/MiKTeX or Mac ARM UI.
 A direct `\usepackage{tikz}` or `\usetikzlibrary{arrows.meta}` in the **trusted literal preamble prefix** is source-level **CONFIRMED** even if a later unrelated opaque user macro makes the rest of the preamble uncertain. This is textual declaration evidence, **not** a claim that a file is installed or that TeX compilation succeeded. Imports **absent** from an opaque preamble are **UNKNOWN**, never incorrectly NOT_LOADED. A conditional or unknown macro **before** an import taints subsequent literal observations, so neither conditional imports nor macro-dependent declarations become false positives.
 
 Only flat literal `\setmainfont{DejaVu Serif}` / `\setmathfont{latinmodern-math.otf}` style assignments are recognized as import-neutral and passed over; opaque font options/macros remain UNKNOWN. This does not resolve or install fonts, expand TeX, or modify the editor source. All automatic additions and removals still refuse on any uncertain preamble, preserve CRLF and known source revisions, and leave manual raw TeX editable. This separation removes the real N1 authoring regression exposed by B #50 while retaining the conservative N2 source-patch contract.
+
+
+## N2 literal declaration provenance (additive read-only API)
+
+The source-first dependency inspector can display *why* a package/library is
+`Confirmed` without implying installation or full TeX evaluation.
+`ProjectImports::declaration_sites(ImportKind, name)` returns zero or more
+`DeclarationSite { kind, name, name_range, line_range }` values. Both ranges
+are **UTF-8 byte offsets in the exact inspected source buffer**:
+`name_range` highlights only the literal member of a comma-separated list,
+and `line_range` covers the physical source line without LF/CRLF.
+Neither range is a new writable source target or a TeX expansion result.
+All existing N2 import/disconnect planners and the five independent capability
+dimensions retain their current contracts.
+
+Only direct declarations after a recognized `\documentclass` and within a
+trusted literal preamble prefix receive source sites. A line in a conditional,
+macro-generated or opaque segment has **no fabricated site**. Positive sites
+before a later opaque command remain available, whereas missing requirements
+remain UNKNOWN. Even when there is a site, an uncertain preamble is still
+ineligible for automatic import/disconnect. Invalid preamble ordering (a
+`\usepackage` before `\documentclass`) is UNKNOWN, not project-loaded.
+
+The B inspector may use these read-only ranges to focus/highlight package
+evidence, but it must still show explicit diffs and obtain consent before
+applying N2 `SourcePatch`. No automatic package download, engine change,
+source rewrite or GUI implementation is implied. D/E/F remain responsible
+for independent compiled fixtures/help/source-integrity tests respectively.
+
+
+## N2 document-body / external-file import ambiguity
+
+A *complete preamble scan is not a complete TeX document dependency scan*.
+External XeLaTeX can load a TikZ library after \begin{document}. The C-owned
+executable fixture [late-library-in-body.tex](fixtures/late-library-in-body.tex)
+loads calc after the preamble and uses its coordinate syntax successfully.
+
+The targeted inspect() recognizer therefore looks for possible late
+\usetikzlibrary, \usepackage, \RequirePackage, \input, \include or
+dynamic \csname control words **after** the confirmed begin-document
+anchor. It ignores ordinary % comments and escaped backslashes, and
+does not confuse longer command names with exact control words. This
+is **ambiguity detection**, not execution or complete TeX parsing.
+Source text in a verbatim-like environment can conservatively produce
+UNKNOWN: the scanner cannot prove the runtime scope.
+
+When such a hint is found, existing trusted preamble declarations and
+their exact source ranges remain Confirmed; missing requirements become
+Unknown, never Absent. begin_document_target() returns None,
+and both source-add and source-disconnect planners refuse with
+uncertain_reason = "possible late import or external source in document body".
+The entire source remains untouched. B displays the reason and offers
+manual raw TeX editing; it does not silently add a duplicate or install
+a TeX package. Indirect unknown macros which do not resemble these
+control words remain outside this bounded recognizer, not a claim of
+complete dependency discovery.
+
+Regression gates: cargo test -p tikzarium-extensions --test project_imports,
+the original six tool/help tests, and an *independent* external XeLaTeX
+compile of the fixture (source text and PDF proof are separate from
+GUI authoring). Physical Win10/MiKTeX and Mac M1/M4 remain NOT_RUN.

@@ -40,6 +40,20 @@ jobs:
         run: python -c "import platform,sys; print(platform.machine()); sys.exit(0 if platform.machine().lower() in ('arm64','aarch64') else 1)"
       - name: Python fixture harness unit tests
         run: python -m unittest discover -s scripts/tools -p "test_qa_*.py" -v
+      - name: C04/C06 static extension catalogue audit
+        run: |
+          python -c "from pathlib import Path; Path('.qa-artifacts').mkdir(exist_ok=True)"
+          python extensions/qa/verify_catalog.py --report .qa-artifacts/catalog-audit.json
+      - name: C04/C06 catalogue tamper regressions
+        run: python -m unittest discover -s extensions/qa -p "test_verify_catalog.py" -v
+      - name: Retain static catalogue metadata evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qa-catalog-metadata-${{ matrix.os }}
+          path: .qa-artifacts/catalog-audit.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Rust formatting
         run: cargo fmt --all -- --check
       - name: Rust full workspace tests

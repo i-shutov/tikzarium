@@ -3,8 +3,13 @@ from __future__ import annotations
 
 from pathlib import Path
 import unittest
+from tempfile import TemporaryDirectory
+from subprocess import CompletedProcess
+from unittest.mock import patch
 
-from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, n1_state_contract, poppler_version, setup_stage_complete, tex_failure
+import qa_miktex_vertical as qa
+
+from qa_miktex_vertical import MISSING_LIBRARY, PRIMITIVE_TOKENS, N1_TOOLS, miktex_engine, miktex_tex_log_identity, n1_state_contract, poppler_version, setup_stage_complete, tex_failure
 
 
 class MiKTeXVerticalContract(unittest.TestCase):
@@ -20,6 +25,29 @@ class MiKTeXVerticalContract(unittest.TestCase):
         self.assertTrue(miktex_engine("MiKTeX-XeTeX 4.0 (MiKTeX 25.12)"))
         self.assertFalse(miktex_engine("XeTeX 3.14159 (TeX Live 2026)"))
         self.assertFalse(miktex_engine("MiKTeX-pdfTeX 4.0"))
+
+    def test_actual_compiler_logs_require_pinned_miktex_banner_on_first_line(self):
+        real_banner = ("This is XeTeX, Version 3.141592653-2.6-0.999997 "
+                       "(MiKTeX 25.12) (preloaded format=xelatex 2026.10.31)")
+        self.assertTrue(miktex_tex_log_identity(real_banner + "\nentering extended mode"))
+        self.assertTrue(miktex_tex_log_identity("\ufeff" + real_banner))
+        for bad_log in (
+            "",
+            "This is XeTeX, Version 3.141592653 (TeX Live 2026)",
+            "This is XeTeX, Version 3.14 (TeX Live 2026) (MiKTeX 25.12)",
+            "This is pdfTeX, Version 3.14 (MiKTeX 25.12)",
+            "This is XeTeX, Version 3.14 (MiKTeX 26.1)",
+            "engine diagnostic\n" + real_banner,
+        ):
+            with self.subTest(bad_log=bad_log):
+                self.assertFalse(miktex_tex_log_identity(bad_log))
+
+    def test_both_positive_routes_gate_on_real_cli_and_direct_tex_logs(self):
+        code = (Path(__file__).resolve().parent / "qa_miktex_vertical.py").read_text(encoding="utf-8")
+        self.assertGreaterEqual(code.count("and miktex_tex_log_identity(cli_log_text)"), 2)
+        self.assertIn("and miktex_tex_log_identity(direct_log_text)", code)
+        self.assertIn("and miktex_tex_log_identity(log_text)", code)
+        self.assertIn('str(pdf), "--log", str(cli_log)', code)
 
     def test_terminal_setup_provenance_rejects_stale_or_mismatched_checkpoint(self):
         setup = {"installer_sha256": "0" * 64, "xelatex_path": r"D:\private\xelatex.exe"}
@@ -130,6 +158,79 @@ class MiKTeXVerticalContract(unittest.TestCase):
                 self.assertIn(token, tex)
         self.assertIn(r"\TikzariumOpaqueNote", tex)
         self.assertIn("Кривая Безье αβγ", tex)
+
+
+    def test_handwritten_direct_pdf_must_pass_real_pdf_auditor(self):
+        """Mock gate only: a direct PDF file existing is insufficient."""
+        banner = ("This is XeTeX, Version 3.141592653-2.6-0.999997 "
+                  "(MiKTeX 25.12) (preloaded format=xelatex)")
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "fixtures/qa/d06-native-primitives/main.tex"
+            source.parent.mkdir(parents=True)
+            source.write_text("\n".join(PRIMITIVE_TOKENS), encoding="utf-8")
+            output = root / "output"
+            output.mkdir()
+            pdf_calls = []
+
+            def fake_run(cmd, cwd=None, timeout=180):
+                if cmd[1] == "build":
+                    Path(cmd[3]).write_bytes(b"%PDF-FAKE (mock only)")
+                    Path(cmd[5]).write_text(banner, encoding="utf-8")
+                else:
+                    target = Path(next(arg.split("=", 1)[1] for arg in cmd
+                                       if arg.startswith("-output-directory=")))
+                    (target / "main.pdf").write_bytes(b"%PDF-FAKE (mock only)")
+                    (target / "main.log").write_text(banner, encoding="utf-8")
+                return CompletedProcess(cmd, 0, b"", b"")
+
+            def fake_inspect_pdf(pdf, pages, expected_text, expected_fonts):
+                pdf_calls.append(pdf)
+                self.assertEqual(pages, 1)
+                self.assertEqual(expected_text, ["Примитивы TikZ", "Кривая Безье αβγ"])
+                self.assertEqual(expected_fonts, ["DejaVuSerif", "LatinModernMath"])
+                return ("direct" not in pdf.parts, {"checked": True})
+
+            with patch.object(qa, "run", side_effect=fake_run), \
+                    patch("qa_smoke.inspect_pdf", side_effect=fake_inspect_pdf):
+                result = qa.positive(root, output, Path("mock-engine"), Path("mock-cli"))
+            self.assertEqual(result["status"], "FAIL")
+            self.assertEqual(len(pdf_calls), 2, "Both produced PDFs must be audited")
+            self.assertIn("direct", pdf_calls[1].parts)
+            self.assertEqual(result["direct_pdf"], {"checked": True})
+            self.assertEqual(result["direct_pdf_sha256"], qa.sha(pdf_calls[1]))
+
+    def test_negative_tex_error_requires_miktex_banner_in_actual_log(self):
+        """No TeX Live error log can masquerade as a MiKTeX negative PASS."""
+        error = f"! LaTeX Error: File '{MISSING_LIBRARY}' not found."
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "missing-library.tex"
+            source.write_text("An intentional negative input", encoding="utf-8")
+            output = root / "output"
+            output.mkdir()
+            current_banner = ["This is XeTeX, Version 3.14 (TeX Live 2026)"]
+
+            def fake_run(cmd, cwd=None, timeout=180):
+                dest = Path(next(arg.split("=", 1)[1] for arg in cmd
+                                 if arg.startswith("-output-directory=")))
+                (dest / "missing-library.log").write_text(
+                    current_banner[0] + "\n" + error, encoding="utf-8")
+                return CompletedProcess(cmd, 1, error.encode(), b"")
+
+            with patch.object(qa, "run", side_effect=fake_run):
+                bad = qa.negative(source, "texlive", "missing-library",
+                                  output, Path("mock-engine"))
+                self.assertEqual(bad["status"], "FAIL")
+                self.assertFalse(bad["tex_identity"])
+                current_banner[0] = (
+                    "This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12)"
+                )
+                good = qa.negative(source, "miktex", "missing-library",
+                                   output, Path("mock-engine"))
+            self.assertEqual(good["status"], "PASS")
+            self.assertTrue(good["tex_identity"])
+            self.assertFalse(good["pdf_exists"])
 
 
 if __name__ == "__main__":

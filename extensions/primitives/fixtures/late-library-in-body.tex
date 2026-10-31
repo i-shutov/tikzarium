@@ -1,0 +1,9 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\begin{document}
+% This library is loaded after begin-document, not in the preamble.
+\usetikzlibrary{calc}
+\begin{tikzpicture}
+  \draw let \p1=(1cm,2cm) in (0,0) -- (\x1,\y1);
+\end{tikzpicture}
+\end{document}

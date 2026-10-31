@@ -6,12 +6,11 @@
 
 use crate::{
     primitive_edit::SourceTarget,
-    primitives::{Capabilities, Catalog, Evidence, PrimitiveError, SourcePatch},
+    primitives::{Capabilities, Catalog, Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
 };
 use std::{collections::BTreeSet, ops::Range};
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
-const SUPPORTED_LIBRARIES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {
@@ -19,11 +18,24 @@ pub enum ImportKind {
     TikzLibrary,
 }
 
+/// Byte-accurate attribution for one directly authored, trusted literal import.
+/// The name_range highlights only the package/library name (not the command).
+/// line_range covers the physical line without its LF/CRLF terminator.
+/// It is read-only evidence, never an authorization for an arbitrary source edit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeclarationSite {
+    pub kind: ImportKind,
+    pub name: String,
+    pub name_range: Range<usize>,
+    pub line_range: Range<usize>,
+}
+
 /// Facts from the current source buffer only. No kpsewhich or package installation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectImports {
     packages: BTreeSet<String>,
     libraries: BTreeSet<String>,
+    declaration_sites: Vec<DeclarationSite>,
     pub uncertain_reason: Option<&'static str>,
     pub begin_document: Option<Range<usize>>,
     pub class_declared: bool,
@@ -52,6 +64,19 @@ impl ProjectImports {
         } else {
             Evidence::Absent
         }
+    }
+
+    /// Return source sites only for declarations confirmed in the trusted
+    /// literal prefix. Missing, macro-derived and conditional imports have no
+    /// fabricated source site; consult status() separately for UNKNOWN/Absent.
+    /// Ranges use UTF-8 bytes in the source passed to inspect().
+    #[must_use]
+    pub fn declaration_sites(&self, kind: ImportKind, name: &str) -> Vec<DeclarationSite> {
+        self.declaration_sites
+            .iter()
+            .filter(|site| site.kind == kind && site.name == name)
+            .cloned()
+            .collect()
     }
 
     pub fn begin_document_target(&self, revision: u64) -> Option<SourceTarget> {
@@ -140,6 +165,59 @@ pub(crate) fn literal_names(
     Some(names)
 }
 
+/// Obtain the exact UTF-8 token spans after validation by the existing,
+/// deliberately narrow literal recognizer. Package options cannot contain
+/// braces, so the first opening brace belongs to the name list.
+fn literal_name_spans(
+    line: &str,
+    command: &str,
+    options_allowed: bool,
+) -> Option<Vec<(String, Range<usize>)>> {
+    let names = literal_names(line, command, options_allowed)?;
+    let opening = line.find('{')?;
+    let body = &line[opening + 1..];
+    let closing = body.find('}')?;
+    let mut positions = Vec::new();
+    let mut cursor = opening + 1;
+    for field in body[..closing].split(',') {
+        let name = field.trim();
+        let leading = field.len() - field.trim_start().len();
+        let start = cursor + leading;
+        positions.push((name.to_owned(), start..start + name.len()));
+        cursor += field.len() + 1;
+    }
+    if positions.len() != names.len()
+        || positions
+            .iter()
+            .zip(&names)
+            .any(|((observed, _), validated)| observed != validated)
+    {
+        return None;
+    }
+    Some(positions)
+}
+
+fn record_literal_sites(
+    result: &mut ProjectImports,
+    kind: ImportKind,
+    trimmed: &str,
+    command: &str,
+    options_allowed: bool,
+    line_range: Range<usize>,
+    token_start: usize,
+) {
+    if let Some(spans) = literal_name_spans(trimmed, command, options_allowed) {
+        for (name, local) in spans {
+            result.declaration_sites.push(DeclarationSite {
+                kind,
+                name,
+                name_range: token_start + local.start..token_start + local.end,
+                line_range: line_range.clone(),
+            });
+        }
+    }
+}
+
 /// Only flat, literal fontspec/unicode-math font choices are import-neutral.
 /// Options, TeX commands, nested braces and other opaque forms remain UNKNOWN.
 /// This does not test font installation or override the XeLaTeX compiler.
@@ -160,8 +238,47 @@ fn literal_flat_font_assignment(line: &str, command: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b" ._+-".contains(&b))
 }
 
+/// A *hint* that source after \begin{document} might import packages or
+/// libraries. This never grants Confirmed evidence: verbatim and macro scopes
+/// cannot be resolved by a lexical scanner. False positives fail closed.
+fn contains_control_word(line: &str, command: &str) -> bool {
+    line.match_indices(command).any(|(start, _)| {
+        // A preceding escaped backslash is a TeX \\ control symbol, not
+        // the start of this control word. Handle longer backslash runs too.
+        let previous_slashes = line[..start]
+            .bytes()
+            .rev()
+            .take_while(|byte| *byte == b'\\')
+            .count();
+        previous_slashes.is_multiple_of(2)
+            && !line[start + command.len()..]
+                .chars()
+                .next()
+                .is_some_and(|ch| ch.is_alphabetic() || ch == '@')
+    })
+}
+
+fn document_body_may_import(body: &str) -> bool {
+    const IMPORT_LIKE_COMMANDS: [&str; 6] = [
+        "\\usetikzlibrary",
+        "\\usepackage",
+        "\\RequirePackage",
+        "\\input",
+        "\\include",
+        "\\csname",
+    ];
+    body.split_inclusive('\n').any(|raw| {
+        let line = raw.trim_end_matches(['\r', '\n']);
+        let active = uncommented(line);
+        IMPORT_LIKE_COMMANDS
+            .iter()
+            .any(|command| contains_control_word(active, command))
+    })
+}
+
 /// Recognize only complete, literal preamble lines. Never expand arbitrary macros.
-/// Text after begin(document) is left entirely opaque to this scanner.
+/// After begin(document), detect only possible late import hints: these never
+/// establish positive evidence or authorize a source edit.
 #[must_use]
 pub fn inspect(source: &str) -> ProjectImports {
     let has_crlf = source.contains("\r\n");
@@ -170,6 +287,7 @@ pub fn inspect(source: &str) -> ProjectImports {
     let mut result = ProjectImports {
         packages: BTreeSet::new(),
         libraries: BTreeSet::new(),
+        declaration_sites: Vec::new(),
         uncertain_reason: None,
         begin_document: None,
         class_declared: false,
@@ -203,6 +321,10 @@ pub fn inspect(source: &str) -> ProjectImports {
             offset += raw.len();
             continue;
         }
+        let token_start = offset
+            + line
+                .find(trimmed)
+                .expect("trimmed literal is in source line");
         if trimmed == BEGIN_DOCUMENT {
             let local = line.find(BEGIN_DOCUMENT).expect("literal begin token");
             let start = offset + local;
@@ -218,7 +340,9 @@ pub fn inspect(source: &str) -> ProjectImports {
             literal_prefix_trusted = false;
         } else if trimmed.starts_with("\\documentclass") {
             match literal_names(trimmed, "\\documentclass", true) {
-                Some(names) if names.len() == 1 && !result.class_declared => {
+                Some(names)
+                    if names.len() == 1 && !result.class_declared && literal_prefix_trusted =>
+                {
                     result.class_declared = true;
                 }
                 _ => {
@@ -239,7 +363,25 @@ pub fn inspect(source: &str) -> ProjectImports {
             // These exact forms only select fonts; they do not import TikZ.
         } else if trimmed.starts_with("\\usepackage") {
             match literal_names(trimmed, "\\usepackage", true) {
-                Some(names) if literal_prefix_trusted => result.packages.extend(names),
+                Some(names) if literal_prefix_trusted && result.class_declared => {
+                    result.packages.extend(names);
+                    record_literal_sites(
+                        &mut result,
+                        ImportKind::Package,
+                        trimmed,
+                        "\\usepackage",
+                        true,
+                        offset..offset + line.len(),
+                        token_start,
+                    );
+                }
+                Some(_) if !result.class_declared => {
+                    first_reason(
+                        &mut result.uncertain_reason,
+                        "package declaration precedes documentclass",
+                    );
+                    literal_prefix_trusted = false;
+                }
                 Some(_) => {}
                 None => {
                     first_reason(
@@ -252,6 +394,13 @@ pub fn inspect(source: &str) -> ProjectImports {
         } else if trimmed.starts_with("\\usetikzlibrary") {
             match literal_names(trimmed, "\\usetikzlibrary", false) {
                 Some(names) => {
+                    if !result.class_declared {
+                        first_reason(
+                            &mut result.uncertain_reason,
+                            "TikZ library declaration precedes documentclass",
+                        );
+                        literal_prefix_trusted = false;
+                    }
                     if !result.packages.contains("tikz") {
                         first_reason(
                             &mut result.uncertain_reason,
@@ -261,6 +410,15 @@ pub fn inspect(source: &str) -> ProjectImports {
                     }
                     if literal_prefix_trusted {
                         result.libraries.extend(names);
+                        record_literal_sites(
+                            &mut result,
+                            ImportKind::TikzLibrary,
+                            trimmed,
+                            "\\usetikzlibrary",
+                            false,
+                            offset..offset + line.len(),
+                            token_start,
+                        );
                     }
                 }
                 None => {
@@ -281,6 +439,20 @@ pub fn inspect(source: &str) -> ProjectImports {
             literal_prefix_trusted = false;
         }
         offset += raw.len();
+    }
+    // Direct library loading after \begin{document} is supported by TeX.
+    // Likewise, body-side \input/\include can pull in external imports. Do
+    // not turn a preamble-only absence into a false NOT_LOADED verdict or
+    // silently add an earlier duplicate. Existing trusted sites stay known.
+    if result
+        .begin_document
+        .as_ref()
+        .is_some_and(|begin| document_body_may_import(&source[begin.end..]))
+    {
+        first_reason(
+            &mut result.uncertain_reason,
+            "possible late import or external source in document body",
+        );
     }
     if result.begin_document.is_none() {
         first_reason(
@@ -324,6 +496,59 @@ pub fn capabilities_for_tool(
         Evidence::Absent
     };
     catalog.capabilities(tool_id, installed, loaded, engine)
+}
+
+/// N2 library panel status from the *same* declarative catalogue as the six
+/// primitive tools. Installation is caller-provided, never inferred from TeX
+/// declarations; visual_editable stays false for arbitrary library constructs.
+/// tool_implemented means at least one listed native generator depends on this
+/// library (currently arrows.meta only), not full library editing coverage.
+pub fn capabilities_for_library(
+    catalog: &Catalog,
+    name: &str,
+    project: &ProjectImports,
+    installed: Evidence,
+    engine: Option<&str>,
+) -> Result<Capabilities, PrimitiveError> {
+    let library = catalog
+        .library(name)
+        .ok_or_else(|| PrimitiveError::UnknownLibrary(name.to_owned()))?;
+    let package = project.status(ImportKind::Package, "tikz");
+    let loaded_library = project.status(ImportKind::TikzLibrary, name);
+    let project_loaded = if package == Evidence::Confirmed && loaded_library == Evidence::Confirmed
+    {
+        Evidence::Confirmed
+    } else if package == Evidence::Unknown || loaded_library == Evidence::Unknown {
+        Evidence::Unknown
+    } else {
+        Evidence::Absent
+    };
+    let tool_implemented = if catalog.tools.iter().any(|tool| {
+        tool.requirements
+            .libraries
+            .iter()
+            .any(|required| required == name)
+    }) {
+        Evidence::Confirmed
+    } else {
+        Evidence::Absent
+    };
+    let engine_compatible = match engine {
+        Some(actual) if actual.eq_ignore_ascii_case(&library.requirements.engine) => {
+            Evidence::Confirmed
+        }
+        // The catalogue records an XeLaTeX proof target, not a claim that
+        // other engines reject this PGF/TikZ library.
+        _ => Evidence::Unknown,
+    };
+    Ok(Capabilities {
+        installed,
+        project_loaded,
+        engine_compatible,
+        tool_implemented,
+        help_available: Evidence::Confirmed,
+        visual_editable: false,
+    })
 }
 
 /// An explicit source proposal; B must show the diff and request the user action.
@@ -372,7 +597,7 @@ pub fn plan_import(
                 reason: "only the tikz package has an N2 automatic source adapter",
             };
         }
-        ImportKind::TikzLibrary if !SUPPORTED_LIBRARIES.contains(&name) => {
+        ImportKind::TikzLibrary if !N2_LIBRARY_NAMES.contains(&name) => {
             return ImportDecision::Refused {
                 reason: "library has no N2 literal import adapter; use source",
             };

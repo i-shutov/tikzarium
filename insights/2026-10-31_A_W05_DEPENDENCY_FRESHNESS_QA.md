@@ -75,3 +75,12 @@ A nonempty `.fls` with only external/foreign `INPUT` lines cannot certify full p
 ### Latest recorder test formatting
 
 HEAD `e0f78eec4c1e56112477e7747ac17a9c54ea0e7e`, [Rust CI 41209317672](https://github.com/i-shutov/tikzarium/actions/runs/41209317672) and [D QA 41209317661](https://github.com/i-shutov/tikzarium/actions/runs/41209317661) **FAIL Rustfmt** in one A test blank line before `external_only_recorder_cannot_certify_source_freshness`. Applied exact observed formatter removal; behavior unchanged. New SHA must pass independently.
+
+
+## 2026-10-31 — main merge QA provenance / no inherited PASS
+
+Before integrating existing PR #28, observed latest main `aa6d1d08caee984d5f31ac13396e346fc451c8fe`, branch HEAD `bd18d1b94ca2c76516f3bb3d85ef3ebe87ce9c63`, current AGENTS, open PRs and A plan. GitHub comparison against common ancestor `b2a1299d5660d04614c78ca696189dfab10e4f43`: main advanced by 53 commits, **zero files touching A core/CLI or A plans/insights**. The new branch tree is main plus the original five A code/test blobs (SHA preserved) and updates only A plans/insights. Commit has both branch and main as parents (normal merge, no history rewrite / no force update). Main's B/C/D files remain intact.
+
+Original `bd18d1b94ca2c76516f3bb3d85ef3ebe87ce9c63` checks: [Rust 41209431449](https://github.com/i-shutov/tikzarium/actions/runs/41209431449), [D QA 41209431371](https://github.com/i-shutov/tikzarium/actions/runs/41209431371), [real MiKTeX Windows Server 41209431524](https://github.com/i-shutov/tikzarium/actions/runs/41209431524), [font 41209431447](https://github.com/i-shutov/tikzarium/actions/runs/41209431447), [N1 41209431391](https://github.com/i-shutov/tikzarium/actions/runs/41209431391) were completed SUCCESS on that **old** SHA, not this integration merge. Fresh combined-head CI/QA is PENDING and must be evaluated independently.
+
+D10 post-main hosted checks at `aa6d1d08caee984d5f31ac13396e346fc451c8fe`: Rust [41217239643](https://github.com/i-shutov/tikzarium/actions/runs/41217239643) 3/3, D QA [41217239580](https://github.com/i-shutov/tikzarium/actions/runs/41217239580) 7/7, true MiKTeX build [41217239682](https://github.com/i-shutov/tikzarium/actions/runs/41217239682) 1/1; these prove baseline main only, **not new PR #28**. Unresolved evidence remains: production MiKTeX `doctor` with real `findtexmf` NOT_RUN, physical Win10/M1/M4 NOT_RUN, GUI/undo integrated smoke NOT_RUN. No release PASS.
