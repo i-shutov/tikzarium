@@ -99,7 +99,7 @@ fn main() -> ExitCode {
                 "tikz.sty",
                 "tikzlibrarycalc.code.tex",
                 "tikzlibrarypositioning.code.tex",
-                "tikzlibraryarrows.meta.code.tex",
+                "pgflibraryarrows.meta.code.tex",
                 "fontspec.sty",
                 "unicode-math.sty",
             ] {

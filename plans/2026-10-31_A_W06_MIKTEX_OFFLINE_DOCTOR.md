@@ -71,3 +71,15 @@ to silently switch to TeX Live or another MiKTeX installation. The CLI
 child-process regression puts a valid fake XeLaTeX on PATH, selects a missing
 Unicode MiKTeX path, and checks no PDF appears and custom TeX/CRLF bytes stay
 unchanged. This test is authored; exact-head CI is required before PASS.
+
+## W06.1 — real PGF arrows.meta lookup correction (2026-10-31)
+
+The existing doctor incorrectly probed the invented `tikzlibraryarrows.meta.code.tex`. A real TeX Live 2025/dev installation returns **no such file**, but `kpsewhich pgflibraryarrows.meta.code.tex` resolves to `.../tex/generic/pgf/libraries/pgflibraryarrows.meta.code.tex`. The real document `\\usetikzlibrary{arrows.meta}` compiles with XeLaTeX and loads the PGF file (exit 0, actual PDF). PGF's `arrows.meta` is a **PGF library**, even when requested through TikZ's `\\usetikzlibrary` convenience command. The wrong lookup had forced doctor exit=3 on hosted TeX Live and prevented all subsequent end-to-end fixture tests. The fixed lookup is exactly `pgflibraryarrows.meta.code.tex` on both MiKTeX and TeX Live; `calc` and `positioning` remain `tikzlibrary*.code.tex`.
+
+- [x] Correct doctor mapping; preserve MISSING/NOT_CHECKED fail-closed semantics rather than suppressing the package gate.
+- [x] Extend CLI test: only the true PGF library is present; invented filename absent; doctor returns 0; remove unicode-math => exit 3.
+- [x] Apply the exact hosted Rustfmt 1.91 diffs from failed SHA `0166c4a900e1` for A's `discovery.rs` and `doctor_unix.rs`.
+- [ ] Re-run and inspect **new exact-head** Rust/TeX/QA workflows. Prior failed runs 41188362441 and 41188362460 must stay recorded as FAIL, not converted to PASS.
+- [ ] Independent hosted real MiKTeX #40 and physical Win10/M1/M4 acceptance remain separate gates.
+
+Verified package naming locally using `kpsewhich` and direct real XeLaTeX; no Rust build tools available in local workspace. This correction touches only A-owned code/tests and A plans/insights; other engineers own CI and GUI.

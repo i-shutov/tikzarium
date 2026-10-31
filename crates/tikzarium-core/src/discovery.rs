@@ -320,10 +320,7 @@ mod tests {
             Some(shared_helper)
         );
         std::fs::remove_file(user_helper).unwrap();
-        assert_eq!(
-            tool_next_to_engine(Some(&user_engine), "findtexmf"),
-            None
-        );
+        assert_eq!(tool_next_to_engine(Some(&user_engine), "findtexmf"), None);
     }
 
     #[test]

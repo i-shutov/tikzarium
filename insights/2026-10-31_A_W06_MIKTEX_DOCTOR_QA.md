@@ -60,3 +60,11 @@ Regression authored: working fake engine on PATH, explicitly selected missing
 Unicode MiKTeX path, no created PDF, byte-identical CRLF plus opaque macro.
 New branch SHA tests remain PENDING until exact-head hosted Rust CI finishes.
 Physical Win10 MiKTeX user/shared and Mac M1/M4 remain NOT_RUN.
+
+## W06.1 investigation — false MISSING in real doctor
+
+The completed exact-head checks for SHA `0166c4a900e1efe4252eadcb095c1153c275351a` are **not green**: [Rust CI 41188362441](https://github.com/i-shutov/tikzarium/actions/runs/41188362441) failed Linux doctor on `tikzlibraryarrows.meta.code.tex: MISSING` (exit 3), and Windows/macOS rustfmt. [D QA 41188362460](https://github.com/i-shutov/tikzarium/actions/runs/41188362460) failed its required doctor preflight on three hosts, while [figure-font job 41188362495](https://github.com/i-shutov/tikzarium/actions/runs/41188362495) passed. No claim of all-green CI.
+
+**Root cause independently reproduced:** local XeTeX 0.999996 TeX Live 2025/dev, `kpsewhich tikzlibraryarrows.meta.code.tex` => not found, `kpsewhich pgflibraryarrows.meta.code.tex` => `/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryarrows.meta.code.tex`. A direct `xelatex -interaction=nonstopmode -halt-on-error -no-shell-escape test-arrows-meta.tex` with `\\usetikzlibrary{arrows.meta}` and `\\draw[-{Stealth}]` produced an actual PDF (exit=0) and log `pgflibraryarrows.meta.code.tex`. This is a *false-negative doctor*, not evidence that the installed TikZ lacks arrow tips. Never bypass a genuinely missing package.
+
+Corrective changes: native PGF filename in CLI doctor and fake-MiKTeX doctor test; assert invented filename absent; apply the 3 exact rustfmt differences visible in hosted job log. New exact-head CI is PENDING until completed and inspected. MiKTeX user/shared on native Win10, network-isolated verification, and physical Macs M1/M4 are still NOT_RUN; independent MiKTeX workflow #40 has no physical acceptance equivalence. Vendor MiKTeX option reference: https://docs.miktex.org/manual/miktex-xetex.html .

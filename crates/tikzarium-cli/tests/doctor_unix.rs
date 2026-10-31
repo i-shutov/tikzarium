@@ -95,19 +95,22 @@ fn doctor_reports_present_and_missing_without_installer_invocation() {
         "tikz.sty",
         "tikzlibrarycalc.code.tex",
         "tikzlibrarypositioning.code.tex",
-        "tikzlibraryarrows.meta.code.tex",
+        "pgflibraryarrows.meta.code.tex",
         "fontspec.sty",
         "unicode-math.sty",
     ] {
         fs::write(packages.join(name), b"installed").unwrap();
     }
 
+    // arrows.meta is a PGF library, not a tikzlibrary*.code.tex file.
+    // The old invented tikzlibraryarrows.meta.code.tex is intentionally absent.
+    assert!(!packages.join("tikzlibraryarrows.meta.code.tex").exists());
     let present = cli(&engine, &["doctor"]);
     assert_eq!(present.status.code(), Some(0));
     let stdout = String::from_utf8(present.stdout).unwrap();
     assert!(stdout.contains("Distribution: MiKTeX"));
     assert!(stdout.contains("unicode-math.sty: present"));
-    assert!(stdout.contains("tikzlibraryarrows.meta.code.tex: present"));
+    assert!(stdout.contains("pgflibraryarrows.meta.code.tex: present"));
     assert!(stdout.contains("MiKTeX user с пробелом"));
     let calls = fs::read_to_string(&marker).unwrap();
     assert_eq!(calls.lines().count(), 7);
@@ -117,9 +120,11 @@ fn doctor_reports_present_and_missing_without_installer_invocation() {
     fs::remove_file(packages.join("unicode-math.sty")).unwrap();
     let missing = cli(&engine, &["doctor"]);
     assert_eq!(missing.status.code(), Some(3));
-    assert!(String::from_utf8(missing.stderr)
-        .unwrap()
-        .contains("unicode-math.sty: MISSING"));
+    assert!(
+        String::from_utf8(missing.stderr)
+            .unwrap()
+            .contains("unicode-math.sty: MISSING")
+    );
 }
 
 #[test]
@@ -169,11 +174,7 @@ fn successful_pdf_with_missing_glyph_reports_explicit_cli_warning() {
 
     let result = cli(
         &engine,
-        &[
-            "build",
-            source.to_str().unwrap(),
-            pdf.to_str().unwrap(),
-        ],
+        &["build", source.to_str().unwrap(), pdf.to_str().unwrap()],
     );
     assert_eq!(result.status.code(), Some(0));
     assert!(pdf.is_file());
