@@ -120,7 +120,8 @@ def inspect_pdf(
             info["pages_expected"] = expected_pages
             valid = valid and info["pages_actual"] == expected_pages
         else:
-            info["pages_note"] = "NOT_CHECKED: pdfinfo unavailable; PDF byte integrity only"
+            info["pages_note"] = "NOT_CHECKED: pdfinfo unavailable; required page-count assertion FAILED"
+            valid = False
 
     expected = [text_expect] if isinstance(text_expect, str) else (text_expect or [])
     if expected:
@@ -177,8 +178,9 @@ def inspect_pdf(
             valid = valid and proc.returncode == 0 and all(checks.values())
         else:
             info["font_embedding_note"] = (
-                "NOT_CHECKED: pdffonts unavailable; embedded-font release gate remains open"
+                "NOT_CHECKED: pdffonts unavailable; required embedded-font assertion FAILED"
             )
+            valid = False
     return valid, info
 
 def command(args: list[str], timeout: int = 180, cwd: Path | None = None) -> subprocess.CompletedProcess:
