@@ -49,7 +49,11 @@ fn inspect_pages(pdf: &[u8]) -> Result<usize, String> {
         return Err(format!(
             "pdfinfo failed ({}): {}",
             output.status,
-            String::from_utf8_lossy(&output.stderr).trim().chars().take(200).collect::<String>()
+            String::from_utf8_lossy(&output.stderr)
+                .trim()
+                .chars()
+                .take(200)
+                .collect::<String>()
         ));
     }
     parse_page_count(&String::from_utf8_lossy(&output.stdout))
@@ -70,11 +74,7 @@ pub fn spawn_page_render(
     rx
 }
 
-fn rasterize_page(
-    pdf: &[u8],
-    page: usize,
-    renderer: Option<PathBuf>,
-) -> Result<Vec<u8>, String> {
+fn rasterize_page(pdf: &[u8], page: usize, renderer: Option<PathBuf>) -> Result<Vec<u8>, String> {
     if page == 0 {
         return Err("PDF pages are one-based".into());
     }
@@ -101,7 +101,11 @@ fn rasterize_page(
         return Err(format!(
             "pdftoppm page {page} failed ({}): {}",
             output.status,
-            String::from_utf8_lossy(&output.stderr).trim().chars().take(200).collect::<String>()
+            String::from_utf8_lossy(&output.stderr)
+                .trim()
+                .chars()
+                .take(200)
+                .collect::<String>()
         ));
     }
     fs::read(output_prefix.with_extension("png"))
@@ -114,7 +118,10 @@ mod tests {
 
     #[test]
     fn page_count_requires_exact_positive_pages_field() {
-        assert_eq!(parse_page_count("Title: Example\nPages:          12\nSize: 2k"), Some(12));
+        assert_eq!(
+            parse_page_count("Title: Example\nPages:          12\nSize: 2k"),
+            Some(12)
+        );
         assert_eq!(parse_page_count("Pages: 1\n"), Some(1));
         assert_eq!(parse_page_count("Pages: 0"), None);
         assert_eq!(parse_page_count("Pages: many"), None);
