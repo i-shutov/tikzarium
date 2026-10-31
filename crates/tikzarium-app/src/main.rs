@@ -13,6 +13,7 @@ use tikzarium_extensions::{ExtensionStatus, Registry};
 
 mod font_proof;
 mod pdf_navigation;
+mod source_fonts;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
@@ -22,6 +23,7 @@ use ui_state::{
 
 use font_proof::{FontProofResult, spawn_font_proof};
 use pdf_navigation::{can_navigate, spawn_page_count, spawn_page_render};
+use source_fonts::scan_explicit_font_hints;
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
@@ -697,6 +699,33 @@ impl TikzariumApp {
                     ui.text_edit_singleline(&mut self.prefs.math_font);
                 });
                 ui.small("Example: DejaVu Serif · DejaVu Sans · latinmodern-math.otf");
+                egui::CollapsingHeader::new("Current source · font references")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        ui.small("Read-only source hints; not expanded TeX macros, installed-font verification or the effective font of each TikZ node.");
+                        let hints = scan_explicit_font_hints(&self.document.source);
+                        egui::ScrollArea::vertical().max_height(105.0).show(ui, |ui| {
+                            if hints.is_empty() {
+                                ui.label("No explicit fontspec/unicode-math declarations detected.");
+                            }
+                            for hint in hints.iter().take(40) {
+                                let display_family = hint.family.chars().take(75).collect::<String>();
+                                let label = format!(
+                                    "Line {} · \\{} · {}",
+                                    hint.line, hint.command, display_family
+                                );
+                                if ui.button(label).clicked() {
+                                    self.jump_to_line = Some(hint.line);
+                                    if !self.workspace.show_source() {
+                                        self.workspace = WorkspaceMode::Split;
+                                    }
+                                }
+                            }
+                            if hints.len() > 40 {
+                                ui.small(format!("{} more hints omitted from the list", hints.len() - 40));
+                            }
+                        });
+                    });
                 ui.horizontal_wrapped(|ui| {
                     if ui.button("Copy preamble").clicked() {
                         match self.prefs.figure_fonts().preamble() {
