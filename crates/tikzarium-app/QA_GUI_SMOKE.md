@@ -11,7 +11,7 @@ Record: Git SHA; OS build and CPU; Rust app version; XeLaTeX/TeX Live or MiKTeX 
 | WIN10-03 / MAC-03 | Build with Ctrl+Enter / Cmd+Enter using XeLaTeX; view and zoom exact preview | XeLaTeX diagnostics/job status, page-one image if Poppler present; if missing, PDF export available but preview correctly reports renderer absent |
 | WIN10-04 / MAC-04 | Build `a.tex` to valid PDF, then Save As `b.tex` without altering source via Ctrl+Shift+S / Cmd+Shift+S | Stale warning remains visible; **Export PDF disabled**; old PDF retained in canvas; screenshot |
 | WIN10-05 / MAC-05 | Edit the compiled source before rebuilding; then introduce invalid TeX and rebuild | Stale banner on edit; failed build preserves previous PDF, exposes failure row without fictional coordinates; screenshot; record error source-line limitation |
-| WIN10-06 / MAC-06 | Start long build; try Open, Open path, Save, Save As, Discover TeX | Actions disabled; Cancel terminates active job; no file identity switch |
+| WIN10-06 / MAC-06 | Build a valid PDF, then start a long rebuild; try Open, Open path, Save, Save As, Discover TeX and Export PDF | Actions and old-PDF export disabled while rebuilding; Cancel terminates active job; no file identity switch |
 | WIN10-07 / MAC-07 | Trigger unsaved changes via Open of another file, test Save and open / Discard and open / Cancel | Modal protects current edits; no source loss in cancel path |
 | WIN10-08 / MAC-08 | Type Cyrillic and compose Unicode input with OS IME, check CRLF source diagnostic navigation if available | No broken UTF-8 caret positioning; document reproducibility; no imaginary PASS while #10 not integrated |
 
