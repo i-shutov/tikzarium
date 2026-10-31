@@ -11,6 +11,12 @@ $userConfig = Join-Path $root 'config'
 $userData = Join-Path $root 'data'
 $recordDir = Join-Path (Get-Location) '.qa-artifacts/miktex-windows-server'
 New-Item -ItemType Directory -Force -Path $root, $userInstall, $userConfig, $userData, $recordDir | Out-Null
+# Even with --private / --no-registry, MiKTeX 25.12 may otherwise select
+# runneradmin's Roaming profile for package writes. Scope ALL child processes
+# to CI runner-temp roots; validate the *actual* root report before modifying.
+$env:MIKTEX_USERINSTALL = $userInstall
+$env:MIKTEX_USERCONFIG = $userConfig
+$env:MIKTEX_USERDATA = $userData
 # Persist a record even if the installer, config probe or package provision fails.
 @{ schema_version = 1; stage = 'installer-start'; status = 'INCOMPLETE'; host = 'windows-2022'; physical_windows10 = 'NOT_RUN' } |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
@@ -33,6 +39,18 @@ $initexmf = Get-ChildItem -LiteralPath $userInstall -File -Recurse -Filter inite
 if (-not $miktexExe -or -not $initexmf) { throw 'Isolated MiKTeX utility executables missing' }
 $bin = Split-Path -Parent $miktexExe
 $env:PATH = "$bin;$env:PATH"
+# An installer executable in runner-temp is NOT proof that the MiKTeX user
+# package root is isolated. Do not write settings or install packages before
+# validating UserInstall/UserConfig/UserData from a real initexmf --report.
+$rootReport = (& $initexmf --report 2>&1 | Out-String)
+$reportExitCode = $LASTEXITCODE
+$rootReport | Set-Content -LiteralPath (Join-Path $recordDir 'texmf-roots-preflight.log') -Encoding utf8
+$null = Assert-MiKTeXPrivateRoots -Report $rootReport -ExitCode $reportExitCode `
+    -Install $userInstall -Config $userConfig -Data $userData
+@{ schema_version = 1; stage = 'texmf-roots-verified'; status = 'INCOMPLETE'
+   user_install = $userInstall; user_config = $userConfig; user_data = $userData } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $recordDir 'setup-stage.json') -Encoding utf8
+
 
 # This setting belongs ONLY to the isolated private CI installation.
 # An explicit packages install is allowed; a compile-time surprise install is not.
@@ -80,6 +98,13 @@ foreach ($package in $packages) {
 }
 & $miktexExe packages install @packages
 if ($LASTEXITCODE -ne 0) { throw "MiKTeX explicit package provisioning failed ($LASTEXITCODE)" }
+# Assert that provisioning and any MiKTeX maintenance still use the same
+# isolated TEXMF roots; a successful package exit is not enough.
+$rootReportPost = (& $initexmf --report 2>&1 | Out-String)
+$rootReportPostExitCode = $LASTEXITCODE
+$rootReportPost | Set-Content -LiteralPath (Join-Path $recordDir 'texmf-roots-post-provision.log') -Encoding utf8
+$null = Assert-MiKTeXPrivateRoots -Report $rootReportPost -ExitCode $rootReportPostExitCode `
+    -Install $userInstall -Config $userConfig -Data $userData
 $packageVersionFile = Join-Path $recordDir 'explicit-package-versions.txt'
 foreach ($package in $packages) {
     $info = (& $miktexExe packages info --template '{id}|{version}|{timePackaged}|{isInstalled}' $package 2>&1 | Out-String).Trim()
@@ -97,6 +122,9 @@ if ($LASTEXITCODE -ne 0 -or $version -notmatch '(?i)MiKTeX') {
 
 # PATH for next steps is temporary job-local; the user-installed TeX is untouched.
 $bin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+"MIKTEX_USERINSTALL=$userInstall" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+"MIKTEX_USERCONFIG=$userConfig" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+"MIKTEX_USERDATA=$userData" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 "TIKZARIUM_XELATEX=$xelatex" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 "TIKZARIUM_MIKTEX_EXE=$miktexExe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 "TIKZARIUM_MIKTEX_PREFIX=$userInstall" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8

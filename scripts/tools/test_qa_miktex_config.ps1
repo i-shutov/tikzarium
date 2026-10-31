@@ -26,3 +26,27 @@ foreach ($case in $badCases) {
     if (-not $rejected) { throw "Fail-open readback: $($case.Label)" }
 }
 Write-Host 'D06 MiKTeX config readback parser: 7/7 PASS (host PowerShell only)'
+
+# Host-only TEXMF root parser regression: fail closed on fallbacks to AppData.
+$qaRoot = Join-Path $env:TEMP 'TikZarium Private Roots With Spaces'
+$inst = Join-Path $qaRoot 'install'
+$cfg = Join-Path $qaRoot 'config'
+$dat = Join-Path $qaRoot 'data'
+$validRoots = "UserInstall: $inst`nUserConfig: $cfg`nUserData: $dat`n"
+if (-not (Assert-MiKTeXPrivateRoots -Report $validRoots -ExitCode 0 -Install $inst -Config $cfg -Data $dat)) {
+    throw 'Failed to validate expected MiKTeX report roots'
+}
+$wrongRootReports = @(
+    @{ Label = 'default user AppData'; Text = $validRoots.Replace($inst, 'C:\Users\runneradmin\AppData\Roaming\MiKTeX\2.9'); Exit = 0 },
+    @{ Label = 'missing data root'; Text = $validRoots.Replace("UserData: $dat", ''); Exit = 0 },
+    @{ Label = 'duplicate install root'; Text = "$validRoots`nUserInstall: $inst"; Exit = 0 },
+    @{ Label = 'different config root'; Text = $validRoots.Replace($cfg, (Join-Path $qaRoot 'other-config')); Exit = 0 },
+    @{ Label = 'failed report command'; Text = $validRoots; Exit = 1 }
+)
+foreach ($case in $wrongRootReports) {
+    $rejected = $false
+    try { $null = Assert-MiKTeXPrivateRoots -Report $case.Text -ExitCode $case.Exit -Install $inst -Config $cfg -Data $dat }
+    catch { $rejected = $true }
+    if (-not $rejected) { throw "Fail-open MiKTeX root check: $($case.Label)" }
+}
+Write-Host 'D06 MiKTeX report root parser: 6/6 PASS (host PowerShell only)'
