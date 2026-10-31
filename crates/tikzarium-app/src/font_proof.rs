@@ -76,7 +76,7 @@ fn test_fonts(fonts: FigureFonts, xelatex: Option<std::path::PathBuf>, pdftoppm:
             let lines = text.lines().skip(2).filter(|line| !line.trim().is_empty()).collect::<Vec<_>>();
             if lines.is_empty() || lines.iter().any(|line| {
                 let fields = line.split_whitespace().collect::<Vec<_>>();
-                fields.len() < 6 || fields[3] != "yes" // 'emb' column
+                fields.len() < 7 || fields[fields.len() - 5] != "yes" // emb, sub, uni, obj, gen are final columns
             }) {
                 verified = false;
                 report.push_str("Embedded fonts: FAIL / UNKNOWN\n");

@@ -11,11 +11,16 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{ExtensionStatus, Registry};
 
+mod font_proof;
 mod ui_state;
+mod ui_theme;
 use ui_state::{
     BottomView, EditorCommand, WorkspaceMode, editor_command, line_start_char_index,
     preview_is_stale, scaled_zoom,
 };
+
+use font_proof::{FontProofResult, spawn_font_proof};
+use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 
@@ -44,11 +49,19 @@ struct TikzariumApp {
     show_packages: bool,
     show_log: bool,
     pending_open: Option<PathBuf>,
+    prefs: UiPreferences,
+    font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
+    font_proof_status: String,
+    font_proof_report: String,
+    font_proof_texture: Option<egui::TextureHandle>,
 }
 
 impl TikzariumApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.set_visuals(egui::Visuals::dark());
+        let prefs = cc.storage
+            .and_then(|storage| eframe::get_value::<UiPreferences>(storage, STORAGE_KEY))
+            .unwrap_or_default();
+        prefs.theme.apply(&cc.egui_ctx, prefs.compact);
         let tex = TexEnvironment::discover();
         let registry = Registry::new().expect("built-in extension manifests must validate");
         let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
@@ -77,6 +90,11 @@ impl TikzariumApp {
             show_packages: true,
             show_log: true,
             pending_open: None,
+            prefs,
+            font_proof_rx: None,
+            font_proof_status: "Not tested".into(),
+            font_proof_report: String::new(),
+            font_proof_texture: None,
         }
     }
 
@@ -447,11 +465,138 @@ impl TikzariumApp {
                 }
             });
     }
+    fn begin_font_proof(&mut self) {
+        if self.font_proof_rx.is_some() {
+            return;
+        }
+        self.font_proof_texture = None;
+        self.font_proof_report.clear();
+        self.font_proof_status = "Checking fontspec + unicode-math via XeLaTeX …".into();
+        self.font_proof_rx = Some(spawn_font_proof(
+            self.prefs.figure_fonts(),
+            self.tex.xelatex.clone(),
+            self.tex.pdf_renderer.clone(),
+        ));
+    }
+
+    fn poll_font_proof(&mut self, ctx: &egui::Context) {
+        let result = self.font_proof_rx.as_ref().and_then(|rx| match rx.try_recv() {
+            Ok(value) => Some(value),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => Some(Err("Font proof worker disconnected".into())),
+        });
+        if let Some(result) = result {
+            self.font_proof_rx = None;
+            match result {
+                Ok(proof) => {
+                    self.font_proof_status = proof.description;
+                    self.font_proof_report = proof.font_report;
+                    if let Some(bytes) = proof.preview_png {
+                        match image::load_from_memory(&bytes) {
+                            Ok(image) => {
+                                let rgba = image.to_rgba8();
+                                let size = [rgba.width() as usize, rgba.height() as usize];
+                                let color = egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
+                                self.font_proof_texture = Some(ctx.load_texture(
+                                    "exact-figure-font-proof", color, egui::TextureOptions::LINEAR
+                                ));
+                            }
+                            Err(error) => {
+                                self.font_proof_report.push_str(&format!("\nPreview decode: {error}"));
+                            }
+                        }
+                    }
+                }
+                Err(error) => {
+                    self.font_proof_status = format!("Font proof failed: {error}");
+                    self.font_proof_report = "No font compatibility claim was made.".into();
+                }
+            }
+        }
+        if self.font_proof_rx.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(80));
+        }
+    }
+
+    fn show_font_lab(&mut self, ctx: &egui::Context) {
+        if !self.prefs.show_font_lab { return; }
+        let mut open = true;
+        egui::Window::new("Figure typography · XeLaTeX")
+            .open(&mut open)
+            .resizable(true)
+            .default_size(egui::vec2(580.0, 520.0))
+            .show(ctx, |ui| {
+                ui.label("Text and math families used inside TikZ figures, not the GUI font.");
+                ui.small("Names require installed system/TeX fonts; absence is an error, never a silent substitute.");
+                ui.horizontal(|ui| {
+                    ui.label("Text:");
+                    ui.text_edit_singleline(&mut self.prefs.text_family);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Sans:");
+                    ui.text_edit_singleline(&mut self.prefs.sans_family);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Math:");
+                    ui.text_edit_singleline(&mut self.prefs.math_font);
+                });
+                ui.small("Example: DejaVu Serif · DejaVu Sans · latinmodern-math.otf");
+                ui.horizontal_wrapped(|ui| {
+                    if ui.button("Copy preamble").clicked() {
+                        match self.prefs.figure_fonts().preamble() {
+                            Ok(source) => ui.ctx().copy_text(source),
+                            Err(error) => self.font_proof_status = format!("Invalid family: {error}"),
+                        }
+                    }
+                    if ui.button("Copy literal-text node").clicked() {
+                        match self.prefs.figure_fonts().example_node("Привет, мир! — Геометрия") {
+                            Ok(source) => ui.ctx().copy_text(source),
+                            Err(error) => self.font_proof_status = format!("Invalid family: {error}"),
+                        }
+                    }
+                    if ui.button("Copy proof .tex").clicked() {
+                        match self.prefs.figure_fonts().proof_source() {
+                            Ok(source) => ui.ctx().copy_text(source),
+                            Err(error) => self.font_proof_status = format!("Invalid family: {error}"),
+                        }
+                    }
+                });
+                if ui.add_enabled(
+                    self.font_proof_rx.is_none(),
+                    egui::Button::new("Verify fonts via XeLaTeX")
+                ).clicked() {
+                    self.begin_font_proof();
+                }
+                ui.strong(&self.font_proof_status);
+                ui.small("Proof is separate from the active document. PDF glyph extraction needs pdftotext; font embedding needs pdffonts.");
+                egui::ScrollArea::vertical().max_height(150.0).show(ui, |ui| {
+                    if let Some(texture) = &self.font_proof_texture {
+                        ui.image((texture.id(), texture.size_vec2() * 0.45));
+                    }
+                });
+                ui.separator();
+                egui::ScrollArea::both().max_height(150.0).show(ui, |ui| {
+                    ui.add(egui::TextEdit::multiline(&mut self.font_proof_report)
+                        .font(egui::TextStyle::Monospace)
+                        .desired_width(f32::INFINITY)
+                        .desired_rows(7)
+                        .interactive(false));
+                });
+            });
+        self.prefs.show_font_lab = open;
+    }
+
 }
 
 impl eframe::App for TikzariumApp {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, STORAGE_KEY, &self.prefs);
+    }
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_build(ctx);
+        self.poll_font_proof(ctx);
+        self.show_font_lab(ctx);
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
                 editor_command(egui::Key::S, input.modifiers)
@@ -552,6 +697,10 @@ impl eframe::App for TikzariumApp {
                 ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
                 ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
                 ui.separator();
+                self.prefs.draw_toolbar(ui, ctx);
+                if ui.button("Figure fonts").clicked() {
+                    self.prefs.show_font_lab = !self.prefs.show_font_lab;
+                }
                 ui.checkbox(&mut self.show_packages, "Packages");
                 ui.checkbox(&mut self.show_log, "Diagnostics / log");
                 if self.document.dirty() {

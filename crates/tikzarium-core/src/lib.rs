@@ -3,11 +3,13 @@
 pub mod build;
 pub mod diagnostics;
 pub mod discovery;
+pub mod fonts;
 pub mod document;
 pub mod preview;
 
 pub use build::{BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService};
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
 pub use discovery::{TexEnvironment, find_executable};
+pub use fonts::{FigureFonts, FontInputError, missing_glyph_messages, tex_escape_plain_text, validate_font_name};
 pub use document::Document;
 pub use preview::{Preview, PreviewError, render_first_page};
