@@ -222,7 +222,8 @@ mod tests {
     #[test]
     fn poppler_worker_captures_stdout_and_stderr_without_pipes() {
         let (_dir, path) = fake_poppler("printf 'Pages: 2\n'; printf 'warning\n' >&2");
-        let output = run_poppler(&mut Command::new(path), "fixture", Duration::from_secs(2)).unwrap();
+        let output =
+            run_poppler(&mut Command::new(path), "fixture", Duration::from_secs(2)).unwrap();
         assert!(output.status.success());
         assert_eq!(
             parse_page_count(&String::from_utf8_lossy(&output.stdout)),
@@ -236,8 +237,12 @@ mod tests {
     fn poppler_worker_kills_hung_process_and_reports_not_checked() {
         let (_dir, path) = fake_poppler("while :; do :; done");
         let start = Instant::now();
-        let error =
-            run_poppler(&mut Command::new(path), "fixture", Duration::from_millis(150)).unwrap_err();
+        let error = run_poppler(
+            &mut Command::new(path),
+            "fixture",
+            Duration::from_millis(150),
+        )
+        .unwrap_err();
         assert!(error.contains("timed out"));
         assert!(start.elapsed() < Duration::from_secs(5));
     }
