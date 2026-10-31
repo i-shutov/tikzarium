@@ -577,11 +577,10 @@ impl TikzariumApp {
             .find(|status| status.manifest.id == "org.tikzarium.core");
         tikz_canvas::Capabilities {
             installed: core.is_some_and(|status| status.installed),
-            loaded: tikzarium_extensions::project_imports::inspect(&self.document.source)
-                .status(
-                    tikzarium_extensions::project_imports::ImportKind::Package,
-                    "tikz",
-                ),
+            loaded: tikzarium_extensions::project_imports::inspect(&self.document.source).status(
+                tikzarium_extensions::project_imports::ImportKind::Package,
+                "tikz",
+            ),
             engine_compatible: self.tex.xelatex.is_some()
                 && core.is_some_and(|status| {
                     status.compilation != tikzarium_extensions::CompilationState::IncompatibleEngine
