@@ -1,0 +1,15 @@
+[package]
+name = "tikzarium-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tikzarium-core = { path = "../tikzarium-core" }
+tikzarium-extensions = { path = "../tikzarium-extensions" }
+eframe = { version = "=0.33.3", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
+rfd = "0.15"

@@ -1,0 +1,7 @@
+id = "org.tikzarium.pgfplots"
+display_name = "PGFPlots"
+version = "0.1.0"
+category = "Scientific plots"
+requires_files = ["pgfplots.sty"]
+visual_features = []
+notes = "XeLaTeX compile when installed; visual axes planned for v0.5."

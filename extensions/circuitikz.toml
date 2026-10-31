@@ -1,0 +1,7 @@
+id = "org.tikzarium.circuitikz"
+display_name = "CircuitikZ"
+version = "0.1.0"
+category = "Engineering"
+requires_files = ["circuitikz.sty"]
+visual_features = []
+notes = "XeLaTeX package discovery only; circuit editor planned for v0.6."

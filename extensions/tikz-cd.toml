@@ -1,0 +1,7 @@
+id = "org.tikzarium.tikz-cd"
+display_name = "TikZ commutative diagrams"
+version = "0.1.0"
+category = "Mathematics"
+requires_files = ["tikz-cd.sty"]
+visual_features = []
+notes = "XeLaTeX package discovery only; adapter planned for v0.6."
