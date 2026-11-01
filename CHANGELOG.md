@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — I40 tracked Rust 1.91 Cargo.lock across all hosted build/GUI/MiKTeX QA (CI pending)
+
+- Tracked the real `Cargo.lock` from accepted post-merge X11 main `06b62eea`: source artifact `13072954180` ZIP SHA-256 `48cb9ddffed42ccb71531eb75b7f9d7b59e64ddf375de5a9269fc8cfdef3018d`, lock SHA-256 `4713fd0c29ef8718ff71316f68e5dffe43335b77857e5c7eff9771d087310503` (370 packages, 366 registry). Exact one-time [Rust 1.91 import/check](https://github.com/i-shutov/tikzarium/actions/runs/41282413609) SUCCESS; its temporary workflow removed.
+- CI Rust check/test/clippy/build/run now uses `--locked` across native Windows Server / macOS ARM, D three-host matrix, actual Linux/X11 egui, hosted private MiKTeX and N1 generated TeX/PDF. Shared Python audit + seven offline negative tests record tracked lock SHA, checked Cargo metadata and host provenance; archive JSON with build evidence. No TeX/package auto-install change.
+- Final branch exact-head CI and post-merge main checks **NOT_RUN** at changelog authoring time. Physical Windows 10 x64 with separately installed MiKTeX and physical Mac ARM M1/M4 with user-installed XeLaTeX **NOT_RUN**; deterministic binary reproducibility **NOT_VERIFIED**. Real PDF and GUI proof remain separate requirements. No release.
+
 ## Unreleased — I36 B30 X11 held-button AND keyboard receipt desktop acceptance (NOT_RUN pending artifacts)
 
 - I35 [actual Linux/X11 41279880858](https://github.com/i-shutov/tikzarium/actions/runs/41279880858) held **Button1Mask=256** across key-only XTest Ctrl+Z but source Undo still failed and later release inserted Line #2. I36 adds 80ms XTest key dwell/XSync, native XQueryKeymap proof of Ctrl/z down/up, XGetInputFocus snapshot, server Button1Mask check each key step, preserving strict source rollback. This disambiguates too-fast synthetic key events from B30 production routing. QA-only; actual I36 GUI acceptance NOT_RUN until complete, physical OS NOT_RUN, no release.
