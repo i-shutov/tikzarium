@@ -1564,7 +1564,6 @@ impl eframe::App for TikzariumApp {
                     self.pending_open_validation_error = Some(error);
                     ctx.request_repaint();
                 }
-
                 None => {}
             }
         }
@@ -2551,6 +2550,7 @@ mod split_layout_tests {
         );
         assert!(source.contains("РУЧНАЯ_ПРАВКА"));
     }
+
     #[test]
     fn b35_rejected_save_is_legible_inside_real_egui_modal() {
         let ctx = egui::Context::default();
