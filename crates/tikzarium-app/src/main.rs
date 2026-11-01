@@ -191,6 +191,9 @@ struct TikzariumApp {
     prefs: UiPreferences,
     authoring: tikz_authoring::Session,
     highlight_generated_line: bool,
+    // A visual source-patch Undo must not leave stale native TextEdit snapshots
+    // that could reintroduce an already deleted TikZ command.
+    reset_source_editor_undo_after_visual_patch: bool,
     font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
     font_proof_status: String,
     font_proof_report: String,
@@ -246,6 +249,7 @@ impl TikzariumApp {
                 state
             },
             highlight_generated_line: false,
+            reset_source_editor_undo_after_visual_patch: false,
             font_proof_rx: None,
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
@@ -648,6 +652,14 @@ impl TikzariumApp {
                     .desired_width(f32::INFINITY)
                     .desired_rows(36)
                     .show(ui);
+                if self.reset_source_editor_undo_after_visual_patch {
+                    // The revision-checked source inverse patch is authoritative.
+                    // Old native TextEdit snapshots must not resurrect the
+                    // deleted command when the user next edits source.
+                    output.state.clear_undoer();
+                    output.state.store(ui.ctx(), output.response.id);
+                    self.reset_source_editor_undo_after_visual_patch = false;
+                }
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
                 tikz_canvas::observe_source_text_edit(
@@ -677,7 +689,12 @@ impl TikzariumApp {
                         ));
                         self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
-                        output.response.request_focus();
+                        // Do not restore text keyboard focus within the same
+                        // held-guide Undo event: highlighting/scrolling remains
+                        // available, but native TextEdit must not repeat Undo.
+                        if !self.authoring.cancelled_pointer_capture {
+                            output.response.request_focus();
+                        }
                         // The galley, not physical line count * font height,
                         // owns TextEdit's geometry (wrapping, padding, DPI,
                         // unicode and font layout). Scroll to the actual cursor.
@@ -1052,6 +1069,7 @@ impl eframe::App for TikzariumApp {
         {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
+            self.reset_source_editor_undo_after_visual_patch = true;
         }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
