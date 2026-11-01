@@ -2038,11 +2038,12 @@ mod split_layout_tests {
     fn b33_typed_save_rejects_existing_open_target_and_accepts_new_utf8_file() {
         let dir = tempfile::tempdir().unwrap();
         let target = dir.path().join("чужой-файл.tex");
-        let original = "% чужие макросы\\r\\n\\\\MyOpaque{не менять}\\r\\n";
+        let original = "% чужие макросы\r\n\\MyOpaque{не менять}\r\n";
         std::fs::write(&target, original).unwrap();
-        let mut scratch = Document::scratch("% набросок\\n\\\\draw (0,0) -- (1,1);\\n");
+        let mut scratch = Document::scratch("% набросок\n\\draw (0,0) -- (1,1);\n");
         assert!(typed_save_destination(&scratch, target.to_str().unwrap()).is_err());
         assert!(typed_save_destination(&scratch, "").is_err());
+
         let alias_dir = dir.path().join("alias-dir");
         std::fs::create_dir(&alias_dir).unwrap();
         let path_alias = alias_dir.join("..").join("чужой-файл.tex");
@@ -2057,16 +2058,25 @@ mod split_layout_tests {
             symlink(dir.path().join("missing.tex"), &dangling).unwrap();
             assert!(typed_save_destination(&scratch, dangling.to_str().unwrap()).is_err());
         }
+
         let safe = dir.path().join("мой-рисунок.tex");
         let destination = typed_save_destination(&scratch, safe.to_str().unwrap()).unwrap();
         scratch.save_to(destination).unwrap();
         assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
-        assert!(std::fs::read_to_string(&safe).unwrap().contains("\\\\draw"));
+        assert!(std::fs::read_to_string(&safe)
+            .unwrap()
+            .contains("\\draw"));
+
         let mut opened = Document::load(&target).unwrap();
-        opened.source.push_str("% обычная правка\\n");
-        assert_eq!(typed_save_destination(&opened, target.to_str().unwrap()).unwrap(), target);
+        opened.source.push_str("% обычная правка\n");
+        assert_eq!(
+            typed_save_destination(&opened, target.to_str().unwrap()).unwrap(),
+            target
+        );
         opened.save().unwrap();
-        assert!(std::fs::read_to_string(&target).unwrap().contains("обычная правка"));
+        assert!(std::fs::read_to_string(&target)
+            .unwrap()
+            .contains("обычная правка"));
     }
 
     #[test]
