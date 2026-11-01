@@ -385,5 +385,4 @@ mod tests {
         std::fs::write(&file, &source).unwrap();
         assert_eq!(std::fs::read_to_string(file).unwrap(), original);
     }
-
 }
