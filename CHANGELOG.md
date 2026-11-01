@@ -1,5 +1,7 @@
 ## Unreleased — B38 library connect/disconnect + N3 help inspector (DRAFT: QA NOT_RUN)
 
+- Re-pinned I46/I47 real Linux/X11 workflows and their screenshot-coordinate profiles to the exact B38 app/src Git tree, preserving full pointer/Save/Open/PDF checks. Inherited B37 coordinates remain provisional pending fresh screenshot review; this does NOT silently promote bootstrap to PASS.
+
 - The native egui inspector now exposes four C-owned TikZ library entries and displays installation/project loading/engine target/tool implementation/help independently without promoting UNKNOWN to installed/compiled.
 - Shows byte-local before/after source proposals before explicit user Connect/Disconnect; revision-checked C plans append inverse to existing N1 Undo, preserve CRLF/unknown macros and cancel in-flight pointer. No implicit package install, TeX substitution, solver or full-source rewrite.
 - Adds Russian offline search in egui over the same C catalogue used by CLI/authoring; syntax/examples/parameter units/default provenance/manual sections remain unified.

@@ -57,11 +57,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact checkout and B37 app source tree; never accept stale B31 X11
+      - name: Verify exact checkout and B38 app source tree; new screenshots still require manual calibration
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'b855b7d8972b6663e0e764daa140c68a6b232fef'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c0e45c3445f25f365ca7ac4a2985b9a4261b7373'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q

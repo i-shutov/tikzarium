@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I51 B37 source-tree-pinned X11; inherited B35 gestures and new provisional PDF focus clicks REQUIRE actual independent screenshot calibration",
+  "profile": "B38 provisional app-tree-pinned real X11; inherited B37 coordinates NOT YET visually reaccepted",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I51 B37 source-tree pinned. Inherited B36 real-X11 coordinates and blue-selected-button probes are provisional after removal of global stale fit warning; fail closed on unknown layout. New B37 raster LOD and status visual review NOT_RUN.",
+  "layout_note": "B38 source-tree ref pinned; legacy B37 click coordinates are not yet independently calibrated on new right-side library/help controls; fail closed on mismatched controls. GUI preview screenshot alone is not six-gesture PASS.",
   "path_click": [
     310,
     18
@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "b855b7d8972b6663e0e764daa140c68a6b232fef",
+  "reviewed_app_tree_sha": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
   "zoom_out_click": [
     523,
     99
@@ -155,7 +155,7 @@
   ],
   "undo_held_pointer": true,
   "b30_release_source_history_regression": true,
-  "calibration_reference": "B36 real-X11 six gestures and PDF toggles accepted as controls only on B36 app/src tree 276ad1525db4ef3d3aab4624808453a897ad5b6a; B37 image quality and warning status require new artifacts and independent manual comparison.",
+  "calibration_reference": "B37 accepted baseline; B38 real pointer and PDF proof NOT_RUN at profile update. Compare actual B38 screenshot and PDF reference manually.",
   "b34_modal_real_run": 41308995293,
   "b36_bootstrap_clicks_unreviewed": false,
   "b36_evidence_recalibrated_from": "B36 two screenshot-verified layouts inherited strictly as candidate B37 coords; status layout changed. Unknown/ambiguous probe rejects test; no B37 GUI claim until exact-head live proof.",
@@ -199,5 +199,6 @@
       ]
     }
   ],
-  "b37_preview_fidelity_visual_review": "NOT_RUN"
+  "b37_preview_fidelity_visual_review": "NOT_RUN_ON_B38",
+  "bootstrap_caveat": "B38 code tree SHA exact; pointer coordinates inherited from independently reviewed B37; real screenshots, saved source/PDF hashes and manual image inspection REQUIRED before scenario PASS; physical Win10 and Mac ARM NOT_RUN."
 }
