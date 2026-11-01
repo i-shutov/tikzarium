@@ -605,8 +605,17 @@ def main() -> int:
                                         "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
             run(["xdotool", "windowsize", "--sync", window,
                  str(profile["restore_size"][0]), str(profile["restore_size"][1])])
-            time.sleep(0.7)
+            # I45: capture both the restored-size PDF and a later settled
+            # frame. Human inspection must compare the printed toolbar zoom
+            # against the actual PDF raster/page fit; frame differences alone
+            # never prove a corrected zoom label or that the whole page fits.
+            time.sleep(0.25)
             screenshot("04f-b26-restored-fit-page.png")
+            time.sleep(0.75)
+            screenshot("04g-b31-zoom-readout-settled.png")
+            report["zoom_readout_review"] = "MANUAL_COMPARE_TOOLBAR_AND_PDF_SCALE_REQUIRED"
+            report["steps"].append({"case": "b31_zoom_readout_after_restore",
+                                    "status": "TWO_REAL_FRAMES_NEED_VISUAL_QA"})
             if source.read_bytes() != before_resize_source:
                 raise RuntimeError("B26 responsive PDF fit modified user's TikZ source")
             if sha256(out / "04e-b26-resized-fit-page.png") == sha256(out / "04f-b26-restored-fit-page.png"):

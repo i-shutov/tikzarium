@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I43 B31 app tree confirmed. Manual review of authentic B30 1180x680 screenshot shows reflow: Fit width near (603,98), Fit Page near (680,98), NOT original 1366x740 (1027,72)/(515,97). These compact B31 coordinates are provisional until exact B31 screenshots. No inherited visual PASS.",
+  "layout_note": "I43 B31 previous app tree confirmed; I45 corrected zoom readout app tree pending real X11 re-review. Manual review of authentic B30 1180x680 screenshot shows reflow: Fit width near (603,98), Fit Page near (680,98), NOT original 1366x740 (1027,72)/(515,97). These compact B31 coordinates are provisional until exact B31 screenshots. No inherited visual PASS.",
   "path_click": [
     310,
     18
@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "3aea076697daef8572d24694995a4e2ef24bbcaa",
+  "reviewed_app_tree_sha": "af316d5e5452d74186b92d65c95c448253d0e61c",
   "zoom_out_click": [
     882,
     72
