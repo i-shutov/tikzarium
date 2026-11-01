@@ -1307,7 +1307,7 @@ mod split_layout_tests {
                         let fit = fit_page_zoom(image, viewport).expect("page must fit");
                         assert!(image.x * fit <= viewport.x - 23.0);
                         assert!(image.y * fit <= viewport.y - 23.0);
-                        assert!(fit <= 5.0 && fit >= 0.2);
+                        assert!((0.2..=5.0).contains(&fit));
                         checked = true;
                     });
                 },
