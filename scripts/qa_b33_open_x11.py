@@ -151,6 +151,20 @@ def main() -> int:
         command(["xdotool", "type", "--clearmodifiers", "--delay", "6", str(victim)])
         time.sleep(0.3)
         shot("03-open-target-typed.png")
+        if args.mode == "full":
+            # A typed Open path is never implicit permission to overwrite.
+            click(profile["toolbar_save_click"])
+            shot("03a-scratch-save-rejected.png")
+            if sha(victim) != expected_victim or sha(unrelated) != expected_unrelated:
+                raise RuntimeError("Toolbar Save overwrote existing Open-target TeX")
+            click(profile["toolbar_build_click"])
+            shot("03b-scratch-build-rejected.png")
+            if sha(victim) != expected_victim or victim.with_suffix(".pdf").exists():
+                raise RuntimeError("Toolbar Build used occupied Open-target path for scratch")
+            report["steps"].append({
+                "event": "unbound_scratch_toolbar_save_build_occupied",
+                "status": "PENDING_VISUAL_REVIEW_HASHED_UNMODIFIED",
+            })
         click(profile["open_path_click"])
         time.sleep(0.75)
         shot("04-dirty-open-modal-candidate.png")
@@ -160,11 +174,126 @@ def main() -> int:
             "event": "dirty_scratch_open_existing_target", "status": "SENT_REAL_X11",
             "victim_unmodified": True, "modal": "SCREENSHOT_MANUAL_REVIEW_REQUIRED",
         })
-        report["status"] = "BOOTSTRAP_NOT_ACCEPTED"
-        report["modal_save_open"] = "NOT_RUN"
-        report["manual_visual_review"] = "NOT_RUN"
-        if args.mode == "full":
-            raise RuntimeError("Full acceptance requires separately reviewed modal button/field positions; do not pretend bootstrap is PASS.")
+        if args.mode == "bootstrap":
+            report["status"] = "BOOTSTRAP_NOT_ACCEPTED"
+            report["modal_save_open"] = "NOT_RUN"
+            report["manual_visual_review"] = "NOT_RUN"
+            return 0
+        if profile.get("modal_save_input_click") is None or profile.get("modal_save_button_click") is None:
+            raise RuntimeError("Modal was not independently screenshot-calibrated: FULL NOT_RUN")
+
+        def modal_destination(path: Path) -> None:
+            click(profile["modal_save_input_click"])
+            key("ctrl+a")
+            command(["xdotool", "type", "--clearmodifiers", "--delay", "5", str(path)])
+            time.sleep(0.25)
+
+        def still_safe(label: str) -> None:
+            if sha(victim) != expected_victim or sha(unrelated) != expected_unrelated:
+                raise RuntimeError(f"{label}: existing user TeX bytes were overwritten")
+            if scratch_save.exists():
+                raise RuntimeError(f"{label}: scratch file appeared before explicit acceptance")
+
+        # Press actual Save and open modal button with *no* destination.
+        click(profile["modal_save_button_click"])
+        shot("05-reject-empty-save-destination.png")
+        still_safe("empty Save-and-open")
+
+        modal_destination(victim)
+        click(profile["modal_save_button_click"])
+        shot("06-reject-same-victim.png")
+        still_safe("same Open-target destination")
+
+        modal_destination(unrelated)
+        click(profile["modal_save_button_click"])
+        shot("07-reject-occupied-other.png")
+        still_safe("other occupied user TeX")
+
+        alias = out / "symlink-alias.tex"
+        alias.symlink_to(victim)
+        modal_destination(alias)
+        click(profile["modal_save_button_click"])
+        shot("08-reject-existing-symlink.png")
+        still_safe("existing symlink alias")
+        if not alias.is_symlink():
+            raise RuntimeError("Existing alias symlink was destroyed")
+
+        dangling = out / "dangling-symlink.tex"
+        destination_missing = out / "should-remain-missing.tex"
+        dangling.symlink_to(destination_missing)
+        modal_destination(dangling)
+        click(profile["modal_save_button_click"])
+        shot("09-reject-dangling-symlink.png")
+        still_safe("dangling symlink")
+        if destination_missing.exists() or not dangling.is_symlink():
+            raise RuntimeError("Dangling symlink was followed or replaced")
+
+        # Distinct unoccupied destination is now explicit user permission.
+        modal_destination(scratch_save)
+        shot("10-explicit-safe-save-path.png")
+        click(profile["modal_save_button_click"])
+        deadline = time.monotonic() + 12
+        while time.monotonic() < deadline and not scratch_save.is_file():
+            time.sleep(0.2)
+        if not scratch_save.is_file():
+            raise RuntimeError("Real modal Save-and-open did not persist separate scratch source")
+        if scratch_save.read_bytes() != SCRATCH.encode("utf-8"):
+            raise RuntimeError("Modal save changed Unicode scratch source or unknown macro")
+        if sha(victim) != expected_victim or sha(unrelated) != expected_unrelated:
+            raise RuntimeError("Modal acceptance modified original/third-party document")
+        time.sleep(0.8)
+        shot("11-reopened-crlf-victim-source.png")
+
+        # Source TextEdit must show the victim, not the previously-saved scratch,
+        # even after Ctrl+Z, and native Undo must not resurrect a former file.
+        click(profile["source_click"])
+        key("ctrl+z")
+        time.sleep(0.25)
+        key("ctrl+a")
+        key("ctrl+c")
+        copied = subprocess.run(["xclip", "-selection", "clipboard", "-o"],
+                                capture_output=True, timeout=5, check=True).stdout
+        (out / "reopened-editor-copy.txt").write_bytes(copied)
+        if b"OpaqueUserMacro" not in copied or b"ScratchMacro" in copied:
+            raise RuntimeError("Undo switched editor to previous scratch or failed to reopen victim")
+        shot("12-undo-after-reopen.png")
+        click(profile["toolbar_save_click"])
+        if sha(victim) != expected_victim or sha(unrelated) != expected_unrelated:
+            raise RuntimeError("Post-open GUI Save rewrote/normalized original victim CRLF")
+        report["modal_save_open"] = "PASS_REAL_X11_SAVE_SEPARATE_AND_REOPEN_UNDO_FENCED"
+        report["steps"].append({
+            "event": "six_real_modal_save_destinations_and_native_undo",
+            "status": "PENDING_INDEPENDENT_SCREENSHOT_REVIEW",
+            "scratch_save_sha256": sha(scratch_save),
+            "victim_sha256": sha(victim),
+            "clipboard_sha256": hashlib.sha256(copied).hexdigest(),
+        })
+
+        click(profile["toolbar_build_click"])
+        shot("13-real-gui-xelatex-build.png")
+        pdf = victim.with_suffix(".pdf")
+        deadline = time.monotonic() + 150
+        while time.monotonic() < deadline and not pdf.is_file():
+            time.sleep(2)
+            click(profile["toolbar_export_click"])
+        if not pdf.is_file() or pdf.read_bytes()[:5] != b"%PDF-":
+            raise RuntimeError("Actual GUI Build/Export did not produce XeLaTeX PDF")
+        text = command(["pdftotext", "-enc", "UTF-8", str(pdf), "-"])
+        fonts = command(["pdffonts", str(pdf)])
+        (out / "pdf-extracted-text.txt").write_text(text, encoding="utf-8")
+        (out / "pdf-fonts.txt").write_text(fonts, encoding="utf-8")
+        if "Не менять оригинал" not in text or "yes" not in fonts:
+            raise RuntimeError("External GUI XeLaTeX PDF lacks Cyrillic text or embedded font")
+        if sha(victim) != expected_victim or sha(unrelated) != expected_unrelated:
+            raise RuntimeError("GUI compile/export mutated original source CRLF bytes")
+        shot("14-actual-gui-pdf-after-build.png")
+        report["source_pdf_accepted"] = "PASS_REAL_GUI_XELATEX_PDF_BYTES_PENDING_VISUAL_REVIEW"
+        report["pdf_sha256"] = sha(pdf)
+        report["steps"].append({
+            "event": "actual_xelatex_gui_build_export",
+            "status": "PASS_PDF_CONTENT_FONT_SOURCE_HASH_PENDING_VISUAL_REVIEW",
+        })
+        report["status"] = "EVIDENCE_PENDING_MANUAL_VISUAL_REVIEW"
         return 0
     except Exception as exc:
         report["error"] = str(exc)
@@ -174,6 +303,12 @@ def main() -> int:
         report["final_victim_sha256"] = sha(victim)
         report["final_unrelated_sha256"] = sha(unrelated)
         report["final_scratch_save_exists"] = scratch_save.exists()
+        report["artifact_sha256"] = {
+            path.name: sha(path) for path in sorted(out.glob("*.png"))
+        }
+        report["artifact_sha256"].update({
+            path.name: sha(path) for path in sorted(out.glob("*.pdf"))
+        })
         (out / "report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
