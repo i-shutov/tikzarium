@@ -19,6 +19,13 @@ class I53(unittest.TestCase):
   self.assertIn(b'% I53 alternate file',m.REOPEN_SOURCE)
   self.assertIn(b'\\OpaqueLabel',m.REOPEN_SOURCE)
   self.assertIn('Не менять'.encode(),m.REOPEN_SOURCE)
+ def test_full_gui_path_clipboard_rejects_partial_filename(self):
+  from pathlib import Path
+  expected=Path("/tmp/мой-проект/library-connect.tex")
+  raw=str(expected).encode()
+  self.assertTrue(m.path_clipboard_matches(raw,expected))
+  self.assertFalse(m.path_clipboard_matches(raw[:-2],expected))
+  self.assertFalse(m.path_clipboard_matches(raw+b"garbage",expected))
  def test_profile_fail_closed(self):
   names=("source","path","save","build","export","panel","library","connect","disconnect","undo")
   d={k:[200,130] for k in names};d["tree"]="old"

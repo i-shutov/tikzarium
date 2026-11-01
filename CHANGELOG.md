@@ -1,5 +1,7 @@
 ## Unreleased — I53 B39 real-X11 N2 libraries / two-file GUI Reopen (CI NOT_RUN)
 
+- I53 B39 run 41359783212 reached real GUI but failed at initial Save before Connect: X11 `xdotool type --delay 3` submitted `library-connect.t`, not requested `.tex` (verified in screenshot/file report). QA driver now pastes the UTF-8 Path through X11 clipboard and checks full in-app field with Ctrl+A/C before Save or GUI Open. Negative tests reject missing filename suffix/extra bytes. New CI NOT_RUN at authoring; production unchanged.
+
 - New full-window positioning Connect → saved TeX → externally compiled XeLaTeX PDF → Disconnect → Undo QA, with failure screenshots, hashes and negative tests; B39 stable-row ID in scope and actual two-file GUI Open source checks added; Disconnect candidate [1190,584] requires fresh B39 screenshot before GUI PASS.
 
 ## Unreleased — B38 library connect/disconnect + N3 help inspector (DRAFT: QA NOT_RUN)

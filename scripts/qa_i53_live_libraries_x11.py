@@ -18,6 +18,8 @@ SRC = "\n".join([
 DECL=b"\\usetikzlibrary{positioning}\n"
 REOPEN_SOURCE=SRC.replace(b"% Preserve unknown macro", b"% I53 alternate file\n% Preserve unknown macro", 1)
 def sha(b): return hashlib.sha256(b).hexdigest()
+def path_clipboard_matches(actual,target):
+ return actual==os.fsencode(target)
 def exact_patch(old,new):
  return new.count(DECL)==1 and new.replace(DECL,b"",1)==old
 def check_profile(p,tree):
@@ -92,12 +94,30 @@ def main():
   def key(name):
    command("xdotool","key","--clearmodifiers",name)
    time.sleep(.2)
+  def clipboard_now():
+   result=subprocess.run(["xclip","-selection","clipboard","-o"],
+                         capture_output=True,timeout=5)
+   return result.stdout if result.returncode==0 else b""
+  def fill_gui_path(target):
+   # Prior xdotool type --delay 3 raced Save: actual GUI saved
+   # library-connect.t instead of requested library-connect.tex.
+   # Use native clipboard+TextEdit, then check the entire Path field
+   # BEFORE clicking Save/Open. No partial path can count as proof.
+   path_clip=out/"clipboard-path.txt"
+   path_clip.write_bytes(os.fsencode(target))
+   subprocess.run(["xclip","-selection","clipboard","-i",str(path_clip)],
+                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+                  check=True,timeout=6)
+   click("path");key("ctrl+a");key("ctrl+v")
+   time.sleep(.4)
+   key("ctrl+a");key("ctrl+c")
+   until(lambda:path_clipboard_matches(clipboard_now(),target),
+         "full GUI path field clipboard readback",8)
   shot("01-start.png")
   subprocess.run(["xclip","-selection","clipboard","-i",str(out/"clipboard.txt")],
                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=6)
   click("source");key("ctrl+a");key("ctrl+v");shot("02-pasted.png")
-  click("path");key("ctrl+a")
-  command("xdotool","type","--clearmodifiers","--delay","3",str(doc),timeout=30)
+  fill_gui_path(doc)
   click("save")
   until(doc.exists,"GUI initial Save")
   if doc.read_bytes()!=SRC:raise RuntimeError("Initial GUI source bytes changed")
@@ -148,13 +168,8 @@ def main():
   control=out/"reopen-control.tex"
   control.write_bytes(REOPEN_SOURCE)
   marker=out/"clipboard-reopen-sentinel.txt"
-  def clipboard_now():
-   result=subprocess.run(["xclip","-selection","clipboard","-o"],
-                         capture_output=True,timeout=5)
-   return result.stdout if result.returncode==0 else b""
   def gui_reopen(target,expected,label):
-   click("path");key("ctrl+a")
-   command("xdotool","type","--clearmodifiers","--delay","3",str(target),timeout=30)
+   fill_gui_path(target)
    key("ctrl+o")
    time.sleep(.7)
    shot(label+"-opened.png")
