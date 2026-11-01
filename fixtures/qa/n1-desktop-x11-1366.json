@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B27 exact app-tree: real Ctrl+Z while guide mouse is held, then mouse-up + Save + fresh gesture; no old B26 PASS inheritance",
+  "profile": "B28 exact app-tree: focused source TextEdit plus held guide pointer, Ctrl+Z before release, GUI Save, byte-exact inverse; B27 X11 FAIL is not PASS",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b",
+  "reviewed_app_tree_sha": "4be7a5aebbdd77a820abc08ea37d349dcab6bcec",
   "zoom_out_click": [
     882,
     72
@@ -145,5 +145,6 @@
     1366,
     740
   ],
-  "undo_held_pointer": true
+  "undo_held_pointer": true,
+  "b28_focused_textedit_regression": true
 }

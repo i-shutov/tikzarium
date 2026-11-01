@@ -13,3 +13,7 @@ B27 #69 fixes a source-revision-safe Undo that formerly allowed a held guide ges
 
 ## Evidence boundary
 Real hosted Linux X11 != physical Win10/MiKTeX or Mac ARM external XeLaTeX. Egui unit event != desktop process. Physical tests NOT_RUN; Cargo.lock release reproducibility NOT_VERIFIED. Do not call a workflow dispatched a completed result.
+
+## I28 B28 exact-source integration
+
+2026-11-01 · I28 QA integration onto exact B28 `f2dfbd0bb073e6152146a151eca138af8fc030e1` (independently verified app src tree `4be7a5aebbdd77a820abc08ea37d349dcab6bcec`). Real B27 X11 [41267001529](https://github.com/i-shutov/tikzarium/actions/runs/41267001529) was FAIL and remains historical evidence. B28 routes Undo during an armed guide pointer despite stale focused TextEdit, consuming the key; unweakened genuine X11 held-click/held-drag, exact saved-source rollback, fresh gesture, 6 native tools, F1 and GUI Save/Build/Export PDF must pass with independent source/PDF/screenshot review. Unit-event B28 success alone is insufficient. Real B28 X11 NOT_RUN, physical Win10/MiKTeX and Mac M1/M4 NOT_RUN, Cargo.lock untracked; no release.

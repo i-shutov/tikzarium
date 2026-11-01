@@ -527,11 +527,25 @@ pub fn handle_visual_undo_shortcut(
             && !input.modifiers.shift
             && !input.modifiers.alt
     });
-    if !pressed || ctx.wants_keyboard_input() || !session.undo_available() {
+    // A source jump auto-focuses the code TextEdit. Holding a new guide
+    // pointer capture makes Ctrl/Cmd+Z a *visual* Undo even if that old TextEdit
+    // still reports keyboard focus (reproduced by actual X11 I26).
+    let guide_capture = session.guide_pointer_armed
+        || session.drag_start.is_some()
+        || session.alt_selection_capture;
+    if !pressed || (ctx.wants_keyboard_input() && !guide_capture) || !session.undo_available() {
         return None;
     }
     match session.undo_and_focus_line(source) {
-        Ok(line) => Some(line),
+        Ok(line) => {
+            // The source editor is rendered later in this same egui frame and
+            // may receive focus again for the selected line. Consume the key
+            // to prevent a second, native TextEdit Undo of unrelated user TeX.
+            ctx.input_mut(|input| {
+                input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z);
+            });
+            Some(line)
+        }
         Err(error) => {
             session.status = error;
             None
@@ -2177,6 +2191,132 @@ mod tests {
                         session.undo(&mut source).unwrap();
                         assert_eq!(source, original);
                     }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b28_held_visual_undo_preempts_auto_focused_source_and_consumes_key() {
+        // I26 real X11: creating a native primitive scrolls/highlights the
+        // source TextEdit, which may still own keyboard focus when the user
+        // holds a new guide click/drag and presses Ctrl+Z. The ordinary
+        // TextEdit shortcut must keep its native behavior WITHOUT a guide
+        // capture; the held pointer instead routes to revision-checked Undo.
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    session
+                        .insert(&mut source, tool, Draft::for_tool(tool))
+                        .unwrap();
+                    let frame = |events: Vec<egui::Event>,
+                                 modifiers: egui::Modifiers,
+                                 request_source_focus: bool,
+                                 session: &mut Session,
+                                 source: &mut String| {
+                        let mut undo_line = None;
+                        let mut guide_rect = Rect::NOTHING;
+                        let mut key_consumed = false;
+                        let _output = ctx.run(
+                            egui::RawInput {
+                                screen_rect: Some(Rect::from_min_size(
+                                    Pos2::ZERO,
+                                    Vec2::new(width, 480.0),
+                                )),
+                                modifiers,
+                                events,
+                                ..Default::default()
+                            },
+                            |ctx| {
+                                // Same application ordering: global Undo,
+                                // visible editable source, then guide Response.
+                                undo_line = handle_visual_undo_shortcut(ctx, session, source);
+                                if undo_line.is_some() {
+                                    key_consumed =
+                                        !ctx.input(|input| input.key_pressed(egui::Key::Z));
+                                }
+                                egui::SidePanel::left("b28-source")
+                                    .default_width(270.0)
+                                    .show(ctx, |ui| {
+                                        let response = ui
+                                            .add(egui::TextEdit::multiline(source).desired_rows(8));
+                                        if request_source_focus {
+                                            response.request_focus();
+                                        }
+                                        observe_source_text_edit(&response, session, source);
+                                    });
+                                egui::CentralPanel::default().show(ctx, |ui| {
+                                    guide_rect = show_guide_frame(ui, session, source, READY).1;
+                                });
+                            },
+                        );
+                        (undo_line, guide_rect, key_consumed)
+                    };
+                    let (_, rect, _) = frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert!(ctx.wants_keyboard_input());
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    frame(
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert!(session.guide_pointer_armed);
+                    assert!(
+                        ctx.wants_keyboard_input(),
+                        "source focus must reproduce I26"
+                    );
+                    if dragged {
+                        frame(
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            false,
+                            &mut session,
+                            &mut source,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    let (undone, _, key_consumed) =
+                        frame(vec![z(true)], modifiers, false, &mut session, &mut source);
+                    assert!(undone.is_some(), "{tool:?}: missed held-pointer Undo");
+                    assert!(key_consumed, "{tool:?}: TextEdit could repeat Undo");
+                    assert_eq!(source, original, "{tool:?}: unrelated user TeX changed");
+                    assert!(session.cancelled_pointer_capture);
+                    frame(
+                        vec![z(false), primary(if dragged { end } else { start }, false)],
+                        egui::Modifiers::default(),
+                        false,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert_eq!(source, original, "{tool:?}: mouse-up inserted a ghost");
+                    assert!(!session.cancelled_pointer_capture);
                 }
             }
         }

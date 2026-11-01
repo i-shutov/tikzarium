@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I28 B28 focus-safe pointer Undo real X11 gate (NOT_RUN)
+
+- QA-only integration onto exact B28 `f2dfbd0bb073e6152146a151eca138af8fc030e1`, source tree `4be7a5aebbdd77a820abc08ea37d349dcab6bcec`. Existing B27 real-X11 FAIL retained. Requires actual Ctrl+Z during a held guide pointer despite TextEdit focus, byte-exact Save rollback, no ghost, 6 native tools, Russian F1, GUI XeLaTeX PDF and independent visual review. Real B28 X11 / physical OS NOT_RUN pending new exact-head evidence.
+
 ## Unreleased — 2026-11-01: I26 B27 physical-input Linux/X11 Undo + six native tools (QA PENDING)
 
 - QA-only branch based on [#69 B27](https://github.com/i-shutov/tikzarium/pull/69) exact source HEAD `1805a46cbca2985c4b4798ccf4b0e22171107297`, app source tree `5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b`. No edits to B-owned Rust or the old independent #48 branch. Updated X11 driver sends **real Ctrl+Z while holding a mouse press/drag on the provisional guide**, releases, GUI-saves and checks exact restored source bytes and zero ghost commands; then creates a fresh line, verifies Save and proceeds with all six native TikZ gestures, contextual Russian F1 and actual GUI XeLaTeX PDF/fitting.

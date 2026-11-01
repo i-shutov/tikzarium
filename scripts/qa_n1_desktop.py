@@ -110,11 +110,11 @@ def original_preserved(original: bytes, current: bytes) -> bool:
 def verify_held_undo(before: bytes, after: bytes, original: bytes) -> None:
     """Both source rollback and non-insertion of a held gesture are required."""
     if len(owners(before)) != 1 or owners(before)[0]["tool"] != "line":
-        raise RuntimeError("B27 setup must contain exactly the original line")
+        raise RuntimeError("B28 setup must contain exactly the original line")
     if after != original:
-        raise RuntimeError("B27 Undo/mouse-up did not restore exact source bytes or inserted a ghost")
+        raise RuntimeError("B28 Undo/mouse-up did not restore exact source bytes or inserted a ghost")
     if owners(after):
-        raise RuntimeError("B27 cancelled gesture left an owned native command")
+        raise RuntimeError("B28 cancelled gesture left an owned native command")
 
 
 def wait_for(predicate, seconds: float, message: str) -> None:
@@ -152,7 +152,7 @@ def main() -> int:
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
               "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
-              "b27_held_pointer_undo": "NOT_RUN",
+              "b28_held_pointer_undo": "NOT_RUN",
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -264,14 +264,14 @@ def main() -> int:
                                     "save_attempts": save_attempts})
             screenshot("pointer-" + case["tool"] + ".png")
             if case["tool"] == "line" and profile.get("undo_held_pointer"):
-                # B27: actual X11 keyboard Undo WHILE the pointer remains held
+                # B28: actual X11 keyboard Undo WHILE the pointer remains held
                 # over the guide; then a real mouse-up, Save, and source-byte
                 # inspection. Never fabricate the restored TeX file in QA.
                 for moved in (False, True):
                     prior = source.read_bytes()
                     verify_seed = owners(prior)
                     if len(verify_seed) != 1 or verify_seed[0]["tool"] != "line":
-                        raise RuntimeError("B27 expected one persisted line before Ctrl+Z")
+                        raise RuntimeError("B28 expected one persisted line before Ctrl+Z")
                     click(case["tool_click"])
                     run(["xdotool", "mousemove", "--sync", "--window", window,
                          str(start[0]), str(start[1]), "mousedown", "1"])
@@ -280,20 +280,20 @@ def main() -> int:
                         run(["xdotool", "mousemove", "--sync", "--window", window,
                              str(end[0]), str(end[1])])
                     time.sleep(0.25)
-                    screenshot("b27-" + ("drag" if moved else "click") + "-held.png")
+                    screenshot("b28-" + ("drag" if moved else "click") + "-held.png")
                     key("ctrl+z")
                     time.sleep(0.3)
-                    screenshot("b27-" + ("drag" if moved else "click") + "-undo-held.png")
+                    screenshot("b28-" + ("drag" if moved else "click") + "-undo-held.png")
                     run(["xdotool", "mouseup", "1"])
                     time.sleep(0.3)
                     click(profile["save_click"])
                     wait_for(lambda: source.read_bytes() != prior, 10,
-                             "B27 Ctrl+Z did not undo saved first line")
+                             "B28 Ctrl+Z did not undo saved first line")
                     reverted = source.read_bytes()
                     verify_held_undo(prior, reverted, FIXTURE.encode("utf-8"))
-                    screenshot("b27-" + ("drag" if moved else "click") + "-after-release.png")
+                    screenshot("b28-" + ("drag" if moved else "click") + "-after-release.png")
                     report["steps"].append({
-                        "case": "b27_undo_held_" + ("drag" if moved else "click"),
+                        "case": "b28_undo_held_" + ("drag" if moved else "click"),
                         "status": "PASS_REAL_X11_UNDO_RELEASE_NO_GHOST",
                         "sha256": sha256(source)})
                     # Continue the original six-primitive authoring vertical:
@@ -309,16 +309,16 @@ def main() -> int:
                     time.sleep(0.3)
                     click(profile["save_click"])
                     wait_for(lambda: len(owners(source.read_bytes())) == 1, 10,
-                             "B27 fresh guide gesture after Undo did not save")
+                             "B28 fresh guide gesture after Undo did not save")
                     restored = source.read_bytes()
                     if (owners(restored)[0]["tool"] != "line"
                             or not original_preserved(FIXTURE.encode("utf-8"), restored)):
-                        raise RuntimeError("B27 fresh gesture damaged unrelated TikZ")
-                    screenshot("b27-" + ("drag" if moved else "click") + "-fresh-line.png")
+                        raise RuntimeError("B28 fresh gesture damaged unrelated TikZ")
+                    screenshot("b28-" + ("drag" if moved else "click") + "-fresh-line.png")
                     report["steps"].append({
-                        "case": "b27_fresh_after_undo_" + ("drag" if moved else "click"),
+                        "case": "b28_fresh_after_undo_" + ("drag" if moved else "click"),
                         "status": "PASS_REAL_X11_FRESH_GESTURE", "sha256": sha256(source)})
-                report["b27_held_pointer_undo"] = "PASS_REAL_X11_CLICK_AND_DRAG"
+                report["b28_held_pointer_undo"] = "PASS_REAL_X11_CLICK_AND_DRAG"
         if profile.get("gestures"):
             names = [case["tool"] for case in profile["gestures"]]
             if len(names) != len(TOOLS) or set(names) != TOOLS:
