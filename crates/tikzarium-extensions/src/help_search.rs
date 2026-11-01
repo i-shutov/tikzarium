@@ -29,6 +29,16 @@ impl<'a> HelpEntry<'a> {
         }
     }
 
+    /// The original Russian explanation in the common C catalogue.
+    #[must_use]
+    pub fn description_ru(self) -> &'a str {
+        match self {
+            Self::Tool(tool) => &tool.help_ru,
+            Self::Parameter(_, parameter) => &parameter.help_ru,
+            Self::Library(library) => &library.help_ru,
+        }
+    }
+
     #[must_use]
     pub fn syntax(self) -> &'a str {
         match self {
@@ -88,6 +98,7 @@ impl<'a> HelpEntry<'a> {
         let base = [
             id.as_str(),
             self.title(),
+            self.description_ru(),
             self.syntax(),
             self.example(),
             self.warning(),
@@ -187,6 +198,14 @@ mod tests {
                 .any(|entry| entry.id() == "tikz.library.positioning")
         );
         assert!(exact(&catalog, "tikz.not-a-tool").is_none());
+        assert!(exact(&catalog, "tikz.line").unwrap()
+            .description_ru().contains("Создаёт прямой отрезок"));
+        assert!(exact(&catalog, "tikz.library.positioning").unwrap()
+            .description_ru().contains("смещение и якоря"));
+        assert!(search(&catalog, "СМЕЩЕНИЕ И ЯКОРЯ").iter()
+            .any(|entry| entry.id() == "tikz.library.positioning"));
+        assert!(search(&catalog, "СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК").iter()
+            .any(|entry| entry.id() == "tikz.line"));
     }
 
     #[test]
