@@ -85,6 +85,23 @@ fn show_split_source_panel(
         .show(ctx, add_contents);
 }
 
+/// Fit an entire rasterized XeLaTeX PDF page in the actual remaining preview
+/// viewport, AFTER the provisional guide and status widgets took their space.
+/// Scrollbar allowance is conservative; no PDF-to-TeX coordinate conversion.
+fn fit_page_zoom(image: egui::Vec2, viewport: egui::Vec2) -> Option<f32> {
+    if !image.is_finite() || !viewport.is_finite() || image.x <= 0.0 || image.y <= 0.0 {
+        return None;
+    }
+    let available = viewport - egui::vec2(24.0, 24.0);
+    if available.x <= 0.0 || available.y <= 0.0 {
+        return None;
+    }
+    let zoom = (available.x / image.x).min(available.y / image.y);
+    // Existing +/- controls promise a minimum of 20%. At a smaller scale
+    // the complete page cannot be displayed here; do not falsely claim fit.
+    (zoom >= 0.2 && zoom.is_finite()).then_some(zoom.min(5.0))
+}
+
 /// Screen-space caret region from the real egui text galley. Never estimate
 /// source-line positions from a fixed logical row height: soft wrapping,
 /// font metrics and horizontal scroll invalidate that estimate.
@@ -675,6 +692,7 @@ impl TikzariumApp {
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
         let canvas_width = ui.available_width();
+        let mut fit_page_requested = false;
         ui.horizontal_wrapped(|ui| {
             ui.heading("Canvas · exact PDF (read-only)");
             let page_controls = self.receiver.is_none()
@@ -724,6 +742,16 @@ impl TikzariumApp {
             {
                 self.zoom = fit;
             }
+            if ui
+                .add_enabled(
+                    self.preview_texture.is_some(),
+                    egui::Button::new("Вся страница"),
+                )
+                .on_hover_text("Подогнать точную PDF-страницу целиком по доступной области под полем TikZ, не по вспомогательной сетке")
+                .clicked()
+            {
+                fit_page_requested = true;
+            }
         });
         if self.preview_stale() {
             ui.colored_label(
@@ -753,6 +781,19 @@ impl TikzariumApp {
             }
         }
         ui.separator();
+        if fit_page_requested {
+            // Compute at the last possible point: the toolbar, warnings,
+            // source-authoring guide and separator already occupy the UI.
+            let fit = self
+                .preview_texture
+                .as_ref()
+                .and_then(|texture| fit_page_zoom(texture.size_vec2(), ui.available_size()));
+            if let Some(fit) = fit {
+                self.zoom = fit;
+            } else {
+                self.status = "Вся PDF-страница не помещается при минимальных 20%; увеличьте область PDF или используйте прокрутку".into();
+            }
+        }
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
@@ -1219,6 +1260,66 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b25_fit_page_uses_real_remaining_viewport_not_canvas_width_or_provisional_guide() {
+        let ctx = egui::Context::default();
+        let mut source = QUICKSTART.to_owned();
+        let original = source.clone();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        session.select_tool(tikz_authoring::Tool::Line);
+        for (width, height) in [(1366.0, 740.0), (850.0, 560.0)] {
+            let mut checked = false;
+            ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width, height),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+                    show_split_inspector_panel(ctx, layout, |ui| {
+                        ui.strong("F1 · каталог C");
+                    });
+                    show_split_source_panel(ctx, layout, |ui| {
+                        ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                    });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.heading("Canvas · exact PDF");
+                        ui.small("External XeLaTeX PDF, provisional guide below");
+                        tikz_canvas::show_guide(
+                            ui,
+                            &mut session,
+                            &mut source,
+                            tikz_canvas::Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        );
+                        ui.separator();
+                        let viewport = ui.available_size();
+                        let image = egui::vec2(720.0, 480.0);
+                        let fit = fit_page_zoom(image, viewport).expect("page must fit");
+                        assert!(image.x * fit <= viewport.x - 23.0);
+                        assert!(image.y * fit <= viewport.y - 23.0);
+                        assert!(fit <= 5.0 && fit >= 0.2);
+                        checked = true;
+                    });
+                },
+            );
+            assert!(checked, "no frame at {width}x{height}");
+            assert_eq!(source, original, "fit must never change user TeX");
+        }
+        assert_eq!(fit_page_zoom(egui::vec2(0.0, 480.0), egui::vec2(400.0, 300.0)), None);
+        assert_eq!(fit_page_zoom(egui::vec2(1000.0, 1000.0), egui::vec2(100.0, 100.0)), None);
+        assert_eq!(fit_page_zoom(egui::vec2(f32::NAN, 100.0), egui::vec2(400.0, 300.0)), None);
+        assert!(!session.undo_available());
+    }
 
     #[test]
     fn b21_source_navigation_targets_actual_textedit_galley_for_long_unicode_lines() {
