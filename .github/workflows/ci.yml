@@ -37,18 +37,22 @@ jobs:
         shell: bash
         run: |
           rustc -vV | grep -F 'host: aarch64-apple-darwin'
+      - name: I40 audited Cargo.lock and fail-closed provenance / hosted native
+        run: |
+          python -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
+          python scripts/qa_cargo_lock.py --report .qa-artifacts/lock-${{ matrix.target_name }}.json
       - name: Check source formatting
         run: cargo fmt --all -- --check
       - name: Check crates compile
-        run: cargo check --workspace --all-targets
+        run: cargo check --locked --workspace --all-targets
       - name: Tests
-        run: cargo test --workspace
+        run: cargo test --locked --workspace
       - name: I06 source-save integrity (no-op, external change and symlink)
-        run: cargo test -p tikzarium-core document::tests -- --nocapture
+        run: cargo test --locked -p tikzarium-core document::tests -- --nocapture
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
-        run: cargo build --release -p tikzarium-app -p tikzarium-cli
+        run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
       - name: Upload Windows binaries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -57,6 +61,7 @@ jobs:
           path: |
             target/release/tikzarium-app.exe
             target/release/tikzarium-cli.exe
+            .qa-artifacts/lock-windows-x64.json
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'
@@ -66,6 +71,7 @@ jobs:
           path: |
             target/release/tikzarium-app
             target/release/tikzarium-cli
+            .qa-artifacts/lock-macos-arm64.json
           if-no-files-found: error
 
   xelatex-linux-smoke:
@@ -87,15 +93,19 @@ jobs:
           kpsewhich tikz.sty
           kpsewhich standalone.cls
           pdftoppm -v
+      - name: I40 audited Cargo.lock and fail-closed provenance / hosted Linux
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
+          python3 scripts/qa_cargo_lock.py --report /tmp/tikzarium-ci/lock-linux.json
       - name: Offline unit tests for PDF Unicode gate
         run: python3 -m unittest discover -s scripts/tests -p 'test_qa_unicode_pdf.py' -v
       - name: Test CLI build against actual XeLaTeX
         run: |
-          cargo run -p tikzarium-cli -- doctor
+          cargo run --locked -p tikzarium-cli -- doctor
           mkdir -p /tmp/tikzarium-ci
           sha256sum examples/quickstart.tex examples/cyrillic.tex > /tmp/tikzarium-ci/source-before.sha256
-          cargo run -p tikzarium-cli -- build examples/quickstart.tex /tmp/tikzarium-ci/quickstart.pdf
-          cargo run -p tikzarium-cli -- build examples/cyrillic.tex /tmp/tikzarium-ci/cyrillic.pdf
+          cargo run --locked -p tikzarium-cli -- build examples/quickstart.tex /tmp/tikzarium-ci/quickstart.pdf
+          cargo run --locked -p tikzarium-cli -- build examples/cyrillic.tex /tmp/tikzarium-ci/cyrillic.pdf
           pdfinfo /tmp/tikzarium-ci/quickstart.pdf | grep -E '^Pages: *1$'
           pdfinfo /tmp/tikzarium-ci/cyrillic.pdf | grep -E '^Pages: *1$'
           python3 scripts/qa_unicode_pdf.py /tmp/tikzarium-ci/cyrillic.pdf --expect 'Тест' --expect 'Кириллица.' --expect 'Точка' --extracted-out /tmp/tikzarium-ci/cyrillic-extracted.txt
