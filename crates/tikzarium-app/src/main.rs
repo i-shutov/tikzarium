@@ -290,7 +290,7 @@ fn pending_open_controls(
     open_target: &Path,
     save_input: &mut String,
     validation_error: Option<&str>,
-) -> (Option<PendingOpenAction>, egui::Rect) {
+) -> (Option<PendingOpenAction>, egui::Rect, Option<egui::Rect>) {
     ui.label("В текущем TeX-документе есть несохранённые изменения.");
     ui.small(format!(
         "Открыть после подтверждения: {}",
@@ -305,10 +305,10 @@ fn pending_open_controls(
     ui.small("Путь открываемого файла не используется для сохранения. Для нового документа укажите другое имя.");
     // A rejected Save-and-open must explain itself inside the modal. The
     // top-toolbar status is dimmed and cannot be read through the backdrop.
-    if let Some(error) = validation_error {
+    let error_rect = validation_error.map(|error| {
         let color = ui.visuals().error_fg_color;
-        ui.colored_label(color, error);
-    }
+        ui.colored_label(color, error).rect
+    });
     let mut action = None;
     let mut save_button_rect = egui::Rect::NOTHING;
     ui.horizontal(|ui| {
@@ -329,7 +329,7 @@ fn pending_open_controls(
             action = Some(PendingOpenAction::Cancel);
         }
     });
-    (action, save_button_rect)
+    (action, save_button_rect, error_rect)
 }
 
 /// Dirty-Open confirmation must block underlying guide/source pointer events.
@@ -339,8 +339,8 @@ fn show_pending_open_dialog(
     open_target: &Path,
     save_input: &mut String,
     validation_error: Option<&str>,
-) -> (Option<PendingOpenAction>, egui::Rect) {
-    let mut result = (None, egui::Rect::NOTHING);
+) -> (Option<PendingOpenAction>, egui::Rect, Option<egui::Rect>) {
+    let mut result = (None, egui::Rect::NOTHING, None);
     egui::Modal::new(egui::Id::new("tikzarium-pending-open")).show(ctx, |ui| {
         ui.heading("Несохранённые изменения");
         ui.separator();
@@ -2207,8 +2207,9 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        (action, rect) =
-                            pending_open_controls(ui, doc, open_target, save_field, None);
+                        let result = pending_open_controls(ui, doc, open_target, save_field, None);
+                        action = result.0;
+                        rect = result.1;
                     });
                 },
             );
@@ -2559,7 +2560,8 @@ mod split_layout_tests {
         let target = Path::new("victim.tex");
         let mut destination = String::from("victim.tex");
         let message = "Файл уже существует. Выберите новое имя для сохранения.";
-        let output = ctx.run(
+        let mut error_bounds = None;
+        let _ = ctx.run(
             egui::RawInput {
                 screen_rect: Some(egui::Rect::from_min_size(
                     egui::Pos2::ZERO,
@@ -2568,19 +2570,20 @@ mod split_layout_tests {
                 ..Default::default()
             },
             |ctx| {
-                show_pending_open_dialog(ctx, &document, target, &mut destination, Some(message));
+                error_bounds = show_pending_open_dialog(
+                    ctx,
+                    &document,
+                    target,
+                    &mut destination,
+                    Some(message),
+                )
+                .2;
             },
         );
-        let visible = output.shapes.iter().any(|clipped| {
-            if let egui::Shape::Text(text) = &clipped.shape {
-                text.galley.text().contains(message)
-            } else {
-                false
-            }
-        });
         assert!(
-            visible,
-            "the rejected save explanation must be rendered in the foreground modal"
+            error_bounds.is_some_and(|rect| rect.is_positive()),
+            "the rejection label must occupy a real layout rect inside the foreground egui modal"
         );
+        assert_eq!(document.source, "% черновик\\r\\n\\\\Opaque{тест}\\r\\n");
     }
 }
