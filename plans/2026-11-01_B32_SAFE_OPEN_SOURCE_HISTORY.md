@@ -26,3 +26,23 @@ The B32 modal fix did **not** cover a separate source-level destructive route: i
 B33 routes an unbound `save()` through `save_as()` instead of directly trusting `file_field`. On Windows/macOS this invokes the external OS Save As dialog; on Linux a shared `typed_save_destination` guard rejects occupied files (including symlinks and canonical aliases), accepts only unused destinations or the same currently bound document, and passes successful paths to the existing atomic document writer. B32's Save-before-Open uses this same typed-path protection. No core, C catalogue, TeX tools or D QA files changed. Intentional replacement of a *different* file on Linux has no non-dialog confirmation workflow yet and is intentionally **blocked**, not silently attempted.
 
 Regression: real temp files with UTF-8/CRLF opaque TeX, existing target, `..` alias, symlink to occupied file, dangling symlink (Unix), unused destination and normal same-open-document save. Existing production egui `RawInput` modal clicks, TextEdit native Undo fences, six TikZ pointer event frames, F1 and Save/Reopen suites remain intact. Validate the final exact SHA on hosted CI and independently in Linux/X11; distinguish UNIT_EVENT from physical Win10/M1/M4 (NOT_RUN).
+
+
+## B34 extension — real egui modal for dirty Open
+
+B32 presented its destructive Save/Discard/Cancel choice in a plain
+egui Window, not a modal. Background source/guide/inspector pointer
+handlers could therefore still run while the choice was visible.
+B34 replaces the production dialog with native egui 0.33.3 Modal,
+with blocking backdrop, explicit Escape-to-Cancel and no implicit
+Discard. It also gates global F1/visual Undo while the decision is
+pending. Existing separate save destination and collision checks stay
+unchanged; source macros and TeX scopes are never rewritten.
+
+New UNIT_EVENT regression runs production modal through
+egui::Context::run(RawInput), clicking a background button with real
+pointer down/up, then Escape; verifies no background click, no
+implicit discard and untouched UTF-8/CRLF opaque TeX. Preserve six
+C-catalogue primitive/selection/parameter/F1/Undo/Save-Reopen tests.
+Require exact-head CI and independent Linux/X11 modal acceptance;
+physical Win10/M1/M4 NOT_RUN. External XeLaTeX PDF remains authoritative.

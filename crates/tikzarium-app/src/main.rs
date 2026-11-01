@@ -325,6 +325,25 @@ fn pending_open_controls(
     (action, save_button_rect)
 }
 
+/// Dirty-Open confirmation must block underlying guide/source pointer events.
+fn show_pending_open_dialog(
+    ctx: &egui::Context,
+    document: &Document,
+    open_target: &Path,
+    save_input: &mut String,
+) -> (Option<PendingOpenAction>, egui::Rect) {
+    let mut result = (None, egui::Rect::NOTHING);
+    egui::Modal::new(egui::Id::new("tikzarium-pending-open")).show(ctx, |ui| {
+        ui.heading("Несохранённые изменения");
+        ui.separator();
+        result = pending_open_controls(ui, document, open_target, save_input);
+    });
+    if result.0.is_none() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        result.0 = Some(PendingOpenAction::Cancel);
+    }
+    result
+}
+
 struct TikzariumApp {
     document: Document,
     file_field: String,
@@ -1246,19 +1265,21 @@ impl eframe::App for TikzariumApp {
         self.poll_pages(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
-        tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
-        // The text editor keeps its native Ctrl/Cmd+Z; outside focused text
-        // widgets the same revision-checked Undo works from the keyboard.
-        if self.workspace == WorkspaceMode::Split
-            && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
-                ctx,
-                &mut self.authoring,
-                &mut self.document.source,
-            )
-        {
-            self.jump_to_line = Some(line);
-            self.highlight_generated_line = true;
-            self.reset_source_editor_undo_history = true;
+        // Pending dirty-Open decisions own the keyboard: do not change source
+        // through a global help/visual Undo shortcut behind the modal.
+        if self.pending_open.is_none() {
+            tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
+            if self.workspace == WorkspaceMode::Split
+                && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
+                    ctx,
+                    &mut self.authoring,
+                    &mut self.document.source,
+                )
+            {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+                self.reset_source_editor_undo_history = true;
+            }
         }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
@@ -1475,18 +1496,13 @@ impl eframe::App for TikzariumApp {
             }
         });
         if let Some(path) = self.pending_open.clone() {
-            let mut decision = None;
-            egui::Window::new("Несохранённые изменения")
-                .collapsible(false)
-                .show(ctx, |ui| {
-                    decision = pending_open_controls(
-                        ui,
-                        &self.document,
-                        &path,
-                        &mut self.pending_open_save_path,
-                    )
-                    .0;
-                });
+            let decision = show_pending_open_dialog(
+                ctx,
+                &self.document,
+                &path,
+                &mut self.pending_open_save_path,
+            )
+            .0;
             match decision {
                 Some(PendingOpenAction::Save(save_path)) => {
                     if self.save_to_path(save_path) {
@@ -2310,5 +2326,85 @@ mod split_layout_tests {
             source, reopened,
             "native Undo after Open may not resurrect previous-file bytes"
         );
+    }
+
+    #[test]
+    fn b34_dirty_open_modal_blocks_background_pointer_and_escape_cancels() {
+        fn frame(
+            ctx: &egui::Context,
+            doc: &Document,
+            target: &Path,
+            save_input: &mut String,
+            background_clicks: &mut usize,
+            events: Vec<egui::Event>,
+        ) -> (Option<PendingOpenAction>, egui::Rect) {
+            let mut action = None;
+            let mut behind = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let button = ui.button("Background source action");
+                        behind = button.rect;
+                        if button.clicked() {
+                            *background_clicks += 1;
+                        }
+                    });
+                    action = show_pending_open_dialog(ctx, doc, target, save_input).0;
+                },
+            );
+            (action, behind)
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой.tex");
+        let untouched = "% CRLF и неизвестный макрос\r\n\\Opaque{тест}\r\n";
+        std::fs::write(&target, untouched).unwrap();
+        let doc = Document::scratch("% черновик\n\\draw (0,0) -- (1,1);\n");
+        let original = doc.source.clone();
+        let ctx = egui::Context::default();
+        let mut save_input = String::new();
+        let mut clicked = 0;
+        let (_, background) = frame(
+            &ctx, &doc, &target, &mut save_input, &mut clicked, vec![],
+        );
+        assert!(background.is_positive());
+        let pos = background.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        };
+        frame(
+            &ctx, &doc, &target, &mut save_input, &mut clicked,
+            vec![egui::Event::PointerMoved(pos), pointer(true)],
+        );
+        let (action, _) = frame(
+            &ctx, &doc, &target, &mut save_input, &mut clicked, vec![pointer(false)],
+        );
+        assert!(action.is_none());
+        assert_eq!(clicked, 0, "modal must block source/canvas controls behind it");
+
+        let (action, _) = frame(
+            &ctx, &doc, &target, &mut save_input, &mut clicked,
+            vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::default(),
+            }],
+        );
+        assert_eq!(action, Some(PendingOpenAction::Cancel));
+        assert_eq!(doc.source, original);
+        assert_eq!(std::fs::read_to_string(target).unwrap(), untouched);
     }
 }

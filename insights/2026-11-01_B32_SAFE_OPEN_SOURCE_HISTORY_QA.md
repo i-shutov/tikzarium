@@ -18,3 +18,17 @@ Re-review of `TikzariumApp::save` against `Document::save_to` identified an **in
 B-only correction: unbound saves route through native Save As dialog (Windows/macOS) or a validated typed destination (Linux). The shared guard checks `symlink_metadata`, denies occupied non-current files and dangling symlinks, and preserves normal save of the active file. It also centralizes protection for the B32 dirty-Open modal. New regression uses actual temporary UTF-8/CRLF files, opaque commands and alias/symlink cases; no fake XeLaTeX/PDF assertions. The guard is a UI preflight, **not an OS atomic lock** against races; do not claim more.
 
 As of patch authorship: GitHub commit SHA and automated check outcomes must be read from the **final HEAD**, not from the earlier B32 PASS. Independent real X11 screenshot/modal/Save/Build acceptance still required; physical Win10 and ARM macOS remain NOT_RUN.
+
+
+## B34 QA extension — modal event capture
+
+Reproduced by reading the B-owned production handler: a plain
+egui::Window does not block pointer events to background widgets,
+and global visual Undo/F1 were handled before the window. B34 uses
+egui 0.33.3 native Modal plus keyboard gating; Escape cancels without
+dropping edits. New test b34_dirty_open_modal_blocks_background_pointer_and_escape_cancels
+exercises Context::run(RawInput) on the production modal, a live
+background button, pointer press/release and Escape, checking no
+background click and byte-preserved UTF-8/CRLF target. This is
+UNIT_EVENT only; do not claim real X11 or Win10/M1/M4 tests before
+independent evidence. Source-level defect and test added together.
