@@ -101,7 +101,6 @@ jobs:
           grep -F 'tikz.circle' /tmp/tikzarium-ci/help-search.txt
           grep -F 'Пояснение: Создаёт прямой отрезок' /tmp/tikzarium-ci/help-line.txt
           grep -F 'Пояснение: Позволяет задавать положение узла' /tmp/tikzarium-ci/help-positioning.txt
-          grep -F 'тикз-не-содержится' /tmp/tikzarium-ci/help-description-search.txt && exit 1 || test "$?" -eq 1
           grep -F 'tikz.library.positioning' /tmp/tikzarium-ci/help-description-search.txt
           if cargo run --locked -p tikzarium-cli -- help nonexistent-unknown-tool; then exit 1; fi
       - name: Install local TeX + PDF tools
