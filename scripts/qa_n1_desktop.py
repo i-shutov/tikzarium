@@ -278,6 +278,7 @@ def main() -> int:
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
               "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
+              "compact_fit_page": "NOT_RUN", "compact_fit_width": "NOT_RUN",
               "b30_held_pointer_undo": "NOT_RUN",
               "x11_button1_mask_trace": [],
               "f1_help_visual": "NOT_RUN",
@@ -577,6 +578,31 @@ def main() -> int:
             if not all(str(n) in report["resized_window_geometry"]
                        for n in profile["responsive_resize"]):
                 raise RuntimeError("Actual window dimensions do not match B26 resize")
+            # B31: actual compact GUI controls; differing frames are NOT visual PASS.
+            if "compact_fit_width_click" in profile:
+                compact_original = source.read_bytes()
+                click(profile["compact_fit_width_click"])
+                time.sleep(0.5)
+                screenshot("04e2-b31-compact-fit-width-candidate.png")
+                if (sha256(out / "04e-b26-resized-fit-page.png")
+                        == sha256(out / "04e2-b31-compact-fit-width-candidate.png")):
+                    raise RuntimeError("Compact Fit width no frame effect; coordinate may be stale")
+                if source.read_bytes() != compact_original:
+                    raise RuntimeError("Compact Fit width modified TikZ source")
+                report["compact_fit_width"] = "FRAME_CHANGED_MANUAL_PDF_WIDTH_REVIEW_REQUIRED"
+                report["steps"].append({"case": "b31_compact_fit_width",
+                                        "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+                click(profile["fit_page_click"])
+                time.sleep(0.5)
+                screenshot("04e3-b31-compact-fit-page-restored.png")
+                if (sha256(out / "04e2-b31-compact-fit-width-candidate.png")
+                        == sha256(out / "04e3-b31-compact-fit-page-restored.png")):
+                    raise RuntimeError("Compact Fit Page no frame effect; coordinate may be stale")
+                if source.read_bytes() != compact_original:
+                    raise RuntimeError("Compact mode switches modified TikZ source")
+                report["compact_fit_page"] = "FRAME_CHANGED_MANUAL_WHOLE_PAGE_REVIEW_REQUIRED"
+                report["steps"].append({"case": "b31_compact_fit_page_restored",
+                                        "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
             run(["xdotool", "windowsize", "--sync", window,
                  str(profile["restore_size"][0]), str(profile["restore_size"][1])])
             time.sleep(0.7)
