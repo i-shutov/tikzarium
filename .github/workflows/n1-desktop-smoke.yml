@@ -62,20 +62,14 @@ jobs:
             texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
       - name: Offline evidence predicate tests, never called desktop acceptance
         run: python3 -m unittest discover -s scripts/tests -p test_qa_n1_desktop.py -v
-      - name: Build exact-checkout egui application; record Cargo.lock drift explicitly
+      - name: I40 immutable locked egui build and dependency graph provenance
         run: |
           mkdir -p "$RUNNER_TEMP/i19-build-evidence"
-          cargo build -p tikzarium-app --bin tikzarium-app
-          if git ls-files --error-unmatch Cargo.lock >/dev/null 2>&1; then
-            git diff -- Cargo.lock > "$RUNNER_TEMP/i19-build-evidence/cargo-lock.diff"
-            if test -s "$RUNNER_TEMP/i19-build-evidence/cargo-lock.diff"; then
-              echo "::warning::Tracked Cargo.lock drift under Rust 1.91.0; diff preserved in QA evidence"
-            fi
-          else
-            test -s Cargo.lock
-            cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
-            echo "::warning::Source repository has NO Cargo.lock; generated resolution archived, release reproducibility NOT VERIFIED"
-          fi
+          python3 -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
+          python3 scripts/qa_cargo_lock.py --report "$RUNNER_TEMP/i19-build-evidence/lock-evidence.json"
+          cargo build --locked -p tikzarium-app --bin tikzarium-app
+          git diff --exit-code -- Cargo.lock
+          cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
       - name: Real B30 X11 source-history held-pointer Undo, six gestures, GUI Save/XeLaTeX, fit/resize
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
@@ -95,6 +89,6 @@ jobs:
             ${{ runner.temp }}/i19-evidence/*.pdf
             ${{ runner.temp }}/i19-evidence/*.log
             ${{ runner.temp }}/i19-evidence/*.txt
-            ${{ runner.temp }}/i19-build-evidence/*.diff
+            ${{ runner.temp }}/i19-build-evidence/lock-evidence.json
             ${{ runner.temp }}/i19-build-evidence/Cargo.lock
           if-no-files-found: warn
