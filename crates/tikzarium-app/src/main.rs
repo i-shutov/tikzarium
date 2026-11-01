@@ -1485,7 +1485,7 @@ mod split_layout_tests {
         let viewport = egui::vec2(500.0, 150.0);
         let mut zoom = 1.0;
         assert!(!refit_selected_page(true, Some(image), viewport, &mut zoom));
-        assert!(zoom >= 0.02 && zoom < 0.2, "compact fit: {zoom}");
+        assert!((0.02..0.2).contains(&zoom), "compact fit: {zoom}");
         assert!(image.x * zoom <= viewport.x - 23.0);
         assert!(image.y * zoom <= viewport.y - 23.0);
 
