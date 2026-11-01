@@ -21,3 +21,7 @@ Independent I36 desktop screenshot audit for 1180×680 showed that clicking **«
 ## Fit width consistency
 
 The existing toolbar 'Fit width' separately clamped raster scale up to 20% and pretended its canvas was at least 80pt wide. This could clip a large exact PDF horizontally at 850pt Split. B31 uses the same 2% floor and actual available canvas width, disabling the fit command rather than claiming success when less than 2% is necessary. New negative/positive compact-width regression. Tooltips are Russian. Does not change drawing gestures, source or TeX.
+
+## B31 follow-up: live I43 zoom-label synchronization
+
+Independent I43 exact B31 Linux/X11 [run 41290833137](https://github.com/i-shutov/tikzarium/actions/runs/41290833137) verified the compact Fit Page/Fit width PDF, six native C gestures, held-pointer Undo, source, Russian F1 and external XeLaTeX. It also found a specific remaining display defect: after 1180×680 → 1366×740, the PDF was re-fitted to ~25% but the toolbar still showed 7% from the preceding compact viewport. The page/guide are not coordinate-aligned. B-owned correction: compare the emitted rounded zoom readout to the post-guide refit and explicitly request one follow-up egui frame only when they differ; preserve source bytes, manual zoom behavior, C catalogue and XeLaTeX renderer. Add a real headless egui split/guide/TextEdit two-frame regression at both sizes. Independent screenshot recheck still required before main integration; do not treat UNIT_EVENT as live GUI.
