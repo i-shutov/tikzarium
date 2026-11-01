@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B26 exact app-tree candidate; B25 screenshot acceptance historical; B26 re-review required",
+  "profile": "B30 exact app-tree: GUI-native source editor history isolated from visual inverse patch; actual held-click/held-drag Undo, GUI Save and native PDF",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B26 reuses B25 button layout and six-gesture coordinates, now with persistent Fit Page on resize/new raster; these coordinates must be accepted by exact-B26 real X11 screenshot evidence, not inherited from B25.",
+  "layout_note": "B30 only changes Undo focus/native editor history, not known B26/B28 coordinates. Coordinates are hypotheses until this exact B30 real X11 source/PDF/screenshots are independently reviewed; no inherited visual PASS.",
   "path_click": [
     310,
     18
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "47c4c86be10471a5f56f7019ad63a77e7f4480f5",
+  "reviewed_app_tree_sha": "965933b3f70504f2f4082bc22795bab67fad5d44",
   "zoom_out_click": [
     882,
     72
@@ -144,5 +144,7 @@
   "restore_size": [
     1366,
     740
-  ]
+  ],
+  "undo_held_pointer": true,
+  "b30_release_source_history_regression": true
 }

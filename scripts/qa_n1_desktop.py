@@ -8,6 +8,7 @@ source is never changed. Coordinate profiles are specific to a reviewed UI SHA.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -31,6 +32,131 @@ FIXTURE = r"""\documentclass{standalone}
 \end{tikzpicture}
 \end{document}
 """
+
+
+def x11_button1_mask() -> int:
+    """Query X11 server Button1Mask (1<<8), not the QA driver's intent.
+
+    Repeated xdotool commands are independent XTest clients. A screenshot
+    taken before the driver's mouseup does not prove X11 still sees Button1
+    pressed. Fail closed when XQueryPointer cannot establish the live mask.
+    """
+    x11 = ctypes.CDLL("libX11.so.6")
+    ptr = ctypes.c_void_p
+    window = ctypes.c_ulong
+    integer = ctypes.c_int
+    mask_type = ctypes.c_uint
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ptr
+    x11.XDefaultScreen.argtypes = [ptr]
+    x11.XDefaultScreen.restype = integer
+    x11.XRootWindow.argtypes = [ptr, integer]
+    x11.XRootWindow.restype = window
+    x11.XQueryPointer.argtypes = [
+        ptr, window, ctypes.POINTER(window), ctypes.POINTER(window),
+        ctypes.POINTER(integer), ctypes.POINTER(integer),
+        ctypes.POINTER(integer), ctypes.POINTER(integer),
+        ctypes.POINTER(mask_type),
+    ]
+    x11.XQueryPointer.restype = integer
+    x11.XCloseDisplay.argtypes = [ptr]
+    x11.XCloseDisplay.restype = integer
+    display = x11.XOpenDisplay(None)
+    if not display:
+        raise RuntimeError("XQueryPointer cannot open active X11 DISPLAY")
+    try:
+        root = x11.XRootWindow(display, x11.XDefaultScreen(display))
+        root_reply, child = window(), window()
+        root_x, root_y, win_x, win_y = integer(), integer(), integer(), integer()
+        mask = mask_type()
+        if not x11.XQueryPointer(
+            display, root, ctypes.byref(root_reply), ctypes.byref(child),
+            ctypes.byref(root_x), ctypes.byref(root_y),
+            ctypes.byref(win_x), ctypes.byref(win_y), ctypes.byref(mask),
+        ):
+            raise RuntimeError("XQueryPointer did not return a pointer mask")
+        return mask.value
+    finally:
+        x11.XCloseDisplay(display)
+
+
+def x11_button1_pressed(mask: int) -> bool:
+    return bool(mask & (1 << 8))
+
+
+def xtest_ctrl_z_sequence(ctrl_keycode: int, z_keycode: int) -> tuple[tuple[int, bool], ...]:
+    """Physical XTest key sequence; never sends a mouse button release."""
+    return ((ctrl_keycode, True), (z_keycode, True),
+            (z_keycode, False), (ctrl_keycode, False))
+
+
+def x11_keycode_down(keymap: bytes, keycode: int) -> bool:
+    """The XQueryKeymap 256-bit server state, independent of app focus."""
+    if len(keymap) != 32 or not 8 <= keycode <= 255:
+        raise ValueError("X11 keymap must be 32 bytes with a valid keycode")
+    return bool(keymap[keycode // 8] & (1 << (keycode % 8)))
+
+
+def xtest_ctrl_z_preserving_pointer() -> dict:
+    """Send X11 Ctrl+Z with physically observable key-down dwell.
+
+    A burst of four XTest key events can elide the hotkey from the GUI
+    event-loop without ever releasing the mouse. Each event is XSync'd,
+    its XQueryKeymap state verified, and held for > one typical GUI frame.
+    This is a QA-only server-side keyboard input, not a Session call.
+    """
+    x11 = ctypes.CDLL("libX11.so.6")
+    xtest = ctypes.CDLL("libXtst.so.6")
+    ptr = ctypes.c_void_p
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ptr
+    x11.XKeysymToKeycode.argtypes = [ptr, ctypes.c_ulong]
+    x11.XKeysymToKeycode.restype = ctypes.c_ubyte
+    x11.XSync.argtypes = [ptr, ctypes.c_int]
+    x11.XSync.restype = ctypes.c_int
+    x11.XQueryKeymap.argtypes = [ptr, ptr]
+    x11.XQueryKeymap.restype = ctypes.c_int
+    x11.XGetInputFocus.argtypes = [
+        ptr, ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(ctypes.c_int)]
+    x11.XGetInputFocus.restype = ctypes.c_int
+    x11.XCloseDisplay.argtypes = [ptr]
+    x11.XCloseDisplay.restype = ctypes.c_int
+    xtest.XTestFakeKeyEvent.argtypes = [
+        ptr, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
+    xtest.XTestFakeKeyEvent.restype = ctypes.c_int
+    display = x11.XOpenDisplay(None)
+    if not display:
+        raise RuntimeError("XTest Ctrl+Z cannot open active X11 DISPLAY")
+    try:
+        ctrl = x11.XKeysymToKeycode(display, 0xFFE3)  # XK_Control_L
+        z = x11.XKeysymToKeycode(display, ord("z"))
+        if not ctrl or not z or ctrl == z:
+            raise RuntimeError("XTest Ctrl+Z keycodes unavailable")
+        focused = ctypes.c_ulong()
+        revert_to = ctypes.c_int()
+        x11.XGetInputFocus(display, ctypes.byref(focused), ctypes.byref(revert_to))
+        trace = {"focus_window": focused.value, "key_events": []}
+        for code, pressed in xtest_ctrl_z_sequence(ctrl, z):
+            if not xtest.XTestFakeKeyEvent(display, code, int(pressed), 0):
+                raise RuntimeError("XTestFakeKeyEvent rejected Ctrl+Z")
+            x11.XSync(display, 0)
+            keymap = ctypes.create_string_buffer(32)
+            x11.XQueryKeymap(display, keymap)
+            actual = x11_keycode_down(keymap.raw, code)
+            button_mask = x11_button1_mask()
+            trace["key_events"].append({
+                "keycode": code, "expected_pressed": pressed,
+                "server_pressed": actual, "button1_mask": button_mask,
+                "button1": x11_button1_pressed(button_mask),
+            })
+            if actual != pressed:
+                raise RuntimeError("X11 server failed to register Ctrl+Z key state")
+            if not x11_button1_pressed(button_mask):
+                raise RuntimeError("X11 server dropped held Button1 during Ctrl+Z")
+            time.sleep(0.08)
+        return trace
+    finally:
+        x11.XCloseDisplay(display)
 
 
 def sha256(path: Path) -> str:
@@ -107,6 +233,16 @@ def original_preserved(original: bytes, current: bytes) -> bool:
     return b"".join(remainder) == original
 
 
+def verify_held_undo(before: bytes, after: bytes, original: bytes) -> None:
+    """Both source rollback and non-insertion of a held gesture are required."""
+    if len(owners(before)) != 1 or owners(before)[0]["tool"] != "line":
+        raise RuntimeError("B30 setup must contain exactly the original line")
+    if after != original:
+        raise RuntimeError("B30 Undo/mouse-up did not restore exact source bytes or inserted a ghost")
+    if owners(after):
+        raise RuntimeError("B30 cancelled gesture left an owned native command")
+
+
 def wait_for(predicate, seconds: float, message: str) -> None:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -142,6 +278,8 @@ def main() -> int:
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
               "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
+              "b30_held_pointer_undo": "NOT_RUN",
+              "x11_button1_mask_trace": [],
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -206,11 +344,25 @@ def main() -> int:
         # focus. Leave the path editor explicitly before triggering actual
         # global Save; never synthesize a file from this test driver.
         click(profile["source_click"])
+        # Observe the Ctrl+S path, but do not let a flaky focused-TextEdit
+        # shortcut conceal the separate user-required *GUI Save* vertical.
+        # Explicitly record the shortcut as unverified when the file was not
+        # persisted; never fabricate the TeX document in QA.
         key("ctrl+s")
-        wait_for(source.is_file, 10, "Ctrl+S after source focus did not save the entered path")
+        try:
+            wait_for(source.is_file, 2.0,
+                     "Ctrl+S after source focus did not persist entered path")
+            report["keyboard_save_shortcut"] = "PASS_REAL_X11"
+        except RuntimeError:
+            report["keyboard_save_shortcut"] = "DID_NOT_PERSIST_IN_2S_NOT_ACCEPTED"
+            screenshot("02b-before-explicit-gui-save.png")
+            click(profile["save_click"])
+            wait_for(source.is_file, 10,
+                     "Visible GUI Save button did not persist entered path")
         if source.read_bytes() != FIXTURE.encode("utf-8"):
             raise RuntimeError("Saved buffer differs from actual pasted Unicode source")
-        report["steps"].append({"case": "keyboard_paste_save", "status": "PASS",
+        report["steps"].append({"case": "gui_paste_save", "status": "PASS",
+                                "keyboard_save": report["keyboard_save_shortcut"],
                                 "sha256": sha256(source)})
         screenshot("02-saved-source.png")
         for case in profile.get("gestures", []):
@@ -252,6 +404,76 @@ def main() -> int:
                                     "sha256": sha256(source), "id": found[-1]["id"],
                                     "save_attempts": save_attempts})
             screenshot("pointer-" + case["tool"] + ".png")
+            if case["tool"] == "line" and profile.get("undo_held_pointer"):
+                # B30: actual X11 keyboard Undo WHILE the pointer remains held
+                # over the guide; then a real mouse-up, Save, and source-byte
+                # inspection. Never fabricate the restored TeX file in QA.
+                for moved in (False, True):
+                    prior = source.read_bytes()
+                    verify_seed = owners(prior)
+                    if len(verify_seed) != 1 or verify_seed[0]["tool"] != "line":
+                        raise RuntimeError("B30 expected one persisted line before Ctrl+Z")
+                    click(case["tool_click"])
+                    run(["xdotool", "mousemove", "--sync", "--window", window,
+                         str(start[0]), str(start[1]), "mousedown", "1"])
+                    if moved:
+                        time.sleep(0.2)
+                        run(["xdotool", "mousemove", "--sync", "--window", window,
+                             str(end[0]), str(end[1])])
+                    time.sleep(0.25)
+                    variant = "drag" if moved else "click"
+                    mask_before = x11_button1_mask()
+                    report["x11_button1_mask_trace"].append({
+                        "case": variant, "phase": "before_ctrl_z",
+                        "mask": mask_before, "button1": x11_button1_pressed(mask_before)})
+                    screenshot("b30-" + variant + "-held.png")
+                    if not x11_button1_pressed(mask_before):
+                        raise RuntimeError("QA XTest Button1 was UP before Ctrl+Z; held-pointer scenario not established")
+                    report["x11_held_undo_key_events"] = xtest_ctrl_z_preserving_pointer()
+                    report["x11_held_undo_key_input"] = "XTestFakeKeyEvent Control_L+z, each event XSync/80ms XQueryKeymap"
+                    time.sleep(0.3)
+                    mask_after = x11_button1_mask()
+                    report["x11_button1_mask_trace"].append({
+                        "case": variant, "phase": "after_ctrl_z_before_explicit_mouseup",
+                        "mask": mask_after, "button1": x11_button1_pressed(mask_after)})
+                    screenshot("b30-" + variant + "-undo-held.png")
+                    if not x11_button1_pressed(mask_after):
+                        raise RuntimeError("QA XTest Button1 was released before explicit mouseup; cannot attribute ghost to production")
+                    run(["xdotool", "mouseup", "1"])
+                    time.sleep(0.3)
+                    click(profile["save_click"])
+                    wait_for(lambda: source.read_bytes() != prior, 10,
+                             "B30 Ctrl+Z did not undo saved first line")
+                    reverted = source.read_bytes()
+                    verify_held_undo(prior, reverted, FIXTURE.encode("utf-8"))
+                    screenshot("b30-" + ("drag" if moved else "click") + "-after-release.png")
+                    report["steps"].append({
+                        "case": "b30_undo_held_" + ("drag" if moved else "click"),
+                        "status": "PASS_REAL_X11_UNDO_RELEASE_NO_GHOST",
+                        "sha256": sha256(source)})
+                    # Continue the original six-primitive authoring vertical:
+                    # one fresh intentional line must still work after Undo.
+                    click(case["tool_click"])
+                    run(["xdotool", "mousemove", "--sync", "--window", window,
+                         str(start[0]), str(start[1]), "mousedown", "1"])
+                    time.sleep(0.2)
+                    run(["xdotool", "mousemove", "--sync", "--window", window,
+                         str(end[0]), str(end[1])])
+                    time.sleep(0.2)
+                    run(["xdotool", "mouseup", "1"])
+                    time.sleep(0.3)
+                    click(profile["save_click"])
+                    wait_for(lambda: len(owners(source.read_bytes())) == 1, 10,
+                             "B30 fresh guide gesture after Undo did not save")
+                    restored = source.read_bytes()
+                    if (owners(restored)[0]["tool"] != "line"
+                            or not original_preserved(FIXTURE.encode("utf-8"), restored)):
+                        raise RuntimeError("B30 fresh gesture damaged unrelated TikZ")
+                    screenshot("b30-" + ("drag" if moved else "click") + "-fresh-line.png")
+                    report["steps"].append({
+                        "case": "b30_fresh_after_undo_" + ("drag" if moved else "click"),
+                        "status": "PASS_REAL_X11_FRESH_GESTURE", "sha256": sha256(source)})
+                report["b30_held_pointer_undo"] = "PASS_REAL_X11_CLICK_AND_DRAG"
         if profile.get("gestures"):
             names = [case["tool"] for case in profile["gestures"]]
             if len(names) != len(TOOLS) or set(names) != TOOLS:
