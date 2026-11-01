@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent real-X11 B34 dirty-Open source-integrity acceptance.
+"""Independent real-X11 B35 dirty-Open source-integrity acceptance.
 
 Only XTest/xdotool/xclip operate the actual egui process. The QA driver writes
 victim and occupied fixture files BEFORE GUI actions; the saved scratch source
@@ -80,7 +80,7 @@ def profile_check(profile: dict, app_tree_sha: str) -> None:
         if (not isinstance(xy, list) or len(xy) != 2
                 or any(type(v) is not int or v < 0 for v in xy)):
             raise ValueError(f"Missing reviewed X11 control coordinates: {key}")
-    # Bounds measured from actual B34 modal screenshot, failed X11 41307868676.
+    # Bounds provisionally inherited from actual B34 modal screenshot; recheck B35, failed X11 41307868676.
     # Do not count a click OUTSIDE the button as a rejection-path test.
     rect = profile.get("modal_save_reviewed_rect")
     if (not isinstance(rect, list) or len(rect) != 4

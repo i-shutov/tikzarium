@@ -58,3 +58,9 @@ presents the modal with a Text event, asserts source/target bytes
 unchanged, then closes the dialog and checks manual editing resumes.
 
 B34 QA correction: hosted macOS clippy `-D warnings` rejected nine arguments in the second headless-test helper despite 81/81 tests passing. The helper now groups the modal document/path and UI focus flags (six parameters), without weakening lints. Stream B is reconciled with accepted N3 main; the new shared C catalogue/help files are inherited unchanged.
+
+## B35 — Make Save-and-open rejection visible in the modal (real X11 finding)
+
+Manual review of the exact B34 I46 real-GUI artifacts (I46 run 41310358630, QA SHA `1c82dab1583119bfbdf8aa863bd5760c4d3935ef`, production app source tree `ecc6d40668fd6edddc97c682f8ddcca5fe615c99`) found a reproducible UX defect: `06-reject-target-after.png` and `07-reject-other-occupied.png` show the rejection message ONLY in the top toolbar, which egui::Modal darkens and leaves outside the actionable dialog. The user sees a clickable Save-and-open button that apparently does nothing, despite correct disk protection. The I46 source hashes and real X11 workflows are valid B34 evidence, NOT B35 acceptance.
+
+B35 keeps the same save collision policy and C catalogue, but stores a dialog-local rejection error and renders it in warning/error foreground color INSIDE the active egui modal. This also shows an actual failed disk write, clears stale rejection on changing save destination, and clears state on Save/Discard/Cancel/new Open. Do not alter source, macros, TeX, PDF/coordinate mapping or unrelated streams. Add `UNIT_EVENT` production modal rendered-shape assertion at 850x560. Re-run exact-head fmt/Clippy/tests, hosted CI and independently repin B35 app source tree for real X11 screenshot confirmation; B34 X11 does not count as B35 GUI PASS.

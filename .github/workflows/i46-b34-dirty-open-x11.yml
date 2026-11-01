@@ -1,4 +1,4 @@
-name: I46 B34 real X11 dirty-Open preserve user TeX and PDF
+name: I46 B35 real X11 dirty-Open preserve user TeX and PDF
 on:
   push:
     branches:
@@ -13,8 +13,8 @@ on:
       - 'crates/tikzarium-app/**'
       - 'Cargo.lock'
       - 'Cargo.toml'
-      - 'plans/2026-11-01_I46_B34_DIRTY_OPEN_REAL_X11.md'
-      - 'insights/2026-11-01_I46_B34_REAL_OPEN_QA.md'
+      - 'plans/2026-11-01_I46_B35_DIRTY_OPEN_REAL_X11.md'
+      - 'insights/2026-11-01_I46_B35_REAL_OPEN_QA.md'
       - 'CHANGELOG.md'
   pull_request:
     branches:
@@ -28,8 +28,8 @@ on:
       - 'crates/tikzarium-app/**'
       - 'Cargo.lock'
       - 'Cargo.toml'
-      - 'plans/2026-11-01_I46_B34_DIRTY_OPEN_REAL_X11.md'
-      - 'insights/2026-11-01_I46_B34_REAL_OPEN_QA.md'
+      - 'plans/2026-11-01_I46_B35_DIRTY_OPEN_REAL_X11.md'
+      - 'insights/2026-11-01_I46_B35_REAL_OPEN_QA.md'
       - 'CHANGELOG.md'
   workflow_dispatch:
 permissions:
@@ -52,11 +52,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact checkout and B34 app source tree; never accept stale B31 X11
+      - name: Verify exact checkout and B35 app source tree; never accept stale B31 X11
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'ecc6d40668fd6edddc97c682f8ddcca5fe615c99'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '46aced2dbe1b66ba10d8cc92292024625e73936b'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q
@@ -67,7 +67,7 @@ jobs:
           xelatex --version | head -1
       - name: I46 offline predicates (not accepted as actual GUI)
         run: python3 -m unittest discover -s scripts/tests -p test_qa_i46_dirty_open_x11.py -v
-      - name: Build unmodified B34 egui executable with checked Cargo.lock
+      - name: Build unmodified B35 egui executable with checked Cargo.lock
         run: |
           cargo build --locked -p tikzarium-app --bin tikzarium-app
           git diff --exit-code -- Cargo.lock
