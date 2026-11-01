@@ -13,6 +13,7 @@ The dedicated one-time [import run #41282413609](https://github.com/i-shutov/tik
 ## Integrated vertical
 
 - Track the immutable accepted Cargo.lock in Git; no Cargo.lock regeneration or live version upgrade on release CI.
+- **Cross-host byte reproducibility gate:** Windows hosted checkout initially converted 3,805 LF endings to CRLF, changing raw lock SHA to `a88dd89468c3b215fd8fd608115ef41a574c7aa9c50a3806871edf1a0ec041ad` while Git diff hid this normalization. Scope `.gitattributes` to `Cargo.lock text eol=lf`, and compare raw committed Git blob to raw checked-out bytes; no line-ending policy for user .tex/.tikz files. Retest exact revised PR HEAD on Windows/Linux/macOS and demand one canonical SHA on all three.
 - Every Rust `check`, `test`, `clippy`, `build`, `run` in the five relevant CI workflows uses `--locked`. `cargo fmt` does not resolve dependencies.
 - Add a single Python stdlib lock auditor `scripts/qa_cargo_lock.py`: checks tracked and unchanged lock, format 4, unique package records, registry SHA-256 entries, all four local crates, actual `cargo metadata --locked`, source Git commit and Rust/host provenance. Explicitly records `NOT_VERIFIED` for bitwise identical binaries.
 - Run adversarial offline tests for missing/cracked checksums, missing workspace member, duplicated packages, invalid TOML and invalid format.
