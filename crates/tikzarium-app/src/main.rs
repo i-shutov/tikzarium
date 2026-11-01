@@ -1,7 +1,7 @@
 //! Native egui workbench. XeLaTeX PDF is authoritative; no fake Rust render.
 use eframe::egui;
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, TryRecvError},
     time::Duration,
 };
@@ -193,6 +193,165 @@ fn source_caret_target(
         .expand2(egui::vec2(2.0, 2.0))
 }
 
+/// Switching documents must not reuse egui TextEdit's native Undo snapshots:
+/// those snapshots belong to the old .tex buffer, not the new source file.
+fn show_source_text_edit(
+    ui: &mut egui::Ui,
+    source: &mut String,
+    reset_undo_history: &mut bool,
+) -> egui::text_edit::TextEditOutput {
+    let fenced = *reset_undo_history;
+    let mut output = egui::TextEdit::multiline(source)
+        .code_editor()
+        .desired_width(f32::INFINITY)
+        .desired_rows(36)
+        .interactive(!fenced)
+        .show(ui);
+    if fenced {
+        output.state.clear_undoer();
+        output.state.clone().store(ui.ctx(), output.response.id);
+        *reset_undo_history = false;
+        ui.ctx().request_repaint();
+    }
+    output
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum PendingOpenAction {
+    Save(PathBuf),
+    Discard,
+    Cancel,
+    Reject(String),
+}
+
+/// An "Open path" is never implicitly a "Save As" destination. In particular,
+/// do not replace the target file with an unsaved scratch buffer before
+/// re-opening it. Resolve aliases of existing files before comparing paths.
+fn same_existing_path(a: &Path, b: &Path) -> bool {
+    a == b
+        || matches!(
+            (a.canonicalize(), b.canonicalize()),
+            (Ok(left), Ok(right)) if left == right
+        )
+}
+
+/// A typed path is not explicit permission to overwrite another TeX file.
+/// Linux without a native Save As dialog must fail closed on occupied paths;
+/// the platform file dialog on Windows/macOS handles intentional replacement.
+fn typed_save_destination(document: &Document, input: &str) -> Result<PathBuf, String> {
+    if input.trim().is_empty() {
+        return Err("Укажите путь для сохранения TeX-документа.".into());
+    }
+    let path = PathBuf::from(input.trim());
+    let saving_current = document
+        .path
+        .as_deref()
+        .is_some_and(|current| same_existing_path(current, &path));
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) if !saving_current => Err(
+            "Файл уже существует. Автоматическая перезапись чужого TeX запрещена; выберите новое имя."
+                .into(),
+        ),
+        Ok(_) => Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(path),
+        Err(error) => Err(format!("Не удалось проверить путь сохранения: {error}")),
+    }
+}
+
+fn pending_open_save_destination(
+    document: &Document,
+    input: &str,
+    open_target: &Path,
+) -> Result<PathBuf, String> {
+    if input.trim().is_empty() {
+        return Err(
+            "Укажите отдельный путь для сохранения текущего документа перед открытием.".into(),
+        );
+    }
+    let save_path = typed_save_destination(document, input)?;
+    let current_is_target = document
+        .path
+        .as_deref()
+        .is_some_and(|current| same_existing_path(current, open_target));
+    if same_existing_path(&save_path, open_target) && !current_is_target {
+        return Err(
+            "Нельзя сохранить текущий документ поверх файла, который вы собираетесь открыть."
+                .into(),
+        );
+    }
+    Ok(save_path)
+}
+
+/// Real egui controls; returning the save-button rect additionally allows
+/// pointer event-frame tests to exercise the exact production click handler.
+fn pending_open_controls(
+    ui: &mut egui::Ui,
+    document: &Document,
+    open_target: &Path,
+    save_input: &mut String,
+    validation_error: Option<&str>,
+) -> (Option<PendingOpenAction>, egui::Rect, Option<egui::Rect>) {
+    ui.label("В текущем TeX-документе есть несохранённые изменения.");
+    ui.small(format!(
+        "Открыть после подтверждения: {}",
+        open_target.display()
+    ));
+    ui.label("Путь сохранения текущего документа:");
+    ui.add(
+        egui::TextEdit::singleline(save_input)
+            .desired_width(400.0)
+            .hint_text("отдельный файл .tex"),
+    );
+    ui.small("Путь открываемого файла не используется для сохранения. Для нового документа укажите другое имя.");
+    // A rejected Save-and-open must explain itself inside the modal. The
+    // top-toolbar status is dimmed and cannot be read through the backdrop.
+    let error_rect = validation_error.map(|error| {
+        let color = ui.visuals().error_fg_color;
+        ui.colored_label(color, error).rect
+    });
+    let mut action = None;
+    let mut save_button_rect = egui::Rect::NOTHING;
+    ui.horizontal(|ui| {
+        let button = ui.button("Сохранить и открыть");
+        save_button_rect = button.rect;
+        if button.clicked() {
+            action = Some(
+                match pending_open_save_destination(document, save_input, open_target) {
+                    Ok(path) => PendingOpenAction::Save(path),
+                    Err(error) => PendingOpenAction::Reject(error),
+                },
+            );
+        }
+        if ui.button("Отбросить и открыть").clicked() {
+            action = Some(PendingOpenAction::Discard);
+        }
+        if ui.button("Отмена").clicked() {
+            action = Some(PendingOpenAction::Cancel);
+        }
+    });
+    (action, save_button_rect, error_rect)
+}
+
+/// Dirty-Open confirmation must block underlying guide/source pointer events.
+fn show_pending_open_dialog(
+    ctx: &egui::Context,
+    document: &Document,
+    open_target: &Path,
+    save_input: &mut String,
+    validation_error: Option<&str>,
+) -> (Option<PendingOpenAction>, egui::Rect, Option<egui::Rect>) {
+    let mut result = (None, egui::Rect::NOTHING, None);
+    egui::Modal::new(egui::Id::new("tikzarium-pending-open")).show(ctx, |ui| {
+        ui.heading("Несохранённые изменения");
+        ui.separator();
+        result = pending_open_controls(ui, document, open_target, save_input, validation_error);
+    });
+    if result.0.is_none() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        result.0 = Some(PendingOpenAction::Cancel);
+    }
+    result
+}
+
 struct TikzariumApp {
     document: Document,
     file_field: String,
@@ -225,12 +384,14 @@ struct TikzariumApp {
     show_packages: bool,
     show_log: bool,
     pending_open: Option<PathBuf>,
+    pending_open_save_path: String,
+    pending_open_validation_error: Option<String>,
     prefs: UiPreferences,
     authoring: tikz_authoring::Session,
     highlight_generated_line: bool,
-    // A visual source-patch Undo must not leave stale native TextEdit snapshots
-    // that could reintroduce an already deleted TikZ command.
-    reset_source_editor_undo_after_visual_patch: bool,
+    // A source patch or document replacement must not leave native TextEdit
+    // history that could restore commands or bytes from a previous file.
+    reset_source_editor_undo_history: bool,
     font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
     font_proof_status: String,
     font_proof_report: String,
@@ -279,6 +440,8 @@ impl TikzariumApp {
             show_packages: true,
             show_log: true,
             pending_open: None,
+            pending_open_save_path: String::new(),
+            pending_open_validation_error: None,
             prefs,
             authoring: {
                 let mut state = tikz_authoring::Session::default();
@@ -286,7 +449,7 @@ impl TikzariumApp {
                 state
             },
             highlight_generated_line: false,
-            reset_source_editor_undo_after_visual_patch: false,
+            reset_source_editor_undo_history: false,
             font_proof_rx: None,
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
@@ -304,6 +467,13 @@ impl TikzariumApp {
             return;
         }
         if self.document.dirty() {
+            self.pending_open_validation_error = None;
+            self.pending_open_save_path = self
+                .document
+                .path
+                .as_ref()
+                .map(|current| current.display().to_string())
+                .unwrap_or_default();
             self.pending_open = Some(path);
             return;
         }
@@ -316,6 +486,9 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                // A stable egui TextEdit widget ID otherwise retains the old
+                // document's native Ctrl/Cmd+Z history across Open/Reopen.
+                self.reset_source_editor_undo_history = true;
                 self.highlight_generated_line = false;
                 self.built_source = None;
                 self.built_path = None;
@@ -379,12 +552,13 @@ impl TikzariumApp {
         }
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         {
-            if self.file_field.trim().is_empty() {
-                self.status =
-                    "Enter a destination .tex path (no native dialog on this host)".into();
-                return false;
+            match typed_save_destination(&self.document, &self.file_field) {
+                Ok(path) => self.save_to_path(path),
+                Err(error) => {
+                    self.status = error;
+                    false
+                }
             }
-            self.save_to_path(PathBuf::from(self.file_field.trim()))
         }
     }
 
@@ -392,9 +566,9 @@ impl TikzariumApp {
         if let Some(path) = self.document.path.clone() {
             return self.save_to_path(path);
         }
-        if !self.file_field.trim().is_empty() {
-            return self.save_to_path(PathBuf::from(self.file_field.trim()));
-        }
+        // The toolbar's Path field is also used by Open path. For scratch
+        // documents it is not an authorized overwrite destination. Route
+        // through a platform Save As dialog or validated typed path instead.
         self.save_as()
     }
 
@@ -671,6 +845,9 @@ impl TikzariumApp {
         self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
     }
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
+        if self.pending_open.is_some() {
+            ui.disable();
+        }
         ui.heading("TeX / TikZ source");
         ui.small(
             self.document
@@ -684,25 +861,11 @@ impl TikzariumApp {
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                let visual_undo_fence = self.reset_source_editor_undo_after_visual_patch;
-                let mut output = egui::TextEdit::multiline(&mut self.document.source)
-                    .code_editor()
-                    .desired_width(f32::INFINITY)
-                    .desired_rows(36)
-                    // An inverse source patch is authoritative. Do not allow
-                    // focused TextEdit to replay its native Undo history while
-                    // the same Ctrl/Cmd+Z event is being resolved.
-                    .interactive(!visual_undo_fence)
-                    .show(ui);
-                if visual_undo_fence {
-                    // The revision-checked source inverse patch is authoritative.
-                    // Old native TextEdit snapshots must not resurrect the
-                    // deleted command when the user next edits source.
-                    output.state.clear_undoer();
-                    output.state.clone().store(ui.ctx(), output.response.id);
-                    self.reset_source_editor_undo_after_visual_patch = false;
-                    ui.ctx().request_repaint();
-                }
+                let mut output = show_source_text_edit(
+                    ui,
+                    &mut self.document.source,
+                    &mut self.reset_source_editor_undo_history,
+                );
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
                 tikz_canvas::observe_source_text_edit(
@@ -882,7 +1045,7 @@ impl TikzariumApp {
                 // Fallback Undo can run inside the guide after the source
                 // panel has rendered; fence its native history next frame.
                 if guide_undo_key {
-                    self.reset_source_editor_undo_after_visual_patch = true;
+                    self.reset_source_editor_undo_history = true;
                 }
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
@@ -1116,19 +1279,21 @@ impl eframe::App for TikzariumApp {
         self.poll_pages(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
-        tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
-        // The text editor keeps its native Ctrl/Cmd+Z; outside focused text
-        // widgets the same revision-checked Undo works from the keyboard.
-        if self.workspace == WorkspaceMode::Split
-            && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
-                ctx,
-                &mut self.authoring,
-                &mut self.document.source,
-            )
-        {
-            self.jump_to_line = Some(line);
-            self.highlight_generated_line = true;
-            self.reset_source_editor_undo_after_visual_patch = true;
+        // Pending dirty-Open decisions own the keyboard: do not change source
+        // through a global help/visual Undo shortcut behind the modal.
+        if self.pending_open.is_none() {
+            tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
+            if self.workspace == WorkspaceMode::Split
+                && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
+                    ctx,
+                    &mut self.authoring,
+                    &mut self.document.source,
+                )
+            {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+                self.reset_source_editor_undo_history = true;
+            }
         }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
@@ -1155,11 +1320,15 @@ impl eframe::App for TikzariumApp {
                 None => {}
             }
         }
+        let file_actions_enabled = self.receiver.is_none() && self.pending_open.is_none();
         egui::TopBottomPanel::top("tools").show(ctx, |ui| {
+            if self.pending_open.is_some() {
+                ui.disable();
+            }
             ui.horizontal_wrapped(|ui| {
                 ui.heading("TikZarium");
                 if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Open"))
+                    .add_enabled(file_actions_enabled, egui::Button::new("Open"))
                     .on_hover_text("Ctrl+O / Cmd+O")
                     .clicked()
                 {
@@ -1172,30 +1341,27 @@ impl eframe::App for TikzariumApp {
                         .hint_text("path/to/figure.tex"),
                 );
                 if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Open path"))
+                    .add_enabled(file_actions_enabled, egui::Button::new("Open path"))
                     .clicked()
                 {
                     self.open_path(PathBuf::from(self.file_field.trim()));
                 }
                 if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Save"))
+                    .add_enabled(file_actions_enabled, egui::Button::new("Save"))
                     .on_hover_text("Ctrl+S / Cmd+S")
                     .clicked()
                 {
                     self.save();
                 }
                 if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Save As…"))
+                    .add_enabled(file_actions_enabled, egui::Button::new("Save As…"))
                     .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
                     .clicked()
                 {
                     self.save_as();
                 }
                 if ui
-                    .add_enabled(
-                        self.receiver.is_none(),
-                        egui::Button::new("Build (XeLaTeX)"),
-                    )
+                    .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
                     .on_hover_text("Ctrl+Enter / Cmd+Enter")
                     .clicked()
                 {
@@ -1248,6 +1414,9 @@ impl eframe::App for TikzariumApp {
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
+                if self.pending_open.is_some() {
+                    ui.disable();
+                }
                 if let Some(line) = tikz_canvas::show_inspector_action_bar(
                     ui,
                     &mut self.authoring,
@@ -1267,6 +1436,9 @@ impl eframe::App for TikzariumApp {
                 .resizable(true)
                 .default_height(145.0)
                 .show(ctx, |ui| {
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
                     ui.horizontal(|ui| {
                         ui.selectable_value(
                             &mut self.bottom_view,
@@ -1340,6 +1512,9 @@ impl eframe::App for TikzariumApp {
             });
         }
         egui::CentralPanel::default().show(ctx, |ui| {
+            if self.pending_open.is_some() {
+                ui.disable();
+            }
             if self.workspace.show_canvas() {
                 self.show_pdf_canvas(ui);
             } else {
@@ -1347,26 +1522,50 @@ impl eframe::App for TikzariumApp {
             }
         });
         if let Some(path) = self.pending_open.clone() {
-            egui::Window::new("Unsaved edits")
-                .collapsible(false)
-                .show(ctx, |ui| {
-                    ui.label(
-                        "Save the current document or discard changes before opening another file.",
-                    );
-                    ui.horizontal(|ui| {
-                        if ui.button("Save and open").clicked() && self.save() {
-                            self.pending_open = None;
-                            self.load_path(path.clone());
-                        }
-                        if ui.button("Discard and open").clicked() {
-                            self.pending_open = None;
-                            self.load_path(path.clone());
-                        }
-                        if ui.button("Cancel").clicked() {
-                            self.pending_open = None;
-                        }
-                    });
-                });
+            let previous_destination = self.pending_open_save_path.clone();
+            let decision = show_pending_open_dialog(
+                ctx,
+                &self.document,
+                &path,
+                &mut self.pending_open_save_path,
+                self.pending_open_validation_error.as_deref(),
+            )
+            .0;
+            // Once the user corrects the destination, the old rejection must
+            // not linger as though the newly entered path had been checked.
+            if self.pending_open_save_path != previous_destination {
+                self.pending_open_validation_error = None;
+            }
+            match decision {
+                Some(PendingOpenAction::Save(save_path)) => {
+                    if self.save_to_path(save_path) {
+                        self.pending_open = None;
+                        self.pending_open_save_path.clear();
+                        self.pending_open_validation_error = None;
+                        self.load_path(path);
+                    } else {
+                        self.pending_open_validation_error = Some(self.status.clone());
+                        ctx.request_repaint();
+                    }
+                }
+                Some(PendingOpenAction::Discard) => {
+                    self.pending_open = None;
+                    self.pending_open_save_path.clear();
+                    self.pending_open_validation_error = None;
+                    self.load_path(path);
+                }
+                Some(PendingOpenAction::Cancel) => {
+                    self.pending_open = None;
+                    self.pending_open_save_path.clear();
+                    self.pending_open_validation_error = None;
+                }
+                Some(PendingOpenAction::Reject(error)) => {
+                    self.status = error.clone();
+                    self.pending_open_validation_error = Some(error);
+                    ctx.request_repaint();
+                }
+                None => {}
+            }
         }
     }
 }
@@ -1892,5 +2091,499 @@ mod split_layout_tests {
             assert_eq!(source, untouched, "resizing silently changed source");
             assert!(!session.undo_available());
         }
+    }
+
+    #[test]
+    fn b33_typed_save_rejects_existing_open_target_and_accepts_new_utf8_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой-файл.tex");
+        let original = "% чужие макросы\r\n\\MyOpaque{не менять}\r\n";
+        std::fs::write(&target, original).unwrap();
+        let mut scratch = Document::scratch("% набросок\n\\draw (0,0) -- (1,1);\n");
+        assert!(typed_save_destination(&scratch, target.to_str().unwrap()).is_err());
+        assert!(typed_save_destination(&scratch, "").is_err());
+
+        let alias_dir = dir.path().join("alias-dir");
+        std::fs::create_dir(&alias_dir).unwrap();
+        let path_alias = alias_dir.join("..").join("чужой-файл.tex");
+        assert!(typed_save_destination(&scratch, path_alias.to_str().unwrap()).is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let alias = dir.path().join("shortcut.tex");
+            symlink(&target, &alias).unwrap();
+            assert!(typed_save_destination(&scratch, alias.to_str().unwrap()).is_err());
+            let dangling = dir.path().join("broken.tex");
+            symlink(dir.path().join("missing.tex"), &dangling).unwrap();
+            assert!(typed_save_destination(&scratch, dangling.to_str().unwrap()).is_err());
+        }
+
+        let safe = dir.path().join("мой-рисунок.tex");
+        let destination = typed_save_destination(&scratch, safe.to_str().unwrap()).unwrap();
+        scratch.save_to(destination).unwrap();
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
+        assert!(std::fs::read_to_string(&safe).unwrap().contains("\\draw"));
+
+        let mut opened = Document::load(&target).unwrap();
+        opened.source.push_str("% обычная правка\n");
+        assert_eq!(
+            typed_save_destination(&opened, target.to_str().unwrap()).unwrap(),
+            target
+        );
+        opened.save().unwrap();
+        assert!(
+            std::fs::read_to_string(&target)
+                .unwrap()
+                .contains("обычная правка")
+        );
+    }
+
+    #[test]
+    fn b32_pending_open_protects_the_target_and_other_existing_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("цель.tex");
+        let target_source = "% чужой документ\r\n\\input{custom-macro}\r\n";
+        std::fs::write(&target, target_source).unwrap();
+        let mut scratch = Document::scratch(
+            "\\documentclass{standalone}\n% мой черновик\n\\begin{document}тест\\end{document}\n",
+        );
+        assert!(scratch.dirty());
+        assert!(pending_open_save_destination(&scratch, "", &target).is_err());
+        assert!(
+            pending_open_save_destination(&scratch, target.to_str().unwrap(), &target).is_err()
+        );
+
+        let alias_dir = dir.path().join("alias");
+        std::fs::create_dir(&alias_dir).unwrap();
+        let alias = alias_dir.join("..").join("цель.tex");
+        assert!(pending_open_save_destination(&scratch, alias.to_str().unwrap(), &target).is_err());
+
+        let occupied = dir.path().join("occupied.tex");
+        std::fs::write(&occupied, "unrelated\n").unwrap();
+        assert!(
+            pending_open_save_destination(&scratch, occupied.to_str().unwrap(), &target).is_err()
+        );
+
+        let safe = dir.path().join("мой-сохранённый.tex");
+        let resolved =
+            pending_open_save_destination(&scratch, safe.to_str().unwrap(), &target).unwrap();
+        scratch.save_to(resolved).unwrap();
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), target_source);
+        assert_eq!(std::fs::read_to_string(&occupied).unwrap(), "unrelated\n");
+        assert_eq!(
+            Document::load(&target).unwrap().source,
+            target_source,
+            "opening must retrieve the target, not an overwritten scratch document"
+        );
+
+        let mut already_open = Document::load(&target).unwrap();
+        already_open.source.push_str("% current document change\n");
+        assert!(
+            pending_open_save_destination(&already_open, target.to_str().unwrap(), &target,)
+                .is_ok(),
+            "reopening the same loaded file must remain possible"
+        );
+    }
+
+    #[test]
+    fn b32_real_egui_pending_open_click_rejects_target_then_saves_elsewhere() {
+        fn frame(
+            ctx: &egui::Context,
+            doc: &Document,
+            open_target: &Path,
+            save_field: &mut String,
+            events: Vec<egui::Event>,
+        ) -> (Option<PendingOpenAction>, egui::Rect) {
+            let mut action = None;
+            let mut rect = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let result = pending_open_controls(ui, doc, open_target, save_field, None);
+                        action = result.0;
+                        rect = result.1;
+                    });
+                },
+            );
+            (action, rect)
+        }
+        fn click(
+            ctx: &egui::Context,
+            doc: &Document,
+            target: &Path,
+            save_field: &mut String,
+            point: egui::Pos2,
+        ) -> PendingOpenAction {
+            let pointer = |pressed| egui::Event::PointerButton {
+                pos: point,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::default(),
+            };
+            frame(
+                ctx,
+                doc,
+                target,
+                save_field,
+                vec![egui::Event::PointerMoved(point), pointer(true)],
+            );
+            frame(ctx, doc, target, save_field, vec![pointer(false)])
+                .0
+                .expect("the actual Save and open button must dispatch")
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("outside.tex");
+        let original = "\\documentclass{article}\r\n% неприкосновенно\r\n";
+        std::fs::write(&target, original).unwrap();
+        let ctx = egui::Context::default();
+        let mut doc = Document::scratch("% черновик\n\\myUnknown{тест}\n");
+        let mut save_field = String::new();
+        let (_, button) = frame(&ctx, &doc, &target, &mut save_field, vec![]);
+        assert!(button.is_positive());
+        let pos = button.center();
+        assert!(matches!(
+            click(&ctx, &doc, &target, &mut save_field, pos),
+            PendingOpenAction::Reject(_),
+        ));
+        save_field = target.to_str().unwrap().to_owned();
+        assert!(matches!(
+            click(&ctx, &doc, &target, &mut save_field, pos),
+            PendingOpenAction::Reject(_),
+        ));
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
+        let safe = dir.path().join("own.tex");
+        save_field = safe.to_str().unwrap().to_owned();
+        assert_eq!(
+            click(&ctx, &doc, &target, &mut save_field, pos),
+            PendingOpenAction::Save(safe.clone())
+        );
+        doc.save_to(&safe).unwrap();
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
+        assert!(
+            std::fs::read_to_string(&safe)
+                .unwrap()
+                .contains("\\myUnknown")
+        );
+        assert_eq!(Document::load(&target).unwrap().source, original);
+    }
+
+    #[test]
+    fn b32_new_document_fences_old_native_textedit_history() {
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            reset: &mut bool,
+            events: Vec<egui::Event>,
+            modifiers: egui::Modifiers,
+            focus_editor: bool,
+        ) {
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    modifiers,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let output = show_source_text_edit(ui, source, reset);
+                        if focus_editor {
+                            output.response.request_focus();
+                        }
+                    });
+                },
+            );
+        }
+        let ctx = egui::Context::default();
+        let mut source = "% старый документ\n".to_owned();
+        let mut reset = false;
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![egui::Event::Text("ручная правка".into())],
+            Default::default(),
+            false,
+        );
+        assert!(source.contains("ручная правка"));
+        // This is the load_path transition. It keeps the same egui TextEdit ID
+        // but swaps the source; the first new-file frame clears old snapshots.
+        let reopened = "% другой файл\n\\myOpaqueMacro{тест}\n".to_owned();
+        source = reopened.clone();
+        reset = true;
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
+        assert!(!reset);
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![egui::Event::Key {
+                key: egui::Key::Z,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers,
+            }],
+            modifiers,
+            false,
+        );
+        assert_eq!(
+            source, reopened,
+            "native Undo after Open may not resurrect previous-file bytes"
+        );
+    }
+
+    #[test]
+    fn b34_dirty_open_modal_blocks_background_pointer_and_escape_cancels() {
+        fn frame(
+            ctx: &egui::Context,
+            doc: &Document,
+            target: &Path,
+            save_input: &mut String,
+            background_clicks: &mut usize,
+            events: Vec<egui::Event>,
+        ) -> (Option<PendingOpenAction>, egui::Rect) {
+            let mut action = None;
+            let mut behind = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let button = ui.button("Background source action");
+                        behind = button.rect;
+                        if button.clicked() {
+                            *background_clicks += 1;
+                        }
+                    });
+                    action = show_pending_open_dialog(ctx, doc, target, save_input, None).0;
+                },
+            );
+            (action, behind)
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой.tex");
+        let untouched = "% CRLF и неизвестный макрос\r\n\\Opaque{тест}\r\n";
+        std::fs::write(&target, untouched).unwrap();
+        let doc = Document::scratch("% черновик\n\\draw (0,0) -- (1,1);\n");
+        let original = doc.source.clone();
+        let ctx = egui::Context::default();
+        let mut save_input = String::new();
+        let mut clicked = 0;
+        let (_, background) = frame(&ctx, &doc, &target, &mut save_input, &mut clicked, vec![]);
+        assert!(background.is_positive());
+        let pos = background.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        };
+        frame(
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
+            vec![egui::Event::PointerMoved(pos), pointer(true)],
+        );
+        let (action, _) = frame(
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
+            vec![pointer(false)],
+        );
+        assert!(action.is_none());
+        assert_eq!(
+            clicked, 0,
+            "modal must block source/canvas controls behind it"
+        );
+
+        let (action, _) = frame(
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
+            vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::default(),
+            }],
+        );
+        assert_eq!(action, Some(PendingOpenAction::Cancel));
+        assert_eq!(doc.source, original);
+        assert_eq!(std::fs::read_to_string(target).unwrap(), untouched);
+    }
+
+    #[test]
+    fn b34_focused_source_textedit_does_not_accept_keys_behind_modal() {
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            reset: &mut bool,
+            dialog: (&Document, &Path, &mut String),
+            state: (bool, bool),
+            events: Vec<egui::Event>,
+        ) {
+            let (doc, target, save_field) = dialog;
+            let (modal, focus_editor) = state;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        if modal {
+                            ui.disable();
+                        }
+                        let output = show_source_text_edit(ui, source, reset);
+                        if focus_editor {
+                            output.response.request_focus();
+                        }
+                    });
+                    if modal {
+                        show_pending_open_dialog(ctx, doc, target, save_field, None);
+                    }
+                },
+            );
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой.tex");
+        let original_target = "% неприкосновенный\r\n\\Opaque{тест}\r\n";
+        std::fs::write(&target, original_target).unwrap();
+        let ctx = egui::Context::default();
+        let mut source = "% редактируемый черновик\n".to_owned();
+        let original_source = source.clone();
+        let doc = Document::scratch(&source);
+        let mut reset = false;
+        let mut save_field = String::new();
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, true),
+            vec![],
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (true, false),
+            vec![egui::Event::Text("НЕЛЬЗЯ_ВСТАВЛЯТЬ".into())],
+        );
+        assert_eq!(source, original_source);
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original_target);
+        // Closing the decision restores normal text editing.
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, true),
+            vec![],
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, false),
+            vec![egui::Event::Text("РУЧНАЯ_ПРАВКА".into())],
+        );
+        assert!(source.contains("РУЧНАЯ_ПРАВКА"));
+    }
+
+    #[test]
+    fn b35_rejected_save_is_legible_inside_real_egui_modal() {
+        let ctx = egui::Context::default();
+        let document = Document::scratch("% черновик\r\n\\Opaque{тест}\r\n");
+        let target = Path::new("victim.tex");
+        let mut destination = String::from("victim.tex");
+        let message = "Файл уже существует. Выберите новое имя для сохранения.";
+        let mut error_bounds = None;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                error_bounds = show_pending_open_dialog(
+                    ctx,
+                    &document,
+                    target,
+                    &mut destination,
+                    Some(message),
+                )
+                .2;
+            },
+        );
+        assert!(
+            error_bounds.is_some_and(|rect| rect.is_positive()),
+            "the rejection label must occupy a real layout rect inside the foreground egui modal"
+        );
+        assert_eq!(document.source, "% черновик\r\n\\Opaque{тест}\r\n");
     }
 }
