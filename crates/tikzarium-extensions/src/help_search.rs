@@ -198,14 +198,16 @@ mod tests {
                 .any(|entry| entry.id() == "tikz.library.positioning")
         );
         assert!(exact(&catalog, "tikz.not-a-tool").is_none());
-        assert!(exact(&catalog, "tikz.line").unwrap()
-            .description_ru().contains("Создаёт прямой отрезок"));
-        assert!(exact(&catalog, "tikz.library.positioning").unwrap()
-            .description_ru().contains("смещение и якоря"));
-        assert!(search(&catalog, "СМЕЩЕНИЕ И ЯКОРЯ").iter()
+        let line = exact(&catalog, "tikz.line").unwrap();
+        assert!(line.description_ru().contains("Создаёт прямой отрезок"));
+        let positioning = exact(&catalog, "tikz.library.positioning").unwrap();
+        assert!(positioning.description_ru().contains("смещение и якоря"));
+        let positioning_search = search(&catalog, "СМЕЩЕНИЕ И ЯКОРЯ");
+        assert!(positioning_search
+            .iter()
             .any(|entry| entry.id() == "tikz.library.positioning"));
-        assert!(search(&catalog, "СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК").iter()
-            .any(|entry| entry.id() == "tikz.line"));
+        let line_search = search(&catalog, "СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК");
+        assert!(line_search.iter().any(|entry| entry.id() == "tikz.line"));
     }
 
     #[test]
