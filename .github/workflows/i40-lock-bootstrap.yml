@@ -1,0 +1,53 @@
+name: I40 temporary lockfile bootstrap from audited main GUI artifact
+on:
+  push:
+    branches:
+      - integrator/i40-lock-repro-20261101
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  import-audited-lock:
+    if: github.repository == 'i-shutov/tikzarium'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.91.0'
+      - name: Import exact Cargo.lock from accepted main X11 artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/i-shutov/tikzarium/actions/artifacts/13072954180/zip" \
+            -o "$RUNNER_TEMP/tikzarium-main-x11-artifact.zip"
+          printf '%s  %s\n' '48cb9ddffed42ccb71531eb75b7f9d7b59e64ddf375de5a9269fc8cfdef3018d' "$RUNNER_TEMP/tikzarium-main-x11-artifact.zip" | sha256sum --check
+          unzip -p "$RUNNER_TEMP/tikzarium-main-x11-artifact.zip" i19-build-evidence/Cargo.lock > Cargo.lock
+          printf '%s  %s\n' '4713fd0c29ef8718ff71316f68e5dffe43335b77857e5c7eff9771d087310503' Cargo.lock | sha256sum --check
+          grep -F 'version = 4' Cargo.lock | head -n 1
+          git status --short
+      - name: Verify upstream exact-resolution under Rust 1.91.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo metadata --locked --no-deps --format-version 1 >/dev/null
+          cargo check --workspace --all-targets --locked
+          git diff --exit-code -- Cargo.lock
+      - name: Commit audited lock to dedicated integration branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- Cargo.lock
+          test "$(git diff --cached --name-only)" = "Cargo.lock"
+          git commit -m "build(I40): pin accepted Rust 1.91 dependency resolution"
+          git push origin HEAD:refs/heads/integrator/i40-lock-repro-20261101
