@@ -104,6 +104,20 @@ fn fit_page_zoom(image: egui::Vec2, viewport: egui::Vec2) -> Option<f32> {
     (zoom >= 0.02 && zoom.is_finite()).then_some(zoom.min(5.0))
 }
 
+/// Fit width to the *actual* central-panel width without inventing 80px
+/// of space or clamping up to 20% and therefore clipping a narrow preview.
+fn fit_width_zoom(image_width: f32, canvas_width: f32) -> Option<f32> {
+    if !image_width.is_finite() || !canvas_width.is_finite() || image_width <= 0.0 {
+        return None;
+    }
+    let available = canvas_width - 24.0;
+    if available <= 0.0 {
+        return None;
+    }
+    let zoom = available / image_width;
+    (zoom.is_finite() && zoom >= 0.02).then_some(zoom.min(5.0))
+}
+
 /// Draw the actual egui Fit Page control. The selected state is sticky across
 /// page navigation and window resizing, unlike a one-shot scalar zoom.
 fn show_fit_page_button(ui: &mut egui::Ui, enabled: bool, fit_active: &mut bool) -> egui::Response {
@@ -800,11 +814,12 @@ impl TikzariumApp {
                 self.fit_page_active = false;
                 self.zoom = 1.0;
             }
-            let fit = self.preview_texture.as_ref().map(|texture| {
-                ((canvas_width - 24.0).max(80.0) / texture.size_vec2().x).clamp(0.2, 5.0)
+            let fit = self.preview_texture.as_ref().and_then(|texture| {
+                fit_width_zoom(texture.size_vec2().x, canvas_width)
             });
             if ui
                 .add_enabled(fit.is_some(), egui::Button::new("Fit width"))
+                .on_hover_text("Подогнать точный PDF по реальной ширине области просмотра; допускается масштаб меньше 20% в компактном окне. Не меняет исходный TikZ.")
                 .clicked()
                 && let Some(fit) = fit
             {
@@ -1507,6 +1522,19 @@ mod split_layout_tests {
         ));
         assert_eq!(zoom, previous);
         assert_eq!(fit_page_zoom(egui::vec2(f32::NAN, 1700.0), viewport), None,);
+    }
+
+    #[test]
+    fn b31_fit_width_respects_actual_center_width_without_false_fit() {
+        let raster_width = 1200.0;
+        let compact_center = 230.0;
+        let fit = fit_width_zoom(raster_width, compact_center)
+            .expect("230pt canvas must fit a 1200px raster below 20%");
+        assert!((0.02..0.2).contains(&fit));
+        assert!(raster_width * fit <= compact_center - 23.0);
+        assert_eq!(fit_width_zoom(raster_width, 40.0), None);
+        assert_eq!(fit_width_zoom(f32::NAN, compact_center), None);
+        assert_eq!(fit_width_zoom(0.0, compact_center), None);
     }
 
     #[test]

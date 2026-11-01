@@ -17,3 +17,7 @@ Independent I36 desktop screenshot audit for 1180×680 showed that clicking **«
 - Retain six-pointer/selection/source/F1/Undo/Save-Reopen coverage from integrated B16–B30. Compare exact source and ensure no unexpected Undo entry.
 - Require exact-head CI Rust, D QA, N1, MiKTeX, fonts; independent X11 screenshot of new Fit Page behavior before acceptance. Hosted Windows Server does **not** establish physical Win10. M1/M4 physical tests NOT_RUN.
 - External XeLaTeX PDF remains authoritative; provisional guide has no verified coordinate calibration.
+
+## Fit width consistency
+
+The existing toolbar 'Fit width' separately clamped raster scale up to 20% and pretended its canvas was at least 80pt wide. This could clip a large exact PDF horizontally at 850pt Split. B31 uses the same 2% floor and actual available canvas width, disabling the fit command rather than claiming success when less than 2% is necessary. New negative/positive compact-width regression. Tooltips are Russian. Does not change drawing gestures, source or TeX.
