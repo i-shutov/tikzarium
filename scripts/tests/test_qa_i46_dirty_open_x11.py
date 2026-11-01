@@ -35,6 +35,17 @@ class I46ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside reviewed"):
             profile_check(missed, profile["reviewed_app_tree_sha"])
         self.assertEqual(profile["modal_save"], [536, 429])
+        self.assertEqual(profile["modal_input_with_error"], [675, 376])
+        self.assertNotEqual(profile["modal_input"], profile["modal_input_with_error"])
+        # Proven on actual B35 error screenshot: old y=398 is no longer
+        # inside TextEdit and silently invalidates the positive Save test.
+        stale = dict(profile, modal_input_with_error=[675, 398])
+        with self.assertRaisesRegex(ValueError, "outside B35 reviewed"):
+            profile_check(stale, profile["reviewed_app_tree_sha"])
+        omitted = dict(profile)
+        omitted.pop("modal_input_with_error")
+        with self.assertRaisesRegex(ValueError, "Missing reviewed"):
+            profile_check(omitted, profile["reviewed_app_tree_sha"])
 
     def test_protection_rejects_altered_bytes(self):
         from tempfile import TemporaryDirectory

@@ -75,7 +75,7 @@ def profile_check(profile: dict, app_tree_sha: str) -> None:
     if profile.get("reviewed_app_tree_sha") != app_tree_sha:
         raise ValueError("Unreviewed app/src Git tree; coordinates may target wrong controls")
     for key in ("source", "path", "open_path", "save", "build", "export",
-                "modal_input", "modal_save"):
+                "modal_input", "modal_input_with_error", "modal_save"):
         xy = profile.get(key)
         if (not isinstance(xy, list) or len(xy) != 2
                 or any(type(v) is not int or v < 0 for v in xy)):
@@ -90,6 +90,21 @@ def profile_check(profile: dict, app_tree_sha: str) -> None:
     x, y = profile["modal_save"]
     if not (rect[0] <= x <= rect[2] and rect[1] <= y <= rect[3]):
         raise ValueError("Modal Save click is outside reviewed real-X11 button bounds")
+    # B35's error message is inside the foreground modal. Its extra line
+    # recenters the modal UP, moving the save-path TextEdit from y~398
+    # to y~376. Clicking the old y~398 instead targets explanatory text.
+    error_rect = profile.get("modal_input_with_error_reviewed_rect")
+    if (not isinstance(error_rect, list) or len(error_rect) != 4
+            or any(type(v) is not int for v in error_rect)
+            or not (0 <= error_rect[0] < error_rect[2] < 1366
+                    and 0 <= error_rect[1] < error_rect[3] < 740)):
+        raise ValueError("Missing B35 screenshot-reviewed error-state input bounds")
+    input_x, input_y = profile["modal_input_with_error"]
+    if not (error_rect[0] <= input_x <= error_rect[2]
+            and error_rect[1] <= input_y <= error_rect[3]):
+        raise ValueError("Error-state input click is outside B35 reviewed TextEdit bounds")
+    if profile["modal_input"] == profile["modal_input_with_error"]:
+        raise ValueError("B35 modal recentering requires independent input coordinates")
 
 
 def main() -> int:
@@ -200,8 +215,10 @@ def main() -> int:
             same_bytes(victim, VICTIM, f"{label}/victim")
             same_bytes(occupied, OCCUPIED, f"{label}/occupied")
 
-        def modal_field(value: Path) -> None:
-            click("modal_input")
+        def modal_field(value: Path, *, after_rejection: bool = False) -> None:
+            # Actual B35 X11 screenshots 05/06 prove the dialog moves after
+            # a foreground validation error; never reuse the no-error TextEdit y.
+            click("modal_input_with_error" if after_rejection else "modal_input")
             key("ctrl+a")
             type_ascii(str(value))
 
@@ -257,7 +274,7 @@ def main() -> int:
         shot("06-reject-target-after.png")
         report["steps"].append({"case": "reject_same_open_target", "result": "NO_USER_FILE_OVERWRITE; FRAME_REVIEW_PENDING"})
 
-        modal_field(occupied)
+        modal_field(occupied, after_rejection=True)
         click("modal_save")
         time.sleep(0.4)
         assert_protected("reject_occupied")
@@ -268,7 +285,7 @@ def main() -> int:
 
         if scratch.exists():
             raise RuntimeError("Scratch save destination already exists before GUI accept")
-        modal_field(scratch)
+        modal_field(scratch, after_rejection=True)
         shot("08-accept-separate-before.png")
         click("modal_save")
         wait_for(scratch.is_file, "Production modal never saved scratch to separate file", 20)

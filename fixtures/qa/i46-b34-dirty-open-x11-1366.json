@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I46 B35 current-source X11 dirty-Open; modal Save click calibrated from genuine exact-tree 41307868676 screenshot 08; semantic PASS pending new exact-head GUI artifact",
+  "profile": "I46/I48 B35 exact-app-tree real X11; error-state TextEdit re-centered and calibrated by first B35 41313976782 screenshots 05/06/08; new positive workflow evidence pending.",
   "source": [
     120,
     190
@@ -34,11 +34,21 @@
     429
   ],
   "reviewed_app_tree_sha": "46aced2dbe1b66ba10d8cc92292024625e73936b",
-  "bootstrap_caveat": "B35 app/src 46aced2dbe1b66ba10d8cc92292024625e73936b; B34-calibrated modal Save button rect is provisional for B35, do not assert B35 real-GUI PASS until fresh real X11 frames inspected. Specifically verify the occupied-save rejection appears INSIDE the foreground B35 modal. Physical Win10/Mac NOT_RUN.",
+  "bootstrap_caveat": "B35 exact app/source tree 46aced2dbe1b66ba10d8cc92292024625e73936b. 41313976782 genuine X11 screenshot 06 PROVES red rejection error in foreground modal; 05 no-error input y398, 06 after-rejection input y376. First B35 I46 FAIL was QA click y398 into explanatory text, not a proven B35 product failure. A fresh exact-head real GUI positive Save/Open/Undo/PDF run and independent artifact review remain mandatory. Physical Windows 10 and Mac ARM NOT_RUN.",
   "modal_save_reviewed_rect": [
     465,
     416,
     603,
     441
+  ],
+  "modal_input_with_error": [
+    675,
+    376
+  ],
+  "modal_input_with_error_reviewed_rect": [
+    465,
+    366,
+    875,
+    387
   ]
 }
