@@ -115,11 +115,11 @@ class DesktopEvidenceTests(unittest.TestCase):
         sample[1, 2], sample[2, 2] = gray, blue
         selected, _ = desktop.b36_select_reviewed_layout(layouts, "pdf", getter)
         self.assertEqual(selected["name"], "wrapped")
-        sample[1, 1] = blue
-        sample[2, 1] = gray
+        sample[1, 1], sample[2, 1] = blue, gray
+        sample[1, 2], sample[2, 2] = blue, gray
         with self.assertRaisesRegex(RuntimeError, "not unique"):
             desktop.b36_select_reviewed_layout(layouts, "guide", getter)
-        sample[1, 1] = gray
+        sample[1, 1], sample[1, 2] = gray, gray
         with self.assertRaisesRegex(RuntimeError, "not unique"):
             desktop.b36_select_reviewed_layout(layouts, "guide", getter)
         with self.assertRaises(ValueError):
