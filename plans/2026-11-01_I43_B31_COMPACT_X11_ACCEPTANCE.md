@@ -5,7 +5,7 @@
 ## Large user vertical
 
 - Preserve all six native TikZ gestures, X11 Button1Mask/XQueryKeymap held Ctrl+Z undo click+drag, exact byte rollback, fresh gesture, Russian F1, GUI Save and actual GUI Build/Export external XeLaTeX PDF.
-- After PDF exists, capture actual Fit width/Fit Page, resize egui to 1180×680 with Fit Page active, screenshot, click compact Fit width, screenshot, restore Fit Page, screenshot, and resize to 1366×740. Source unchanged. Compare all PNGs with **real exported PDF raster**: page top/bottom, source always editable, fit controls genuinely activated. Coordinates are hypotheses until manually reviewed.
+- After PDF exists, capture actual Fit width/Fit Page, resize egui to 1180×680 with Fit Page active, screenshot, click compact Fit width, screenshot, restore Fit Page, screenshot, and resize to 1366×740. Source unchanged. Compare all PNGs with **real exported PDF raster**: page top/bottom, source always editable, fit controls genuinely activated. Compact click candidates `(603,98)` Fit width and `(680,98)` Fit Page derive from manually reviewed **B30** true 1180×680 X11 screenshot, where the toolbar wrapped to the next row; these still require B31 screenshots for acceptance. Normal 1366×740 locations must NOT be reused at compact width.
 - Retain `cargo --locked`; no edits to #48, production B, shared C, external TeX executors, user CRLF/macros, or package installation. Merge QA into B31 with `expected_head_sha` only after actual GUI acceptance and exact CI; B31 into main only after full artifacts reviewed; separate post-merge CI.
 
 ## Evidence status

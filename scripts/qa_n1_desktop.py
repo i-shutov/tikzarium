@@ -592,7 +592,7 @@ def main() -> int:
                 report["compact_fit_width"] = "FRAME_CHANGED_MANUAL_PDF_WIDTH_REVIEW_REQUIRED"
                 report["steps"].append({"case": "b31_compact_fit_width",
                                         "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
-                click(profile["fit_page_click"])
+                click(profile["compact_fit_page_click"])
                 time.sleep(0.5)
                 screenshot("04e3-b31-compact-fit-page-restored.png")
                 if (sha256(out / "04e2-b31-compact-fit-width-candidate.png")
