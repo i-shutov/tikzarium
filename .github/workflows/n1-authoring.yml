@@ -6,6 +6,9 @@ on:
       - 'crates/**'
       - 'extensions/primitives/**'
       - '.github/workflows/n1-authoring.yml'
+      - 'Cargo.lock'
+      - 'scripts/qa_cargo_lock.py'
+      - 'scripts/tests/test_qa_cargo_lock.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,13 +31,17 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends texlive-xetex texlive-pictures texlive-latex-extra texlive-fonts-recommended fonts-dejavu-core poppler-utils
+      - name: I40 offline negative and locked dependency provenance
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
+          python3 scripts/qa_cargo_lock.py --report "$RUNNER_TEMP/n1-lock/lock-evidence.json"
       - name: Exercise the real egui authoring state and catalogue (NOT GUI pointer smoke)
         run: |
-          cargo test -p tikzarium-extensions --all-targets
-          cargo test -p tikzarium-app tikz_authoring::tests
-          cargo test -p tikzarium-app tikz_canvas::tests
-          cargo run -p tikzarium-app --bin n1-authoring-proof -- "$RUNNER_TEMP/n1-authoring"
-          cargo run -p tikzarium-extensions --bin primitive-fixtures > "$RUNNER_TEMP/n1-authoring/catalogue-fixture.tex"
+          cargo test --locked -p tikzarium-extensions --all-targets
+          cargo test --locked -p tikzarium-app tikz_authoring::tests
+          cargo test --locked -p tikzarium-app tikz_canvas::tests
+          cargo run --locked -p tikzarium-app --bin n1-authoring-proof -- "$RUNNER_TEMP/n1-authoring"
+          cargo run --locked -p tikzarium-extensions --bin primitive-fixtures > "$RUNNER_TEMP/n1-authoring/catalogue-fixture.tex"
           cmp extensions/primitives/fixtures/all-six.tex "$RUNNER_TEMP/n1-authoring/catalogue-fixture.tex"
       - name: Compile actual generated source and verify glyphs, embedding and unchanged source
         shell: bash
@@ -63,6 +70,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: n1-app-authoring-linux
-          path: ${{ runner.temp }}/n1-authoring/
+          path: |
+            ${{ runner.temp }}/n1-authoring/
+            ${{ runner.temp }}/n1-lock/lock-evidence.json
           if-no-files-found: warn
           retention-days: 14
