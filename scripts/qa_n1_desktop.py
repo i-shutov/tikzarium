@@ -84,6 +84,49 @@ def x11_button1_pressed(mask: int) -> bool:
     return bool(mask & (1 << 8))
 
 
+def xtest_ctrl_z_sequence(ctrl_keycode: int, z_keycode: int) -> tuple[tuple[int, bool], ...]:
+    """Physical XTest key sequence; never sends a mouse button release."""
+    return ((ctrl_keycode, True), (z_keycode, True),
+            (z_keycode, False), (ctrl_keycode, False))
+
+
+def xtest_ctrl_z_preserving_pointer() -> None:
+    """Send genuine X11 key events while Button1 stays held on the server.
+
+    xdotool key --clearmodifiers was observed to release Button1 BEFORE
+    the QA driver's mouseup (I34 XQueryPointer: 256 -> 0). That sequence
+    was not a valid held-Undo regression. XTest sends ONLY key events.
+    """
+    x11 = ctypes.CDLL("libX11.so.6")
+    xtest = ctypes.CDLL("libXtst.so.6")
+    ptr = ctypes.c_void_p
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ptr
+    x11.XKeysymToKeycode.argtypes = [ptr, ctypes.c_ulong]
+    x11.XKeysymToKeycode.restype = ctypes.c_ubyte
+    x11.XSync.argtypes = [ptr, ctypes.c_int]
+    x11.XSync.restype = ctypes.c_int
+    x11.XCloseDisplay.argtypes = [ptr]
+    x11.XCloseDisplay.restype = ctypes.c_int
+    xtest.XTestFakeKeyEvent.argtypes = [
+        ptr, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
+    xtest.XTestFakeKeyEvent.restype = ctypes.c_int
+    display = x11.XOpenDisplay(None)
+    if not display:
+        raise RuntimeError("XTest Ctrl+Z cannot open active X11 DISPLAY")
+    try:
+        ctrl = x11.XKeysymToKeycode(display, 0xFFE3)  # XK_Control_L
+        z = x11.XKeysymToKeycode(display, ord("z"))
+        if not ctrl or not z or ctrl == z:
+            raise RuntimeError("XTest Ctrl+Z keycodes unavailable")
+        for code, pressed in xtest_ctrl_z_sequence(ctrl, z):
+            if not xtest.XTestFakeKeyEvent(display, code, int(pressed), 0):
+                raise RuntimeError("XTestFakeKeyEvent rejected Ctrl+Z")
+        x11.XSync(display, 0)
+    finally:
+        x11.XCloseDisplay(display)
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -354,7 +397,8 @@ def main() -> int:
                     screenshot("b30-" + variant + "-held.png")
                     if not x11_button1_pressed(mask_before):
                         raise RuntimeError("QA XTest Button1 was UP before Ctrl+Z; held-pointer scenario not established")
-                    key("ctrl+z")
+                    xtest_ctrl_z_preserving_pointer()
+                    report["x11_held_undo_key_input"] = "XTestFakeKeyEvent Control_L+z, no synthetic mouse release"
                     time.sleep(0.3)
                     mask_after = x11_button1_mask()
                     report["x11_button1_mask_trace"].append({

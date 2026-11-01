@@ -43,6 +43,11 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
+    def test_xtest_ctrl_z_has_only_key_events_and_balanced_releases(self):
+        self.assertEqual(desktop.xtest_ctrl_z_sequence(37, 52),
+                         ((37, True), (52, True), (52, False), (37, False)))
+        self.assertNotIn(0, [code for code, _ in desktop.xtest_ctrl_z_sequence(37, 52)])
+
     def test_x11_button1_mask_detection_is_fail_closed(self):
         self.assertFalse(desktop.x11_button1_pressed(0))
         self.assertFalse(desktop.x11_button1_pressed(1 << 9))

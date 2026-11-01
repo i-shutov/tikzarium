@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased — I34 B30 real held-pointer XQueryPointer forensic acceptance (NOT_RUN pending artifacts)
+## Unreleased — I35 B30 true XTest held Ctrl+Z and GUI acceptance (NOT_RUN pending artifacts)
+
+- [I34 real X11 41279540150](https://github.com/i-shutov/tikzarium/actions/runs/41279540150) correctly failed closed: X11 Button1Mask **256→0** across `xdotool key --clearmodifiers` before QA mouseup, so old “held” ghost tests used invalid input. I35 replaces that key with genuine XTestFakeKeyEvent key-only Ctrl+Z, demonstrated under isolated Xvfb to preserve Button1Mask=256, and keeps server mask/byte-exact/no-ghost tests. No B production edits; actual I35 acceptance and physical Win10/M1/M4 NOT_RUN, no merge/release.
+
+## Unreleased — I34 B30 real held-pointer XQueryPointer forensic acceptance (QA_HARNESS FAIL)
 
 - I33 actual [X11 41279059557](https://github.com/i-shutov/tikzarium/actions/runs/41279059557) **FAIL**: before explicit driver mouseup, Ctrl+Z screenshot reveals ghost Line #2; saved .tex contains Line IDs 1+2, matching previous B29 source SHA exactly. QA now queries actual X11 Button1Mask before/after key to distinguish XTest-button release from application early insertion. Fail closed on absent held button; source-rollback assertions unchanged. B30 production and C catalogue untouched, physical Win10/M1/M4 NOT_RUN; no release.
 
