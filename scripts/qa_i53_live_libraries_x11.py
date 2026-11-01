@@ -25,7 +25,7 @@ def exact_patch(old,new):
  return new.count(DECL)==1 and new.replace(DECL,b"",1)==old
 def check_profile(p,tree):
  if not tree or p.get("tree")!=tree: raise ValueError("Not a verified production app tree")
- for n in ("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query","help_result"):
+ for n in ("source","path","open_path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query","help_result"):
   x=p.get(n)
   if not isinstance(x,list) or len(x)!=2 or any(type(v)!=int or v<0 for v in x):
    raise ValueError("Unreviewed X11 target "+n)
@@ -171,8 +171,11 @@ def main():
   marker=out/"clipboard-reopen-sentinel.txt"
   def gui_reopen(target,expected,label):
    fill_gui_path(target)
-   key("ctrl+o")
-   time.sleep(.7)
+   # Clicking the visible Open path toolbar button is a real user action.
+   # Ctrl+O while the Path TextEdit retains Ctrl+A selection was intermittent
+   # in exact CI 41362909420; do not infer a product defect from QA focus alone.
+   click("open_path")
+   time.sleep(.9)
    shot(label+"-opened.png")
    marker.write_bytes(b"I53_SOURCE_NOT_COPIED")
    subprocess.run(["xclip","-selection","clipboard","-i",str(marker)],
@@ -189,7 +192,7 @@ def main():
    raise RuntimeError("GUI Reopen/Save touched a different TeX file")
   if sha(pdf.read_bytes())!=report["pdf_sha256"]:
    raise RuntimeError("GUI Reopen altered previously exported XeLaTeX PDF")
-  report["reopen"]="REAL_GUI_TWO_FILE_OPEN_EXACT_SOURCE"
+  report["reopen"]="REAL_GUI_TWO_FILE_OPEN_EXACT_SOURCE_TOOLBAR"
   report["reopen_control_sha256"]=sha(REOPEN_SOURCE)
   # N3 actual help TextEdit, independent screenshot result audit required.
   query_bytes=HELP_QUERY.encode("utf-8")

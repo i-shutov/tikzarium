@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
-  "status": "I54_ACTUAL_9adb_HELP_N3_QUERY_PASS; HELPROW_CLICK_y175_CANDIDATE_SCREENSHOT_REVIEW_PENDING",
+  "status": "I54_B39_GUI_OPEN_TOOLBAR_REACCEPT_AFTER_CTRL_O_INTERMITTENT_FOCUS_RACE; NEW_CI_NOT_RUN; N3_ENTRY_SCREENSHOT_CANDIDATE",
   "source": [
     120,
     190
@@ -55,5 +55,9 @@
   "help_result": [
     1150,
     175
+  ],
+  "open_path": [
+    498,
+    13
   ]
 }
