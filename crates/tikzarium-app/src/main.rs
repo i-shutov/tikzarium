@@ -2207,7 +2207,8 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        (action, rect) = pending_open_controls(ui, doc, open_target, save_field, None);
+                        (action, rect) =
+                            pending_open_controls(ui, doc, open_target, save_field, None);
                     });
                 },
             );
