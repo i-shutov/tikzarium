@@ -66,11 +66,11 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertTrue(desktop.x11_button1_pressed(1 << 8))
         self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
 
-    def test_b31_compact_profile_is_exact_source_pinned(self):
+    def test_b31_corrected_zoom_readout_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "3aea076697daef8572d24694995a4e2ef24bbcaa")
+                         "af316d5e5452d74186b92d65c95c448253d0e61c")
         self.assertTrue(profile["undo_held_pointer"])
         self.assertTrue(profile["b30_release_source_history_regression"])
         self.assertNotIn("b28_focused_textedit_regression", profile)
