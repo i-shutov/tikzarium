@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "reviewed_app_tree_sha": "2b4e06b7627dac2f41f25014611e44af91407052",
+  "reviewed_parent_source_head_sha": "2188aa9a0cda7d6e35ace75d32819587775aa9a9",
+  "window_size": [
+    1366,
+    740
+  ],
+  "source_click": [
+    120,
+    190
+  ],
+  "path_click": [
+    310,
+    18
+  ],
+  "open_path_click": [
+    498,
+    13
+  ],
+  "modal_save_input_click": null,
+  "modal_save_button_click": null,
+  "notes": "B33 startup X11 paths are inherited only from visually inspected I45 B31 1366x740 screenshot; modal positions NOT_REVIEWED until bootstrap screenshot. Do not execute full acceptance with these absent positions. Existing app-tree must match exactly."
+}
