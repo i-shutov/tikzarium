@@ -2245,10 +2245,10 @@ mod tests {
                     // BEFORE C-catalogue insertion, as in the live X11 app.
                     let mut seconds = 0.0;
                     let mut frame = |events: Vec<egui::Event>,
-                                 modifiers: egui::Modifiers,
-                                 request_source_focus: bool,
-                                 session: &mut Session,
-                                 source: &mut String| {
+                                     modifiers: egui::Modifiers,
+                                     request_source_focus: bool,
+                                     session: &mut Session,
+                                     source: &mut String| {
                         let mut undo_line = None;
                         let mut guide_rect = Rect::NOTHING;
                         let mut key_consumed = false;
@@ -2290,11 +2290,7 @@ mod tests {
                                         {
                                             output.response.request_focus();
                                         }
-                                        observe_source_text_edit(
-                                            &output.response,
-                                            session,
-                                            source,
-                                        );
+                                        observe_source_text_edit(&output.response, session, source);
                                     });
                                 egui::CentralPanel::default().show(ctx, |ui| {
                                     guide_rect = show_guide_frame(ui, session, source, READY).1;
