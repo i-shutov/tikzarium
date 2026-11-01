@@ -278,7 +278,10 @@ fn pending_open_controls(
     save_input: &mut String,
 ) -> (Option<PendingOpenAction>, egui::Rect) {
     ui.label("В текущем TeX-документе есть несохранённые изменения.");
-    ui.small(format!("Открыть после подтверждения: {}", open_target.display()));
+    ui.small(format!(
+        "Открыть после подтверждения: {}",
+        open_target.display()
+    ));
     ui.label("Путь сохранения текущего документа:");
     ui.add(
         egui::TextEdit::singleline(save_input)
@@ -292,10 +295,12 @@ fn pending_open_controls(
         let button = ui.button("Сохранить и открыть");
         save_button_rect = button.rect;
         if button.clicked() {
-            action = Some(match pending_open_save_destination(document, save_input, open_target) {
-                Ok(path) => PendingOpenAction::Save(path),
-                Err(error) => PendingOpenAction::Reject(error),
-            });
+            action = Some(
+                match pending_open_save_destination(document, save_input, open_target) {
+                    Ok(path) => PendingOpenAction::Save(path),
+                    Err(error) => PendingOpenAction::Reject(error),
+                },
+            );
         }
         if ui.button("Отбросить и открыть").clicked() {
             action = Some(PendingOpenAction::Discard);
@@ -1304,10 +1309,7 @@ impl eframe::App for TikzariumApp {
                     self.save_as();
                 }
                 if ui
-                    .add_enabled(
-                        file_actions_enabled,
-                        egui::Button::new("Build (XeLaTeX)"),
-                    )
+                    .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
                     .on_hover_text("Ctrl+Enter / Cmd+Enter")
                     .clicked()
                 {
@@ -2029,7 +2031,9 @@ mod split_layout_tests {
         );
         assert!(scratch.dirty());
         assert!(pending_open_save_destination(&scratch, "", &target).is_err());
-        assert!(pending_open_save_destination(&scratch, target.to_str().unwrap(), &target).is_err());
+        assert!(
+            pending_open_save_destination(&scratch, target.to_str().unwrap(), &target).is_err()
+        );
 
         let alias_dir = dir.path().join("alias");
         std::fs::create_dir(&alias_dir).unwrap();
@@ -2038,7 +2042,9 @@ mod split_layout_tests {
 
         let occupied = dir.path().join("occupied.tex");
         std::fs::write(&occupied, "unrelated\n").unwrap();
-        assert!(pending_open_save_destination(&scratch, occupied.to_str().unwrap(), &target).is_err());
+        assert!(
+            pending_open_save_destination(&scratch, occupied.to_str().unwrap(), &target).is_err()
+        );
 
         let safe = dir.path().join("мой-сохранённый.tex");
         let resolved =
@@ -2054,12 +2060,11 @@ mod split_layout_tests {
 
         let mut already_open = Document::load(&target).unwrap();
         already_open.source.push_str("% current document change\n");
-        assert!(pending_open_save_destination(
-            &already_open,
-            target.to_str().unwrap(),
-            &target,
-        )
-        .is_ok(), "reopening the same loaded file must remain possible");
+        assert!(
+            pending_open_save_destination(&already_open, target.to_str().unwrap(), &target,)
+                .is_ok(),
+            "reopening the same loaded file must remain possible"
+        );
     }
 
     #[test]
@@ -2084,12 +2089,7 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        (action, rect) = pending_open_controls(
-                            ui,
-                            doc,
-                            open_target,
-                            save_field,
-                        );
+                        (action, rect) = pending_open_controls(ui, doc, open_target, save_field);
                     });
                 },
             );
@@ -2148,7 +2148,11 @@ mod split_layout_tests {
         );
         doc.save_to(&safe).unwrap();
         assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
-        assert!(std::fs::read_to_string(&safe).unwrap().contains("\\myUnknown"));
+        assert!(
+            std::fs::read_to_string(&safe)
+                .unwrap()
+                .contains("\\myUnknown")
+        );
         assert_eq!(Document::load(&target).unwrap().source, original);
     }
 
@@ -2185,7 +2189,14 @@ mod split_layout_tests {
         let ctx = egui::Context::default();
         let mut source = "% старый документ\n".to_owned();
         let mut reset = false;
-        frame(&ctx, &mut source, &mut reset, vec![], Default::default(), true);
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
         frame(
             &ctx,
             &mut source,
@@ -2200,9 +2211,23 @@ mod split_layout_tests {
         let reopened = "% другой файл\n\\myOpaqueMacro{тест}\n".to_owned();
         source = reopened.clone();
         reset = true;
-        frame(&ctx, &mut source, &mut reset, vec![], Default::default(), false);
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
         assert!(!reset);
-        frame(&ctx, &mut source, &mut reset, vec![], Default::default(), true);
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
         let modifiers = egui::Modifiers {
             command: true,
             ctrl: true,
@@ -2227,5 +2252,4 @@ mod split_layout_tests {
             "native Undo after Open may not resurrect previous-file bytes"
         );
     }
-
 }
