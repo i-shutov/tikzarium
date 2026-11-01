@@ -18,7 +18,25 @@
     498,
     13
   ],
-  "modal_save_input_click": null,
-  "modal_save_button_click": null,
-  "notes": "B33 startup X11 paths are inherited only from visually inspected I45 B31 1366x740 screenshot; modal positions NOT_REVIEWED until bootstrap screenshot. Do not execute full acceptance with these absent positions. Existing app-tree must match exactly."
+  "modal_save_input_click": [
+    600,
+    195
+  ],
+  "modal_save_button_click": [
+    535,
+    242
+  ],
+  "notes": "Visually manually reviewed I47 B33 real X11 bootstrap screenshot 04-dirty-open-modal-candidate.png from exact QA run 41305353488 artifact 13082923530. Modal at ~x466-820 y69-260; save field center (600,195), Save and open button center (535,242); B31/I47 toolbar controls inspected from 1366x740 actual screenshots. Changes to app source tree require repin and fresh manual review.",
+  "toolbar_save_click": [
+    554,
+    13
+  ],
+  "toolbar_build_click": [
+    695,
+    13
+  ],
+  "toolbar_export_click": [
+    835,
+    13
+  ]
 }
