@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
+
+- QA-only integration on B-owned PR #72 corrected SHA `8f20359f2118660e27a28ecb773c32f8676f56c0`: repin real-X11 workflow, physical-pointer profile and tests to app tree `af316d5e5452d74186b92d65c95c448253d0e61c`. No production Rust/source/TeX edits and no old PR #48 replay.
+- Preserve two authentic restored-size screenshots at 1366×740 to independently verify that the visible zoom toolbar no longer reads stale 7% when raster refits to roughly 25%; screenshot frame changes alone **NOT** a numerical correctness PASS. All six native pointer tools, held-click/drag Undo, byte-preserved source, Russian F1 and actual GUI XeLaTeX PDF remain mandatory.
+- Corrected-head hosted Rust/D QA/N1/font workflows SUCCESS. Hosted MiKTeX installer initial network timeout then rerun + independent PDF audit SUCCESS; this is **not** physical Windows 10. Exact I45 GUI artifact/visual acceptance **NOT_RUN**, physical Win10/M1/M4 **NOT_RUN** at changelog authoring; no merge/release.
+
 ## Unreleased — I43 independent B31 compact real Linux/X11 acceptance (NOT_RUN)
 
 - Accepted I40 main `8640c2cf`, B31 draft `174207d0`, Git-tree-confirmed B31 app `3aea076697daef8572d24694995a4e2ef24bbcaa`. Five hosted B31 exact-head locked CI families succeeded; old I33 X11 failed B30 tree fence before GUI launch.
