@@ -1,3 +1,8 @@
+## Unreleased — N3 Russian contextual help semantic correction (CI pending)
+
+- Fixed the shared C-catalogue offline help search and CLI detail to include full existing Russian `help_ru` for native tools, parameters and TikZ libraries, not just a short title. Tests exercise exact IDs and description-only Cyrillic search; no second data source, TeX parser, auto-install, or changes to app GUI/figure fonts.
+- New exact-HEAD CI, real CLI output, post-merge CI and physical Win10/M1/M4 acceptance: NOT_RUN at authoring. Do not mark accepted until verified.
+
 # Changelog
 
 ## Unreleased — N3 offline search and CLI from ONE Russian TikZ catalogue (CI PENDING)
