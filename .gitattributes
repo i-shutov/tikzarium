@@ -1,0 +1,3 @@
+# Keep only the versioned Rust dependency lock byte-identical across hosted OS.
+# Do not impose line ending normalization on user-managed .tex/.tikz sources.
+Cargo.lock text eol=lf
