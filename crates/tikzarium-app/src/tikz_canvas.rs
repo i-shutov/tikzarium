@@ -2141,10 +2141,7 @@ mod tests {
                                 &ctx,
                                 &mut session,
                                 &mut source,
-                                vec![
-                                    z(false),
-                                    primary(if dragged { end } else { start }, false),
-                                ],
+                                vec![z(false), primary(if dragged { end } else { start }, false)],
                                 egui::Modifiers::default(),
                                 None,
                                 width,
