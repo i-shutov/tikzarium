@@ -1,0 +1,9 @@
+# B30 QA — I32 X11 ghost during held Ctrl+Z (2026-11-01)
+
+**Ground truth before B30:** main `529217b89e83ffb93393eefb99a2a6ff07967c13`; B29 `133cab9eff2da0e2ab2ae9574e5328f2dad3ee62`. [I32 true X11 FAIL](https://github.com/i-shutov/tikzarium/actions/runs/41274957152), independently audited [artifact 13071152254](https://github.com/i-shutov/tikzarium/actions/runs/41274957152/artifacts/13071152254): first native Line and GUI Save pass; a second Line is visible *before explicit mouse-up* during Ctrl+Z and remains in the saved 628-byte source, which is not the 336-byte original. Held-drag, other five tools, F1 and GUI Build/Export are NOT_RUN in that failing run.
+
+**Diagnosis quality:** response.clicked()/drag_stopped() being processed on an unexpected event frame, dual native-TextEdit visual Undo ownership or backend-generated pointer transition are candidate mechanisms, **not proven**. B30 establishes a release-event invariant and records debug-only noncontent input state in next QA run. It serializes visual inverse patches against the native TextEdit history and no longer autofocuses code on source highlight.
+
+**Tests added:** two production-handler `UNIT_EVENT` regressions: 24 variations (six C tools × two widths × combined/separate Ctrl+Z mouse press), plus 12 no-undo-history held gestures; existing six-tool click/drag, focused source, F1, parameters, manual edits, Save/Reopen kept. Claim a test result only after exact-head CI and distinguish hosted Windows Server from physical Win10.
+
+**Gate:** PR #69 draft / QA #70 draft, no merge until independent real X11 tests (held-click AND drag, post-Undo fresh command, six primitives, source highlight, Russian F1, editable manual source, Save/Reopen and external XeLaTeX Build/Export PDF), artifact and screenshot review. All physical Win10/M1/M4 remain NOT_RUN; guide provisional, PDF authoritative.

@@ -647,18 +647,24 @@ impl TikzariumApp {
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
+                let visual_undo_fence = self.reset_source_editor_undo_after_visual_patch;
                 let mut output = egui::TextEdit::multiline(&mut self.document.source)
                     .code_editor()
                     .desired_width(f32::INFINITY)
                     .desired_rows(36)
+                    // An inverse source patch is authoritative. Do not allow
+                    // focused TextEdit to replay its native Undo history while
+                    // the same Ctrl/Cmd+Z event is being resolved.
+                    .interactive(!visual_undo_fence)
                     .show(ui);
-                if self.reset_source_editor_undo_after_visual_patch {
+                if visual_undo_fence {
                     // The revision-checked source inverse patch is authoritative.
                     // Old native TextEdit snapshots must not resurrect the
                     // deleted command when the user next edits source.
                     output.state.clear_undoer();
                     output.state.clone().store(ui.ctx(), output.response.id);
                     self.reset_source_editor_undo_after_visual_patch = false;
+                    ui.ctx().request_repaint();
                 }
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
@@ -689,12 +695,9 @@ impl TikzariumApp {
                         ));
                         self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
-                        // Do not restore text keyboard focus within the same
-                        // held-guide Undo event: highlighting/scrolling remains
-                        // available, but native TextEdit must not repeat Undo.
-                        if !self.authoring.cancelled_pointer_capture {
-                            output.response.request_focus();
-                        }
+                        // Scroll/highlight without stealing keyboard focus.
+                        // A new guide gesture must own Ctrl/Cmd+Z until its
+                        // mouse-up; users click the source to edit text.
                         // The galley, not physical line count * font height,
                         // owns TextEdit's geometry (wrapping, padding, DPI,
                         // unicode and font layout). Scroll to the actual cursor.
@@ -827,9 +830,20 @@ impl TikzariumApp {
         ui.small("The guide pad edits N1-owned source through the shared TikZ catalogue. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
         if self.workspace == WorkspaceMode::Split {
             let caps = self.primitive_capabilities();
+            let guide_undo_key = ui.input(|input| {
+                input.key_pressed(egui::Key::Z)
+                    && input.modifiers.command
+                    && !input.modifiers.shift
+                    && !input.modifiers.alt
+            });
             if let Some(line) =
                 tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
             {
+                // Fallback Undo can run inside the guide after the source
+                // panel has rendered; fence its native history next frame.
+                if guide_undo_key {
+                    self.reset_source_editor_undo_after_visual_patch = true;
+                }
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
                 // The source SidePanel has already been rendered this frame.

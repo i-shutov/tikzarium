@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I33 B30 real X11 pointer Undo QA (NOT_RUN pending artifacts)
+
+- QA-only integration at B30 #69 exact `750fb6b743a516f44a362f2f568ce1b92c69e6f4` and source tree `965933b3f70504f2f4082bc22795bab67fad5d44`; real X11 six-tool/held-click and held-drag Undo, exact source restoration without ghosts, Russian F1, GUI XeLaTeX PDF, fit/resize screenshot evidence. Historical B29 GUI [41274957152](https://github.com/i-shutov/tikzarium/actions/runs/41274957152) FAIL. B30 hosted CI 5/5 workflow families PASS does not prove actual GUI; B30 X11 NOT_RUN at commit. Physical Win10/MiKTeX and M1/M4 XeLaTeX NOT_RUN; no release.
+
 ## Unreleased — I31 B29 source-history actual GUI re-acceptance (NOT_RUN)
 
 - Independently pinned QA source to B29 draft PR #69 HEAD `133cab9eff2da0e2ab2ae9574e5328f2dad3ee62`, app tree `d7a487e91614c7b607ce92f53275e10e2a5ee911`. Previous B28 real X11 [41271432298](https://github.com/i-shutov/tikzarium/actions/runs/41271432298) failed despite apparent Undo success. Re-run real held-click and held-drag Undo plus 6 native tools, GUI Save/Build/Export and F1/PDF screenshot audit without weakening test predicates; no B production changes, old #48 untouched. Hosted B29 CI does not replace actual X11; physical Win10/Mac NOT_RUN. No release.
