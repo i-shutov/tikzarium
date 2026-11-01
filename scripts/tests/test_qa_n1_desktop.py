@@ -43,11 +43,12 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
-    def test_b26_candidate_profile_is_exact_source_pinned(self):
+    def test_b27_candidate_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "47c4c86be10471a5f56f7019ad63a77e7f4480f5")
+                         "5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b")
+        self.assertTrue(profile["undo_held_pointer"])
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
         self.assertEqual(profile["zoom_out_click"], [882, 72])
@@ -58,6 +59,19 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertEqual(profile["gestures"][0]["tool_click"], [599, 166])
         self.assertEqual(len(profile["gestures"]), 6)
         self.assertEqual({case["tool"] for case in profile["gestures"]}, desktop.TOOLS)
+
+    def test_b27_real_undo_predicate_rejects_ghost_and_unrelated_mutation(self):
+        original = desktop.FIXTURE.encode("utf-8")
+        before = original.replace(b"\\\\end{tikzpicture}",
+                                  line(version=2) + b"\\\\end{tikzpicture}")
+        desktop.verify_held_undo(before, original, original)
+        for bad in (before, before + line(2, version=2),
+                    original.replace("Не менять".encode(), b"changed")):
+            with self.subTest(bad=bad):
+                with self.assertRaises(RuntimeError):
+                    desktop.verify_held_undo(before, bad, original)
+        with self.assertRaises(RuntimeError):
+            desktop.verify_held_undo(original, original, original)
 
     def test_generated_lines_preserve_unicode_original(self):
         original = desktop.FIXTURE.encode()

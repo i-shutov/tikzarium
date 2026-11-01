@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B26 exact app-tree candidate; B25 screenshot acceptance historical; B26 re-review required",
+  "profile": "B27 exact app-tree: real Ctrl+Z while guide mouse is held, then mouse-up + Save + fresh gesture; no old B26 PASS inheritance",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B26 reuses B25 button layout and six-gesture coordinates, now with persistent Fit Page on resize/new raster; these coordinates must be accepted by exact-B26 real X11 screenshot evidence, not inherited from B25.",
+  "layout_note": "B26 reuses B25 button layout and six-gesture coordinates, now with persistent Fit Page on resize/new raster; these coordinates must be accepted by exact-B26 real X11 screenshot evidence, not inherited from B25. B27 tests click and drag X11 hold/Undo/release; acceptance is gated by actual saved-source and screenshot audit.",
   "path_click": [
     310,
     18
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "47c4c86be10471a5f56f7019ad63a77e7f4480f5",
+  "reviewed_app_tree_sha": "5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b",
   "zoom_out_click": [
     882,
     72
@@ -144,5 +144,6 @@
   "restore_size": [
     1366,
     740
-  ]
+  ],
+  "undo_held_pointer": true
 }

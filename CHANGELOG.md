@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-11-01: I26 B27 physical-input Linux/X11 Undo + six native tools (QA PENDING)
+
+- QA-only branch based on [#69 B27](https://github.com/i-shutov/tikzarium/pull/69) exact source HEAD `1805a46cbca2985c4b4798ccf4b0e22171107297`, app source tree `5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b`. No edits to B-owned Rust or the old independent #48 branch. Updated X11 driver sends **real Ctrl+Z while holding a mouse press/drag on the provisional guide**, releases, GUI-saves and checks exact restored source bytes and zero ghost commands; then creates a fresh line, verifies Save and proceeds with all six native TikZ gestures, contextual Russian F1 and actual GUI XeLaTeX PDF/fitting.
+- This is **NOT_RUN until exact-head hosted workflow plus independent saved-source/PDF/screenshot artifact review**. Unit-event B27 proof cannot substitute. Hosted X11 is not physical Windows10/MiKTeX or Mac M1/M4/XeLaTeX acceptance; no release. Cargo.lock remains untracked.
+
+
 ## Unreleased — 2026-11-01: I24 B26 actual X11 sticky whole-page resize QA (NOT_RUN)
 
 - Non-production I23 QA bridge merged with **B26 #67** exact source `73878df418dd6343bbca9dd94a2e5daf979ed7fc`, src tree `47c4c86be10471a5f56f7019ad63a77e7f4480f5`; actual egui six-tool + GUI-save/build/export + Russian F1 and full-PDF visual evidence must be regenerated on B26. Driver now captures a genuine selected Fit Page resize/restore (1180×680 ↔ 1366×740); screenshot difference is **not** a visual PASS, and desktop new-page raster still NOT_RUN. Track exact Cargo.lock resolution separately, do not claim physical Win10/MiKTeX/M1/M4 QA. No release.

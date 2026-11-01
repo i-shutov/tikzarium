@@ -1,4 +1,4 @@
-name: I23 real B26 native TikZ and responsive whole-page PDF acceptance
+name: I26 real B27 Undo-while-held pointer plus native TikZ PDF acceptance
 on:
   push:
     branches:
@@ -54,7 +54,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '47c4c86be10471a5f56f7019ad63a77e7f4480f5'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -78,7 +78,7 @@ jobs:
             cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
             echo "::warning::Source repository has NO Cargo.lock; generated resolution archived, release reproducibility NOT VERIFIED"
           fi
-      - name: Real B26 X11 gestures, GUI Save, XeLaTeX PDF, Fit page and resize
+      - name: Real B27 X11 held-pointer Undo, six gestures, GUI Save/XeLaTeX, fit/resize
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
           chmod 700 "$RUNNER_TEMP/i19-runtime"
