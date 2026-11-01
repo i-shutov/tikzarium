@@ -34,3 +34,7 @@ substring; нет универсального разбора TeX-команд.
 Production source added, tests written; no local Rust toolchain in the
 integration runtime, поэтому LOCALLY_NOT_RUN. Require exact-head CI and
 read back its logs/artifacts. Hosted GUI and physical Win10/M1/M4 NOT_RUN.
+
+## Integrator follow-up (original semantic deficiency)
+
+На `4d809b10` успешные hosted проверки НЕ доказывали полноту помощи: CLI печатал только title, а поиск не видел `help_ru` у tools/libraries. Ветка исправлена через единый `HelpEntry::description_ru()`, никаких дублированных схем. Проверяется исходная фраза о прямом отрезке и положение узлов «смещение и якоря» в полных выводах и русских запросах. Новый SHA CI/CLI после внесения изменений NOT_RUN; физический Win10/M1/M4 NOT_RUN. Важно не объявлять новый PASS без фактических артефактов.
