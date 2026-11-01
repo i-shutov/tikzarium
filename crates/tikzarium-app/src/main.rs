@@ -1569,10 +1569,7 @@ mod split_layout_tests {
             let mut observed = None;
             let _ = ctx.run(
                 egui::RawInput {
-                    screen_rect: Some(egui::Rect::from_min_size(
-                        egui::Pos2::ZERO,
-                        window,
-                    )),
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, window)),
                     ..Default::default()
                 },
                 |ctx| {
@@ -1634,8 +1631,14 @@ mod split_layout_tests {
             );
             assert!(!settled.2, "stable fit must not request endless redraws");
         }
-        assert_eq!(source, original, "PDF fitting must never edit arbitrary TeX");
-        assert!(!session.undo_available(), "fitting must not insert an undo entry");
+        assert_eq!(
+            source, original,
+            "PDF fitting must never edit arbitrary TeX"
+        );
+        assert!(
+            !session.undo_available(),
+            "fitting must not insert an undo entry"
+        );
     }
 
     #[test]
