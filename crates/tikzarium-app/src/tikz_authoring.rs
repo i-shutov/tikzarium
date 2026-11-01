@@ -411,30 +411,34 @@ fn plan_library(
     let target = imports.begin_document_target(revision).ok_or_else(|| {
         format!(
             "C/N2: {}",
-            imports.uncertain_reason.unwrap_or("нет подтверждённого якоря преамбулы")
+            imports
+                .uncertain_reason
+                .unwrap_or("нет подтверждённого якоря преамбулы")
         )
     })?;
     match change {
-        LibraryChange::Connect => match project_imports::plan_import(
-            source, target, ImportKind::TikzLibrary, name,
-        ) {
-            ImportDecision::Proposed(plan) => Ok(Some(LibraryPlan::Connect(plan))),
-            ImportDecision::AlreadyLoaded => Ok(None),
-            ImportDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
-        },
-        LibraryChange::Disconnect => match project_disconnect::plan_library_disconnect(
-            source, target, name,
-        ) {
-            DisconnectDecision::Proposed(plan) => Ok(Some(LibraryPlan::Disconnect(plan))),
-            DisconnectDecision::AlreadyAbsent => Ok(None),
-            DisconnectDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
-        },
+        LibraryChange::Connect => {
+            match project_imports::plan_import(source, target, ImportKind::TikzLibrary, name) {
+                ImportDecision::Proposed(plan) => Ok(Some(LibraryPlan::Connect(plan))),
+                ImportDecision::AlreadyLoaded => Ok(None),
+                ImportDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
+            }
+        }
+        LibraryChange::Disconnect => {
+            match project_disconnect::plan_library_disconnect(source, target, name) {
+                DisconnectDecision::Proposed(plan) => Ok(Some(LibraryPlan::Disconnect(plan))),
+                DisconnectDecision::AlreadyAbsent => Ok(None),
+                DisconnectDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
+            }
+        }
     }
 }
 
 /// Read-only exact before/after display of just the affected physical lines.
 pub fn library_proposal(
-    source: &str, name: &str, change: LibraryChange,
+    source: &str,
+    name: &str,
+    change: LibraryChange,
 ) -> Result<Option<String>, String> {
     let Some(plan) = plan_library(source, name, change, 0)? else {
         return Ok(None);
@@ -442,14 +446,26 @@ pub fn library_proposal(
     let patch = plan.patch();
     let start = source[..patch.range.start].rfind('\n').map_or(0, |i| i + 1);
     let end = source[patch.range.end..]
-        .find('\n').map_or(source.len(), |i| patch.range.end + i);
+        .find('\n')
+        .map_or(source.len(), |i| patch.range.end + i);
     let before = &source[start..end];
     let mut after = before.to_owned();
-    after.replace_range(patch.range.start - start..patch.range.end - start, &patch.replacement);
-    let line = source[..start].bytes().filter(|byte| *byte == b'\n').count() + 1;
+    after.replace_range(
+        patch.range.start - start..patch.range.end - start,
+        &patch.replacement,
+    );
+    let line = source[..start]
+        .bytes()
+        .filter(|byte| *byte == b'\n')
+        .count()
+        + 1;
     Ok(Some(format!(
         "@@ строка {line} · EOL {} @@\nБыло:\n{before}\nСтанет:\n{after}",
-        if source.contains("\r\n") { "CRLF" } else { "LF" }
+        if source.contains("\r\n") {
+            "CRLF"
+        } else {
+            "LF"
+        }
     )))
 }
 
@@ -549,14 +565,21 @@ impl Session {
     /// Confirm only a freshly re-planned C/N2 patch and push its inverse
     /// onto the existing visual source Undo stack.
     pub fn change_library(
-        &mut self, source: &mut String, name: &str, change: LibraryChange,
+        &mut self,
+        source: &mut String,
+        name: &str,
+        change: LibraryChange,
     ) -> Result<usize, String> {
         self.sync(source)?;
         let Some(plan) = plan_library(source, name, change, self.revision)? else {
             return Err("Библиотека уже находится в требуемом состоянии".into());
         };
         let offset = plan.patch().range.start;
-        let line = source[..offset].bytes().filter(|byte| *byte == b'\n').count() + 1;
+        let line = source[..offset]
+            .bytes()
+            .filter(|byte| *byte == b'\n')
+            .count()
+            + 1;
         let inverse = plan.apply(source, &mut self.revision)?;
         self.observed_source.clone_from(source);
         self.undo.push(inverse);
@@ -787,16 +810,29 @@ mod tests {
             let mut session = Session::default();
             session.reset(&source);
             let preview = library_proposal(&source, name, LibraryChange::Connect)
-                .unwrap().unwrap();
+                .unwrap()
+                .unwrap();
             assert!(preview.contains(&format!("\\usetikzlibrary{{{name}}}")));
             assert!(preview.contains("EOL CRLF"));
             assert_eq!(source, original);
-            session.change_library(&mut source, name, LibraryChange::Connect).unwrap();
+            session
+                .change_library(&mut source, name, LibraryChange::Connect)
+                .unwrap();
             assert!(source.contains(&format!("\\usetikzlibrary{{{name}}}\r\n")));
             assert!(source.contains("\\opaqueMacro{текст}\r\n"));
-            assert!(library_proposal(&source, name, LibraryChange::Connect).unwrap().is_none());
-            assert!(library_proposal(&source, name, LibraryChange::Disconnect).unwrap().is_some());
-            session.change_library(&mut source, name, LibraryChange::Disconnect).unwrap();
+            assert!(
+                library_proposal(&source, name, LibraryChange::Connect)
+                    .unwrap()
+                    .is_none()
+            );
+            assert!(
+                library_proposal(&source, name, LibraryChange::Disconnect)
+                    .unwrap()
+                    .is_some()
+            );
+            session
+                .change_library(&mut source, name, LibraryChange::Disconnect)
+                .unwrap();
             assert_eq!(source, original);
             session.undo(&mut source).unwrap();
             assert!(source.contains(&format!("\\usetikzlibrary{{{name}}}\r\n")));
@@ -812,19 +848,29 @@ mod tests {
         let mut session = Session::default();
         session.reset(&source);
         let proposal = library_proposal(&source, "calc", LibraryChange::Disconnect)
-            .unwrap().unwrap();
+            .unwrap()
+            .unwrap();
         assert!(proposal.contains("\\usetikzlibrary{arrows.meta,fit}"));
-        session.change_library(&mut source, "calc", LibraryChange::Disconnect).unwrap();
+        session
+            .change_library(&mut source, "calc", LibraryChange::Disconnect)
+            .unwrap();
         assert!(source.contains("\\usetikzlibrary{arrows.meta,fit}"));
         session.undo(&mut source).unwrap();
         assert_eq!(source, initial);
-        let opaque = initial.replace("\\usepackage{tikz}", "\\conditionalMacro{x}\n\\usepackage{tikz}");
+        let opaque = initial.replace(
+            "\\usepackage{tikz}",
+            "\\conditionalMacro{x}\n\\usepackage{tikz}",
+        );
         let preserved = opaque.clone();
         let mut session = Session::default();
         session.reset(&opaque);
         let mut source = opaque;
         assert!(library_proposal(&source, "fit", LibraryChange::Disconnect).is_err());
-        assert!(session.change_library(&mut source, "fit", LibraryChange::Disconnect).is_err());
+        assert!(
+            session
+                .change_library(&mut source, "fit", LibraryChange::Disconnect)
+                .is_err()
+        );
         assert_eq!(source, preserved);
         assert!(!session.undo_available());
     }

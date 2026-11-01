@@ -1,12 +1,12 @@
 //! B38: existing C/N2 library source transactions and N3 offline help in egui.
 //! The external XeLaTeX PDF, not the provisional guide, is authoritative.
+use crate::tikz_authoring::{self, LibraryChange, Session};
 use eframe::egui;
 use tikzarium_extensions::{
     help_search::{self, HelpEntry},
     primitives::Evidence,
     project_imports::{self, ImportKind, capabilities_for_library},
 };
-use crate::tikz_authoring::{self, LibraryChange, Session};
 
 fn evidence_label(value: Evidence) -> &'static str {
     match value {
@@ -27,11 +27,17 @@ pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
                 return;
             }
             if text.len() > 256 {
-                ui.colored_label(ui.visuals().error_fg_color, "Запрос слишком длинный (256 байт)");
+                ui.colored_label(
+                    ui.visuals().error_fg_color,
+                    "Запрос слишком длинный (256 байт)",
+                );
                 return;
             }
             let entries = help_search::search(tikz_authoring::catalog(), text);
-            ui.small(format!("Найдено: {} · установка и совместимость НЕ проверяются", entries.len()));
+            ui.small(format!(
+                "Найдено: {} · установка и совместимость НЕ проверяются",
+                entries.len()
+            ));
             let truncated = entries.len() > 12;
             for entry in entries.into_iter().take(12) {
                 egui::CollapsingHeader::new(entry.id()).show(ui, |ui| {
@@ -60,7 +66,8 @@ pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
                         ));
                         if parameter.default_provenance == "editor_preset" {
                             ui.small(format!(
-                                "Пресет редактора: {} (НЕ default TikZ)", parameter.default
+                                "Пресет редактора: {} (НЕ default TikZ)",
+                                parameter.default
                             ));
                         } else {
                             ui.small("Default TikZ: UNKNOWN");
@@ -165,7 +172,14 @@ mod tests {
         let src = "\\documentclass{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta}\n\\begin{document}\n\\end{document}\n";
         let project = project_imports::inspect(src);
         for library in &catalog.libraries {
-            let c = capabilities_for_library(catalog, &library.name, &project, Evidence::Unknown, Some("xelatex")).unwrap();
+            let c = capabilities_for_library(
+                catalog,
+                &library.name,
+                &project,
+                Evidence::Unknown,
+                Some("xelatex"),
+            )
+            .unwrap();
             assert_eq!(c.installed, Evidence::Unknown);
             assert_eq!(c.help_available, Evidence::Confirmed);
             assert_eq!(c.engine_compatible, Evidence::Confirmed);
@@ -178,15 +192,19 @@ mod tests {
                 assert_eq!(c.tool_implemented, Evidence::Absent);
             }
         }
-        assert!(help_search::search(catalog, "СМЕЩЕНИЕ И ЯКОРЯ")
-            .iter().any(|entry| entry.id() == "tikz.library.positioning"));
+        assert!(
+            help_search::search(catalog, "СМЕЩЕНИЕ И ЯКОРЯ")
+                .iter()
+                .any(|entry| entry.id() == "tikz.library.positioning")
+        );
     }
 
     #[test]
     fn b38_egui_frame_with_opaque_source_never_mutates_bytes() {
         // UNIT_EVENT only; this is not real X11 pointer or physical OS evidence.
         let ctx = egui::Context::default();
-        let original = "\\documentclass{standalone}\n\\opaque{source}\n\\begin{document}\n\\end{document}\n";
+        let original =
+            "\\documentclass{standalone}\n\\opaque{source}\n\\begin{document}\n\\end{document}\n";
         let mut source = original.to_owned();
         let mut session = Session::default();
         session.reset(&source);
