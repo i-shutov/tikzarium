@@ -1,0 +1,70 @@
+name: I47 B33 independent real X11 dirty Open file safety (bootstrap NOT acceptance)
+on:
+  push:
+    branches:
+      - qa/i47-b33-real-x11-file-safety
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i47-b33-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  b33-open-gui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.sha }}
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TIKZARIUM_SOURCE_SHA }}
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Assert exact B33 production app source, not old B31 screenshots
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '2b4e06b7627dac2f41f25014611e44af91407052'
+          python3 - <<'PY'
+          import json
+          with open("fixtures/qa/b33-open-x11-1366.json", encoding="utf-8") as fd:
+              profile=json.load(fd)
+          assert profile["reviewed_app_tree_sha"] == "2b4e06b7627dac2f41f25014611e44af91407052"
+          assert profile["modal_save_input_click"] is None and profile["modal_save_button_click"] is None
+          PY
+      - name: Install isolated X11, external XeLaTeX and PDF evidence prerequisites
+        shell: bash
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+      - name: Build exact branch application with locked dependencies
+        run: |
+          cargo build --locked -p tikzarium-app --bin tikzarium-app
+          git diff --exit-code -- Cargo.lock
+      - name: Drive real egui window, capture modal and CRLF victim hash
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/i47-runtime"
+          chmod 700 "$RUNNER_TEMP/i47-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i47-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i47-openbox.log 2>&1 & python3 scripts/qa_b33_open_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --output "$RUNNER_TEMP/i47-evidence" --profile fixtures/qa/b33-open-x11-1366.json --mode bootstrap'
+      - name: Upload real X11 bootstrap frames (never modal acceptance)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: i47-b33-dirty-open-bootstrap-${{ env.TIKZARIUM_SOURCE_SHA }}
+          path: |
+            ${{ runner.temp }}/i47-evidence/*.png
+            ${{ runner.temp }}/i47-evidence/*.json
+            ${{ runner.temp }}/i47-evidence/*.tex
+            ${{ runner.temp }}/i47-evidence/*.txt
+            ${{ runner.temp }}/i47-evidence/*.log
+          if-no-files-found: warn
