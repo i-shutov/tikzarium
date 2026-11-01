@@ -533,10 +533,7 @@ pub fn handle_visual_undo_shortcut(
     let guide_capture = session.guide_pointer_armed
         || session.drag_start.is_some()
         || session.alt_selection_capture;
-    if !pressed
-        || (ctx.wants_keyboard_input() && !guide_capture)
-        || !session.undo_available()
-    {
+    if !pressed || (ctx.wants_keyboard_input() && !guide_capture) || !session.undo_available() {
         return None;
     }
     match session.undo_and_focus_line(source) {
@@ -2199,7 +2196,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn b28_held_visual_undo_preempts_auto_focused_source_and_consumes_key() {
         // I26 real X11: creating a native primitive scrolls/highlights the
@@ -2252,8 +2248,7 @@ mod tests {
                             |ctx| {
                                 // Same application ordering: global Undo,
                                 // visible editable source, then guide Response.
-                                undo_line =
-                                    handle_visual_undo_shortcut(ctx, session, source);
+                                undo_line = handle_visual_undo_shortcut(ctx, session, source);
                                 if undo_line.is_some() {
                                     key_consumed =
                                         !ctx.input(|input| input.key_pressed(egui::Key::Z));
@@ -2261,18 +2256,15 @@ mod tests {
                                 egui::SidePanel::left("b28-source")
                                     .default_width(270.0)
                                     .show(ctx, |ui| {
-                                        let response = ui.add(
-                                            egui::TextEdit::multiline(source)
-                                                .desired_rows(8),
-                                        );
+                                        let response = ui
+                                            .add(egui::TextEdit::multiline(source).desired_rows(8));
                                         if request_source_focus {
                                             response.request_focus();
                                         }
                                         observe_source_text_edit(&response, session, source);
                                     });
                                 egui::CentralPanel::default().show(ctx, |ui| {
-                                    guide_rect =
-                                        show_guide_frame(ui, session, source, READY).1;
+                                    guide_rect = show_guide_frame(ui, session, source, READY).1;
                                 });
                             },
                         );
@@ -2296,7 +2288,10 @@ mod tests {
                         &mut source,
                     );
                     assert!(session.guide_pointer_armed);
-                    assert!(ctx.wants_keyboard_input(), "source focus must reproduce I26");
+                    assert!(
+                        ctx.wants_keyboard_input(),
+                        "source focus must reproduce I26"
+                    );
                     if dragged {
                         frame(
                             vec![egui::Event::PointerMoved(end)],
@@ -2307,13 +2302,8 @@ mod tests {
                         );
                         assert!(session.drag_start.is_some());
                     }
-                    let (undone, _, key_consumed) = frame(
-                        vec![z(true)],
-                        modifiers,
-                        false,
-                        &mut session,
-                        &mut source,
-                    );
+                    let (undone, _, key_consumed) =
+                        frame(vec![z(true)], modifiers, false, &mut session, &mut source);
                     assert!(undone.is_some(), "{tool:?}: missed held-pointer Undo");
                     assert!(key_consumed, "{tool:?}: TextEdit could repeat Undo");
                     assert_eq!(source, original, "{tool:?}: unrelated user TeX changed");
