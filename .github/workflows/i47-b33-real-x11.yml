@@ -1,4 +1,4 @@
-name: I47 B33 independent real X11 dirty Open file safety (bootstrap NOT acceptance)
+name: I47 B33 real X11 dirty Open and CRLF-safe modal/PDF acceptance evidence
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: i47-b33-${{ github.sha }}
+  group: i47-b33-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   b33-open-gui:
@@ -34,7 +34,10 @@ jobs:
           with open("fixtures/qa/b33-open-x11-1366.json", encoding="utf-8") as fd:
               profile=json.load(fd)
           assert profile["reviewed_app_tree_sha"] == "2b4e06b7627dac2f41f25014611e44af91407052"
-          assert profile["modal_save_input_click"] is None and profile["modal_save_button_click"] is None
+          assert profile["modal_save_input_click"] == [600, 195]
+          assert profile["modal_save_button_click"] == [535, 242]
+          assert profile["toolbar_save_click"] == [554, 13]
+          assert profile["toolbar_build_click"] == [695, 13]
           PY
       - name: Install isolated X11, external XeLaTeX and PDF evidence prerequisites
         shell: bash
@@ -46,25 +49,27 @@ jobs:
             texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
       - name: Build exact branch application with locked dependencies
         run: |
+          python3 -m py_compile scripts/qa_b33_open_x11.py
           cargo build --locked -p tikzarium-app --bin tikzarium-app
           git diff --exit-code -- Cargo.lock
-      - name: Drive real egui window, capture modal and CRLF victim hash
+      - name: Drive real egui modal save rejection, victim reopen Undo, actual XeLaTeX GUI PDF
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/i47-runtime"
           chmod 700 "$RUNNER_TEMP/i47-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/i47-runtime"
           xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
-            bash -c 'openbox --sm-disable >/tmp/i47-openbox.log 2>&1 & python3 scripts/qa_b33_open_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --output "$RUNNER_TEMP/i47-evidence" --profile fixtures/qa/b33-open-x11-1366.json --mode bootstrap'
-      - name: Upload real X11 bootstrap frames (never modal acceptance)
+            bash -c 'openbox --sm-disable >/tmp/i47-openbox.log 2>&1 & python3 scripts/qa_b33_open_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --output "$RUNNER_TEMP/i47-evidence" --profile fixtures/qa/b33-open-x11-1366.json --mode full'
+      - name: Upload saved-source, PDF, screenshots and hash report (independent visual review still required)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i47-b33-dirty-open-bootstrap-${{ env.TIKZARIUM_SOURCE_SHA }}
+          name: i47-b33-dirty-open-full-${{ env.TIKZARIUM_SOURCE_SHA }}
           path: |
             ${{ runner.temp }}/i47-evidence/*.png
             ${{ runner.temp }}/i47-evidence/*.json
             ${{ runner.temp }}/i47-evidence/*.tex
+            ${{ runner.temp }}/i47-evidence/*.pdf
             ${{ runner.temp }}/i47-evidence/*.txt
             ${{ runner.temp }}/i47-evidence/*.log
           if-no-files-found: warn
