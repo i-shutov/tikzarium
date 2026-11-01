@@ -235,6 +235,29 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
         )
 }
 
+/// A typed path is not explicit permission to overwrite another TeX file.
+/// Linux without a native Save As dialog must fail closed on occupied paths;
+/// the platform file dialog on Windows/macOS handles intentional replacement.
+fn typed_save_destination(document: &Document, input: &str) -> Result<PathBuf, String> {
+    if input.trim().is_empty() {
+        return Err("Укажите путь для сохранения TeX-документа.".into());
+    }
+    let path = PathBuf::from(input.trim());
+    let saving_current = document
+        .path
+        .as_deref()
+        .is_some_and(|current| same_existing_path(current, &path));
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) if !saving_current => Err(
+            "Файл уже существует. Автоматическая перезапись чужого TeX запрещена; выберите новое имя."
+                .into(),
+        ),
+        Ok(_) => Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(path),
+        Err(error) => Err(format!("Не удалось проверить путь сохранения: {error}")),
+    }
+}
+
 fn pending_open_save_destination(
     document: &Document,
     input: &str,
@@ -245,7 +268,7 @@ fn pending_open_save_destination(
             "Укажите отдельный путь для сохранения текущего документа перед открытием.".into(),
         );
     }
-    let save_path = PathBuf::from(input.trim());
+    let save_path = typed_save_destination(document, input)?;
     let current_is_target = document
         .path
         .as_deref()
@@ -254,16 +277,6 @@ fn pending_open_save_destination(
         return Err(
             "Нельзя сохранить текущий документ поверх файла, который вы собираетесь открыть."
                 .into(),
-        );
-    }
-    // Save-and-open is not an implicit overwrite of a third, unrelated file.
-    let saving_current = document
-        .path
-        .as_deref()
-        .is_some_and(|current| same_existing_path(current, &save_path));
-    if save_path.exists() && !saving_current {
-        return Err(
-            "Выбранный путь сохранения уже занят другим файлом; укажите новый путь.".into(),
         );
     }
     Ok(save_path)
@@ -509,12 +522,13 @@ impl TikzariumApp {
         }
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         {
-            if self.file_field.trim().is_empty() {
-                self.status =
-                    "Enter a destination .tex path (no native dialog on this host)".into();
-                return false;
+            match typed_save_destination(&self.document, &self.file_field) {
+                Ok(path) => self.save_to_path(path),
+                Err(error) => {
+                    self.status = error;
+                    false
+                }
             }
-            self.save_to_path(PathBuf::from(self.file_field.trim()))
         }
     }
 
@@ -522,9 +536,9 @@ impl TikzariumApp {
         if let Some(path) = self.document.path.clone() {
             return self.save_to_path(path);
         }
-        if !self.file_field.trim().is_empty() {
-            return self.save_to_path(PathBuf::from(self.file_field.trim()));
-        }
+        // The toolbar's Path field is also used by Open path. For scratch
+        // documents it is not an authorized overwrite destination. Route
+        // through a platform Save As dialog or validated typed path instead.
         self.save_as()
     }
 
@@ -2018,6 +2032,41 @@ mod split_layout_tests {
             assert_eq!(source, untouched, "resizing silently changed source");
             assert!(!session.undo_available());
         }
+    }
+
+    #[test]
+    fn b33_typed_save_rejects_existing_open_target_and_accepts_new_utf8_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой-файл.tex");
+        let original = "% чужие макросы\\r\\n\\\\MyOpaque{не менять}\\r\\n";
+        std::fs::write(&target, original).unwrap();
+        let mut scratch = Document::scratch("% набросок\\n\\\\draw (0,0) -- (1,1);\\n");
+        assert!(typed_save_destination(&scratch, target.to_str().unwrap()).is_err());
+        assert!(typed_save_destination(&scratch, "").is_err());
+        let alias_dir = dir.path().join("alias-dir");
+        std::fs::create_dir(&alias_dir).unwrap();
+        let path_alias = alias_dir.join("..").join("чужой-файл.tex");
+        assert!(typed_save_destination(&scratch, path_alias.to_str().unwrap()).is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let alias = dir.path().join("shortcut.tex");
+            symlink(&target, &alias).unwrap();
+            assert!(typed_save_destination(&scratch, alias.to_str().unwrap()).is_err());
+            let dangling = dir.path().join("broken.tex");
+            symlink(dir.path().join("missing.tex"), &dangling).unwrap();
+            assert!(typed_save_destination(&scratch, dangling.to_str().unwrap()).is_err());
+        }
+        let safe = dir.path().join("мой-рисунок.tex");
+        let destination = typed_save_destination(&scratch, safe.to_str().unwrap()).unwrap();
+        scratch.save_to(destination).unwrap();
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
+        assert!(std::fs::read_to_string(&safe).unwrap().contains("\\\\draw"));
+        let mut opened = Document::load(&target).unwrap();
+        opened.source.push_str("% обычная правка\\n");
+        assert_eq!(typed_save_destination(&opened, target.to_str().unwrap()).unwrap(), target);
+        opened.save().unwrap();
+        assert!(std::fs::read_to_string(&target).unwrap().contains("обычная правка"));
     }
 
     #[test]
