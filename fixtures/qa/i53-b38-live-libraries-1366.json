@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
-  "status": "RUN1_X11_SCREENSHOT_CALIBRATION_PANEL_Y150_RECORD_Y224_ACTION_PROVISIONAL",
+  "status": "RUN3_SCREENSHOT_CONFIRMED_CONNECT_AT_1224_605;DISCONNECT_AND_UNDO_UNCALIBRATED",
   "source": [
     120,
     190
@@ -31,8 +31,8 @@
     224
   ],
   "connect": [
-    1140,
-    510
+    1224,
+    605
   ],
   "disconnect": [
     1140,
