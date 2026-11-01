@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased — I36 B30 X11 held-button AND keyboard receipt desktop acceptance (NOT_RUN pending artifacts)
+
+- I35 [actual Linux/X11 41279880858](https://github.com/i-shutov/tikzarium/actions/runs/41279880858) held **Button1Mask=256** across key-only XTest Ctrl+Z but source Undo still failed and later release inserted Line #2. I36 adds 80ms XTest key dwell/XSync, native XQueryKeymap proof of Ctrl/z down/up, XGetInputFocus snapshot, server Button1Mask check each key step, preserving strict source rollback. This disambiguates too-fast synthetic key events from B30 production routing. QA-only; actual I36 GUI acceptance NOT_RUN until complete, physical OS NOT_RUN, no release.
+
+## Unreleased — I35 B30 true XTest held Ctrl+Z and GUI acceptance (HISTORICAL FAIL)
+
+- [I34 real X11 41279540150](https://github.com/i-shutov/tikzarium/actions/runs/41279540150) correctly failed closed: X11 Button1Mask **256→0** across `xdotool key --clearmodifiers` before QA mouseup, so old “held” ghost tests used invalid input. I35 replaces that key with genuine XTestFakeKeyEvent key-only Ctrl+Z, demonstrated under isolated Xvfb to preserve Button1Mask=256, and keeps server mask/byte-exact/no-ghost tests. No B production edits; actual I35 acceptance and physical Win10/M1/M4 NOT_RUN, no merge/release.
+
+## Unreleased — I34 B30 real held-pointer XQueryPointer forensic acceptance (QA_HARNESS FAIL)
+
+- I33 actual [X11 41279059557](https://github.com/i-shutov/tikzarium/actions/runs/41279059557) **FAIL**: before explicit driver mouseup, Ctrl+Z screenshot reveals ghost Line #2; saved .tex contains Line IDs 1+2, matching previous B29 source SHA exactly. QA now queries actual X11 Button1Mask before/after key to distinguish XTest-button release from application early insertion. Fail closed on absent held button; source-rollback assertions unchanged. B30 production and C catalogue untouched, physical Win10/M1/M4 NOT_RUN; no release.
+
+## Unreleased — I33 B30 real X11 pointer Undo QA (historical FAIL)
+
+- First exact B30 QA [41278805656](https://github.com/i-shutov/tikzarium/actions/runs/41278805656) failed **offline fixture-key consistency** before launching the executable; corrected the test reference to the unchanged B30 fixture marker. This is a QA preflight correction, **not** a real GUI FAIL/PASS; strict live test unchanged.
+
+- QA-only integration at B30 #69 exact `750fb6b743a516f44a362f2f568ce1b92c69e6f4` and source tree `965933b3f70504f2f4082bc22795bab67fad5d44`; real X11 six-tool/held-click and held-drag Undo, exact source restoration without ghosts, Russian F1, GUI XeLaTeX PDF, fit/resize screenshot evidence. Historical B29 GUI [41274957152](https://github.com/i-shutov/tikzarium/actions/runs/41274957152) FAIL. B30 hosted CI 5/5 workflow families PASS does not prove actual GUI; B30 X11 NOT_RUN at commit. Physical Win10/MiKTeX and M1/M4 XeLaTeX NOT_RUN; no release.
+
+## Unreleased — I31 B29 source-history actual GUI re-acceptance (NOT_RUN)
+
+- Independently pinned QA source to B29 draft PR #69 HEAD `133cab9eff2da0e2ab2ae9574e5328f2dad3ee62`, app tree `d7a487e91614c7b607ce92f53275e10e2a5ee911`. Previous B28 real X11 [41271432298](https://github.com/i-shutov/tikzarium/actions/runs/41271432298) failed despite apparent Undo success. Re-run real held-click and held-drag Undo plus 6 native tools, GUI Save/Build/Export and F1/PDF screenshot audit without weakening test predicates; no B production changes, old #48 untouched. Hosted B29 CI does not replace actual X11; physical Win10/Mac NOT_RUN. No release.
+
+## Unreleased — I29 B28 X11 initial source-save gate: explicit GUI Save (pending rerun)
+
+- [I28 run 41271124460](https://github.com/i-shutov/tikzarium/actions/runs/41271124460) failed before held-pointer tests: actual source editor displayed original Unicode and path but Ctrl+S did not persist the file. Real pointer/PDF NOT_RUN. QA now records shortcut failure separately and uses the visible GUI Save button to test the required source-persistence vertical; no TeX is fabricated and shortcut is not called PASS. Corrected exact-head CI/visual evidence pending.
+
+## Unreleased — I28 B28 focus-safe pointer Undo real X11 gate (NOT_RUN)
+
+- QA-only integration onto exact B28 `f2dfbd0bb073e6152146a151eca138af8fc030e1`, source tree `4be7a5aebbdd77a820abc08ea37d349dcab6bcec`. Existing B27 real-X11 FAIL retained. Requires actual Ctrl+Z during a held guide pointer despite TextEdit focus, byte-exact Save rollback, no ghost, 6 native tools, Russian F1, GUI XeLaTeX PDF and independent visual review. Real B28 X11 / physical OS NOT_RUN pending new exact-head evidence.
+
+## Unreleased — 2026-11-01: I26 B27 physical-input Linux/X11 Undo + six native tools (QA PENDING)
+
+- QA-only branch based on [#69 B27](https://github.com/i-shutov/tikzarium/pull/69) exact source HEAD `1805a46cbca2985c4b4798ccf4b0e22171107297`, app source tree `5274ea9c12a3a9f25cea3b47c0fa504c1b5fff1b`. No edits to B-owned Rust or the old independent #48 branch. Updated X11 driver sends **real Ctrl+Z while holding a mouse press/drag on the provisional guide**, releases, GUI-saves and checks exact restored source bytes and zero ghost commands; then creates a fresh line, verifies Save and proceeds with all six native TikZ gestures, contextual Russian F1 and actual GUI XeLaTeX PDF/fitting.
+- This is **NOT_RUN until exact-head hosted workflow plus independent saved-source/PDF/screenshot artifact review**. Unit-event B27 proof cannot substitute. Hosted X11 is not physical Windows10/MiKTeX or Mac M1/M4/XeLaTeX acceptance; no release. Cargo.lock remains untracked.
+
+
 ## Unreleased — 2026-11-01: I24 B26 actual X11 sticky whole-page resize QA (NOT_RUN)
 
 - Non-production I23 QA bridge merged with **B26 #67** exact source `73878df418dd6343bbca9dd94a2e5daf979ed7fc`, src tree `47c4c86be10471a5f56f7019ad63a77e7f4480f5`; actual egui six-tool + GUI-save/build/export + Russian F1 and full-PDF visual evidence must be regenerated on B26. Driver now captures a genuine selected Fit Page resize/restore (1180×680 ↔ 1366×740); screenshot difference is **not** a visual PASS, and desktop new-page raster still NOT_RUN. Track exact Cargo.lock resolution separately, do not claim physical Win10/MiKTeX/M1/M4 QA. No release.

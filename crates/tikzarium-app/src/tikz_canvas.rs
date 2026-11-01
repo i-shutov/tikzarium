@@ -354,29 +354,77 @@ fn show_guide_frame_with_palette(
     // in-flight pointer gesture (including a release in the same event frame),
     // not just clear the provisional dragged point. Keep it inert until mouse-up
     // even if Esc/Alt are released earlier than the primary pointer button.
-    let (escape, primary_down, origin_on_guide, pointer_lost) = ui.input(|input| {
-        (
-            input.key_pressed(egui::Key::Escape),
-            input.pointer.primary_down(),
-            input
-                .pointer
-                .press_origin()
-                .is_some_and(|origin| rect.contains(origin)),
-            // Desktop focus loss / pointer leaving the native viewport is
-            // not a mouse-up gesture. Never turn it into a TikZ insertion.
-            input.events.iter().any(|event| {
-                matches!(
-                    event,
-                    egui::Event::PointerGone | egui::Event::WindowFocused(false)
-                )
-            }),
-        )
-    });
+    let (escape, primary_down, origin_on_guide, pointer_lost, primary_released, undo_key) = ui
+        .input(|input| {
+            (
+                input.key_pressed(egui::Key::Escape),
+                input.pointer.primary_down(),
+                input
+                    .pointer
+                    .press_origin()
+                    .is_some_and(|origin| rect.contains(origin)),
+                // Desktop focus loss / pointer leaving the native viewport is
+                // not a mouse-up gesture. Never turn it into a TikZ insertion.
+                input.events.iter().any(|event| {
+                    matches!(
+                        event,
+                        egui::Event::PointerGone | egui::Event::WindowFocused(false)
+                    )
+                }),
+                // An egui Response::clicked() alone is not proof that the
+                // physical primary button was released in this event frame.
+                input.events.iter().any(|event| {
+                    matches!(
+                        event,
+                        egui::Event::PointerButton {
+                            button: egui::PointerButton::Primary,
+                            pressed: false,
+                            ..
+                        }
+                    )
+                }),
+                input.key_pressed(egui::Key::Z)
+                    && input.modifiers.command
+                    && !input.modifiers.shift
+                    && !input.modifiers.alt,
+            )
+        });
     // A short click has no drag_start. Remember the press independently so
     // TextEdit changes or a tool switch cannot silently re-arm its release.
     if primary_down && origin_on_guide && !session.cancelled_pointer_capture {
+        // Transfer keyboard focus only on the initial capture, not on every
+        // repaint while the button is held.
+        if !session.guide_pointer_armed {
+            response.request_focus();
+        }
         session.guide_pointer_armed = true;
     }
+    let held_guide = session.guide_pointer_armed
+        || session.drag_start.is_some()
+        || session.alt_selection_capture;
+    #[cfg(debug_assertions)]
+    if undo_key && (held_guide || origin_on_guide) {
+        // Diagnostic contains no document text, paths, or user macro data.
+        // It is captured by the independent X11 app.log if a regression recurs.
+        eprintln!(
+            "TikZarium B30 egui held-Undo: down={primary_down} released={primary_released} armed={held_guide} undo_available={}",
+            session.undo_available()
+        );
+    }
+    // App-level keyboard routing runs before the guide Response. When a
+    // mouse press and Ctrl+Z arrive together, the source editor may still
+    // have focus at that earlier point. Give the real captured guide one
+    // final chance to route the shortcut; otherwise cancel its gesture.
+    let fallback_undo_line =
+        if undo_key && held_guide && !escape && !pointer_lost && !session.cancelled_pointer_capture
+        {
+            let line = handle_visual_undo_shortcut(ui.ctx(), session, source);
+            session.drag_start = None;
+            session.cancelled_pointer_capture = true;
+            line
+        } else {
+            None
+        };
     if (escape || pointer_lost)
         && (session.drag_start.is_some()
             || session.guide_pointer_armed
@@ -400,7 +448,7 @@ fn show_guide_frame_with_palette(
             session.alt_selection_capture = false;
             session.guide_pointer_armed = false;
         }
-        return (None, rect);
+        return (fallback_undo_line, rect);
     }
     if !primary_down {
         session.guide_pointer_armed = false;
@@ -419,7 +467,10 @@ fn show_guide_frame_with_palette(
     if session.alt_selection_capture {
         session.drag_start = None;
         let mut jump = None;
-        if clicked && let Some(pos) = response.interact_pointer_pos() {
+        if clicked
+            && primary_released
+            && let Some(pos) = response.interact_pointer_pos()
+        {
             match hit_authored_anchor(source, rect, pos) {
                 Ok(Some(id)) => match session.choose(source, id) {
                     Ok(line) => {
@@ -451,7 +502,11 @@ fn show_guide_frame_with_palette(
             session.drag_start = Some(snap(pointer, rect));
         }
     }
-    let finish = if response.drag_stopped() {
+    let finish = if !primary_released || primary_down {
+        // A keyboard/focus frame must never commit an authored command.
+        // Only an explicit primary-button release may finish a gesture.
+        None
+    } else if response.drag_stopped() {
         session.drag_start.take().map(|start| {
             let end = response
                 .interact_pointer_pos()
@@ -527,11 +582,47 @@ pub fn handle_visual_undo_shortcut(
             && !input.modifiers.shift
             && !input.modifiers.alt
     });
-    if !pressed || ctx.wants_keyboard_input() || !session.undo_available() {
+    // A source jump auto-focuses the code TextEdit. Holding a new guide
+    // pointer capture makes Ctrl/Cmd+Z a *visual* Undo even if that old TextEdit
+    // still reports keyboard focus (reproduced by actual X11 I26).
+    let guide_capture = session.guide_pointer_armed
+        || session.drag_start.is_some()
+        || session.alt_selection_capture;
+    if !pressed || (ctx.wants_keyboard_input() && !guide_capture) || !session.undo_available() {
         return None;
     }
     match session.undo_and_focus_line(source) {
-        Ok(line) => Some(line),
+        Ok(line) => {
+            // The source patch can succeed before the guide sees a same-frame
+            // mouse-down. Cancel that still-held press as well; Session::undo
+            // cannot observe egui's raw pointer state on its own.
+            if ctx.input(|input| input.pointer.primary_down()) {
+                session.cancelled_pointer_capture = true;
+                session.guide_pointer_armed = false;
+                session.drag_start = None;
+            }
+            // The source editor is rendered later in this same egui frame and
+            // may receive focus again for the selected line. Consume the key
+            // to prevent a second, native TextEdit Undo of unrelated user TeX.
+            ctx.input_mut(|input| {
+                input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z);
+                // TextEdit also reads raw events. Remove only the successful
+                // visual Ctrl/Cmd+Z press, never unrelated text/IME/pointer
+                // events, before the editor is rendered later in the frame.
+                input.events.retain(|event| {
+                    !matches!(
+                        event,
+                        egui::Event::Key {
+                            key: egui::Key::Z,
+                            pressed: true,
+                            modifiers,
+                            ..
+                        } if modifiers.command && !modifiers.shift && !modifiers.alt
+                    )
+                });
+            });
+            Some(line)
+        }
         Err(error) => {
             session.status = error;
             None
@@ -2036,6 +2127,503 @@ mod tests {
             assert!(line.is_none());
             assert_eq!(source, original);
             assert!(!session.undo_available());
+        }
+    }
+
+    #[test]
+    fn b27_keyboard_undo_cancels_held_guide_capture_without_ghost_insertion() {
+        // This reproduces the production ordering: global Undo is handled
+        // before the guide receives egui Response::clicked()/drag_stopped().
+        // A source Undo must cancel the *new* held gesture until mouse-up.
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    for release_with_undo in [false, true] {
+                        let ctx = egui::Context::default();
+                        let mut source = EVENT_SOURCE.to_owned();
+                        let original = source.clone();
+                        let mut session = Session::default();
+                        session.reset(&source);
+                        session.select_tool(tool);
+                        session
+                            .insert(&mut source, tool, Draft::for_tool(tool))
+                            .unwrap();
+                        assert!(session.undo_available());
+                        let (_, rect) = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        let start = screen_point(rect, Point::new(1.0, 1.0));
+                        let end = screen_point(rect, Point::new(3.0, 2.0));
+                        event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(start), primary(start, true)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        assert!(session.guide_pointer_armed);
+                        if dragged {
+                            event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![egui::Event::PointerMoved(end)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            assert!(session.drag_start.is_some());
+                        }
+
+                        let mut events = vec![z(true)];
+                        if release_with_undo {
+                            events.push(primary(if dragged { end } else { start }, false));
+                        }
+                        let mut undone_line = None;
+                        let mut ghost_line = None;
+                        let _output = ctx.run(
+                            egui::RawInput {
+                                screen_rect: Some(Rect::from_min_size(
+                                    Pos2::ZERO,
+                                    Vec2::new(width, 480.0),
+                                )),
+                                modifiers,
+                                events,
+                                ..Default::default()
+                            },
+                            |ctx| {
+                                undone_line =
+                                    handle_visual_undo_shortcut(ctx, &mut session, &mut source);
+                                egui::CentralPanel::default().show(ctx, |ui| {
+                                    ghost_line =
+                                        show_guide_frame(ui, &mut session, &mut source, READY).0;
+                                });
+                            },
+                        );
+                        assert!(undone_line.is_some(), "{tool:?}: shortcut not handled");
+                        assert_eq!(ghost_line, None, "{tool:?}: ghost on Undo frame");
+                        assert_eq!(source, original, "{tool:?}: Undo must restore bytes");
+                        assert!(!session.undo_available());
+                        assert!(session.drag_start.is_none());
+                        assert!(!session.guide_pointer_armed);
+                        if !release_with_undo {
+                            assert!(session.cancelled_pointer_capture);
+                            let (ghost, _) = event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![z(false), primary(if dragged { end } else { start }, false)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            assert!(ghost.is_none(), "{tool:?}: ghost on later mouse-up");
+                        }
+                        assert!(!session.cancelled_pointer_capture);
+                        assert_eq!(source, original);
+                        assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+
+                        // Releasing a cancelled capture must not poison the
+                        // next intentional C-catalogue TikZ gesture or Undo.
+                        event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(start), primary(start, true)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        let (new_line, _) = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![primary(start, false)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        assert!(new_line.is_some(), "{tool:?}: fresh click blocked");
+                        assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                        session.undo(&mut source).unwrap();
+                        assert_eq!(source, original);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b28_held_visual_undo_preempts_auto_focused_source_and_consumes_key() {
+        // I26 real X11: creating a native primitive scrolls/highlights the
+        // source TextEdit, which may still own keyboard focus when the user
+        // holds a new guide click/drag and presses Ctrl+Z. The ordinary
+        // TextEdit shortcut must keep its native behavior WITHOUT a guide
+        // capture; the held pointer instead routes to revision-checked Undo.
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    // Prime the actual source editor with the old source
+                    // BEFORE C-catalogue insertion, as in the live X11 app.
+                    let mut seconds = 0.0;
+                    let mut frame = |events: Vec<egui::Event>,
+                                     modifiers: egui::Modifiers,
+                                     request_source_focus: bool,
+                                     session: &mut Session,
+                                     source: &mut String| {
+                        let mut undo_line = None;
+                        let mut guide_rect = Rect::NOTHING;
+                        let mut key_consumed = false;
+                        seconds += 1.25;
+                        let _output = ctx.run(
+                            egui::RawInput {
+                                time: Some(seconds),
+                                screen_rect: Some(Rect::from_min_size(
+                                    Pos2::ZERO,
+                                    Vec2::new(width, 480.0),
+                                )),
+                                modifiers,
+                                events,
+                                ..Default::default()
+                            },
+                            |ctx| {
+                                // Same application ordering: global Undo,
+                                // visible editable source, then guide Response.
+                                undo_line = handle_visual_undo_shortcut(ctx, session, source);
+                                if undo_line.is_some() {
+                                    key_consumed =
+                                        !ctx.input(|input| input.key_pressed(egui::Key::Z));
+                                }
+                                egui::SidePanel::left("b28-source")
+                                    .default_width(270.0)
+                                    .show(ctx, |ui| {
+                                        let mut output = egui::TextEdit::multiline(source)
+                                            .code_editor()
+                                            .interactive(undo_line.is_none())
+                                            .desired_rows(8)
+                                            .show(ui);
+                                        if undo_line.is_some() {
+                                            // Match the production source
+                                            // panel's native-history fence.
+                                            output.state.clear_undoer();
+                                            output.state.store(ui.ctx(), output.response.id);
+                                        }
+                                        if request_source_focus
+                                            && !session.cancelled_pointer_capture
+                                        {
+                                            output.response.request_focus();
+                                        }
+                                        observe_source_text_edit(&output.response, session, source);
+                                    });
+                                egui::CentralPanel::default().show(ctx, |ui| {
+                                    guide_rect = show_guide_frame(ui, session, source, READY).1;
+                                });
+                            },
+                        );
+                        (undo_line, guide_rect, key_consumed)
+                    };
+                    let (_, rect, _) = frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert!(ctx.wants_keyboard_input());
+                    session
+                        .insert(&mut source, tool, Draft::for_tool(tool))
+                        .unwrap();
+                    // Actual source jump: the code editor has seen both
+                    // versions, so its native undo history is non-empty.
+                    frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    frame(
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert!(session.guide_pointer_armed);
+                    // The guide takes keyboard focus on pointer-down;
+                    // the old source TextEdit must no longer own the key.
+                    if dragged {
+                        frame(
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            false,
+                            &mut session,
+                            &mut source,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    let (undone, _, key_consumed) =
+                        frame(vec![z(true)], modifiers, true, &mut session, &mut source);
+                    assert!(undone.is_some(), "{tool:?}: missed held-pointer Undo");
+                    assert!(key_consumed, "{tool:?}: TextEdit could repeat Undo");
+                    assert_eq!(source, original, "{tool:?}: unrelated user TeX changed");
+                    assert!(session.cancelled_pointer_capture);
+                    frame(
+                        vec![z(false), primary(if dragged { end } else { start }, false)],
+                        egui::Modifiers::default(),
+                        false,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert_eq!(source, original, "{tool:?}: mouse-up inserted a ghost");
+                    assert!(!session.cancelled_pointer_capture);
+                    // An idle repaint and subsequent file Save/Reopen must
+                    // not resurrect a command from native editor history.
+                    frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        false,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert_eq!(source, original, "{tool:?}: stale TextEdit source");
+                    let reopened = source.clone();
+                    let mut reopened_session = Session::default();
+                    reopened_session.reset(&reopened);
+                    assert_eq!(reopened, original, "{tool:?}: Save/Reopen drift");
+                    assert!(!reopened_session.undo_available());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b30_same_frame_undo_and_mouse_press_cannot_insert_a_ghost_on_release() {
+        // The application handles Ctrl+Z BEFORE the guide Response. In a
+        // combined pointer-down + Ctrl+Z frame Session::undo cannot yet see
+        // guide_pointer_armed. Real primary release must remain inert.
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for combined_press in [false, true] {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    session
+                        .insert(&mut source, tool, Draft::for_tool(tool))
+                        .unwrap();
+                    let (_, rect) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let at = screen_point(rect, Point::new(1.0, 1.0));
+                    if !combined_press {
+                        event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(at), primary(at, true)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        assert!(session.guide_pointer_armed);
+                    }
+                    let mut undone = None;
+                    let mut unexpected_insert = None;
+                    let mut events = vec![z(true)];
+                    if combined_press {
+                        events.insert(0, egui::Event::PointerMoved(at));
+                        events.insert(1, primary(at, true));
+                    }
+                    let _ = ctx.run(
+                        egui::RawInput {
+                            screen_rect: Some(Rect::from_min_size(
+                                Pos2::ZERO,
+                                Vec2::new(width, 480.0),
+                            )),
+                            modifiers,
+                            events,
+                            ..Default::default()
+                        },
+                        |ctx| {
+                            undone = handle_visual_undo_shortcut(ctx, &mut session, &mut source);
+                            egui::CentralPanel::default().show(ctx, |ui| {
+                                unexpected_insert =
+                                    show_guide_frame(ui, &mut session, &mut source, READY).0;
+                            });
+                        },
+                    );
+                    assert!(undone.is_some(), "{tool:?}: visual Undo not applied");
+                    assert!(unexpected_insert.is_none(), "{tool:?}: early insert");
+                    assert_eq!(source, original, "{tool:?}: source changed");
+                    assert!(session.cancelled_pointer_capture);
+                    let (ghost, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![z(false), primary(at, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(ghost.is_none(), "{tool:?}: released a ghost");
+                    assert_eq!(source, original);
+                    assert!(!session.cancelled_pointer_capture);
+                    // A fresh ordinary click must still create common-C code.
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(at), primary(at, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let (new_line, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(at, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(new_line.is_some(), "{tool:?}: fresh gesture blocked");
+                    assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, original);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b30_ctrl_z_with_no_visual_history_cancels_a_held_gesture() {
+        // An unavailable visual Undo must not convert a held pointer press
+        // into a new command on the following mouse-up.
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                let ctx = egui::Context::default();
+                let mut source = EVENT_SOURCE.to_owned();
+                let original = source.clone();
+                let mut session = Session::default();
+                session.reset(&source);
+                session.select_tool(tool);
+                let (_, rect) = event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![],
+                    egui::Modifiers::default(),
+                    None,
+                    width,
+                );
+                let at = screen_point(rect, Point::new(1.0, 1.0));
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(at), primary(at, true)],
+                    egui::Modifiers::default(),
+                    None,
+                    width,
+                );
+                assert!(session.guide_pointer_armed);
+                let (jump, _) = event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::Key {
+                        key: egui::Key::Z,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers,
+                    }],
+                    modifiers,
+                    None,
+                    width,
+                );
+                assert!(jump.is_none());
+                assert!(session.cancelled_pointer_capture);
+                let (ghost, _) = event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![primary(at, false)],
+                    egui::Modifiers::default(),
+                    None,
+                    width,
+                );
+                assert!(ghost.is_none());
+                assert_eq!(source, original);
+                assert!(!session.cancelled_pointer_capture);
+            }
         }
     }
 

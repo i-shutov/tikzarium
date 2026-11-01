@@ -574,6 +574,16 @@ impl Session {
             .map_err(|e| e.to_string())?;
         self.undo.pop();
         self.observed_source.clone_from(source);
+        // Ctrl/Cmd+Z may undo a prior source patch while the user still holds
+        // a new guide click/drag. That in-flight pointer is no longer an
+        // affirmative insertion: its release must remain inert, including
+        // when the undo key and mouse-up occur in the same egui frame.
+        if self.guide_pointer_armed || self.drag_start.is_some() || self.alt_selection_capture {
+            self.cancelled_pointer_capture = true;
+            self.guide_pointer_armed = false;
+            self.drag_start = None;
+            self.alt_selection_capture = false;
+        }
         if let Some(id) = self.selected {
             if let Ok(item) = one_owned(source, id) {
                 self.draft = item.draft;

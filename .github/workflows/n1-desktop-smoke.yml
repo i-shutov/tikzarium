@@ -1,10 +1,9 @@
-name: I23 real B26 native TikZ and responsive whole-page PDF acceptance
+name: I33 real B30 source-history Undo-while-held native TikZ PDF acceptance
 on:
   push:
     branches:
-      - qa/i23-b25-live-fullpage-x11
-      - feat/b25-egui-pointer-focus-fit-page-20261101
-      - feat/b16-egui-live-palette-six-gesture-20261031
+      - qa/i26-b27-live-undo-x11
+      - feat/b27-egui-undo-held-pointer-20261101
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
@@ -17,8 +16,7 @@ on:
       - 'Cargo.lock'
   pull_request:
     branches:
-      - feat/b25-egui-pointer-focus-fit-page-20261101
-      - feat/b16-egui-live-palette-six-gesture-20261031
+      - feat/b27-egui-undo-held-pointer-20261101
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
@@ -33,7 +31,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: i23-desktop-${{ github.event.pull_request.head.sha || github.sha }}
+  group: i33-desktop-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 jobs:
   desktop:
@@ -54,7 +52,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '47c4c86be10471a5f56f7019ad63a77e7f4480f5'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '965933b3f70504f2f4082bc22795bab67fad5d44'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -78,7 +76,7 @@ jobs:
             cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
             echo "::warning::Source repository has NO Cargo.lock; generated resolution archived, release reproducibility NOT VERIFIED"
           fi
-      - name: Real B26 X11 gestures, GUI Save, XeLaTeX PDF, Fit page and resize
+      - name: Real B30 X11 source-history held-pointer Undo, six gestures, GUI Save/XeLaTeX, fit/resize
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
           chmod 700 "$RUNNER_TEMP/i19-runtime"
@@ -89,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i23-b26-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
+          name: i33-b30-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
           path: |
             ${{ runner.temp }}/i19-evidence/*.json
             ${{ runner.temp }}/i19-evidence/*.png
