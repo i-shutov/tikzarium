@@ -128,6 +128,10 @@ def main():
   report["pdf"]="GUI_XELATEX_PDF_CYRILLIC_EMBEDDED_FONT"
   report["pdf_sha256"]=sha(pdf.read_bytes())
   shot("09-pdf.png")
+  # B38 status is part of CollapsingHeader title; a successful Connect
+  # changes ABSENT to CONFIRMED and resets row expansion. Re-open it through
+  # an actual X11 click before exercising the explicit inverse operation.
+  click("library");shot("09b-loaded-library-reopened.png")
   click("disconnect");shot("10-disconnect-click.png")
   click("save")
   until(lambda:doc.read_bytes()!=connected,"Disconnect saved")
