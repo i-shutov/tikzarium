@@ -10,7 +10,7 @@ pub enum HelpEntry<'a> {
     Library(&'a LibrarySpec),
 }
 
-impl HelpEntry<'_> {
+impl<'a> HelpEntry<'a> {
     #[must_use]
     pub fn id(self) -> String {
         match self {
@@ -21,7 +21,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn title(self) -> &str {
+    pub fn title(self) -> &'a str {
         match self {
             Self::Tool(tool) => &tool.title_ru,
             Self::Parameter(_, parameter) => &parameter.help_ru,
@@ -30,7 +30,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn syntax(self) -> &str {
+    pub fn syntax(self) -> &'a str {
         match self {
             Self::Tool(tool) => &tool.syntax,
             Self::Parameter(_, parameter) => &parameter.syntax,
@@ -39,7 +39,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn example(self) -> &str {
+    pub fn example(self) -> &'a str {
         match self {
             Self::Tool(tool) => &tool.example,
             Self::Parameter(_, parameter) => &parameter.example,
@@ -48,7 +48,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn warning(self) -> &str {
+    pub fn warning(self) -> &'a str {
         match self {
             Self::Tool(tool) => &tool.warning_ru,
             Self::Parameter(_, parameter) => &parameter.warning_ru,
@@ -57,7 +57,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn interaction(self) -> &str {
+    pub fn interaction(self) -> &'a str {
         match self {
             Self::Tool(tool) => &tool.interaction_ru,
             Self::Parameter(_, parameter) => &parameter.interaction_ru,
@@ -66,7 +66,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn requirements(self) -> &Requirements {
+    pub fn requirements(self) -> &'a Requirements {
         match self {
             Self::Tool(tool) | Self::Parameter(tool, _) => &tool.requirements,
             Self::Library(library) => &library.requirements,
@@ -74,7 +74,7 @@ impl HelpEntry<'_> {
     }
 
     #[must_use]
-    pub fn manual(self) -> (&str, &str) {
+    pub fn manual(self) -> (&'a str, &'a str) {
         match self {
             Self::Tool(tool) => (&tool.manual_section, &tool.manual_url),
             Self::Parameter(_, parameter) => {

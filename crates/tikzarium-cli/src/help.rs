@@ -16,7 +16,11 @@ fn detail(entry: HelpEntry<'_>) -> String {
     out.push_str(&format!(
         "Пакеты: {}\nБиблиотеки: {}\nДвижок: {}\nСверено с PGF/TikZ: {}\nМинимальная версия: {}\n",
         req.packages.join(", "),
-        if req.libraries.is_empty() { "core".to_owned() } else { req.libraries.join(", ") },
+        if req.libraries.is_empty() {
+            "core".to_owned()
+        } else {
+            req.libraries.join(", ")
+        },
         req.engine,
         req.documented_against,
         req.pgf_version_min
@@ -25,8 +29,16 @@ fn detail(entry: HelpEntry<'_>) -> String {
         out.push_str(&format!(
             "Тип: {}\nЕдиницы: {}\nДопустимые варианты: {}\n",
             parameter.kind,
-            if parameter.units.is_empty() { "не применяются".to_owned() } else { parameter.units.join(", ") },
-            if parameter.allowed_values.is_empty() { "не перечислены".to_owned() } else { parameter.allowed_values.join(", ") }
+            if parameter.units.is_empty() {
+                "не применяются".to_owned()
+            } else {
+                parameter.units.join(", ")
+            },
+            if parameter.allowed_values.is_empty() {
+                "не перечислены".to_owned()
+            } else {
+                parameter.allowed_values.join(", ")
+            }
         ));
         if parameter.default_provenance == "editor_preset" {
             out.push_str(&format!(
@@ -36,7 +48,10 @@ fn detail(entry: HelpEntry<'_>) -> String {
         } else {
             out.push_str("Документированное значение по умолчанию: UNKNOWN\n");
         }
-        out.push_str(&format!("Унаследованные требования: {}\n", parameter.requirements_inherit));
+        out.push_str(&format!(
+            "Унаследованные требования: {}\n",
+            parameter.requirements_inherit
+        ));
     }
     out.push_str(&format!(
         "Ограничения: {}\nВзаимодействие: {}\n",
@@ -55,9 +70,7 @@ pub fn render(query: Option<&str>) -> Result<String, String> {
     let catalog = Catalog::bundled().map_err(|error| error.to_string())?;
     match query {
         None | Some("--all") => {
-            let mut out = String::from(
-                "TikZarium · офлайн-справка из общего каталога GUI\n",
-            );
+            let mut out = String::from("TikZarium · офлайн-справка из общего каталога GUI\n");
             for entry in help_search::entries(&catalog) {
                 out.push_str(&format!("{} · {}\n", entry.id(), entry.title()));
             }
@@ -92,8 +105,13 @@ mod tests {
     #[test]
     fn lists_all_native_tools_libraries_and_parameters_offline() {
         let output = render(Some("--all")).unwrap();
-        for id in ["tikz.line", "tikz.bezier-cubic", "tikz.arrow:tip",
-                   "tikz.library.positioning", "tikz.library.fit"] {
+        for id in [
+            "tikz.line",
+            "tikz.bezier-cubic",
+            "tikz.arrow:tip",
+            "tikz.library.positioning",
+            "tikz.library.fit",
+        ] {
             assert!(output.contains(id), "{id} missing");
         }
     }

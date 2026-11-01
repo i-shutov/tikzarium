@@ -1,4 +1,3 @@
-pub mod help_search;
 //! Declarative PGF/TikZ extension catalogue.
 //!
 //! A TeX package is not an executable plugin. Finding a package does not
@@ -8,6 +7,7 @@ pub mod help_search;
 pub mod evidence;
 pub mod primitive_edit;
 pub mod primitives;
+pub mod help_search;
 pub mod project_disconnect;
 pub mod project_imports;
 
