@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
+  "status": "PROVISIONAL_UNTIL_REAL_SCREENSHOT_REVIEW",
+  "source": [
+    120,
+    190
+  ],
+  "path": [
+    310,
+    18
+  ],
+  "save": [
+    553,
+    13
+  ],
+  "build": [
+    698,
+    13
+  ],
+  "export": [
+    837,
+    13
+  ],
+  "panel": [
+    991,
+    198
+  ],
+  "library": [
+    938,
+    271
+  ],
+  "connect": [
+    955,
+    510
+  ],
+  "disconnect": [
+    955,
+    510
+  ],
+  "undo": [
+    942,
+    64
+  ],
+  "physical_win10_miktex": "NOT_RUN",
+  "physical_mac_arm": "NOT_RUN"
+}
