@@ -133,10 +133,10 @@ mod tests {
         let library = render(Some("tikz.library.positioning")).unwrap();
         assert!(library.contains("Пояснение: Позволяет задавать положение узла"));
         assert!(library.contains("смещение и якоря"));
-        assert!(render(Some("СМЕЩЕНИЕ И ЯКОРЯ")).unwrap()
-            .contains("tikz.library.positioning"));
-        assert!(render(Some("СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК")).unwrap()
-            .contains("tikz.line"));
+        let positioning_search = render(Some("СМЕЩЕНИЕ И ЯКОРЯ")).unwrap();
+        assert!(positioning_search.contains("tikz.library.positioning"));
+        let line_search = render(Some("СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК")).unwrap();
+        assert!(line_search.contains("tikz.line"));
     }
 
     #[test]
