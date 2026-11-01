@@ -66,16 +66,20 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertTrue(desktop.x11_button1_pressed(1 << 8))
         self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
 
-    def test_b30_source_history_profile_is_exact_source_pinned(self):
+    def test_b31_corrected_zoom_readout_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "965933b3f70504f2f4082bc22795bab67fad5d44")
+                         "af316d5e5452d74186b92d65c95c448253d0e61c")
         self.assertTrue(profile["undo_held_pointer"])
         self.assertTrue(profile["b30_release_source_history_regression"])
         self.assertNotIn("b28_focused_textedit_regression", profile)
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
+        self.assertEqual(profile["compact_fit_width_click"], [603, 98])
+        self.assertEqual(profile["compact_fit_page_click"], [680, 98])
+        self.assertNotEqual(profile["compact_fit_width_click"], profile["fit_click"])
+        self.assertNotEqual(profile["compact_fit_page_click"], profile["fit_page_click"])
         self.assertEqual(profile["zoom_out_click"], [882, 72])
         self.assertEqual(profile["fit_page_click"], [515, 97])
         self.assertEqual(profile["responsive_resize"], [1180, 680])

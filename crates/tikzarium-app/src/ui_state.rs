@@ -118,7 +118,9 @@ pub fn scaled_zoom(current: f32, factor: f32) -> f32 {
     if !current.is_finite() || !factor.is_finite() || factor <= 0.0 {
         return 1.0;
     }
-    (current * factor).clamp(0.2, 5.0)
+    // Match whole-page mode's 2% floor. Otherwise the first +/- press
+    // after a legitimate compact Fit Page would abruptly jump to 20%.
+    (current * factor).clamp(0.02, 5.0)
 }
 
 #[cfg(test)]
@@ -277,7 +279,8 @@ mod tests {
     fn zoom_clamps_and_drops_non_finite_inputs() {
         assert_eq!(scaled_zoom(1.0, 1.2), 1.2);
         assert_eq!(scaled_zoom(4.9, 1.2), 5.0);
-        assert_eq!(scaled_zoom(0.21, 0.1), 0.2);
+        assert_eq!(scaled_zoom(0.21, 0.1), 0.021);
+        assert_eq!(scaled_zoom(0.021, 0.1), 0.02);
         assert_eq!(scaled_zoom(f32::NAN, 1.2), 1.0);
         assert_eq!(scaled_zoom(1.0, f32::INFINITY), 1.0);
     }

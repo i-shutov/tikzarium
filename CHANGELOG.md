@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
+
+- QA-only integration on B-owned PR #72 corrected SHA `8f20359f2118660e27a28ecb773c32f8676f56c0`: repin real-X11 workflow, physical-pointer profile and tests to app tree `af316d5e5452d74186b92d65c95c448253d0e61c`. No production Rust/source/TeX edits and no old PR #48 replay.
+- Preserve two authentic restored-size screenshots at 1366×740 to independently verify that the visible zoom toolbar no longer reads stale 7% when raster refits to roughly 25%; screenshot frame changes alone **NOT** a numerical correctness PASS. All six native pointer tools, held-click/drag Undo, byte-preserved source, Russian F1 and actual GUI XeLaTeX PDF remain mandatory.
+- Corrected-head hosted Rust/D QA/N1/font workflows SUCCESS. Hosted MiKTeX installer initial network timeout then rerun + independent PDF audit SUCCESS; this is **not** physical Windows 10. Exact I45 GUI artifact/visual acceptance **NOT_RUN**, physical Win10/M1/M4 **NOT_RUN** at changelog authoring; no merge/release.
+
+## Unreleased — I43 independent B31 compact real Linux/X11 acceptance (NOT_RUN)
+
+- Accepted I40 main `8640c2cf`, B31 draft `174207d0`, Git-tree-confirmed B31 app `3aea076697daef8572d24694995a4e2ef24bbcaa`. Five hosted B31 exact-head locked CI families succeeded; old I33 X11 failed B30 tree fence before GUI launch.
+- QA-only: strict six native TikZ gestures, XTest held-click/drag Undo, source restoration, F1, GUI XeLaTeX PDF; 1180×680 Fit Page/Fit width candidate screenshots, restored window, source-byte checks. Manual PDF/image review required; frame changes alone are not PASS; compact Fit width coordinate is provisional.
+- Production, C catalogue, Cargo.lock and user TeX newline policy unchanged; physical Win10/MiKTeX, Mac M1/M4 XeLaTeX NOT_RUN; no release.
+
 ## Unreleased — I40 tracked Rust 1.91 Cargo.lock across all hosted build/GUI/MiKTeX QA (CI pending)
 
 - Tracked the real `Cargo.lock` from accepted post-merge X11 main `06b62eea`: source artifact `13072954180` ZIP SHA-256 `48cb9ddffed42ccb71531eb75b7f9d7b59e64ddf375de5a9269fc8cfdef3018d`, lock SHA-256 `4713fd0c29ef8718ff71316f68e5dffe43335b77857e5c7eff9771d087310503` (370 packages, 366 registry). Exact one-time [Rust 1.91 import/check](https://github.com/i-shutov/tikzarium/actions/runs/41282413609) SUCCESS; its temporary workflow removed.

@@ -97,9 +97,46 @@ fn fit_page_zoom(image: egui::Vec2, viewport: egui::Vec2) -> Option<f32> {
         return None;
     }
     let zoom = (available.x / image.x).min(available.y / image.y);
-    // Existing +/- controls promise a minimum of 20%. At a smaller scale
-    // the complete page cannot be displayed here; do not falsely claim fit.
-    (zoom >= 0.2 && zoom.is_finite()).then_some(zoom.min(5.0))
+    // An exact 120-dpi PDF raster may need much less than 20% after the
+    // provisional guide consumes vertical space (real X11: 1180x680).
+    // Whole-page mode must show the *entire* PDF, even if text is tiny;
+    // never report success if fitting would require less than 2%.
+    (zoom >= 0.02 && zoom.is_finite()).then_some(zoom.min(5.0))
+}
+
+/// Fit width to the *actual* central-panel width without inventing 80px
+/// of space or clamping up to 20% and therefore clipping a narrow preview.
+fn fit_width_zoom(image_width: f32, canvas_width: f32) -> Option<f32> {
+    if !image_width.is_finite() || !canvas_width.is_finite() || image_width <= 0.0 {
+        return None;
+    }
+    let available = canvas_width - 24.0;
+    if available <= 0.0 {
+        return None;
+    }
+    let zoom = available / image_width;
+    (zoom.is_finite() && zoom >= 0.02).then_some(zoom.min(5.0))
+}
+
+/// The PDF toolbar is painted before the post-guide viewport can be measured.
+/// A resize or page change may therefore refit *after* the visible percentage
+/// was emitted. Schedule one more frame only when the rounded readout differs
+/// from the raster scale; otherwise a resize can leave a stale "7%" alongside
+/// a page rendered at 25% (confirmed in I43 real X11 screenshots).
+fn pdf_zoom_percent(zoom: f32) -> u32 {
+    (zoom * 100.0).round() as u32
+}
+
+fn repaint_if_pdf_zoom_label_stale(
+    ctx: &egui::Context,
+    displayed_percent: u32,
+    actual_zoom: f32,
+) -> bool {
+    let stale = displayed_percent != pdf_zoom_percent(actual_zoom);
+    if stale {
+        ctx.request_repaint();
+    }
+    stale
 }
 
 /// Draw the actual egui Fit Page control. The selected state is sticky across
@@ -111,7 +148,7 @@ fn show_fit_page_button(ui: &mut egui::Ui, enabled: bool, fit_active: &mut bool)
             egui::Button::new("Вся страница").selected(*fit_active),
         )
         .on_hover_text(
-            "Автоматически подгонять текущую страницу точного PDF под доступную область при смене страницы и размера окна. Кнопки +/−, 100% и Fit width отключают этот режим.",
+            "Автоматически подгонять текущую страницу точного PDF под доступную область. В компактном окне масштаб может стать меньше 20%: вся страница видна, но мелкий текст трудно прочитать. Кнопки +/−, 100% и Fit width переключают на ручной масштаб.",
         );
     if response.clicked() {
         *fit_active = true;
@@ -121,7 +158,7 @@ fn show_fit_page_button(ui: &mut egui::Ui, enabled: bool, fit_active: &mut bool)
 
 /// Keep whole-page mode responsive to page changes/resizes, without altering
 /// source or claiming any PDF-to-TikZ coordinate mapping. A missing texture is
-/// not a failure; a page too large even at 20% is explicitly reported.
+/// not a failure; a page too large even at 2% is explicitly reported.
 fn refit_selected_page(
     fit_active: bool,
     image: Option<egui::Vec2>,
@@ -756,6 +793,7 @@ impl TikzariumApp {
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
         let canvas_width = ui.available_width();
         let mut fit_page_requested = false;
+        let mut displayed_zoom_percent = pdf_zoom_percent(self.zoom);
         ui.horizontal_wrapped(|ui| {
             ui.heading("Canvas · exact PDF (read-only)");
             let page_controls = self.receiver.is_none()
@@ -789,7 +827,8 @@ impl TikzariumApp {
                 self.fit_page_active = false;
                 self.zoom = scaled_zoom(self.zoom, 1.0 / 1.2);
             }
-            ui.label(format!("{}%", (self.zoom * 100.0).round() as u32));
+            displayed_zoom_percent = pdf_zoom_percent(self.zoom);
+            ui.label(format!("{displayed_zoom_percent}%"));
             if ui.button("+").clicked() {
                 self.fit_page_active = false;
                 self.zoom = scaled_zoom(self.zoom, 1.2);
@@ -798,11 +837,12 @@ impl TikzariumApp {
                 self.fit_page_active = false;
                 self.zoom = 1.0;
             }
-            let fit = self.preview_texture.as_ref().map(|texture| {
-                ((canvas_width - 24.0).max(80.0) / texture.size_vec2().x).clamp(0.2, 5.0)
+            let fit = self.preview_texture.as_ref().and_then(|texture| {
+                fit_width_zoom(texture.size_vec2().x, canvas_width)
             });
             if ui
                 .add_enabled(fit.is_some(), egui::Button::new("Fit width"))
+                .on_hover_text("Подогнать точный PDF по реальной ширине области просмотра; допускается масштаб меньше 20% в компактном окне. Не меняет исходный TikZ.")
                 .clicked()
                 && let Some(fit) = fit
             {
@@ -868,13 +908,18 @@ impl TikzariumApp {
             ui.available_size(),
             &mut self.zoom,
         );
+        // The toolbar above has already painted its percentage. A late
+        // auto-fit (or a subsequent +/-/Fit width click) changes the PDF
+        // raster scale this frame; repaint the label on the next frame.
+        // Avoid permanent redraws when the rounded percentage is unchanged.
+        repaint_if_pdf_zoom_label_stale(ui.ctx(), displayed_zoom_percent, self.zoom);
         if fit_unavailable {
             if fit_page_requested {
-                self.status = "Вся PDF-страница не помещается при минимальных 20%; увеличьте область PDF или используйте прокрутку".into();
+                self.status = "Вся PDF-страница не помещается даже при 2%; увеличьте область PDF или используйте прокрутку".into();
             }
             ui.colored_label(
                 ui.visuals().warn_fg_color,
-                "Автоподбор страницы: не хватает места даже при 20%; увеличьте область PDF или прокручивайте.",
+                "Автоподбор страницы: не хватает места даже при 2%; увеличьте область PDF или прокручивайте.",
             );
         }
         egui::ScrollArea::both()
@@ -1467,11 +1512,207 @@ mod split_layout_tests {
         assert!(refit_selected_page(
             true,
             Some(egui::vec2(1000.0, 1000.0)),
-            egui::vec2(100.0, 100.0),
+            egui::vec2(40.0, 40.0),
             &mut zoom,
         ));
-        assert_eq!(zoom, before, "cannot claim fit below the 20% minimum");
+        assert_eq!(zoom, before, "cannot claim fit below the 2% minimum");
         assert_eq!(source, original);
+    }
+
+    #[test]
+    fn b31_compact_pdf_fit_is_below_twenty_percent_and_manual_zoom_is_continuous() {
+        // Reproduction target: an actual X11 1180x680 window can leave a
+        // short PDF viewport below the provisional guide. The prior hard
+        // 20% minimum showed a false "cannot fit" while A4 needed ~7%.
+        let image = egui::vec2(1200.0, 1700.0);
+        let viewport = egui::vec2(500.0, 150.0);
+        let mut zoom = 1.0;
+        assert!(!refit_selected_page(true, Some(image), viewport, &mut zoom));
+        assert!((0.02..0.2).contains(&zoom), "compact fit: {zoom}");
+        assert!(image.x * zoom <= viewport.x - 23.0);
+        assert!(image.y * zoom <= viewport.y - 23.0);
+
+        // A manual + immediately after Fit Page must not jump from 7%
+        // to the obsolete 20% lower clamp.
+        let plus = scaled_zoom(zoom, 1.2);
+        assert!((plus - zoom * 1.2).abs() < 0.00001);
+        let minus = scaled_zoom(zoom, 1.0 / 1.2);
+        assert!((minus - zoom / 1.2).abs() < 0.00001);
+
+        // Fail closed rather than claim the whole page is shown at
+        // an infeasible scale, preserving the last user-selected zoom.
+        let previous = zoom;
+        assert!(refit_selected_page(
+            true,
+            Some(image),
+            egui::vec2(40.0, 40.0),
+            &mut zoom,
+        ));
+        assert_eq!(zoom, previous);
+        assert_eq!(fit_page_zoom(egui::vec2(f32::NAN, 1700.0), viewport), None,);
+    }
+
+    #[test]
+    fn b31_x11_resize_refit_repaints_stale_zoom_readout_with_source_untouched() {
+        // I43 real X11: compact Fit Page raster was ~7%, restored viewport
+        // rendered ~25% but the toolbar stayed at 7%. In production the
+        // readout is painted BEFORE the guide and auto-refit, so an explicit
+        // second frame is required to make the displayed percentage truthful.
+        // This is UNIT_EVENT/LAYOUT, NOT another physical desktop acceptance.
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            session: &mut tikz_authoring::Session,
+            zoom: &mut f32,
+            window: egui::Vec2,
+        ) -> (u32, u32, bool) {
+            let mut observed = None;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, window)),
+                    ..Default::default()
+                },
+                |ctx| {
+                    let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+                    show_split_inspector_panel(ctx, layout, |ui| {
+                        ui.strong("F1 · каталог C");
+                    });
+                    show_split_source_panel(ctx, layout, |ui| {
+                        ui.add(egui::TextEdit::multiline(source).code_editor());
+                    });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.heading("Canvas · exact XeLaTeX PDF");
+                        let readout = pdf_zoom_percent(*zoom);
+                        ui.label(format!("{readout}%"));
+                        tikz_canvas::show_guide(
+                            ui,
+                            session,
+                            source,
+                            tikz_canvas::Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        );
+                        ui.separator();
+                        let image = egui::vec2(1200.0, 1700.0);
+                        assert!(!refit_selected_page(
+                            true,
+                            Some(image),
+                            ui.available_size(),
+                            zoom,
+                        ));
+                        let actual = pdf_zoom_percent(*zoom);
+                        let requested = repaint_if_pdf_zoom_label_stale(ctx, readout, *zoom);
+                        observed = Some((readout, actual, requested));
+                    });
+                },
+            );
+            observed.expect("real egui panels must render")
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = QUICKSTART.to_owned();
+        let original = source.clone();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        session.select_tool(tikz_authoring::Tool::Line);
+        let mut zoom = 1.0;
+
+        for window in [egui::vec2(1180.0, 680.0), egui::vec2(1366.0, 740.0)] {
+            let first = frame(&ctx, &mut source, &mut session, &mut zoom, window);
+            assert_ne!(first.0, first.1, "first pass must expose a late refit");
+            assert!(first.2, "a stale toolbar must schedule another frame");
+            let settled = frame(&ctx, &mut source, &mut session, &mut zoom, window);
+            assert_eq!(
+                settled.0, settled.1,
+                "follow-up frame must match readout and raster"
+            );
+            assert!(!settled.2, "stable fit must not request endless redraws");
+        }
+        assert_eq!(
+            source, original,
+            "PDF fitting must never edit arbitrary TeX"
+        );
+        assert!(
+            !session.undo_available(),
+            "fitting must not insert an undo entry"
+        );
+    }
+
+    #[test]
+    fn b31_fit_width_respects_actual_center_width_without_false_fit() {
+        let raster_width = 1200.0;
+        let compact_center = 230.0;
+        let fit = fit_width_zoom(raster_width, compact_center)
+            .expect("230pt canvas must fit a 1200px raster below 20%");
+        assert!((0.02..0.2).contains(&fit));
+        assert!(raster_width * fit <= compact_center - 23.0);
+        assert_eq!(fit_width_zoom(raster_width, 40.0), None);
+        assert_eq!(fit_width_zoom(f32::NAN, compact_center), None);
+        assert_eq!(fit_width_zoom(0.0, compact_center), None);
+    }
+
+    #[test]
+    fn b31_real_egui_split_keeps_editable_source_and_fits_pdf_after_guide() {
+        // Headless *production* egui panels, source TextEdit, guide handler
+        // and actual post-guide available_size. UNIT_EVENT/LAYOUT, not
+        // physical Win10 or M1/M4 acceptance or a PDF-coordinate proof.
+        let ctx = egui::Context::default();
+        let mut source = QUICKSTART.to_owned();
+        let original = source.clone();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        authoring.select_tool(tikz_authoring::Tool::Line);
+        for (width, height) in [(1180.0, 680.0), (850.0, 560.0)] {
+            let mut reached = false;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width, height),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+                    show_split_inspector_panel(ctx, layout, |ui| {
+                        ui.strong("F1 · русский каталог C");
+                    });
+                    show_split_source_panel(ctx, layout, |ui| {
+                        ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                    });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.heading("Canvas · exact PDF");
+                        ui.small("Source is editable; PDF is external XeLaTeX");
+                        tikz_canvas::show_guide(
+                            ui,
+                            &mut authoring,
+                            &mut source,
+                            tikz_canvas::Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        );
+                        ui.separator();
+                        let viewport = ui.available_size();
+                        let image = egui::vec2(1200.0, 1700.0);
+                        let fit = fit_page_zoom(image, viewport)
+                            .expect("A4 should fit below 20% in this real egui layout");
+                        assert!(fit < 0.2, "regression must exercise compact fit: {fit}");
+                        assert!(image.x * fit <= viewport.x - 23.0);
+                        assert!(image.y * fit <= viewport.y - 23.0);
+                        reached = true;
+                    });
+                },
+            );
+            assert!(reached, "no egui panel layout for {width}x{height}");
+            assert_eq!(source, original, "fit must not mutate arbitrary TeX");
+        }
+        assert!(!authoring.undo_available());
     }
 
     #[test]
@@ -1533,7 +1774,7 @@ mod split_layout_tests {
             None
         );
         assert_eq!(
-            fit_page_zoom(egui::vec2(1000.0, 1000.0), egui::vec2(100.0, 100.0)),
+            fit_page_zoom(egui::vec2(1000.0, 1000.0), egui::vec2(40.0, 40.0)),
             None
         );
         assert_eq!(

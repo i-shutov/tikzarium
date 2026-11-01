@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B30 exact app-tree: GUI-native source editor history isolated from visual inverse patch; actual held-click/held-drag Undo, GUI Save and native PDF",
+  "profile": "B31 app-tree: B30 held-click/drag Undo plus six native tools; candidate compact 1180x680 whole XeLaTeX PDF and Fit width",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B30 only changes Undo focus/native editor history, not known B26/B28 coordinates. Coordinates are hypotheses until this exact B30 real X11 source/PDF/screenshots are independently reviewed; no inherited visual PASS.",
+  "layout_note": "I43 B31 previous app tree confirmed; I45 corrected zoom readout app tree pending real X11 re-review. Manual review of authentic B30 1180x680 screenshot shows reflow: Fit width near (603,98), Fit Page near (680,98), NOT original 1366x740 (1027,72)/(515,97). These compact B31 coordinates are provisional until exact B31 screenshots. No inherited visual PASS.",
   "path_click": [
     310,
     18
@@ -27,6 +27,14 @@
   "fit_click": [
     1027,
     72
+  ],
+  "compact_fit_width_click": [
+    603,
+    98
+  ],
+  "compact_fit_page_click": [
+    680,
+    98
   ],
   "gestures": [
     {
@@ -128,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "965933b3f70504f2f4082bc22795bab67fad5d44",
+  "reviewed_app_tree_sha": "af316d5e5452d74186b92d65c95c448253d0e61c",
   "zoom_out_click": [
     882,
     72
