@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased — I46 current B34+N3 real-X11 acceptance (QA verified at d2c67a8; evidence-doc head CI pending)
+## Unreleased — I46/I47 B34 real-X11 acceptance (verified tested SHA 4e31346; final evidence HEAD CI pending)
+
+- Independent Linux/X11 B34 GUI verification at exact SHA `4e31346`: [I46 41309725726](https://github.com/i-shutov/tikzarium/actions/runs/41309725726) PASS source-safe dirty Open, 21/21 hashes, Cyrillic/CRLF/opaque macro preserved, GUI PDF; [I47 41309725695](https://github.com/i-shutov/tikzarium/actions/runs/41309725695) PASS six native source-generating gestures, held-pointer Ctrl+Z and fresh redraw, F1 Russian help, GUI XeLaTeX PDF, fit/zoom, 42/42 hashes. Critical real frames visually inspected. 100% I46 preview is cropped; full page verified separately in I47 25% restored and 7% compact. These are hosted Linux tests, NOT physical Win10/M1/M4. Added docs paths to I47 workflow for final exact-head rerun after acceptance ledger update.
 
 - **I47 B34 six-tool true-X11 gate:** repinned existing N1 desktop smoke workflow, 1366px source-tree profile and offline predicate from historical B31 tree to exact B34 tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99; enables on QA #77 and B #75. This is independent of I46 dirty-Open and must prove six real pointer gestures, held Ctrl+Z, source bytes, GUI XeLaTeX PDF and fit/zoom screenshots. New exact-head run and manual review PENDING, do not infer from B31 historical PASS; physical Win10/Mac NOT_RUN.
 
