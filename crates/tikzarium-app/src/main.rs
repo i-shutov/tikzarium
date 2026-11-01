@@ -2372,9 +2372,7 @@ mod split_layout_tests {
         let ctx = egui::Context::default();
         let mut save_input = String::new();
         let mut clicked = 0;
-        let (_, background) = frame(
-            &ctx, &doc, &target, &mut save_input, &mut clicked, vec![],
-        );
+        let (_, background) = frame(&ctx, &doc, &target, &mut save_input, &mut clicked, vec![]);
         assert!(background.is_positive());
         let pos = background.center();
         let pointer = |pressed| egui::Event::PointerButton {
@@ -2384,17 +2382,33 @@ mod split_layout_tests {
             modifiers: egui::Modifiers::default(),
         };
         frame(
-            &ctx, &doc, &target, &mut save_input, &mut clicked,
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
             vec![egui::Event::PointerMoved(pos), pointer(true)],
         );
         let (action, _) = frame(
-            &ctx, &doc, &target, &mut save_input, &mut clicked, vec![pointer(false)],
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
+            vec![pointer(false)],
         );
         assert!(action.is_none());
-        assert_eq!(clicked, 0, "modal must block source/canvas controls behind it");
+        assert_eq!(
+            clicked, 0,
+            "modal must block source/canvas controls behind it"
+        );
 
         let (action, _) = frame(
-            &ctx, &doc, &target, &mut save_input, &mut clicked,
+            &ctx,
+            &doc,
+            &target,
+            &mut save_input,
+            &mut clicked,
             vec![egui::Event::Key {
                 key: egui::Key::Escape,
                 physical_key: None,
