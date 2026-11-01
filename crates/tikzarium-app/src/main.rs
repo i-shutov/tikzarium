@@ -2487,24 +2487,50 @@ mod split_layout_tests {
         let mut reset = false;
         let mut save_field = String::new();
         frame(
-            &ctx, &mut source, &mut reset, &doc, &target,
-            &mut save_field, false, true, vec![],
+            &ctx,
+            &mut source,
+            &mut reset,
+            &doc,
+            &target,
+            &mut save_field,
+            false,
+            true,
+            vec![],
         );
         frame(
-            &ctx, &mut source, &mut reset, &doc, &target,
-            &mut save_field, true, false,
+            &ctx,
+            &mut source,
+            &mut reset,
+            &doc,
+            &target,
+            &mut save_field,
+            true,
+            false,
             vec![egui::Event::Text("НЕЛЬЗЯ_ВСТАВЛЯТЬ".into())],
         );
         assert_eq!(source, original_source);
         assert_eq!(std::fs::read_to_string(&target).unwrap(), original_target);
         // Closing the decision restores normal text editing.
         frame(
-            &ctx, &mut source, &mut reset, &doc, &target,
-            &mut save_field, false, true, vec![],
+            &ctx,
+            &mut source,
+            &mut reset,
+            &doc,
+            &target,
+            &mut save_field,
+            false,
+            true,
+            vec![],
         );
         frame(
-            &ctx, &mut source, &mut reset, &doc, &target,
-            &mut save_field, false, false,
+            &ctx,
+            &mut source,
+            &mut reset,
+            &doc,
+            &target,
+            &mut save_field,
+            false,
+            false,
             vec![egui::Event::Text("РУЧНАЯ_ПРАВКА".into())],
         );
         assert!(source.contains("РУЧНАЯ_ПРАВКА"));
