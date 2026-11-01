@@ -1,3 +1,8 @@
+## Unreleased — I55 exact-branch/postmerge real-X11 N2+N3 QA (new CI NOT_RUN)
+
+- PR #83 I54 independently accepted against exact QA SHA `00eacbf`, then merged into B #81 as `84ebe1f`. I46/I47/I53 real Linux/X11 artifacts independently rehashed **21/21, 46/46, 28/28**; manual screenshot review confirms source-safe modal, six TikZ gestures, Connect/Disconnect/Undo/two-file Open and Russian C-catalogue search expanded to syntax/example. These do not substitute for physical Windows 10/Mac ARM.
+- I53 push workflow previously ran only on QA branches; add B branch and main to ensure real N2/N3 GUI coverage on exact B source SHA and as separate postmerge CI, with regression assertion and unmodified exact app-tree gate. Actual new B and postmerge CI NOT_RUN at commit, no silent TeX installation.
+
 ## Unreleased — I54 third QA SHA 234efdb · real Open focus ambiguity (next exact CI NOT_RUN)
 
 - I46 [41362909390](https://github.com/i-shutov/tikzarium/actions/runs/41362909390) and I47 [41362909481](https://github.com/i-shutov/tikzarium/actions/runs/41362909481) real-X11 workflows PASS on `234efdbb17a98cae72f4320ce8e1b2c8f177494f`. I53 [41362909420](https://github.com/i-shutov/tikzarium/actions/runs/41362909420) real Connect/Disconnect/Undo/PDF PASS but *fails at two-file GUI Reopen BEFORE N3 detail click*: screenshot `13-control-opened.png` still displays selected path and prior source after Ctrl+O. This is a GUI-input focus/shortcut uncertainty (one previous Ctrl+O run passed), not demonstrated file corruption.

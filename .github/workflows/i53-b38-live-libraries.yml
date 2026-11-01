@@ -4,6 +4,8 @@ on:
     branches:
       - qa/i53-b38-live-libraries
       - qa/i54-b39-n2-n3-desktop-reaccept
+      - feat/b38-n2-n3-inspector-20261101
+      - main
   workflow_dispatch:
 permissions:
   contents: read

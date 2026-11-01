@@ -33,3 +33,10 @@ class I53(unittest.TestCase):
   m.check_profile(d,"old")
   d["help_query"]=["not_an_int",22]
   with self.assertRaises(ValueError):m.check_profile(d,"old")
+ def test_i53_real_gui_gate_survives_product_merge(self):
+  workflow=(Path(__file__).resolve().parents[2]/".github/workflows/i53-b38-live-libraries.yml").read_text(encoding="utf-8")
+  self.assertIn("      - feat/b38-n2-n3-inspector-20261101",workflow)
+  self.assertIn("      - main",workflow)
+  self.assertIn("test \"$(git rev-parse HEAD)\" = \"$TIKZARIUM_SOURCE_SHA\"",workflow)
+  self.assertIn("0ebdd9e123dda4ea18024150cf284c905badcdb6",workflow)
+  self.assertIn("scripts/qa_i53_live_libraries_x11.py",workflow)
