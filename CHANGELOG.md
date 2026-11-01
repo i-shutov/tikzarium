@@ -1,3 +1,8 @@
+## Unreleased — I54 B39 N2/N3 real desktop QA (CI NOT_RUN)
+
+- Exact-tree re-pin I46/I47 for actual B39 X11 reaccept; old modal/gesture coordinates remain provisional until manual screenshot/PDF/source validation.
+- New actual N3 Russian search TextEdit interaction added to I53 full Connect/Disconnect/Undo/two-file Reopen/GUI PDF proof; user source and PDF invariant. No production Rust changes; physical Win10/Mac NOT_RUN.
+
 ## Unreleased — I53 B39 real-X11 N2 libraries / two-file GUI Reopen (CI NOT_RUN)
 
 - I53 B39 run 41359783212 reached real GUI but failed at initial Save before Connect: X11 `xdotool type --delay 3` submitted `library-connect.t`, not requested `.tex` (verified in screenshot/file report). QA driver now pastes the UTF-8 Path through X11 clipboard and checks full in-app field with Ctrl+A/C before Save or GUI Open. Negative tests reject missing filename suffix/extra bytes. New CI NOT_RUN at authoring; production unchanged.

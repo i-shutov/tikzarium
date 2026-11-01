@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - qa/i53-b38-live-libraries
+      - qa/i54-b39-n2-n3-desktop-reaccept
   workflow_dispatch:
 permissions:
   contents: read

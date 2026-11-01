@@ -16,6 +16,7 @@ SRC = "\n".join([
  r"\end{document}", ""
 ]).encode()
 DECL=b"\\usetikzlibrary{positioning}\n"
+HELP_QUERY="смещение и якоря"
 REOPEN_SOURCE=SRC.replace(b"% Preserve unknown macro", b"% I53 alternate file\n% Preserve unknown macro", 1)
 def sha(b): return hashlib.sha256(b).hexdigest()
 def path_clipboard_matches(actual,target):
@@ -24,7 +25,7 @@ def exact_patch(old,new):
  return new.count(DECL)==1 and new.replace(DECL,b"",1)==old
 def check_profile(p,tree):
  if not tree or p.get("tree")!=tree: raise ValueError("Not a verified production app tree")
- for n in ("source","path","save","build","export","panel","library","connect","disconnect","undo"):
+ for n in ("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query"):
   x=p.get(n)
   if not isinstance(x,list) or len(x)!=2 or any(type(v)!=int or v<0 for v in x):
    raise ValueError("Unreviewed X11 target "+n)
@@ -55,7 +56,7 @@ def main():
  "tree":tree,"host":platform.platform(),"binary_sha256":sha(app.read_bytes()),
  "gui":"real egui process X11/Xvfb","visual_review":"NOT_RUN",
  "physical_win10_miktex":"NOT_RUN","physical_mac_arm":"NOT_RUN",
- "connect":"NOT_RUN","disconnect":"NOT_RUN","undo":"NOT_RUN","reopen":"NOT_RUN","pdf":"NOT_RUN"}
+ "connect":"NOT_RUN","disconnect":"NOT_RUN","undo":"NOT_RUN","reopen":"NOT_RUN","pdf":"NOT_RUN","help":"NOT_RUN"}
  env=os.environ.copy()
  env.update({"XDG_CONFIG_HOME":str(out/"config"),"XDG_DATA_HOME":str(out/"data"),
              "XDG_CACHE_HOME":str(out/"cache"),"LIBGL_ALWAYS_SOFTWARE":"1",
@@ -190,6 +191,22 @@ def main():
    raise RuntimeError("GUI Reopen altered previously exported XeLaTeX PDF")
   report["reopen"]="REAL_GUI_TWO_FILE_OPEN_EXACT_SOURCE"
   report["reopen_control_sha256"]=sha(REOPEN_SOURCE)
+  # N3 actual help TextEdit, independent screenshot result audit required.
+  query_bytes=HELP_QUERY.encode("utf-8")
+  helper=out/"help-query-clipboard.txt"
+  helper.write_bytes(query_bytes)
+  subprocess.run(["xclip","-selection","clipboard","-i",str(helper)],
+                 stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=6)
+  click("help_header");shot("15-help-opened.png")
+  click("help_query");key("ctrl+a");key("ctrl+v")
+  time.sleep(.5);shot("16-help-search-results.png")
+  key("ctrl+a");key("ctrl+c")
+  until(lambda:clipboard_now()==query_bytes,"actual N3 help TextEdit query",8)
+  if doc.read_bytes()!=connected or control.read_bytes()!=REOPEN_SOURCE:
+   raise RuntimeError("N3 help search altered saved TeX")
+  if sha(pdf.read_bytes())!=report["pdf_sha256"]:
+   raise RuntimeError("N3 help search altered external PDF")
+  report["help"]="REAL_GUI_QUERY_ENTERED_RESULTS_MANUAL_SCREENSHOT_REVIEW_PENDING"
   report["status"]="PASS_AUTOMATED_X11_MANUAL_REVIEW_PENDING"
  except Exception as e:
   report["error"]=type(e).__name__+": "+str(e)
