@@ -8,6 +8,7 @@ source is never changed. Coordinate profiles are specific to a reviewed UI SHA.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import json
 import os
@@ -31,6 +32,56 @@ FIXTURE = r"""\documentclass{standalone}
 \end{tikzpicture}
 \end{document}
 """
+
+
+def x11_button1_mask() -> int:
+    """Query X11 server Button1Mask (1<<8), not the QA driver's intent.
+
+    Repeated xdotool commands are independent XTest clients. A screenshot
+    taken before the driver's mouseup does not prove X11 still sees Button1
+    pressed. Fail closed when XQueryPointer cannot establish the live mask.
+    """
+    x11 = ctypes.CDLL("libX11.so.6")
+    ptr = ctypes.c_void_p
+    window = ctypes.c_ulong
+    integer = ctypes.c_int
+    mask_type = ctypes.c_uint
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ptr
+    x11.XDefaultScreen.argtypes = [ptr]
+    x11.XDefaultScreen.restype = integer
+    x11.XRootWindow.argtypes = [ptr, integer]
+    x11.XRootWindow.restype = window
+    x11.XQueryPointer.argtypes = [
+        ptr, window, ctypes.POINTER(window), ctypes.POINTER(window),
+        ctypes.POINTER(integer), ctypes.POINTER(integer),
+        ctypes.POINTER(integer), ctypes.POINTER(integer),
+        ctypes.POINTER(mask_type),
+    ]
+    x11.XQueryPointer.restype = integer
+    x11.XCloseDisplay.argtypes = [ptr]
+    x11.XCloseDisplay.restype = integer
+    display = x11.XOpenDisplay(None)
+    if not display:
+        raise RuntimeError("XQueryPointer cannot open active X11 DISPLAY")
+    try:
+        root = x11.XRootWindow(display, x11.XDefaultScreen(display))
+        root_reply, child = window(), window()
+        root_x, root_y, win_x, win_y = integer(), integer(), integer(), integer()
+        mask = mask_type()
+        if not x11.XQueryPointer(
+            display, root, ctypes.byref(root_reply), ctypes.byref(child),
+            ctypes.byref(root_x), ctypes.byref(root_y),
+            ctypes.byref(win_x), ctypes.byref(win_y), ctypes.byref(mask),
+        ):
+            raise RuntimeError("XQueryPointer did not return a pointer mask")
+        return mask.value
+    finally:
+        x11.XCloseDisplay(display)
+
+
+def x11_button1_pressed(mask: int) -> bool:
+    return bool(mask & (1 << 8))
 
 
 def sha256(path: Path) -> str:
@@ -153,6 +204,7 @@ def main() -> int:
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
               "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
               "b30_held_pointer_undo": "NOT_RUN",
+              "x11_button1_mask_trace": [],
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -294,10 +346,23 @@ def main() -> int:
                         run(["xdotool", "mousemove", "--sync", "--window", window,
                              str(end[0]), str(end[1])])
                     time.sleep(0.25)
-                    screenshot("b30-" + ("drag" if moved else "click") + "-held.png")
+                    variant = "drag" if moved else "click"
+                    mask_before = x11_button1_mask()
+                    report["x11_button1_mask_trace"].append({
+                        "case": variant, "phase": "before_ctrl_z",
+                        "mask": mask_before, "button1": x11_button1_pressed(mask_before)})
+                    screenshot("b30-" + variant + "-held.png")
+                    if not x11_button1_pressed(mask_before):
+                        raise RuntimeError("QA XTest Button1 was UP before Ctrl+Z; held-pointer scenario not established")
                     key("ctrl+z")
                     time.sleep(0.3)
-                    screenshot("b30-" + ("drag" if moved else "click") + "-undo-held.png")
+                    mask_after = x11_button1_mask()
+                    report["x11_button1_mask_trace"].append({
+                        "case": variant, "phase": "after_ctrl_z_before_explicit_mouseup",
+                        "mask": mask_after, "button1": x11_button1_pressed(mask_after)})
+                    screenshot("b30-" + variant + "-undo-held.png")
+                    if not x11_button1_pressed(mask_after):
+                        raise RuntimeError("QA XTest Button1 was released before explicit mouseup; cannot attribute ghost to production")
                     run(["xdotool", "mouseup", "1"])
                     time.sleep(0.3)
                     click(profile["save_click"])

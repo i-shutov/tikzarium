@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased — I33 B30 real X11 pointer Undo QA (NOT_RUN pending artifacts)
+## Unreleased — I34 B30 real held-pointer XQueryPointer forensic acceptance (NOT_RUN pending artifacts)
+
+- I33 actual [X11 41279059557](https://github.com/i-shutov/tikzarium/actions/runs/41279059557) **FAIL**: before explicit driver mouseup, Ctrl+Z screenshot reveals ghost Line #2; saved .tex contains Line IDs 1+2, matching previous B29 source SHA exactly. QA now queries actual X11 Button1Mask before/after key to distinguish XTest-button release from application early insertion. Fail closed on absent held button; source-rollback assertions unchanged. B30 production and C catalogue untouched, physical Win10/M1/M4 NOT_RUN; no release.
+
+## Unreleased — I33 B30 real X11 pointer Undo QA (historical FAIL)
 
 - First exact B30 QA [41278805656](https://github.com/i-shutov/tikzarium/actions/runs/41278805656) failed **offline fixture-key consistency** before launching the executable; corrected the test reference to the unchanged B30 fixture marker. This is a QA preflight correction, **not** a real GUI FAIL/PASS; strict live test unchanged.
 

@@ -43,6 +43,12 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
+    def test_x11_button1_mask_detection_is_fail_closed(self):
+        self.assertFalse(desktop.x11_button1_pressed(0))
+        self.assertFalse(desktop.x11_button1_pressed(1 << 9))
+        self.assertTrue(desktop.x11_button1_pressed(1 << 8))
+        self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
+
     def test_b30_source_history_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
