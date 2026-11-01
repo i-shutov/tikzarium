@@ -2669,12 +2669,8 @@ mod split_layout_tests {
                         ui.heading("Canvas · exact XeLaTeX PDF");
                         ui.horizontal_wrapped(|ui| {
                             ui.label("Центр:");
-                            buttons = show_split_center_focus_switch(
-                                ui,
-                                focus,
-                                session,
-                                fit_active,
-                            );
+                            buttons =
+                                show_split_center_focus_switch(ui, focus, session, fit_active);
                         });
                         ui.small("Guide provisional, PDF exact; never PDF-to-source inversion.");
                         if !*focus {
@@ -2692,11 +2688,8 @@ mod split_layout_tests {
                         }
                         ui.separator();
                         pdf_height = ui.available_height();
-                        fit_zoom = fit_page_zoom(
-                            egui::vec2(1200.0, 1700.0),
-                            ui.available_size(),
-                        )
-                        .unwrap_or(0.0);
+                        fit_zoom = fit_page_zoom(egui::vec2(1200.0, 1700.0), ui.available_size())
+                            .unwrap_or(0.0);
                     });
                 },
             );
@@ -2711,7 +2704,12 @@ mod split_layout_tests {
         let mut focus = false;
         let mut fit_active = false;
         let drawing = frame(
-            &ctx, &mut source, &mut authoring, &mut focus, &mut fit_active, vec![],
+            &ctx,
+            &mut source,
+            &mut authoring,
+            &mut focus,
+            &mut fit_active,
+            vec![],
         );
         assert!(drawing.0[1].is_positive());
         assert!(drawing.3 > 180.0, "source panel was hidden");
@@ -2724,36 +2722,60 @@ mod split_layout_tests {
         };
         let pdf_pos = drawing.0[1].center();
         frame(
-            &ctx, &mut source, &mut authoring, &mut focus, &mut fit_active,
+            &ctx,
+            &mut source,
+            &mut authoring,
+            &mut focus,
+            &mut fit_active,
             vec![egui::Event::PointerMoved(pdf_pos), click(pdf_pos, true)],
         );
         let pdf = frame(
-            &ctx, &mut source, &mut authoring, &mut focus, &mut fit_active,
+            &ctx,
+            &mut source,
+            &mut authoring,
+            &mut focus,
+            &mut fit_active,
             vec![click(pdf_pos, false)],
         );
         assert!(focus, "actual PDF toggle click was not dispatched");
-        assert!(fit_active, "PDF focus should request a truthful whole-page fit");
+        assert!(
+            fit_active,
+            "PDF focus should request a truthful whole-page fit"
+        );
         assert!(
             pdf.1 > drawing.1 + 150.0,
             "compact PDF pane did not gain useful height: {} -> {}",
-            drawing.1, pdf.1,
+            drawing.1,
+            pdf.1,
         );
         assert!(
             pdf.2 > drawing.2 + 0.03,
             "exact PDF fit did not improve: {} -> {}",
-            drawing.2, pdf.2,
+            drawing.2,
+            pdf.2,
         );
         assert!(pdf.3 > 180.0, "PDF focus must not hide editable source");
-        assert_eq!(source, original, "view toggling must not touch arbitrary TeX");
+        assert_eq!(
+            source, original,
+            "view toggling must not touch arbitrary TeX"
+        );
         assert!(!authoring.undo_available(), "view toggling is not an edit");
 
         let draw_pos = pdf.0[0].center();
         frame(
-            &ctx, &mut source, &mut authoring, &mut focus, &mut fit_active,
+            &ctx,
+            &mut source,
+            &mut authoring,
+            &mut focus,
+            &mut fit_active,
             vec![egui::Event::PointerMoved(draw_pos), click(draw_pos, true)],
         );
         let restored = frame(
-            &ctx, &mut source, &mut authoring, &mut focus, &mut fit_active,
+            &ctx,
+            &mut source,
+            &mut authoring,
+            &mut focus,
+            &mut fit_active,
             vec![click(draw_pos, false)],
         );
         assert!(!focus, "return to the six native TikZ tools was lost");
@@ -2761,5 +2783,4 @@ mod split_layout_tests {
         assert_eq!(source, original);
         assert!(!authoring.undo_available());
     }
-
 }
