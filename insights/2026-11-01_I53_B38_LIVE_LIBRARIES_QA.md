@@ -1,0 +1,3 @@
+# I53 · исходная независимая оценка B38 N2/N3
+
+Семь workflows exact #81 head `628d48ea3ccf4e53f9ea95096803e52e1f531525` имеют GitHub status SUCCESS. Скачан подлинный артефакт I47 `13099088041`; проверены .tex, внешний XeLaTeX PDF (кириллица «Не менять», DejaVuSerif embedded). Реальный X11 снимок `05b-b37-pdf-large-candidate.png` показывает N2 library panel и N3 help search **свернутыми**. Поэтому эти успехи доказывают сохранение прежних жестов, не новый library Connect/Disconnect. Новый независимый сценарий создан fail-closed, его координаты пока PROVISIONAL и **GUI-результат NOT_RUN** до фактического прогона/просмотра снимков. Linux/X11 не физический Win10/Mac. TeXLive не MiKTeX. Никаких релизных или merge утверждений.
