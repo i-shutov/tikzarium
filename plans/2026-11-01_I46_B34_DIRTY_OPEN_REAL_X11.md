@@ -63,3 +63,7 @@ a post-Open Ctrl+Z must not replay content from a different source.
 ## 2026-11-01 current B source integration checkpoint
 
 I46 merged B-owned PR #75 source f9a4838c8e3a2ea2e2adf58efc152a016c41f09a without editing B production files. Current pinned app/src tree is ecc6d40668fd6edddc97c682f8ddcca5fe615c99. Original B34 8752ed1d77f7c52f866ad493f0dd6042395ca34e was the bootstrap tree only. The I46 real-X11 workflow must now test the current merged QA checkout. All artifact/manual/physical results remain NOT_RUN until independently verified.
+
+## Expanded B33/B34 negative GUI paths and X11 focus recovery
+
+Before dirty-Open modal confirmation, real GUI now exercises toolbar **Save**, keyboard **Ctrl+S**, and toolbar **Build** with the unbound scratch and the same existing typed target. Preserve victim/occupied file SHA and capture screen after every operation; source protection only becomes accepted after independent review of UI state. This closes three additional real user entry points to the same historical overwrite class. The X11 driver verifies keyboard focus after a bounded EWMH-activation or direct X11 input-focus path because Openbox can publish _NET_ACTIVE_WINDOW asynchronously. Driver-level launch/focus failure is **QA FAIL**, not product data-loss evidence; physical target verification remains NOT_RUN.
