@@ -2063,9 +2063,7 @@ mod split_layout_tests {
         let destination = typed_save_destination(&scratch, safe.to_str().unwrap()).unwrap();
         scratch.save_to(destination).unwrap();
         assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
-        assert!(std::fs::read_to_string(&safe)
-            .unwrap()
-            .contains("\\draw"));
+        assert!(std::fs::read_to_string(&safe).unwrap().contains("\\draw"));
 
         let mut opened = Document::load(&target).unwrap();
         opened.source.push_str("% обычная правка\n");
@@ -2074,9 +2072,11 @@ mod split_layout_tests {
             target
         );
         opened.save().unwrap();
-        assert!(std::fs::read_to_string(&target)
-            .unwrap()
-            .contains("обычная правка"));
+        assert!(
+            std::fs::read_to_string(&target)
+                .unwrap()
+                .contains("обычная правка")
+        );
     }
 
     #[test]
