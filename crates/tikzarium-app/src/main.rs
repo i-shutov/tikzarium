@@ -1506,10 +1506,7 @@ mod split_layout_tests {
             &mut zoom,
         ));
         assert_eq!(zoom, previous);
-        assert_eq!(
-            fit_page_zoom(egui::vec2(f32::NAN, 1700.0), viewport),
-            None,
-        );
+        assert_eq!(fit_page_zoom(egui::vec2(f32::NAN, 1700.0), viewport), None,);
     }
 
     #[test]
