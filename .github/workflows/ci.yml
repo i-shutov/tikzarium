@@ -32,6 +32,9 @@ jobs:
           components: rustfmt, clippy
       - name: Toolchain and native target
         run: rustc -vV
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
       - name: Verify physical architecture of hosted runner
         if: runner.os == 'macOS'
         shell: bash
