@@ -134,7 +134,13 @@ def main() -> int:
 
         shot("01-startup.png")
         report["steps"].append({"event": "real_visible_window", "status": "PASS"})
-        command(["xclip", "-selection", "clipboard", "-i", str(clipboard)])
+        # xclip forks to retain clipboard ownership: inherited pipes must not
+        # keep a captured subprocess waiting for EOF after the parent exits.
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i", str(clipboard)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=5, check=True,
+        )
         click(profile["source_click"])
         key("ctrl+a")
         key("ctrl+v")
