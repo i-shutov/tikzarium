@@ -657,7 +657,7 @@ impl TikzariumApp {
                     // Old native TextEdit snapshots must not resurrect the
                     // deleted command when the user next edits source.
                     output.state.clear_undoer();
-                    output.state.store(ui.ctx(), output.response.id);
+                    output.state.clone().store(ui.ctx(), output.response.id);
                     self.reset_source_editor_undo_after_visual_patch = false;
                 }
                 // Both the desktop and UNIT_EVENT frames handle the same
