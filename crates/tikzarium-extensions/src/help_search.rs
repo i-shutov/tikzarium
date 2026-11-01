@@ -203,9 +203,11 @@ mod tests {
         let positioning = exact(&catalog, "tikz.library.positioning").unwrap();
         assert!(positioning.description_ru().contains("смещение и якоря"));
         let positioning_search = search(&catalog, "СМЕЩЕНИЕ И ЯКОРЯ");
-        assert!(positioning_search
-            .iter()
-            .any(|entry| entry.id() == "tikz.library.positioning"));
+        assert!(
+            positioning_search
+                .iter()
+                .any(|entry| entry.id() == "tikz.library.positioning")
+        );
         let line_search = search(&catalog, "СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК");
         assert!(line_search.iter().any(|entry| entry.id() == "tikz.line"));
     }
