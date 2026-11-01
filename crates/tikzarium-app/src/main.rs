@@ -104,11 +104,7 @@ fn fit_page_zoom(image: egui::Vec2, viewport: egui::Vec2) -> Option<f32> {
 
 /// Draw the actual egui Fit Page control. The selected state is sticky across
 /// page navigation and window resizing, unlike a one-shot scalar zoom.
-fn show_fit_page_button(
-    ui: &mut egui::Ui,
-    enabled: bool,
-    fit_active: &mut bool,
-) -> egui::Response {
+fn show_fit_page_button(ui: &mut egui::Ui, enabled: bool, fit_active: &mut bool) -> egui::Response {
     let response = ui
         .add_enabled(
             enabled,
@@ -793,8 +789,12 @@ impl TikzariumApp {
                 self.fit_page_active = false;
                 self.zoom = fit;
             }
-            if show_fit_page_button(ui, self.preview_texture.is_some(), &mut self.fit_page_active)
-                .clicked()
+            if show_fit_page_button(
+                ui,
+                self.preview_texture.is_some(),
+                &mut self.fit_page_active,
+            )
+            .clicked()
             {
                 fit_page_requested = true;
             }
@@ -831,7 +831,9 @@ impl TikzariumApp {
         // page or a resized Split. A manual zoom action above leaves this mode.
         let fit_unavailable = refit_selected_page(
             self.fit_page_active,
-            self.preview_texture.as_ref().map(|texture| texture.size_vec2()),
+            self.preview_texture
+                .as_ref()
+                .map(|texture| texture.size_vec2()),
             ui.available_size(),
             &mut self.zoom,
         );
@@ -1356,7 +1358,15 @@ mod split_layout_tests {
         let mut zoom = 1.0;
         let large = egui::vec2(1366.0, 740.0);
         let page = egui::vec2(720.0, 480.0);
-        let button = frame(&ctx, &mut source, &mut active, &mut zoom, page, large, vec![]);
+        let button = frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            page,
+            large,
+            vec![],
+        );
         assert!(!active);
         let pos = button.center();
         let pointer = |pressed| egui::Event::PointerButton {
@@ -1383,7 +1393,10 @@ mod split_layout_tests {
             large,
             vec![pointer(false)],
         );
-        assert!(active, "the real Fit Page button did not switch on auto-fit");
+        assert!(
+            active,
+            "the real Fit Page button did not switch on auto-fit"
+        );
         let wide_zoom = zoom;
         frame(
             &ctx,
@@ -1408,7 +1421,15 @@ mod split_layout_tests {
         // This is the same state transition as a manual +/−/100%/Fit width.
         active = false;
         zoom = 0.7;
-        frame(&ctx, &mut source, &mut active, &mut zoom, page, large, vec![]);
+        frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            page,
+            large,
+            vec![],
+        );
         assert_eq!(zoom, 0.7, "manual zoom must no longer auto-refit");
         let before = zoom;
         assert!(refit_selected_page(
