@@ -2,9 +2,8 @@ name: I26 real B27 Undo-while-held pointer plus native TikZ PDF acceptance
 on:
   push:
     branches:
-      - qa/i23-b25-live-fullpage-x11
-      - feat/b25-egui-pointer-focus-fit-page-20261101
-      - feat/b16-egui-live-palette-six-gesture-20261031
+      - qa/i26-b27-live-undo-x11
+      - feat/b27-egui-undo-held-pointer-20261101
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
@@ -17,8 +16,7 @@ on:
       - 'Cargo.lock'
   pull_request:
     branches:
-      - feat/b25-egui-pointer-focus-fit-page-20261101
-      - feat/b16-egui-live-palette-six-gesture-20261031
+      - feat/b27-egui-undo-held-pointer-20261101
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'

@@ -62,8 +62,8 @@ class DesktopEvidenceTests(unittest.TestCase):
 
     def test_b27_real_undo_predicate_rejects_ghost_and_unrelated_mutation(self):
         original = desktop.FIXTURE.encode("utf-8")
-        before = original.replace(b"\\\\end{tikzpicture}",
-                                  line(version=2) + b"\\\\end{tikzpicture}")
+        before = original.replace(b"\\end{tikzpicture}",
+                                  line(version=2) + b"\\end{tikzpicture}")
         desktop.verify_held_undo(before, original, original)
         for bad in (before, before + line(2, version=2),
                     original.replace("Не менять".encode(), b"changed")):
