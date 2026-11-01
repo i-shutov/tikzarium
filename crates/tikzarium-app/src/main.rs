@@ -896,11 +896,14 @@ impl TikzariumApp {
     }
 
     fn poll_preview_lod(&mut self, ctx: &egui::Context) {
-        let completed = self.preview_lod_rx.as_ref().and_then(|rx| match rx.try_recv() {
-            Ok(value) => Some(Some(value)),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => Some(None),
-        });
+        let completed = self
+            .preview_lod_rx
+            .as_ref()
+            .and_then(|rx| match rx.try_recv() {
+                Ok(value) => Some(Some(value)),
+                Err(TryRecvError::Empty) => None,
+                Err(TryRecvError::Disconnected) => Some(None),
+            });
         if let Some(result) = completed {
             self.preview_lod_rx = None;
             if let Some((epoch, page, Some(rgba))) = result
@@ -1198,12 +1201,8 @@ impl TikzariumApp {
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 if let Some(texture) = &self.preview_texture {
-                    let _ = show_pdf_raster(
-                        ui,
-                        texture,
-                        self.preview_lod_texture.as_ref(),
-                        self.zoom,
-                    );
+                    let _ =
+                        show_pdf_raster(ui, texture, self.preview_lod_texture.as_ref(), self.zoom);
                 } else {
                     ui.vertical_centered(|ui| {
                         ui.add_space(48.0);
@@ -2703,17 +2702,11 @@ mod split_layout_tests {
     }
     #[test]
     fn b37_real_egui_pdf_lod_route_preserves_source_and_truthful_fit_feedback() {
-        use tikzarium_extensions::primitives::Evidence;
-
         let ctx = egui::Context::default();
-        let full_color = egui::ColorImage::from_rgba_unmultiplied(
-            [400, 160],
-            &vec![255; 400 * 160 * 4],
-        );
-        let lod_color = egui::ColorImage::from_rgba_unmultiplied(
-            [100, 40],
-            &vec![255; 100 * 40 * 4],
-        );
+        let full_color =
+            egui::ColorImage::from_rgba_unmultiplied([400, 160], &vec![255; 400 * 160 * 4]);
+        let lod_color =
+            egui::ColorImage::from_rgba_unmultiplied([100, 40], &vec![255; 100 * 40 * 4]);
         let full = ctx.load_texture("b37-original", full_color, egui::TextureOptions::LINEAR);
         let lod = ctx.load_texture("b37-prefiltered", lod_color, egui::TextureOptions::LINEAR);
         let mut source = format!("{QUICKSTART}\r\n% \\Unknown{{не переписывать}}\r\n");
@@ -2740,12 +2733,7 @@ mod split_layout_tests {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     let (small, uses_lod) = show_pdf_raster(ui, &full, Some(&lod), 0.26);
                     let (large, uses_full) = show_pdf_raster(ui, &full, Some(&lod), 0.75);
-                    observed = Some((
-                        small.rect.size(),
-                        uses_lod,
-                        large.rect.size(),
-                        uses_full,
-                    ));
+                    observed = Some((small.rect.size(), uses_lod, large.rect.size(), uses_full));
                     assert_eq!(page_fit_warning(false), None);
                     assert!(page_fit_warning(true).unwrap().contains("2%"));
                     // Genuine shared C handler still owns authoring, not
@@ -2761,7 +2749,6 @@ mod split_layout_tests {
         assert!((large.x - 300.0).abs() < 0.5);
         assert_eq!(source, unchanged);
         assert!(!session.undo_available());
-        let _ = Evidence::Confirmed;
     }
 
     #[test]

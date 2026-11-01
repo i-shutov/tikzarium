@@ -2,7 +2,6 @@
 //! PDF bytes and XeLaTeX output remain authoritative and unchanged.
 use std::io::Cursor;
 
-
 const LOD_DOWNSAMPLE: u32 = 4;
 
 /// A prefiltered PDF *raster* avoids the lost thin lines produced by GPU
@@ -102,11 +101,8 @@ pub(crate) fn decode_preview_png(png: &[u8]) -> Result<image::RgbaImage, String>
 mod tests {
     #[test]
     fn b37_thin_line_coverage_survives_cpu_prefilter_for_compact_pdf() {
-        let mut original = image::RgbaImage::from_pixel(
-            960,
-            360,
-            image::Rgba([255, 255, 255, 255]),
-        );
+        let mut original =
+            image::RgbaImage::from_pixel(960, 360, image::Rgba([255, 255, 255, 255]));
         // Two-pixel line weight in a 120-dpi PDF raster: at a 26% fit
         // naïve bilinear minification can miss entire straight segments.
         for x in 140..760 {
@@ -132,9 +128,7 @@ mod tests {
             assert!(reduced.get_pixel(x, 69)[0] < 245, "bottom side lost at {x}");
         }
         let rx = super::spawn_preview_lod(original, 123, 2);
-        let (epoch, page, async_lod) = rx.recv_timeout(
-            std::time::Duration::from_secs(5),
-        ).unwrap();
+        let (epoch, page, async_lod) = rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
         assert_eq!((epoch, page), (123, 2));
         assert_eq!(async_lod.unwrap().dimensions(), (240, 90));
     }
