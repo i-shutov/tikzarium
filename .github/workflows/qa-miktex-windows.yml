@@ -8,6 +8,7 @@ on:
       - scripts/tools/qa_miktex_vertical.py
       - scripts/tools/qa_miktex_uploaded.py
       - scripts/tools/test_qa_miktex_uploaded.py
+      - scripts/tools/test_qa_miktex_artifact_lease.py
       - scripts/tools/test_qa_miktex_vertical.py
       - scripts/tools/qa_setup_miktex.ps1
       - scripts/tools/qa_miktex_config.ps1
@@ -30,6 +31,7 @@ on:
       - scripts/tools/qa_miktex_vertical.py
       - scripts/tools/qa_miktex_uploaded.py
       - scripts/tools/test_qa_miktex_uploaded.py
+      - scripts/tools/test_qa_miktex_artifact_lease.py
       - scripts/tools/test_qa_miktex_vertical.py
       - scripts/tools/qa_setup_miktex.ps1
       - scripts/tools/qa_miktex_config.ps1
@@ -76,6 +78,8 @@ jobs:
           Write-Host "OS=$([System.Environment]::OSVersion.VersionString); architecture=$env:RUNNER_ARCH"
       - name: D06 stdlib negative contract tests
         run: python -m unittest discover -s scripts/tools -p test_qa_miktex_vertical.py -v
+      - name: Verify per-workflow MiKTeX artifact lease and rerun overwrite
+        run: python -m unittest discover -s scripts/tools -p test_qa_miktex_artifact_lease.py -v
       - name: D06 MiKTeX configuration readback parser regression
         shell: pwsh
         run: ./scripts/tools/test_qa_miktex_config.ps1
@@ -145,7 +149,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: qa-miktex-windows-server
+          name: qa-miktex-windows-server-${{ github.run_id }}
+          overwrite: true
           path: .qa-artifacts/miktex-windows-server/
           if-no-files-found: warn
           retention-days: 14
@@ -154,7 +159,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: qa-lock-miktex-windows-server
+          name: qa-lock-miktex-windows-server-${{ github.run_id }}
+          overwrite: true
           path: .qa-artifacts/lock-miktex-windows-server.json
           if-no-files-found: warn
           retention-days: 14
@@ -170,9 +176,11 @@ jobs:
       TIKZARIUM_CHECKOUT_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Verify per-workflow MiKTeX artifact lease and rerun overwrite
+        run: python -m unittest discover -s scripts/tools -p test_qa_miktex_artifact_lease.py -v
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: qa-miktex-windows-server
+          name: qa-miktex-windows-server-${{ github.run_id }}
           path: .qa-artifacts/miktex-uploaded
       - name: Independent Poppler auditors (no TeX installation)
         run: |
@@ -192,7 +200,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: qa-miktex-independent-postupload
+          name: qa-miktex-independent-postupload-${{ github.run_id }}
+          overwrite: true
           path: .qa-artifacts/miktex-independent-audit.json
           if-no-files-found: warn
           retention-days: 14
