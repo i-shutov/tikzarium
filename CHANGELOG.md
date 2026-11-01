@@ -2,6 +2,8 @@
 
 ## Unreleased — I46 current B34+N3 real-X11 acceptance (QA verified at d2c67a8; evidence-doc head CI pending)
 
+- **I47 B34 six-tool true-X11 gate:** repinned existing N1 desktop smoke workflow, 1366px source-tree profile and offline predicate from historical B31 tree to exact B34 tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99; enables on QA #77 and B #75. This is independent of I46 dirty-Open and must prove six real pointer gestures, held Ctrl+Z, source bytes, GUI XeLaTeX PDF and fit/zoom screenshots. New exact-head run and manual review PENDING, do not infer from B31 historical PASS; physical Win10/Mac NOT_RUN.
+
 - Independent I46 artifact review: [real-X11 run 41308995293](https://github.com/i-shutov/tikzarium/actions/runs/41308995293) PASS on `d2c67a8`, 21/21 reported file SHA-256 values match, source victim/occupied unchanged, separately saved scratch matches input, GUI Ctrl+Z fenced, GUI XeLaTeX PDF verified (Cyrillic `Не менять`, embedded DejaVuSerif), screenshots 06/07/09/10/12 manually viewed. PDF page is visually cropped at 100% in app; **not a full-page visual PASS**. Physical Win10/M1/M4 NOT_RUN. This docs-only source head must still pass fresh CI.
 
 - **I46 QA coordinate correction:** independently downloaded and visually inspected real [run 41307868676](https://github.com/i-shutov/tikzarium/actions/runs/41307868676) screenshot; former (506,458) missed the actual Save-and-open button (x465–603,y416–441). Calibrated (536,429), added bounds-checked offline regression. Hosted run reached actual B34 modal but its Save/Reject click paths and PDF are **NOT PASS** until exact-head rerun+manual artifact review. No B production change or physical Win10/Mac claim.

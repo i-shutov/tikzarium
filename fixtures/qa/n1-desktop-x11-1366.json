@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B31 app-tree: B30 held-click/drag Undo plus six native tools; candidate compact 1180x680 whole XeLaTeX PDF and Fit width",
+  "profile": "I47 B34 app-tree: prior accepted B31 six gestures/held-pointer Undo/compact Fit controls, repinned to B34; new real X11 run and manual screenshots required",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I43 B31 previous app tree confirmed; I45 corrected zoom readout app tree pending real X11 re-review. Manual review of authentic B30 1180x680 screenshot shows reflow: Fit width near (603,98), Fit Page near (680,98), NOT original 1366x740 (1027,72)/(515,97). These compact B31 coordinates are provisional until exact B31 screenshots. No inherited visual PASS.",
+  "layout_note": "B34 app/src Git tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99 from B-owned exact PR #75 f9a4838. Native primitive toolbar/layout remains unchanged in B32/B33/B34 source diff (source-save/undo/modal safety only), so B31 positional profile reused provisionally. I47 MUST perform genuine B34 six tool gestures, XTest held Undo, source, PDF and screenshots; previous B31 screenshots are historical only and NOT B34 acceptance. On X11 failure inspect artifacts, not pre-assume PASS.",
   "path_click": [
     310,
     18
@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "af316d5e5452d74186b92d65c95c448253d0e61c",
+  "reviewed_app_tree_sha": "ecc6d40668fd6edddc97c682f8ddcca5fe615c99",
   "zoom_out_click": [
     882,
     72
@@ -154,5 +154,7 @@
     740
   ],
   "undo_held_pointer": true,
-  "b30_release_source_history_regression": true
+  "b30_release_source_history_regression": true,
+  "calibration_reference": "Historical B31 runs in calibration_runs; new B34 I46 real modal run 41308995293 is NOT a six-gesture proof",
+  "b34_modal_real_run": 41308995293
 }
