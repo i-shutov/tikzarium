@@ -79,9 +79,13 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertNotIn("b28_focused_textedit_regression", profile)
         self.assertNotIn("reviewed_app_source", profile)
         self.assertFalse(profile["b36_bootstrap_clicks_unreviewed"])
-        self.assertNotEqual(profile["b36_pdf_focus_click"],
-                            profile["b36_return_guide_click"])
-        self.assertEqual(profile["b36_pdf_focus_click"], [492, 98])
+        self.assertEqual(len(profile["b36_focus_layouts"]), 2)
+        self.assertEqual(
+            {v["name"] for v in profile["b36_focus_layouts"]},
+            {"ordinary_single_line", "two_line_fit_page_status"})
+        self.assertEqual(profile["b36_focus_layouts"][0]["pdf_click"], [492, 98])
+        self.assertEqual(profile["b36_focus_layouts"][1]["pdf_click"], [492, 114])
+        self.assertEqual(profile["b36_focus_layouts"][1]["guide_probe"], [750, 87])
         self.assertIn("PDF_CONTENT_MANUAL_NOT_RUN", MODULE.read_text(encoding="utf-8"))
         self.assertEqual(profile["fit_click"], [659, 99])
         self.assertEqual(profile["compact_fit_width_click"], [490, 125])
@@ -96,6 +100,30 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertEqual(profile["gestures"][0]["tool_click"], [599, 166])
         self.assertEqual(len(profile["gestures"]), 6)
         self.assertEqual({case["tool"] for case in profile["gestures"]}, desktop.TOOLS)
+
+    def test_b36_selected_layout_requires_one_real_selected_variant(self):
+        layouts = [
+            {"name": "single", "guide_probe": [1, 1], "pdf_probe": [2, 1]},
+            {"name": "wrapped", "guide_probe": [1, 2], "pdf_probe": [2, 2]},
+        ]
+        blue, gray = (31, 126, 162), (27, 27, 27)
+        sample = {(1, 1): gray, (2, 1): gray,
+                  (1, 2): blue, (2, 2): gray}
+        getter = lambda p: sample[tuple(p)]
+        selected, _ = desktop.b36_select_reviewed_layout(layouts, "guide", getter)
+        self.assertEqual(selected["name"], "wrapped")
+        sample[1, 2], sample[2, 2] = gray, blue
+        selected, _ = desktop.b36_select_reviewed_layout(layouts, "pdf", getter)
+        self.assertEqual(selected["name"], "wrapped")
+        sample[1, 1] = blue
+        sample[2, 1] = gray
+        with self.assertRaisesRegex(RuntimeError, "not unique"):
+            desktop.b36_select_reviewed_layout(layouts, "guide", getter)
+        sample[1, 1] = gray
+        with self.assertRaisesRegex(RuntimeError, "not unique"):
+            desktop.b36_select_reviewed_layout(layouts, "guide", getter)
+        with self.assertRaises(ValueError):
+            desktop.b36_select_reviewed_layout(layouts, "inverted", getter)
 
     def test_b36_default_dark_selected_color_is_fail_closed(self):
         self.assertTrue(desktop.default_dark_selected_rgb((31, 126, 162)))

@@ -1,3 +1,7 @@
+## Unreleased — I51 B36 two-line diagnostic layout X11 strict selection (fresh CI NOT_RUN)
+
+- Real I47 `41329734338` reached six native gesture+actual GUI PDF but exposed a wrapped Fit Page error banner shifting control y-coordinates by 16px; no B36 production fault demonstrated. Independently inspected screenshot `05a`; QA now tests exactly one selected-button layout among reviewed single-/two-line cases using real PNG RGB, with negative ambiguous/none tests. No edits to production Rust. New exact-head GUI and whole-page manual QA NOT_RUN at authoring; physical Win10/Mac NOT_RUN.
+
 ## Unreleased — I51 real B36 X11 screenshot calibration (second QA HEAD pending)
 
 - First exact-I51 genuine X11 I46 PASS, independently verified 21/21 uploaded hashes and foreground modal + real XeLaTeX PDF. I47 first run failed after six persisted native TikZ gestures, XTest held Undo, F1 and PDF because B35 fit coordinates were now wrong: Zoom Out clicked B36 PDF focus and compact Fit Page missed. Corrected all zoom/fit and focus click positions from B36 screenshot 04d/04e2, added actual selected-button blue-pixel predicates in both modes. No production Rust touched. Fresh exact-SHA rerun and new visual acceptance **NOT_RUN** at correction authorship; physical Windows 10 / Mac ARM NOT_RUN.

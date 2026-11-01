@@ -157,14 +157,46 @@
   "b30_release_source_history_regression": true,
   "calibration_reference": "B35 actual X11 accepted only at 46aced2dbe1b66ba10d8cc92292024625e73936b; B36 requires complete fresh exact-head real GUI/PNG/TeX/PDF acceptance.",
   "b34_modal_real_run": 41308995293,
-  "b36_pdf_focus_click": [
-    492,
-    98
-  ],
-  "b36_return_guide_click": [
-    788,
-    72
-  ],
   "b36_bootstrap_clicks_unreviewed": false,
-  "b36_evidence_recalibrated_from": "I51 failed-closed real X11 artifact 13092567737 on exact B36 app tree 276ad...; 04d and 04e2 manually inspected. Old B35 click [882,72] hit PDF крупно; old compact [680,98] hit no Fit Page, causing real GUI failure. New exact-head acceptance NOT_RUN."
+  "b36_evidence_recalibrated_from": "First actual B36 41329734338 report and screenshot 05a show a two-line Fit Page diagnostic shifted center controls down 16px. Dynamically identify exactly one real selected button layout from screenshot RGB; fail closed on none/ambiguous. PDF/return visual proof and new exact-head live run NOT_RUN.",
+  "b36_focus_layouts": [
+    {
+      "name": "ordinary_single_line",
+      "guide_probe": [
+        750,
+        72
+      ],
+      "pdf_probe": [
+        460,
+        98
+      ],
+      "pdf_click": [
+        492,
+        98
+      ],
+      "guide_click": [
+        788,
+        72
+      ]
+    },
+    {
+      "name": "two_line_fit_page_status",
+      "guide_probe": [
+        750,
+        87
+      ],
+      "pdf_probe": [
+        460,
+        114
+      ],
+      "pdf_click": [
+        492,
+        114
+      ],
+      "guide_click": [
+        788,
+        87
+      ]
+    }
+  ]
 }
