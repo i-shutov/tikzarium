@@ -354,7 +354,7 @@ fn show_guide_frame_with_palette(
     // in-flight pointer gesture (including a release in the same event frame),
     // not just clear the provisional dragged point. Keep it inert until mouse-up
     // even if Esc/Alt are released earlier than the primary pointer button.
-    let (escape, primary_down, origin_on_guide) = ui.input(|input| {
+    let (escape, primary_down, origin_on_guide, pointer_lost) = ui.input(|input| {
         (
             input.key_pressed(egui::Key::Escape),
             input.pointer.primary_down(),
@@ -362,6 +362,14 @@ fn show_guide_frame_with_palette(
                 .pointer
                 .press_origin()
                 .is_some_and(|origin| rect.contains(origin)),
+            // Desktop focus loss / pointer leaving the native viewport is
+            // not a mouse-up gesture. Never turn it into a TikZ insertion.
+            input.events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::PointerGone | egui::Event::WindowFocused(false)
+                )
+            }),
         )
     });
     // A short click has no drag_start. Remember the press independently so
@@ -369,8 +377,9 @@ fn show_guide_frame_with_palette(
     if primary_down && origin_on_guide && !session.cancelled_pointer_capture {
         session.guide_pointer_armed = true;
     }
-    if escape
+    if (escape || pointer_lost)
         && (session.drag_start.is_some()
+            || session.guide_pointer_armed
             || session.alt_selection_capture
             || (primary_down && origin_on_guide)
             || clicked
@@ -378,7 +387,12 @@ fn show_guide_frame_with_palette(
     {
         session.drag_start = None;
         session.cancelled_pointer_capture = true;
-        session.status = "Esc: клик или жест отменён; исходный TeX не изменён".into();
+        session.status = if pointer_lost {
+            "Фокус окна или курсор потерян: жест отменён; исходный TeX не изменён"
+        } else {
+            "Esc: клик или жест отменён; исходный TeX не изменён"
+        }
+        .into();
     }
     if session.cancelled_pointer_capture {
         if !primary_down {
@@ -2022,6 +2036,122 @@ mod tests {
             assert!(line.is_none());
             assert_eq!(source, original);
             assert!(!session.undo_available());
+        }
+    }
+
+    #[test]
+    fn b25_pointer_loss_or_window_focus_loss_never_commits_a_held_gesture() {
+        // Real egui input frames, not fabricated Response::drag_stopped().
+        // 6 native C tools × 2 viewports × 2 capture lengths × 2 loss
+        // events × 2 delivery orders = 96 cancellation paths.
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    for focus_loss in [false, true] {
+                        for loss_after_release in [false, true] {
+                            let ctx = egui::Context::default();
+                            let mut source = EVENT_SOURCE.to_owned();
+                            let original = source.clone();
+                            let mut session = Session::default();
+                            session.reset(&source);
+                            session.select_tool(tool);
+                            let (_, rect) = event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            let start = screen_point(rect, Point::new(1.0, 1.0));
+                            let end = screen_point(rect, Point::new(3.0, 2.0));
+                            event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![egui::Event::PointerMoved(start), primary(start, true)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            assert!(session.guide_pointer_armed);
+                            if dragged {
+                                event_frame_mod_with_palette(
+                                    &ctx,
+                                    &mut session,
+                                    &mut source,
+                                    vec![egui::Event::PointerMoved(end)],
+                                    egui::Modifiers::default(),
+                                    None,
+                                    width,
+                                );
+                                assert!(session.drag_start.is_some());
+                            }
+                            let release = primary(if dragged { end } else { start }, false);
+                            let loss = if focus_loss {
+                                egui::Event::WindowFocused(false)
+                            } else {
+                                egui::Event::PointerGone
+                            };
+                            let events = if loss_after_release {
+                                vec![release, loss]
+                            } else {
+                                vec![loss, release]
+                            };
+                            let (jump, _) = event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                events,
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            assert_eq!(
+                                jump, None,
+                                "{tool:?}, width={width}, dragged={dragged}, focus={focus_loss}, after={loss_after_release}"
+                            );
+                            assert_eq!(source, original, "focus/pointer loss must never patch TeX");
+                            assert!(!session.undo_available());
+                            assert!(session.drag_start.is_none());
+                            // A subsequent intentional gesture still works.
+                            event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![egui::Event::WindowFocused(true)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![egui::Event::PointerMoved(start), primary(start, true)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            let (line, _) = event_frame_mod_with_palette(
+                                &ctx,
+                                &mut session,
+                                &mut source,
+                                vec![primary(start, false)],
+                                egui::Modifiers::default(),
+                                None,
+                                width,
+                            );
+                            assert!(line.is_some(), "subsequent gesture blocked {tool:?}");
+                            assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                            session.undo(&mut source).unwrap();
+                            assert_eq!(source, original);
+                            assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                        }
+                    }
+                }
+            }
         }
     }
 
