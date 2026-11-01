@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — I46 independent B34 real dirty-Open GUI safety gate (NOT_RUN at authoring)
+
+- Stacked QA-only branch on PR #75 B34 source 61cc1d04f5a11d1515a81c1e75b55eda4aeccc0f; dedicated real Linux/X11 egui workflow with exact app/src tree fence 8752ed1d77f7c52f866ad493f0dd6042395ca34e, no production edits or old I06 workflow reuse.
+- Actual keyboard/pointer modal acceptance targets rejecting scratch overwrite of existing UTF-8 CRLF opaque-macro TeX, saving scratch to an independent file, source Ctrl+Z fence, and real GUI XeLaTeX PDF with Poppler glyph/embedded-font checks; source/hash/screenshot/artifact retained even after failure.
+- Provisional modal coordinate bootstrap is NOT a GUI PASS. Exact-head CI, downloaded artifact, manual screenshots and physical Windows 10/Mac ARM remain NOT_RUN until explicitly verified. No release claim or main merge.
+
 ## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
 
 - QA-only integration on B-owned PR #72 corrected SHA `8f20359f2118660e27a28ecb773c32f8676f56c0`: repin real-X11 workflow, physical-pointer profile and tests to app tree `af316d5e5452d74186b92d65c95c448253d0e61c`. No production Rust/source/TeX edits and no old PR #48 replay.
