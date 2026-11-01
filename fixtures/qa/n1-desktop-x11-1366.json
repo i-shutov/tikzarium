@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I47 B35 app-tree: prior accepted B31 six gestures/held-pointer Undo/compact Fit controls, repinned to B35; new real X11 run and manual screenshots required",
+  "profile": "I51 B37 source-tree-pinned X11; inherited B35 gestures and new provisional PDF focus clicks REQUIRE actual independent screenshot calibration",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B35 app/src tree 46aced2dbe1b66ba10d8cc92292024625e73936b; B34 source/proof tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99 and prior I46/I47 screenshots are HISTORICAL. B35 coordinates are provisionally inherited from real B34; real B35 X11 source/gestures/PDF and manual screenshot review NOT_RUN. Not B35 acceptance yet.",
+  "layout_note": "I51 B37 source-tree pinned. Inherited B36 real-X11 coordinates and blue-selected-button probes are provisional after removal of global stale fit warning; fail closed on unknown layout. New B37 raster LOD and status visual review NOT_RUN.",
   "path_click": [
     310,
     18
@@ -25,16 +25,16 @@
     13
   ],
   "fit_click": [
-    1027,
-    72
+    659,
+    99
   ],
   "compact_fit_width_click": [
-    603,
-    98
+    490,
+    125
   ],
   "compact_fit_page_click": [
-    680,
-    98
+    570,
+    125
   ],
   "gestures": [
     {
@@ -136,14 +136,14 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "46aced2dbe1b66ba10d8cc92292024625e73936b",
+  "reviewed_app_tree_sha": "b855b7d8972b6663e0e764daa140c68a6b232fef",
   "zoom_out_click": [
-    882,
-    72
+    523,
+    99
   ],
   "fit_page_click": [
-    515,
-    97
+    739,
+    99
   ],
   "responsive_resize": [
     1180,
@@ -155,6 +155,49 @@
   ],
   "undo_held_pointer": true,
   "b30_release_source_history_regression": true,
-  "calibration_reference": "Prior B34 I46/I47 X11 passes on ecc6d40668fd6edddc97c682f8ddcca5fe615c99; new B35 app 46aced2dbe1b66ba10d8cc92292024625e73936b requires fresh exact-head acceptance.",
-  "b34_modal_real_run": 41308995293
+  "calibration_reference": "B36 real-X11 six gestures and PDF toggles accepted as controls only on B36 app/src tree 276ad1525db4ef3d3aab4624808453a897ad5b6a; B37 image quality and warning status require new artifacts and independent manual comparison.",
+  "b34_modal_real_run": 41308995293,
+  "b36_bootstrap_clicks_unreviewed": false,
+  "b36_evidence_recalibrated_from": "B36 two screenshot-verified layouts inherited strictly as candidate B37 coords; status layout changed. Unknown/ambiguous probe rejects test; no B37 GUI claim until exact-head live proof.",
+  "b36_focus_layouts": [
+    {
+      "name": "ordinary_single_line",
+      "guide_probe": [
+        750,
+        72
+      ],
+      "pdf_probe": [
+        460,
+        98
+      ],
+      "pdf_click": [
+        492,
+        98
+      ],
+      "guide_click": [
+        788,
+        72
+      ]
+    },
+    {
+      "name": "two_line_fit_page_status",
+      "guide_probe": [
+        750,
+        87
+      ],
+      "pdf_probe": [
+        460,
+        114
+      ],
+      "pdf_click": [
+        492,
+        114
+      ],
+      "guide_click": [
+        788,
+        87
+      ]
+    }
+  ],
+  "b37_preview_fidelity_visual_review": "NOT_RUN"
 }
