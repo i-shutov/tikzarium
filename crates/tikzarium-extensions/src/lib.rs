@@ -1,3 +1,4 @@
+pub mod help_search;
 //! Declarative PGF/TikZ extension catalogue.
 //!
 //! A TeX package is not an executable plugin. Finding a package does not

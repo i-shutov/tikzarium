@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — N3 offline search and CLI from ONE Russian TikZ catalogue (CI PENDING)
+
+- Added read-only C-owned search over the exact primitive/parameter/library specifications already consumed by egui; CLI `help` exposes full Russian syntax, type/units/values, examples and PGF/TikZ provenance. No duplicate help database, parser, TeX substitute, or speculative package support.
+- CLI `help [--all|query|exact-id]` works without an installed XeLaTeX, distinguishes editor presets from documented TikZ defaults and reports package/project installation as NOT_CHECKED. Rust unit tests and an offline real-CLI CI smoke are mandatory.
+- Exact-head CI and post-merge CI NOT_RUN when authored. Physical Windows 10/MiKTeX and Mac M1/M4/XeLaTeX NOT_RUN; no release.
+
+
 ## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
 
 - QA-only integration on B-owned PR #72 corrected SHA `8f20359f2118660e27a28ecb773c32f8676f56c0`: repin real-X11 workflow, physical-pointer profile and tests to app tree `af316d5e5452d74186b92d65c95c448253d0e61c`. No production Rust/source/TeX edits and no old PR #48 replay.

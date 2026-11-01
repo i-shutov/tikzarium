@@ -1,3 +1,5 @@
+mod help;
+
 use std::{
     env, fs,
     io::{self, Write},
@@ -11,7 +13,7 @@ use tikzarium_core::{
 
 fn usage() {
     eprintln!(
-        "Usage: tikzarium-cli doctor | build <source.tex> <output.pdf> [--log <logfile.log>]"
+        "Usage: tikzarium-cli doctor | help [--all|query|exact-id] | build <source.tex> <output.pdf> [--log <logfile.log>]"
     );
 }
 
@@ -59,6 +61,18 @@ fn report_missing_engine() {
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
+        Some("help") if args.len() == 2 || args.len() == 3 => {
+            match help::render(args.get(2).map(String::as_str)) {
+                Ok(message) => {
+                    print!("{message}");
+                    ExitCode::SUCCESS
+                }
+                Err(error) => {
+                    eprintln!("{error}");
+                    ExitCode::from(1)
+                }
+            }
+        }
         Some("doctor") if args.len() == 2 => {
             let environment = TexEnvironment::discover();
             let Some(xelatex) = environment.xelatex.as_deref() else {

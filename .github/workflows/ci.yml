@@ -85,6 +85,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.91.0
+      - name: N3 real offline shared-catalogue CLI smoke (no installed XeLaTeX needed)
+        env:
+          TIKZARIUM_XELATEX: /does-not-exist/tikzarium-xelatex
+        run: |
+          mkdir -p /tmp/tikzarium-ci
+          cargo run --locked -p tikzarium-cli -- help --all > /tmp/tikzarium-ci/help-all.txt
+          cargo run --locked -p tikzarium-cli -- help tikz.arrow:tip > /tmp/tikzarium-ci/help-tip.txt
+          cargo run --locked -p tikzarium-cli -- help ОКРУЖНОСТЬ > /tmp/tikzarium-ci/help-search.txt
+          grep -F 'tikz.library.positioning' /tmp/tikzarium-ci/help-all.txt
+          grep -F 'НЕ default TikZ' /tmp/tikzarium-ci/help-tip.txt
+          grep -F 'tikz.circle' /tmp/tikzarium-ci/help-search.txt
+          if cargo run --locked -p tikzarium-cli -- help nonexistent-unknown-tool; then exit 1; fi
       - name: Install local TeX + PDF tools
         run: |
           sudo apt-get update
