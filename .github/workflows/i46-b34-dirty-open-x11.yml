@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - qa/i46-b34-dirty-open-real-x11
+      - b/b32-safe-open-source-undo-20261101
+      - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
       - 'scripts/qa_i46_dirty_open_x11.py'
@@ -17,6 +19,7 @@ on:
   pull_request:
     branches:
       - b/b32-safe-open-source-undo-20261101
+      - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
       - 'scripts/qa_i46_dirty_open_x11.py'
