@@ -2584,6 +2584,6 @@ mod split_layout_tests {
             error_bounds.is_some_and(|rect| rect.is_positive()),
             "the rejection label must occupy a real layout rect inside the foreground egui modal"
         );
-        assert_eq!(document.source, "% черновик\\r\\n\\\\Opaque{тест}\\r\\n");
+        assert_eq!(document.source, "% черновик\r\n\\Opaque{тест}\r\n");
     }
 }
