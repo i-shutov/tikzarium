@@ -32,3 +32,12 @@ background button, pointer press/release and Escape, checking no
 background click and byte-preserved UTF-8/CRLF target. This is
 UNIT_EVENT only; do not claim real X11 or Win10/M1/M4 tests before
 independent evidence. Source-level defect and test added together.
+
+
+Additional B34 UNIT_EVENT: a previously focused production
+TextEdit with active native history receives a raw Text event
+while the pending Open modal is visible. All underlying
+production Ui panels are explicitly disabled during the modal.
+The test checks unchanged source and UTF-8/CRLF open target,
+then re-enables the editor and confirms ordinary typing works.
+No claim of physical GUI acceptance until independent evidence.
