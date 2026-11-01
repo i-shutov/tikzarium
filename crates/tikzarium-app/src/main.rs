@@ -17,6 +17,7 @@ mod preview_image;
 mod source_fonts;
 mod tikz_authoring;
 mod tikz_canvas;
+mod tikz_libraries;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
@@ -443,6 +444,7 @@ struct TikzariumApp {
     receiver: Option<Receiver<Result<BuildArtifact, BuildError>>>,
     cancellation: Option<BuildService>,
     show_packages: bool,
+    help_query: String,
     show_log: bool,
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
@@ -502,6 +504,7 @@ impl TikzariumApp {
             receiver: None,
             cancellation: None,
             show_packages: true,
+            help_query: String::new(),
             show_log: true,
             pending_open: None,
             pending_open_save_path: String::new(),
@@ -1040,6 +1043,17 @@ impl TikzariumApp {
     }
 
     fn show_authoring_inspector(&mut self, ui: &mut egui::Ui) {
+        tikz_libraries::show_help_search(ui, &mut self.help_query);
+        if let Some(line) = tikz_libraries::show_library_panel(
+            ui,
+            &mut self.authoring,
+            &mut self.document.source,
+            self.tex.xelatex.is_some(),
+        ) {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
+        ui.separator();
         let caps = self.primitive_capabilities();
         if let Some(line) =
             tikz_canvas::show_inspector(ui, &mut self.authoring, &mut self.document.source, caps)

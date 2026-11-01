@@ -1,3 +1,10 @@
+## Unreleased — B38 library connect/disconnect + N3 help inspector (DRAFT: QA NOT_RUN)
+
+- The native egui inspector now exposes four C-owned TikZ library entries and displays installation/project loading/engine target/tool implementation/help independently without promoting UNKNOWN to installed/compiled.
+- Shows byte-local before/after source proposals before explicit user Connect/Disconnect; revision-checked C plans append inverse to existing N1 Undo, preserve CRLF/unknown macros and cancel in-flight pointer. No implicit package install, TeX substitution, solver or full-source rewrite.
+- Adds Russian offline search in egui over the same C catalogue used by CLI/authoring; syntax/examples/parameter units/default provenance/manual sections remain unified.
+- All new unit/egui layout tests, detailed plans and QA insight included. Exact-head CI, real GUI-PDF artifacts, postmerge and physical Win10/Mac remain NOT_RUN at authoring.
+
 ## Unreleased — I51 B36 actual-X11 automated PASS / PDF-focus manual visual FAIL (block main merge)
 
 - QA `6eea588f`: genuine Linux/X11 I47 `41330287961` SUCCESS, ZIP `13092913019` CRC and 45/45 hashes, real PDF/guide selected states and six native gestures with byte-preserved source. Separate I46 real safe Open SUCCESS. Manual comparison with same-run GUI-exported PDF reference exposes **missing rectangle strokes, stippled circle/Bézier and tiny text in the compact PDF-focus viewport**, plus stale prior `2% cannot fit` warning while focused PDF fits; **B36 visual fidelity FAIL**. No B/main merge pending correction, exact next QA CI NOT_RUN, physical Win10/Mac NOT_RUN.
