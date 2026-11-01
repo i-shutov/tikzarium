@@ -80,6 +80,16 @@ def profile_check(profile: dict, app_tree_sha: str) -> None:
         if (not isinstance(xy, list) or len(xy) != 2
                 or any(type(v) is not int or v < 0 for v in xy)):
             raise ValueError(f"Missing reviewed X11 control coordinates: {key}")
+    # Bounds measured from actual B34 modal screenshot, failed X11 41307868676.
+    # Do not count a click OUTSIDE the button as a rejection-path test.
+    rect = profile.get("modal_save_reviewed_rect")
+    if (not isinstance(rect, list) or len(rect) != 4
+            or any(type(v) is not int for v in rect)
+            or not (0 <= rect[0] < rect[2] < 1366 and 0 <= rect[1] < rect[3] < 740)):
+        raise ValueError("Missing manually reviewed B34 modal Save button bounds")
+    x, y = profile["modal_save"]
+    if not (rect[0] <= x <= rect[2] and rect[1] <= y <= rect[3]):
+        raise ValueError("Modal Save click is outside reviewed real-X11 button bounds")
 
 
 def main() -> int:

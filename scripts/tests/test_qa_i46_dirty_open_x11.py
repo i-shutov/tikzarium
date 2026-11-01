@@ -31,6 +31,10 @@ class I46ContractTests(unittest.TestCase):
         bad = dict(profile, modal_save="not an event coordinate")
         with self.assertRaises(ValueError):
             profile_check(bad, profile["reviewed_app_tree_sha"])
+        missed = dict(profile, modal_save=[506, 458])  # Actual failed I46 click.
+        with self.assertRaisesRegex(ValueError, "outside reviewed"):
+            profile_check(missed, profile["reviewed_app_tree_sha"])
+        self.assertEqual(profile["modal_save"], [536, 429])
 
     def test_protection_rejects_altered_bytes(self):
         from tempfile import TemporaryDirectory

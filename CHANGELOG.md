@@ -2,6 +2,8 @@
 
 ## Unreleased — I46 current B34+N3 real-X11 acceptance (CI PENDING)
 
+- **I46 QA coordinate correction:** independently downloaded and visually inspected real [run 41307868676](https://github.com/i-shutov/tikzarium/actions/runs/41307868676) screenshot; former (506,458) missed the actual Save-and-open button (x465–603,y416–441). Calibrated (536,429), added bounds-checked offline regression. Hosted run reached actual B34 modal but its Save/Reject click paths and PDF are **NOT PASS** until exact-head rerun+manual artifact review. No B production change or physical Win10/Mac claim.
+
 - Integrator QA branch carries latest B #75 SHA f9a4838c8e3a2ea2e2adf58efc152a016c41f09a and current app/src tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99, preserving N3 shared help merged into main. QA-only paths, no production edit. Real modal/XeLaTeX evidence still NOT_RUN pending exact-head workflow and screenshot review. Physical Win10/Mac NOT_RUN.
 
  — N3 Russian contextual help semantic correction (CI pending)

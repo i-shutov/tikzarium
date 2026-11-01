@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I46 B34 current-source real X11 dirty-Open egui modal proof; provisional modal positions pending first screenshot review",
+  "profile": "I46 B34 current-source X11 dirty-Open; modal Save click calibrated from genuine exact-tree 41307868676 screenshot 08; semantic PASS pending new exact-head GUI artifact",
   "source": [
     120,
     190
@@ -30,9 +30,15 @@
     398
   ],
   "modal_save": [
-    506,
-    458
+    536,
+    429
   ],
   "reviewed_app_tree_sha": "ecc6d40668fd6edddc97c682f8ddcca5fe615c99",
-  "bootstrap_caveat": "Coordinates modal_input/modal_save are provisional. They are NOT PASS until real screenshot, source/PDF hashes and human review. The app-tree SHA was read from GitHub git/trees for exact B34 HEAD 61cc1d04."
+  "bootstrap_caveat": "Manually inspected 41307868676 screenshot 08-accept-separate-before.png: actual Save-and-open button spans x465..603, y416..441 in 1366x740 X11 client frame. Previous (506,458) was BELOW button; negative checks therefore did not exercise production modal click and positive never created saved-scratch.tex. This is QA click-coordinate error, NOT a verified production failure. Current run must prove real click, user-file hashes, GUI PDF and new manual screenshots; physical Win10/Mac NOT_RUN.",
+  "modal_save_reviewed_rect": [
+    465,
+    416,
+    603,
+    441
+  ]
 }
