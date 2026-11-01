@@ -31,3 +31,7 @@ B-owned интеграционного блока после B32, не чере�
 ## Статус на момент написания
 Исходный код и тесты подготовлены для PR. Exact-head CI NOT_RUN,
 post-merge CI NOT_RUN, physical Windows 10/M1/M4 NOT_RUN. No release.
+
+## N3 semantic correction — integration gate
+
+Первый green CI HEAD `4d809b10` не проверял `ToolSpec.help_ru` / `LibrarySpec.help_ru`. Исправление использует ровно один read-only accessor в существующем C-каталоге для CLI detailed help и substring search; тесты для exact tool/library ID и описательного поиска. Новый HEAD CI и фактический CLI-вывод должны проверяться отдельно, до этого NOT_RUN. Windows10/M1/M4 физически NOT_RUN.
