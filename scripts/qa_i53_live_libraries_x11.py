@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I53: actual X11 library connect/disconnect, saved TeX, XeLaTeX PDF and Undo."""
+"""I53: real X11 B39 library connect/disconnect, XeLaTeX PDF, Undo and GUI Reopen."""
 import argparse, hashlib, json, os, platform, subprocess, time
 from pathlib import Path
 SRC = "\n".join([
@@ -16,6 +16,7 @@ SRC = "\n".join([
  r"\end{document}", ""
 ]).encode()
 DECL=b"\\usetikzlibrary{positioning}\n"
+REOPEN_SOURCE=SRC.replace(b"% Preserve unknown macro", b"% I53 alternate file\n% Preserve unknown macro", 1)
 def sha(b): return hashlib.sha256(b).hexdigest()
 def exact_patch(old,new):
  return new.count(DECL)==1 and new.replace(DECL,b"",1)==old
@@ -52,7 +53,7 @@ def main():
  "tree":tree,"host":platform.platform(),"binary_sha256":sha(app.read_bytes()),
  "gui":"real egui process X11/Xvfb","visual_review":"NOT_RUN",
  "physical_win10_miktex":"NOT_RUN","physical_mac_arm":"NOT_RUN",
- "connect":"NOT_RUN","disconnect":"NOT_RUN","undo":"NOT_RUN","pdf":"NOT_RUN"}
+ "connect":"NOT_RUN","disconnect":"NOT_RUN","undo":"NOT_RUN","reopen":"NOT_RUN","pdf":"NOT_RUN"}
  env=os.environ.copy()
  env.update({"XDG_CONFIG_HOME":str(out/"config"),"XDG_DATA_HOME":str(out/"data"),
              "XDG_CACHE_HOME":str(out/"cache"),"LIBGL_ALWAYS_SOFTWARE":"1",
@@ -128,10 +129,9 @@ def main():
   report["pdf"]="GUI_XELATEX_PDF_CYRILLIC_EMBEDDED_FONT"
   report["pdf_sha256"]=sha(pdf.read_bytes())
   shot("09-pdf.png")
-  # B38 status is part of CollapsingHeader title; a successful Connect
-  # changes ABSENT to CONFIRMED and resets row expansion. Re-open it through
-  # an actual X11 click before exercising the explicit inverse operation.
-  click("library");shot("09b-loaded-library-reopened.png")
+  # B39 stable egui row ID must preserve expansion after Connect/PDF.
+  # Do not click the row again: that would close it instead.
+  shot("09b-b39-library-must-remain-expanded.png")
   click("disconnect");shot("10-disconnect-click.png")
   click("save")
   until(lambda:doc.read_bytes()!=connected,"Disconnect saved")
@@ -142,6 +142,39 @@ def main():
   until(lambda:doc.read_bytes()==connected,"GUI Undo restored import")
   report["undo"]="REAL_GUI_UNDO_RESTORED"
   shot("12-undo-restored.png")
+  # GUI Save/Reopen must be a real Open event, not merely read_bytes().
+  # A separate control document prevents an unchanged in-memory editor
+  # from masquerading as a successful reload of the original document.
+  control=out/"reopen-control.tex"
+  control.write_bytes(REOPEN_SOURCE)
+  marker=out/"clipboard-reopen-sentinel.txt"
+  def clipboard_now():
+   result=subprocess.run(["xclip","-selection","clipboard","-o"],
+                         capture_output=True,timeout=5)
+   return result.stdout if result.returncode==0 else b""
+  def gui_reopen(target,expected,label):
+   click("path");key("ctrl+a")
+   command("xdotool","type","--clearmodifiers","--delay","3",str(target),timeout=30)
+   key("ctrl+o")
+   time.sleep(.7)
+   shot(label+"-opened.png")
+   marker.write_bytes(b"I53_SOURCE_NOT_COPIED")
+   subprocess.run(["xclip","-selection","clipboard","-i",str(marker)],
+                  stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=6)
+   click("source");key("ctrl+a");key("ctrl+c")
+   until(lambda:clipboard_now()==expected,label+" real GUI source load",8)
+   shot(label+"-source-copied.png")
+   if target.read_bytes()!=expected:
+    raise RuntimeError("GUI Open changed target source bytes: "+label)
+  gui_reopen(control,REOPEN_SOURCE,"13-control")
+  gui_reopen(doc,connected,"14-original")
+  click("save")
+  if doc.read_bytes()!=connected or control.read_bytes()!=REOPEN_SOURCE:
+   raise RuntimeError("GUI Reopen/Save touched a different TeX file")
+  if sha(pdf.read_bytes())!=report["pdf_sha256"]:
+   raise RuntimeError("GUI Reopen altered previously exported XeLaTeX PDF")
+  report["reopen"]="REAL_GUI_TWO_FILE_OPEN_EXACT_SOURCE"
+  report["reopen_control_sha256"]=sha(REOPEN_SOURCE)
   report["status"]="PASS_AUTOMATED_X11_MANUAL_REVIEW_PENDING"
  except Exception as e:
   report["error"]=type(e).__name__+": "+str(e)

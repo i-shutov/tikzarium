@@ -1052,6 +1052,10 @@ impl TikzariumApp {
         ) {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
+            // The C/N2 patch changed the source outside TextEdit. Fence
+            // egui's old native undo snapshots before rendering the code,
+            // so Ctrl/Cmd+Z cannot resurrect pre-patch text behind Session.
+            self.reset_source_editor_undo_history = true;
         }
         ui.separator();
         let caps = self.primitive_capabilities();

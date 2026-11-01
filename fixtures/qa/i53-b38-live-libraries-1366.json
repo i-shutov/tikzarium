@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
-  "status": "RUN4_CONNECT_PDF_VERIFIED;ROW_REOPEN_AND_DISCONNECT_UNDO_CLICKS_PROVISIONAL;ACTUAL_UNDO_HEADER_X1140_Y68",
+  "tree": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
+  "status": "B39_DISCONNECT_CANDIDATE_FROM_B38_REVIEWED_X11_RECT; NEW_B39_SCREENSHOT_REVIEW_NOT_RUN",
   "source": [
     120,
     190
@@ -35,8 +35,8 @@
     605
   ],
   "disconnect": [
-    1224,
-    605
+    1190,
+    584
   ],
   "undo": [
     1140,

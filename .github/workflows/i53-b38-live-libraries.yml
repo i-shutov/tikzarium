@@ -1,4 +1,4 @@
-name: I53 B38 actual X11 library Connect Disconnect PDF Undo
+name: I53 B39 actual X11 library Connect Disconnect PDF Undo and GUI Reopen
 on:
   push:
     branches:
@@ -23,10 +23,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Exact checkout and unchanged B38 production tree
+      - name: Exact checkout and unchanged B39 production tree
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c0e45c3445f25f365ca7ac4a2985b9a4261b7373'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0ebdd9e123dda4ea18024150cf284c905badcdb6'
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
       - name: Install external Linux X11 and XeLaTeX prerequisites
         run: |
@@ -53,7 +53,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i53-b38-library-${{ github.sha }}
+          name: i53-b39-library-${{ github.sha }}
           path: |
             /home/runner/work/_temp/i53-evidence/*.png
             /home/runner/work/_temp/i53-evidence/*.tex

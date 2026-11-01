@@ -1,6 +1,6 @@
-## Unreleased — I53 independent actual-X11 N2 libraries acceptance (DRAFT)
+## Unreleased — I53 B39 real-X11 N2 libraries / two-file GUI Reopen (CI NOT_RUN)
 
-- New full-window positioning Connect → saved TeX → externally compiled XeLaTeX PDF → Disconnect → Undo QA, with failure screenshots, hashes and negative tests; initial click profile provisional, no GUI PASS until review.
+- New full-window positioning Connect → saved TeX → externally compiled XeLaTeX PDF → Disconnect → Undo QA, with failure screenshots, hashes and negative tests; B39 stable-row ID in scope and actual two-file GUI Open source checks added; Disconnect candidate [1190,584] requires fresh B39 screenshot before GUI PASS.
 
 ## Unreleased — B38 library connect/disconnect + N3 help inspector (DRAFT: QA NOT_RUN)
 

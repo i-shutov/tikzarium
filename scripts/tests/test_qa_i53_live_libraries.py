@@ -14,6 +14,11 @@ class I53(unittest.TestCase):
  def test_macro_and_unicode_preservation_fixture(self):
   self.assertIn(b"\\OpaqueLabel",m.SRC)
   self.assertIn("Не менять".encode(),m.SRC)
+ def test_separate_gui_reopen_control_is_distinct_and_preserves_opaque_macro(self):
+  self.assertNotEqual(m.REOPEN_SOURCE,m.SRC)
+  self.assertIn(b'% I53 alternate file',m.REOPEN_SOURCE)
+  self.assertIn(b'\\OpaqueLabel',m.REOPEN_SOURCE)
+  self.assertIn('Не менять'.encode(),m.REOPEN_SOURCE)
  def test_profile_fail_closed(self):
   names=("source","path","save","build","export","panel","library","connect","disconnect","undo")
   d={k:[200,130] for k in names};d["tree"]="old"
