@@ -25,7 +25,7 @@ def exact_patch(old,new):
  return new.count(DECL)==1 and new.replace(DECL,b"",1)==old
 def check_profile(p,tree):
  if not tree or p.get("tree")!=tree: raise ValueError("Not a verified production app tree")
- for n in ("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query"):
+ for n in ("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query","help_result"):
   x=p.get(n)
   if not isinstance(x,list) or len(x)!=2 or any(type(v)!=int or v<0 for v in x):
    raise ValueError("Unreviewed X11 target "+n)
@@ -207,6 +207,13 @@ def main():
   if sha(pdf.read_bytes())!=report["pdf_sha256"]:
    raise RuntimeError("N3 help search altered external PDF")
   report["help"]="REAL_GUI_QUERY_ENTERED_RESULTS_MANUAL_SCREENSHOT_REVIEW_PENDING"
+  # Open the actual result row, not just an empty search box.
+  # The manual reviewer must observe Russian command syntax/example/source.
+  click("help_result");shot("17-help-positioning-details.png")
+  if doc.read_bytes()!=connected or control.read_bytes()!=REOPEN_SOURCE:
+   raise RuntimeError("Help detail expansion altered project source")
+  if sha(pdf.read_bytes())!=report["pdf_sha256"]:
+   raise RuntimeError("Help detail expansion altered external PDF")
   report["status"]="PASS_AUTOMATED_X11_MANUAL_REVIEW_PENDING"
  except Exception as e:
   report["error"]=type(e).__name__+": "+str(e)

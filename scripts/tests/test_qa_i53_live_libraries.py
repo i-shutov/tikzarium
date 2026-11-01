@@ -27,7 +27,7 @@ class I53(unittest.TestCase):
   self.assertFalse(m.path_clipboard_matches(raw[:-2],expected))
   self.assertFalse(m.path_clipboard_matches(raw+b"garbage",expected))
  def test_profile_fail_closed(self):
-  names=("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query")
+  names=("source","path","save","build","export","panel","library","connect","disconnect","undo","help_header","help_query","help_result")
   d={k:[200,130] for k in names};d["tree"]="old"
   with self.assertRaises(ValueError):m.check_profile(d,"new")
   m.check_profile(d,"old")

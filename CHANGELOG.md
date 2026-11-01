@@ -1,3 +1,8 @@
+## Unreleased — I54 second real QA accepted (details expansion next HEAD NOT_RUN)
+
+- Exact I54 `9adbbde4ae1dbf0bacac3279605db852889ccfbe`: I46 X11 [41362471144](https://github.com/i-shutov/tikzarium/actions/runs/41362471144) SUCCESS, I47 six real gestures and held-pointer Undo [41362471218](https://github.com/i-shutov/tikzarium/actions/runs/41362471218) SUCCESS, I53 N2+N3 search [41362471344](https://github.com/i-shutov/tikzarium/actions/runs/41362471344) SUCCESS. Downloaded original artifacts: I46 21/21 previous HEAD verified; I47 **46/46** and I53 **27/27** report SHA-256 match. Manually compared saved native source and XeLaTeX PDF to screenshots; screenshot of actual N3 entered query shows exactly one shared-C result `tikz.library.positioning` with "Найдено: 1". No host hardware claim.
+- Extend actual N3 search by clicking returned positioning help entry and screenshotting syntax/requirements/Russian explanation; coordinate [1150,175] from real 9adb screenshot. Its new exact HEAD CI/visual evidence NOT_RUN when committed. Source/PDF must remain unchanged.
+
 ## Unreleased — I54 review of first real QA (CI first HEAD FAILED, repair NOT_RUN)
 
 - First exact B39 I46 actual dirty-Open [41362016898](https://github.com/i-shutov/tikzarium/actions/runs/41362016898) SUCCESS; downloaded ZIP 13105683167 and verified 21/21 report hashes; manually inspected modal rejection/acceptance/GUI PDF frames, original UTF-8/CRLF source preserved, PDF Cyrillic and embedded DejaVuSerif. I46 accepted on first QA HEAD 3b9af78, no physical Win/Mac implication.
