@@ -43,13 +43,14 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
-    def test_b28_focused_textedit_profile_is_exact_source_pinned(self):
+    def test_b29_source_history_profile_is_exact_source_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "4be7a5aebbdd77a820abc08ea37d349dcab6bcec")
+                         "d7a487e91614c7b607ce92f53275e10e2a5ee911")
         self.assertTrue(profile["undo_held_pointer"])
-        self.assertTrue(profile["b28_focused_textedit_regression"])
+        self.assertTrue(profile["b29_editor_undo_history_regression"])
+        self.assertNotIn("b28_focused_textedit_regression", profile)
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
         self.assertEqual(profile["zoom_out_click"], [882, 72])

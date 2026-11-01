@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B28 exact app-tree: focused source TextEdit plus held guide pointer, Ctrl+Z before release, GUI Save, byte-exact inverse; B27 X11 FAIL is not PASS",
+  "profile": "B29 exact app-tree: GUI-native source editor history isolated from visual inverse patch; actual held-click/held-drag Undo, GUI Save and native PDF",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B26 reuses B25 button layout and six-gesture coordinates, now with persistent Fit Page on resize/new raster; these coordinates must be accepted by exact-B26 real X11 screenshot evidence, not inherited from B25. B27 tests click and drag X11 hold/Undo/release; acceptance is gated by actual saved-source and screenshot audit.",
+  "layout_note": "B29 only changes Undo focus/native editor history, not known B26/B28 coordinates. Coordinates are hypotheses until this exact B29 real X11 source/PDF/screenshots are independently reviewed; no inherited visual PASS.",
   "path_click": [
     310,
     18
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "4be7a5aebbdd77a820abc08ea37d349dcab6bcec",
+  "reviewed_app_tree_sha": "d7a487e91614c7b607ce92f53275e10e2a5ee911",
   "zoom_out_click": [
     882,
     72
@@ -146,5 +146,5 @@
     740
   ],
   "undo_held_pointer": true,
-  "b28_focused_textedit_regression": true
+  "b29_editor_undo_history_regression": true
 }

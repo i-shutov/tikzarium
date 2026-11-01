@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I31 B29 source-history actual GUI re-acceptance (NOT_RUN)
+
+- Independently pinned QA source to B29 draft PR #69 HEAD `133cab9eff2da0e2ab2ae9574e5328f2dad3ee62`, app tree `d7a487e91614c7b607ce92f53275e10e2a5ee911`. Previous B28 real X11 [41271432298](https://github.com/i-shutov/tikzarium/actions/runs/41271432298) failed despite apparent Undo success. Re-run real held-click and held-drag Undo plus 6 native tools, GUI Save/Build/Export and F1/PDF screenshot audit without weakening test predicates; no B production changes, old #48 untouched. Hosted B29 CI does not replace actual X11; physical Win10/Mac NOT_RUN. No release.
+
 ## Unreleased — I29 B28 X11 initial source-save gate: explicit GUI Save (pending rerun)
 
 - [I28 run 41271124460](https://github.com/i-shutov/tikzarium/actions/runs/41271124460) failed before held-pointer tests: actual source editor displayed original Unicode and path but Ctrl+S did not persist the file. Real pointer/PDF NOT_RUN. QA now records shortcut failure separately and uses the visible GUI Save button to test the required source-persistence vertical; no TeX is fabricated and shortcut is not called PASS. Corrected exact-head CI/visual evidence pending.

@@ -376,6 +376,9 @@ fn show_guide_frame_with_palette(
     // TextEdit changes or a tool switch cannot silently re-arm its release.
     if primary_down && origin_on_guide && !session.cancelled_pointer_capture {
         session.guide_pointer_armed = true;
+        // The authoring guide owns a held pointer, not the last selected
+        // source line. Release TextEdit keyboard focus before the next key.
+        response.request_focus();
     }
     if (escape || pointer_lost)
         && (session.drag_start.is_some()
@@ -543,6 +546,20 @@ pub fn handle_visual_undo_shortcut(
             // to prevent a second, native TextEdit Undo of unrelated user TeX.
             ctx.input_mut(|input| {
                 input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z);
+                // TextEdit also reads raw events. Remove only the successful
+                // visual Ctrl/Cmd+Z press, never unrelated text/IME/pointer
+                // events, before the editor is rendered later in the frame.
+                input.events.retain(|event| {
+                    !matches!(
+                        event,
+                        egui::Event::Key {
+                            key: egui::Key::Z,
+                            pressed: true,
+                            modifiers,
+                            ..
+                        } if modifiers.command && !modifiers.shift && !modifiers.alt
+                    )
+                });
             });
             Some(line)
         }
@@ -2224,19 +2241,21 @@ mod tests {
                     let mut session = Session::default();
                     session.reset(&source);
                     session.select_tool(tool);
-                    session
-                        .insert(&mut source, tool, Draft::for_tool(tool))
-                        .unwrap();
-                    let frame = |events: Vec<egui::Event>,
-                                 modifiers: egui::Modifiers,
-                                 request_source_focus: bool,
-                                 session: &mut Session,
-                                 source: &mut String| {
+                    // Prime the actual source editor with the old source
+                    // BEFORE C-catalogue insertion, as in the live X11 app.
+                    let mut seconds = 0.0;
+                    let mut frame = |events: Vec<egui::Event>,
+                                     modifiers: egui::Modifiers,
+                                     request_source_focus: bool,
+                                     session: &mut Session,
+                                     source: &mut String| {
                         let mut undo_line = None;
                         let mut guide_rect = Rect::NOTHING;
                         let mut key_consumed = false;
+                        seconds += 1.25;
                         let _output = ctx.run(
                             egui::RawInput {
+                                time: Some(seconds),
                                 screen_rect: Some(Rect::from_min_size(
                                     Pos2::ZERO,
                                     Vec2::new(width, 480.0),
@@ -2256,12 +2275,22 @@ mod tests {
                                 egui::SidePanel::left("b28-source")
                                     .default_width(270.0)
                                     .show(ctx, |ui| {
-                                        let response = ui
-                                            .add(egui::TextEdit::multiline(source).desired_rows(8));
-                                        if request_source_focus {
-                                            response.request_focus();
+                                        let mut output = egui::TextEdit::multiline(source)
+                                            .code_editor()
+                                            .desired_rows(8)
+                                            .show(ui);
+                                        if undo_line.is_some() {
+                                            // Match the production source
+                                            // panel's native-history fence.
+                                            output.state.clear_undoer();
+                                            output.state.store(ui.ctx(), output.response.id);
                                         }
-                                        observe_source_text_edit(&response, session, source);
+                                        if request_source_focus
+                                            && !session.cancelled_pointer_capture
+                                        {
+                                            output.response.request_focus();
+                                        }
+                                        observe_source_text_edit(&output.response, session, source);
                                     });
                                 egui::CentralPanel::default().show(ctx, |ui| {
                                     guide_rect = show_guide_frame(ui, session, source, READY).1;
@@ -2278,6 +2307,18 @@ mod tests {
                         &mut source,
                     );
                     assert!(ctx.wants_keyboard_input());
+                    session
+                        .insert(&mut source, tool, Draft::for_tool(tool))
+                        .unwrap();
+                    // Actual source jump: the code editor has seen both
+                    // versions, so its native undo history is non-empty.
+                    frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        true,
+                        &mut session,
+                        &mut source,
+                    );
                     let start = screen_point(rect, Point::new(1.0, 1.0));
                     let end = screen_point(rect, Point::new(3.0, 2.0));
                     frame(
@@ -2288,10 +2329,8 @@ mod tests {
                         &mut source,
                     );
                     assert!(session.guide_pointer_armed);
-                    assert!(
-                        ctx.wants_keyboard_input(),
-                        "source focus must reproduce I26"
-                    );
+                    // The guide takes keyboard focus on pointer-down;
+                    // the old source TextEdit must no longer own the key.
                     if dragged {
                         frame(
                             vec![egui::Event::PointerMoved(end)],
@@ -2303,7 +2342,7 @@ mod tests {
                         assert!(session.drag_start.is_some());
                     }
                     let (undone, _, key_consumed) =
-                        frame(vec![z(true)], modifiers, false, &mut session, &mut source);
+                        frame(vec![z(true)], modifiers, true, &mut session, &mut source);
                     assert!(undone.is_some(), "{tool:?}: missed held-pointer Undo");
                     assert!(key_consumed, "{tool:?}: TextEdit could repeat Undo");
                     assert_eq!(source, original, "{tool:?}: unrelated user TeX changed");
@@ -2317,6 +2356,21 @@ mod tests {
                     );
                     assert_eq!(source, original, "{tool:?}: mouse-up inserted a ghost");
                     assert!(!session.cancelled_pointer_capture);
+                    // An idle repaint and subsequent file Save/Reopen must
+                    // not resurrect a command from native editor history.
+                    frame(
+                        vec![],
+                        egui::Modifiers::default(),
+                        false,
+                        &mut session,
+                        &mut source,
+                    );
+                    assert_eq!(source, original, "{tool:?}: stale TextEdit source");
+                    let reopened = source.clone();
+                    let mut reopened_session = Session::default();
+                    reopened_session.reset(&reopened);
+                    assert_eq!(reopened, original, "{tool:?}: Save/Reopen drift");
+                    assert!(!reopened_session.undo_available());
                 }
             }
         }

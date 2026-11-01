@@ -1,4 +1,4 @@
-name: I28 real B28 focused-TextEdit Undo-while-held native TikZ PDF acceptance
+name: I31 real B29 source-history Undo-while-held native TikZ PDF acceptance
 on:
   push:
     branches:
@@ -31,7 +31,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: i28-desktop-${{ github.event.pull_request.head.sha || github.sha }}
+  group: i31-desktop-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 jobs:
   desktop:
@@ -52,7 +52,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '4be7a5aebbdd77a820abc08ea37d349dcab6bcec'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd7a487e91614c7b607ce92f53275e10e2a5ee911'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -76,7 +76,7 @@ jobs:
             cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
             echo "::warning::Source repository has NO Cargo.lock; generated resolution archived, release reproducibility NOT VERIFIED"
           fi
-      - name: Real B28 X11 focused-TextEdit held-pointer Undo, six gestures, GUI Save/XeLaTeX, fit/resize
+      - name: Real B29 X11 source-history held-pointer Undo, six gestures, GUI Save/XeLaTeX, fit/resize
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
           chmod 700 "$RUNNER_TEMP/i19-runtime"
@@ -87,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i28-b28-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
+          name: i31-b29-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
           path: |
             ${{ runner.temp }}/i19-evidence/*.json
             ${{ runner.temp }}/i19-evidence/*.png
