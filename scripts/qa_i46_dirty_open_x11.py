@@ -185,7 +185,10 @@ def main() -> int:
 
         shot("01-startup.png")
         report["steps"].append({"case": "actual_window", "result": "PASS"})
-        command("xclip", "-selection", "clipboard", "-i", str(clipboard))
+        # xclip forks and keeps inherited pipes open: never capture its stdout/stderr.
+        subprocess.run(["xclip", "-selection", "clipboard", "-i", str(clipboard)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=5, check=True)
         click("source")
         key("ctrl+a")
         key("ctrl+v")
