@@ -2108,7 +2108,10 @@ mod tests {
                                 None,
                                 width,
                             );
-                            assert_eq!(jump, None, "{tool:?}, width={width}, dragged={dragged}, focus={focus_loss}, after={loss_after_release}");
+                            assert_eq!(
+                                jump, None,
+                                "{tool:?}, width={width}, dragged={dragged}, focus={focus_loss}, after={loss_after_release}"
+                            );
                             assert_eq!(source, original, "focus/pointer loss must never patch TeX");
                             assert!(!session.undo_available());
                             assert!(session.drag_start.is_none());

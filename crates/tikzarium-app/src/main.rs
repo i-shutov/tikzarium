@@ -1271,7 +1271,7 @@ mod split_layout_tests {
         session.select_tool(tikz_authoring::Tool::Line);
         for (width, height) in [(1366.0, 740.0), (850.0, 560.0)] {
             let mut checked = false;
-            ctx.run(
+            let _ = ctx.run(
                 egui::RawInput {
                     screen_rect: Some(egui::Rect::from_min_size(
                         egui::Pos2::ZERO,
@@ -1315,9 +1315,18 @@ mod split_layout_tests {
             assert!(checked, "no frame at {width}x{height}");
             assert_eq!(source, original, "fit must never change user TeX");
         }
-        assert_eq!(fit_page_zoom(egui::vec2(0.0, 480.0), egui::vec2(400.0, 300.0)), None);
-        assert_eq!(fit_page_zoom(egui::vec2(1000.0, 1000.0), egui::vec2(100.0, 100.0)), None);
-        assert_eq!(fit_page_zoom(egui::vec2(f32::NAN, 100.0), egui::vec2(400.0, 300.0)), None);
+        assert_eq!(
+            fit_page_zoom(egui::vec2(0.0, 480.0), egui::vec2(400.0, 300.0)),
+            None
+        );
+        assert_eq!(
+            fit_page_zoom(egui::vec2(1000.0, 1000.0), egui::vec2(100.0, 100.0)),
+            None
+        );
+        assert_eq!(
+            fit_page_zoom(egui::vec2(f32::NAN, 100.0), egui::vec2(400.0, 300.0)),
+            None
+        );
         assert!(!session.undo_available());
     }
 
