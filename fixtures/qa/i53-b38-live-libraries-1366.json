@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
-  "status": "RUN4_REAL_X11_CONNECT_AND_PDF_PASS;ROW_COLLAPSED_ON_STATUS_CHANGE;REOPEN_ROW_FOR_DISCONNECT;UNDO_PENDING",
+  "status": "RUN4_CONNECT_PDF_VERIFIED;ROW_REOPEN_AND_DISCONNECT_UNDO_CLICKS_PROVISIONAL;ACTUAL_UNDO_HEADER_X1140_Y68",
   "source": [
     120,
     190
@@ -39,8 +39,8 @@
     605
   ],
   "undo": [
-    942,
-    64
+    1140,
+    68
   ],
   "physical_win10_miktex": "NOT_RUN",
   "physical_mac_arm": "NOT_RUN"
