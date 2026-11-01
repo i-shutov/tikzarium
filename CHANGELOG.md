@@ -1,3 +1,7 @@
+## Unreleased — I51 B36 actual-X11 automated PASS / PDF-focus manual visual FAIL (block main merge)
+
+- QA `6eea588f`: genuine Linux/X11 I47 `41330287961` SUCCESS, ZIP `13092913019` CRC and 45/45 hashes, real PDF/guide selected states and six native gestures with byte-preserved source. Separate I46 real safe Open SUCCESS. Manual comparison with same-run GUI-exported PDF reference exposes **missing rectangle strokes, stippled circle/Bézier and tiny text in the compact PDF-focus viewport**, plus stale prior `2% cannot fit` warning while focused PDF fits; **B36 visual fidelity FAIL**. No B/main merge pending correction, exact next QA CI NOT_RUN, physical Win10/Mac NOT_RUN.
+
 ## Unreleased — I51 B36 two-line diagnostic layout X11 strict selection (fresh CI NOT_RUN)
 
 - Real I47 `41329734338` reached six native gesture+actual GUI PDF but exposed a wrapped Fit Page error banner shifting control y-coordinates by 16px; no B36 production fault demonstrated. Independently inspected screenshot `05a`; QA now tests exactly one selected-button layout among reviewed single-/two-line cases using real PNG RGB, with negative ambiguous/none tests. No edits to production Rust. New exact-head GUI and whole-page manual QA NOT_RUN at authoring; physical Win10/Mac NOT_RUN.
