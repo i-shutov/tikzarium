@@ -90,12 +90,20 @@ def xtest_ctrl_z_sequence(ctrl_keycode: int, z_keycode: int) -> tuple[tuple[int,
             (z_keycode, False), (ctrl_keycode, False))
 
 
-def xtest_ctrl_z_preserving_pointer() -> None:
-    """Send genuine X11 key events while Button1 stays held on the server.
+def x11_keycode_down(keymap: bytes, keycode: int) -> bool:
+    """The XQueryKeymap 256-bit server state, independent of app focus."""
+    if len(keymap) != 32 or not 8 <= keycode <= 255:
+        raise ValueError("X11 keymap must be 32 bytes with a valid keycode")
+    return bool(keymap[keycode // 8] & (1 << (keycode % 8)))
 
-    xdotool key --clearmodifiers was observed to release Button1 BEFORE
-    the QA driver's mouseup (I34 XQueryPointer: 256 -> 0). That sequence
-    was not a valid held-Undo regression. XTest sends ONLY key events.
+
+def xtest_ctrl_z_preserving_pointer() -> dict:
+    """Send X11 Ctrl+Z with physically observable key-down dwell.
+
+    A burst of four XTest key events can elide the hotkey from the GUI
+    event-loop without ever releasing the mouse. Each event is XSync'd,
+    its XQueryKeymap state verified, and held for > one typical GUI frame.
+    This is a QA-only server-side keyboard input, not a Session call.
     """
     x11 = ctypes.CDLL("libX11.so.6")
     xtest = ctypes.CDLL("libXtst.so.6")
@@ -106,6 +114,11 @@ def xtest_ctrl_z_preserving_pointer() -> None:
     x11.XKeysymToKeycode.restype = ctypes.c_ubyte
     x11.XSync.argtypes = [ptr, ctypes.c_int]
     x11.XSync.restype = ctypes.c_int
+    x11.XQueryKeymap.argtypes = [ptr, ptr]
+    x11.XQueryKeymap.restype = ctypes.c_int
+    x11.XGetInputFocus.argtypes = [
+        ptr, ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(ctypes.c_int)]
+    x11.XGetInputFocus.restype = ctypes.c_int
     x11.XCloseDisplay.argtypes = [ptr]
     x11.XCloseDisplay.restype = ctypes.c_int
     xtest.XTestFakeKeyEvent.argtypes = [
@@ -119,10 +132,29 @@ def xtest_ctrl_z_preserving_pointer() -> None:
         z = x11.XKeysymToKeycode(display, ord("z"))
         if not ctrl or not z or ctrl == z:
             raise RuntimeError("XTest Ctrl+Z keycodes unavailable")
+        focused = ctypes.c_ulong()
+        revert_to = ctypes.c_int()
+        x11.XGetInputFocus(display, ctypes.byref(focused), ctypes.byref(revert_to))
+        trace = {"focus_window": focused.value, "key_events": []}
         for code, pressed in xtest_ctrl_z_sequence(ctrl, z):
             if not xtest.XTestFakeKeyEvent(display, code, int(pressed), 0):
                 raise RuntimeError("XTestFakeKeyEvent rejected Ctrl+Z")
-        x11.XSync(display, 0)
+            x11.XSync(display, 0)
+            keymap = ctypes.create_string_buffer(32)
+            x11.XQueryKeymap(display, keymap)
+            actual = x11_keycode_down(keymap.raw, code)
+            button_mask = x11_button1_mask()
+            trace["key_events"].append({
+                "keycode": code, "expected_pressed": pressed,
+                "server_pressed": actual, "button1_mask": button_mask,
+                "button1": x11_button1_pressed(button_mask),
+            })
+            if actual != pressed:
+                raise RuntimeError("X11 server failed to register Ctrl+Z key state")
+            if not x11_button1_pressed(button_mask):
+                raise RuntimeError("X11 server dropped held Button1 during Ctrl+Z")
+            time.sleep(0.08)
+        return trace
     finally:
         x11.XCloseDisplay(display)
 
@@ -397,8 +429,8 @@ def main() -> int:
                     screenshot("b30-" + variant + "-held.png")
                     if not x11_button1_pressed(mask_before):
                         raise RuntimeError("QA XTest Button1 was UP before Ctrl+Z; held-pointer scenario not established")
-                    xtest_ctrl_z_preserving_pointer()
-                    report["x11_held_undo_key_input"] = "XTestFakeKeyEvent Control_L+z, no synthetic mouse release"
+                    report["x11_held_undo_key_events"] = xtest_ctrl_z_preserving_pointer()
+                    report["x11_held_undo_key_input"] = "XTestFakeKeyEvent Control_L+z, each event XSync/80ms XQueryKeymap"
                     time.sleep(0.3)
                     mask_after = x11_button1_mask()
                     report["x11_button1_mask_trace"].append({

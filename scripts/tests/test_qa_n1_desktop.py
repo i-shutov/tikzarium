@@ -43,6 +43,18 @@ class DesktopEvidenceTests(unittest.TestCase):
                 with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
                     desktop.owners(candidate)
 
+    def test_x11_query_keymap_bit_state(self):
+        bits = bytearray(32)
+        for code in (37, 52):
+            bits[code // 8] |= (1 << (code % 8))
+        self.assertTrue(desktop.x11_keycode_down(bytes(bits), 37))
+        self.assertTrue(desktop.x11_keycode_down(bytes(bits), 52))
+        self.assertFalse(desktop.x11_keycode_down(bytes(bits), 53))
+        for keymap, code in ((b"", 37), (bytes(32), 7), (bytes(32), 256)):
+            with self.subTest(code=code):
+                with self.assertRaises(ValueError):
+                    desktop.x11_keycode_down(keymap, code)
+
     def test_xtest_ctrl_z_has_only_key_events_and_balanced_releases(self):
         self.assertEqual(desktop.xtest_ctrl_z_sequence(37, 52),
                          ((37, True), (52, True), (52, False), (37, False)))

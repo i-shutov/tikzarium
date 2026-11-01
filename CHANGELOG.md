@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased — I35 B30 true XTest held Ctrl+Z and GUI acceptance (NOT_RUN pending artifacts)
+## Unreleased — I36 B30 X11 held-button AND keyboard receipt desktop acceptance (NOT_RUN pending artifacts)
+
+- I35 [actual Linux/X11 41279880858](https://github.com/i-shutov/tikzarium/actions/runs/41279880858) held **Button1Mask=256** across key-only XTest Ctrl+Z but source Undo still failed and later release inserted Line #2. I36 adds 80ms XTest key dwell/XSync, native XQueryKeymap proof of Ctrl/z down/up, XGetInputFocus snapshot, server Button1Mask check each key step, preserving strict source rollback. This disambiguates too-fast synthetic key events from B30 production routing. QA-only; actual I36 GUI acceptance NOT_RUN until complete, physical OS NOT_RUN, no release.
+
+## Unreleased — I35 B30 true XTest held Ctrl+Z and GUI acceptance (HISTORICAL FAIL)
 
 - [I34 real X11 41279540150](https://github.com/i-shutov/tikzarium/actions/runs/41279540150) correctly failed closed: X11 Button1Mask **256→0** across `xdotool key --clearmodifiers` before QA mouseup, so old “held” ghost tests used invalid input. I35 replaces that key with genuine XTestFakeKeyEvent key-only Ctrl+Z, demonstrated under isolated Xvfb to preserve Button1Mask=256, and keeps server mask/byte-exact/no-ghost tests. No B production edits; actual I35 acceptance and physical Win10/M1/M4 NOT_RUN, no merge/release.
 
