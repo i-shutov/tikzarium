@@ -141,6 +141,7 @@ def main() -> int:
               "physical_win10_miktex": "NOT_RUN", "physical_m1_m4": "NOT_RUN",
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
+              "fit_page": "NOT_RUN",
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -323,6 +324,21 @@ def main() -> int:
                     raise RuntimeError("Zoom Out click had no visible UI frame effect")
                 report["full_page"] = "ZOOM_OUT_FRAME_MANUAL_REVIEW_REQUIRED"
                 report["steps"].append({"case": "zoom_out_entire_page",
+                                        "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+            # B25: actual new whole-PDF-page control, separate from Zoom Out.
+            # Candidate coordinates require screenshot review on exact app tree.
+            if "fit_page_click" in profile:
+                before_source = source.read_bytes()
+                screenshot("04c-fit-page-before.png")
+                click(profile["fit_page_click"])
+                time.sleep(0.5)
+                screenshot("04d-fit-page-candidate.png")
+                if source.read_bytes() != before_source:
+                    raise RuntimeError("Fit-page click modified original TeX")
+                if sha256(out / "04c-fit-page-before.png") == sha256(out / "04d-fit-page-candidate.png"):
+                    raise RuntimeError("Fit-page click had no visible frame effect")
+                report["fit_page"] = "FRAME_CHANGED_MANUAL_FULL_PAGE_REVIEW_REQUIRED"
+                report["steps"].append({"case": "b25_fit_page_button",
                                         "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
         report["status"] = ("PASS_DESKTOP_AUTOMATED_VISUAL_REVIEW_PENDING"
                             if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY")

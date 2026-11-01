@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — 2026-11-01: I23 B25 real GUI whole-page QA bridge (NOT_RUN)
+
+- QA branch based on B25 [#67](https://github.com/i-shutov/tikzarium/pull/67) exact `0174bab2fdc9b6f47f8680f01fbbfba93858f877`, app-src tree `033ece8a178c5c7d315fb95267e348975fe4b5d5`, original active I06 #48 untouched. Actual Linux/X11 six native gestures, GUI Save/Build/Export, Russian F1 and new **«Вся страница»** candidate screenshots will be inspected before QA is called PASS; frame change alone is insufficient. Proposed coordinates require recalibration, and B24 PASS is not inherited. Physical Win10 x64/MiKTeX and Mac M1/M4 XeLaTeX NOT_RUN. No release.
+
+
 ## Unreleased — 2026-11-01: I21 B24 real egui GUI re-acceptance (NOT_RUN until exact-head evidence)
 
 - B24 production [#62](https://github.com/i-shutov/tikzarium/pull/62) exact `33f5ef5cc0f5dbb955d7979497a291845b9f6130` is now included in QA [#66](https://github.com/i-shutov/tikzarium/pull/66) alongside the seven original I19 QA-only files. The real-window test tree pin is updated from B23 `0fbea02a14a08e568da831d78c562cd20dedb8d9` to B24 `e00089592b23219df58adf6cc9550ecaefd7414b` without replaying older I06 branch or overwriting B-owned files. Actual B23 6/6 gestures, GUI PDF, Russian F1, and full-page 32% acceptance are **historical B23 evidence**, not B24 PASS. Pending fresh exact-head hosted X11 run, source/PDF/screenshot review, lease-controlled QA merge into #62 and separate B/main CI. No physical Windows10 or macOS tests, no release.

@@ -1,8 +1,8 @@
-name: I21 real B24 egui desktop source and PDF evidence
+name: I23 real B25 native TikZ and full-page PDF acceptance
 on:
   push:
     branches:
-      - qa/i19-b23-real-x11-acceptance
+      - qa/i23-b25-live-fullpage-x11
       - feat/b16-egui-live-palette-six-gesture-20261031
       - main
     paths:
@@ -16,6 +16,7 @@ on:
       - 'Cargo.lock'
   pull_request:
     branches:
+      - feat/b25-egui-pointer-focus-fit-page-20261101
       - feat/b16-egui-live-palette-six-gesture-20261031
       - main
     paths:
@@ -31,7 +32,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: i19-desktop-${{ github.event.pull_request.head.sha || github.sha }}
+  group: i23-desktop-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 jobs:
   desktop:
@@ -52,7 +53,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'e00089592b23219df58adf6cc9550ecaefd7414b'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '033ece8a178c5c7d315fb95267e348975fe4b5d5'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -76,7 +77,7 @@ jobs:
             cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
             echo "::warning::Source repository has NO Cargo.lock; generated resolution archived, release reproducibility NOT VERIFIED"
           fi
-      - name: Real X11 pointer gestures, application Save, GUI XeLaTeX Build/Export
+      - name: Real B25 X11 gestures, GUI Save, XeLaTeX PDF, Fit page
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
           chmod 700 "$RUNNER_TEMP/i19-runtime"
@@ -87,7 +88,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: i21-b24-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
+          name: i23-b25-desktop-${{ env.TIKZARIUM_SOURCE_SHA }}
           path: |
             ${{ runner.temp }}/i19-evidence/*.json
             ${{ runner.temp }}/i19-evidence/*.png
