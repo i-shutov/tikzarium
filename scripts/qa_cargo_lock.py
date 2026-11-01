@@ -65,6 +65,16 @@ def inspect_lock(raw: bytes) -> dict[str, object]:
     }
 
 
+
+def require_identical_lock(working: bytes, committed: bytes) -> str:
+    """Reject platform-specific checkout conversions, not only logical Git diffs."""
+    if working != committed:
+        if working.replace(b"\\r\\n", b"\\n") == committed:
+            raise RuntimeError("Cargo.lock CRLF conversion changed bytes on checkout; configure eol=lf")
+        raise RuntimeError("Cargo.lock working-tree bytes differ from committed Git blob")
+    return hashlib.sha256(committed).hexdigest()
+
+
 def checked(root: Path, *argv: str) -> str:
     p = subprocess.run(argv, cwd=root, text=True, capture_output=True, check=False)
     if p.returncode != 0:
@@ -76,6 +86,16 @@ def audit(root: Path) -> dict[str, object]:
     report = inspect_lock((root / "Cargo.lock").read_bytes())
     checked(root, "git", "ls-files", "--error-unmatch", "Cargo.lock")
     checked(root, "git", "diff", "--exit-code", "--", "Cargo.lock")
+    # Git diff may silently normalize CRLF on Windows. Compare raw Git blob
+    # to raw worktree bytes; otherwise the same dependency graph hashes
+    # differently across hosts and the evidence is not comparable.
+    blob = subprocess.run(["git", "show", "HEAD:Cargo.lock"], cwd=root,
+                          capture_output=True, check=False)
+    if blob.returncode != 0:
+        raise RuntimeError(f"Could not read committed Cargo.lock: {blob.stderr[-400:]!r}")
+    report["git_blob_sha256"] = require_identical_lock(
+        (root / "Cargo.lock").read_bytes(), blob.stdout)
+    report["worktree_equals_git_blob_bytes"] = True
     # Cargo itself checks stale manifest resolution; no fallback to a regenerated lock.
     metadata = json.loads(checked(root, "cargo", "metadata", "--locked",
                                   "--no-deps", "--format-version", "1"))
