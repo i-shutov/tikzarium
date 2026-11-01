@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I29 B28 X11 initial source-save gate: explicit GUI Save (pending rerun)
+
+- [I28 run 41271124460](https://github.com/i-shutov/tikzarium/actions/runs/41271124460) failed before held-pointer tests: actual source editor displayed original Unicode and path but Ctrl+S did not persist the file. Real pointer/PDF NOT_RUN. QA now records shortcut failure separately and uses the visible GUI Save button to test the required source-persistence vertical; no TeX is fabricated and shortcut is not called PASS. Corrected exact-head CI/visual evidence pending.
+
 ## Unreleased — I28 B28 focus-safe pointer Undo real X11 gate (NOT_RUN)
 
 - QA-only integration onto exact B28 `f2dfbd0bb073e6152146a151eca138af8fc030e1`, source tree `4be7a5aebbdd77a820abc08ea37d349dcab6bcec`. Existing B27 real-X11 FAIL retained. Requires actual Ctrl+Z during a held guide pointer despite TextEdit focus, byte-exact Save rollback, no ghost, 6 native tools, Russian F1, GUI XeLaTeX PDF and independent visual review. Real B28 X11 / physical OS NOT_RUN pending new exact-head evidence.
