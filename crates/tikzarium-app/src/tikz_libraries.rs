@@ -298,13 +298,15 @@ mod tests {
         ) -> Option<usize> {
             assert!(rect.is_positive(), "click target must have a real hit rect");
             let pos = rect.center();
-            frame(ctx, session, source, vec![egui::Event::PointerMoved(pos), primary(pos, true)]);
+            frame(
+                ctx,
+                session,
+                source,
+                vec![egui::Event::PointerMoved(pos), primary(pos, true)],
+            );
             frame(ctx, session, source, vec![primary(pos, false)]).0
         }
-        fn target(
-            found: &[(LibraryUiTarget, egui::Rect)],
-            kind: LibraryUiTarget,
-        ) -> egui::Rect {
+        fn target(found: &[(LibraryUiTarget, egui::Rect)], kind: LibraryUiTarget) -> egui::Rect {
             found
                 .iter()
                 .find(|(name, _)| *name == kind)
@@ -325,19 +327,34 @@ mod tests {
         let mut session = Session::default();
         session.reset(&source);
         let (_, initial) = frame(&ctx, &mut session, &mut source, vec![]);
-        click(&ctx, &mut session, &mut source, target(&initial, LibraryUiTarget::Panel));
+        click(
+            &ctx,
+            &mut session,
+            &mut source,
+            target(&initial, LibraryUiTarget::Panel),
+        );
         let (_, panel_open) = frame(&ctx, &mut session, &mut source, vec![]);
         click(
-            &ctx, &mut session, &mut source,
+            &ctx,
+            &mut session,
+            &mut source,
             target(&panel_open, LibraryUiTarget::Entry(0)),
         );
         let (_, entry_open) = frame(&ctx, &mut session, &mut source, vec![]);
         assert_eq!(source, original, "opening UI must never patch TeX");
         let connected = click(
-            &ctx, &mut session, &mut source,
-            target(&entry_open, LibraryUiTarget::Action(0, LibraryChange::Connect)),
+            &ctx,
+            &mut session,
+            &mut source,
+            target(
+                &entry_open,
+                LibraryUiTarget::Action(0, LibraryChange::Connect),
+            ),
         );
-        assert!(connected.is_some(), "actual egui Connect button did not fire");
+        assert!(
+            connected.is_some(),
+            "actual egui Connect button did not fire"
+        );
         assert!(session.undo_available());
         assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
         assert!(source.contains("\\opaqueMacro{текст и % знак}\r\n"));
@@ -346,13 +363,18 @@ mod tests {
         // expanded, so Disconnect is available without clicking the row again.
         let (_, after_connect) = frame(&ctx, &mut session, &mut source, vec![]);
         let disconnected = click(
-            &ctx, &mut session, &mut source,
+            &ctx,
+            &mut session,
+            &mut source,
             target(
                 &after_connect,
                 LibraryUiTarget::Action(0, LibraryChange::Disconnect),
             ),
         );
-        assert!(disconnected.is_some(), "actual egui Disconnect button did not fire");
+        assert!(
+            disconnected.is_some(),
+            "actual egui Disconnect button did not fire"
+        );
         assert_eq!(source, original);
         session.undo(&mut source).unwrap();
         assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
