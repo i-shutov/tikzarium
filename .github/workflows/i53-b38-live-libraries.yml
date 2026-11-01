@@ -1,0 +1,64 @@
+name: I53 B39 actual X11 library Connect Disconnect PDF Undo and GUI Reopen
+on:
+  push:
+    branches:
+      - qa/i53-b38-live-libraries
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i53-b38-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  real-egui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.sha }}
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Exact checkout and unchanged B39 production tree
+        run: |
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0ebdd9e123dda4ea18024150cf284c905badcdb6'
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+      - name: Install external Linux X11 and XeLaTeX prerequisites
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+          xelatex --version | head -1
+      - name: Negative tests and profile safety are not actual GUI proof
+        run: python3 -m unittest discover -s scripts/tests -p test_qa_i53_live_libraries.py -v
+      - name: Build exact application and preserve Cargo.lock
+        run: |
+          cargo build --locked -p tikzarium-app --bin tikzarium-app
+          git diff --exit-code -- Cargo.lock
+      - name: Real egui source-panel-library-to-PDF-to-Undo vertical
+        run: |
+          mkdir -p "$RUNNER_TEMP/i53-runtime"
+          chmod 700 "$RUNNER_TEMP/i53-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i53-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i53-openbox.log 2>&1 & python3 scripts/qa_i53_live_libraries_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/i53-evidence" --profile fixtures/qa/i53-b38-live-libraries-1366.json'
+      - name: Upload actual screenshots, hashes and failure evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: i53-b39-library-${{ github.sha }}
+          path: |
+            /home/runner/work/_temp/i53-evidence/*.png
+            /home/runner/work/_temp/i53-evidence/*.tex
+            /home/runner/work/_temp/i53-evidence/*.pdf
+            /home/runner/work/_temp/i53-evidence/*.json
+            /home/runner/work/_temp/i53-evidence/*.log
+            /home/runner/work/_temp/i53-evidence/*.txt
+          if-no-files-found: warn

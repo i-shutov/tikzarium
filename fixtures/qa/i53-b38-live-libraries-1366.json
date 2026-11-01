@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "tree": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
+  "status": "B39_DISCONNECT_CANDIDATE_FROM_B38_REVIEWED_X11_RECT; NEW_B39_SCREENSHOT_REVIEW_NOT_RUN",
+  "source": [
+    120,
+    190
+  ],
+  "path": [
+    310,
+    18
+  ],
+  "save": [
+    553,
+    13
+  ],
+  "build": [
+    698,
+    13
+  ],
+  "export": [
+    837,
+    13
+  ],
+  "panel": [
+    1120,
+    150
+  ],
+  "library": [
+    1100,
+    224
+  ],
+  "connect": [
+    1224,
+    605
+  ],
+  "disconnect": [
+    1190,
+    584
+  ],
+  "undo": [
+    1140,
+    68
+  ],
+  "physical_win10_miktex": "NOT_RUN",
+  "physical_mac_arm": "NOT_RUN"
+}
