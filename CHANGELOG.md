@@ -1,3 +1,9 @@
+## Unreleased — I54 review of first real QA (CI first HEAD FAILED, repair NOT_RUN)
+
+- First exact B39 I46 actual dirty-Open [41362016898](https://github.com/i-shutov/tikzarium/actions/runs/41362016898) SUCCESS; downloaded ZIP 13105683167 and verified 21/21 report hashes; manually inspected modal rejection/acceptance/GUI PDF frames, original UTF-8/CRLF source preserved, PDF Cyrillic and embedded DejaVuSerif. I46 accepted on first QA HEAD 3b9af78, no physical Win/Mac implication.
+- First I47 [41362017043](https://github.com/i-shutov/tikzarium/actions/runs/41362017043) failed at stale B38 unit assertion before opening egui. Update unit assertion to exact B39 tree and candidate-only profile; real six-gesture proof still NOT_RUN.
+- First N3 [41362016972](https://github.com/i-shutov/tikzarium/actions/runs/41362016972) full N2 Connect/Disconnect/Undo/two-file Reopen/PDF passed but N3 TextEdit copy timed out: screenshot shows prior [1200,159] click below actual input y130–148, accidentally selecting explanatory help. Correct target [1200,138] based on *real* failed X11 screenshot; new N3 search result/visual review NOT_RUN.
+
 ## Unreleased — I54 B39 N2/N3 real desktop QA (CI NOT_RUN)
 
 - Exact-tree re-pin I46/I47 for actual B39 X11 reaccept; old modal/gesture coordinates remain provisional until manual screenshot/PDF/source validation.

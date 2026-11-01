@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B38 source-tree ref pinned; legacy B37 click coordinates are not yet independently calibrated on new right-side library/help controls; fail closed on mismatched controls. GUI preview screenshot alone is not six-gesture PASS.",
+  "layout_note": "B39 source-tree ref pinned; B37 click coordinates are not yet independently calibrated on B39 library/help side panel; fail closed on changed controls. GUI bootstrap is not gesture PASS.",
   "path_click": [
     310,
     18
@@ -199,6 +199,6 @@
       ]
     }
   ],
-  "b37_preview_fidelity_visual_review": "NOT_RUN_ON_B38",
+  "b37_preview_fidelity_visual_review": "NOT_RUN_ON_B39",
   "bootstrap_caveat": "B39 tree exact; B37 UI clicks and modal positions provisional; only reviewed screenshots and saved TeX/PDF pass. Physical Win10/Mac NOT_RUN."
 }

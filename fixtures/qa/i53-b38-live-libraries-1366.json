@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
-  "status": "I54_B39_N3_QUERY_COORDINATES_PROVISIONAL; N2_I53_1d55_ACCEPTED",
+  "status": "I54_N3_QUERY_HIT_RECT_CALIBRATED_FROM_ACTUAL_FAILED_X11_3b9_HELP_OPENED_PNG_AT_y130_148; NEXT_RUN_NOT_YET_ACCEPTED",
   "source": [
     120,
     190
@@ -50,6 +50,6 @@
   ],
   "help_query": [
     1200,
-    159
+    138
   ]
 }
