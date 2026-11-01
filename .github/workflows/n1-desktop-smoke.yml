@@ -1,4 +1,4 @@
-name: I51 B36 real X11 native TikZ six gestures, held Undo and PDF
+name: I51 B37 real X11 native TikZ six gestures, held Undo and PDF
 on:
   push:
     branches:
@@ -67,7 +67,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '276ad1525db4ef3d3aab4624808453a897ad5b6a'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'b855b7d8972b6663e0e764daa140c68a6b232fef'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q

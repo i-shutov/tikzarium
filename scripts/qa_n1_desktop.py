@@ -682,14 +682,26 @@ def main() -> int:
                 layouts, "guide", lambda p: screenshot_pixel_rgb(
                     out / "05a-b36-drawing-before-toggle.png", tuple(p)))
             click(initial_layout["pdf_click"])
-            time.sleep(0.9)
-            screenshot("05b-b36-pdf-large-candidate.png")
+            # B37 swaps a CPU-Lanczos compact-PDF raster asynchronously.
+            # Capture both an early GUI frame and a later real X11 frame;
+            # neither elapsed time nor frame change proves image fidelity.
+            time.sleep(0.45)
+            screenshot("05b0-b37-pdf-focus-early.png")
+            time.sleep(2.5)
+            screenshot("05b-b37-pdf-large-candidate.png")
             pdf_layout, large_rgb = b36_select_reviewed_layout(
                 layouts, "pdf", lambda p: screenshot_pixel_rgb(
-                    out / "05b-b36-pdf-large-candidate.png", tuple(p)))
+                    out / "05b-b37-pdf-large-candidate.png", tuple(p)))
+            report["b37_pdf_preview"] = {
+                "early_sha256": sha256(out / "05b0-b37-pdf-focus-early.png"),
+                "settled_candidate_sha256": sha256(out / "05b-b37-pdf-large-candidate.png"),
+                "raster_stroke_fidelity": "NOT_RUN_MANUAL_COMPARE_TO_04_PDF_REFERENCE",
+                "stale_fit_warning_absent": "NOT_RUN_MANUAL_SCREENSHOT_REVIEW",
+                "async_lod_arrival": "NOT_OBSERVABLE_FROM_GUI_SCREENSHOT_ALONE",
+            }
             if source.read_bytes() != before_focus:
                 raise RuntimeError("B36 PDF focus click changed user source bytes")
-            if sha256(out / "05a-b36-drawing-before-toggle.png") == sha256(out / "05b-b36-pdf-large-candidate.png"):
+            if sha256(out / "05a-b36-drawing-before-toggle.png") == sha256(out / "05b-b37-pdf-large-candidate.png"):
                 raise RuntimeError("B36 selected PDF focus has no visible frame difference")
             click(pdf_layout["guide_click"])
             time.sleep(0.65)

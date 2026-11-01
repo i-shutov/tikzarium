@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I51 B36 source-tree-pinned X11; inherited B35 gestures and new provisional PDF focus clicks REQUIRE actual independent screenshot calibration",
+  "profile": "I51 B37 source-tree-pinned X11; inherited B35 gestures and new provisional PDF focus clicks REQUIRE actual independent screenshot calibration",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "I51 exact B36 source tree. Real screenshot 04d at 1366 proves toolbar wrap: PDF toggle x840-916/y72, Fit width x630-688/y98, Fit Page x695-781/y98; compact 04e2 at 1180: PDF toggle x458-536/y98, Fit width x458-518/y125, Fit Page x525-612/y125. Rectangles manually reviewed from FIRST failed real B36 run; new recalibrated run NOT_RUN. Not B36 acceptance.",
+  "layout_note": "I51 B37 source-tree pinned. Inherited B36 real-X11 coordinates and blue-selected-button probes are provisional after removal of global stale fit warning; fail closed on unknown layout. New B37 raster LOD and status visual review NOT_RUN.",
   "path_click": [
     310,
     18
@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "276ad1525db4ef3d3aab4624808453a897ad5b6a",
+  "reviewed_app_tree_sha": "b855b7d8972b6663e0e764daa140c68a6b232fef",
   "zoom_out_click": [
     523,
     99
@@ -155,10 +155,10 @@
   ],
   "undo_held_pointer": true,
   "b30_release_source_history_regression": true,
-  "calibration_reference": "B35 actual X11 accepted only at 46aced2dbe1b66ba10d8cc92292024625e73936b; B36 requires complete fresh exact-head real GUI/PNG/TeX/PDF acceptance.",
+  "calibration_reference": "B36 real-X11 six gestures and PDF toggles accepted as controls only on B36 app/src tree 276ad1525db4ef3d3aab4624808453a897ad5b6a; B37 image quality and warning status require new artifacts and independent manual comparison.",
   "b34_modal_real_run": 41308995293,
   "b36_bootstrap_clicks_unreviewed": false,
-  "b36_evidence_recalibrated_from": "First actual B36 41329734338 report and screenshot 05a show a two-line Fit Page diagnostic shifted center controls down 16px. Dynamically identify exactly one real selected button layout from screenshot RGB; fail closed on none/ambiguous. PDF/return visual proof and new exact-head live run NOT_RUN.",
+  "b36_evidence_recalibrated_from": "B36 two screenshot-verified layouts inherited strictly as candidate B37 coords; status layout changed. Unknown/ambiguous probe rejects test; no B37 GUI claim until exact-head live proof.",
   "b36_focus_layouts": [
     {
       "name": "ordinary_single_line",
@@ -198,5 +198,6 @@
         87
       ]
     }
-  ]
+  ],
+  "b37_preview_fidelity_visual_review": "NOT_RUN"
 }

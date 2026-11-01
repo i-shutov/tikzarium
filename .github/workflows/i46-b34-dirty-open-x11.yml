@@ -1,4 +1,4 @@
-name: I51 B36 real X11 dirty-Open preserve user TeX and PDF
+name: I51 B37 real X11 dirty-Open preserve user TeX and PDF
 on:
   push:
     branches:
@@ -57,11 +57,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact checkout and B36 app source tree; never accept stale B31 X11
+      - name: Verify exact checkout and B37 app source tree; never accept stale B31 X11
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '276ad1525db4ef3d3aab4624808453a897ad5b6a'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'b855b7d8972b6663e0e764daa140c68a6b232fef'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q
@@ -72,7 +72,7 @@ jobs:
           xelatex --version | head -1
       - name: I46 offline predicates (not accepted as actual GUI)
         run: python3 -m unittest discover -s scripts/tests -p test_qa_i46_dirty_open_x11.py -v
-      - name: Build unmodified B36 egui executable with checked Cargo.lock
+      - name: Build unmodified B37 egui executable with checked Cargo.lock
         run: |
           cargo build --locked -p tikzarium-app --bin tikzarium-app
           git diff --exit-code -- Cargo.lock
