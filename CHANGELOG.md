@@ -1,4 +1,16 @@
+## Unreleased — N3 Russian contextual help semantic correction (CI pending)
+
+- Fixed the shared C-catalogue offline help search and CLI detail to include full existing Russian `help_ru` for native tools, parameters and TikZ libraries, not just a short title. Tests exercise exact IDs and description-only Cyrillic search; no second data source, TeX parser, auto-install, or changes to app GUI/figure fonts.
+- New exact-HEAD CI, real CLI output, post-merge CI and physical Win10/M1/M4 acceptance: NOT_RUN at authoring. Do not mark accepted until verified.
+
 # Changelog
+
+## Unreleased — N3 offline search and CLI from ONE Russian TikZ catalogue (CI PENDING)
+
+- Added read-only C-owned search over the exact primitive/parameter/library specifications already consumed by egui; CLI `help` exposes full Russian syntax, type/units/values, examples and PGF/TikZ provenance. No duplicate help database, parser, TeX substitute, or speculative package support.
+- CLI `help [--all|query|exact-id]` works without an installed XeLaTeX, distinguishes editor presets from documented TikZ defaults and reports package/project installation as NOT_CHECKED. Rust unit tests and an offline real-CLI CI smoke are mandatory.
+- Exact-head CI and post-merge CI NOT_RUN when authored. Physical Windows 10/MiKTeX and Mac M1/M4/XeLaTeX NOT_RUN; no release.
+
 
 ## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
 
