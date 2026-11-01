@@ -6,9 +6,10 @@ use tikzarium_extensions::{
 
 fn detail(entry: HelpEntry<'_>) -> String {
     let mut out = format!(
-        "{}\n{}\nСинтаксис: {}\nПример: {}\n",
+        "{}\n{}\nПояснение: {}\nСинтаксис: {}\nПример: {}\n",
         entry.id(),
         entry.title(),
+        entry.description_ru(),
         entry.syntax(),
         entry.example()
     );
@@ -122,6 +123,20 @@ mod tests {
         assert!(output.contains("Начальное значение редактора: Stealth (НЕ default TikZ)"));
         assert!(output.contains("https://tikz.dev/tikz-arrows"));
         assert!(output.contains("NOT_CHECKED"));
+    }
+
+    #[test]
+    fn exact_tool_and_library_explain_and_search_full_russian_text() {
+        let tool = render(Some("tikz.line")).unwrap();
+        assert!(tool.contains("Пояснение: Создаёт прямой отрезок"));
+        assert!(tool.contains("Синтаксис:"));
+        let library = render(Some("tikz.library.positioning")).unwrap();
+        assert!(library.contains("Пояснение: Позволяет задавать положение узла"));
+        assert!(library.contains("смещение и якоря"));
+        assert!(render(Some("СМЕЩЕНИЕ И ЯКОРЯ")).unwrap()
+            .contains("tikz.library.positioning"));
+        assert!(render(Some("СОЗДАЁТ ПРЯМОЙ ОТРЕЗОК")).unwrap()
+            .contains("tikz.line"));
     }
 
     #[test]
