@@ -148,8 +148,20 @@ def main() -> int:
         wait_for(locate, "Actual TikZarium egui window not found", 50)
         command("xdotool", "windowsize", "--sync", window, "1366", "740")
         command("xdotool", "windowmove", window, "0", "0")
-        command("xdotool", "windowactivate", "--sync", window)
-        time.sleep(1)
+        # openbox is started asynchronously by the workflow. EWMH
+        # _NET_ACTIVE_WINDOW may not be published yet when the real egui
+        # window appears. Focus directly as a bounded, independently
+        # verified X11 fallback; never pretend an unfocused keyboard worked.
+        try:
+            command("xdotool", "windowactivate", "--sync", window)
+            report["focus_method"] = "EWMH_NET_ACTIVE_WINDOW"
+        except RuntimeError:
+            command("xdotool", "windowfocus", "--sync", window)
+            report["focus_method"] = "XSetInputFocus_direct"
+        time.sleep(0.6)
+        report["x11_focused_window"] = command("xdotool", "getwindowfocus")
+        if int(report["x11_focused_window"]) != int(window):
+            raise RuntimeError("X11 focused window differs from actual TikZarium app")
         report["window_geometry"] = command("xdotool", "getwindowgeometry", "--shell", window)
 
         def shot(name: str) -> None:
@@ -197,6 +209,29 @@ def main() -> int:
         key("ctrl+a")
         type_ascii(str(victim))
         shot("03-open-target-typed.png")
+        # B33 must also block direct toolbar Save / Ctrl+S / Build
+        # against the occupied path typed for Open. The QA driver never
+        # writes victim or an artificial saved TeX after startup.
+        click("save")
+        assert_protected("scratch_direct_gui_save")
+        shot("03a-scratch-save-rejected.png")
+        report["steps"].append({
+            "case": "scratch_gui_save_occupied_target",
+            "result": "VICTIM_HASH_UNCHANGED_MANUAL_STATUS_REVIEW_PENDING"})
+        click("source")
+        key("ctrl+s")
+        assert_protected("scratch_keyboard_ctrl_s")
+        shot("03b-scratch-ctrl-s-rejected.png")
+        report["steps"].append({
+            "case": "scratch_ctrl_s_occupied_target",
+            "result": "VICTIM_HASH_UNCHANGED_MANUAL_STATUS_REVIEW_PENDING"})
+        click("build")
+        time.sleep(0.6)
+        assert_protected("scratch_gui_build")
+        shot("03c-scratch-build-rejected.png")
+        report["steps"].append({
+            "case": "scratch_gui_build_occupied_target",
+            "result": "VICTIM_HASH_UNCHANGED_MANUAL_STATUS_REVIEW_PENDING"})
         click("open_path")
         time.sleep(0.6)
         shot("04-dirty-open-modal.png")
