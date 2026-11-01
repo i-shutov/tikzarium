@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
-  "status": "PROVISIONAL_UNTIL_REAL_SCREENSHOT_REVIEW",
+  "status": "RUN1_X11_SCREENSHOT_CALIBRATION_PANEL_Y150_RECORD_Y224_ACTION_PROVISIONAL",
   "source": [
     120,
     190
@@ -23,19 +23,19 @@
     13
   ],
   "panel": [
-    991,
-    198
+    1120,
+    150
   ],
   "library": [
-    938,
-    271
+    1100,
+    224
   ],
   "connect": [
-    955,
+    1140,
     510
   ],
   "disconnect": [
-    955,
+    1140,
     510
   ],
   "undo": [
