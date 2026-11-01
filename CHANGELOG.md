@@ -1,3 +1,24 @@
+## Unreleased — I54 third QA SHA 234efdb · real Open focus ambiguity (next exact CI NOT_RUN)
+
+- I46 [41362909390](https://github.com/i-shutov/tikzarium/actions/runs/41362909390) and I47 [41362909481](https://github.com/i-shutov/tikzarium/actions/runs/41362909481) real-X11 workflows PASS on `234efdbb17a98cae72f4320ce8e1b2c8f177494f`. I53 [41362909420](https://github.com/i-shutov/tikzarium/actions/runs/41362909420) real Connect/Disconnect/Undo/PDF PASS but *fails at two-file GUI Reopen BEFORE N3 detail click*: screenshot `13-control-opened.png` still displays selected path and prior source after Ctrl+O. This is a GUI-input focus/shortcut uncertainty (one previous Ctrl+O run passed), not demonstrated file corruption.
+- Replace I53 uncertain keyboard shortcut with **actual visible Open path toolbar click**, while still validating two separate in-app GUI source buffers, source hashes, and PDF. New exact CI and final N3 details screenshot NOT_RUN at commit. Track Ctrl+O shortcut reliability separately rather than claiming it always passes.
+
+## Unreleased — I54 second real QA accepted (details expansion next HEAD NOT_RUN)
+
+- Exact I54 `9adbbde4ae1dbf0bacac3279605db852889ccfbe`: I46 X11 [41362471144](https://github.com/i-shutov/tikzarium/actions/runs/41362471144) SUCCESS, I47 six real gestures and held-pointer Undo [41362471218](https://github.com/i-shutov/tikzarium/actions/runs/41362471218) SUCCESS, I53 N2+N3 search [41362471344](https://github.com/i-shutov/tikzarium/actions/runs/41362471344) SUCCESS. Downloaded original artifacts: I46 21/21 previous HEAD verified; I47 **46/46** and I53 **27/27** report SHA-256 match. Manually compared saved native source and XeLaTeX PDF to screenshots; screenshot of actual N3 entered query shows exactly one shared-C result `tikz.library.positioning` with "Найдено: 1". No host hardware claim.
+- Extend actual N3 search by clicking returned positioning help entry and screenshotting syntax/requirements/Russian explanation; coordinate [1150,175] from real 9adb screenshot. Its new exact HEAD CI/visual evidence NOT_RUN when committed. Source/PDF must remain unchanged.
+
+## Unreleased — I54 review of first real QA (CI first HEAD FAILED, repair NOT_RUN)
+
+- First exact B39 I46 actual dirty-Open [41362016898](https://github.com/i-shutov/tikzarium/actions/runs/41362016898) SUCCESS; downloaded ZIP 13105683167 and verified 21/21 report hashes; manually inspected modal rejection/acceptance/GUI PDF frames, original UTF-8/CRLF source preserved, PDF Cyrillic and embedded DejaVuSerif. I46 accepted on first QA HEAD 3b9af78, no physical Win/Mac implication.
+- First I47 [41362017043](https://github.com/i-shutov/tikzarium/actions/runs/41362017043) failed at stale B38 unit assertion before opening egui. Update unit assertion to exact B39 tree and candidate-only profile; real six-gesture proof still NOT_RUN.
+- First N3 [41362016972](https://github.com/i-shutov/tikzarium/actions/runs/41362016972) full N2 Connect/Disconnect/Undo/two-file Reopen/PDF passed but N3 TextEdit copy timed out: screenshot shows prior [1200,159] click below actual input y130–148, accidentally selecting explanatory help. Correct target [1200,138] based on *real* failed X11 screenshot; new N3 search result/visual review NOT_RUN.
+
+## Unreleased — I54 B39 N2/N3 real desktop QA (CI NOT_RUN)
+
+- Exact-tree re-pin I46/I47 for actual B39 X11 reaccept; old modal/gesture coordinates remain provisional until manual screenshot/PDF/source validation.
+- New actual N3 Russian search TextEdit interaction added to I53 full Connect/Disconnect/Undo/two-file Reopen/GUI PDF proof; user source and PDF invariant. No production Rust changes; physical Win10/Mac NOT_RUN.
+
 ## Unreleased — I53 B39 real-X11 N2 libraries / two-file GUI Reopen (CI NOT_RUN)
 
 - I53 B39 run 41359783212 reached real GUI but failed at initial Save before Connect: X11 `xdotool type --delay 3` submitted `library-connect.t`, not requested `.tex` (verified in screenshot/file report). QA driver now pastes the UTF-8 Path through X11 clipboard and checks full in-app field with Ctrl+A/C before Save or GUI Open. Negative tests reject missing filename suffix/extra bytes. New CI NOT_RUN at authoring; production unchanged.

@@ -6,6 +6,7 @@ on:
       - qa/i46-b34-dirty-open-real-x11
       - b/b32-safe-open-source-undo-20261101
       - b/b36-compact-pdf-focus
+      - qa/i54-b39-n2-n3-desktop-reaccept
       - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
@@ -57,11 +58,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact checkout and B38 app source tree; new screenshots still require manual calibration
+      - name: Verify exact checkout and B39 app source tree; new screenshots still require manual calibration
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c0e45c3445f25f365ca7ac4a2985b9a4261b7373'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0ebdd9e123dda4ea18024150cf284c905badcdb6'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q

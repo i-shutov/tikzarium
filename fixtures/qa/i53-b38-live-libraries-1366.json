@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
-  "status": "B39_DISCONNECT_CANDIDATE_FROM_B38_REVIEWED_X11_RECT; NEW_B39_SCREENSHOT_REVIEW_NOT_RUN",
+  "status": "I54_B39_GUI_OPEN_TOOLBAR_REACCEPT_AFTER_CTRL_O_INTERMITTENT_FOCUS_RACE; NEW_CI_NOT_RUN; N3_ENTRY_SCREENSHOT_CANDIDATE",
   "source": [
     120,
     190
@@ -43,5 +43,21 @@
     68
   ],
   "physical_win10_miktex": "NOT_RUN",
-  "physical_mac_arm": "NOT_RUN"
+  "physical_mac_arm": "NOT_RUN",
+  "help_header": [
+    1200,
+    122
+  ],
+  "help_query": [
+    1200,
+    138
+  ],
+  "help_result": [
+    1150,
+    175
+  ],
+  "open_path": [
+    498,
+    13
+  ]
 }
