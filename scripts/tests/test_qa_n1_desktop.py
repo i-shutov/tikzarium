@@ -49,7 +49,7 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertEqual(profile["reviewed_app_tree_sha"],
                          "965933b3f70504f2f4082bc22795bab67fad5d44")
         self.assertTrue(profile["undo_held_pointer"])
-        self.assertTrue(profile["b30_editor_undo_history_regression"])
+        self.assertTrue(profile["b30_release_source_history_regression"])
         self.assertNotIn("b28_focused_textedit_regression", profile)
         self.assertNotIn("reviewed_app_source", profile)
         self.assertEqual(profile["fit_click"], [1027, 72])
