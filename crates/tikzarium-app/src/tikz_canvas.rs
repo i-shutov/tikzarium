@@ -13,14 +13,22 @@ pub struct Capabilities {
     pub implemented: bool,
 }
 impl Capabilities {
-    fn base_ready(self) -> bool {
-        self.installed && self.engine_compatible && self.implemented
+    // Native code generation uses C's catalogue and verified project imports;
+    // it does NOT invoke a TeX engine. Missing external TeX blocks an exact
+    // build, not ordinary editable TikZ source authoring.
+    fn source_authoring_supported(self) -> bool {
+        self.implemented
+    }
+    fn exact_build_prerequisites_verified(self) -> bool {
+        self.installed && self.engine_compatible
     }
     fn explanation(self) -> &'static str {
-        if !self.engine_compatible {
-            "Путь внешнего XeLaTeX не подтверждён. Windows: отдельно установленный MiKTeX."
+        if !self.implemented {
+            "Визуальный обработчик для этого инструмента не реализован; исходный TeX можно редактировать вручную."
+        } else if !self.engine_compatible {
+            "Внешний XeLaTeX не найден: TikZ-код создавать можно, но точный PDF пока не проверить. Windows 10: отдельно установите MiKTeX."
         } else if !self.installed {
-            "Наличие tikz.sty не подтверждено. Редактор не устанавливает TeX или пакеты автоматически."
+            "Наличие tikz.sty не подтверждено: исходный TikZ можно создавать, но точный PDF пока не проверить. Пакеты не устанавливаются автоматически."
         } else if self.loaded == Evidence::Absent {
             "ABSENT: прямого подключения TikZ в проверенной преамбуле нет; просмотрите C/N2 diff."
         } else if self.loaded == Evidence::Unknown {
@@ -218,38 +226,47 @@ fn hit_authored_anchor(source: &str, rect: Rect, pos: Pos2) -> Result<Option<u64
     }
 }
 
-fn show_guide_frame(
+fn show_guide_frame_with_palette(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
+    mut palette_rects: Option<&mut [Rect; 6]>,
 ) -> (Option<usize>, Rect) {
     ui.horizontal_wrapped(|ui| {
         ui.strong("TikZ · инструменты");
-        for tool in TOOLS {
+        for (index, tool) in TOOLS.into_iter().enumerate() {
             let info = tikz_authoring::spec(tool);
-            if ui
+            let button = ui
                 .add(egui::Button::new(&info.title_ru).selected(session.active == Some(tool)))
                 .on_hover_text(format!(
                     "{}\n{}\nPGF/TikZ §{}\n{}",
                     info.help_ru, info.syntax, info.manual_section, info.manual_url
-                ))
-                .clicked()
-            {
+                ));
+            if let Some(rects) = palette_rects.as_deref_mut() {
+                rects[index] = button.rect;
+            }
+            if button.clicked() {
                 session.select_tool(tool);
             }
         }
     });
-    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+    ui.strong(match session.active {
+        Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
+        None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
+    });
+    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
     let project_state = session
         .active
         .map(|tool| tikz_authoring::requirements_status(source, tool));
-    let ready = caps.base_ready()
+    let ready = caps.source_authoring_supported()
         && project_state == Some(tikzarium_extensions::primitives::Evidence::Confirmed);
-    if !ready {
+    // Missing XeLaTeX/tikz.sty is a build-time warning, not a veto on safe
+    // source patches. Keep import UNKNOWN/ABSENT fail-closed independently.
+    if !ready || !caps.exact_build_prerequisites_verified() {
         ui.colored_label(
             ui.visuals().warn_fg_color,
-            if !caps.base_ready() {
+            if !caps.source_authoring_supported() || ready {
                 caps.explanation()
             } else {
                 match project_state {
@@ -333,6 +350,47 @@ fn show_guide_frame(
     // Snapshot Response flags *before* locking egui InputState. Calling
     // Response methods from inside ui.input can recurse into the context lock.
     let clicked = response.clicked();
+    // A short click has no drag_start. Esc must therefore capture the entire
+    // in-flight pointer gesture (including a release in the same event frame),
+    // not just clear the provisional dragged point. Keep it inert until mouse-up
+    // even if Esc/Alt are released earlier than the primary pointer button.
+    let (escape, primary_down, origin_on_guide) = ui.input(|input| {
+        (
+            input.key_pressed(egui::Key::Escape),
+            input.pointer.primary_down(),
+            input
+                .pointer
+                .press_origin()
+                .is_some_and(|origin| rect.contains(origin)),
+        )
+    });
+    // A short click has no drag_start. Remember the press independently so
+    // TextEdit changes or a tool switch cannot silently re-arm its release.
+    if primary_down && origin_on_guide && !session.cancelled_pointer_capture {
+        session.guide_pointer_armed = true;
+    }
+    if escape
+        && (session.drag_start.is_some()
+            || session.alt_selection_capture
+            || (primary_down && origin_on_guide)
+            || clicked
+            || response.drag_stopped())
+    {
+        session.drag_start = None;
+        session.cancelled_pointer_capture = true;
+        session.status = "Esc: клик или жест отменён; исходный TeX не изменён".into();
+    }
+    if session.cancelled_pointer_capture {
+        if !primary_down {
+            session.cancelled_pointer_capture = false;
+            session.alt_selection_capture = false;
+            session.guide_pointer_armed = false;
+        }
+        return (None, rect);
+    }
+    if !primary_down {
+        session.guide_pointer_armed = false;
+    }
     let alt_press_on_guide = ui.input(|input| {
         input.modifiers.alt
             && (input.pointer.primary_down() || clicked)
@@ -379,13 +437,6 @@ fn show_guide_frame(
             session.drag_start = Some(snap(pointer, rect));
         }
     }
-    // Escape cancels the active provisional gesture, including a key event in
-    // the same frame as drag-stop. Never turn a cancelled drag into TeX source.
-    if ui.input(|input| input.key_pressed(egui::Key::Escape)) && session.drag_start.take().is_some()
-    {
-        session.status = "Жест отменён Esc; исходный TeX не изменён".into();
-        return (None, rect);
-    }
     let finish = if response.drag_stopped() {
         session.drag_start.take().map(|start| {
             let end = response
@@ -422,6 +473,15 @@ fn show_guide_frame(
     (None, rect)
 }
 
+fn show_guide_frame(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> (Option<usize>, Rect) {
+    show_guide_frame_with_palette(ui, session, source, caps, None)
+}
+
 /// The production handler and UNIT_EVENT egui frames run the same Response
 /// processing. The guide is provisional; neither path decodes a PDF.
 pub fn show_guide(
@@ -439,11 +499,97 @@ pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
     }
 }
 
+/// A focused source/parameter TextEdit owns native Ctrl/Cmd+Z. Elsewhere the
+/// shortcut invokes the same revision-checked inverse source patch as the
+/// inspector button; it never reconstructs TikZ from approximate geometry.
+pub fn handle_visual_undo_shortcut(
+    ctx: &egui::Context,
+    session: &mut Session,
+    source: &mut String,
+) -> Option<usize> {
+    let pressed = ctx.input(|input| {
+        input.key_pressed(egui::Key::Z)
+            && input.modifiers.command
+            && !input.modifiers.shift
+            && !input.modifiers.alt
+    });
+    if !pressed || ctx.wants_keyboard_input() || !session.undo_available() {
+        return None;
+    }
+    match session.undo_and_focus_line(source) {
+        Ok(line) => Some(line),
+        Err(error) => {
+            session.status = error;
+            None
+        }
+    }
+}
+
 /// The same TextEdit change hook is used by the desktop app and egui events.
 pub fn observe_source_text_edit(response: &egui::Response, session: &mut Session, source: &str) {
     if response.changed() {
         session.note_manual_source_edit(source);
     }
+}
+
+/// Always visible above the independently scrollable inspector. The shared
+/// Session inverse patch is the only source authority; no TeX is reconstructed.
+fn show_inspector_action_bar_frame(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    undo_rect: Option<&mut Rect>,
+    help_rect: Option<&mut Rect>,
+) -> Option<usize> {
+    let mut jump = None;
+    ui.horizontal_wrapped(|ui| {
+        let button = ui
+            .add_enabled(
+                session.undo_available(),
+                egui::Button::new("↶ Отменить правку"),
+            )
+            .on_hover_text("Undo TikZ/source-правки; Ctrl/Cmd+Z вне текстовых полей. В редакторе Ctrl/Cmd+Z остаётся текстовым Undo.");
+        if let Some(rect) = undo_rect {
+            *rect = button.rect;
+        }
+        if button.clicked() {
+            match session.undo_and_focus_line(source) {
+                Ok(line) => jump = Some(line),
+                Err(error) => session.status = error,
+            }
+        }
+    });
+    ui.small(&session.status);
+    // F1 is useful without scrolling through a long list of properties.
+    // All wording, syntax and provenance come straight from the C catalogue.
+    if session.help
+        && let Some(tool) = session.active
+    {
+        let info = tikz_authoring::spec(tool);
+        let summary = ui
+            .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
+            .on_hover_text(format!(
+                "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
+                info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
+            ));
+        ui.add(egui::Label::new(&info.syntax).truncate());
+        ui.hyperlink_to(
+            format!("PGF/TikZ §{}", info.manual_section),
+            &info.manual_url,
+        );
+        if let Some(rect) = help_rect {
+            *rect = summary.rect;
+        }
+    }
+    jump
+}
+
+pub fn show_inspector_action_bar(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+) -> Option<usize> {
+    show_inspector_action_bar_frame(ui, session, source, None, None)
 }
 
 fn parameter_help(p: &ParameterSpec) -> String {
@@ -617,7 +763,7 @@ pub fn show_inspector(
             }
         } else if ui
             .add_enabled(
-                caps.base_ready() && loaded,
+                caps.source_authoring_supported() && loaded,
                 egui::Button::new("Вставить по параметрам"),
             )
             .clicked()
@@ -681,24 +827,290 @@ pub fn show_inspector(
     } else {
         ui.small("Выберите примитив над полем ввода. Исходный код остаётся главным документом.");
     }
-    ui.separator();
-    if ui
-        .add_enabled(
-            session.undo_available(),
-            egui::Button::new("Отменить визуальную правку"),
-        )
-        .clicked()
-        && let Err(error) = session.undo(source)
-    {
-        session.status = error;
-    }
-    ui.small(&session.status);
     jump
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn inspector_undo_button_uses_real_egui_pointer_and_focuses_source() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+            mut rect: Option<&mut Rect>,
+        ) -> Option<usize> {
+            let mut jump = None;
+            let _output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(260.0, 360.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        jump = show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            rect.as_deref_mut(),
+                            None,
+                        );
+                    });
+                },
+            );
+            jump
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        session.draft.values.insert("radius".into(), "2cm".into());
+        session.apply_parameters(&mut source).unwrap();
+        assert_ne!(source, inserted);
+        let mut undo_button = Rect::NOTHING;
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![],
+            Some(&mut undo_button),
+        );
+        assert!(undo_button.width() > 0.0 && undo_button.height() > 0.0);
+        let at = undo_button.center();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            None,
+        );
+        let jump = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            None,
+        );
+        assert_eq!(source, inserted);
+        assert_eq!(jump, Some(tikz_authoring::owned(&source)[0].line));
+        assert!(session.undo_available());
+        // Another real button click removes the authored command and focuses
+        // the insertion line, leaving opaque source bytes entirely unchanged.
+        frame(&ctx, &mut session, &mut source, vec![], None);
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, true)],
+            None,
+        );
+        let deletion_line = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            None,
+        )
+        .expect("second Undo must focus the deletion site");
+        assert_eq!(source, original);
+        assert_eq!(
+            deletion_line,
+            original
+                .lines()
+                .position(|line| line == r"\end{tikzpicture}")
+                .unwrap()
+                + 1
+        );
+        assert!(!session.undo_available());
+        source.push_str("% ручной код после Undo\n");
+        session.note_manual_source_edit(&source);
+        let hand_edited = source.clone();
+        let no_jump = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, true), primary(at, false)],
+            None,
+        );
+        assert!(no_jump.is_none());
+        assert_eq!(source, hand_edited);
+    }
+
+    #[test]
+    fn f1_pinned_c_help_is_visible_without_scrolling_and_never_edits_source() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+        ) -> Rect {
+            let mut help = Rect::NOTHING;
+            let _output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(320.0, 260.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_help_shortcut(ctx, session);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help));
+                    });
+                },
+            );
+            help
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Cubic);
+        assert!(session.help);
+        let visible = frame(&ctx, &mut session, &mut source, vec![]);
+        assert!(visible.width() > 0.0 && visible.bottom() < 260.0);
+        let f1 = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![f1(true)]),
+            Rect::NOTHING
+        );
+        assert!(!session.help);
+        frame(&ctx, &mut session, &mut source, vec![f1(false)]);
+        assert!(frame(&ctx, &mut session, &mut source, vec![f1(true)]).width() > 0.0);
+        assert!(session.help);
+        assert_eq!(source, original);
+        assert!(!session.undo_available());
+        assert_eq!(tikz_authoring::spec(Tool::Cubic).id, "tikz.bezier-cubic");
+    }
+
+    #[test]
+    fn keyboard_visual_undo_uses_real_frames_without_stealing_textedit_undo() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            editor: &mut String,
+            events: Vec<egui::Event>,
+            modifiers: egui::Modifiers,
+            focus_editor: bool,
+        ) -> Option<usize> {
+            let mut jump = None;
+            let _output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(440.0, 260.0))),
+                    events,
+                    modifiers,
+                    ..Default::default()
+                },
+                |ctx| {
+                    jump = handle_visual_undo_shortcut(ctx, session, source);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        if focus_editor {
+                            let response = ui.add(egui::TextEdit::singleline(editor));
+                            response.request_focus();
+                        }
+                    });
+                },
+            );
+            jump
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        session.draft.values.insert("radius".into(), "2cm".into());
+        session.apply_parameters(&mut source).unwrap();
+        let expected_line = tikz_authoring::owned(&source)[0].line;
+        let modifiers = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        let mut editor = String::from("manual editor");
+        assert_eq!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(true)],
+                modifiers,
+                false,
+            ),
+            Some(expected_line)
+        );
+        assert_eq!(source, inserted);
+        assert!(session.undo_available());
+        // Native Cmd/Ctrl+Z in a focused editor cannot consume visual history.
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            &mut editor,
+            vec![z(false)],
+            modifiers,
+            true,
+        );
+        let prior = source.clone();
+        assert!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(true)],
+                modifiers,
+                true,
+            )
+            .is_none()
+        );
+        assert_eq!(source, prior);
+        source.push_str("% ручная правка\n");
+        session.note_manual_source_edit(&source);
+        assert!(!session.undo_available());
+        assert!(
+            frame(
+                &ctx,
+                &mut session,
+                &mut source,
+                &mut editor,
+                vec![z(false)],
+                modifiers,
+                false,
+            )
+            .is_none()
+        );
+        assert!(source.ends_with("% ручная правка\n"));
+    }
+
     #[test]
     fn parameter_help_distinguishes_editor_presets_from_tex_defaults() {
         for tool in TOOLS {
@@ -839,11 +1251,55 @@ mod tests {
         events: Vec<egui::Event>,
         modifiers: egui::Modifiers,
     ) -> (Option<usize>, Rect) {
+        event_frame_mod_with_palette(ctx, session, source, events, modifiers, None, 820.0)
+    }
+
+    #[derive(Clone, Copy)]
+    struct EventFrameOptions {
+        width: f32,
+        caps: Capabilities,
+    }
+
+    fn event_frame_mod_with_palette(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+        palette_rects: Option<&mut [Rect; 6]>,
+        viewport_width: f32,
+    ) -> (Option<usize>, Rect) {
+        event_frame_mod_with_palette_caps(
+            ctx,
+            session,
+            source,
+            events,
+            modifiers,
+            palette_rects,
+            EventFrameOptions {
+                width: viewport_width,
+                caps: READY,
+            },
+        )
+    }
+
+    fn event_frame_mod_with_palette_caps(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+        mut palette_rects: Option<&mut [Rect; 6]>,
+        options: EventFrameOptions,
+    ) -> (Option<usize>, Rect) {
         let mut observed = None;
         let mut guide_rect = Rect::NOTHING;
         let _output = ctx.run(
             egui::RawInput {
-                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(820.0, 480.0))),
+                screen_rect: Some(Rect::from_min_size(
+                    Pos2::ZERO,
+                    Vec2::new(options.width, 480.0),
+                )),
                 modifiers,
                 events,
                 ..Default::default()
@@ -851,7 +1307,13 @@ mod tests {
             |ctx| {
                 handle_help_shortcut(ctx, session);
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    (observed, guide_rect) = show_guide_frame(ui, session, source, READY);
+                    (observed, guide_rect) = show_guide_frame_with_palette(
+                        ui,
+                        session,
+                        source,
+                        options.caps,
+                        palette_rects.as_deref_mut(),
+                    );
                 });
             },
         );
@@ -864,6 +1326,148 @@ mod tests {
             button: egui::PointerButton::Primary,
             pressed,
             modifiers: egui::Modifiers::default(),
+        }
+    }
+
+    #[test]
+    fn actual_palette_click_then_six_gestures_source_help_reopen_parameter_and_undo() {
+        // No pre-selected Session tool: hit the real egui palette responses,
+        // measured from the exact frame layout at narrow and wide widths.
+        for viewport_width in [820.0, 1366.0] {
+            for (index, tool) in TOOLS.into_iter().enumerate() {
+                let ctx = egui::Context::default();
+                let mut source = EVENT_SOURCE.to_owned();
+                let original = source.clone();
+                let mut session = Session::default();
+                session.reset(&source);
+                let mut buttons = [Rect::NOTHING; 6];
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![],
+                    egui::Modifiers::default(),
+                    Some(&mut buttons),
+                    viewport_width,
+                );
+                assert!(
+                    buttons
+                        .iter()
+                        .all(|rect| rect.width() > 0.0 && rect.height() > 0.0)
+                );
+                let at = buttons[index].center();
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(at), primary(at, true)],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![primary(at, false)],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                assert_eq!(session.active, Some(tool), "{tool:?}: palette click missed");
+                assert!(session.help, "{tool:?}: catalogue help was not enabled");
+                assert_eq!(source, original, "{tool:?}: palette selection edited TeX");
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::Key {
+                        key: egui::Key::F1,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers: egui::Modifiers::default(),
+                    }],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                assert!(!session.help, "{tool:?}: F1 did not toggle contextual help");
+                assert_eq!(source, original);
+                let (_, guide) = event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                let start = screen_point(guide, Point::new(1.0, 1.0));
+                let end = screen_point(guide, Point::new(3.0, 2.0));
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(start), primary(start, true)],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(end)],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                let (jump, _) = event_frame_mod_with_palette(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![primary(end, false)],
+                    egui::Modifiers::default(),
+                    None,
+                    viewport_width,
+                );
+                let line = jump.expect("gesture must focus its new source line");
+                assert_eq!(session.selected, Some(1));
+                let items = tikz_authoring::owned(&source);
+                assert_eq!(items.len(), 1);
+                assert_eq!(items[0].tool, tool);
+                assert_eq!(items[0].line, line);
+                // The REAL palette→gesture handler must author the same short,
+                // readable metadata that the editor/Save/Reopen path recognizes.
+                let (_, metadata) = items[0].text.split_once(tikz_authoring::MARKER).unwrap();
+                assert!(metadata.starts_with("[2,"), "{tool:?}: old hex emitted");
+                assert!(metadata.len() < 240, "{tool:?}: unreadably long marker");
+                assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                let tmp = tempfile::tempdir().unwrap();
+                let tex = tmp.path().join("native-gesture.tex");
+                std::fs::write(&tex, &source).unwrap();
+                let mut reopened_source = std::fs::read_to_string(&tex).unwrap();
+                assert_eq!(reopened_source, source);
+                let mut reopened = Session::default();
+                reopened.reset(&reopened_source);
+                assert_eq!(reopened.choose(&reopened_source, 1).unwrap(), line);
+                let parameter = match tool {
+                    Tool::Circle => "radius",
+                    Tool::Node => "x",
+                    _ => "start_x",
+                };
+                reopened
+                    .draft
+                    .values
+                    .insert(parameter.into(), "1.75cm".into());
+                reopened.apply_parameters(&mut reopened_source).unwrap();
+                assert_ne!(reopened_source, source);
+                reopened.undo(&mut reopened_source).unwrap();
+                assert_eq!(reopened_source, source);
+                session.undo(&mut source).unwrap();
+                assert_eq!(source, original, "{tool:?}: source Undo damaged opaque TeX");
+            }
         }
     }
 
@@ -1295,6 +1899,470 @@ mod tests {
         let (jump, _) = event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)]);
         assert!(jump.is_some());
         assert_eq!(tikz_authoring::owned(&source).len(), 1);
+    }
+
+    #[test]
+    fn b23_external_tex_absence_warns_but_does_not_block_native_c_source_gestures() {
+        // 6 catalogue tools × 2 widths × 3 distinct external-runtime gaps.
+        // Actual egui RawInput pointer frames exercise the production handler.
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for (installed, engine_compatible) in [(false, false), (true, false), (false, true)]
+                {
+                    let caps = Capabilities {
+                        installed,
+                        engine_compatible,
+                        loaded: Evidence::Confirmed,
+                        implemented: true,
+                    };
+                    assert!(!caps.exact_build_prerequisites_verified());
+                    assert!(caps.source_authoring_supported());
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        EventFrameOptions { width, caps },
+                    );
+                    let at = screen_point(rect, Point::new(1.0, 1.0));
+                    let _ = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(at), primary(at, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        EventFrameOptions { width, caps },
+                    );
+                    let (line, _) = event_frame_mod_with_palette_caps(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(at, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        EventFrameOptions { width, caps },
+                    );
+                    assert!(
+                        line.is_some(),
+                        "{tool:?}: source gesture blocked when installed={installed}, engine={engine_compatible}"
+                    );
+                    let objects = tikz_authoring::owned(&source);
+                    assert_eq!(objects.len(), 1);
+                    assert_eq!(objects[0].tool, tool);
+                    assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, original);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b23_missing_c_adapter_or_unverified_project_imports_still_block_source_writes() {
+        // External runtime unavailability must not weaken ownership/import
+        // checks. These stay fail-closed even in offline authoring mode.
+        for caps in [
+            Capabilities {
+                implemented: false,
+                ..READY
+            },
+            Capabilities {
+                installed: false,
+                engine_compatible: false,
+                ..READY
+            },
+        ] {
+            let mut source = if caps.implemented {
+                EVENT_SOURCE.replace("\\usetikzlibrary{arrows.meta}\n", "")
+            } else {
+                EVENT_SOURCE.to_owned()
+            };
+            let original = source.clone();
+            let ctx = egui::Context::default();
+            let mut session = Session::default();
+            session.reset(&source);
+            session.select_tool(Tool::Arrow);
+            let (_, rect) = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![],
+                egui::Modifiers::default(),
+                None,
+                EventFrameOptions { width: 820.0, caps },
+            );
+            let at = screen_point(rect, Point::new(1.0, 1.0));
+            let _ = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![egui::Event::PointerMoved(at), primary(at, true)],
+                egui::Modifiers::default(),
+                None,
+                EventFrameOptions { width: 820.0, caps },
+            );
+            let (line, _) = event_frame_mod_with_palette_caps(
+                &ctx,
+                &mut session,
+                &mut source,
+                vec![primary(at, false)],
+                egui::Modifiers::default(),
+                None,
+                EventFrameOptions { width: 820.0, caps },
+            );
+            assert!(line.is_none());
+            assert_eq!(source, original);
+            assert!(!session.undo_available());
+        }
+    }
+
+    #[test]
+    fn b24_manual_utf8_source_edit_cancels_held_click_and_drag_before_mouse_up() {
+        // The source TextEdit change hook and this production pointer handler
+        // share Session::note_manual_source_edit. A click is not a drag, so
+        // clearing only drag_start would let its mouse-up create a ghost line.
+        for width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for dragged in [false, true] {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(session.guide_pointer_armed);
+                    if dragged {
+                        event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            None,
+                            width,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    // Equivalent to TextEdit's changed() hook (not an N1
+                    // generator/patch): an unrelated Cyrillic source edit.
+                    let at = source.find(r"\begin{tikzpicture}").unwrap();
+                    source.insert_str(at, "% ручной UTF-8 комментарий\n");
+                    session.note_manual_source_edit(&source);
+                    let hand_edited = source.clone();
+                    assert!(session.cancelled_pointer_capture);
+                    assert!(session.drag_start.is_none());
+                    assert!(!session.undo_available());
+                    let release = if dragged { end } else { start };
+                    let (jump, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(release, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert_eq!(jump, None, "{tool:?} {width} dragged={dragged}");
+                    assert_eq!(source, hand_edited);
+                    assert_eq!(tikz_authoring::owned(&source).len(), 0);
+                    assert!(!session.cancelled_pointer_capture);
+                    assert!(!session.guide_pointer_armed);
+                    // A later intentional gesture still creates one ordinary
+                    // C-authored command and its Undo restores manual source.
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    let (line, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(start, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        width,
+                    );
+                    assert!(line.is_some(), "{tool:?}: new click was blocked");
+                    assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, hand_edited);
+                    assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                    let file_dir = tempfile::tempdir().unwrap();
+                    let file = file_dir.path().join("b24-manual-utf8.tex");
+                    std::fs::write(&file, &source).unwrap();
+                    let reopened = std::fs::read_to_string(&file).unwrap();
+                    assert_eq!(reopened, hand_edited);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b24_switching_tool_during_armed_pointer_keeps_release_inert() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Line);
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let at = screen_point(rect, Point::new(1.0, 1.0));
+        event_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+        );
+        assert!(session.guide_pointer_armed);
+        session.select_tool(Tool::Cubic);
+        assert!(session.cancelled_pointer_capture);
+        assert_eq!(
+            event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)]).0,
+            None
+        );
+        assert_eq!(source, original);
+        assert!(!session.cancelled_pointer_capture);
+        assert_eq!(session.active, Some(Tool::Cubic));
+        event_frame(&ctx, &mut session, &mut source, vec![primary(at, true)]);
+        assert!(
+            event_frame(&ctx, &mut session, &mut source, vec![primary(at, false)])
+                .0
+                .is_some()
+        );
+        assert_eq!(tikz_authoring::owned(&source)[0].tool, Tool::Cubic);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original);
+    }
+
+    #[test]
+    fn b22_escape_cancels_click_and_drag_on_release_or_before_release_all_six_tools() {
+        let escape = || egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        // Modes: click+Esc on release, Esc while a click is still held,
+        // and drag-stop+Esc in exactly the same frame. Each previously lacked
+        // at least one cancellation guarantee from the production handler.
+        for viewport_width in [820.0, 1366.0] {
+            for tool in TOOLS {
+                for mode in 0..3 {
+                    let ctx = egui::Context::default();
+                    let mut source = EVENT_SOURCE.to_owned();
+                    let original = source.clone();
+                    let mut session = Session::default();
+                    session.reset(&source);
+                    session.select_tool(tool);
+                    let (_, rect) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let start = screen_point(rect, Point::new(1.0, 1.0));
+                    let end = screen_point(rect, Point::new(3.0, 2.0));
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    if mode == 2 {
+                        let _ = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![egui::Event::PointerMoved(end)],
+                            egui::Modifiers::default(),
+                            None,
+                            viewport_width,
+                        );
+                        assert!(session.drag_start.is_some());
+                    }
+                    if mode == 1 {
+                        let (jump, _) = event_frame_mod_with_palette(
+                            &ctx,
+                            &mut session,
+                            &mut source,
+                            vec![escape()],
+                            egui::Modifiers::default(),
+                            None,
+                            viewport_width,
+                        );
+                        assert_eq!(jump, None);
+                        assert!(session.cancelled_pointer_capture);
+                    }
+                    let release = if mode == 2 { end } else { start };
+                    let mut events = vec![primary(release, false)];
+                    if mode != 1 {
+                        events.push(escape());
+                    }
+                    let (jump, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        events,
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    assert_eq!(jump, None, "{tool:?} {viewport_width} mode {mode}");
+                    assert_eq!(source, original, "{tool:?} mode {mode}: Esc inserted TeX");
+                    assert!(!session.undo_available());
+                    assert!(session.drag_start.is_none());
+                    assert!(!session.cancelled_pointer_capture);
+                    assert!(session.status.contains("отмен"));
+
+                    // Cancellation must not poison the next real click.
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let _ = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![egui::Event::PointerMoved(start), primary(start, true)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    let (inserted, _) = event_frame_mod_with_palette(
+                        &ctx,
+                        &mut session,
+                        &mut source,
+                        vec![primary(start, false)],
+                        egui::Modifiers::default(),
+                        None,
+                        viewport_width,
+                    );
+                    assert!(
+                        inserted.is_some(),
+                        "{tool:?} mode {mode}: next click blocked"
+                    );
+                    assert_eq!(tikz_authoring::owned(&source).len(), 1);
+                    session.undo(&mut source).unwrap();
+                    assert_eq!(source, original);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn b22_escape_during_alt_select_keeps_source_and_ownership_unchanged() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let draft = Draft::from_gesture(
+            Tool::Line,
+            Point::new(1.0, 1.0),
+            Point::new(3.0, 2.0),
+            &Draft::for_tool(Tool::Line),
+        );
+        session.insert(&mut source, Tool::Line, draft).unwrap();
+        session.select_tool(Tool::Circle);
+        let original = source.clone();
+        let (_, rect) = event_frame(&ctx, &mut session, &mut source, vec![]);
+        let point = screen_point(rect, Point::new(1.0, 1.0));
+        let alt = egui::Modifiers {
+            alt: true,
+            ..Default::default()
+        };
+        let _ = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::PointerButton {
+                    pos: point,
+                    button: egui::PointerButton::Primary,
+                    pressed: true,
+                    modifiers: alt,
+                },
+            ],
+            alt,
+        );
+        assert!(session.alt_selection_capture);
+        let (cancelled, _) = event_frame_mod(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::Key {
+                key: egui::Key::Escape,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: alt,
+            }],
+            alt,
+        );
+        assert_eq!(cancelled, None);
+        assert!(session.cancelled_pointer_capture);
+        let (released, _) =
+            event_frame(&ctx, &mut session, &mut source, vec![primary(point, false)]);
+        assert_eq!(released, None);
+        assert_eq!(session.selected, None);
+        assert_eq!(source, original);
+        assert!(!session.alt_selection_capture);
+        assert!(!session.cancelled_pointer_capture);
+        assert!(session.undo_available());
     }
 
     #[test]

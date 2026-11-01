@@ -34,6 +34,71 @@ use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 
+// Fixed 500pt source + 250pt inspector left the exact PDF/guide unusable
+// at the native 850pt minimum window width. Reserve central space first.
+// All dimensions are egui logical points, independent of Retina scale.
+#[derive(Clone, Copy, Debug)]
+struct SplitPanelLayout {
+    source_default: f32,
+    source_max: f32,
+    inspector_default: f32,
+    inspector_max: f32,
+}
+
+impl SplitPanelLayout {
+    fn for_width(viewport_width: f32) -> Self {
+        let width = viewport_width.max(0.0);
+        let inspector_max = (width * 0.26).clamp(210.0, 300.0);
+        let source_max = (width - inspector_max - 230.0 - 32.0).clamp(240.0, 600.0);
+        Self {
+            source_default: (width * 0.36).clamp(240.0, 500.0).min(source_max),
+            source_max,
+            inspector_default: (width * 0.21).clamp(210.0, 270.0),
+            inspector_max,
+        }
+    }
+}
+
+fn show_split_inspector_panel(
+    ctx: &egui::Context,
+    layout: SplitPanelLayout,
+    add_contents: impl FnOnce(&mut egui::Ui),
+) {
+    egui::SidePanel::right("tikz-source-inspector")
+        .resizable(true)
+        .default_width(layout.inspector_default)
+        .min_width(210.0)
+        .max_width(layout.inspector_max)
+        .show(ctx, add_contents);
+}
+
+fn show_split_source_panel(
+    ctx: &egui::Context,
+    layout: SplitPanelLayout,
+    add_contents: impl FnOnce(&mut egui::Ui),
+) {
+    egui::SidePanel::left("source")
+        .resizable(true)
+        .default_width(layout.source_default)
+        .min_width(240.0)
+        .max_width(layout.source_max)
+        .show(ctx, add_contents);
+}
+
+/// Screen-space caret region from the real egui text galley. Never estimate
+/// source-line positions from a fixed logical row height: soft wrapping,
+/// font metrics and horizontal scroll invalidate that estimate.
+fn source_caret_target(
+    galley: &egui::Galley,
+    galley_pos: egui::Pos2,
+    char_index: usize,
+) -> egui::Rect {
+    galley
+        .pos_from_cursor(egui::text::CCursor::new(char_index))
+        .translate(galley_pos.to_vec2())
+        .expand2(egui::vec2(2.0, 2.0))
+}
+
 struct TikzariumApp {
     document: Document,
     file_field: String,
@@ -553,14 +618,11 @@ impl TikzariumApp {
                         self.highlight_generated_line = false;
                         output.state.store(ui.ctx(), output.response.id);
                         output.response.request_focus();
-                        let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
-                        let y = output.response.rect.top()
-                            + (line.saturating_sub(1) as f32) * row_height;
+                        // The galley, not physical line count * font height,
+                        // owns TextEdit's geometry (wrapping, padding, DPI,
+                        // unicode and font layout). Scroll to the actual cursor.
                         ui.scroll_to_rect(
-                            egui::Rect::from_min_size(
-                                egui::pos2(output.response.rect.left(), y),
-                                egui::vec2(1.0, row_height),
-                            ),
+                            source_caret_target(&output.galley, output.galley_pos, position),
                             Some(egui::Align::Center),
                         );
                     } else {
@@ -886,6 +948,18 @@ impl eframe::App for TikzariumApp {
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
         tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
+        // The text editor keeps its native Ctrl/Cmd+Z; outside focused text
+        // widgets the same revision-checked Undo works from the keyboard.
+        if self.workspace == WorkspaceMode::Split
+            && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
+                ctx,
+                &mut self.authoring,
+                &mut self.document.source,
+            )
+        {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         let shortcut = ctx.input(|input| {
             if input.key_pressed(egui::Key::S) {
                 editor_command(egui::Key::S, input.modifiers)
@@ -1001,16 +1075,22 @@ impl eframe::App for TikzariumApp {
                 ui.label(&self.status);
             });
         });
+        let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.workspace == WorkspaceMode::Split {
-            egui::SidePanel::right("tikz-source-inspector")
-                .resizable(true)
-                .default_width(250.0)
-                .min_width(210.0)
-                .show(ctx, |ui| {
-                    egui::ScrollArea::vertical()
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| self.show_authoring_inspector(ui));
-                });
+            show_split_inspector_panel(ctx, split_layout, |ui| {
+                if let Some(line) = tikz_canvas::show_inspector_action_bar(
+                    ui,
+                    &mut self.authoring,
+                    &mut self.document.source,
+                ) {
+                    self.jump_to_line = Some(line);
+                    self.highlight_generated_line = true;
+                }
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| self.show_authoring_inspector(ui));
+            });
         }
         if self.show_log {
             egui::TopBottomPanel::bottom("log")
@@ -1085,13 +1165,9 @@ impl eframe::App for TikzariumApp {
                 });
         }
         if self.workspace == WorkspaceMode::Split {
-            egui::SidePanel::left("source")
-                .resizable(true)
-                .default_width(500.0)
-                .min_width(240.0)
-                .show(ctx, |ui| {
-                    self.show_source_editor(ui);
-                });
+            show_split_source_panel(ctx, split_layout, |ui| {
+                self.show_source_editor(ui);
+            });
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.workspace.show_canvas() {
@@ -1137,4 +1213,120 @@ fn main() -> eframe::Result<()> {
         options,
         Box::new(|cc| Ok(Box::new(TikzariumApp::new(cc)))),
     )
+}
+
+#[cfg(test)]
+mod split_layout_tests {
+    use super::*;
+    use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b21_source_navigation_targets_actual_textedit_galley_for_long_unicode_lines() {
+        let ctx = egui::Context::default();
+        let original = format!(
+            "\\documentclass{{standalone}}\n% {}\n\\begin{{tikzpicture}}\n  \\draw (0,0) -- (1,1);\n\\end{{tikzpicture}}\n",
+            "длинный_пользовательский_макрос_".repeat(40)
+        );
+        let mut source = original.clone();
+        let index = line_start_char_index(&source, 4).expect("source line");
+        // Two genuine egui layout frames, including a narrow window and a
+        // widened window, exercise the same caret helper used in production.
+        for viewport in [340.0, 820.0] {
+            let mut inspected = false;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(viewport, 400.0),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let output = egui::TextEdit::multiline(&mut source)
+                            .code_editor()
+                            .desired_width(180.0)
+                            .desired_rows(10)
+                            .show(ui);
+                        let caret = source_caret_target(&output.galley, output.galley_pos, index);
+                        let relative = caret.center() - output.galley_pos;
+                        let actual = output.galley.cursor_from_pos(relative);
+                        assert_eq!(actual.index, index, "galley cursor drift at {viewport}");
+                        assert!(caret.is_finite());
+                        // The source jump is a read-only navigation operation.
+                        ui.scroll_to_rect(caret, Some(egui::Align::Center));
+                        inspected = true;
+                    });
+                },
+            );
+            assert!(inspected);
+            assert_eq!(source, original);
+        }
+    }
+
+    #[test]
+    fn actual_egui_frames_keep_source_inspector_and_guide_at_minimum_and_resized_widths() {
+        let ctx = egui::Context::default();
+        let mut source = QUICKSTART.to_owned();
+        let untouched = source.clone();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        session.select_tool(tikz_authoring::Tool::Line);
+        // Reuse the SAME egui Context so saved side-panel widths are exercised
+        // as the user shrinks a live window and then enlarges it again.
+        for viewport in [1366.0, 850.0, 820.0, 1366.0] {
+            let mut editor_width = 0.0;
+            let mut inspector_width = 0.0;
+            let mut guide_width = 0.0;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(viewport, 768.0),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+                    show_split_inspector_panel(ctx, layout, |ui| {
+                        inspector_width = ui.max_rect().width();
+                        let _ =
+                            tikz_canvas::show_inspector_action_bar(ui, &mut session, &mut source);
+                    });
+                    show_split_source_panel(ctx, layout, |ui| {
+                        editor_width = ui.max_rect().width();
+                        ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                    });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        guide_width = ui.available_width();
+                        let _ = tikz_canvas::show_guide(
+                            ui,
+                            &mut session,
+                            &mut source,
+                            tikz_canvas::Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        );
+                    });
+                },
+            );
+            assert!(
+                editor_width > 200.0,
+                "source hidden at {viewport}: {editor_width}"
+            );
+            assert!(
+                inspector_width > 180.0,
+                "inspector hidden at {viewport}: {inspector_width}"
+            );
+            assert!(
+                guide_width > 190.0,
+                "guide clipped at {viewport}: {guide_width}"
+            );
+            assert_eq!(source, untouched, "resizing silently changed source");
+            assert!(!session.undo_available());
+        }
+    }
 }
