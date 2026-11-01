@@ -354,8 +354,8 @@ fn show_guide_frame_with_palette(
     // in-flight pointer gesture (including a release in the same event frame),
     // not just clear the provisional dragged point. Keep it inert until mouse-up
     // even if Esc/Alt are released earlier than the primary pointer button.
-    let (escape, primary_down, origin_on_guide, pointer_lost, primary_released, undo_key) =
-        ui.input(|input| {
+    let (escape, primary_down, origin_on_guide, pointer_lost, primary_released, undo_key) = ui
+        .input(|input| {
             (
                 input.key_pressed(egui::Key::Escape),
                 input.pointer.primary_down(),
@@ -415,19 +415,16 @@ fn show_guide_frame_with_palette(
     // mouse press and Ctrl+Z arrive together, the source editor may still
     // have focus at that earlier point. Give the real captured guide one
     // final chance to route the shortcut; otherwise cancel its gesture.
-    let fallback_undo_line = if undo_key
-        && held_guide
-        && !escape
-        && !pointer_lost
-        && !session.cancelled_pointer_capture
-    {
-        let line = handle_visual_undo_shortcut(ui.ctx(), session, source);
-        session.drag_start = None;
-        session.cancelled_pointer_capture = true;
-        line
-    } else {
-        None
-    };
+    let fallback_undo_line =
+        if undo_key && held_guide && !escape && !pointer_lost && !session.cancelled_pointer_capture
+        {
+            let line = handle_visual_undo_shortcut(ui.ctx(), session, source);
+            session.drag_start = None;
+            session.cancelled_pointer_capture = true;
+            line
+        } else {
+            None
+        };
     if (escape || pointer_lost)
         && (session.drag_start.is_some()
             || session.guide_pointer_armed
@@ -470,7 +467,10 @@ fn show_guide_frame_with_palette(
     if session.alt_selection_capture {
         session.drag_start = None;
         let mut jump = None;
-        if clicked && primary_released && let Some(pos) = response.interact_pointer_pos() {
+        if clicked
+            && primary_released
+            && let Some(pos) = response.interact_pointer_pos()
+        {
             match hit_authored_anchor(source, rect, pos) {
                 Ok(Some(id)) => match session.choose(source, id) {
                     Ok(line) => {
@@ -2506,19 +2506,10 @@ mod tests {
                             ..Default::default()
                         },
                         |ctx| {
-                            undone = handle_visual_undo_shortcut(
-                                ctx,
-                                &mut session,
-                                &mut source,
-                            );
+                            undone = handle_visual_undo_shortcut(ctx, &mut session, &mut source);
                             egui::CentralPanel::default().show(ctx, |ui| {
-                                unexpected_insert = show_guide_frame(
-                                    ui,
-                                    &mut session,
-                                    &mut source,
-                                    READY,
-                                )
-                                .0;
+                                unexpected_insert =
+                                    show_guide_frame(ui, &mut session, &mut source, READY).0;
                             });
                         },
                     );
