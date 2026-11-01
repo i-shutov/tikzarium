@@ -141,7 +141,7 @@ def main() -> int:
               "physical_win10_miktex": "NOT_RUN", "physical_m1_m4": "NOT_RUN",
               "pointer_authoring": "NOT_RUN", "manual_visual_review": "NOT_RUN",
               "gui_pdf_export": "NOT_RUN", "fit_width": "NOT_RUN", "full_page": "NOT_RUN",
-              "fit_page": "NOT_RUN",
+              "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
               "steps": []}
@@ -340,6 +340,32 @@ def main() -> int:
                 report["fit_page"] = "FRAME_CHANGED_MANUAL_FULL_PAGE_REVIEW_REQUIRED"
                 report["steps"].append({"case": "b25_fit_page_button",
                                         "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+        # B26: drive a REAL window resize while the production Fit Page mode
+        # remains selected, then restore its original dimensions. Screenshots
+        # need independent PDF-versus-GUI visual review; varying pixel arrays
+        # alone do NOT prove that the whole PDF remains visible.
+        if "responsive_resize" in profile and "fit_page_click" in profile:
+            before_resize_source = source.read_bytes()
+            run(["xdotool", "windowsize", "--sync", window,
+                 str(profile["responsive_resize"][0]),
+                 str(profile["responsive_resize"][1])])
+            time.sleep(0.7)
+            screenshot("04e-b26-resized-fit-page.png")
+            report["resized_window_geometry"] = run(["xdotool", "getwindowgeometry", "--shell", window])
+            if not all(str(n) in report["resized_window_geometry"]
+                       for n in profile["responsive_resize"]):
+                raise RuntimeError("Actual window dimensions do not match B26 resize")
+            run(["xdotool", "windowsize", "--sync", window,
+                 str(profile["restore_size"][0]), str(profile["restore_size"][1])])
+            time.sleep(0.7)
+            screenshot("04f-b26-restored-fit-page.png")
+            if source.read_bytes() != before_resize_source:
+                raise RuntimeError("B26 responsive PDF fit modified user's TikZ source")
+            if sha256(out / "04e-b26-resized-fit-page.png") == sha256(out / "04f-b26-restored-fit-page.png"):
+                raise RuntimeError("B26 window resize and restore produced identical frames")
+            report["responsive_fit"] = "ACTUAL_RESIZE_RESTORE_FRAMES_MANUAL_FULLPAGE_REVIEW_REQUIRED"
+            report["steps"].append({"case": "b26_live_resize_restore_fit_page",
+                                    "status": "FRAMES_CAPTURED_NOT_VISUAL_PASS"})
         report["status"] = ("PASS_DESKTOP_AUTOMATED_VISUAL_REVIEW_PENDING"
                             if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY")
     except Exception as exc:

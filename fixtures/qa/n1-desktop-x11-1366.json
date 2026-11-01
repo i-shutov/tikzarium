@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "B25 X11 exact app-tree candidate; coordinates subject to screenshot review, NOT_RUN until CI",
+  "profile": "B26 exact app-tree candidate; B25 screenshot acceptance historical; B26 re-review required",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B25 adds whole-page button after Fit width; may wrap controls and shift palette. Candidate y+24 offsets and Fit-page x515,y97 must be re-calibrated from screenshots. B24 PASS is historical only, not B25.",
+  "layout_note": "B26 reuses B25 button layout and six-gesture coordinates, now with persistent Fit Page on resize/new raster; these coordinates must be accepted by exact-B26 real X11 screenshot evidence, not inherited from B25.",
   "path_click": [
     310,
     18
@@ -128,7 +128,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "033ece8a178c5c7d315fb95267e348975fe4b5d5",
+  "reviewed_app_tree_sha": "47c4c86be10471a5f56f7019ad63a77e7f4480f5",
   "zoom_out_click": [
     882,
     72
@@ -136,5 +136,13 @@
   "fit_page_click": [
     515,
     97
+  ],
+  "responsive_resize": [
+    1180,
+    680
+  ],
+  "restore_size": [
+    1366,
+    740
   ]
 }

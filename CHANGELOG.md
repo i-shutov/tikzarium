@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased — 2026-11-01: I23 B25 real GUI whole-page QA bridge (NOT_RUN)
+## Unreleased — 2026-11-01: I24 B26 actual X11 sticky whole-page resize QA (NOT_RUN)
 
+- Non-production I23 QA bridge merged with **B26 #67** exact source `73878df418dd6343bbca9dd94a2e5daf979ed7fc`, src tree `47c4c86be10471a5f56f7019ad63a77e7f4480f5`; actual egui six-tool + GUI-save/build/export + Russian F1 and full-PDF visual evidence must be regenerated on B26. Driver now captures a genuine selected Fit Page resize/restore (1180×680 ↔ 1366×740); screenshot difference is **not** a visual PASS, and desktop new-page raster still NOT_RUN. Track exact Cargo.lock resolution separately, do not claim physical Win10/MiKTeX/M1/M4 QA. No release.
+
+
+## Unreleased — 2026-11-01: I23 B25 real GUI whole-page QA bridge (B25 ACCEPTED, B26 NOT_RUN)
+
+- Subsequent independent I23 B25 run [41258646232](https://github.com/i-shutov/tikzarium/actions/runs/41258646232) SUCCESS: artifact `13064825120`, 29/29 report hashes, six actual native pointer gestures, GUI-save original macro, XeLaTeX PDF with embedded font/Cyrillic and original full PDF with six shapes + bottom-left text visually reviewed in «Вся страница». This does **not** transfer to B26 persistent fit-page. Physical Win10/Mac NOT_RUN.
 - QA branch based on B25 [#67](https://github.com/i-shutov/tikzarium/pull/67) exact `0174bab2fdc9b6f47f8680f01fbbfba93858f877`, app-src tree `033ece8a178c5c7d315fb95267e348975fe4b5d5`, original active I06 #48 untouched. Actual Linux/X11 six native gestures, GUI Save/Build/Export, Russian F1 and new **«Вся страница»** candidate screenshots will be inspected before QA is called PASS; frame change alone is insufficient. Proposed coordinates require recalibration, and B24 PASS is not inherited. Physical Win10 x64/MiKTeX and Mac M1/M4 XeLaTeX NOT_RUN. No release.
 
 
