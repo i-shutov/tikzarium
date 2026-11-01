@@ -1,3 +1,8 @@
+## Unreleased — I47 independent B33 real X11 file-safety gate (BOOTSTRAP_NOT_ACCEPTED)
+
+- New QA-only workflow and real-X11 process script for dirty-scratch `Open path` into an existing CRLF/UTF-8 user-victim TeX: records actual screenshot, user macro victim SHA and unrelated third-file SHA, under a hard exact B33 source-tree lease. Production Rust and old I45 workflow untouched.
+- **Bootstrap is not modal acceptance:** Save-and-open reject/accept, cross-document Ctrl+Z, actual saved-source-to-PDF, artifact visual audit, user Windows10/Mac M1/M4, and postmerge CI all remain NOT_RUN until separately proved. No release claim.
+
 # Changelog
 
 ## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
