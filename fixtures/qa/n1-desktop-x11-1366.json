@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B36 app/src tree 276ad1525db4ef3d3aab4624808453a897ad5b6a Git-verified; B35 coordinates and PDF 7%/25% are HISTORICAL. Not B36 acceptance. New B36 focus clicks provisional until real screenshot manual review.",
+  "layout_note": "I51 exact B36 source tree. Real screenshot 04d at 1366 proves toolbar wrap: PDF toggle x840-916/y72, Fit width x630-688/y98, Fit Page x695-781/y98; compact 04e2 at 1180: PDF toggle x458-536/y98, Fit width x458-518/y125, Fit Page x525-612/y125. Rectangles manually reviewed from FIRST failed real B36 run; new recalibrated run NOT_RUN. Not B36 acceptance.",
   "path_click": [
     310,
     18
@@ -25,16 +25,16 @@
     13
   ],
   "fit_click": [
-    1027,
-    72
+    659,
+    99
   ],
   "compact_fit_width_click": [
-    603,
-    98
+    490,
+    125
   ],
   "compact_fit_page_click": [
-    680,
-    98
+    570,
+    125
   ],
   "gestures": [
     {
@@ -138,12 +138,12 @@
   ],
   "reviewed_app_tree_sha": "276ad1525db4ef3d3aab4624808453a897ad5b6a",
   "zoom_out_click": [
-    882,
-    72
+    523,
+    99
   ],
   "fit_page_click": [
-    515,
-    97
+    739,
+    99
   ],
   "responsive_resize": [
     1180,
@@ -158,12 +158,13 @@
   "calibration_reference": "B35 actual X11 accepted only at 46aced2dbe1b66ba10d8cc92292024625e73936b; B36 requires complete fresh exact-head real GUI/PNG/TeX/PDF acceptance.",
   "b34_modal_real_run": 41308995293,
   "b36_pdf_focus_click": [
-    990,
-    72
+    492,
+    98
   ],
   "b36_return_guide_click": [
-    867,
+    788,
     72
   ],
-  "b36_bootstrap_clicks_unreviewed": true
+  "b36_bootstrap_clicks_unreviewed": false,
+  "b36_evidence_recalibrated_from": "I51 failed-closed real X11 artifact 13092567737 on exact B36 app tree 276ad...; 04d and 04e2 manually inspected. Old B35 click [882,72] hit PDF крупно; old compact [680,98] hit no Fit Page, causing real GUI failure. New exact-head acceptance NOT_RUN."
 }

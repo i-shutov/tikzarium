@@ -1,3 +1,7 @@
+## Unreleased — I51 real B36 X11 screenshot calibration (second QA HEAD pending)
+
+- First exact-I51 genuine X11 I46 PASS, independently verified 21/21 uploaded hashes and foreground modal + real XeLaTeX PDF. I47 first run failed after six persisted native TikZ gestures, XTest held Undo, F1 and PDF because B35 fit coordinates were now wrong: Zoom Out clicked B36 PDF focus and compact Fit Page missed. Corrected all zoom/fit and focus click positions from B36 screenshot 04d/04e2, added actual selected-button blue-pixel predicates in both modes. No production Rust touched. Fresh exact-SHA rerun and new visual acceptance **NOT_RUN** at correction authorship; physical Windows 10 / Mac ARM NOT_RUN.
+
 ## Unreleased — I51 B36 independent X11 PDF-focus integration (NOT_RUN; QA source head)
 
 - QA-only source-tree rebase of I46 dirty-Open and I47 full six-gesture native-X11 workflows onto B36 #79 `af75b0402bdf9c99dd18999fc5a4f6eb4c974e23` (app/src `276ad1525db4ef3d3aab4624808453a897ad5b6a`), preserving existing Save/Undo/CRLF/opaque macro, external XeLaTeX PDF and F1 checks. Adds provisional 1180×680 real pointer PDF-focus/guide-return screenshots and no-TeX-mutation hash gates. Old B35 coordinates expressly NOT calibrated on B36; no visual acceptance inferred from mere differing screenshots.

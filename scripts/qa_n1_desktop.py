@@ -243,6 +243,27 @@ def verify_held_undo(before: bytes, after: bytes, original: bytes) -> None:
         raise RuntimeError("B30 cancelled gesture left an owned native command")
 
 
+def default_dark_selected_rgb(rgb: tuple[int, int, int]) -> bool:
+    """Conservative egui default-dark blue selection, not semantic PDF proof.
+
+    Used only for SOURCE-TREE-pinned, screenshot-calibrated X11 profile. An
+    accent mismatch should fail, never silently classify a wrong button hit.
+    """
+    red, green, blue = rgb
+    return green > red + 45 and blue > red + 70 and blue > green + 20
+
+
+def screenshot_pixel_rgb(path: Path, xy: tuple[int, int]) -> tuple[int, int, int]:
+    """Read a physically captured PNG pixel using existing ImageMagick."""
+    import re
+    pixel = run(["identify", "-format",
+                 f"%[pixel:p{{{xy[0]},{xy[1]}}}]", str(path)])
+    match = re.fullmatch(r"(?:srgb|rgb)\((\d+),(\d+),(\d+)\)", pixel)
+    if match is None:
+        raise RuntimeError(f"Unexpected screenshot RGB format: {pixel!r}")
+    return tuple(int(value) for value in match.groups())
+
+
 def wait_for(predicate, seconds: float, message: str) -> None:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -623,31 +644,49 @@ def main() -> int:
             report["responsive_fit"] = "ACTUAL_RESIZE_RESTORE_FRAMES_MANUAL_FULLPAGE_REVIEW_REQUIRED"
             report["steps"].append({"case": "b26_live_resize_restore_fit_page",
                                     "status": "FRAMES_CAPTURED_NOT_VISUAL_PASS"})
-        # I51/B36: genuine X11 clicks in the new Split center switch.
-        # These are PROVISIONAL coordinates until independent PNG review:
-        # a changed frame is never proof that the intended toggle was hit.
+        # I51/B36: physically clicked Split center toggle. Button coordinates
+        # were independently calibrated from first failed B36 GUI screenshots.
+        # Selection color plus source-byte guards catch old B35 wrong clicks;
+        # only manual external-PDF-vs-GUI review can establish legible page.
         if "b36_pdf_focus_click" in profile:
             before_focus = source.read_bytes()
             run(["xdotool", "windowsize", "--sync", window, "1180", "680"])
             time.sleep(0.75)
             screenshot("05a-b36-drawing-before-toggle.png")
+            pdf_probe = (460, 98)  # left blue inset of wrapped PDF крупно button
+            guide_probe = (750, 72)  # left blue inset of Рисовать TikZ
+            initial_pdf = screenshot_pixel_rgb(out / "05a-b36-drawing-before-toggle.png", pdf_probe)
+            initial_draw = screenshot_pixel_rgb(out / "05a-b36-drawing-before-toggle.png", guide_probe)
+            if default_dark_selected_rgb(initial_pdf) or not default_dark_selected_rgb(initial_draw):
+                raise RuntimeError("B36 bootstrap drawing mode is not selected at reviewed coordinates")
             click(profile["b36_pdf_focus_click"])
             time.sleep(0.9)
             screenshot("05b-b36-pdf-large-candidate.png")
+            large_pdf = screenshot_pixel_rgb(out / "05b-b36-pdf-large-candidate.png", pdf_probe)
+            large_draw = screenshot_pixel_rgb(out / "05b-b36-pdf-large-candidate.png", guide_probe)
+            if not default_dark_selected_rgb(large_pdf) or default_dark_selected_rgb(large_draw):
+                raise RuntimeError("B36 real X11 PDF крупно control did not become selected")
             if source.read_bytes() != before_focus:
                 raise RuntimeError("B36 PDF focus click changed user source bytes")
             if sha256(out / "05a-b36-drawing-before-toggle.png") == sha256(out / "05b-b36-pdf-large-candidate.png"):
-                raise RuntimeError("B36 focus candidate has no visible effect; click may be stale")
+                raise RuntimeError("B36 selected PDF focus has no visible frame difference")
             click(profile["b36_return_guide_click"])
-            time.sleep(0.6)
+            time.sleep(0.65)
             screenshot("05c-b36-return-guide-candidate.png")
+            returned_pdf = screenshot_pixel_rgb(out / "05c-b36-return-guide-candidate.png", pdf_probe)
+            returned_draw = screenshot_pixel_rgb(out / "05c-b36-return-guide-candidate.png", guide_probe)
+            if default_dark_selected_rgb(returned_pdf) or not default_dark_selected_rgb(returned_draw):
+                raise RuntimeError("B36 return-to-guide real X11 control did not become selected")
             if source.read_bytes() != before_focus:
                 raise RuntimeError("B36 return-to-guide changed user source bytes")
-            if sha256(out / "05b-b36-pdf-large-candidate.png") == sha256(out / "05c-b36-return-guide-candidate.png"):
-                raise RuntimeError("B36 guide return candidate has no visible effect; click may be stale")
-            report["b36_pdf_focus"] = "REAL_POINTER_FRAMES_CAPTURED_SOURCE_UNCHANGED_MANUAL_CONTENT_NOT_RUN"
+            report["b36_focus_button_rgb"] = {
+                "drawing": {"pdf": initial_pdf, "guide": initial_draw},
+                "pdf_focus": {"pdf": large_pdf, "guide": large_draw},
+                "restored": {"pdf": returned_pdf, "guide": returned_draw},
+            }
+            report["b36_pdf_focus"] = "REAL_X11_SELECTED_TOGGLE_AND_SOURCE_BYTES_PROVEN_PDF_CONTENT_MANUAL_NOT_RUN"
             report["steps"].append({"case": "b36_compact_pdf_focus_and_return",
-                                    "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+                                    "status": "SOURCE_AND_SELECTION_PROVEN_WHOLE_PAGE_MANUAL_NOT_RUN"})
             run(["xdotool", "windowsize", "--sync", window,
                  str(profile["restore_size"][0]), str(profile["restore_size"][1])])
             time.sleep(0.4)
