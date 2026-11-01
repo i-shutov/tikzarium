@@ -56,3 +56,5 @@ TextEdit from keyboard input, independent of modal layering.
 A second real RawInput test focuses the production TextEdit,
 presents the modal with a Text event, asserts source/target bytes
 unchanged, then closes the dialog and checks manual editing resumes.
+
+B34 QA correction: hosted macOS clippy `-D warnings` rejected nine arguments in the second headless-test helper despite 81/81 tests passing. The helper now groups the modal document/path and UI focus flags (six parameters), without weakening lints. Stream B is reconciled with accepted N3 main; the new shared C catalogue/help files are inherited unchanged.

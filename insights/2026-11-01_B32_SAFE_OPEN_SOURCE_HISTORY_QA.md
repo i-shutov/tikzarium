@@ -41,3 +41,5 @@ production Ui panels are explicitly disabled during the modal.
 The test checks unchanged source and UTF-8/CRLF open target,
 then re-enables the editor and confirms ordinary typing works.
 No claim of physical GUI acceptance until independent evidence.
+
+B34 exact-head QA note: macOS hosted log on `2e047938dd3799fe29161851c04b5e9d903d34f1` showed 81/81 app and 55/55 core tests passing but a strict Clippy `too_many_arguments` rejection in the new test helper. Grouped arguments in follow-up and merged fresh main N3 without touching its files; check the **new** exact final SHA for fresh CI, do not cite the old passing tests as final.

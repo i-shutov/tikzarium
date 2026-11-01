@@ -2443,13 +2443,12 @@ mod split_layout_tests {
             ctx: &egui::Context,
             source: &mut String,
             reset: &mut bool,
-            doc: &Document,
-            target: &Path,
-            save_field: &mut String,
-            modal: bool,
-            focus_editor: bool,
+            dialog: (&Document, &Path, &mut String),
+            state: (bool, bool),
             events: Vec<egui::Event>,
         ) {
+            let (doc, target, save_field) = dialog;
+            let (modal, focus_editor) = state;
             let _ = ctx.run(
                 egui::RawInput {
                     screen_rect: Some(egui::Rect::from_min_size(
@@ -2490,22 +2489,16 @@ mod split_layout_tests {
             &ctx,
             &mut source,
             &mut reset,
-            &doc,
-            &target,
-            &mut save_field,
-            false,
-            true,
+            (&doc, &target, &mut save_field),
+            (false, true),
             vec![],
         );
         frame(
             &ctx,
             &mut source,
             &mut reset,
-            &doc,
-            &target,
-            &mut save_field,
-            true,
-            false,
+            (&doc, &target, &mut save_field),
+            (true, false),
             vec![egui::Event::Text("НЕЛЬЗЯ_ВСТАВЛЯТЬ".into())],
         );
         assert_eq!(source, original_source);
@@ -2515,22 +2508,16 @@ mod split_layout_tests {
             &ctx,
             &mut source,
             &mut reset,
-            &doc,
-            &target,
-            &mut save_field,
-            false,
-            true,
+            (&doc, &target, &mut save_field),
+            (false, true),
             vec![],
         );
         frame(
             &ctx,
             &mut source,
             &mut reset,
-            &doc,
-            &target,
-            &mut save_field,
-            false,
-            false,
+            (&doc, &target, &mut save_field),
+            (false, false),
             vec![egui::Event::Text("РУЧНАЯ_ПРАВКА".into())],
         );
         assert!(source.contains("РУЧНАЯ_ПРАВКА"));
