@@ -51,6 +51,14 @@ class LockValidatorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid UTF-8"):
             module.inspect_lock(b"[[package]\x00")
 
+    def test_git_blob_and_worktree_must_match_byte_for_byte(self):
+        self.assertEqual(module.require_identical_lock(b"line\n", b"line\n"),
+                         module.hashlib.sha256(b"line\n").hexdigest())
+        with self.assertRaisesRegex(RuntimeError, "CRLF"):
+            module.require_identical_lock(b"line\r\n", b"line\n")
+        with self.assertRaisesRegex(RuntimeError, "working-tree bytes"):
+            module.require_identical_lock(b"changed\n", b"line\n")
+
     def test_real_repository_lock_present_and_valid(self):
         lock_path = Path(__file__).resolve().parents[2] / "Cargo.lock"
         self.assertTrue(lock_path.is_file(), "Cargo.lock must be tracked in Git")
