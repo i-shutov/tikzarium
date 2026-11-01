@@ -1,3 +1,10 @@
+## Unreleased — I50 D06 MiKTeX rerun artifact provenance (CI pending)
+
+- Closed a demonstrated GitHub Actions evidence-routing defect: [D06 #41315329378](https://github.com/i-shutov/tikzarium/actions/runs/41315329378) attempt 4 actually built six PDFs with privately installed MiKTeX 25.12 on hosted Windows Server (47-file ZIP, package inventory unchanged), but the independent Ubuntu auditor fetched the stale 265-byte ZIP from attempt 1 by nonunique artifact name and failed before PDF audit.
+- Bind Windows evidence, lock and independent report to the same `github.run_id` and explicitly replace prior attempts with `actions/upload-artifact overwrite: true`; Ubuntu downloads the exact same-run Windows name. The naming does not use `run_attempt`, so a failed-audit-only rerun can read the last successful Windows producer without changing source provenance.
+- New stdlib negative regression checks execute in both Windows and Ubuntu jobs, rejecting absent overwrite, stale/nonunique names, attempt-based naming and consumer mismatch. Workflow, tests, plan and research/QA insight committed together; no B/egui/C catalogue edits, no TeX auto-installs or GUI-font coupling.
+- New exact-HEAD CI, independent uploaded-PDF/Unicode/font audit and post-merge CI: **NOT_RUN at authoring**. Physical Windows 10 x64 with external MiKTeX and Mac ARM M1/M4 with external XeLaTeX: **NOT_RUN**.
+
 # Changelog
 
 ## Unreleased — I46/I47 B34 real-X11 acceptance (verified tested SHA 4e31346; final evidence HEAD CI pending)
