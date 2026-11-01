@@ -289,6 +289,7 @@ fn pending_open_controls(
     document: &Document,
     open_target: &Path,
     save_input: &mut String,
+    validation_error: Option<&str>,
 ) -> (Option<PendingOpenAction>, egui::Rect) {
     ui.label("В текущем TeX-документе есть несохранённые изменения.");
     ui.small(format!(
@@ -302,6 +303,12 @@ fn pending_open_controls(
             .hint_text("отдельный файл .tex"),
     );
     ui.small("Путь открываемого файла не используется для сохранения. Для нового документа укажите другое имя.");
+    // A rejected Save-and-open must explain itself inside the modal. The
+    // top-toolbar status is dimmed and cannot be read through the backdrop.
+    if let Some(error) = validation_error {
+        let color = ui.visuals().error_fg_color;
+        ui.colored_label(color, error);
+    }
     let mut action = None;
     let mut save_button_rect = egui::Rect::NOTHING;
     ui.horizontal(|ui| {
@@ -331,12 +338,13 @@ fn show_pending_open_dialog(
     document: &Document,
     open_target: &Path,
     save_input: &mut String,
+    validation_error: Option<&str>,
 ) -> (Option<PendingOpenAction>, egui::Rect) {
     let mut result = (None, egui::Rect::NOTHING);
     egui::Modal::new(egui::Id::new("tikzarium-pending-open")).show(ctx, |ui| {
         ui.heading("Несохранённые изменения");
         ui.separator();
-        result = pending_open_controls(ui, document, open_target, save_input);
+        result = pending_open_controls(ui, document, open_target, save_input, validation_error);
     });
     if result.0.is_none() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
         result.0 = Some(PendingOpenAction::Cancel);
@@ -377,6 +385,7 @@ struct TikzariumApp {
     show_log: bool,
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
+    pending_open_validation_error: Option<String>,
     prefs: UiPreferences,
     authoring: tikz_authoring::Session,
     highlight_generated_line: bool,
@@ -432,6 +441,7 @@ impl TikzariumApp {
             show_log: true,
             pending_open: None,
             pending_open_save_path: String::new(),
+            pending_open_validation_error: None,
             prefs,
             authoring: {
                 let mut state = tikz_authoring::Session::default();
@@ -457,6 +467,7 @@ impl TikzariumApp {
             return;
         }
         if self.document.dirty() {
+            self.pending_open_validation_error = None;
             self.pending_open_save_path = self
                 .document
                 .path
@@ -1511,31 +1522,49 @@ impl eframe::App for TikzariumApp {
             }
         });
         if let Some(path) = self.pending_open.clone() {
+            let previous_destination = self.pending_open_save_path.clone();
             let decision = show_pending_open_dialog(
                 ctx,
                 &self.document,
                 &path,
                 &mut self.pending_open_save_path,
+                self.pending_open_validation_error.as_deref(),
             )
             .0;
+            // Once the user corrects the destination, the old rejection must
+            // not linger as though the newly entered path had been checked.
+            if self.pending_open_save_path != previous_destination {
+                self.pending_open_validation_error = None;
+            }
             match decision {
                 Some(PendingOpenAction::Save(save_path)) => {
                     if self.save_to_path(save_path) {
                         self.pending_open = None;
                         self.pending_open_save_path.clear();
+                        self.pending_open_validation_error = None;
                         self.load_path(path);
+                    } else {
+                        self.pending_open_validation_error = Some(self.status.clone());
+                        ctx.request_repaint();
                     }
                 }
                 Some(PendingOpenAction::Discard) => {
                     self.pending_open = None;
                     self.pending_open_save_path.clear();
+                    self.pending_open_validation_error = None;
                     self.load_path(path);
                 }
                 Some(PendingOpenAction::Cancel) => {
                     self.pending_open = None;
                     self.pending_open_save_path.clear();
+                    self.pending_open_validation_error = None;
                 }
-                Some(PendingOpenAction::Reject(error)) => self.status = error,
+                Some(PendingOpenAction::Reject(error)) => {
+                    self.status = error.clone();
+                    self.pending_open_validation_error = Some(error);
+                    ctx.request_repaint();
+                }
+
                 None => {}
             }
         }
@@ -2179,7 +2208,7 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        (action, rect) = pending_open_controls(ui, doc, open_target, save_field);
+                        (action, rect) = pending_open_controls(ui, doc, open_target, save_field, None);
                     });
                 },
             );
@@ -2372,7 +2401,7 @@ mod split_layout_tests {
                             *background_clicks += 1;
                         }
                     });
-                    action = show_pending_open_dialog(ctx, doc, target, save_input).0;
+                    action = show_pending_open_dialog(ctx, doc, target, save_input, None).0;
                 },
             );
             (action, behind)
@@ -2469,7 +2498,7 @@ mod split_layout_tests {
                         }
                     });
                     if modal {
-                        show_pending_open_dialog(ctx, doc, target, save_field);
+                        show_pending_open_dialog(ctx, doc, target, save_field, None);
                     }
                 },
             );
@@ -2521,5 +2550,36 @@ mod split_layout_tests {
             vec![egui::Event::Text("РУЧНАЯ_ПРАВКА".into())],
         );
         assert!(source.contains("РУЧНАЯ_ПРАВКА"));
+    }
+    #[test]
+    fn b35_rejected_save_is_legible_inside_real_egui_modal() {
+        let ctx = egui::Context::default();
+        let document = Document::scratch("% черновик\r\n\\Opaque{тест}\r\n");
+        let target = Path::new("victim.tex");
+        let mut destination = String::from("victim.tex");
+        let message = "Файл уже существует. Выберите новое имя для сохранения.";
+        let output = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                show_pending_open_dialog(ctx, &document, target, &mut destination, Some(message));
+            },
+        );
+        let visible = output.shapes.iter().any(|clipped| {
+            if let egui::Shape::Text(text) = &clipped.shape {
+                text.galley.text().contains(message)
+            } else {
+                false
+            }
+        });
+        assert!(
+            visible,
+            "the rejected save explanation must be rendered in the foreground modal"
+        );
     }
 }
