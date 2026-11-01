@@ -28,7 +28,7 @@ use font_proof::{FontProofResult, spawn_font_proof};
 use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
-use preview_image::decode_preview_png;
+use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
 use source_fonts::scan_explicit_font_hints;
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
@@ -137,6 +137,34 @@ fn repaint_if_pdf_zoom_label_stale(
         ctx.request_repaint();
     }
     stale
+}
+
+/// A 120-dpi Poppler PNG shrunk below 40% with GPU bilinear filtering
+/// undersamples hairlines and can omit entire rectangle sides (real I51 X11).
+/// Select a CPU-prefiltered LOD but keep the full raster dimensions as the
+/// layout authority; this is still a sampled PDF *preview*, not PDF geometry.
+fn show_pdf_raster(
+    ui: &mut egui::Ui,
+    full: &egui::TextureHandle,
+    prefiltered: Option<&egui::TextureHandle>,
+    zoom: f32,
+) -> (egui::Response, bool) {
+    let use_prefiltered = zoom < 0.38 && prefiltered.is_some();
+    let texture = if use_prefiltered {
+        prefiltered.expect("checked above")
+    } else {
+        full
+    };
+    (
+        ui.image((texture.id(), full.size_vec2() * zoom)),
+        use_prefiltered,
+    )
+}
+
+fn page_fit_warning(unavailable: bool) -> Option<&'static str> {
+    unavailable.then_some(
+        "Автоподбор страницы: не хватает места даже при 2%; увеличьте область PDF или прокручивайте.",
+    )
 }
 
 /// Draw the actual egui Fit Page control. The selected state is sticky across
@@ -396,6 +424,8 @@ struct TikzariumApp {
     status: String,
     preview_status: String,
     preview_texture: Option<egui::TextureHandle>,
+    preview_lod_texture: Option<egui::TextureHandle>,
+    preview_lod_rx: Option<PreviewLodReceiver>,
     pdf: Option<Vec<u8>>,
     built_source: Option<String>,
     built_path: Option<PathBuf>,
@@ -453,6 +483,8 @@ impl TikzariumApp {
             status: "Save the starter as a .tex file, then Build".into(),
             preview_status: "No exact preview yet".into(),
             preview_texture: None,
+            preview_lod_texture: None,
+            preview_lod_rx: None,
             pdf: None,
             built_source: None,
             built_path: None,
@@ -531,6 +563,8 @@ impl TikzariumApp {
                 self.jump_to_line = None;
                 self.last_build_failed = false;
                 self.preview_texture = None;
+                self.preview_lod_texture = None;
+                self.preview_lod_rx = None;
                 self.fit_page_active = false;
                 self.pdf = None;
                 self.preview_epoch = self.preview_epoch.wrapping_add(1);
@@ -691,6 +725,8 @@ impl TikzariumApp {
                     self.diagnostics = artifact.diagnostics.clone();
                     self.last_build_failed = false;
                     self.preview_texture = None;
+                    self.preview_lod_texture = None;
+                    self.preview_lod_rx = None;
                     self.preview_status = "Exact PDF created by XeLaTeX".into();
                     match artifact.preview {
                         Ok(Some(bitmap)) => match decode_preview_png(&bitmap.png) {
@@ -702,6 +738,14 @@ impl TikzariumApp {
                                     "exact-pdf-page1",
                                     color,
                                     egui::TextureOptions::LINEAR,
+                                ));
+                                // Keep the full raster immediately available. A CPU Lanczos
+                                // minification worker produces a separate texture for the
+                                // compact PDF view without blocking egui's event thread.
+                                self.preview_lod_rx = Some(spawn_preview_lod(
+                                    rgba,
+                                    self.preview_epoch,
+                                    self.page_index,
                                 ));
                             }
                             Err(error) => {
@@ -834,6 +878,8 @@ impl TikzariumApp {
                             color,
                             egui::TextureOptions::LINEAR,
                         ));
+                        self.preview_lod_texture = None;
+                        self.preview_lod_rx = Some(spawn_preview_lod(rgba, epoch, page));
                         self.page_index = page;
                         self.page_navigation_status = format!("Showing page {page}");
                     }
@@ -845,6 +891,33 @@ impl TikzariumApp {
             }
         }
         if self.page_count_rx.is_some() || self.page_render_rx.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(75));
+        }
+    }
+
+    fn poll_preview_lod(&mut self, ctx: &egui::Context) {
+        let completed = self.preview_lod_rx.as_ref().and_then(|rx| match rx.try_recv() {
+            Ok(value) => Some(Some(value)),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => Some(None),
+        });
+        if let Some(result) = completed {
+            self.preview_lod_rx = None;
+            if let Some((epoch, page, Some(rgba))) = result
+                && epoch == self.preview_epoch
+                && page == self.page_index
+            {
+                let size = [rgba.width() as usize, rgba.height() as usize];
+                let color = egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw());
+                self.preview_lod_texture = Some(ctx.load_texture(
+                    format!("pdf-prefiltered-lod-{epoch}-{page}"),
+                    color,
+                    egui::TextureOptions::LINEAR,
+                ));
+                ctx.request_repaint();
+            }
+        }
+        if self.preview_lod_rx.is_some() {
             ctx.request_repaint_after(Duration::from_millis(75));
         }
     }
@@ -987,7 +1060,6 @@ impl TikzariumApp {
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
         let canvas_width = ui.available_width();
-        let mut fit_page_requested = false;
         let mut displayed_zoom_percent = pdf_zoom_percent(self.zoom);
         ui.horizontal_wrapped(|ui| {
             ui.heading("Canvas · exact PDF (read-only)");
@@ -1053,15 +1125,11 @@ impl TikzariumApp {
                 self.fit_page_active = false;
                 self.zoom = fit;
             }
-            if show_fit_page_button(
+            show_fit_page_button(
                 ui,
                 self.preview_texture.is_some(),
                 &mut self.fit_page_active,
-            )
-            .clicked()
-            {
-                fit_page_requested = true;
-            }
+            );
         });
         if self.preview_stale() {
             ui.colored_label(
@@ -1120,20 +1188,22 @@ impl TikzariumApp {
         // raster scale this frame; repaint the label on the next frame.
         // Avoid permanent redraws when the rounded percentage is unchanged.
         repaint_if_pdf_zoom_label_stale(ui.ctx(), displayed_zoom_percent, self.zoom);
-        if fit_unavailable {
-            if fit_page_requested {
-                self.status = "Вся PDF-страница не помещается даже при 2%; увеличьте область PDF или используйте прокрутку".into();
-            }
-            ui.colored_label(
-                ui.visuals().warn_fg_color,
-                "Автоподбор страницы: не хватает места даже при 2%; увеличьте область PDF или прокручивайте.",
-            );
+        // Fit failure belongs to the current viewport only. Never persist
+        // it in the top-level Build/Save status: a later successful refit must
+        // not keep showing the obsolete "2%" error (I51 X11 screenshot).
+        if let Some(warning) = page_fit_warning(fit_unavailable) {
+            ui.colored_label(ui.visuals().warn_fg_color, warning);
         }
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 if let Some(texture) = &self.preview_texture {
-                    ui.image((texture.id(), texture.size_vec2() * self.zoom));
+                    let _ = show_pdf_raster(
+                        ui,
+                        texture,
+                        self.preview_lod_texture.as_ref(),
+                        self.zoom,
+                    );
                 } else {
                     ui.vertical_centered(|ui| {
                         ui.add_space(48.0);
@@ -1321,6 +1391,7 @@ impl eframe::App for TikzariumApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_build(ctx);
         self.poll_pages(ctx);
+        self.poll_preview_lod(ctx);
         self.poll_font_proof(ctx);
         self.show_font_lab(ctx);
         // Pending dirty-Open decisions own the keyboard: do not change source
@@ -2630,6 +2701,69 @@ mod split_layout_tests {
         );
         assert_eq!(document.source, "% черновик\r\n\\Opaque{тест}\r\n");
     }
+    #[test]
+    fn b37_real_egui_pdf_lod_route_preserves_source_and_truthful_fit_feedback() {
+        use tikzarium_extensions::primitives::Evidence;
+
+        let ctx = egui::Context::default();
+        let full_color = egui::ColorImage::from_rgba_unmultiplied(
+            [400, 160],
+            &vec![255; 400 * 160 * 4],
+        );
+        let lod_color = egui::ColorImage::from_rgba_unmultiplied(
+            [100, 40],
+            &vec![255; 100 * 40 * 4],
+        );
+        let full = ctx.load_texture("b37-original", full_color, egui::TextureOptions::LINEAR);
+        let lod = ctx.load_texture("b37-prefiltered", lod_color, egui::TextureOptions::LINEAR);
+        let mut source = format!("{QUICKSTART}\r\n% \\Unknown{{не переписывать}}\r\n");
+        let unchanged = source.clone();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        let mut observed = None;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1180.0, 680.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                let layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+                show_split_inspector_panel(ctx, layout, |ui| {
+                    ui.strong("Справка C · F1");
+                });
+                show_split_source_panel(ctx, layout, |ui| {
+                    ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                });
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let (small, uses_lod) = show_pdf_raster(ui, &full, Some(&lod), 0.26);
+                    let (large, uses_full) = show_pdf_raster(ui, &full, Some(&lod), 0.75);
+                    observed = Some((
+                        small.rect.size(),
+                        uses_lod,
+                        large.rect.size(),
+                        uses_full,
+                    ));
+                    assert_eq!(page_fit_warning(false), None);
+                    assert!(page_fit_warning(true).unwrap().contains("2%"));
+                    // Genuine shared C handler still owns authoring, not
+                    // the PDF preview or this display-only texture switch.
+                    assert!(!session.undo_available());
+                });
+            },
+        );
+        let (small, lod_used, large, large_lod_used) = observed.unwrap();
+        assert!(lod_used && !large_lod_used);
+        assert!((small.x - 104.0).abs() < 0.5);
+        assert!((small.y - 41.6).abs() < 0.5);
+        assert!((large.x - 300.0).abs() < 0.5);
+        assert_eq!(source, unchanged);
+        assert!(!session.undo_available());
+        let _ = Evidence::Confirmed;
+    }
+
     #[test]
     fn b36_compact_pdf_focus_switch_uses_real_egui_frames_and_keeps_tikz_source() {
         fn frame(

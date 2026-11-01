@@ -2,6 +2,41 @@
 //! PDF bytes and XeLaTeX output remain authoritative and unchanged.
 use std::io::Cursor;
 
+
+const LOD_DOWNSAMPLE: u32 = 4;
+
+/// A prefiltered PDF *raster* avoids the lost thin lines produced by GPU
+/// linear minification without mipmaps. Exact PDF remains external XeLaTeX.
+pub(crate) type PreviewLodReceiver =
+    std::sync::mpsc::Receiver<(u64, usize, Option<image::RgbaImage>)>;
+
+fn prefilter_for_small_view(rgba: &image::RgbaImage) -> Option<image::RgbaImage> {
+    let (width, height) = rgba.dimensions();
+    if width < LOD_DOWNSAMPLE || height < LOD_DOWNSAMPLE {
+        return None;
+    }
+    Some(image::imageops::resize(
+        rgba,
+        width.div_ceil(LOD_DOWNSAMPLE),
+        height.div_ceil(LOD_DOWNSAMPLE),
+        image::imageops::FilterType::Lanczos3,
+    ))
+}
+
+/// Offload the expensive full-image footprint filter to a worker. The receiver
+/// carries page and PDF epoch so an old render cannot overwrite a later page.
+pub(crate) fn spawn_preview_lod(
+    rgba: image::RgbaImage,
+    epoch: u64,
+    page: usize,
+) -> PreviewLodReceiver {
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send((epoch, page, prefilter_for_small_view(&rgba)));
+    });
+    rx
+}
+
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 const MAX_COMPRESSED_BYTES: usize = 64 * 1024 * 1024;
 const MAX_EDGE: u32 = 8_192;
@@ -65,6 +100,51 @@ pub(crate) fn decode_preview_png(png: &[u8]) -> Result<image::RgbaImage, String>
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn b37_thin_line_coverage_survives_cpu_prefilter_for_compact_pdf() {
+        let mut original = image::RgbaImage::from_pixel(
+            960,
+            360,
+            image::Rgba([255, 255, 255, 255]),
+        );
+        // Two-pixel line weight in a 120-dpi PDF raster: at a 26% fit
+        // naïve bilinear minification can miss entire straight segments.
+        for x in 140..760 {
+            for y in [80, 81, 278, 279] {
+                original.put_pixel(x, y, image::Rgba([0, 0, 0, 255]));
+            }
+        }
+        for y in 80..280 {
+            for x in [140, 141, 758, 759] {
+                original.put_pixel(x, y, image::Rgba([0, 0, 0, 255]));
+            }
+        }
+        let reduced = super::prefilter_for_small_view(&original).unwrap();
+        assert_eq!(reduced.dimensions(), (240, 90));
+        // The output is antialiased, not artificially painted black: all
+        // four strokes retain measurable coverage across the complete side.
+        for y in 24..67 {
+            assert!(reduced.get_pixel(35, y)[0] < 245, "left side lost at {y}");
+            assert!(reduced.get_pixel(189, y)[0] < 245, "right side lost at {y}");
+        }
+        for x in 38..186 {
+            assert!(reduced.get_pixel(x, 20)[0] < 245, "top side lost at {x}");
+            assert!(reduced.get_pixel(x, 69)[0] < 245, "bottom side lost at {x}");
+        }
+        let rx = super::spawn_preview_lod(original, 123, 2);
+        let (epoch, page, async_lod) = rx.recv_timeout(
+            std::time::Duration::from_secs(5),
+        ).unwrap();
+        assert_eq!((epoch, page), (123, 2));
+        assert_eq!(async_lod.unwrap().dimensions(), (240, 90));
+    }
+
+    #[test]
+    fn b37_small_preview_does_not_allocate_invalid_lod() {
+        let tiny = image::RgbaImage::new(3, 2);
+        assert!(super::prefilter_for_small_view(&tiny).is_none());
+    }
+
     use super::*;
     use image::ImageEncoder;
 
