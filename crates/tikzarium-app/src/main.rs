@@ -102,6 +102,50 @@ fn fit_page_zoom(image: egui::Vec2, viewport: egui::Vec2) -> Option<f32> {
     (zoom >= 0.2 && zoom.is_finite()).then_some(zoom.min(5.0))
 }
 
+/// Draw the actual egui Fit Page control. The selected state is sticky across
+/// page navigation and window resizing, unlike a one-shot scalar zoom.
+fn show_fit_page_button(
+    ui: &mut egui::Ui,
+    enabled: bool,
+    fit_active: &mut bool,
+) -> egui::Response {
+    let response = ui
+        .add_enabled(
+            enabled,
+            egui::Button::new("Вся страница").selected(*fit_active),
+        )
+        .on_hover_text(
+            "Автоматически подгонять текущую страницу точного PDF под доступную область при смене страницы и размера окна. Кнопки +/−, 100% и Fit width отключают этот режим.",
+        );
+    if response.clicked() {
+        *fit_active = true;
+    }
+    response
+}
+
+/// Keep whole-page mode responsive to page changes/resizes, without altering
+/// source or claiming any PDF-to-TikZ coordinate mapping. A missing texture is
+/// not a failure; a page too large even at 20% is explicitly reported.
+fn refit_selected_page(
+    fit_active: bool,
+    image: Option<egui::Vec2>,
+    viewport: egui::Vec2,
+    zoom: &mut f32,
+) -> bool {
+    if !fit_active {
+        return false;
+    }
+    let Some(image) = image else {
+        return false;
+    };
+    if let Some(fit) = fit_page_zoom(image, viewport) {
+        *zoom = fit;
+        false
+    } else {
+        true
+    }
+}
+
 /// Screen-space caret region from the real egui text galley. Never estimate
 /// source-line positions from a fixed logical row height: soft wrapping,
 /// font metrics and horizontal scroll invalidate that estimate.
@@ -136,6 +180,7 @@ struct TikzariumApp {
     building_source: Option<String>,
     building_path: Option<PathBuf>,
     zoom: f32,
+    fit_page_active: bool,
     preview_epoch: u64,
     page_index: usize,
     page_count: Option<usize>,
@@ -186,6 +231,7 @@ impl TikzariumApp {
             building_source: None,
             building_path: None,
             zoom: 1.0,
+            fit_page_active: false,
             preview_epoch: 0,
             page_index: 1,
             page_count: None,
@@ -243,6 +289,7 @@ impl TikzariumApp {
                 self.jump_to_line = None;
                 self.last_build_failed = false;
                 self.preview_texture = None;
+                self.fit_page_active = false;
                 self.pdf = None;
                 self.preview_epoch = self.preview_epoch.wrapping_add(1);
                 self.page_index = 1;
@@ -723,13 +770,16 @@ impl TikzariumApp {
                 self.request_page(next);
             }
             if ui.button("−").clicked() {
+                self.fit_page_active = false;
                 self.zoom = scaled_zoom(self.zoom, 1.0 / 1.2);
             }
             ui.label(format!("{}%", (self.zoom * 100.0).round() as u32));
             if ui.button("+").clicked() {
+                self.fit_page_active = false;
                 self.zoom = scaled_zoom(self.zoom, 1.2);
             }
             if ui.button("100%").clicked() {
+                self.fit_page_active = false;
                 self.zoom = 1.0;
             }
             let fit = self.preview_texture.as_ref().map(|texture| {
@@ -740,14 +790,10 @@ impl TikzariumApp {
                 .clicked()
                 && let Some(fit) = fit
             {
+                self.fit_page_active = false;
                 self.zoom = fit;
             }
-            if ui
-                .add_enabled(
-                    self.preview_texture.is_some(),
-                    egui::Button::new("Вся страница"),
-                )
-                .on_hover_text("Подогнать точную PDF-страницу целиком по доступной области под полем TikZ, не по вспомогательной сетке")
+            if show_fit_page_button(ui, self.preview_texture.is_some(), &mut self.fit_page_active)
                 .clicked()
             {
                 fit_page_requested = true;
@@ -781,18 +827,22 @@ impl TikzariumApp {
             }
         }
         ui.separator();
-        if fit_page_requested {
-            // Compute at the last possible point: the toolbar, warnings,
-            // source-authoring guide and separator already occupy the UI.
-            let fit = self
-                .preview_texture
-                .as_ref()
-                .and_then(|texture| fit_page_zoom(texture.size_vec2(), ui.available_size()));
-            if let Some(fit) = fit {
-                self.zoom = fit;
-            } else {
+        // Refit on *every* frame while selected, including a newly rasterized
+        // page or a resized Split. A manual zoom action above leaves this mode.
+        let fit_unavailable = refit_selected_page(
+            self.fit_page_active,
+            self.preview_texture.as_ref().map(|texture| texture.size_vec2()),
+            ui.available_size(),
+            &mut self.zoom,
+        );
+        if fit_unavailable {
+            if fit_page_requested {
                 self.status = "Вся PDF-страница не помещается при минимальных 20%; увеличьте область PDF или используйте прокрутку".into();
             }
+            ui.colored_label(
+                ui.visuals().warn_fg_color,
+                "Автоподбор страницы: не хватает места даже при 20%; увеличьте область PDF или прокручивайте.",
+            );
         }
         egui::ScrollArea::both()
             .auto_shrink([false, false])
@@ -1260,6 +1310,116 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b26_fit_page_button_remains_selected_on_resize_and_new_pdf_raster() {
+        // Actual Context::run pointer frames on the *production* Fit Page
+        // button, followed by real UI-layout refits. No XeLaTeX emulation,
+        // no PDF-to-guide coordinate inference and no source mutations.
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            active: &mut bool,
+            zoom: &mut f32,
+            image: egui::Vec2,
+            size: egui::Vec2,
+            events: Vec<egui::Event>,
+        ) -> egui::Rect {
+            let mut button = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        button = show_fit_page_button(ui, true, active).rect;
+                        ui.add(
+                            egui::TextEdit::multiline(source)
+                                .code_editor()
+                                .desired_rows(2),
+                        );
+                        ui.add_space(42.0);
+                        let too_small =
+                            refit_selected_page(*active, Some(image), ui.available_size(), zoom);
+                        assert!(!too_small, "test viewport should fit at 20%");
+                    });
+                },
+            );
+            button
+        }
+        let ctx = egui::Context::default();
+        let mut source = QUICKSTART.to_owned();
+        let original = source.clone();
+        let mut active = false;
+        let mut zoom = 1.0;
+        let large = egui::vec2(1366.0, 740.0);
+        let page = egui::vec2(720.0, 480.0);
+        let button = frame(&ctx, &mut source, &mut active, &mut zoom, page, large, vec![]);
+        assert!(!active);
+        let pos = button.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        };
+        frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            page,
+            large,
+            vec![egui::Event::PointerMoved(pos), pointer(true)],
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            page,
+            large,
+            vec![pointer(false)],
+        );
+        assert!(active, "the real Fit Page button did not switch on auto-fit");
+        let wide_zoom = zoom;
+        frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            page,
+            egui::vec2(850.0, 560.0),
+            vec![],
+        );
+        assert!(zoom < wide_zoom, "resize did not refit the page");
+        frame(
+            &ctx,
+            &mut source,
+            &mut active,
+            &mut zoom,
+            egui::vec2(720.0, 1200.0),
+            large,
+            vec![],
+        );
+        assert!(zoom < wide_zoom, "new taller PDF raster was not refitted");
+        // This is the same state transition as a manual +/−/100%/Fit width.
+        active = false;
+        zoom = 0.7;
+        frame(&ctx, &mut source, &mut active, &mut zoom, page, large, vec![]);
+        assert_eq!(zoom, 0.7, "manual zoom must no longer auto-refit");
+        let before = zoom;
+        assert!(refit_selected_page(
+            true,
+            Some(egui::vec2(1000.0, 1000.0)),
+            egui::vec2(100.0, 100.0),
+            &mut zoom,
+        ));
+        assert_eq!(zoom, before, "cannot claim fit below the 20% minimum");
+        assert_eq!(source, original);
+    }
 
     #[test]
     fn b25_fit_page_uses_real_remaining_viewport_not_canvas_width_or_provisional_guide() {
