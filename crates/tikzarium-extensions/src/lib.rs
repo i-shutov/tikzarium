@@ -5,9 +5,9 @@
 //! No manifest field is interpreted as a command, shared library, or script.
 
 pub mod evidence;
+pub mod help_search;
 pub mod primitive_edit;
 pub mod primitives;
-pub mod help_search;
 pub mod project_disconnect;
 pub mod project_imports;
 

@@ -77,9 +77,7 @@ impl<'a> HelpEntry<'a> {
     pub fn manual(self) -> (&'a str, &'a str) {
         match self {
             Self::Tool(tool) => (&tool.manual_section, &tool.manual_url),
-            Self::Parameter(_, parameter) => {
-                (&parameter.manual_section, &parameter.manual_url)
-            }
+            Self::Parameter(_, parameter) => (&parameter.manual_section, &parameter.manual_url),
             Self::Library(library) => (&library.manual_section, &library.manual_url),
         }
     }
@@ -152,13 +150,20 @@ mod tests {
     fn single_source_of_truth_exposes_every_tool_parameter_and_library() {
         let catalog = Catalog::bundled().unwrap();
         let expected = catalog.tools.len()
-            + catalog.tools.iter().map(|tool| tool.parameter.len()).sum::<usize>()
+            + catalog
+                .tools
+                .iter()
+                .map(|tool| tool.parameter.len())
+                .sum::<usize>()
             + catalog.libraries.len();
         let items = entries(&catalog);
         assert_eq!(items.len(), expected);
         assert_eq!(catalog.tools.len(), 6);
         assert_eq!(catalog.libraries.len(), 4);
-        let ids = items.iter().map(|entry| entry.id()).collect::<std::collections::HashSet<_>>();
+        let ids = items
+            .iter()
+            .map(|entry| entry.id())
+            .collect::<std::collections::HashSet<_>>();
         assert_eq!(ids.len(), items.len());
         assert!(ids.contains("tikz.arrow:tip"));
         assert!(ids.contains("tikz.library.arrows-meta"));
@@ -167,13 +172,20 @@ mod tests {
     #[test]
     fn russian_unicode_and_parameter_search_use_the_shared_catalogue() {
         let catalog = Catalog::bundled().unwrap();
-        assert!(search(&catalog, "ОКРУЖНОСТЬ")
-            .iter()
-            .any(|entry| entry.id() == "tikz.circle"));
-        assert_eq!(exact(&catalog, "tikz.arrow:tip").unwrap().id(), "tikz.arrow:tip");
-        assert!(search(&catalog, "positioning")
-            .iter()
-            .any(|entry| entry.id() == "tikz.library.positioning"));
+        assert!(
+            search(&catalog, "ОКРУЖНОСТЬ")
+                .iter()
+                .any(|entry| entry.id() == "tikz.circle")
+        );
+        assert_eq!(
+            exact(&catalog, "tikz.arrow:tip").unwrap().id(),
+            "tikz.arrow:tip"
+        );
+        assert!(
+            search(&catalog, "positioning")
+                .iter()
+                .any(|entry| entry.id() == "tikz.library.positioning")
+        );
         assert!(exact(&catalog, "tikz.not-a-tool").is_none());
     }
 
@@ -186,8 +198,10 @@ mod tests {
             assert!(url.starts_with("https://tikz.dev/"));
             assert_eq!(entry.requirements().pgf_version_min, "UNKNOWN");
             if let HelpEntry::Parameter(_, parameter) = entry {
-                assert!(parameter.default_provenance == "editor_preset"
-                    || parameter.default_provenance == "UNKNOWN");
+                assert!(
+                    parameter.default_provenance == "editor_preset"
+                        || parameter.default_provenance == "UNKNOWN"
+                );
             }
         }
     }
