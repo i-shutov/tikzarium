@@ -69,7 +69,7 @@ def inspect_lock(raw: bytes) -> dict[str, object]:
 def require_identical_lock(working: bytes, committed: bytes) -> str:
     """Reject platform-specific checkout conversions, not only logical Git diffs."""
     if working != committed:
-        if working.replace(b"\\r\\n", b"\\n") == committed:
+        if working.replace(b"\r\n", b"\n") == committed:
             raise RuntimeError("Cargo.lock CRLF conversion changed bytes on checkout; configure eol=lf")
         raise RuntimeError("Cargo.lock working-tree bytes differ from committed Git blob")
     return hashlib.sha256(committed).hexdigest()
