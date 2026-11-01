@@ -1,3 +1,7 @@
+## Unreleased — I53 independent actual-X11 N2 libraries acceptance (DRAFT)
+
+- New full-window positioning Connect → saved TeX → externally compiled XeLaTeX PDF → Disconnect → Undo QA, with failure screenshots, hashes and negative tests; initial click profile provisional, no GUI PASS until review.
+
 ## Unreleased — B38 library connect/disconnect + N3 help inspector (DRAFT: QA NOT_RUN)
 
 - Re-pinned I46/I47 real Linux/X11 workflows and their screenshot-coordinate profiles to the exact B38 app/src Git tree, preserving full pointer/Save/Open/PDF checks. Inherited B37 coordinates remain provisional pending fresh screenshot review; this does NOT silently promote bootstrap to PASS.
