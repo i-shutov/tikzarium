@@ -243,6 +243,52 @@ def verify_held_undo(before: bytes, after: bytes, original: bytes) -> None:
         raise RuntimeError("B30 cancelled gesture left an owned native command")
 
 
+def default_dark_selected_rgb(rgb: tuple[int, int, int]) -> bool:
+    """Conservative egui default-dark blue selection, not semantic PDF proof.
+
+    Used only for SOURCE-TREE-pinned, screenshot-calibrated X11 profile. An
+    accent mismatch should fail, never silently classify a wrong button hit.
+    """
+    red, green, blue = rgb
+    return green > red + 45 and blue > red + 70 and blue > green + 20
+
+
+def screenshot_pixel_rgb(path: Path, xy: tuple[int, int]) -> tuple[int, int, int]:
+    """Read a physically captured PNG pixel using existing ImageMagick."""
+    import re
+    pixel = run(["identify", "-format",
+                 f"%[pixel:p{{{xy[0]},{xy[1]}}}]", str(path)])
+    match = re.fullmatch(r"(?:srgb|rgb)\((\d+),(\d+),(\d+)\)", pixel)
+    if match is None:
+        raise RuntimeError(f"Unexpected screenshot RGB format: {pixel!r}")
+    return tuple(int(value) for value in match.groups())
+
+
+def b36_select_reviewed_layout(layouts: list[dict], mode: str, sample_rgb) -> tuple[dict, dict]:
+    """Choose one screenshot-reviewed layout by actual egui selected pixels.
+
+    A Fit Page diagnostic can wrap and shift both buttons by 16 pixels.
+    Neither presence of a screenshot nor different pixels is a mode PASS:
+    exactly one approved layout must have the *expected* selected state.
+    """
+    if mode not in ("guide", "pdf"):
+        raise ValueError("Unknown B36 center view")
+    matching = []
+    for layout in layouts:
+        guide_rgb = tuple(sample_rgb(layout["guide_probe"]))
+        pdf_rgb = tuple(sample_rgb(layout["pdf_probe"]))
+        guide_active = default_dark_selected_rgb(guide_rgb)
+        pdf_active = default_dark_selected_rgb(pdf_rgb)
+        if (guide_active, pdf_active) == ((True, False) if mode == "guide" else (False, True)):
+            matching.append((layout, {"guide": guide_rgb, "pdf": pdf_rgb}))
+    if len(matching) != 1:
+        raise RuntimeError(
+            f"B36 {mode} selection not unique on real screenshot "
+            f"({len(matching)} reviewed layout matches)"
+        )
+    return matching[0]
+
+
 def wait_for(predicate, seconds: float, message: str) -> None:
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -623,6 +669,59 @@ def main() -> int:
             report["responsive_fit"] = "ACTUAL_RESIZE_RESTORE_FRAMES_MANUAL_FULLPAGE_REVIEW_REQUIRED"
             report["steps"].append({"case": "b26_live_resize_restore_fit_page",
                                     "status": "FRAMES_CAPTURED_NOT_VISUAL_PASS"})
+        # I51/B36: real-X11 center-view selection, selected-pixel verified.
+        # Existing two-line Fit Page status shifts buttons 16px; choose from
+        # screenshot-reviewed coordinates, never from guessed default layout.
+        if "b36_focus_layouts" in profile:
+            before_focus = source.read_bytes()
+            run(["xdotool", "windowsize", "--sync", window, "1180", "680"])
+            time.sleep(0.75)
+            screenshot("05a-b36-drawing-before-toggle.png")
+            layouts = profile["b36_focus_layouts"]
+            initial_layout, initial_rgb = b36_select_reviewed_layout(
+                layouts, "guide", lambda p: screenshot_pixel_rgb(
+                    out / "05a-b36-drawing-before-toggle.png", tuple(p)))
+            click(initial_layout["pdf_click"])
+            # B37 swaps a CPU-Lanczos compact-PDF raster asynchronously.
+            # Capture both an early GUI frame and a later real X11 frame;
+            # neither elapsed time nor frame change proves image fidelity.
+            time.sleep(0.45)
+            screenshot("05b0-b37-pdf-focus-early.png")
+            time.sleep(2.5)
+            screenshot("05b-b37-pdf-large-candidate.png")
+            pdf_layout, large_rgb = b36_select_reviewed_layout(
+                layouts, "pdf", lambda p: screenshot_pixel_rgb(
+                    out / "05b-b37-pdf-large-candidate.png", tuple(p)))
+            report["b37_pdf_preview"] = {
+                "early_sha256": sha256(out / "05b0-b37-pdf-focus-early.png"),
+                "settled_candidate_sha256": sha256(out / "05b-b37-pdf-large-candidate.png"),
+                "raster_stroke_fidelity": "NOT_RUN_MANUAL_COMPARE_TO_04_PDF_REFERENCE",
+                "stale_fit_warning_absent": "NOT_RUN_MANUAL_SCREENSHOT_REVIEW",
+                "async_lod_arrival": "NOT_OBSERVABLE_FROM_GUI_SCREENSHOT_ALONE",
+            }
+            if source.read_bytes() != before_focus:
+                raise RuntimeError("B36 PDF focus click changed user source bytes")
+            if sha256(out / "05a-b36-drawing-before-toggle.png") == sha256(out / "05b-b37-pdf-large-candidate.png"):
+                raise RuntimeError("B36 selected PDF focus has no visible frame difference")
+            click(pdf_layout["guide_click"])
+            time.sleep(0.65)
+            screenshot("05c-b36-return-guide-candidate.png")
+            restored_layout, returned_rgb = b36_select_reviewed_layout(
+                layouts, "guide", lambda p: screenshot_pixel_rgb(
+                    out / "05c-b36-return-guide-candidate.png", tuple(p)))
+            if source.read_bytes() != before_focus:
+                raise RuntimeError("B36 return-to-guide changed user source bytes")
+            report["b36_focus_button_rgb"] = {
+                "drawing": {"layout": initial_layout["name"], **initial_rgb},
+                "pdf_focus": {"layout": pdf_layout["name"], **large_rgb},
+                "restored": {"layout": restored_layout["name"], **returned_rgb},
+            }
+            report["b36_pdf_focus"] = "REAL_X11_SELECTED_TOGGLE_AND_SOURCE_BYTES_PROVEN_PDF_CONTENT_MANUAL_NOT_RUN"
+            report["steps"].append({"case": "b36_compact_pdf_focus_and_return",
+                                    "status": "SOURCE_AND_SELECTION_PROVEN_WHOLE_PAGE_MANUAL_NOT_RUN"})
+            run(["xdotool", "windowsize", "--sync", window,
+                 str(profile["restore_size"][0]), str(profile["restore_size"][1])])
+            time.sleep(0.4)
         report["status"] = ("PASS_DESKTOP_AUTOMATED_VISUAL_REVIEW_PENDING"
                             if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY")
     except Exception as exc:
