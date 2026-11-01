@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tree": "c0e45c3445f25f365ca7ac4a2985b9a4261b7373",
-  "status": "RUN3_SCREENSHOT_CONFIRMED_CONNECT_AT_1224_605;DISCONNECT_AND_UNDO_UNCALIBRATED",
+  "status": "RUN4_REAL_X11_CONNECT_AND_PDF_PASS;ROW_COLLAPSED_ON_STATUS_CHANGE;REOPEN_ROW_FOR_DISCONNECT;UNDO_PENDING",
   "source": [
     120,
     190
@@ -35,8 +35,8 @@
     605
   ],
   "disconnect": [
-    1140,
-    510
+    1224,
+    605
   ],
   "undo": [
     942,
