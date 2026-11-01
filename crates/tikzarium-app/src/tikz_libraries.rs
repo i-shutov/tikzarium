@@ -85,20 +85,39 @@ pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
 
 /// Individual library installation stays UNKNOWN until a specific file probe.
 /// A matching catalogue engine target does not establish successful compilation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LibraryUiTarget {
+    Panel,
+    Entry(usize),
+    Action(usize, LibraryChange),
+}
+
 pub fn show_library_panel(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
     has_xelatex: bool,
 ) -> Option<usize> {
+    show_library_panel_tracking(ui, session, source, has_xelatex, |_, _| {})
+}
+
+// The observer only records the actual egui hit rectangles for UNIT_EVENT
+// tests. Both production and tests execute this same click/change handler.
+fn show_library_panel_tracking(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    has_xelatex: bool,
+    mut observe: impl FnMut(LibraryUiTarget, egui::Rect),
+) -> Option<usize> {
     let mut jump = None;
-    egui::CollapsingHeader::new("Библиотеки TikZ · подключение в исходнике")
+    let panel = egui::CollapsingHeader::new("Библиотеки TikZ · подключение в исходнике")
         .default_open(false)
         .show(ui, |ui| {
             ui.small("Installed / loaded / engine / tool / help независимы. Без автоустановки.");
             let catalog = tikz_authoring::catalog();
             let project = project_imports::inspect(source);
-            for library in &catalog.libraries {
+            for (index, library) in catalog.libraries.iter().enumerate() {
                 let capabilities = capabilities_for_library(
                     catalog,
                     &library.name,
@@ -107,9 +126,14 @@ pub fn show_library_panel(
                     if has_xelatex { Some("xelatex") } else { None },
                 ).expect("bundled C library record");
                 let direct = project.status(ImportKind::TikzLibrary, &library.name);
-                egui::CollapsingHeader::new(format!(
+                // The status changes ABSENT ↔ CONFIRMED after a click.
+                // Without a stable ID the open details immediately collapse,
+                // hiding the inverse action and making Undo appear lost.
+                let entry = egui::CollapsingHeader::new(format!(
                     "{} · {}", library.title_ru, evidence_label(direct)
-                )).show(ui, |ui| {
+                ))
+                .id_salt(("tikz-library", library.name.as_str()))
+                .show(ui, |ui| {
                     ui.label(&library.help_ru);
                     ui.code(&library.syntax);
                     ui.small(format!(
@@ -139,7 +163,9 @@ pub fn show_library_panel(
                                 LibraryChange::Connect => "Подключить библиотеку в преамбуле",
                                 LibraryChange::Disconnect => "Отключить только это прямое подключение",
                             };
-                            if ui.button(label).clicked() {
+                            let button = ui.button(label);
+                            observe(LibraryUiTarget::Action(index, action), button.rect);
+                            if button.clicked() {
                                 match session.change_library(source, &library.name, action) {
                                     Ok(line) => {
                                         jump = Some(line);
@@ -158,8 +184,10 @@ pub fn show_library_panel(
                         }
                     }
                 });
+                observe(LibraryUiTarget::Entry(index), entry.header_response.rect);
             }
         });
+    observe(LibraryUiTarget::Panel, panel.header_response.rect);
     jump
 }
 
@@ -218,4 +246,122 @@ mod tests {
         assert_eq!(source, original);
         assert!(!session.undo_available());
     }
+
+    #[test]
+    fn b39_actual_egui_pointer_connect_disconnect_keeps_details_open_and_undo_safe() {
+        // UNIT_EVENT: genuine Context::run frames and Response::clicked()
+        // with observed hit rectangles, NOT an X11 or physical Win/Mac run.
+        fn primary(pos: egui::Pos2, pressed: bool) -> egui::Event {
+            egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::default(),
+            }
+        }
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+        ) -> (Option<usize>, Vec<(LibraryUiTarget, egui::Rect)>) {
+            let mut found = Vec::new();
+            let mut jumped = None;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(980.0, 1200.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        jumped = show_library_panel_tracking(
+                            ui,
+                            session,
+                            source,
+                            false,
+                            |target, rect| found.push((target, rect)),
+                        );
+                    });
+                },
+            );
+            (jumped, found)
+        }
+        fn click(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            rect: egui::Rect,
+        ) -> Option<usize> {
+            assert!(rect.is_positive(), "click target must have a real hit rect");
+            let pos = rect.center();
+            frame(ctx, session, source, vec![egui::Event::PointerMoved(pos), primary(pos, true)]);
+            frame(ctx, session, source, vec![primary(pos, false)]).0
+        }
+        fn target(
+            found: &[(LibraryUiTarget, egui::Rect)],
+            kind: LibraryUiTarget,
+        ) -> egui::Rect {
+            found
+                .iter()
+                .find(|(name, _)| *name == kind)
+                .map(|(_, rect)| *rect)
+                .unwrap_or_else(|| panic!("expected actual egui target {kind:?}; got {found:?}"))
+        }
+
+        let ctx = egui::Context::default();
+        ctx.style_mut(|style| style.animation_time = 0.0);
+        let original = concat!(
+            "\\documentclass{standalone}\r\n",
+            "\\usepackage{tikz}\r\n",
+            "\\begin{document}\r\n",
+            "\\opaqueMacro{текст и % знак}\r\n",
+            "\\end{document}\r\n",
+        );
+        let mut source = original.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let (_, initial) = frame(&ctx, &mut session, &mut source, vec![]);
+        click(&ctx, &mut session, &mut source, target(&initial, LibraryUiTarget::Panel));
+        let (_, panel_open) = frame(&ctx, &mut session, &mut source, vec![]);
+        click(
+            &ctx, &mut session, &mut source,
+            target(&panel_open, LibraryUiTarget::Entry(0)),
+        );
+        let (_, entry_open) = frame(&ctx, &mut session, &mut source, vec![]);
+        assert_eq!(source, original, "opening UI must never patch TeX");
+        let connected = click(
+            &ctx, &mut session, &mut source,
+            target(&entry_open, LibraryUiTarget::Action(0, LibraryChange::Connect)),
+        );
+        assert!(connected.is_some(), "actual egui Connect button did not fire");
+        assert!(session.undo_available());
+        assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
+        assert!(source.contains("\\opaqueMacro{текст и % знак}\r\n"));
+
+        // The status-bearing label has changed; the same row MUST remain
+        // expanded, so Disconnect is available without clicking the row again.
+        let (_, after_connect) = frame(&ctx, &mut session, &mut source, vec![]);
+        let disconnected = click(
+            &ctx, &mut session, &mut source,
+            target(
+                &after_connect,
+                LibraryUiTarget::Action(0, LibraryChange::Disconnect),
+            ),
+        );
+        assert!(disconnected.is_some(), "actual egui Disconnect button did not fire");
+        assert_eq!(source, original);
+        session.undo(&mut source).unwrap();
+        assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original);
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("b39-library-clicks.tex");
+        std::fs::write(&file, &source).unwrap();
+        assert_eq!(std::fs::read_to_string(file).unwrap(), original);
+    }
+
 }
