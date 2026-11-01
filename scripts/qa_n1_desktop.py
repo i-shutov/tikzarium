@@ -623,6 +623,34 @@ def main() -> int:
             report["responsive_fit"] = "ACTUAL_RESIZE_RESTORE_FRAMES_MANUAL_FULLPAGE_REVIEW_REQUIRED"
             report["steps"].append({"case": "b26_live_resize_restore_fit_page",
                                     "status": "FRAMES_CAPTURED_NOT_VISUAL_PASS"})
+        # I51/B36: genuine X11 clicks in the new Split center switch.
+        # These are PROVISIONAL coordinates until independent PNG review:
+        # a changed frame is never proof that the intended toggle was hit.
+        if "b36_pdf_focus_click" in profile:
+            before_focus = source.read_bytes()
+            run(["xdotool", "windowsize", "--sync", window, "1180", "680"])
+            time.sleep(0.75)
+            screenshot("05a-b36-drawing-before-toggle.png")
+            click(profile["b36_pdf_focus_click"])
+            time.sleep(0.9)
+            screenshot("05b-b36-pdf-large-candidate.png")
+            if source.read_bytes() != before_focus:
+                raise RuntimeError("B36 PDF focus click changed user source bytes")
+            if sha256(out / "05a-b36-drawing-before-toggle.png") == sha256(out / "05b-b36-pdf-large-candidate.png"):
+                raise RuntimeError("B36 focus candidate has no visible effect; click may be stale")
+            click(profile["b36_return_guide_click"])
+            time.sleep(0.6)
+            screenshot("05c-b36-return-guide-candidate.png")
+            if source.read_bytes() != before_focus:
+                raise RuntimeError("B36 return-to-guide changed user source bytes")
+            if sha256(out / "05b-b36-pdf-large-candidate.png") == sha256(out / "05c-b36-return-guide-candidate.png"):
+                raise RuntimeError("B36 guide return candidate has no visible effect; click may be stale")
+            report["b36_pdf_focus"] = "REAL_POINTER_FRAMES_CAPTURED_SOURCE_UNCHANGED_MANUAL_CONTENT_NOT_RUN"
+            report["steps"].append({"case": "b36_compact_pdf_focus_and_return",
+                                    "status": "FRAMES_DIFFER_NOT_VISUAL_PASS"})
+            run(["xdotool", "windowsize", "--sync", window,
+                 str(profile["restore_size"][0]), str(profile["restore_size"][1])])
+            time.sleep(0.4)
         report["status"] = ("PASS_DESKTOP_AUTOMATED_VISUAL_REVIEW_PENDING"
                             if profile.get("gestures") else "PASS_BOOTSTRAP_ONLY")
     except Exception as exc:

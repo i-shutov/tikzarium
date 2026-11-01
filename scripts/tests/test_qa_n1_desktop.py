@@ -66,18 +66,23 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertTrue(desktop.x11_button1_pressed(1 << 8))
         self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
 
-    def test_i48_b35_real_n1_source_profile_is_exact_tree_pinned(self):
+    def test_i51_b36_real_n1_source_profile_is_exact_tree_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "46aced2dbe1b66ba10d8cc92292024625e73936b")
+                         "276ad1525db4ef3d3aab4624808453a897ad5b6a")
         self.assertNotEqual(profile["reviewed_app_tree_sha"],
                             "af316d5e5452d74186b92d65c95c448253d0e61c")
-        self.assertIn("Not B35 acceptance", profile["layout_note"])
+        self.assertIn("Not B36 acceptance", profile["layout_note"])
         self.assertTrue(profile["undo_held_pointer"])
         self.assertTrue(profile["b30_release_source_history_regression"])
         self.assertNotIn("b28_focused_textedit_regression", profile)
         self.assertNotIn("reviewed_app_source", profile)
+        self.assertTrue(profile["b36_bootstrap_clicks_unreviewed"])
+        self.assertNotEqual(profile["b36_pdf_focus_click"],
+                            profile["b36_return_guide_click"])
+        self.assertEqual(profile["b36_pdf_focus_click"], [990, 72])
+        self.assertIn("MANUAL_CONTENT_NOT_RUN", MODULE.read_text(encoding="utf-8"))
         self.assertEqual(profile["fit_click"], [1027, 72])
         self.assertEqual(profile["compact_fit_width_click"], [603, 98])
         self.assertEqual(profile["compact_fit_page_click"], [680, 98])

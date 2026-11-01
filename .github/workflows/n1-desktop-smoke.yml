@@ -1,7 +1,8 @@
-name: I47 B35 real X11 native TikZ six gestures, held Undo and PDF
+name: I51 B36 real X11 native TikZ six gestures, held Undo and PDF
 on:
   push:
     branches:
+      - qa/i51-b36-real-x11-pdf-focus
       - qa/i46-b34-dirty-open-real-x11
       - qa/i45-b31-zoom-label-live-reaccept
       - qa/i43-b31-compact-real-x11
@@ -19,9 +20,12 @@ on:
       - 'Cargo.lock'
       - 'plans/2026-11-01_I46_B35_DIRTY_OPEN_REAL_X11.md'
       - 'insights/2026-11-01_I46_B35_REAL_OPEN_QA.md'
+      - 'plans/2026-11-01_I51_B36_LIVE_PDF_FOCUS.md'
+      - 'insights/2026-11-01_I51_B36_LIVE_DESKTOP_QA.md'
       - 'CHANGELOG.md'
   pull_request:
     branches:
+      - b/b36-compact-pdf-focus
       - b/b32-safe-open-source-undo-20261101
       - feat/b27-egui-undo-held-pointer-20261101
       - b/b31-compact-xelatex-fit
@@ -63,7 +67,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '46aced2dbe1b66ba10d8cc92292024625e73936b'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '276ad1525db4ef3d3aab4624808453a897ad5b6a'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q
@@ -81,7 +85,7 @@ jobs:
           cargo build --locked -p tikzarium-app --bin tikzarium-app
           git diff --exit-code -- Cargo.lock
           cp Cargo.lock "$RUNNER_TEMP/i19-build-evidence/Cargo.lock"
-      - name: Real B35 X11 held-pointer Undo, six gestures, GUI XeLaTeX, compact Fit Page/Fit width
+      - name: Real B36 X11 held-pointer Undo, six gestures, GUI XeLaTeX, compact Fit Page/Fit width
         run: |
           mkdir -p "$RUNNER_TEMP/i19-runtime"
           chmod 700 "$RUNNER_TEMP/i19-runtime"

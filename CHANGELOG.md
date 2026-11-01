@@ -1,3 +1,8 @@
+## Unreleased — I51 B36 independent X11 PDF-focus integration (NOT_RUN; QA source head)
+
+- QA-only source-tree rebase of I46 dirty-Open and I47 full six-gesture native-X11 workflows onto B36 #79 `af75b0402bdf9c99dd18999fc5a4f6eb4c974e23` (app/src `276ad1525db4ef3d3aab4624808453a897ad5b6a`), preserving existing Save/Undo/CRLF/opaque macro, external XeLaTeX PDF and F1 checks. Adds provisional 1180×680 real pointer PDF-focus/guide-return screenshots and no-TeX-mutation hash gates. Old B35 coordinates expressly NOT calibrated on B36; no visual acceptance inferred from mere differing screenshots.
+- Exact-head hosted X11, screenshot and PDF manual review, PR merge and post-merge CI **NOT_RUN** at authoring. Physical Windows 10/MiKTeX and Mac M1/M4/XeLaTeX **NOT_RUN**. No production Rust, catalogue or TeX behavior changed.
+
 ## Unreleased — I50 D06 MiKTeX rerun artifact provenance (CI pending)
 
 - Closed a demonstrated GitHub Actions evidence-routing defect: [D06 #41315329378](https://github.com/i-shutov/tikzarium/actions/runs/41315329378) attempt 4 actually built six PDFs with privately installed MiKTeX 25.12 on hosted Windows Server (47-file ZIP, package inventory unchanged), but the independent Ubuntu auditor fetched the stale 265-byte ZIP from attempt 1 by nonunique artifact name and failed before PDF audit.

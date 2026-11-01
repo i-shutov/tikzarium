@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I47 B35 app-tree: prior accepted B31 six gestures/held-pointer Undo/compact Fit controls, repinned to B35; new real X11 run and manual screenshots required",
+  "profile": "I51 B36 source-tree-pinned X11; inherited B35 gestures and new provisional PDF focus clicks REQUIRE actual independent screenshot calibration",
   "calibration_runs": [
     41192581511,
     41193030547,
@@ -11,7 +11,7 @@
   ],
   "initial_png_sha256": "b65754a44205040655d6434b8a592b665ec4fa02deac4ff8c4dfc50ddc7f612a",
   "selected_png_sha256": "61f3d83313300494bc43fa3696c148b2c54011b27682210610d81db1f68f966a",
-  "layout_note": "B35 app/src tree 46aced2dbe1b66ba10d8cc92292024625e73936b; B34 source/proof tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99 and prior I46/I47 screenshots are HISTORICAL. B35 coordinates are provisionally inherited from real B34; real B35 X11 source/gestures/PDF and manual screenshot review NOT_RUN. Not B35 acceptance yet.",
+  "layout_note": "B36 app/src tree 276ad1525db4ef3d3aab4624808453a897ad5b6a Git-verified; B35 coordinates and PDF 7%/25% are HISTORICAL. Not B36 acceptance. New B36 focus clicks provisional until real screenshot manual review.",
   "path_click": [
     310,
     18
@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "46aced2dbe1b66ba10d8cc92292024625e73936b",
+  "reviewed_app_tree_sha": "276ad1525db4ef3d3aab4624808453a897ad5b6a",
   "zoom_out_click": [
     882,
     72
@@ -155,6 +155,15 @@
   ],
   "undo_held_pointer": true,
   "b30_release_source_history_regression": true,
-  "calibration_reference": "Prior B34 I46/I47 X11 passes on ecc6d40668fd6edddc97c682f8ddcca5fe615c99; new B35 app 46aced2dbe1b66ba10d8cc92292024625e73936b requires fresh exact-head acceptance.",
-  "b34_modal_real_run": 41308995293
+  "calibration_reference": "B35 actual X11 accepted only at 46aced2dbe1b66ba10d8cc92292024625e73936b; B36 requires complete fresh exact-head real GUI/PNG/TeX/PDF acceptance.",
+  "b34_modal_real_run": 41308995293,
+  "b36_pdf_focus_click": [
+    990,
+    72
+  ],
+  "b36_return_guide_click": [
+    867,
+    72
+  ],
+  "b36_bootstrap_clicks_unreviewed": true
 }
