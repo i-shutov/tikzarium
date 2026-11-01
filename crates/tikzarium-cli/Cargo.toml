@@ -7,4 +7,5 @@ repository.workspace = true
 
 [dependencies]
 tikzarium-core = { path = "../tikzarium-core" }
+tikzarium-extensions = { path = "../tikzarium-extensions" }
 tempfile.workspace = true

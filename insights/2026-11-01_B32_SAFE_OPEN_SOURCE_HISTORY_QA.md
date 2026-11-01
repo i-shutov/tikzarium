@@ -32,3 +32,14 @@ background button, pointer press/release and Escape, checking no
 background click and byte-preserved UTF-8/CRLF target. This is
 UNIT_EVENT only; do not claim real X11 or Win10/M1/M4 tests before
 independent evidence. Source-level defect and test added together.
+
+
+Additional B34 UNIT_EVENT: a previously focused production
+TextEdit with active native history receives a raw Text event
+while the pending Open modal is visible. All underlying
+production Ui panels are explicitly disabled during the modal.
+The test checks unchanged source and UTF-8/CRLF open target,
+then re-enables the editor and confirms ordinary typing works.
+No claim of physical GUI acceptance until independent evidence.
+
+B34 exact-head QA note: macOS hosted log on `2e047938dd3799fe29161851c04b5e9d903d34f1` showed 81/81 app and 55/55 core tests passing but a strict Clippy `too_many_arguments` rejection in the new test helper. Grouped arguments in follow-up and merged fresh main N3 without touching its files; check the **new** exact final SHA for fresh CI, do not cite the old passing tests as final.

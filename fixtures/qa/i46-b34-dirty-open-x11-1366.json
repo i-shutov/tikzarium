@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I46 B34 dedicated real X11 dirty-Open egui modal proof; provisional modal positions pending first screenshot review",
+  "profile": "I46 B34 current-source real X11 dirty-Open egui modal proof; provisional modal positions pending first screenshot review",
   "source": [
     120,
     190
@@ -33,6 +33,6 @@
     506,
     458
   ],
-  "reviewed_app_tree_sha": "8752ed1d77f7c52f866ad493f0dd6042395ca34e",
+  "reviewed_app_tree_sha": "ecc6d40668fd6edddc97c682f8ddcca5fe615c99",
   "bootstrap_caveat": "Coordinates modal_input/modal_save are provisional. They are NOT PASS until real screenshot, source/PDF hashes and human review. The app-tree SHA was read from GitHub git/trees for exact B34 HEAD 61cc1d04."
 }

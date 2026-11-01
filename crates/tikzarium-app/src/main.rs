@@ -834,6 +834,9 @@ impl TikzariumApp {
         self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
     }
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
+        if self.pending_open.is_some() {
+            ui.disable();
+        }
         ui.heading("TeX / TikZ source");
         ui.small(
             self.document
@@ -1308,6 +1311,9 @@ impl eframe::App for TikzariumApp {
         }
         let file_actions_enabled = self.receiver.is_none() && self.pending_open.is_none();
         egui::TopBottomPanel::top("tools").show(ctx, |ui| {
+            if self.pending_open.is_some() {
+                ui.disable();
+            }
             ui.horizontal_wrapped(|ui| {
                 ui.heading("TikZarium");
                 if ui
@@ -1397,6 +1403,9 @@ impl eframe::App for TikzariumApp {
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
+                if self.pending_open.is_some() {
+                    ui.disable();
+                }
                 if let Some(line) = tikz_canvas::show_inspector_action_bar(
                     ui,
                     &mut self.authoring,
@@ -1416,6 +1425,9 @@ impl eframe::App for TikzariumApp {
                 .resizable(true)
                 .default_height(145.0)
                 .show(ctx, |ui| {
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
                     ui.horizontal(|ui| {
                         ui.selectable_value(
                             &mut self.bottom_view,
@@ -1489,6 +1501,9 @@ impl eframe::App for TikzariumApp {
             });
         }
         egui::CentralPanel::default().show(ctx, |ui| {
+            if self.pending_open.is_some() {
+                ui.disable();
+            }
             if self.workspace.show_canvas() {
                 self.show_pdf_canvas(ui);
             } else {
@@ -2420,5 +2435,91 @@ mod split_layout_tests {
         assert_eq!(action, Some(PendingOpenAction::Cancel));
         assert_eq!(doc.source, original);
         assert_eq!(std::fs::read_to_string(target).unwrap(), untouched);
+    }
+
+    #[test]
+    fn b34_focused_source_textedit_does_not_accept_keys_behind_modal() {
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            reset: &mut bool,
+            dialog: (&Document, &Path, &mut String),
+            state: (bool, bool),
+            events: Vec<egui::Event>,
+        ) {
+            let (doc, target, save_field) = dialog;
+            let (modal, focus_editor) = state;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        if modal {
+                            ui.disable();
+                        }
+                        let output = show_source_text_edit(ui, source, reset);
+                        if focus_editor {
+                            output.response.request_focus();
+                        }
+                    });
+                    if modal {
+                        show_pending_open_dialog(ctx, doc, target, save_field);
+                    }
+                },
+            );
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("чужой.tex");
+        let original_target = "% неприкосновенный\r\n\\Opaque{тест}\r\n";
+        std::fs::write(&target, original_target).unwrap();
+        let ctx = egui::Context::default();
+        let mut source = "% редактируемый черновик\n".to_owned();
+        let original_source = source.clone();
+        let doc = Document::scratch(&source);
+        let mut reset = false;
+        let mut save_field = String::new();
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, true),
+            vec![],
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (true, false),
+            vec![egui::Event::Text("НЕЛЬЗЯ_ВСТАВЛЯТЬ".into())],
+        );
+        assert_eq!(source, original_source);
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), original_target);
+        // Closing the decision restores normal text editing.
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, true),
+            vec![],
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut reset,
+            (&doc, &target, &mut save_field),
+            (false, false),
+            vec![egui::Event::Text("РУЧНАЯ_ПРАВКА".into())],
+        );
+        assert!(source.contains("РУЧНАЯ_ПРАВКА"));
     }
 }

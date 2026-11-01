@@ -85,6 +85,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.91.0
+      - name: N3 real offline shared-catalogue CLI smoke (no installed XeLaTeX needed)
+        env:
+          TIKZARIUM_XELATEX: /does-not-exist/tikzarium-xelatex
+        run: |
+          mkdir -p /tmp/tikzarium-ci
+          cargo run --locked -p tikzarium-cli -- help --all > /tmp/tikzarium-ci/help-all.txt
+          cargo run --locked -p tikzarium-cli -- help tikz.arrow:tip > /tmp/tikzarium-ci/help-tip.txt
+          cargo run --locked -p tikzarium-cli -- help ОКРУЖНОСТЬ > /tmp/tikzarium-ci/help-search.txt
+          cargo run --locked -p tikzarium-cli -- help tikz.line > /tmp/tikzarium-ci/help-line.txt
+          cargo run --locked -p tikzarium-cli -- help tikz.library.positioning > /tmp/tikzarium-ci/help-positioning.txt
+          cargo run --locked -p tikzarium-cli -- help 'смещение и якоря' > /tmp/tikzarium-ci/help-description-search.txt
+          grep -F 'tikz.library.positioning' /tmp/tikzarium-ci/help-all.txt
+          grep -F 'НЕ default TikZ' /tmp/tikzarium-ci/help-tip.txt
+          grep -F 'tikz.circle' /tmp/tikzarium-ci/help-search.txt
+          grep -F 'Пояснение: Создаёт прямой отрезок' /tmp/tikzarium-ci/help-line.txt
+          grep -F 'Пояснение: Позволяет задавать положение узла' /tmp/tikzarium-ci/help-positioning.txt
+          grep -F 'tikz.library.positioning' /tmp/tikzarium-ci/help-description-search.txt
+          if cargo run --locked -p tikzarium-cli -- help nonexistent-unknown-tool; then exit 1; fi
       - name: Install local TeX + PDF tools
         run: |
           sudo apt-get update

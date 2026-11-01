@@ -46,3 +46,15 @@ implicit discard and untouched UTF-8/CRLF opaque TeX. Preserve six
 C-catalogue primitive/selection/parameter/F1/Undo/Save-Reopen tests.
 Require exact-head CI and independent Linux/X11 modal acceptance;
 physical Win10/M1/M4 NOT_RUN. External XeLaTeX PDF remains authoritative.
+
+
+B34 final safety extension: the production top toolbar, Split
+inspector, diagnostics, source TextEdit and central PDF/guide now
+explicitly disable their egui Ui while the modal is pending. This
+also protects the first decision frame and a previously focused
+TextEdit from keyboard input, independent of modal layering.
+A second real RawInput test focuses the production TextEdit,
+presents the modal with a Text event, asserts source/target bytes
+unchanged, then closes the dialog and checks manual editing resumes.
+
+B34 QA correction: hosted macOS clippy `-D warnings` rejected nine arguments in the second headless-test helper despite 81/81 tests passing. The helper now groups the modal document/path and UI focus flags (six parameters), without weakening lints. Stream B is reconciled with accepted N3 main; the new shared C catalogue/help files are inherited unchanged.

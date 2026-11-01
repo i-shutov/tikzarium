@@ -59,3 +59,7 @@ a post-Open Ctrl+Z must not replay content from a different source.
 - Offline predicates: NOT_RUN until test job executes.
 - Physical Windows 10/Mac M1/M4: NOT_RUN.
 - Creating a QA workflow implies neither release nor main merge.
+
+## 2026-11-01 current B source integration checkpoint
+
+I46 merged B-owned PR #75 source f9a4838c8e3a2ea2e2adf58efc152a016c41f09a without editing B production files. Current pinned app/src tree is ecc6d40668fd6edddc97c682f8ddcca5fe615c99. Original B34 8752ed1d77f7c52f866ad493f0dd6042395ca34e was the bootstrap tree only. The I46 real-X11 workflow must now test the current merged QA checkout. All artifact/manual/physical results remain NOT_RUN until independently verified.

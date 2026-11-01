@@ -1,10 +1,22 @@
 # Changelog
 
-## Unreleased — I46 independent B34 real dirty-Open GUI safety gate (NOT_RUN at authoring)
+## Unreleased — I46 current B34+N3 real-X11 acceptance (CI PENDING)
 
-- Stacked QA-only branch on PR #75 B34 source 61cc1d04f5a11d1515a81c1e75b55eda4aeccc0f; dedicated real Linux/X11 egui workflow with exact app/src tree fence 8752ed1d77f7c52f866ad493f0dd6042395ca34e, no production edits or old I06 workflow reuse.
-- Actual keyboard/pointer modal acceptance targets rejecting scratch overwrite of existing UTF-8 CRLF opaque-macro TeX, saving scratch to an independent file, source Ctrl+Z fence, and real GUI XeLaTeX PDF with Poppler glyph/embedded-font checks; source/hash/screenshot/artifact retained even after failure.
-- Provisional modal coordinate bootstrap is NOT a GUI PASS. Exact-head CI, downloaded artifact, manual screenshots and physical Windows 10/Mac ARM remain NOT_RUN until explicitly verified. No release claim or main merge.
+- Integrator QA branch carries latest B #75 SHA f9a4838c8e3a2ea2e2adf58efc152a016c41f09a and current app/src tree ecc6d40668fd6edddc97c682f8ddcca5fe615c99, preserving N3 shared help merged into main. QA-only paths, no production edit. Real modal/XeLaTeX evidence still NOT_RUN pending exact-head workflow and screenshot review. Physical Win10/Mac NOT_RUN.
+
+ — N3 Russian contextual help semantic correction (CI pending)
+
+- Fixed the shared C-catalogue offline help search and CLI detail to include full existing Russian `help_ru` for native tools, parameters and TikZ libraries, not just a short title. Tests exercise exact IDs and description-only Cyrillic search; no second data source, TeX parser, auto-install, or changes to app GUI/figure fonts.
+- New exact-HEAD CI, real CLI output, post-merge CI and physical Win10/M1/M4 acceptance: NOT_RUN at authoring. Do not mark accepted until verified.
+
+# Changelog
+
+## Unreleased — N3 offline search and CLI from ONE Russian TikZ catalogue (CI PENDING)
+
+- Added read-only C-owned search over the exact primitive/parameter/library specifications already consumed by egui; CLI `help` exposes full Russian syntax, type/units/values, examples and PGF/TikZ provenance. No duplicate help database, parser, TeX substitute, or speculative package support.
+- CLI `help [--all|query|exact-id]` works without an installed XeLaTeX, distinguishes editor presets from documented TikZ defaults and reports package/project installation as NOT_CHECKED. Rust unit tests and an offline real-CLI CI smoke are mandatory.
+- Exact-head CI and post-merge CI NOT_RUN when authored. Physical Windows 10/MiKTeX and Mac M1/M4/XeLaTeX NOT_RUN; no release.
+
 
 ## Unreleased — I45 corrected-B31 genuine-X11 zoom-readout reacceptance (PENDING)
 
