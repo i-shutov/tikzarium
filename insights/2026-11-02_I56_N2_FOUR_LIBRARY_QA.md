@@ -17,3 +17,5 @@ UNIT_EVENT is not a host GUI test. Linux TeX Live is not Windows MiKTeX. The cat
 ## First exact-head CI and repair
 
 The first PR #84 commit `2b73fdc` was **not accepted**: n1-authoring workflow invalid (zero jobs), Rust fmt failed on three OS, and two X11 jobs rejected obsolete exact app/src tree before opening egui. Distinguish CI schema and test-code tree mismatches from product failure. Next repair keeps the same PR, restores the entire workflow from known-good main with a simple script call, formats Rust, re-pins the three QA workflows and respective exact-tree profiles. All new head CI and manual artifact reviews NOT_RUN at repair authoring.
+
+The second CI HEAD `ad1e5dd` discovered an additional stale *test* assertion in test_qa_n1_desktop.py, after the workflow exact tree gate had already passed; this is not evidence of a six-gesture product defect. Repin it to the verified test-only app tree. N1 workflow checkout is also changed from synthetic PR merge commit to explicit PR head SHA with git rev-parse exact verification. Latest head CI and artifacts NOT_RUN at this checkpoint.

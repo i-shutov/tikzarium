@@ -70,7 +70,7 @@ class DesktopEvidenceTests(unittest.TestCase):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "0ebdd9e123dda4ea18024150cf284c905badcdb6")
+                         "c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf")
         self.assertNotEqual(profile["reviewed_app_tree_sha"],
                             "af316d5e5452d74186b92d65c95c448253d0e61c")
         self.assertIn("B39 source-tree ref pinned", profile["layout_note"])
