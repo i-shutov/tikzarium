@@ -61,3 +61,16 @@ source widths. App code commit `2909e4684c8743462ccf205adf51c1ee94ac0c8b`;
 helper/test commit `312ffd86d648ae0a99937b18735cf7d8de064304`.
 Full GUI manual resize verification: **NOT_RUN** until exact-head X11
 artifact and screenshots are reviewed. Physical Win10/M1/M4: **NOT_RUN**.
+
+## F1 help-tab state mismatch
+
+Source inspection: Studio `update` reacted only to F1 false→true, switching
+`prefs.studio_dock=Help`; a subsequent F1 true→false left the tab at Help
+although `Session::help` was false. This would render the second shortcut
+visually inert. Fixed in B-owned Studio UI and main via shared
+`route_studio_help_toggle`, with real egui RawInput F1 press/release/press
+test asserting Help→Properties and no source/Undo mutations. Commits
+`01b626edaa607e05c25d309725fc29c171590b93` and
+`8faa2989bf038fd1d6679d37338c168664668746`.
+Exact-head CI and independent real X11 F1 screenshot remain separate gates;
+do not report PASS before evidence is available.
