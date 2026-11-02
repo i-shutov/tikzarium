@@ -1,3 +1,9 @@
+## Unreleased — I59 direct XeLaTeX QA MiKTeX offline policy (candidate exact-head CI NOT_RUN)
+
+- Close an offline safety discrepancy: production Rust already passes `--disable-installer` on MiKTeX, but direct Python figure-glyph and five scientific extension XeLaTeX QA fixtures previously did not. New shared read-only distribution/version check verifies the option on the selected MiKTeX binary before adding it to these QA subprocesses; TeX Live continues without the MiKTeX-only flag, unknown/ambiguous compilers are refused.
+- Add negative stdlib regressions for flag refusal and both direct invocation paths; run the same helper against real hosted Windows Server MiKTeX and preserve original Rust/GUI/C catalogue, user source and external TeX distribution. No package installation, GUI rendering or general solver added.
+- This checkpoint is **not** a CI pass claim. Exact-head PR checks, downloaded artifact review, merge and postmerge remain NOT_RUN at authoring. Hosted MiKTeX is CI_ONLY; physical Windows 10 x64/MiKTeX and Mac ARM M1/M4 XeLaTeX are **NOT_RUN**. Details in plans/insights I59.
+
 ## Unreleased — B40 native TextEdit Undo transaction fencing (PR #85, independent X11 PENDING)
 
 - B-owned egui source safety: compare the session source revision around the real inspector action bar, parameter/dependency/library inspector and six-gesture guide; after a confirmed visual source transaction, clear stale native TextEdit undo snapshots on the next editor frame. Do not reset for pure selection/F1; ordinary code remains editable and source-authoritative.
