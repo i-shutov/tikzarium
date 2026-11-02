@@ -1726,6 +1726,30 @@ impl TikzariumApp {
     }
 }
 
+/// Reserve the Studio status row before any side/central panel consumes the
+/// remaining viewport. The bottom bar is full width, and on-demand diagnostics
+/// stack ABOVE it; editable source and provisional guide cannot render beneath
+/// an after-the-fact CentralPanel overlay.
+fn show_studio_status_panel(
+    ctx: &egui::Context,
+    status: &str,
+    xelatex_ready: bool,
+) -> egui::Rect {
+    egui::TopBottomPanel::bottom("b42-status")
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(status).small());
+                if xelatex_ready {
+                    ui.small("XeLaTeX: настроен");
+                } else {
+                    ui.colored_label(ui.visuals().warn_fg_color, "XeLaTeX не выбран");
+                }
+            });
+        })
+        .response
+        .rect
+}
+
 impl eframe::App for TikzariumApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, STORAGE_KEY, &self.prefs);
@@ -1884,6 +1908,9 @@ impl eframe::App for TikzariumApp {
             });
         }
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
+        if self.prefs.studio_mode {
+            show_studio_status_panel(ctx, &self.status, self.tex.xelatex.is_some());
+        }
         if self.prefs.studio_mode && self.prefs.studio_inspector_open {
             let studio = studio_ui::StudioLayout::for_width(ctx.available_rect().width());
             egui::SidePanel::right("b42-studio-inspector")
@@ -2062,18 +2089,6 @@ impl eframe::App for TikzariumApp {
                 self.prefs.studio_dock = StudioDock::Libraries;
                 self.prefs.studio_inspector_open = true;
             }
-        }
-        if self.prefs.studio_mode {
-            egui::TopBottomPanel::bottom("b42-status").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(&self.status).small());
-                    if self.tex.xelatex.is_none() {
-                        ui.colored_label(ui.visuals().warn_fg_color, "XeLaTeX не выбран");
-                    } else {
-                        ui.small("XeLaTeX: настроен");
-                    }
-                });
-            });
         }
         if let Some(path) = self.pending_open.clone() {
             let previous_destination = self.pending_open_save_path.clone();
@@ -2827,6 +2842,89 @@ mod split_layout_tests {
                 "guide clipped at {viewport}: {guide_width}"
             );
             assert_eq!(source, untouched, "resizing silently changed source");
+            assert!(!session.undo_available());
+        }
+    }
+
+
+    #[test]
+    fn b42_status_is_full_width_and_does_not_occlude_editable_source_or_guide() {
+        // The production status panel must be allocated BEFORE any inspector,
+        // source SidePanel or CentralPanel, at minimum and normal viewport.
+        // RawInput layout evidence only, not a physical OS-window screenshot.
+        for (width, height) in [(850.0, 560.0), (1366.0, 768.0)] {
+            let ctx = egui::Context::default();
+            let mut source = QUICKSTART.to_owned();
+            let original = source.clone();
+            let mut session = tikz_authoring::Session::default();
+            session.reset(&source);
+            let mut status_rect = egui::Rect::NOTHING;
+            let mut source_rect = egui::Rect::NOTHING;
+            let mut guide_rect = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width, height),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("b42-status-test-toolbar").show(ctx, |ui| {
+                        ui.label("Studio: source + native TikZ guide");
+                    });
+                    status_rect = show_studio_status_panel(ctx, "Сохраните рисунок", false);
+                    egui::SidePanel::right("b42-status-test-inspector")
+                        .exact_width(225.0)
+                        .show(ctx, |ui| {
+                            ui.label("Русские пояснения C");
+                        });
+                    egui::SidePanel::left("b42-status-test-tools")
+                        .exact_width(62.0)
+                        .show(ctx, |ui| {
+                            ui.label("TikZ");
+                        });
+                    source_rect = show_split_source_panel(
+                        ctx,
+                        SplitPanelLayout::for_width(ctx.available_rect().width()),
+                        |ui| {
+                            ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                        },
+                    );
+                    guide_rect = egui::CentralPanel::default()
+                        .show(ctx, |ui| {
+                            tikz_canvas::show_guide_studio(
+                                ui,
+                                &mut session,
+                                &mut source,
+                                tikz_canvas::Capabilities {
+                                    installed: true,
+                                    loaded: Evidence::Confirmed,
+                                    engine_compatible: true,
+                                    implemented: true,
+                                },
+                            );
+                        })
+                        .response
+                        .rect;
+                },
+            );
+            assert!(status_rect.is_positive());
+            assert!(source_rect.is_positive());
+            assert!(guide_rect.is_positive());
+            assert!(
+                status_rect.width() >= width - 2.0,
+                "status row not full width at {width}: {status_rect:?}"
+            );
+            assert!(
+                source_rect.bottom() <= status_rect.top() + 1.0,
+                "source hidden under status at {width}"
+            );
+            assert!(
+                guide_rect.bottom() <= status_rect.top() + 1.0,
+                "guide hidden under status at {width}"
+            );
+            assert_eq!(source, original);
             assert!(!session.undo_available());
         }
     }

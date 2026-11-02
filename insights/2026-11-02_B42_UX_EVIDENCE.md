@@ -151,3 +151,18 @@ closes the palette without editing CRLF, Cyrillic text, unknown macros or Undo.
 
 Exact-head Rust test and independent X11 acceptance are pending after
 this patch. Never equate the event test with physical Win10/M1/M4.
+
+
+## B42 full-width status bar layout order — 2026-11-02
+
+Reproducible source-level UX defect: eframe::App::update previously called
+TopBottomPanel::bottom("b42-status") *after* CentralPanel and the side panels.
+Egui layout is order-dependent; late bottom allocation can obscure content
+and cannot reserve the intended full viewport width. The production call is
+now before inspector, tool rail, source, central and optional diagnostics,
+with the same status text and XeLaTeX prerequisite indication.
+
+B-owned UNIT_EVENT uses the same status handler and actual egui panel layout
+at 850x560 / 1366x768 to assert full width, nonoverlapping source/guide,
+unchanged TeX and Undo. No invented PDF coordinate authority. Hosted exact-head
+CI and independent real X11 remain separate and pending at authoring.

@@ -137,3 +137,20 @@ The selected tool, popup dismissal, and no source/Undo modification are
 asserted. This is UNIT_EVENT, not a physical desktop test, not PDF validation.
 D's independent I61 real X11, manual source Ctrl+Z, two-file Open/Save, and
 external XeLaTeX remain necessary. Await exact-head CI results.
+
+
+## B42 bottom-status panel structural layout repair — 2026-11-02
+
+Code audit identified a concrete egui panel ordering issue: Studio rendered
+TopBottomPanel::bottom("b42-status") AFTER CentralPanel had consumed the
+viewport. That makes bottom-row reservation order-dependent and risks
+overlapping/cropping the live guide or source. Also bottom status rendered
+after side panels, so it did not reserve the full window width.
+
+Move the real status panel handler before all Studio side and central panels
+(and before optional diagnostics) so it owns the full-width bottom row and
+diagnostics sit above it. Add a real egui RawInput layout regression with
+the production status handler, editor TextEdit and native guide at 850x560
+and 1366x768. Assert full width, status non-overlap, source byte integrity
+and no spurious Undo. UNIT_EVENT, not physical Win10/M1/M4 or real X11.
+Exact-head Rust/QA and independent desktop screenshots are acceptance gates.
