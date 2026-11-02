@@ -1776,7 +1776,7 @@ mod split_layout_tests {
             );
         }
         let ctx = egui::Context::default();
-        let mut source = "% комментарий\\r\\n\\\\documentclass{standalone}\\r\\n\\\\usepackage{tikz}\\r\\n\\\\begin{document}\\r\\n\\\\begin{tikzpicture}\\r\\n\\\\end{tikzpicture}\\r\\n\\\\myOpaque{не менять}\\r\\n\\\\end{document}\\r\\n".to_owned();
+        let mut source = "% комментарий\r\n\\documentclass{standalone}\r\n\\usepackage{tikz}\r\n\\begin{document}\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n\\myOpaque{не менять}\r\n\\end{document}\r\n".to_owned();
         let original = source.clone();
         let mut session = tikz_authoring::Session::default();
         session.reset(&source);
@@ -1837,8 +1837,8 @@ mod split_layout_tests {
         let path = dir.path().join("b40-тест.tex");
         std::fs::write(&path, source.as_bytes()).unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), manually_edited.as_bytes());
-        assert!(source.contains("\\\\myOpaque{не менять}"));
-        assert!(source.contains("\\r\\n"));
+        assert!(source.contains("\\myOpaque{не менять}"));
+        assert!(source.contains("\r\n"));
         let unchanged_revision = session.source_revision();
         session.select_tool(tikz_authoring::Tool::Rectangle);
         assert!(!fence_source_editor_undo_on_revision_change(
