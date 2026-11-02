@@ -17,6 +17,9 @@ on:
       - scripts/tools/test_qa_miktex_inventory.ps1
       - fixtures/qa/d06-native-primitives/**
       - scripts/tools/qa_smoke.py
+      - scripts/tools/qa_engine_policy.py
+      - scripts/tools/test_qa_engine_policy.py
+      - scripts/tools/test_qa_smoke.py
       - crates/tikzarium-core/**
       - crates/tikzarium-cli/**
       - crates/tikzarium-app/**
@@ -40,6 +43,9 @@ on:
       - scripts/tools/test_qa_miktex_inventory.ps1
       - fixtures/qa/d06-native-primitives/**
       - scripts/tools/qa_smoke.py
+      - scripts/tools/qa_engine_policy.py
+      - scripts/tools/test_qa_engine_policy.py
+      - scripts/tools/test_qa_smoke.py
       - crates/tikzarium-core/**
       - crates/tikzarium-cli/**
       - crates/tikzarium-app/**
@@ -101,6 +107,14 @@ jobs:
             if (-not (Test-Path -LiteralPath $path)) { throw "Chocolatey Poppler $tool shim missing: $path" }
           }
           "TIKZARIUM_POPPLER_BIN=$popplerBin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Direct Python QA also refuses MiKTeX automatic installation
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tools -p test_qa_engine_policy.py -v
+          python -m unittest discover -s scripts/tools -p test_qa_smoke.py -v
+          $env:PYTHONPATH = 'scripts/tools'
+          python -c "import os; from qa_engine_policy import probe_engine_policy; p = probe_engine_policy(os.environ['TIKZARIUM_XELATEX']); print('Selected QA distribution:', p.distribution, 'offline flags:', p.offline_args); assert p.distribution == 'MiKTeX' and p.offline_args == ('--disable-installer',)"
+
       - name: Verify selected engine and required installed files (no tlmgr)
         shell: pwsh
         run: |
