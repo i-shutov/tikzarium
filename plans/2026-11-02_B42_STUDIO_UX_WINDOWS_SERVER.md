@@ -28,3 +28,18 @@ test are release gates, never infer them from source changes alone.
 - Eliminate duplicate first-load orange error with no selected tool.
 - PDF focus changes only on selection transition; preserve manual zoom.
 - Re-run real X11 screenshot and all original source/Undo/TeX checks on revised exact HEAD before merging.
+
+## B42 UNIT_EVENT Studio gesture regression (additional B-owned coverage)
+
+A direct `egui::Context::run(RawInput)` test now drives the **Studio** guide
+(`show_guide_frame_mode(..., legacy_palette=false)`) at 850 and 1366 pt.
+For each of the six C-owned primitives it sends actual pointer down/move/up,
+asserts exactly one authored C command and the selected source line, then
+checks on-disk Save/Reopen, F1 without a source mutation, and byte-exact visual
+Undo preserving an opaque macro and Russian comment.
+
+This protects against the B42 UI refactor inadvertently bypassing the
+production pointer handler. Palette group icon selection, the full desktop
+layout, source native Ctrl+Z and external XeLaTeX still require independent
+real X11 evidence. The test is **UNIT_EVENT**, not Linux/X11 process QA and
+not physical Windows 10 or macOS ARM acceptance.
