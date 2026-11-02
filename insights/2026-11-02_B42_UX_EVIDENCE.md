@@ -138,3 +138,16 @@ non-overwrite protection remains. Added actual egui event-frame
 Save-icon test with CRLF/Cyrillic macro Save/Reopen and occupied
 destination rejection. Exact-head hosted CI and new independent
 D X11 acceptance remain PENDING; no physical OS claims.
+
+
+## B42 actual group/tool selection event-frame QA — 2026-11-02
+
+Identified an evidence gap, not a confirmed new production UX bug:
+the previously added six-gesture Studio test directly sets Session::active,
+and X11 bootstrap proves group opening only. The new B-owned UNIT_EVENT
+uses production rail/palette click handlers, egui Response rectangles and
+pointer press/release for all six C-catalogue native tool icons. Selection
+closes the palette without editing CRLF, Cyrillic text, unknown macros or Undo.
+
+Exact-head Rust test and independent X11 acceptance are pending after
+this patch. Never equate the event test with physical Win10/M1/M4.

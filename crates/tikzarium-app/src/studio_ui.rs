@@ -310,6 +310,16 @@ pub fn show_group_rail(
     active: &mut Option<StudioGroup>,
     narrow: bool,
 ) -> Option<Pos2> {
+    show_group_rail_observed(ui, active, narrow, |_, _| {})
+}
+
+// Observe native widget rectangles in event tests without changing production clicks.
+fn show_group_rail_observed(
+    ui: &mut egui::Ui,
+    active: &mut Option<StudioGroup>,
+    narrow: bool,
+    mut observe: impl FnMut(StudioGroup, Rect),
+) -> Option<Pos2> {
     let _ = narrow;
     ui.vertical_centered(|ui| {
         ui.strong("TikZ");
@@ -325,6 +335,7 @@ pub fn show_group_rail(
             43.0,
             &tooltip,
         );
+        observe(group, response.rect);
         if response.clicked() {
             *active = if *active == Some(group) {
                 None
@@ -361,6 +372,19 @@ pub fn show_palette(
     session: &mut Session,
     data: PaletteData<'_>,
     open_libraries: &mut bool,
+) {
+    show_palette_observed(ctx, group, anchor, session, data, open_libraries, |_, _| {});
+}
+
+// The observer exposes the very same C tool buttons used by the Studio GUI.
+fn show_palette_observed(
+    ctx: &egui::Context,
+    group: &mut Option<StudioGroup>,
+    anchor: Pos2,
+    session: &mut Session,
+    data: PaletteData<'_>,
+    open_libraries: &mut bool,
+    mut observe: impl FnMut(Tool, Rect),
 ) {
     let PaletteData {
         source,
@@ -448,15 +472,15 @@ pub fn show_palette(
                                 info.manual_section,
                                 status
                             );
-                            if icon_button(
+                            let response = icon_button(
                                 ui,
                                 StudioIcon::Tool(tool),
                                 session.active == Some(tool),
                                 46.0,
                                 &tip,
-                            )
-                            .clicked()
-                            {
+                            );
+                            observe(tool, response.rect);
+                            if response.clicked() {
                                 session.select_tool(tool);
                                 *group = None;
                             }
@@ -642,4 +666,142 @@ mod tests {
         assert_eq!(source, before);
         source.clear();
     }
+
+    #[test]
+    fn b42_rawinput_group_and_six_native_tool_icons_use_production_handlers() {
+        // Actual egui press/release; layout positions are observed from
+        // production widgets, not guessed or supplied as alternate controls.
+        // UNIT_EVENT only: does not replace real Linux/X11 desktop acceptance.
+        struct State {
+            group: Option<StudioGroup>,
+            anchor: Pos2,
+            groups: [Rect; 4],
+            tools: [Rect; 6],
+            session: Session,
+            filter: String,
+            libraries: bool,
+        }
+        impl State {
+            fn frame(&mut self, ctx: &egui::Context, source: &str, events: Vec<egui::Event>) {
+                let State {
+                    group,
+                    anchor,
+                    groups,
+                    tools,
+                    session,
+                    filter,
+                    libraries,
+                } = self;
+                let _ = ctx.run(
+                    egui::RawInput {
+                        screen_rect: Some(Rect::from_min_size(
+                            Pos2::ZERO,
+                            Vec2::new(850.0, 560.0),
+                        )),
+                        events,
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        egui::SidePanel::left("b42-real-event-rail")
+                            .resizable(false)
+                            .exact_width(62.0)
+                            .show(ctx, |ui| {
+                                if let Some(next) =
+                                    show_group_rail_observed(ui, group, true, |kind, rect| {
+                                        let index = StudioGroup::ALL
+                                            .iter()
+                                            .position(|&candidate| candidate == kind)
+                                            .unwrap();
+                                        groups[index] = rect;
+                                    })
+                                {
+                                    *anchor = next;
+                                }
+                            });
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("TikZ source is authoritative, not provisional overlay.");
+                        });
+                        show_palette_observed(
+                            ctx,
+                            group,
+                            *anchor,
+                            session,
+                            PaletteData {
+                                source,
+                                extensions: &[],
+                                filter,
+                            },
+                            libraries,
+                            |tool, rect| {
+                                let index = crate::tikz_authoring::TOOLS
+                                    .iter()
+                                    .position(|&candidate| candidate == tool)
+                                    .unwrap();
+                                tools[index] = rect;
+                            },
+                        );
+                    },
+                );
+            }
+            fn click(&mut self, ctx: &egui::Context, source: &str, pos: Pos2) {
+                for pressed in [true, false] {
+                    self.frame(
+                        ctx,
+                        source,
+                        vec![
+                            egui::Event::PointerMoved(pos),
+                            egui::Event::PointerButton {
+                                pos,
+                                button: egui::PointerButton::Primary,
+                                pressed,
+                                modifiers: Default::default(),
+                            },
+                        ],
+                    );
+                }
+            }
+        }
+
+        let ctx = egui::Context::default();
+        let source = "% русский комментарий\r\n\\myOpaque{Не менять}\r\n".to_owned();
+        let untouched = source.clone();
+        let mut state = State {
+            group: None,
+            anchor: Pos2::ZERO,
+            groups: [Rect::NOTHING; 4],
+            tools: [Rect::NOTHING; 6],
+            session: Session::default(),
+            filter: String::new(),
+            libraries: false,
+        };
+        state.session.reset(&source);
+        for kind in [
+            StudioGroup::Geometry,
+            StudioGroup::Connections,
+            StudioGroup::Text,
+        ] {
+            for &tool in kind.tools() {
+                state.frame(&ctx, &source, vec![]);
+                let group_index = StudioGroup::ALL
+                    .iter()
+                    .position(|&candidate| candidate == kind)
+                    .unwrap();
+                assert!(state.groups[group_index].is_positive());
+                state.click(&ctx, &source, state.groups[group_index].center());
+                assert_eq!(state.group, Some(kind), "{kind:?} group not opened");
+                let tool_index = crate::tikz_authoring::TOOLS
+                    .iter()
+                    .position(|&candidate| candidate == tool)
+                    .unwrap();
+                assert!(state.tools[tool_index].is_positive(), "{tool:?} button absent");
+                state.click(&ctx, &source, state.tools[tool_index].center());
+                assert_eq!(state.session.active, Some(tool), "{tool:?} not selected");
+                assert_eq!(state.group, None, "palette remains open after tool click");
+                assert_eq!(source, untouched, "click cannot rewrite opaque TeX");
+                assert!(!state.session.undo_available(), "selection is not a patch");
+            }
+        }
+        assert!(!state.libraries);
+    }
+
 }

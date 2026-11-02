@@ -122,3 +122,18 @@ report I61 PASS until D independently re-leases its app tree,
 reruns all six real X11 icons/gestures, Save/Reopen, Help/Undo and
 XeLaTeX source/PDF + manual artifact review. This UNIT_EVENT is
 not physical Win10/MiKTeX, Mac M1/M4 or the user Windows Server.
+
+
+## B42 grouped icon selection UNIT_EVENT extension — 2026-11-02
+
+Gap found: existing six-gesture Studio tests inject an active tool, while
+real Linux/X11 bootstrap only proved opening the Geometry group. The B
+egui regression now clicks real group and all six tool Response handlers
+via press/release RawInput frames at 850×560. Actual egui response rectangles
+are observed; production publicly exposed signatures remain unchanged.
+The native C registry still supplies tools, syntax and generator.
+
+The selected tool, popup dismissal, and no source/Undo modification are
+asserted. This is UNIT_EVENT, not a physical desktop test, not PDF validation.
+D's independent I61 real X11, manual source Ctrl+Z, two-file Open/Save, and
+external XeLaTeX remain necessary. Await exact-head CI results.
