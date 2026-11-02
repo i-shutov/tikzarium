@@ -66,15 +66,17 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertTrue(desktop.x11_button1_pressed(1 << 8))
         self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
 
-    def test_b39_real_n1_source_profile_is_exact_tree_pinned(self):
+    def test_b40_real_n1_source_profile_is_exact_tree_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf")
+                         "eefe044db4ea5dba41a02411ac4686aa557c31e1")
         self.assertNotEqual(profile["reviewed_app_tree_sha"],
                             "af316d5e5452d74186b92d65c95c448253d0e61c")
-        self.assertIn("B39 source-tree ref pinned", profile["layout_note"])
+        self.assertIn("B40 exact app tree lease", profile["layout_note"])
         self.assertIn("not yet independently calibrated", profile["layout_note"])
+        self.assertTrue(profile["b40_source_history_fence"])
+        self.assertIn("b40_source_focused_ctrl_z_after_guide", MODULE.read_text(encoding="utf-8"))
         self.assertTrue(profile["undo_held_pointer"])
         self.assertTrue(profile["b30_release_source_history_regression"])
         self.assertNotIn("b28_focused_textedit_regression", profile)
@@ -88,7 +90,7 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertEqual(profile["b36_focus_layouts"][1]["pdf_click"], [492, 114])
         self.assertEqual(profile["b36_focus_layouts"][1]["guide_probe"], [750, 87])
         self.assertIn("PDF_CONTENT_MANUAL_NOT_RUN", MODULE.read_text(encoding="utf-8"))
-        self.assertEqual(profile["b37_preview_fidelity_visual_review"], "NOT_RUN_ON_B39")
+        self.assertEqual(profile["b37_preview_fidelity_visual_review"], "NOT_RUN_ON_B40")
         self.assertEqual(profile["fit_click"], [659, 99])
         self.assertEqual(profile["compact_fit_width_click"], [490, 125])
         self.assertEqual(profile["compact_fit_page_click"], [570, 125])
