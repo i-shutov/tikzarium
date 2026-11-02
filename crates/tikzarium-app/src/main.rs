@@ -1274,7 +1274,9 @@ impl TikzariumApp {
                     Some(StudioFileAction::OpenPath) => {
                         self.open_path(PathBuf::from(self.file_field.trim()));
                     }
-                    Some(StudioFileAction::SaveAs) => self.save_as(),
+                    Some(StudioFileAction::SaveAs) => {
+                        self.save_as();
+                    }
                     None => {}
                 }
                 ui.menu_button("Вид", |ui| {
