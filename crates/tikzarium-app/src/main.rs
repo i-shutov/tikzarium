@@ -3933,7 +3933,12 @@ mod b42_file_popup_tests {
             vec![egui::Event::PointerMoved(pos), pointer(pos, true)],
             Default::default(),
         );
-        let released = frame(ctx, file_field, vec![pointer(pos, false)], Default::default());
+        let released = frame(
+            ctx,
+            file_field,
+            vec![pointer(pos, false)],
+            Default::default(),
+        );
         let settled = frame(ctx, file_field, vec![], Default::default());
         (released, settled)
     }
@@ -3998,13 +4003,21 @@ mod b42_file_popup_tests {
             field, "second-crlf.tex",
             "focused File TextEdit must replace the path"
         );
-        assert!(entered.path_rect.is_some(), "typing must not close the menu");
+        assert!(
+            entered.path_rect.is_some(),
+            "typing must not close the menu"
+        );
 
         let visible = frame(&ctx, &mut field, vec![], Default::default());
-        let open_rect = visible.open_rect.expect("Open button not visible after editing");
+        let open_rect = visible
+            .open_rect
+            .expect("Open button not visible after editing");
         let (activated, closed) = click(&ctx, &mut field, open_rect.center());
         assert_eq!(activated.action, Some(StudioFileAction::OpenPath));
-        assert!(closed.path_rect.is_none(), "Open must explicitly close File");
+        assert!(
+            closed.path_rect.is_none(),
+            "Open must explicitly close File"
+        );
         assert_eq!(std::fs::read(&second).unwrap(), untouched.as_bytes());
         assert_eq!(Document::load(&second).unwrap().source, untouched);
     }
