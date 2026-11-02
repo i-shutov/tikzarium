@@ -56,6 +56,17 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
         run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
+      - name: Native portable preview (unsigned, not an installer or physical GUI proof)
+        shell: bash
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_package_preview.py' -v
+          python scripts/package_preview.py \
+            --platform '${{ matrix.target_name }}' \
+            --app 'target/release/tikzarium-app${{ matrix.executable_suffix }}' \
+            --cli 'target/release/tikzarium-cli${{ matrix.executable_suffix }}' \
+            --lock '.qa-artifacts/lock-${{ matrix.target_name }}.json' \
+            --source-sha "$(git rev-parse HEAD)" \
+            --output '.qa-artifacts/tikzarium-${{ matrix.target_name }}-portable-preview.zip'
       - name: Upload Windows binaries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -65,6 +76,7 @@ jobs:
             target/release/tikzarium-app.exe
             target/release/tikzarium-cli.exe
             .qa-artifacts/lock-windows-x64.json
+            .qa-artifacts/tikzarium-windows-x64-portable-preview.zip
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'
@@ -75,6 +87,7 @@ jobs:
             target/release/tikzarium-app
             target/release/tikzarium-cli
             .qa-artifacts/lock-macos-arm64.json
+            .qa-artifacts/tikzarium-macos-arm64-portable-preview.zip
           if-no-files-found: error
 
   xelatex-linux-smoke:
