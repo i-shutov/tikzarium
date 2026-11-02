@@ -1,0 +1,82 @@
+name: I60 B41 actual X11 inspector Apply source Undo Open XeLaTeX
+on:
+  push:
+    branches: [qa/i60-b41-inspector-real-x11]
+    paths:
+      - '.github/workflows/i60-b41-pinned-apply-live-x11.yml'
+      - 'scripts/qa_i60_b41_inspector_x11.py'
+      - 'scripts/tests/test_qa_i60_b41_inspector.py'
+      - 'fixtures/qa/i60-b41-inspector-1366.json'
+      - 'crates/tikzarium-app/**'
+      - 'Cargo.lock'
+      - 'plans/2026-11-02_I60_B41_REAL_X11_INSPECTOR.md'
+      - 'insights/2026-11-02_I60_B41_X11_QA.md'
+  pull_request:
+    branches: [b41-egui-pinned-parameter-apply]
+    paths:
+      - '.github/workflows/i60-b41-pinned-apply-live-x11.yml'
+      - 'scripts/qa_i60_b41_inspector_x11.py'
+      - 'scripts/tests/test_qa_i60_b41_inspector.py'
+      - 'fixtures/qa/i60-b41-inspector-1366.json'
+      - 'crates/tikzarium-app/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i60-b41-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+jobs:
+  native-x11:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TIKZARIUM_SOURCE_SHA }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Exact B41 production source tree lease and immutable QA provenance
+        run: |
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd290bdad0de0058b538a26be0209a97f2626f76a'
+          git merge-base --is-ancestor e9bdd306f1009fa1f444e7d8948e16a48b6ce190 HEAD
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+      - name: Install hosted Linux/X11 tools and externally invoked TeX Live XeLaTeX
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+          xelatex --version | head -1
+      - name: Negative driver contract tests (NOT desktop acceptance)
+        run: python3 -m unittest discover -s scripts/tests -p test_qa_i60_b41_inspector.py -v
+      - name: Rust locked build of actual egui process; no production modification
+        run: |
+          cargo build --locked -p tikzarium-app --bin tikzarium-app
+          git diff --exit-code -- Cargo.lock
+      - name: Real X11 Circle parameter draft pinned Apply native Ctrl+Z visual Undo two-file Open XeLaTeX
+        run: |
+          mkdir -p "$RUNNER_TEMP/i60-runtime"
+          chmod 700 "$RUNNER_TEMP/i60-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i60-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i60-openbox.log 2>&1 & python3 scripts/qa_i60_b41_inspector_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/i60-evidence" --profile fixtures/qa/i60-b41-inspector-1366.json'
+      - name: Preserve screenshots source logs PDF provenance including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: i60-b41-real-egui-${{ env.TIKZARIUM_SOURCE_SHA }}
+          path: |
+            ${{ runner.temp }}/i60-evidence/*.json
+            ${{ runner.temp }}/i60-evidence/*.png
+            ${{ runner.temp }}/i60-evidence/*.tex
+            ${{ runner.temp }}/i60-evidence/*.pdf
+            ${{ runner.temp }}/i60-evidence/*.log
+            ${{ runner.temp }}/i60-evidence/*.txt
+          if-no-files-found: warn

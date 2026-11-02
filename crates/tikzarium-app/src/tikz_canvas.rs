@@ -645,6 +645,7 @@ fn show_inspector_action_bar_frame(
     source: &mut String,
     undo_rect: Option<&mut Rect>,
     help_rect: Option<&mut Rect>,
+    apply_rect: Option<&mut Rect>,
 ) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
@@ -663,25 +664,43 @@ fn show_inspector_action_bar_frame(
                 Err(error) => session.status = error,
             }
         }
+        // Long Bézier/node inspectors scroll below the fold. The committed
+        // source action must stay reachable without hunting for a lower button.
+        if session.selected.is_some()
+            && let Some(line) = show_pinned_apply_parameters(ui, session, source, apply_rect)
+        {
+            jump = Some(line);
+        }
     });
     ui.small(&session.status);
-    // F1 is useful without scrolling through a long list of properties.
-    // All wording, syntax and provenance come straight from the C catalogue.
-    if session.help
-        && let Some(tool) = session.active
-    {
-        let info = tikz_authoring::spec(tool);
-        let summary = ui
-            .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
-            .on_hover_text(format!(
-                "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
-                info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
-            ));
-        ui.add(egui::Label::new(&info.syntax).truncate());
-        ui.hyperlink_to(
-            format!("PGF/TikZ §{}", info.manual_section),
-            &info.manual_url,
-        );
+    // F1 must be visible even after Open/Reopen clears the selected tool.
+    // Detailed syntax and parameter semantics continue to come exclusively
+    // from the shared C catalogue; no separate B help generator.
+    if session.help {
+        let summary = if let Some(tool) = session.active {
+            let info = tikz_authoring::spec(tool);
+            let summary = ui
+                .add(
+                    egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru))
+                        .truncate(),
+                )
+                .on_hover_text(format!(
+                    "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
+                    info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
+                ));
+            ui.add(egui::Label::new(&info.syntax).truncate());
+            ui.hyperlink_to(
+                format!("PGF/TikZ §{}", info.manual_section),
+                &info.manual_url,
+            );
+            summary
+        } else {
+            let summary = ui.label(
+                "F1 · Выберите инструмент TikZ в палитре или созданную команду в инспекторе.",
+            );
+            ui.small("Синтаксис, параметры, пример и источник появятся из общего каталога C. Неизвестный TeX не изменяется.");
+            summary
+        };
         if let Some(rect) = help_rect {
             *rect = summary.rect;
         }
@@ -694,7 +713,7 @@ pub fn show_inspector_action_bar(
     session: &mut Session,
     source: &mut String,
 ) -> Option<usize> {
-    show_inspector_action_bar_frame(ui, session, source, None, None)
+    show_inspector_action_bar_frame(ui, session, source, None, None, None)
 }
 
 fn parameter_help(p: &ParameterSpec) -> String {
@@ -721,30 +740,80 @@ fn parameter_help(p: &ParameterSpec) -> String {
         p.manual_url
     )
 }
-fn parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) {
+/// Return the actual editor response rectangle so headless UNIT_EVENT tests
+/// can target the same parameter control that the desktop inspector uses.
+fn parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -> Rect {
     let help = parameter_help(p);
+    let mut control_rect = Rect::NOTHING;
     ui.horizontal(|ui| {
         ui.label(&p.id).on_hover_text(&help);
         if p.kind == "choice" {
-            egui::ComboBox::from_id_salt(("n1-parameter", &p.id))
+            control_rect = egui::ComboBox::from_id_salt(("n1-parameter", &p.id))
                 .selected_text(value.as_str())
                 .show_ui(ui, |ui| {
                     for candidate in &p.allowed_values {
                         ui.selectable_value(value, candidate.clone(), candidate);
                     }
-                });
+                })
+                .response
+                .rect;
         } else {
-            ui.add(
-                egui::TextEdit::singleline(value).desired_width(if p.kind == "dimension" {
-                    85.0
-                } else {
-                    150.0
-                }),
-            )
-            .on_hover_text(&help);
+            control_rect = ui
+                .add(
+                    egui::TextEdit::singleline(value).desired_width(if p.kind == "dimension" {
+                        85.0
+                    } else {
+                        150.0
+                    }),
+                )
+                .on_hover_text(&help)
+                .rect;
         }
     });
     ui.small(&p.help_ru);
+    control_rect
+}
+
+/// A property is *pending* only if its selected marker is still unique,
+/// byte-validated against the C generator and different from the source.
+/// An opaque/manual command can never be enabled by this convenience action.
+fn selected_pending_parameters(session: &Session, source: &str) -> bool {
+    let Some(id) = session.selected else {
+        return false;
+    };
+    let mut matches = tikz_authoring::owned(source)
+        .into_iter()
+        .filter(|item| item.id == id);
+    let Some(item) = matches.next() else {
+        return false;
+    };
+    matches.next().is_none() && session.active == Some(item.tool) && item.draft != session.draft
+}
+
+/// This is the real pinned inspector action, not a second source generator.
+/// Session applies the existing C-authored, revision-checked minimal patch.
+fn show_pinned_apply_parameters(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    rect: Option<&mut Rect>,
+) -> Option<usize> {
+    let pending = selected_pending_parameters(session, source);
+    let button = ui
+        .add_enabled(pending, egui::Button::new("✓ Применить параметры"))
+        .on_hover_text(
+            "Черновик свойств ещё не записан в TeX. Применяется только выбранная команда; источник PDF — внешний XeLaTeX.",
+        );
+    if let Some(rect) = rect {
+        *rect = button.rect;
+    }
+    if button.clicked() {
+        match session.apply_parameters(source) {
+            Ok(line) => return Some(line),
+            Err(error) => session.status = error,
+        }
+    }
+    None
 }
 
 pub fn show_inspector(
@@ -857,8 +926,20 @@ pub fn show_inspector(
             }
         }
         if session.selected.is_some() {
+            let pending = selected_pending_parameters(session, source);
+            if pending {
+                ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    "Параметры пока только в черновике; TeX/PDF не изменён. Кнопка «✓ Применить параметры» закреплена над прокруткой.",
+                );
+            } else {
+                ui.small("Параметры совпадают с исходником; новой правки нет.");
+            }
             if ui
-                .button("Применить параметры · изменить только эту команду")
+                .add_enabled(
+                    pending,
+                    egui::Button::new("Применить параметры · изменить только эту команду"),
+                )
                 .clicked()
             {
                 match session.apply_parameters(source) {
@@ -938,6 +1019,352 @@ pub fn show_inspector(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // B41: real egui pointer/keyboard event frames, not fabricated UI flags.
+    // The pinned Apply sits above a long scrollable inspector and must commit
+    // only changed, uniquely validated C-owned parameters. This is UNIT_EVENT.
+    fn b41_inspector_frame(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+        parameter_rect: &mut Rect,
+        apply_rect: &mut Rect,
+    ) -> Option<usize> {
+        let mut jump = None;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(680.0, 500.0))),
+                events,
+                modifiers,
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let radius = tikz_authoring::spec(Tool::Circle)
+                        .parameter
+                        .iter()
+                        .find(|item| item.id == "radius")
+                        .expect("circle radius from shared C catalogue");
+                    let value = session
+                        .draft
+                        .values
+                        .get_mut("radius")
+                        .expect("circle draft radius");
+                    *parameter_rect = parameter_control(ui, radius, value);
+                    jump = show_pinned_apply_parameters(ui, session, source, Some(apply_rect));
+                });
+            },
+        );
+        jump
+    }
+
+    #[test]
+    fn b41_real_egui_inspector_parameter_edit_pinned_apply_undo_and_reopen() {
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        let mut field = Rect::NOTHING;
+        let mut apply = Rect::NOTHING;
+        let empty = egui::Modifiers::default();
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        assert!(field.is_positive() && apply.is_positive());
+        assert!(!selected_pending_parameters(&session, &source));
+
+        // Clicking the disabled action before editing must never write TeX.
+        let at = apply.center();
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        assert_eq!(source, inserted);
+
+        // Edit the actual dimension TextEdit using pointer and Ctrl+A/Text.
+        let at = field.center();
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        let ctrl = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::Key {
+                key: egui::Key::A,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: ctrl,
+            }],
+            ctrl,
+            &mut field,
+            &mut apply,
+        );
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::Text("2.25cm".into())],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        assert_eq!(
+            session.draft.values.get("radius").map(String::as_str),
+            Some("2.25cm"),
+            "real inspector TextEdit must update the draft"
+        );
+        assert_eq!(source, inserted, "draft must not silently edit TeX");
+        assert!(selected_pending_parameters(&session, &source));
+
+        // Commit with an actual pointer click on the pinned production handler.
+        let at = apply.center();
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        let jumped = b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        assert!(jumped.is_some(), "pinned Apply did not commit the C patch");
+        assert_ne!(source, inserted);
+        assert!(source.contains("2.25cm"));
+        assert!(!selected_pending_parameters(&session, &source));
+
+        let committed = source.clone();
+        let committed_revision = session.source_revision();
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, true)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        b41_inspector_frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            empty,
+            &mut field,
+            &mut apply,
+        );
+        assert_eq!(source, committed, "no-op Apply must be disabled");
+        assert_eq!(session.source_revision(), committed_revision);
+
+        // Save and reload ordinary UTF-8 TeX; the selected C draft survives.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b41-инспектор.tex");
+        std::fs::write(&path, source.as_bytes()).unwrap();
+        let reopened = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(reopened.as_bytes(), committed.as_bytes());
+        assert!(reopened.contains(r"\myOpaqueMacro{a_b}"));
+        let owned = tikz_authoring::owned(&reopened);
+        assert_eq!(owned.len(), 1);
+        let mut restored = Session::default();
+        restored.reset(&reopened);
+        restored.choose(&reopened, owned[0].id).unwrap();
+        assert_eq!(
+            restored.draft.values.get("radius").map(String::as_str),
+            Some("2.25cm")
+        );
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, inserted, "Undo restores exact pre-Apply TeX");
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, original, "Undo restores opaque original TeX");
+    }
+
+    #[test]
+    fn b41_compact_real_inspector_bar_pointer_apply_stays_above_scroll() {
+        // Real production action bar, in an actual 260-pt right SidePanel with
+        // the normal scrollable inspector underneath. The earlier radius
+        // TextEdit test uses a separate wide panel; this covers the compact
+        // wrapped layout without claiming a full X11/physical GUI session.
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+            apply_rect: &mut Rect,
+        ) -> Option<usize> {
+            let mut jump = None;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(900.0, 380.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::SidePanel::right("b41-compact-real-inspector")
+                        .exact_width(260.0)
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            jump = show_inspector_action_bar_frame(
+                                ui,
+                                session,
+                                source,
+                                None,
+                                None,
+                                Some(apply_rect),
+                            );
+                            ui.separator();
+                            egui::ScrollArea::vertical()
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    let _ = show_inspector(ui, session, source, READY);
+                                });
+                        });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("PDF is rendered by external XeLaTeX");
+                    });
+                },
+            );
+            jump
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        let mut apply_rect = Rect::NOTHING;
+        frame(&ctx, &mut session, &mut source, vec![], &mut apply_rect);
+        assert!(apply_rect.is_positive(), "pinned Apply must be rendered");
+        assert!(
+            apply_rect.min.x > 580.0
+                && apply_rect.max.x < 900.0
+                && apply_rect.min.y >= 0.0
+                && apply_rect.max.y < 160.0,
+            "Apply must be visible above the scrolling inspector at 260pt: {apply_rect:?}"
+        );
+        let at = apply_rect.center();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            &mut apply_rect,
+        );
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert_eq!(source, inserted, "unchanged Apply must remain disabled");
+
+        session
+            .draft
+            .values
+            .insert("radius".into(), "2.75cm".into());
+        assert!(selected_pending_parameters(&session, &source));
+        frame(&ctx, &mut session, &mut source, vec![], &mut apply_rect);
+        let at = apply_rect.center();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            &mut apply_rect,
+        );
+        let jump = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert!(jump.is_some(), "actual wrapped pinned Apply must dispatch");
+        assert!(source.contains("2.75cm"));
+        assert!(!selected_pending_parameters(&session, &source));
+        let committed = source.clone();
+        let rev = session.source_revision();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, true)],
+            &mut apply_rect,
+        );
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert_eq!(source, committed, "no-op must not patch twice");
+        assert_eq!(session.source_revision(), rev);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, inserted, "Undo must restore the exact previous TeX");
+        assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+    }
+
     #[test]
     fn inspector_undo_button_uses_real_egui_pointer_and_focuses_source() {
         fn frame(
@@ -961,6 +1388,7 @@ mod tests {
                             session,
                             source,
                             rect.as_deref_mut(),
+                            None,
                             None,
                         );
                     });
@@ -1068,7 +1496,14 @@ mod tests {
                 |ctx| {
                     handle_help_shortcut(ctx, session);
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help));
+                        show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            None,
+                            Some(&mut help),
+                            None,
+                        );
                     });
                 },
             );
@@ -1102,6 +1537,72 @@ mod tests {
         assert_eq!(source, original);
         assert!(!session.undo_available());
         assert_eq!(tikz_authoring::spec(Tool::Cubic).id, "tikz.bezier-cubic");
+    }
+
+    #[test]
+    fn f1_without_active_tool_after_reopen_shows_russian_guidance_in_real_egui_frame() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+        ) -> Rect {
+            let mut help_rect = Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(430.0, 320.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_help_shortcut(ctx, session);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            None,
+                            Some(&mut help_rect),
+                            None,
+                        );
+                    });
+                },
+            );
+            help_rect
+        }
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        // Real GUI Open/Reopen resets this authoring state; no tool is active.
+        session.reset(&source);
+        assert!(session.active.is_none());
+        assert!(!session.help);
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![]),
+            Rect::NOTHING
+        );
+        let f1 = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        let help = frame(&ctx, &mut session, &mut source, vec![f1(true)]);
+        assert!(session.help);
+        assert!(
+            help.is_positive() && help.bottom() < 320.0,
+            "F1 without a selected tool must render a visible Russian guidance row"
+        );
+        frame(&ctx, &mut session, &mut source, vec![f1(false)]);
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![f1(true)]),
+            Rect::NOTHING
+        );
+        assert!(!session.help);
+        assert_eq!(source, original, "generic help must never change user TeX");
+        assert!(!session.undo_available());
     }
 
     #[test]

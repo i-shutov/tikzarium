@@ -66,14 +66,14 @@ class DesktopEvidenceTests(unittest.TestCase):
         self.assertTrue(desktop.x11_button1_pressed(1 << 8))
         self.assertTrue(desktop.x11_button1_pressed((1 << 8) | (1 << 2)))
 
-    def test_b40_real_n1_source_profile_is_exact_tree_pinned(self):
+    def test_b41_real_n1_source_profile_is_exact_tree_pinned(self):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "eefe044db4ea5dba41a02411ac4686aa557c31e1")
+                         "d290bdad0de0058b538a26be0209a97f2626f76a")
         self.assertNotEqual(profile["reviewed_app_tree_sha"],
                             "af316d5e5452d74186b92d65c95c448253d0e61c")
-        self.assertIn("B40 exact app tree lease", profile["layout_note"])
+        self.assertIn("B41 exact app tree lease", profile["layout_note"])
         self.assertIn("not yet independently calibrated", profile["layout_note"])
         self.assertTrue(profile["b40_source_history_fence"])
         self.assertIn("b40_source_focused_ctrl_z_after_guide", MODULE.read_text(encoding="utf-8"))

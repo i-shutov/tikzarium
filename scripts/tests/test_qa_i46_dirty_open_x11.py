@@ -47,14 +47,14 @@ class I46ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing reviewed"):
             profile_check(omitted, profile["reviewed_app_tree_sha"])
 
-    def test_i58_b40_lease_keeps_exact_tree_and_unreviewed_coordinates(self):
+    def test_i60_b41_lease_keeps_exact_tree_and_unreviewed_coordinates(self):
         profile = json.loads(
             Path("fixtures/qa/i46-b34-dirty-open-x11-1366.json").read_text())
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "eefe044db4ea5dba41a02411ac4686aa557c31e1")
+                         "d290bdad0de0058b538a26be0209a97f2626f76a")
         self.assertEqual(
             profile["i58_evidence_level"],
-            "PROVISIONAL_B40_COORDINATES__REAL_X11_SCREENSHOTS_TEX_PDF_MUST_BE_REVIEWED")
+            "PROVISIONAL_B41_COORDINATES__EXACT_TREE_REPIN_NOT_REAL_GUI_ACCEPTANCE")
         with self.assertRaises(ValueError):
             profile_check(profile, "c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf")
 

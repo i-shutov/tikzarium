@@ -10,6 +10,8 @@ on:
       - qa/i26-b27-live-undo-x11
       - feat/b27-egui-undo-held-pointer-20261101
       - qa/i54-b39-n2-n3-desktop-reaccept
+      - qa/i60-b41-inspector-real-x11
+      - b41-egui-pinned-parameter-apply
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
@@ -27,6 +29,7 @@ on:
       - 'CHANGELOG.md'
   pull_request:
     branches:
+      - b41-egui-pinned-parameter-apply
       - b40-egui-source-undo-transaction-fence
       - b/b36-compact-pdf-focus
       - b/b32-safe-open-source-undo-20261101
@@ -66,11 +69,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact B40 source tree; prior B37 coordinates require independent visual reacceptance
+      - name: Verify exact B41 source tree; prior B37 coordinates require independent visual reacceptance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd290bdad0de0058b538a26be0209a97f2626f76a'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q

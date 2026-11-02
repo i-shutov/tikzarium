@@ -38,6 +38,6 @@ class I53(unittest.TestCase):
   self.assertIn("      - feat/b38-n2-n3-inspector-20261101",workflow)
   self.assertIn("      - main",workflow)
   self.assertIn("test \"$(git rev-parse HEAD)\" = \"$TIKZARIUM_SOURCE_SHA\"",workflow)
-  self.assertIn("eefe044db4ea5dba41a02411ac4686aa557c31e1",workflow)
+  self.assertIn("d290bdad0de0058b538a26be0209a97f2626f76a",workflow)
   self.assertIn("scripts/qa_i53_live_libraries_x11.py",workflow)
   self.assertIn("qa/i58-b40-source-history-x11",workflow)
