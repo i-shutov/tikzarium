@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — I63 B42 P0 File Open integration lease (actual X11 NOT_RUN at commit)
+
+- Merge frozen B42 File TextEdit click-to-edit production repair into existing stacked #92 as a second-parent exact SHA, preserving all prior D QA changes; move I61 app-source-tree guard to `72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb`. Do not disable source-tree provenance or replace external TeX Live with MiKTeX in Linux/X11 QA.
+- B42 exact-head Rust/Clippy/D QA/hosted MiKTeX/N1 XeLaTeX/fonts passed before re-lease; product popup fix is UNIT_EVENT until real two-file Open/edit/Save/reopen and dirty Cancel succeed with original PNG/source/PDF hashes reviewed. Inspector Apply and physical Win10/M1/M4 remain NOT_RUN. No merge to main.
+
 ## Unreleased — I62 real N1 GUI Help, Undo and two-file I/O acceptance (QA ONLY)
 
 - Extend existing stacked #92 independent Linux/X11 driver to test actual F1 open/close, TextEdit Ctrl+Z, visual Undo, second CRLF/opaque-source GUI Open/Save/Reopen and dirty Open cancel; separate NOT_RUN until exact-head CI and manual artifacts. No B/C/A production edits.

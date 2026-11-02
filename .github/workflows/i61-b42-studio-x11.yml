@@ -1,5 +1,5 @@
 # B42 six native GUI gestures, persisted source, external XeLaTeX PDF.
-# Exact app-tree profile is fail-closed; Open/Undo/Apply/F1 and physical OS not covered.
+# Exact B42 source-tree lease is fail-closed. Current Linux/X11 probe includes real Open/Undo/F1; Inspector Apply and physical OS remain NOT_RUN until independently accepted.
 name: I61 B42 real Studio icon-to-native-source/PDF (independent D QA)
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
           toolchain: '1.91.0'
       - name: Exact B42 app source-tree lease (fail closed before GUI)
         run: |
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '64df229392c03a99ca29238bcc2e5f422c4d7409'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb'
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
           echo "TIKZARIUM_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           git diff --exit-code -- Cargo.lock

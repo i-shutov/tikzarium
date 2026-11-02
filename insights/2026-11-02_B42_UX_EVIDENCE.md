@@ -189,3 +189,9 @@ and no false visual Undo. These tests do not mean true desktop GUI
 acceptance. D #92 Studio X11 six gestures, manual source Ctrl+Z,
 two-file Save/Open and exact XeLaTeX PDF remain gates; physical
 Windows10/M1/M4 and the owner's Windows Server remain NOT_RUN.
+
+## B42 P0 File-popup forensic correction and fix (2026-11-02)
+
+I62 run 41470355844 artifact 13154818704: root coordinate (440,93) IS inside File path TextEdit (screenshot 33). Screenshot 34 shows collapsed menu before path entry, screenshot 35 is byte-identical. Prior incorrect-coordinate hypothesis was retracted. egui 0.33.3 PopupCloseBehavior default is CloseOnClick, including clicks inside menu: production ui.menu_button File was unsuitable for an embedded TextEdit. Source-level repro is confirmed; a physical corrected executable has NOT_RUN.
+
+Fix only the B-owned File menu to CloseOnClickOutside and keep explicit closing for activated Open/Save As. The new event-frame test of the real extracted handler asserts that focusing does not dismiss the popup, Ctrl+A and typing edit the path, Open closes explicitly, and a separate CRLF/Russian/opaque fixture is untouched. Against the old default click-to-close semantics the first keep-open assertion would fail; no measured pre-fix red-run is claimed. No changes to catalogues, compiler, themes or D QA. New exact-head CI and independent I62 full X11 acceptance are required before merge; prior six primitive → source → XeLaTeX PDF proof remains historical evidence.
