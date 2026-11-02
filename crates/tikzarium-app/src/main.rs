@@ -1114,30 +1114,56 @@ impl TikzariumApp {
             ui.horizontal(|ui| {
                 ui.strong(egui::RichText::new("TikZarium").size(20.0));
                 ui.separator();
-                if studio_ui::icon_button(
-                    ui, StudioIcon::Open, false, 34.0, "Открыть TeX · Ctrl+O"
-                ).clicked() && ready {
+                if studio_ui::icon_button(ui, StudioIcon::Open, false, 34.0, "Открыть TeX · Ctrl+O")
+                    .clicked()
+                    && ready
+                {
                     self.open_document_dialog();
                 }
                 if studio_ui::icon_button(
-                    ui, StudioIcon::Save, false, 34.0, "Сохранить исходник · Ctrl+S"
-                ).clicked() && ready {
+                    ui,
+                    StudioIcon::Save,
+                    false,
+                    34.0,
+                    "Сохранить исходник · Ctrl+S",
+                )
+                .clicked()
+                    && ready
+                {
                     self.save();
                 }
                 if studio_ui::icon_button(
-                    ui, StudioIcon::Build, self.receiver.is_some(), 34.0,
-                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter"
-                ).clicked() && ready {
+                    ui,
+                    StudioIcon::Build,
+                    self.receiver.is_some(),
+                    34.0,
+                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter",
+                )
+                .clicked()
+                    && ready
+                {
                     self.build();
                 }
                 if studio_ui::icon_button(
-                    ui, StudioIcon::Export, false, 34.0,
-                    "Экспорт PDF. Только актуальный результат XeLaTeX."
-                ).clicked() && self.pdf.is_some() && !self.preview_stale() {
+                    ui,
+                    StudioIcon::Export,
+                    false,
+                    34.0,
+                    "Экспорт PDF. Только актуальный результат XeLaTeX.",
+                )
+                .clicked()
+                    && self.pdf.is_some()
+                    && !self.preview_stale()
+                {
                     self.export();
                 }
-                if self.receiver.is_some() && ui.small_button("■").on_hover_text("Отменить сборку").clicked()
-                    && let Some(cancel) = &self.cancellation {
+                if self.receiver.is_some()
+                    && ui
+                        .small_button("■")
+                        .on_hover_text("Отменить сборку")
+                        .clicked()
+                    && let Some(cancel) = &self.cancellation
+                {
                     cancel.cancel();
                 }
                 ui.separator();
@@ -1148,11 +1174,17 @@ impl TikzariumApp {
                             .desired_width(260.0)
                             .hint_text("figure.tex"),
                     );
-                    if ui.add_enabled(ready, egui::Button::new("Открыть путь")).clicked() {
+                    if ui
+                        .add_enabled(ready, egui::Button::new("Открыть путь"))
+                        .clicked()
+                    {
                         self.open_path(PathBuf::from(self.file_field.trim()));
                         ui.close();
                     }
-                    if ui.add_enabled(ready, egui::Button::new("Сохранить как…")).clicked() {
+                    if ui
+                        .add_enabled(ready, egui::Button::new("Сохранить как…"))
+                        .clicked()
+                    {
                         self.save_as();
                         ui.close();
                     }
@@ -1173,17 +1205,27 @@ impl TikzariumApp {
                     }
                 });
                 if studio_ui::icon_button(
-                    ui, StudioIcon::Help, self.prefs.studio_dock == StudioDock::Help, 32.0,
-                    "Контекстная справка F1 из общего TikZ-каталога"
-                ).clicked() {
+                    ui,
+                    StudioIcon::Help,
+                    self.prefs.studio_dock == StudioDock::Help,
+                    32.0,
+                    "Контекстная справка F1 из общего TikZ-каталога",
+                )
+                .clicked()
+                {
                     self.authoring.help = true;
                     self.prefs.studio_dock = StudioDock::Help;
                     self.prefs.studio_inspector_open = true;
                 }
                 if studio_ui::icon_button(
-                    ui, StudioIcon::Console, self.prefs.studio_console_open, 32.0,
-                    "Показать или скрыть диагностику и журнал XeLaTeX"
-                ).clicked() {
+                    ui,
+                    StudioIcon::Console,
+                    self.prefs.studio_console_open,
+                    32.0,
+                    "Показать или скрыть диагностику и журнал XeLaTeX",
+                )
+                .clicked()
+                {
                     self.prefs.studio_console_open = !self.prefs.studio_console_open;
                 }
             });
@@ -1194,7 +1236,10 @@ impl TikzariumApp {
                     self.fit_page_active = true;
                 }
                 ui.separator();
-                let filename = self.document.path.as_ref()
+                let filename = self
+                    .document
+                    .path
+                    .as_ref()
                     .map_or_else(|| "Новый .tex".to_owned(), |p| p.display().to_string());
                 ui.add(egui::Label::new(filename).truncate());
                 if self.document.dirty() {
@@ -1218,62 +1263,78 @@ impl TikzariumApp {
         ui.separator();
         let prior = self.authoring.source_revision();
         if let Some(line) = tikz_canvas::show_inspector_action_bar(
-            ui, &mut self.authoring, &mut self.document.source
+            ui,
+            &mut self.authoring,
+            &mut self.document.source,
         ) {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
         fence_source_editor_undo_on_revision_change(
-            prior, &self.authoring, &mut self.reset_source_editor_undo_history
+            prior,
+            &self.authoring,
+            &mut self.reset_source_editor_undo_history,
         );
         ui.separator();
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
-            .show(ui, |ui| {
-                match self.prefs.studio_dock {
-                    StudioDock::Properties => {
-                        let prior = self.authoring.source_revision();
-                        let caps = self.primitive_capabilities();
-                        if let Some(line) = tikz_canvas::show_inspector(
-                            ui, &mut self.authoring, &mut self.document.source, caps
-                        ) {
-                            self.jump_to_line = Some(line);
-                            self.highlight_generated_line = true;
+            .show(ui, |ui| match self.prefs.studio_dock {
+                StudioDock::Properties => {
+                    let prior = self.authoring.source_revision();
+                    let caps = self.primitive_capabilities();
+                    if let Some(line) = tikz_canvas::show_inspector(
+                        ui,
+                        &mut self.authoring,
+                        &mut self.document.source,
+                        caps,
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    fence_source_editor_undo_on_revision_change(
+                        prior,
+                        &self.authoring,
+                        &mut self.reset_source_editor_undo_history,
+                    );
+                }
+                StudioDock::Libraries => {
+                    ui.heading("Библиотеки проекта");
+                    ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
+                    let prior = self.authoring.source_revision();
+                    if let Some(line) = tikz_libraries::show_library_panel(
+                        ui,
+                        &mut self.authoring,
+                        &mut self.document.source,
+                        self.tex.xelatex.is_some(),
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    fence_source_editor_undo_on_revision_change(
+                        prior,
+                        &self.authoring,
+                        &mut self.reset_source_editor_undo_history,
+                    );
+                    ui.collapsing("Реестр доступности пакетов", |ui| {
+                        for item in &self.package_statuses {
+                            ui.strong(&item.manifest.display_name);
+                            ui.small(format!(
+                                "Установка: {:?} · XeLaTeX: {:?} · GUI-адаптер: {}",
+                                item.installation,
+                                item.compilation,
+                                if item.visual_editable {
+                                    "да"
+                                } else {
+                                    "нет"
+                                }
+                            ));
                         }
-                        fence_source_editor_undo_on_revision_change(
-                            prior, &self.authoring, &mut self.reset_source_editor_undo_history
-                        );
-                    }
-                    StudioDock::Libraries => {
-                        ui.heading("Библиотеки проекта");
-                        ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
-                        let prior = self.authoring.source_revision();
-                        if let Some(line) = tikz_libraries::show_library_panel(
-                            ui, &mut self.authoring, &mut self.document.source,
-                            self.tex.xelatex.is_some()
-                        ) {
-                            self.jump_to_line = Some(line);
-                            self.highlight_generated_line = true;
-                        }
-                        fence_source_editor_undo_on_revision_change(
-                            prior, &self.authoring, &mut self.reset_source_editor_undo_history
-                        );
-                        ui.collapsing("Реестр доступности пакетов", |ui| {
-                            for item in &self.package_statuses {
-                                ui.strong(&item.manifest.display_name);
-                                ui.small(format!(
-                                    "Установка: {:?} · XeLaTeX: {:?} · GUI-адаптер: {}",
-                                    item.installation, item.compilation,
-                                    if item.visual_editable { "да" } else { "нет" }
-                                ));
-                            }
-                        });
-                    }
-                    StudioDock::Help => {
-                        tikz_libraries::show_help_search(ui, &mut self.help_query);
-                        ui.separator();
-                        studio_ui::show_context_help(ui, &self.authoring);
-                    }
+                    });
+                }
+                StudioDock::Help => {
+                    tikz_libraries::show_help_search(ui, &mut self.help_query);
+                    ui.separator();
+                    studio_ui::show_context_help(ui, &self.authoring);
                 }
             });
     }
@@ -1371,12 +1432,13 @@ impl TikzariumApp {
             let previous_revision = self.authoring.source_revision();
             let inserted = if self.prefs.studio_mode {
                 tikz_canvas::show_guide_studio(
-                    ui, &mut self.authoring, &mut self.document.source, caps
+                    ui,
+                    &mut self.authoring,
+                    &mut self.document.source,
+                    caps,
                 )
             } else {
-                tikz_canvas::show_guide(
-                    ui, &mut self.authoring, &mut self.document.source, caps
-                )
+                tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
             };
             if let Some(line) = inserted {
                 self.jump_to_line = Some(line);
@@ -1669,96 +1731,97 @@ impl eframe::App for TikzariumApp {
             self.workspace = WorkspaceMode::Split;
             self.show_studio_toolbar(ctx);
         } else {
-        egui::TopBottomPanel::top("tools").show(ctx, |ui| {
-            if self.pending_open.is_some() {
-                ui.disable();
-            }
-            ui.horizontal_wrapped(|ui| {
-                ui.heading("TikZarium");
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Open"))
-                    .on_hover_text("Ctrl+O / Cmd+O")
-                    .clicked()
-                {
-                    self.open_document_dialog();
+            egui::TopBottomPanel::top("tools").show(ctx, |ui| {
+                if self.pending_open.is_some() {
+                    ui.disable();
                 }
-                ui.label("Path:");
-                ui.add(
-                    egui::TextEdit::singleline(&mut self.file_field)
-                        .desired_width(280.0)
-                        .hint_text("path/to/figure.tex"),
-                );
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Open path"))
-                    .clicked()
-                {
-                    self.open_path(PathBuf::from(self.file_field.trim()));
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Save"))
-                    .on_hover_text("Ctrl+S / Cmd+S")
-                    .clicked()
-                {
-                    self.save();
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Save As…"))
-                    .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
-                    .clicked()
-                {
-                    self.save_as();
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
-                    .on_hover_text("Ctrl+Enter / Cmd+Enter")
-                    .clicked()
-                {
-                    self.build();
-                }
-                if ui
-                    .add_enabled(self.receiver.is_some(), egui::Button::new("Cancel"))
-                    .clicked()
-                    && let Some(cancel) = &self.cancellation
-                {
-                    cancel.cancel();
-                }
-                if ui
-                    .add_enabled(
-                        self.pdf.is_some() && !self.preview_stale(),
-                        egui::Button::new("Export PDF"),
-                    )
-                    .clicked()
-                {
-                    self.export();
-                }
-                if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
-                    .clicked()
-                {
-                    self.refresh_tex();
-                }
+                ui.horizontal_wrapped(|ui| {
+                    ui.heading("TikZarium");
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Open"))
+                        .on_hover_text("Ctrl+O / Cmd+O")
+                        .clicked()
+                    {
+                        self.open_document_dialog();
+                    }
+                    ui.label("Path:");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.file_field)
+                            .desired_width(280.0)
+                            .hint_text("path/to/figure.tex"),
+                    );
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Open path"))
+                        .clicked()
+                    {
+                        self.open_path(PathBuf::from(self.file_field.trim()));
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Save"))
+                        .on_hover_text("Ctrl+S / Cmd+S")
+                        .clicked()
+                    {
+                        self.save();
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Save As…"))
+                        .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
+                        .clicked()
+                    {
+                        self.save_as();
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
+                        .on_hover_text("Ctrl+Enter / Cmd+Enter")
+                        .clicked()
+                    {
+                        self.build();
+                    }
+                    if ui
+                        .add_enabled(self.receiver.is_some(), egui::Button::new("Cancel"))
+                        .clicked()
+                        && let Some(cancel) = &self.cancellation
+                    {
+                        cancel.cancel();
+                    }
+                    if ui
+                        .add_enabled(
+                            self.pdf.is_some() && !self.preview_stale(),
+                            egui::Button::new("Export PDF"),
+                        )
+                        .clicked()
+                    {
+                        self.export();
+                    }
+                    if ui
+                        .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
+                        .clicked()
+                    {
+                        self.refresh_tex();
+                    }
+                });
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Workspace:");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Source, "Source");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
+                    ui.separator();
+                    self.prefs.draw_toolbar(ui, ctx);
+                    if ui.button("Figure fonts").clicked() {
+                        self.prefs.show_font_lab = !self.prefs.show_font_lab;
+                    }
+                    ui.checkbox(&mut self.show_packages, "Library inventory");
+                    ui.checkbox(&mut self.show_log, "Diagnostics / log");
+                    if self.document.dirty() {
+                        ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
+                    }
+                    if self.preview_stale() {
+                        ui.colored_label(egui::Color32::YELLOW, "PDF stale");
+                    }
+                    ui.label(&self.status);
+                });
             });
-            ui.horizontal_wrapped(|ui| {
-                ui.label("Workspace:");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Source, "Source");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
-                ui.separator();
-                self.prefs.draw_toolbar(ui, ctx);
-                if ui.button("Figure fonts").clicked() {
-                    self.prefs.show_font_lab = !self.prefs.show_font_lab;
-                }
-                ui.checkbox(&mut self.show_packages, "Library inventory");
-                ui.checkbox(&mut self.show_log, "Diagnostics / log");
-                if self.document.dirty() {
-                    ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
-                }
-                if self.preview_stale() {
-                    ui.colored_label(egui::Color32::YELLOW, "PDF stale");
-                }
-                ui.label(&self.status);
-            });
-        });
+
         }
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.prefs.studio_mode && self.prefs.studio_inspector_open {
@@ -1769,7 +1832,9 @@ impl eframe::App for TikzariumApp {
                 .min_width(225.0)
                 .max_width(studio.inspector_max)
                 .show(ctx, |ui| {
-                    if self.pending_open.is_some() { ui.disable(); }
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
                     self.show_studio_inspector(ui);
                 });
         }
@@ -1799,7 +1864,8 @@ impl eframe::App for TikzariumApp {
             });
         }
         if (!self.prefs.studio_mode && self.show_log)
-            || (self.prefs.studio_mode && self.prefs.studio_console_open) {
+            || (self.prefs.studio_mode && self.prefs.studio_console_open)
+        {
             egui::TopBottomPanel::bottom("log")
                 .resizable(true)
                 .default_height(145.0)
@@ -1874,15 +1940,23 @@ impl eframe::App for TikzariumApp {
                         });
                 });
         }
-        if self.prefs.studio_mode && self.workspace == WorkspaceMode::Split
-            && self.prefs.studio_tool_rail {
+        if self.prefs.studio_mode
+            && self.workspace == WorkspaceMode::Split
+            && self.prefs.studio_tool_rail
+        {
             egui::SidePanel::left("b42-tool-groups")
                 .resizable(false)
-                .exact_width(studio_ui::StudioLayout::for_width(ctx.available_rect().width()).tool_rail_width)
+                .exact_width(
+                    studio_ui::StudioLayout::for_width(ctx.available_rect().width())
+                        .tool_rail_width,
+                )
                 .show(ctx, |ui| {
-                    if self.pending_open.is_some() { ui.disable(); }
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
                     if let Some(anchor) = studio_ui::show_group_rail(
-                        ui, &mut self.studio_group,
+                        ui,
+                        &mut self.studio_group,
                         studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
                     ) {
                         self.studio_palette_anchor = anchor;
@@ -1907,8 +1981,12 @@ impl eframe::App for TikzariumApp {
         if self.prefs.studio_mode && self.pending_open.is_none() {
             let mut open_libraries = false;
             studio_ui::show_palette(
-                ctx, &mut self.studio_group, self.studio_palette_anchor,
-                &mut self.authoring, &self.document.source, &mut open_libraries,
+                ctx,
+                &mut self.studio_group,
+                self.studio_palette_anchor,
+                &mut self.authoring,
+                &self.document.source,
+                &mut open_libraries,
             );
             if open_libraries {
                 self.prefs.studio_dock = StudioDock::Libraries;

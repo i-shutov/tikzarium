@@ -1,10 +1,11 @@
 //! B42: grouped icon palettes for TikZ-native authoring.
 //! Tool and parameter semantics belong to the existing C catalogue. Vector
 //! icon strokes are only UI affordances, never a second PGF renderer.
+use crate::tikz_authoring::{self, Session, Tool};
 use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
 use tikzarium_extensions::primitives::Evidence;
-use crate::tikz_authoring::{self, Session, Tool};
+
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StudioDock {
@@ -64,7 +65,11 @@ pub struct StudioLayout {
 }
 impl StudioLayout {
     pub fn for_width(width: f32) -> Self {
-        let width = if width.is_finite() { width.max(0.0) } else { 0.0 };
+        let width = if width.is_finite() {
+            width.max(0.0)
+        } else {
+            0.0
+        };
         Self {
             tool_rail_width: 62.0,
             inspector_width: (width * 0.22).clamp(225.0, 300.0),
@@ -92,11 +97,14 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
     let p = ui.painter_at(rect);
     let c = rect.center();
     let t = rect.width().min(rect.height()) * 0.28;
-    let stroke = Stroke::new(1.9, if selected {
-        ui.visuals().selection.stroke.color
-    } else {
-        ui.visuals().text_color()
-    });
+    let stroke = Stroke::new(
+        1.9,
+        if selected {
+            ui.visuals().selection.stroke.color
+        } else {
+            ui.visuals().text_color()
+        },
+    );
     let point = |x: f32, y: f32| Pos2::new(c.x + t * x, c.y + t * y);
     match kind {
         StudioIcon::Tool(Tool::Line) => {
@@ -110,97 +118,148 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
             line(&p, point(1.0, 0.0), point(0.3, 0.65), stroke);
         }
         StudioIcon::Tool(Tool::Rectangle) => {
-            let a=point(-1.0,-0.72); let b=point(1.0,0.72);
-            p.add(Shape::closed_line(vec![
-                a, point(1.0,-0.72), b, point(-1.0,0.72)
-            ],stroke));
+            let a = point(-1.0, -0.72);
+            let b = point(1.0, 0.72);
+            p.add(Shape::closed_line(
+                vec![a, point(1.0, -0.72), b, point(-1.0, 0.72)],
+                stroke,
+            ));
         }
         StudioIcon::Tool(Tool::Circle) => {
-            p.circle_stroke(c, t*0.9, stroke);
+            p.circle_stroke(c, t * 0.9, stroke);
         }
         StudioIcon::Tool(Tool::Node) => {
-            p.add(Shape::closed_line(vec![
-                point(-1.0,-0.8),point(1.0,-0.8),
-                point(1.0,0.8),point(-1.0,0.8)
-            ], stroke));
-            p.text(c,egui::Align2::CENTER_CENTER,"T",
-                egui::FontId::proportional(t*1.15),stroke.color);
+            p.add(Shape::closed_line(
+                vec![
+                    point(-1.0, -0.8),
+                    point(1.0, -0.8),
+                    point(1.0, 0.8),
+                    point(-1.0, 0.8),
+                ],
+                stroke,
+            ));
+            p.text(
+                c,
+                egui::Align2::CENTER_CENTER,
+                "T",
+                egui::FontId::proportional(t * 1.15),
+                stroke.color,
+            );
         }
         StudioIcon::Tool(Tool::Cubic) => {
-            let mut points=Vec::with_capacity(21);
+            let mut points = Vec::with_capacity(21);
             for i in 0..=20 {
-                let v=i as f32/20.0;let inv=1.0-v;
-                let x=inv*inv*inv*(-1.1)+3.0*inv*inv*v*(-0.45)
-                    +3.0*inv*v*v*(0.45)+v*v*v*(1.1);
-                let y=inv*inv*inv*(0.8)+3.0*inv*inv*v*(-1.3)
-                    +3.0*inv*v*v*(1.3)+v*v*v*(-0.8);
-                points.push(point(x,y));
+                let v = i as f32 / 20.0;
+                let inv = 1.0 - v;
+                let x = inv * inv * inv * (-1.1)
+                    + 3.0 * inv * inv * v * (-0.45)
+                    + 3.0 * inv * v * v * (0.45)
+                    + v * v * v * (1.1);
+                let y = inv * inv * inv * (0.8)
+                    + 3.0 * inv * inv * v * (-1.3)
+                    + 3.0 * inv * v * v * (1.3)
+                    + v * v * v * (-0.8);
+                points.push(point(x, y));
             }
-            p.add(Shape::line(points,stroke));
+            p.add(Shape::line(points, stroke));
         }
         StudioIcon::Group(StudioGroup::Geometry) => {
-            p.circle_stroke(point(-0.45,-0.4),t*0.60,stroke);
-            p.add(Shape::closed_line(vec![
-                point(0.10,-0.10),point(1.0,-0.10),
-                point(1.0,0.82),point(0.10,0.82)
-            ],stroke));
+            p.circle_stroke(point(-0.45, -0.4), t * 0.60, stroke);
+            p.add(Shape::closed_line(
+                vec![
+                    point(0.10, -0.10),
+                    point(1.0, -0.10),
+                    point(1.0, 0.82),
+                    point(0.10, 0.82),
+                ],
+                stroke,
+            ));
         }
-        StudioIcon::Group(StudioGroup::Connections) =>
-            draw_icon(ui,rect,StudioIcon::Tool(Tool::Arrow),selected),
-        StudioIcon::Group(StudioGroup::Text) =>
-            draw_icon(ui,rect,StudioIcon::Tool(Tool::Node),selected),
+        StudioIcon::Group(StudioGroup::Connections) => {
+            draw_icon(ui, rect, StudioIcon::Tool(Tool::Arrow), selected)
+        }
+        StudioIcon::Group(StudioGroup::Text) => {
+            draw_icon(ui, rect, StudioIcon::Tool(Tool::Node), selected)
+        }
         StudioIcon::Group(StudioGroup::Extensions) => {
-            for (x,y) in [(-0.65,-0.65),(0.65,-0.65),(-0.65,0.65),(0.65,0.65)] {
-                p.circle_filled(point(x,y),2.6,stroke.color);
+            for (x, y) in [(-0.65, -0.65), (0.65, -0.65), (-0.65, 0.65), (0.65, 0.65)] {
+                p.circle_filled(point(x, y), 2.6, stroke.color);
             }
-            line(&p,point(-0.65,-0.65),point(0.65,0.65),stroke);
-            line(&p,point(-0.65,0.65),point(0.65,-0.65),stroke);
+            line(&p, point(-0.65, -0.65), point(0.65, 0.65), stroke);
+            line(&p, point(-0.65, 0.65), point(0.65, -0.65), stroke);
         }
         StudioIcon::Open => {
-            p.add(Shape::line(vec![
-                point(-1.05,-0.45),point(-0.45,-0.45),
-                point(-0.18,-0.15),point(0.95,-0.15),
-                point(0.85,0.76),point(-0.98,0.76),
-                point(-1.05,-0.45)
-            ],stroke));
+            p.add(Shape::line(
+                vec![
+                    point(-1.05, -0.45),
+                    point(-0.45, -0.45),
+                    point(-0.18, -0.15),
+                    point(0.95, -0.15),
+                    point(0.85, 0.76),
+                    point(-0.98, 0.76),
+                    point(-1.05, -0.45),
+                ],
+                stroke,
+            ));
         }
         StudioIcon::Save => {
-            p.add(Shape::closed_line(vec![
-                point(-0.85,-1.0),point(0.58,-1.0),
-                point(0.95,-0.65),point(0.95,1.0),
-                point(-0.85,1.0)
-            ],stroke));
-            line(&p,point(-0.43,-0.9),point(-0.43,-0.3),stroke);
-            line(&p,point(-0.43,-0.3),point(0.38,-0.3),stroke);
-            line(&p,point(-0.43,0.25),point(0.55,0.25),stroke);
+            p.add(Shape::closed_line(
+                vec![
+                    point(-0.85, -1.0),
+                    point(0.58, -1.0),
+                    point(0.95, -0.65),
+                    point(0.95, 1.0),
+                    point(-0.85, 1.0),
+                ],
+                stroke,
+            ));
+            line(&p, point(-0.43, -0.9), point(-0.43, -0.3), stroke);
+            line(&p, point(-0.43, -0.3), point(0.38, -0.3), stroke);
+            line(&p, point(-0.43, 0.25), point(0.55, 0.25), stroke);
         }
         StudioIcon::Build => {
-            p.add(Shape::closed_line(vec![
-                point(-0.65,-1.0),point(1.0,0.0),point(-0.65,1.0)
-            ],stroke));
+            p.add(Shape::closed_line(
+                vec![point(-0.65, -1.0), point(1.0, 0.0), point(-0.65, 1.0)],
+                stroke,
+            ));
         }
         StudioIcon::Export => {
-            p.add(Shape::line(vec![
-                point(-0.9,-0.3),point(-0.9,0.98),
-                point(0.9,0.98),point(0.9,-0.3)
-            ],stroke));
-            line(&p,point(0.0,-1.0),point(0.0,0.38),stroke);
-            line(&p,point(0.0,0.38),point(-0.5,-0.13),stroke);
-            line(&p,point(0.0,0.38),point(0.5,-0.13),stroke);
+            p.add(Shape::line(
+                vec![
+                    point(-0.9, -0.3),
+                    point(-0.9, 0.98),
+                    point(0.9, 0.98),
+                    point(0.9, -0.3),
+                ],
+                stroke,
+            ));
+            line(&p, point(0.0, -1.0), point(0.0, 0.38), stroke);
+            line(&p, point(0.0, 0.38), point(-0.5, -0.13), stroke);
+            line(&p, point(0.0, 0.38), point(0.5, -0.13), stroke);
         }
         StudioIcon::Help => {
-            p.circle_stroke(c,t,stroke);
-            p.text(c,egui::Align2::CENTER_CENTER,"?",
-                egui::FontId::proportional(t*1.6),stroke.color);
+            p.circle_stroke(c, t, stroke);
+            p.text(
+                c,
+                egui::Align2::CENTER_CENTER,
+                "?",
+                egui::FontId::proportional(t * 1.6),
+                stroke.color,
+            );
         }
         StudioIcon::Console => {
-            p.add(Shape::closed_line(vec![
-                point(-1.0,-0.8),point(1.0,-0.8),
-                point(1.0,0.8),point(-1.0,0.8)
-            ],stroke));
-            line(&p,point(-0.65,-0.3),point(-0.2,0.0),stroke);
-            line(&p,point(-0.2,0.0),point(-0.65,0.3),stroke);
-            line(&p,point(-0.05,0.35),point(0.65,0.35),stroke);
+            p.add(Shape::closed_line(
+                vec![
+                    point(-1.0, -0.8),
+                    point(1.0, -0.8),
+                    point(1.0, 0.8),
+                    point(-1.0, 0.8),
+                ],
+                stroke,
+            ));
+            line(&p, point(-0.65, -0.3), point(-0.2, 0.0), stroke);
+            line(&p, point(-0.2, 0.0), point(-0.65, 0.3), stroke);
+            line(&p, point(-0.05, 0.35), point(0.65, 0.35), stroke);
         }
     }
 }
@@ -214,18 +273,18 @@ pub fn icon_button(
     side: f32,
     tooltip: &str,
 ) -> egui::Response {
-    let (rect,response)=ui.allocate_exact_size(Vec2::splat(side),Sense::click());
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click());
     if ui.is_rect_visible(rect) {
-        let p=ui.painter_at(rect);
-        let fill=if selected {
+        let p = ui.painter_at(rect);
+        let fill = if selected {
             ui.visuals().selection.bg_fill
         } else if response.hovered() {
             ui.visuals().widgets.hovered.bg_fill
         } else {
             ui.visuals().widgets.inactive.bg_fill
         };
-        p.rect_filled(rect,egui::CornerRadius::same(7),fill);
-        draw_icon(ui,rect,kind,selected);
+        p.rect_filled(rect, egui::CornerRadius::same(7), fill);
+        draw_icon(ui, rect, kind, selected);
     }
     response.on_hover_text(tooltip)
 }
@@ -237,18 +296,28 @@ pub fn show_group_rail(
     active: &mut Option<StudioGroup>,
     narrow: bool,
 ) -> Option<Pos2> {
-    let _=narrow;
-    ui.vertical_centered(|ui|{
+    let _ = narrow;
+    ui.vertical_centered(|ui| {
         ui.strong("TikZ");
         ui.separator();
     });
-    let mut anchor=None;
+    let mut anchor = None;
     for group in StudioGroup::ALL {
-        let tooltip=format!("Палитра: {}. Нажмите для раскрытия.",group.label());
-        let response=icon_button(ui,StudioIcon::Group(group),*active==Some(group),43.0,&tooltip);
+        let tooltip = format!("Палитра: {}. Нажмите для раскрытия.", group.label());
+        let response = icon_button(
+            ui,
+            StudioIcon::Group(group),
+            *active == Some(group),
+            43.0,
+            &tooltip,
+        );
         if response.clicked() {
-            *active=if *active==Some(group){None}else{Some(group)};
-            anchor=Some(response.rect.right_top());
+            *active = if *active == Some(group) {
+                None
+            } else {
+                Some(group)
+            };
+            anchor = Some(response.rect.right_top());
         }
     }
     anchor
@@ -264,10 +333,10 @@ pub fn show_palette(
     source: &str,
     open_libraries: &mut bool,
 ) {
-    if ctx.input(|input| input.key_pressed(egui::Key::Escape)){
-        *group=None;
+    if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        *group = None;
     }
-    let Some(selected)=*group else {return};
+    let Some(selected) = *group else { return };
     egui::Area::new(egui::Id::new("b42-group-palette"))
         .order(egui::Order::Foreground)
         .fixed_pos(anchor+egui::vec2(6.0,-36.0))
@@ -318,42 +387,53 @@ pub fn show_palette(
 }
 
 /// The same read-only C catalogue consumed by the inspector and F1.
-pub fn show_context_help(ui:&mut egui::Ui,session:&Session) {
+pub fn show_context_help(ui: &mut egui::Ui, session: &Session) {
     ui.heading("Справка TikZ");
-    if let Some(tool)=session.active {
-        let info=tikz_authoring::spec(tool);
+    if let Some(tool) = session.active {
+        let info = tikz_authoring::spec(tool);
         ui.strong(&info.title_ru);
         ui.label(&info.help_ru);
         ui.code(&info.syntax);
         ui.label("Пример:");
         ui.code(&info.example);
-        ui.hyperlink_to(format!("PGF/TikZ §{}",info.manual_section),&info.manual_url);
+        ui.hyperlink_to(
+            format!("PGF/TikZ §{}", info.manual_section),
+            &info.manual_url,
+        );
         ui.small(format!(
             "Пакет: {} · Библиотеки: {} · PGF {}",
             info.requirements.packages.join(", "),
             info.requirements.libraries.join(", "),
             info.requirements.documented_against
         ));
-        for param in &info.parameter{
-            egui::CollapsingHeader::new(&param.id).show(ui,|ui|{
+        for param in &info.parameter {
+            egui::CollapsingHeader::new(&param.id).show(ui, |ui| {
                 ui.label(&param.help_ru);
                 ui.code(&param.syntax);
                 ui.small(format!(
                     "Тип: {} · Единицы: {} · Допустимые значения: {}",
-                    param.kind,param.units.join(", "),param.allowed_values.join(", ")
+                    param.kind,
+                    param.units.join(", "),
+                    param.allowed_values.join(", ")
                 ));
-                if param.default_provenance=="editor_preset" {
+                if param.default_provenance == "editor_preset" {
                     ui.small(format!(
-                        "Предустановка редактора: {} (НЕ default TikZ)",param.default
+                        "Предустановка редактора: {} (НЕ default TikZ)",
+                        param.default
                     ));
-                }else{ui.small("Default TikZ: UNKNOWN");}
+                } else {
+                    ui.small("Default TikZ: UNKNOWN");
+                }
                 ui.label(&param.warning_ru);
                 ui.label(&param.interaction_ru);
                 ui.code(&param.example);
-                ui.hyperlink_to(format!("PGF/TikZ §{}",param.manual_section),&param.manual_url);
+                ui.hyperlink_to(
+                    format!("PGF/TikZ §{}", param.manual_section),
+                    &param.manual_url,
+                );
             });
         }
-    }else{
+    } else {
         ui.label("Выберите инструмент в левой палитре.");
         ui.small("Подсказки и параметры поступают из единого каталога C.");
     }
@@ -364,41 +444,57 @@ mod tests {
     use super::*;
     #[test]
     fn compact_group_rail_is_bounded_with_expansion_as_floating_overlay() {
-        for width in [850.0_f32,1180.0,1366.0,1920.0] {
-            let layout=StudioLayout::for_width(width);
-            assert_eq!(layout.tool_rail_width,62.0);
-            assert!(width-layout.tool_rail_width-layout.inspector_width-240.0>190.0);
+        for width in [850.0_f32, 1180.0, 1366.0, 1920.0] {
+            let layout = StudioLayout::for_width(width);
+            assert_eq!(layout.tool_rail_width, 62.0);
+            assert!(width - layout.tool_rail_width - layout.inspector_width - 240.0 > 190.0);
         }
     }
     #[test]
     fn groups_cover_all_native_c_tools_once_and_expose_future_adapters() {
-        let all=StudioGroup::ALL.iter().flat_map(|g|g.tools()).copied()
+        let all = StudioGroup::ALL
+            .iter()
+            .flat_map(|g| g.tools())
+            .copied()
             .collect::<Vec<_>>();
-        assert_eq!(all.len(),6);
-        for item in crate::tikz_authoring::TOOLS{
-            assert_eq!(all.iter().filter(|&&t|t==item).count(),1);
-            assert!(tikz_authoring::spec(item).manual_url.starts_with("https://tikz.dev/"));
+        assert_eq!(all.len(), 6);
+        for item in crate::tikz_authoring::TOOLS {
+            assert_eq!(all.iter().filter(|&&t| t == item).count(), 1);
+            assert!(
+                tikz_authoring::spec(item)
+                    .manual_url
+                    .starts_with("https://tikz.dev/")
+            );
         }
         assert!(StudioGroup::Extensions.tools().is_empty());
     }
     #[test]
     fn icon_tooltips_and_dock_types_do_not_duplicate_document_state() {
-        let v=serde_json::to_string(&StudioDock::Libraries).unwrap();
-        assert_eq!(serde_json::from_str::<StudioDock>(&v).unwrap(),StudioDock::Libraries);
-        assert_eq!(StudioDock::ALL.len(),3);
+        let v = serde_json::to_string(&StudioDock::Libraries).unwrap();
+        assert_eq!(
+            serde_json::from_str::<StudioDock>(&v).unwrap(),
+            StudioDock::Libraries
+        );
+        assert_eq!(StudioDock::ALL.len(), 3);
     }
     #[test]
     fn icon_geometry_does_not_change_source_in_egui_frame() {
-        let ctx=egui::Context::default();
-        let mut source=String::from("% opaque CRLF\r\n\\newcommand{\\mine}{value}\r\n");
-        let before=source.clone();
-        let _=ctx.run(egui::RawInput::default(),|ctx|{
-            egui::CentralPanel::default().show(ctx,|ui|{
-                icon_button(ui,StudioIcon::Tool(Tool::Cubic),false,44.0,"Bezier");
-                icon_button(ui,StudioIcon::Group(StudioGroup::Extensions),false,44.0,"Packages");
+        let ctx = egui::Context::default();
+        let mut source = String::from("% opaque CRLF\r\n\\newcommand{\\mine}{value}\r\n");
+        let before = source.clone();
+        let _ = ctx.run(egui::RawInput::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                icon_button(ui, StudioIcon::Tool(Tool::Cubic), false, 44.0, "Bezier");
+                icon_button(
+                    ui,
+                    StudioIcon::Group(StudioGroup::Extensions),
+                    false,
+                    44.0,
+                    "Packages",
+                );
             });
         });
-        assert_eq!(source,before);
+        assert_eq!(source, before);
         source.clear();
     }
 }

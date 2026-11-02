@@ -248,34 +248,37 @@ fn show_guide_frame_mode(
     legacy_palette: bool,
 ) -> (Option<usize>, Rect) {
     if legacy_palette {
-    ui.horizontal_wrapped(|ui| {
-        ui.strong("TikZ · инструменты");
-        for (index, tool) in TOOLS.into_iter().enumerate() {
-            let info = tikz_authoring::spec(tool);
-            let button = ui
-                .add(egui::Button::new(&info.title_ru).selected(session.active == Some(tool)))
-                .on_hover_text(format!(
-                    "{}\n{}\nPGF/TikZ §{}\n{}",
-                    info.help_ru, info.syntax, info.manual_section, info.manual_url
-                ));
-            if let Some(rects) = palette_rects.as_deref_mut() {
-                rects[index] = button.rect;
+        ui.horizontal_wrapped(|ui| {
+            ui.strong("TikZ · инструменты");
+            for (index, tool) in TOOLS.into_iter().enumerate() {
+                let info = tikz_authoring::spec(tool);
+                let button = ui
+                    .add(egui::Button::new(&info.title_ru).selected(session.active == Some(tool)))
+                    .on_hover_text(format!(
+                        "{}\n{}\nPGF/TikZ §{}\n{}",
+                        info.help_ru, info.syntax, info.manual_section, info.manual_url
+                    ));
+                if let Some(rects) = palette_rects.as_deref_mut() {
+                    rects[index] = button.rect;
+                }
+                if button.clicked() {
+                    session.select_tool(tool);
+                }
             }
-            if button.clicked() {
-                session.select_tool(tool);
-            }
-        }
-    });
-    ui.strong(match session.active {
-        Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
-        None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
-    });
-    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+        });
+        ui.strong(match session.active {
+            Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
+            None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
+        });
+        ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
     } else {
         ui.horizontal(|ui| {
             ui.strong("Эскиз TikZ");
             if let Some(tool) = session.active {
-                ui.small(format!("Выбран: {} · шаг 0,25 cm", tikz_authoring::spec(tool).title_ru));
+                ui.small(format!(
+                    "Выбран: {} · шаг 0,25 cm",
+                    tikz_authoring::spec(tool).title_ru
+                ));
             } else {
                 ui.small("Выберите инструмент в палитре слева.");
             }

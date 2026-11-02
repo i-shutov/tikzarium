@@ -1,8 +1,9 @@
 //! Persistent egui appearance. This styling NEVER changes figure source or PDF colors.
+use crate::studio_ui::StudioDock;
 use eframe::egui::{self, Color32, Stroke};
 use serde::{Deserialize, Serialize};
 use tikzarium_core::FigureFonts;
-use crate::studio_ui::StudioDock;
+
 
 pub const STORAGE_KEY: &str = "tikzarium.preferences.v1";
 
