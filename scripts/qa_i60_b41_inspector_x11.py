@@ -100,7 +100,8 @@ def main() -> int:
     if actual_tree != APP_TREE or profile.get("app_tree") != actual_tree:
         parser.error("B41 app/src tree lease changed: screenshot targets NOT_RUN")
     for key in ("source", "path", "save", "open", "build", "export", "circle",
-                "guide_start", "guide_end", "radius", "apply", "undo"):
+                "guide_start", "guide_end", "radius", "apply", "undo",
+                "pdf_fit_page"):
         xy = profile.get(key)
         if (not isinstance(xy, list) or len(xy) != 2
                 or any(type(v) is not int for v in xy)
