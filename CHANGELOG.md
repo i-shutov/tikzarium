@@ -1,3 +1,15 @@
+## Unreleased — B40 native TextEdit Undo transaction fencing (PR #85, independent X11 PENDING)
+
+- B-owned egui source safety: compare the session source revision around the real inspector action bar, parameter/dependency/library inspector and six-gesture guide; after a confirmed visual source transaction, clear stale native TextEdit undo snapshots on the next editor frame. Do not reset for pure selection/F1; ordinary code remains editable and source-authoritative.
+- New real egui `Context::run(RawInput)` UNIT_EVENT checks Unicode/CRLF hand-edit → shared-catalogue primitive patch → visual Undo → native Ctrl/Cmd+Z → byte-for-byte disk persistence with opaque macro. On previous exact B HEAD `4c46fdb`, Rust CI, D matrix, N1 XeLaTeX, hosted MiKTeX and Unicode workflows PASS. Older I46/I47 X11 rejected changed app tree BEFORE launching the GUI: B40 window-level source-history QA remains **NOT_RUN**, not PASS.
+- Reconcile with I57 accepted main `3a1e18d` without touching C/A/D/E/F production. Exact merged B40 head CI and independent B40 X11 source-history gestures must be run and reviewed before merge. Overlay is provisional; external XeLaTeX PDF authoritative. Physical Windows 10/MiKTeX and Mac ARM M1/M4 GUI **NOT_RUN**; no v1.0 claim.
+
+## Unreleased — I57 N2 four real X11 library GUI source-to-PDF sessions (candidate NOT_RUN)
+
+- Add one four-library hosted Linux/X11 acceptance workflow on exact PR SHA and after main merge; reuse the existing I53 real egui driver for independently isolated arrows.meta/calc/fit/positioning Connect → Save → external XeLaTeX PDF → Disconnect → Undo → two-file in-GUI Open and unified-C Russian help. No production Rust, C generator, compiler or package installation change.
+- New matrix/profile negative tests, individual original-source/PDF/hashes and screenshots; three unreviewed library coordinates are **PROVISIONAL** and must be corrected from actual X11 screenshots on the same PR. No bootstrap or UNIT_EVENT is a host GUI PASS. Initial exact-head CI, visual review and merge **NOT_RUN**.
+- Independently verified preceding I56 on merged main `81d3544`: 7/7 distinct postmerge workflows success; downloaded I53 28/28 hashes, N1 9/9, N2 12/12, MiKTeX auditor 6/6 PDF hashes. Four catalogue-figure rasters reviewed. Physical Windows 10/MiKTeX and macOS ARM/XeLaTeX **NOT_RUN**.
+
 ## Unreleased — I56 N2 four-library event / PDF QA (repaired exact CI NOT_RUN)
 
 - Extend the real egui handler Context::run(RawInput) Connect → Disconnect → Undo → disk byte-roundtrip test from one arrows.meta row to all four C-catalogue libraries (arrows.meta, positioning, calc, fit). Each starts in its own collapsed UI context, verifying exactly one CRLF import and unchanged Cyrillic/opaque source. This is UNIT_EVENT, **not hosted X11 or physical desktop**.
