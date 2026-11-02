@@ -1269,41 +1269,51 @@ impl TikzariumApp {
             }
         });
         ui.separator();
-        let prior = self.authoring.source_revision();
-        if let Some(line) = tikz_canvas::show_inspector_action_bar(
-            ui,
-            &mut self.authoring,
-            &mut self.document.source,
-        ) {
-            self.jump_to_line = Some(line);
-            self.highlight_generated_line = true;
+        if self.authoring.active.is_some() || self.authoring.undo_available() {
+            let prior = self.authoring.source_revision();
+            if let Some(line) = tikz_canvas::show_inspector_action_bar(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+            ) {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+            }
+            fence_source_editor_undo_on_revision_change(
+                prior,
+                &self.authoring,
+                &mut self.reset_source_editor_undo_history,
+            );
+            ui.separator();
         }
-        fence_source_editor_undo_on_revision_change(
-            prior,
-            &self.authoring,
-            &mut self.reset_source_editor_undo_history,
-        );
-        ui.separator();
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| match self.prefs.studio_dock {
                 StudioDock::Properties => {
-                    let prior = self.authoring.source_revision();
-                    let caps = self.primitive_capabilities();
-                    if let Some(line) = tikz_canvas::show_inspector(
-                        ui,
-                        &mut self.authoring,
-                        &mut self.document.source,
-                        caps,
-                    ) {
-                        self.jump_to_line = Some(line);
-                        self.highlight_generated_line = true;
+                    if self.authoring.active.is_none() {
+                        ui.heading("Выберите инструмент");
+                        ui.label("Нажмите на группу иконок слева, затем выберите команду TikZ.");
+                        ui.small("Параметры и примеры появятся здесь из единого каталога.");
+                        ui.separator();
+                        ui.small("Исходный .tex остаётся редактируемым. Точный результат — внешний XeLaTeX.");
+                    } else {
+                        let prior = self.authoring.source_revision();
+                        let caps = self.primitive_capabilities();
+                        if let Some(line) = tikz_canvas::show_inspector(
+                            ui,
+                            &mut self.authoring,
+                            &mut self.document.source,
+                            caps,
+                        ) {
+                            self.jump_to_line = Some(line);
+                            self.highlight_generated_line = true;
+                        }
+                        fence_source_editor_undo_on_revision_change(
+                            prior,
+                            &self.authoring,
+                            &mut self.reset_source_editor_undo_history,
+                        );
                     }
-                    fence_source_editor_undo_on_revision_change(
-                        prior,
-                        &self.authoring,
-                        &mut self.reset_source_editor_undo_history,
-                    );
                 }
                 StudioDock::Libraries => {
                     ui.heading("Библиотеки проекта");

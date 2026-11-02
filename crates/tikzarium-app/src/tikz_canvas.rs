@@ -871,13 +871,15 @@ pub fn show_inspector(
     let mut jump = None;
     ui.heading("TikZ · параметры и справка");
     ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
-    ui.small(format!(
-        "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · B-инструмент=реализован · C-справка=доступна",
-        if caps.installed { "CONFIRMED" } else { "UNKNOWN" },
-        evidence_label(caps.loaded),
-        if caps.engine_compatible { "CONFIRMED" } else { "UNKNOWN" },
-    ));
-    ui.small(caps.explanation());
+    ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
+        ui.small(format!(
+            "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · GUI-инструмент=реализован · справка=доступна",
+            if caps.installed { "CONFIRMED" } else { "UNKNOWN" },
+            evidence_label(caps.loaded),
+            if caps.engine_compatible { "CONFIRMED" } else { "UNKNOWN" },
+        ));
+        ui.small(caps.explanation());
+    });
     let choices = tikz_authoring::owned(source);
     egui::ComboBox::from_id_salt("n1-owned-command")
         .selected_text(
