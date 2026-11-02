@@ -341,15 +341,15 @@ def main() -> int:
         # The second file is an explicit test INPUT, never forged GUI output.
         secondary = out / "second-crlf.tex"
         secondary_input = (
-            "\\documentclass{standalone}\r\n"
-            "\\usepackage{tikz}\r\n"
+            "\\\documentclass{standalone}\r\n"
+            "\\\usepackage{tikz}\r\n"
             "% I62 preserve original CRLF comment\r\n"
-            "\\newcommand{\\OpaqueSecond}{Не менять}\r\n"
-            "\\begin{document}\r\n"
-            "\\begin{tikzpicture}\r\n"
-            "\\node at (0,0) {\\OpaqueSecond};\r\n"
-            "\\end{tikzpicture}\r\n"
-            "\\end{document}\r\n"
+            "\\\newcommand{\\\OpaqueSecond}{Не менять}\r\n"
+            "\\\begin{document}\r\n"
+            "\\\begin{tikzpicture}\r\n"
+            "\\\node at (0,0) {\\\OpaqueSecond};\r\n"
+            "\\\end{tikzpicture}\r\n"
+            "\\\end{document}\r\n"
         ).encode("utf-8")
         secondary.write_bytes(secondary_input)
         click(found, 321, 40)
