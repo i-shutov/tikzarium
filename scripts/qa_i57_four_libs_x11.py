@@ -86,6 +86,7 @@ def run_matrix(app: Path, out: Path, base_profile: Path, matrix_path: Path) -> i
         "physical_mac_arm_xelatex": "NOT_RUN",
         "results": {name: {"status": "NOT_RUN"} for name in LIBRARIES},
     }
+    failures = []
     try:
         for name in LIBRARIES:
             safe = name.replace(".", "-")
@@ -126,7 +127,9 @@ def run_matrix(app: Path, out: Path, base_profile: Path, matrix_path: Path) -> i
                 "help": report.get("help", "NOT_RUN"),
             })
             if rc or not report["status"].startswith("PASS_"):
-                raise RuntimeError(f"{name}: actual GUI scenario failed: {report.get('error')}")
+                result["error"] = report.get("error", "GUI result rejected")
+                failures.append(f"{name}: {result['error']}")
+                continue
             doc = evidence / "library-connect.tex"
             if not module.exact_patch(module.SRC, doc.read_bytes()):
                 raise RuntimeError(f"{name}: saved GUI Open/Undo source differs from exact C import")
@@ -135,6 +138,8 @@ def run_matrix(app: Path, out: Path, base_profile: Path, matrix_path: Path) -> i
             if not (evidence / "library-connect.pdf").read_bytes().startswith(b"%PDF-"):
                 raise RuntimeError(f"{name}: external generated PDF missing")
             result["status"] = "PASS_AUTOMATED_X11_MANUAL_REVIEW_PENDING"
+        if failures:
+            raise RuntimeError("Actual GUI library failures: " + " | ".join(failures))
         manifest["status"] = "PASS_AUTOMATED_X11_MANUAL_REVIEW_PENDING"
         return 0
     except Exception as error:
