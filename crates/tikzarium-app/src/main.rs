@@ -79,13 +79,15 @@ fn show_split_source_panel(
     ctx: &egui::Context,
     layout: SplitPanelLayout,
     add_contents: impl FnOnce(&mut egui::Ui),
-) {
+) -> egui::Rect {
     egui::SidePanel::left("source")
         .resizable(true)
         .default_width(layout.source_default)
         .min_width(240.0)
         .max_width(layout.source_max)
-        .show(ctx, add_contents);
+        .show(ctx, add_contents)
+        .response
+        .rect
 }
 
 /// Fit an entire rasterized XeLaTeX PDF page in the actual remaining preview
@@ -1192,7 +1194,14 @@ impl TikzariumApp {
                     }
                 });
                 ui.menu_button("Вид", |ui| {
-                    ui.checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов");
+                    if ui
+                        .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
+                        .changed()
+                        && !self.prefs.studio_tool_rail
+                    {
+                        // A hidden rail must not leave a floating tool palette.
+                        self.studio_group = None;
+                    }
                     ui.checkbox(&mut self.prefs.studio_inspector_open, "Инспектор");
                     ui.checkbox(&mut self.prefs.studio_console_open, "Диагностика");
                     ui.separator();
@@ -2006,11 +2015,13 @@ impl eframe::App for TikzariumApp {
                     }
                 });
         }
-        if self.workspace == WorkspaceMode::Split {
-            show_split_source_panel(ctx, split_layout, |ui| {
+        let actual_source_rect = if self.workspace == WorkspaceMode::Split {
+            Some(show_split_source_panel(ctx, split_layout, |ui| {
                 self.show_source_editor(ui);
-            });
-        }
+            }))
+        } else {
+            None
+        };
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.pending_open.is_some() {
                 ui.disable();
@@ -2021,15 +2032,16 @@ impl eframe::App for TikzariumApp {
                 self.show_source_editor(ui);
             }
         });
-        if self.prefs.studio_mode && self.pending_open.is_none() {
+        if self.prefs.studio_mode
+            && self.prefs.studio_tool_rail
+            && self.pending_open.is_none()
+            && let Some(source_rect) = actual_source_rect
+        {
             let mut open_libraries = false;
             studio_ui::show_palette(
                 ctx,
                 &mut self.studio_group,
-                egui::pos2(
-                    self.studio_palette_anchor.x + split_layout.source_default + 18.0,
-                    self.studio_palette_anchor.y,
-                ),
+                studio_ui::palette_anchor_at_source_edge(source_rect, self.studio_palette_anchor),
                 &mut self.authoring,
                 studio_ui::PaletteData {
                     source: &self.document.source,
