@@ -155,11 +155,14 @@ try {
     $report.cargo='PASS_WINDOWS_SERVER_NOT_WIN10'
    }
   }
-  $report.status=if($report.font_audit -eq 'PASS_ALL_FONT_ROWS_EMBEDDED' -and
-                     $report.text_audit -eq 'PASS_EXPECTED_CYRILLIC_EXTRACTED'){
+  $complete=($report.font_audit -eq 'PASS_ALL_FONT_ROWS_EMBEDDED' -and
+             $report.text_audit -eq 'PASS_EXPECTED_CYRILLIC_EXTRACTED' -and
+             (-not $CheckRust -or $report.cargo -eq 'PASS_WINDOWS_SERVER_NOT_WIN10'))
+  $report.status=if($complete){
    'PASS_USER_WINDOWS_SERVER_TEX_FONT_AND_EXTRACTED_TEXT'
-  }else{'PARTIAL_PDF_FONT_OR_TEXT_AUDIT_NOT_RUN'}
-  $exit=0
+  }else{'PARTIAL_REQUIRED_FONT_TEXT_OR_RUST_CHECK_NOT_RUN'}
+  # A PARTIAL report must not make the self-hosted workflow green.
+  $exit=if($complete){0}else{2}
  }finally{Pop-Location}
 }catch{
  $report.status='FAIL'
