@@ -287,6 +287,22 @@ pub fn icon_button(
     response.on_hover_text(tooltip)
 }
 
+/// F1 opens the same C-backed Help tab; toggling F1 off must visibly leave
+/// that tab rather than only changing an invisible Session::help boolean.
+pub fn route_studio_help_toggle(
+    was_enabled: bool,
+    is_enabled: bool,
+    dock: &mut StudioDock,
+    inspector_open: &mut bool,
+) {
+    if !was_enabled && is_enabled {
+        *dock = StudioDock::Help;
+        *inspector_open = true;
+    } else if was_enabled && !is_enabled && *dock == StudioDock::Help {
+        *dock = StudioDock::Properties;
+    }
+}
+
 /// Narrow permanent rail: four *groups* rather than dozens of buttons.
 /// Clicking a group opens a floating palette; the code and PDF keep their size.
 pub fn show_group_rail(
@@ -546,6 +562,53 @@ mod tests {
         );
         assert_eq!(StudioDock::ALL.len(), 3);
     }
+    #[test]
+    fn real_f1_key_frames_toggle_visible_studio_dock_without_editing_tex() {
+        let ctx = egui::Context::default();
+        let source = "% ручной CRLF\r\n\\myOpaqueMacro{unknown}\r\n".to_owned();
+        let before = source.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        let mut dock = StudioDock::Properties;
+        let mut open = false;
+        let frame = |event: egui::Event,
+                     session: &mut Session,
+                     dock: &mut StudioDock,
+                     open: &mut bool| {
+            let _ = ctx.run(
+                egui::RawInput {
+                    events: vec![event],
+                    ..Default::default()
+                },
+                |ctx| {
+                    let old = session.help;
+                    crate::tikz_canvas::handle_help_shortcut(ctx, session);
+                    route_studio_help_toggle(old, session.help, dock, open);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Исходник редактируем, PDF — внешний XeLaTeX");
+                    });
+                },
+            );
+        };
+        let key = |pressed: bool| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        frame(key(true), &mut session, &mut dock, &mut open);
+        assert!(session.help);
+        assert_eq!(dock, StudioDock::Help);
+        assert!(open);
+        frame(key(false), &mut session, &mut dock, &mut open);
+        frame(key(true), &mut session, &mut dock, &mut open);
+        assert!(!session.help);
+        assert_eq!(dock, StudioDock::Properties);
+        assert_eq!(source, before);
+        assert!(!session.undo_available());
+    }
+
     #[test]
     fn palette_follows_actual_source_pane_resize_not_default_width() {
         // Simulated measured response rectangles from a resizable source panel.
