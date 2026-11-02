@@ -1240,10 +1240,7 @@ mod tests {
             let mut jump = None;
             let _ = ctx.run(
                 egui::RawInput {
-                    screen_rect: Some(Rect::from_min_size(
-                        Pos2::ZERO,
-                        Vec2::new(900.0, 380.0),
-                    )),
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(900.0, 380.0))),
                     events,
                     ..Default::default()
                 },
@@ -1310,7 +1307,10 @@ mod tests {
         );
         assert_eq!(source, inserted, "unchanged Apply must remain disabled");
 
-        session.draft.values.insert("radius".into(), "2.75cm".into());
+        session
+            .draft
+            .values
+            .insert("radius".into(), "2.75cm".into());
         assert!(selected_pending_parameters(&session, &source));
         frame(&ctx, &mut session, &mut source, vec![], &mut apply_rect);
         let at = apply_rect.center();
@@ -1485,7 +1485,14 @@ mod tests {
                 |ctx| {
                     handle_help_shortcut(ctx, session);
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help), None);
+                        show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            None,
+                            Some(&mut help),
+                            None,
+                        );
                     });
                 },
             );
