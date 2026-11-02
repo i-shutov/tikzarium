@@ -1,7 +1,9 @@
+# Legacy B41 coordinate profile; the current B42 Studio uses I61 real-X11 source/PDF QA.
+# Historical B41 branch/explicit dispatch remain available with exact B41 provenance.
 name: I57 N2 four actual X11 library source PDF Undo Open and C help
 on:
   pull_request:
-    branches: [main, b40-egui-source-undo-transaction-fence, b41-egui-pinned-parameter-apply]
+    branches: [b40-egui-source-undo-transaction-fence, b41-egui-pinned-parameter-apply]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
@@ -12,7 +14,7 @@ on:
       - 'crates/**'
       - 'Cargo.lock'
   push:
-    branches: [main, qa/i58-b40-source-history-x11, qa/i60-b41-inspector-real-x11, b41-egui-pinned-parameter-apply]
+    branches: [qa/i58-b40-source-history-x11, qa/i60-b41-inspector-real-x11, b41-egui-pinned-parameter-apply]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
