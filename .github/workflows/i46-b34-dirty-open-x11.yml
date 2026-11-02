@@ -8,6 +8,8 @@ on:
       - b/b32-safe-open-source-undo-20261101
       - b/b36-compact-pdf-focus
       - qa/i54-b39-n2-n3-desktop-reaccept
+      - qa/i60-b41-inspector-real-x11
+      - b41-egui-pinned-parameter-apply
       - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
@@ -24,6 +26,7 @@ on:
       - 'CHANGELOG.md'
   pull_request:
     branches:
+      - b41-egui-pinned-parameter-apply
       - b40-egui-source-undo-transaction-fence
       - b/b32-safe-open-source-undo-20261101
       - b/b36-compact-pdf-focus
@@ -60,11 +63,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact checkout and B40 source tree; new screenshots still require manual calibration
+      - name: Verify exact checkout and B41 source tree; new screenshots still require manual calibration
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q

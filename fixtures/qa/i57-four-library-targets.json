@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "tree": "eefe044db4ea5dba41a02411ac4686aa557c31e1",
+  "tree": "5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a",
   "status": "PROVISIONAL_COORDINATES_NOT_ACCEPTED_WITHOUT_REAL_SCREENSHOTS",
   "libraries": {
     "arrows.meta": {
@@ -60,6 +60,7 @@
       ]
     }
   },
-  "i58_evidence_level": "PROVISIONAL_B40_COORDINATES__REAL_X11_SCREENSHOTS_TEX_PDF_MUST_BE_REVIEWED",
-  "i58_source_head": "45c3117aa4dc7edf307fd92cd78f3adb04d27202"
+  "i58_evidence_level": "PROVISIONAL_B41_COORDINATES__EXACT_TREE_REPIN_NOT_REAL_GUI_ACCEPTANCE",
+  "i58_source_head": "45c3117aa4dc7edf307fd92cd78f3adb04d27202",
+  "i60_reacceptance": "B41 exact app tree pin; B40 coordinates provisional; independent source/PDF/screenshots mandatory for each workflow; physical Win10/M1/M4 NOT_RUN"
 }

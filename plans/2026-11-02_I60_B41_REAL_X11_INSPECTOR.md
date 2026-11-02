@@ -25,3 +25,7 @@
 4. Merge B41 в main только после всех обязательных CI, просмотра артефактов и expected_head_sha; post-merge CI — отдельный.
 
 Физическая Windows 10 x64 с независимо установленным MiKTeX и macOS ARM M1/M4 с внешним XeLaTeX — **NOT_RUN**. Preview/guide не объявляется геометрически эквивалентным PDF. Никаких автоматических TeX-подстановок или установок.
+
+## I60 coordinated reacceptance of I46/I47/I53/I57 on B41
+
+On independent QA branch only, repin existing four real-X11 workflows to B41 app/src exact Git tree `5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a`, preserving legacy source/PDF/human-screen predicates. A/C/B production remain untouched. All previous B40 profiles carry **PROVISIONAL_B41_COORDINATES**, not physical GUI assertions. Exact SHA workflow and actual screenshot/PDF/source artifact proof required separately for every vertical; fail closed and recalibrate only after genuine evidence. No merge #90/#89 until all gates.
