@@ -9,3 +9,7 @@ Patch intended: compare the B Session's source revision before/after three produ
 New B40 `UNIT_EVENT` uses real `egui::Context::run(RawInput)` TextEdit frames to test Unicode/CRLF manual typing, one native TikZ primitive patch, source Undo, an attempted stale Ctrl+Z and byte-exact saved file with an unknown macro. It does not exercise the full native window or verify screen-space PDF coordinates. The prior I56 four-library `UNIT_EVENT`, I47 six-gesture real-X11, I46 dirty Open and I53 library/Help real-X11 remain separate evidence.
 
 Exact-HEAD CI, independent GUI click/visual review and physical Windows 10 / Mac ARM: NOT_RUN at authoring. Do not claim PASS until observed.
+
+## First exact-head CI correction
+
+PR #85 first HEAD `bb1e753e7a676504dfae41fffd64e2c00a3c78d1`: rustfmt detected only formatting differences in the new B40 test; I46/I47 X11 legacy scripts rejected the intentionally changed app source tree before launching the GUI (not a user-facing gesture failure). Fix applied from rustfmt diff without modifying D-owned CI test fences. Full exact-head checks still pending.

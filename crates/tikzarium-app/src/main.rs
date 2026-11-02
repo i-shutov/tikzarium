@@ -1781,7 +1781,15 @@ mod split_layout_tests {
         let mut session = tikz_authoring::Session::default();
         session.reset(&source);
         let mut reset = false;
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![], Default::default(), true);
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
         frame(
             &ctx,
             &mut source,
@@ -1802,15 +1810,33 @@ mod split_layout_tests {
             )
             .unwrap();
         assert!(fence_source_editor_undo_on_revision_change(
-            before,
-            &session,
-            &mut reset,
+            before, &session, &mut reset,
         ));
         let with_primitive = source.clone();
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![], Default::default(), false);
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
         assert!(!reset);
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![], Default::default(), true);
-        let command = egui::Modifiers { command: true, ctrl: true, ..Default::default() };
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        let command = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
         let z = |pressed| egui::Event::Key {
             key: egui::Key::Z,
             physical_key: None,
@@ -1818,9 +1844,28 @@ mod split_layout_tests {
             repeat: false,
             modifiers: command,
         };
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![z(true)], command, false);
-        assert_eq!(source, with_primitive, "native Undo must not cross an authored patch");
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![z(false)], command, false);
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(true)],
+            command,
+            false,
+        );
+        assert_eq!(
+            source, with_primitive,
+            "native Undo must not cross an authored patch"
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(false)],
+            command,
+            false,
+        );
         let before_undo = session.source_revision();
         session.undo(&mut source).unwrap();
         assert_eq!(source, manually_edited);
@@ -1829,10 +1874,37 @@ mod split_layout_tests {
             &session,
             &mut reset,
         ));
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![], Default::default(), false);
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![], Default::default(), true);
-        frame(&ctx, &mut source, &mut session, &mut reset, vec![z(true)], command, false);
-        assert_eq!(source, manually_edited, "stale native Undo must not erase manual TeX");
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(true)],
+            command,
+            false,
+        );
+        assert_eq!(
+            source, manually_edited,
+            "stale native Undo must not erase manual TeX"
+        );
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("b40-тест.tex");
         std::fs::write(&path, source.as_bytes()).unwrap();
@@ -1846,7 +1918,10 @@ mod split_layout_tests {
             &session,
             &mut reset,
         ));
-        assert!(!reset, "a pure selection must not erase native editor history");
+        assert!(
+            !reset,
+            "a pure selection must not erase native editor history"
+        );
     }
 
     #[test]
