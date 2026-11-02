@@ -34,8 +34,9 @@ class FixtureHarnessTests(unittest.TestCase):
             src.write_text("Unicode", encoding="utf-8")
             policy = EnginePolicy("MiKTeX", "MiKTeX-XeTeX 25.12",
                                   ("--disable-installer",))
-            with patch("qa_smoke.shutil.which", return_value="xelatex"), patch(
-                "qa_smoke.probe_engine_policy", return_value=policy
+            with patch.dict("os.environ", {"TIKZARIUM_XELATEX": "xelatex"}), patch(
+                "qa_smoke.shutil.which", return_value="xelatex"
+            ), patch("qa_smoke.probe_engine_policy", return_value=policy
             ), patch("qa_smoke.command",
                      return_value=CompletedProcess(["xelatex"], 1, "", "missing")) as compile:
                 passed, report = check_missing_glyphs(src, root, "font")
@@ -43,6 +44,25 @@ class FixtureHarnessTests(unittest.TestCase):
             self.assertEqual(report["glyph_engine_distribution"], "MiKTeX")
             args = compile.call_args.args[0]
             self.assertEqual(args[:2], ["xelatex", "--disable-installer"])
+
+    def test_direct_glyph_audit_preserves_explicit_selected_engine_path(self):
+        # The hosted MiKTeX runner passes an ABSOLUTE private xelatex.exe path.
+        # The test must not inherit its environment or silently substitute TeX Live.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "font.tex"
+            source.write_text("Unicode", encoding="utf-8")
+            selected = r"C:\MiKTeX\bin\xelatex.exe"
+            policy = EnginePolicy("MiKTeX", "MiKTeX-XeTeX 25.12",
+                                  ("--disable-installer",))
+            with patch.dict("os.environ", {"TIKZARIUM_XELATEX": selected}), patch(
+                "qa_smoke.probe_engine_policy", return_value=policy
+            ), patch("qa_smoke.command",
+                     return_value=CompletedProcess([selected], 1, "", "missing")) as compile:
+                passed, _ = check_missing_glyphs(source, root, "font")
+            self.assertFalse(passed)
+            self.assertEqual(compile.call_args.args[0][:2],
+                             [selected, "--disable-installer"])
 
     def test_rejects_traversal_and_absolute_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
