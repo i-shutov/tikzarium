@@ -27,6 +27,22 @@ jobs:
             xvfb xauth openbox xdotool imagemagick libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev
+      - name: Parse user-server PowerShell audit without running it
+        shell: bash
+        run: |
+          # This only checks syntax on the hosted Linux runner.
+          # It does not run MiKTeX or certify the dedicated Windows Server.
+          pwsh -NoProfile -NonInteractive -Command '
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              "scripts/tools/qa_windows_server_user.ps1",
+              [ref]$tokens, [ref]$errors) | Out-Null
+            if($errors.Count -ne 0) {
+              $errors | ForEach-Object { Write-Error $_ }
+              exit 1
+            }
+            Write-Host "PowerShell AST syntax PASS; Windows Server runtime NOT_RUN"
+          '
       - name: Compile the actual Rust/egui executable from locked sources
         run: |
           cargo build --locked -p tikzarium-app --bin tikzarium-app
