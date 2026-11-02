@@ -117,3 +117,24 @@ visible glyph fidelity. Implemented in
 This script is NOT_RUN on the actual dedicated Windows Server; hosted
 MiKTeX proof does not substitute for it. Exact-head CI, script runtime,
 and visual glyph review are independent gates.
+
+## B42 external D I61 failed at first Save: screenshot-to-code root cause
+
+[run 41427351166](https://github.com/i-shutov/tikzarium/actions/runs/41427351166)
+on #92 exact D SHA `517906e80fab2bda3c6aafa834a7b90a066790df`
+returned `gui_save=NOT_RUN`, `six_real_tools=NOT_RUN`,
+`real_xelatex_pdf=NOT_RUN`; error: `Save did not create default
+figure.tex`. Independently downloaded GitHub artifact `13133090660`,
+verified the screenshot bytes against its report and visually examined
+`02-file-menu-default-path.png` and `04-source-pasted.png`. The
+visible `figure.tex` was grey *placeholder*, not a value. Source
+`TikzariumApp::new` set `file_field` empty, while Linux
+`typed_save_destination` refuses empty input. This establishes
+a real first-save workflow defect, not a gesture or XeLaTeX regression.
+
+Changed B main.rs only for production: the new scratch filename
+`figure.tex` is prefilled as actual editable text, and existing
+non-overwrite protection remains. Added actual egui event-frame
+Save-icon test with CRLF/Cyrillic macro Save/Reopen and occupied
+destination rejection. Exact-head hosted CI and new independent
+D X11 acceptance remain PENDING; no physical OS claims.

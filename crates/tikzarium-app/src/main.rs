@@ -36,6 +36,10 @@ use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
+// The Linux Save action cannot use a native dialog: this is an actual, editable
+// initial destination, never just a hint. typed_save_destination still forbids
+// overwriting a pre-existing file without a deliberate path change.
+const DEFAULT_SCRATCH_FILENAME: &str = "figure.tex";
 
 // Fixed 500pt source + 250pt inspector left the exact PDF/guide unusable
 // at the native 850pt minimum window width. Reserve central space first.
@@ -496,7 +500,7 @@ impl TikzariumApp {
         let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
         Self {
             document: Document::scratch(QUICKSTART),
-            file_field: String::new(),
+            file_field: DEFAULT_SCRATCH_FILENAME.to_owned(),
             tex,
             package_statuses,
             diagnostics: Vec::new(),
@@ -2825,6 +2829,96 @@ mod split_layout_tests {
             assert_eq!(source, untouched, "resizing silently changed source");
             assert!(!session.undo_available());
         }
+    }
+
+    #[test]
+    fn b42_studio_save_icon_event_persists_default_utf8_scratch_without_overwriting() {
+        // The exact production icon handler is driven by egui pointer frames.
+        // This is UNIT_EVENT, not an actual X11/Win10/macOS desktop run.
+        fn frame(
+            ctx: &egui::Context,
+            document: &mut Document,
+            destination: &Path,
+            rect: &mut egui::Rect,
+            events: Vec<egui::Event>,
+        ) -> bool {
+            let mut saved = false;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("b42-save-icon-event").show(ctx, |ui| {
+                        ui.horizontal(|ui| {
+                            let response = studio_ui::icon_button(
+                                ui,
+                                StudioIcon::Save,
+                                false,
+                                34.0,
+                                "Сохранить исходник · Ctrl+S",
+                            );
+                            *rect = response.rect;
+                            if response.clicked() {
+                                let path = typed_save_destination(
+                                    document,
+                                    destination.to_str().unwrap(),
+                                )
+                                .unwrap();
+                                document.save_to(&path).unwrap();
+                                saved = true;
+                            }
+                        });
+                    });
+                },
+            );
+            saved
+        }
+
+        assert_eq!(DEFAULT_SCRATCH_FILENAME, "figure.tex");
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join(DEFAULT_SCRATCH_FILENAME);
+        let original = "% исходный комментарий\r\n\\MyOpaque{Не менять}\r\n";
+        let mut document = Document::scratch(original);
+        let ctx = egui::Context::default();
+        let mut rect = egui::Rect::NOTHING;
+        assert!(!frame(&ctx, &mut document, &path, &mut rect, vec![]));
+        assert!(rect.is_positive());
+        let pos = rect.center();
+        let button = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        assert!(!frame(
+            &ctx,
+            &mut document,
+            &path,
+            &mut rect,
+            vec![egui::Event::PointerMoved(pos), button(true)],
+        ));
+        assert!(frame(
+            &ctx,
+            &mut document,
+            &path,
+            &mut rect,
+            vec![button(false)],
+        ));
+        assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
+        assert_eq!(Document::load(&path).unwrap().source, original);
+        assert!(!document.dirty());
+
+        let another_scratch = Document::scratch("% другой черновик\r\n");
+        assert!(
+            typed_save_destination(&another_scratch, path.to_str().unwrap()).is_err(),
+            "the suggested scratch name must never overwrite a prior document"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
     }
 
     #[test]

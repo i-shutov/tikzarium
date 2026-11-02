@@ -93,3 +93,32 @@ The prior any-`yes` predicate was unsafe. The corrected B-owned
 `scripts/tools/qa_windows_server_user.ps1` does not auto-install packages,
 and produces partial states if Poppler PDF tools are unavailable. The
 dedicated Windows Server and physical Windows 10/M1/M4 remain NOT_RUN.
+
+## B42 real-X11 scratch Save incident and B-owned correction (2026-11-02)
+
+Independent stacked D #92 I61 Linux/X11 on B42 source tree
+`817ef8606d882ed39111b886fce57e0c0a37fb3a`, run
+[41427351166](https://github.com/i-shutov/tikzarium/actions/runs/41427351166),
+artifact `13133090660` stopped **after a real clipboard paste** with
+`Studio toolbar Save did not create default figure.tex`. The original
+`02-file-menu-default-path.png` shows that `figure.tex` was only a
+TextEdit grey *hint*, whereas B-owned `TikzariumApp::new` initialized
+`file_field = String::new()`. On Linux `save_as()` uses the actual
+field via `typed_save_destination` and thus rejects an empty path.
+This is a concrete Studio UX defect (and a wrong D assumption), **not**
+a failure of the six native pointer tools: I61 never got that far.
+
+B42 now gives the new scratch file a **real editable** `figure.tex`
+destination, matching the already displayed hint. Explicit user Save
+writes the current directory only if that name does not exist; existing
+files are still rejected by `typed_save_destination` (no overwrite).
+File → Save As retains user-controlled paths. A new B-owned
+`RawInput` UNIT_EVENT test clicks the *production vector Save icon*,
+checks UTF-8/CRLF/opaque macro byte fidelity on disk and fails closed
+for a second scratch with an occupied destination.
+
+New B-only commit HEAD exact SHA/CI: inspect after push; do not
+report I61 PASS until D independently re-leases its app tree,
+reruns all six real X11 icons/gestures, Save/Reopen, Help/Undo and
+XeLaTeX source/PDF + manual artifact review. This UNIT_EVENT is
+not physical Win10/MiKTeX, Mac M1/M4 or the user Windows Server.
