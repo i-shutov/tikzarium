@@ -20,6 +20,8 @@ import tempfile
 import unicodedata
 from datetime import datetime, timezone
 
+from qa_engine_policy import probe_engine_policy
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -216,9 +218,13 @@ def check_missing_glyphs(source: Path, output: Path, fixture_id: str) -> tuple[b
     engine = os.environ.get("TIKZARIUM_XELATEX") or shutil.which("xelatex")
     if not engine:
         return False, {"glyph_audit": "FAIL", "glyph_error": "XeLaTeX executable not found"}
+    try:
+        policy = probe_engine_policy(str(engine))
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        return False, {"glyph_audit": "FAIL", "glyph_error": f"Offline engine policy: {exc}"}
     with tempfile.TemporaryDirectory(prefix="xelatex-font-audit-", dir=output) as temp:
         target = Path(temp)
-        args = [str(engine), "-interaction=nonstopmode", "-halt-on-error",
+        args = [str(engine), *policy.offline_args, "-interaction=nonstopmode", "-halt-on-error",
                 "-file-line-error", "-no-shell-escape",
                 f"-output-directory={target}", source.name]
         proc = command(args, cwd=source.parent)
@@ -228,6 +234,7 @@ def check_missing_glyphs(source: Path, output: Path, fixture_id: str) -> tuple[b
         warnings = re.findall(r"(?m)^Missing character:.*$", audit_log)
         passed = proc.returncode == 0 and log_file.exists() and (target / f"{source.stem}.pdf").is_file() and not warnings
         return passed, {"glyph_audit": "PASS" if passed else "FAIL",
+                        "glyph_engine_distribution": policy.distribution,
                         "glyph_audit_exit_code": proc.returncode,
                         "missing_glyphs": len(warnings),
                         "missing_glyph_examples": warnings[:4]}
