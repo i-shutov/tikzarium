@@ -74,3 +74,46 @@ test asserting Help→Properties and no source/Undo mutations. Commits
 `8faa2989bf038fd1d6679d37338c168664668746`.
 Exact-head CI and independent real X11 F1 screenshot remain separate gates;
 do not report PASS before evidence is available.
+
+## B42 exact-head CI failure repaired and real Studio screenshots independently inspected
+
+On source SHA `88877297726b0d788108e995b4dbec3e4bb22d92`, strict Rust
+formatting failed on every Rust matrix at `studio_ui.rs:571`; tests were
+**not executed** past that gate. The exact rustfmt layout from the hosted
+job log was applied in commit
+`f2273814aa160be5c0ec7b8779f9e4b7831ab6d7`, on the SAME #91 branch.
+Do not inherit earlier green tests; rerun all exact-head checks.
+
+Downloaded and inspected **two** real Ubuntu/X11 screenshots from the B42
+bootstrap [run 41421044602](https://github.com/i-shutov/tikzarium/actions/runs/41421044602)
+on that formatted app tree. ZIP CRC passes and image SHA-256 matches the
+artifact manifest: workspace
+`b5f717856087c397b9a87a98965f581a180e6f055256724072a240f413538cad`;
+Geometry popup
+`d3be3595ba89bed353a8af1a7c11a81c173ac4140722c2e1edc213e92a1e3c77`.
+The screenshot does visibly show the popup with four selectable geometric
+icons outside the editable source pane. This only proves an actual
+*group click*, not selection of an individual native tool, six gestures,
+source manual Ctrl+Z, file Open/Save, or XeLaTeX PDF in the Studio process.
+The artifact's originally stored manual-review field remains historically
+NOT_RUN; this independent review is recorded here without falsifying it.
+
+Three older I51/I57 workflows on the formatted HEAD refuse the B42 tree
+**before GUI execution**; those failures cannot count as gesture FAIL/PASS.
+D-owned independent coordinate re-leasing remains mandatory. Physical
+Windows 10 and M1/M4 remain NOT_RUN.
+
+## Persistent Windows Server PDF QA trust correction
+
+The proposed self-hosted audit incorrectly accepted
+`pdffonts | -match '\byes\b'`, which only checked that *some* font had
+`yes`. The B-owned script now parses every font record, rejects any
+nonembedded row, requires DejaVu Serif in the Cyrillic fixture, checks
+one page and extracts the expected Russian text with `pdftotext`.
+Absent tools produce partial/NOT_RUN rather than false PASS. Optional
+`pdftoppm` exports a PNG explicitly marked unreviewed, not proof of
+visible glyph fidelity. Implemented in
+`f56b3e12c48ab095c859671b74a6698c71072c84`.
+This script is NOT_RUN on the actual dedicated Windows Server; hosted
+MiKTeX proof does not substitute for it. Exact-head CI, script runtime,
+and visual glyph review are independent gates.
