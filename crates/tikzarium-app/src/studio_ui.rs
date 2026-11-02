@@ -694,10 +694,7 @@ mod tests {
                 } = self;
                 let _ = ctx.run(
                     egui::RawInput {
-                        screen_rect: Some(Rect::from_min_size(
-                            Pos2::ZERO,
-                            Vec2::new(850.0, 560.0),
-                        )),
+                        screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(850.0, 560.0))),
                         events,
                         ..Default::default()
                     },
@@ -793,7 +790,10 @@ mod tests {
                     .iter()
                     .position(|&candidate| candidate == tool)
                     .unwrap();
-                assert!(state.tools[tool_index].is_positive(), "{tool:?} button absent");
+                assert!(
+                    state.tools[tool_index].is_positive(),
+                    "{tool:?} button absent"
+                );
                 state.click(&ctx, &source, state.tools[tool_index].center());
                 assert_eq!(state.session.active, Some(tool), "{tool:?} not selected");
                 assert_eq!(state.group, None, "palette remains open after tool click");
@@ -803,5 +803,4 @@ mod tests {
         }
         assert!(!state.libraries);
     }
-
 }
