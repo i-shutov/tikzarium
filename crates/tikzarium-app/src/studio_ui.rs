@@ -786,6 +786,10 @@ mod tests {
                 assert!(state.groups[group_index].is_positive());
                 state.click(&ctx, &source, state.groups[group_index].center());
                 assert_eq!(state.group, Some(kind), "{kind:?} group not opened");
+                // egui Areas register their popup hit-test widgets on the
+                // following frame. Settle that frame before dispatching the
+                // next primary press into a newly opened foreground palette.
+                state.frame(&ctx, &source, vec![]);
                 let tool_index = crate::tikz_authoring::TOOLS
                     .iter()
                     .position(|&candidate| candidate == tool)
