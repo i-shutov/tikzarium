@@ -43,7 +43,7 @@ jobs:
       - name: Exact B41 production source tree lease and immutable QA provenance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd290bdad0de0058b538a26be0209a97f2626f76a'
           git merge-base --is-ancestor e9bdd306f1009fa1f444e7d8948e16a48b6ce190 HEAD
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
       - name: Install hosted Linux/X11 tools and externally invoked TeX Live XeLaTeX

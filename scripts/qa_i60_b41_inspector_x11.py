@@ -14,7 +14,7 @@ import platform
 import subprocess
 import time
 
-APP_TREE = "5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a"
+APP_TREE = "d290bdad0de0058b538a26be0209a97f2626f76a"
 SRC = ("\n".join((
     r"\documentclass{standalone}",
     r"\usepackage{fontspec}",
@@ -288,6 +288,13 @@ def main() -> int:
         if control.read_bytes() != CONTROL:
             raise AssertionError("GUI Save normalized untouched CRLF original")
         open_document(doc, inserted, "11-original-reopened")
+        # B41 F1 must work without an active tool after real GUI Open.
+        key("F1")
+        screenshot("11b-generic-F1-after-Open.png")
+        if (out / "11-original-reopened.png").read_bytes() == (
+                out / "11b-generic-F1-after-Open.png").read_bytes():
+            raise AssertionError("F1 after GUI Open rendered no visible general help")
+        key("F1")
         if control.read_bytes() != CONTROL or doc.read_bytes() != inserted:
             raise AssertionError("GUI Open/Save changed an unrelated user file")
 

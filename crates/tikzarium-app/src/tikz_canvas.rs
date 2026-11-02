@@ -673,23 +673,34 @@ fn show_inspector_action_bar_frame(
         }
     });
     ui.small(&session.status);
-    // F1 is useful without scrolling through a long list of properties.
-    // All wording, syntax and provenance come straight from the C catalogue.
-    if session.help
-        && let Some(tool) = session.active
-    {
-        let info = tikz_authoring::spec(tool);
-        let summary = ui
-            .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
-            .on_hover_text(format!(
-                "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
-                info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
-            ));
-        ui.add(egui::Label::new(&info.syntax).truncate());
-        ui.hyperlink_to(
-            format!("PGF/TikZ §{}", info.manual_section),
-            &info.manual_url,
-        );
+    // F1 must be visible even after Open/Reopen clears the selected tool.
+    // Detailed syntax and parameter semantics continue to come exclusively
+    // from the shared C catalogue; no separate B help generator.
+    if session.help {
+        let summary = if let Some(tool) = session.active {
+            let info = tikz_authoring::spec(tool);
+            let summary = ui
+                .add(
+                    egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru))
+                        .truncate(),
+                )
+                .on_hover_text(format!(
+                    "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
+                    info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
+                ));
+            ui.add(egui::Label::new(&info.syntax).truncate());
+            ui.hyperlink_to(
+                format!("PGF/TikZ §{}", info.manual_section),
+                &info.manual_url,
+            );
+            summary
+        } else {
+            let summary = ui.label(
+                "F1 · Выберите инструмент TikZ в палитре или созданную команду в инспекторе.",
+            );
+            ui.small("Синтаксис, параметры, пример и источник появятся из общего каталога C. Неизвестный TeX не изменяется.");
+            summary
+        };
         if let Some(rect) = help_rect {
             *rect = summary.rect;
         }
@@ -1526,6 +1537,72 @@ mod tests {
         assert_eq!(source, original);
         assert!(!session.undo_available());
         assert_eq!(tikz_authoring::spec(Tool::Cubic).id, "tikz.bezier-cubic");
+    }
+
+    #[test]
+    fn f1_without_active_tool_after_reopen_shows_russian_guidance_in_real_egui_frame() {
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+        ) -> Rect {
+            let mut help_rect = Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(430.0, 320.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_help_shortcut(ctx, session);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        show_inspector_action_bar_frame(
+                            ui,
+                            session,
+                            source,
+                            None,
+                            Some(&mut help_rect),
+                            None,
+                        );
+                    });
+                },
+            );
+            help_rect
+        }
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let original = source.clone();
+        let mut session = Session::default();
+        // Real GUI Open/Reopen resets this authoring state; no tool is active.
+        session.reset(&source);
+        assert!(session.active.is_none());
+        assert!(!session.help);
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![]),
+            Rect::NOTHING
+        );
+        let f1 = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::default(),
+        };
+        let help = frame(&ctx, &mut session, &mut source, vec![f1(true)]);
+        assert!(session.help);
+        assert!(
+            help.is_positive() && help.bottom() < 320.0,
+            "F1 without a selected tool must render a visible Russian guidance row"
+        );
+        frame(&ctx, &mut session, &mut source, vec![f1(false)]);
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![f1(true)]),
+            Rect::NOTHING
+        );
+        assert!(!session.help);
+        assert_eq!(source, original, "generic help must never change user TeX");
+        assert!(!session.undo_available());
     }
 
     #[test]

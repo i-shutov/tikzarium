@@ -70,7 +70,7 @@ class DesktopEvidenceTests(unittest.TestCase):
         profile_path = Path(__file__).resolve().parents[2] / "fixtures/qa/n1-desktop-x11-1366.json"
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a")
+                         "d290bdad0de0058b538a26be0209a97f2626f76a")
         self.assertNotEqual(profile["reviewed_app_tree_sha"],
                             "af316d5e5452d74186b92d65c95c448253d0e61c")
         self.assertIn("B41 exact app tree lease", profile["layout_note"])

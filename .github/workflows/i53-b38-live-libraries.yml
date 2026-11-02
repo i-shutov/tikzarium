@@ -32,7 +32,7 @@ jobs:
       - name: Exact checkout and B41 exact source production tree
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd290bdad0de0058b538a26be0209a97f2626f76a'
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
       - name: Install external Linux X11 and XeLaTeX prerequisites
         run: |

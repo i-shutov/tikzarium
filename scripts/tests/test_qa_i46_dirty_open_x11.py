@@ -51,7 +51,7 @@ class I46ContractTests(unittest.TestCase):
         profile = json.loads(
             Path("fixtures/qa/i46-b34-dirty-open-x11-1366.json").read_text())
         self.assertEqual(profile["reviewed_app_tree_sha"],
-                         "5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a")
+                         "d290bdad0de0058b538a26be0209a97f2626f76a")
         self.assertEqual(
             profile["i58_evidence_level"],
             "PROVISIONAL_B41_COORDINATES__EXACT_TREE_REPIN_NOT_REAL_GUI_ACCEPTANCE")

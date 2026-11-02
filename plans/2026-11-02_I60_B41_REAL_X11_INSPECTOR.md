@@ -29,3 +29,7 @@
 ## I60 coordinated reacceptance of I46/I47/I53/I57 on B41
 
 On independent QA branch only, repin existing four real-X11 workflows to B41 app/src exact Git tree `5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a`, preserving legacy source/PDF/human-screen predicates. A/C/B production remain untouched. All previous B40 profiles carry **PROVISIONAL_B41_COORDINATES**, not physical GUI assertions. Exact SHA workflow and actual screenshot/PDF/source artifact proof required separately for every vertical; fail closed and recalibrate only after genuine evidence. No merge #90/#89 until all gates.
+
+## I60 exact B41 F1 re-lease — 2026-11-02
+
+QA #90 reconciled against B41 #89 HEAD `52004622c2e0cd2a24843ab1fb3e87877de12c5e`, app/src tree `d290bdad0de0058b538a26be0209a97f2626f76a`. Prior run 41397220307 and its 20/20 SHA-256 apply **only** to former B41 tree `5fa3b794c4711cd32c1b0f68a0ea00c7bf38657a`. X11 screenshots, source/PDF, F1 after actual GUI Open without an active tool, I46/I47/I53/I57, and inline Fit Page on this new SHA remain **NOT_RUN** until exact-head CI and human artifact review. Coordinates remain provisional pending screenshots; physical Win10/MiKTeX and Mac M1/M4/XeLaTeX remain NOT_RUN. No B production edits in QA, no automatic TeX package installation.
