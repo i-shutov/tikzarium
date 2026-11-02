@@ -492,6 +492,13 @@ pub struct Session {
     undo: Vec<SourcePatch>,
 }
 impl Session {
+    /// Monotone source revision, including authored patches and manual TextEdit edits.
+    /// UI compares it only around source-changing handlers, not around typing,
+    /// so ordinary native text Undo remains available until a source patch.
+    pub(crate) fn source_revision(&self) -> u64 {
+        self.revision
+    }
+
     pub fn reset(&mut self, source: &str) {
         *self = Self {
             observed_source: source.into(),
