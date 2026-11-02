@@ -183,3 +183,11 @@ A/D/E/F source, TeX/CAS/solver or PDF-to-coordinates. Classification:
 UNIT_EVENT only, not physical Windows 10/M1/M4 or full Linux/X11.
 #91 remains draft pending exact-head hosted fmt/test/Clippy and
 independent D #92 real six-tool source-to-XeLaTeX acceptance.
+
+## P0 File popup click-to-edit repair — 2026-11-02
+
+D I62 real Linux/X11 run 41470355844 showed a correct click into the File menu TextEdit, immediate popup collapse and failed second-file Open. Exact pinned egui 0.33.3 default closes a menu on ANY click, even inside its controls. No test-coordinate shift is appropriate. This is a verified production design blocker.
+
+In existing B #91 alone, File uses MenuButton + MenuConfig CloseOnClickOutside. Actual Open and Save As still call ui.close explicitly and retain safe file/dirty-confirm logic. A new headless egui Context::run(RawInput) regression uses the exact extracted production File handler to click TextEdit, replace path, click Open and check an independent CRLF/Cyrillic/opaque fixture. No C/A/D/E/F production code, separate PR, custom TeX, or workflow changes. UNIT_EVENT does NOT establish an actual successful X11 two-file Open.
+
+Hold merge until exact new-head Rust/Clippy/D QA passes and D #92 re-leases the new app/source tree for the real Open/Edit/Save/Reopen, dirty Cancel, inspector Apply, source/PDF/fonts and manual PNG audit. Physical Windows 10/MiKTeX and Mac ARM external XeLaTeX remain NOT_RUN.

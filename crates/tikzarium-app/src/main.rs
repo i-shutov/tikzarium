@@ -507,6 +507,83 @@ struct TikzariumApp {
     font_proof_texture: Option<egui::TextureHandle>,
 }
 
+// B42: the path TextEdit must not close its menu just by gaining focus.
+// egui 0.33 defaults to CloseOnClick, including clicks inside the menu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum StudioFileAction {
+    OpenPath,
+    SaveAs,
+}
+
+struct StudioFileMenuResponse {
+    action: Option<StudioFileAction>,
+    #[cfg(test)]
+    trigger_rect: egui::Rect,
+    #[cfg(test)]
+    path_rect: Option<egui::Rect>,
+    #[cfg(test)]
+    open_rect: Option<egui::Rect>,
+}
+
+fn show_studio_file_menu(
+    ui: &mut egui::Ui,
+    file_field: &mut String,
+    ready: bool,
+) -> StudioFileMenuResponse {
+    let mut result = StudioFileMenuResponse {
+        action: None,
+        #[cfg(test)]
+        trigger_rect: egui::Rect::NOTHING,
+        #[cfg(test)]
+        path_rect: None,
+        #[cfg(test)]
+        open_rect: None,
+    };
+    let (trigger, _) = egui::containers::menu::MenuButton::new("Файл")
+        .config(
+            egui::containers::menu::MenuConfig::default()
+                .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
+        )
+        .ui(ui, |ui| {
+            ui.label("TeX-проект:");
+            let path_edit = ui.add(
+                egui::TextEdit::singleline(file_field)
+                    .desired_width(260.0)
+                    .hint_text("figure.tex"),
+            );
+            #[cfg(test)]
+            {
+                result.path_rect = Some(path_edit.rect);
+            }
+            #[cfg(not(test))]
+            let _ = path_edit;
+
+            let open = ui.add_enabled(ready, egui::Button::new("Открыть путь"));
+            #[cfg(test)]
+            {
+                result.open_rect = Some(open.rect);
+            }
+            if open.clicked() {
+                result.action = Some(StudioFileAction::OpenPath);
+                ui.close();
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("Сохранить как…"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::SaveAs);
+                ui.close();
+            }
+        });
+    #[cfg(test)]
+    {
+        result.trigger_rect = trigger.rect;
+    }
+    #[cfg(not(test))]
+    let _ = trigger;
+    result
+}
+
 impl TikzariumApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let prefs = cc
@@ -1193,28 +1270,13 @@ impl TikzariumApp {
                     cancel.cancel();
                 }
                 ui.separator();
-                ui.menu_button("Файл", |ui| {
-                    ui.label("TeX-проект:");
-                    ui.add(
-                        egui::TextEdit::singleline(&mut self.file_field)
-                            .desired_width(260.0)
-                            .hint_text("figure.tex"),
-                    );
-                    if ui
-                        .add_enabled(ready, egui::Button::new("Открыть путь"))
-                        .clicked()
-                    {
+                match show_studio_file_menu(ui, &mut self.file_field, ready).action {
+                    Some(StudioFileAction::OpenPath) => {
                         self.open_path(PathBuf::from(self.file_field.trim()));
-                        ui.close();
                     }
-                    if ui
-                        .add_enabled(ready, egui::Button::new("Сохранить как…"))
-                        .clicked()
-                    {
-                        self.save_as();
-                        ui.close();
-                    }
-                });
+                    Some(StudioFileAction::SaveAs) => self.save_as(),
+                    None => {}
+                }
                 ui.menu_button("Вид", |ui| {
                     if ui
                         .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
@@ -3813,5 +3875,137 @@ mod split_layout_tests {
         assert!(restored.1 < pdf.1 - 150.0);
         assert_eq!(source, original);
         assert!(!authoring.undo_available());
+    }
+}
+
+#[cfg(test)]
+mod b42_file_popup_tests {
+    use super::*;
+
+    fn frame(
+        ctx: &egui::Context,
+        file_field: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+    ) -> StudioFileMenuResponse {
+        let mut result = None;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
+                )),
+                events,
+                modifiers,
+                ..Default::default()
+            },
+            |ctx| {
+                egui::TopBottomPanel::top("b42-file-popup-event").show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.strong("TikZarium");
+                        ui.separator();
+                        result = Some(show_studio_file_menu(ui, file_field, true));
+                    });
+                });
+                egui::CentralPanel::default().show(ctx, |_ui| {});
+            },
+        );
+        result.expect("the production File menu was not laid out")
+    }
+
+    fn pointer(pos: egui::Pos2, pressed: bool) -> egui::Event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        }
+    }
+
+    fn click(
+        ctx: &egui::Context,
+        file_field: &mut String,
+        pos: egui::Pos2,
+    ) -> (StudioFileMenuResponse, StudioFileMenuResponse) {
+        frame(
+            ctx,
+            file_field,
+            vec![egui::Event::PointerMoved(pos), pointer(pos, true)],
+            Default::default(),
+        );
+        let released = frame(ctx, file_field, vec![pointer(pos, false)], Default::default());
+        let settled = frame(ctx, file_field, vec![], Default::default());
+        (released, settled)
+    }
+
+    #[test]
+    fn b42_file_textedit_click_keeps_popup_open_then_real_open_action() {
+        // I62 repro: old ui.menu_button closed the popup upon focusing TextEdit.
+        // UNIT_EVENT through the actual production menu, NOT physical X11.
+        let directory = tempfile::tempdir().unwrap();
+        let second = directory.path().join("second-crlf.tex");
+        let untouched = "% Не менять\r\n\\OpaqueSecond{тест}\r\n";
+        std::fs::write(&second, untouched).unwrap();
+
+        let ctx = egui::Context::default();
+        let mut field = "figure.tex".to_owned();
+        let initial = frame(&ctx, &mut field, vec![], Default::default());
+        assert!(initial.trigger_rect.is_positive());
+        let (_, opened) = click(&ctx, &mut field, initial.trigger_rect.center());
+        assert!(opened.path_rect.is_some(), "File popup did not open");
+
+        let (_, focused) = click(&ctx, &mut field, opened.path_rect.unwrap().center());
+        assert!(
+            focused.path_rect.is_some(),
+            "clicking inside File TextEdit must not dismiss the popup"
+        );
+        let control = egui::Modifiers {
+            ctrl: true,
+            command: true,
+            ..Default::default()
+        };
+        frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Key {
+                key: egui::Key::A,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: control,
+            }],
+            control,
+        );
+        frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Key {
+                key: egui::Key::A,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: control,
+            }],
+            Default::default(),
+        );
+        let entered = frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Text("second-crlf.tex".into())],
+            Default::default(),
+        );
+        assert_eq!(
+            field, "second-crlf.tex",
+            "focused File TextEdit must replace the path"
+        );
+        assert!(entered.path_rect.is_some(), "typing must not close the menu");
+
+        let visible = frame(&ctx, &mut field, vec![], Default::default());
+        let open_rect = visible.open_rect.expect("Open button not visible after editing");
+        let (activated, closed) = click(&ctx, &mut field, open_rect.center());
+        assert_eq!(activated.action, Some(StudioFileAction::OpenPath));
+        assert!(closed.path_rect.is_none(), "Open must explicitly close File");
+        assert_eq!(std::fs::read(&second).unwrap(), untouched.as_bytes());
+        assert_eq!(Document::load(&second).unwrap().source, untouched);
     }
 }
