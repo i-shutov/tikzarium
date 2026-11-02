@@ -36,3 +36,5 @@ Lua-only графические расширения не объявляются
 Win10/M1/M4 acceptance и не завершённая GUI-поисковая строка.
 
 Проверка смыслового поиска: полные поля `help_ru` инструментов, параметров и библиотек индексируются из того же C-каталога. Например, `tikzarium-cli help "смещение и якоря"` находит `tikz.library.positioning` даже при отсутствии этих слов в коротком названии. При точном ID полное русское описание выводится отдельно от заголовка.
+
+B38 draft: egui inspector adds search over this same C catalogue and a four-library source connection panel. Do not mark real GUI acceptance before exact-head CI/X11 evidence; physical Win10/Mac NOT_RUN.

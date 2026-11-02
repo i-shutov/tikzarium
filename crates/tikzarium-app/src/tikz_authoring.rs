@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, ops::Range, sync::LazyLock};
 use tikzarium_extensions::primitives::{Catalog, Evidence, SourcePatch, ToolSpec};
+use tikzarium_extensions::project_disconnect::{self, DisconnectDecision, DisconnectPlan};
 use tikzarium_extensions::project_imports::{self, ImportDecision, ImportKind, ImportPlan};
 
 static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
@@ -57,6 +58,10 @@ pub fn spec(tool: Tool) -> &'static ToolSpec {
         .tool(tool.catalog_id())
         .expect("six reviewed catalogue IDs")
 }
+pub fn catalog() -> &'static Catalog {
+    &CATALOG
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
     pub x: f32,
@@ -370,6 +375,100 @@ fn dependency_plan(source: &str, tool: Tool, revision: u64) -> Result<ImportPlan
     }
 }
 
+/// Reuse C/N2's literal import and disconnect planners (not a TeX parser).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LibraryChange {
+    Connect,
+    Disconnect,
+}
+
+enum LibraryPlan {
+    Connect(ImportPlan),
+    Disconnect(DisconnectPlan),
+}
+impl LibraryPlan {
+    fn patch(&self) -> &SourcePatch {
+        match self {
+            Self::Connect(plan) => &plan.patch,
+            Self::Disconnect(plan) => &plan.patch,
+        }
+    }
+    fn apply(&self, source: &mut String, revision: &mut u64) -> Result<SourcePatch, String> {
+        match self {
+            Self::Connect(plan) => plan.apply(source, revision),
+            Self::Disconnect(plan) => plan.apply(source, revision),
+        }
+        .map_err(|error| error.to_string())
+    }
+}
+fn plan_library(
+    source: &str,
+    name: &str,
+    change: LibraryChange,
+    revision: u64,
+) -> Result<Option<LibraryPlan>, String> {
+    let imports = project_imports::inspect(source);
+    let target = imports.begin_document_target(revision).ok_or_else(|| {
+        format!(
+            "C/N2: {}",
+            imports
+                .uncertain_reason
+                .unwrap_or("нет подтверждённого якоря преамбулы")
+        )
+    })?;
+    match change {
+        LibraryChange::Connect => {
+            match project_imports::plan_import(source, target, ImportKind::TikzLibrary, name) {
+                ImportDecision::Proposed(plan) => Ok(Some(LibraryPlan::Connect(plan))),
+                ImportDecision::AlreadyLoaded => Ok(None),
+                ImportDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
+            }
+        }
+        LibraryChange::Disconnect => {
+            match project_disconnect::plan_library_disconnect(source, target, name) {
+                DisconnectDecision::Proposed(plan) => Ok(Some(LibraryPlan::Disconnect(plan))),
+                DisconnectDecision::AlreadyAbsent => Ok(None),
+                DisconnectDecision::Refused { reason } => Err(format!("C/N2: {reason}")),
+            }
+        }
+    }
+}
+
+/// Read-only exact before/after display of just the affected physical lines.
+pub fn library_proposal(
+    source: &str,
+    name: &str,
+    change: LibraryChange,
+) -> Result<Option<String>, String> {
+    let Some(plan) = plan_library(source, name, change, 0)? else {
+        return Ok(None);
+    };
+    let patch = plan.patch();
+    let start = source[..patch.range.start].rfind('\n').map_or(0, |i| i + 1);
+    let end = source[patch.range.end..]
+        .find('\n')
+        .map_or(source.len(), |i| patch.range.end + i);
+    let before = &source[start..end];
+    let mut after = before.to_owned();
+    after.replace_range(
+        patch.range.start - start..patch.range.end - start,
+        &patch.replacement,
+    );
+    let line = source[..start]
+        .bytes()
+        .filter(|byte| *byte == b'\n')
+        .count()
+        + 1;
+    Ok(Some(format!(
+        "@@ строка {line} · EOL {} @@\nБыло:\n{before}\nСтанет:\n{after}",
+        if source.contains("\r\n") {
+            "CRLF"
+        } else {
+            "LF"
+        }
+    )))
+}
+
 #[derive(Default)]
 pub struct Session {
     pub active: Option<Tool>,
@@ -463,6 +562,38 @@ impl Session {
         self.undo.push(inverse);
         Ok(())
     }
+    /// Confirm only a freshly re-planned C/N2 patch and push its inverse
+    /// onto the existing visual source Undo stack.
+    pub fn change_library(
+        &mut self,
+        source: &mut String,
+        name: &str,
+        change: LibraryChange,
+    ) -> Result<usize, String> {
+        self.sync(source)?;
+        let Some(plan) = plan_library(source, name, change, self.revision)? else {
+            return Err("Библиотека уже находится в требуемом состоянии".into());
+        };
+        let offset = plan.patch().range.start;
+        let line = source[..offset]
+            .bytes()
+            .filter(|byte| *byte == b'\n')
+            .count()
+            + 1;
+        let inverse = plan.apply(source, &mut self.revision)?;
+        self.observed_source.clone_from(source);
+        self.undo.push(inverse);
+        self.cancelled_pointer_capture |=
+            self.guide_pointer_armed || self.drag_start.is_some() || self.alt_selection_capture;
+        self.guide_pointer_armed = false;
+        self.drag_start = None;
+        self.alt_selection_capture = false;
+        self.status = format!(
+            "{name}: подтверждённая C/N2 правка преамбулы. Undo доступен, установка пакетов НЕ выполнялась"
+        );
+        Ok(line)
+    }
+
     pub fn choose(&mut self, source: &str, id: u64) -> Result<usize, String> {
         self.sync(source)?;
         let item = one_owned(source, id)?;
@@ -665,6 +796,85 @@ mod tests {
         let line = generate(Tool::Node, &draft, 3).unwrap();
         assert_eq!(owned(&line).len(), 1);
     }
+    #[test]
+    fn b38_connect_disconnect_four_libraries_preserves_crlf_macro_and_undo() {
+        let original = concat!(
+            "\\documentclass{standalone}\r\n",
+            "\\usepackage{tikz}\r\n",
+            "\\begin{document}\r\n",
+            "\\opaqueMacro{текст}\r\n",
+            "\\end{document}\r\n",
+        );
+        for name in ["arrows.meta", "positioning", "calc", "fit"] {
+            let mut source = original.to_owned();
+            let mut session = Session::default();
+            session.reset(&source);
+            let preview = library_proposal(&source, name, LibraryChange::Connect)
+                .unwrap()
+                .unwrap();
+            assert!(preview.contains(&format!("\\usetikzlibrary{{{name}}}")));
+            assert!(preview.contains("EOL CRLF"));
+            assert_eq!(source, original);
+            session
+                .change_library(&mut source, name, LibraryChange::Connect)
+                .unwrap();
+            assert!(source.contains(&format!("\\usetikzlibrary{{{name}}}\r\n")));
+            assert!(source.contains("\\opaqueMacro{текст}\r\n"));
+            assert!(
+                library_proposal(&source, name, LibraryChange::Connect)
+                    .unwrap()
+                    .is_none()
+            );
+            assert!(
+                library_proposal(&source, name, LibraryChange::Disconnect)
+                    .unwrap()
+                    .is_some()
+            );
+            session
+                .change_library(&mut source, name, LibraryChange::Disconnect)
+                .unwrap();
+            assert_eq!(source, original);
+            session.undo(&mut source).unwrap();
+            assert!(source.contains(&format!("\\usetikzlibrary{{{name}}}\r\n")));
+            session.undo(&mut source).unwrap();
+            assert_eq!(source, original);
+        }
+    }
+
+    #[test]
+    fn b38_shared_declaration_edit_and_opaque_preamble_fail_closed() {
+        let initial = "\\documentclass{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta,calc,fit}\n\\begin{document}\n\\someMacro{x}\n\\end{document}\n";
+        let mut source = initial.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let proposal = library_proposal(&source, "calc", LibraryChange::Disconnect)
+            .unwrap()
+            .unwrap();
+        assert!(proposal.contains("\\usetikzlibrary{arrows.meta,fit}"));
+        session
+            .change_library(&mut source, "calc", LibraryChange::Disconnect)
+            .unwrap();
+        assert!(source.contains("\\usetikzlibrary{arrows.meta,fit}"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, initial);
+        let opaque = initial.replace(
+            "\\usepackage{tikz}",
+            "\\conditionalMacro{x}\n\\usepackage{tikz}",
+        );
+        let preserved = opaque.clone();
+        let mut session = Session::default();
+        session.reset(&opaque);
+        let mut source = opaque;
+        assert!(library_proposal(&source, "fit", LibraryChange::Disconnect).is_err());
+        assert!(
+            session
+                .change_library(&mut source, "fit", LibraryChange::Disconnect)
+                .is_err()
+        );
+        assert_eq!(source, preserved);
+        assert!(!session.undo_available());
+    }
+
     #[test]
     fn library_activation_is_explicit_and_reversible() {
         let mut source = SOURCE.replace("\\usetikzlibrary{arrows.meta}\n", "");

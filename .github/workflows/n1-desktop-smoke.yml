@@ -8,6 +8,7 @@ on:
       - qa/i43-b31-compact-real-x11
       - qa/i26-b27-live-undo-x11
       - feat/b27-egui-undo-held-pointer-20261101
+      - qa/i54-b39-n2-n3-desktop-reaccept
       - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
@@ -63,11 +64,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify tested checkout and exact screenshot-reviewed app tree
+      - name: Verify exact B39 app source tree; prior B37 coordinates require independent visual reacceptance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'b855b7d8972b6663e0e764daa140c68a6b232fef'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0ebdd9e123dda4ea18024150cf284c905badcdb6'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q

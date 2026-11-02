@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "profile": "I51 B37 source-tree-pinned X11; B35 modal coordinates inherited, NOT screenshot-calibrated for B36",
+  "profile": "I54 B39 exact tree; inherited coordinates PROVISIONAL until actual X11 screenshot review",
   "source": [
     120,
     190
@@ -33,8 +33,8 @@
     536,
     429
   ],
-  "reviewed_app_tree_sha": "b855b7d8972b6663e0e764daa140c68a6b232fef",
-  "bootstrap_caveat": "B37 exact app/src tree Git-verified, B36 modal controls inherited from real Linux/X11; fail closed if positions drift. Independently inspect new modal/source/PDF PNG and fonts before acceptance. Physical Win10 and Mac ARM NOT_RUN.",
+  "reviewed_app_tree_sha": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
+  "bootstrap_caveat": "B39 tree exact; B37 UI clicks and modal positions provisional; only reviewed screenshots and saved TeX/PDF pass. Physical Win10/Mac NOT_RUN.",
   "modal_save_reviewed_rect": [
     465,
     416,
