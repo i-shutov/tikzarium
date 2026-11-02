@@ -1,0 +1,59 @@
+name: I61 B42 real Studio icon-to-native-source/PDF (independent D QA)
+on:
+  push:
+    branches: [qa/i61-b42-studio-source-pdf]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: i61-studio-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+jobs:
+  studio-full-vertical:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Exact B42 app source-tree lease (fail closed before GUI)
+        run: |
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '64df229392c03a99ca29238bcc2e5f422c4d7409'
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+          echo "TIKZARIUM_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          git diff --exit-code -- Cargo.lock
+      - name: Font-audit offline contract tests (NOT GUI)
+        run: python3 -m unittest discover -s scripts/tests -p test_qa_i61_studio_fonts.py -v
+      - name: Hosted Linux/X11 and external TeX Live XeLaTeX prerequisites
+        run: |
+          sudo apt-get update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
+            libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+          xelatex --version | head -n 2
+          command -v pdffonts
+      - name: Compile locked production egui binary, no QA stub
+        run: |
+          cargo build --locked -p tikzarium-app --bin tikzarium-app
+          git diff --exit-code -- Cargo.lock
+      - name: Real group icon, all six pointers, source Save and XeLaTeX PDF
+        run: |
+          mkdir -p "$RUNNER_TEMP/i61-runtime"
+          chmod 700 "$RUNNER_TEMP/i61-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/i61-runtime"
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/i61-openbox.log 2>&1 & python3 scripts/qa_i61_b42_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/i61-evidence"'
+      - name: Upload actual GUI screenshots, saved source, PDF, log and SHA ledger
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: i61-b42-source-pdf-${{ github.run_id }}
+          path: ${{ runner.temp }}/i61-evidence/
+          if-no-files-found: warn

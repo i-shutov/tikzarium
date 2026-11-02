@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+"""I61: real B42 Studio X11 group-click -> six native TikZ gestures -> saved TeX/PDF.
+
+Never infer PASS from a screenshot alone; this script requires actual process
+events and bytes that the running GUI persisted. Independent manual inspection
+of screenshots/PDF remains mandatory. Linux/Xvfb != physical Win10 or Mac ARM.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import subprocess
+import time
+
+from qa_n1_desktop import FIXTURE, original_preserved, owners
+
+# Candidate click coordinates are tied to the exact app/src Git tree and
+# previously inspected B42 bootstrap screenshots, not a general GUI contract.
+APP_TREE = "64df229392c03a99ca29238bcc2e5f422c4d7409"
+BUTTONS = [
+    ("line", (30, 150), (599, 169), (646, 350), (750, 377)),
+    ("rectangle", (30, 150), (653, 169), (681, 425), (765, 477)),
+    ("circle", (30, 150), (707, 169), (810, 351), (840, 351)),
+    ("cubic", (30, 150), (761, 169), (777, 470), (902, 460)),
+    ("arrow", (30, 199), (599, 216), (615, 535), (743, 552)),
+    ("node", (30, 248), (599, 266), (850, 550), (851, 550)),
+]
+
+
+def sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+
+def audit_embedded_fonts(output: str) -> list[str]:
+    """Require all PDF fonts embedded; parse the rightmost pdffonts columns.
+
+    Type may have spaces (CID TrueType). The five final columns are
+    emb, sub, uni, object, ID. One nonembedded font fails the audit.
+    """
+    rows = [line for line in output.splitlines()[2:] if line.strip()]
+    if not rows:
+        raise RuntimeError("No font records in pdffonts")
+    for line in rows:
+        columns = line.split()
+        flags = columns[-5:]
+        if (
+            len(columns) < 8 or len(flags) != 5
+            or any(flag.lower() not in ("yes", "no") for flag in flags[:3])
+            or not flags[3].isdigit() or not flags[4].isdigit()
+        ):
+            raise RuntimeError("Unparseable PDF font row: " + line)
+        if flags[0].lower() != "yes":
+            raise RuntimeError("Nonembedded PDF font: " + line)
+    return rows
+
+
+def run(*argv: str, timeout: int = 25) -> str:
+    result = subprocess.run(argv, capture_output=True, timeout=timeout, check=False)
+    if result.returncode:
+        raise RuntimeError(f"{argv[0]} exit {result.returncode}: "
+                           + result.stderr.decode("utf-8", "replace")[-1400:])
+    return result.stdout.decode("utf-8", "replace").strip()
+
+
+def wait(predicate, detail: str, seconds: float = 12.0) -> None:
+    until = time.monotonic() + seconds
+    while time.monotonic() < until:
+        if predicate():
+            return
+        time.sleep(0.20)
+    raise RuntimeError(detail)
+
+
+def paste(contents: bytes, path: Path) -> None:
+    path.write_bytes(contents)
+    # xclip backgrounds an X11 clipboard owner. Capturing its stdout/stderr
+    # via run() keeps inherited pipes open, causing a false 25s timeout.
+    # Do not capture the detached owner; match independently accepted I47 QA.
+    subprocess.run(["xclip", "-selection", "clipboard", "-i", str(path)],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                   timeout=8, check=True)
+    run("xdotool", "key", "--clearmodifiers", "ctrl+v")
+    time.sleep(0.28)
+
+
+def screenshot(out: Path, label: str) -> None:
+    filename = out / (label + ".png")
+    run("import", "-window", "root", str(filename), timeout=35)
+    if filename.stat().st_size < 5000:
+        raise RuntimeError(f"Empty X11 screenshot: {label}")
+
+
+def click(window: str, x: int, y: int) -> None:
+    # Reviewed screenshots show ROOT pixels. xdotool --window instead uses
+    # client-relative coordinates and double-counts the 20px WM titlebar.
+    run("xdotool", "mousemove", "--sync", str(x), str(y), "click", "1")
+    time.sleep(0.20)
+
+
+def key(value: str) -> None:
+    run("xdotool", "key", "--clearmodifiers", value)
+    time.sleep(0.18)
+
+
+def gesture(window: str, start: tuple[int, int], end: tuple[int, int]) -> None:
+    run("xdotool", "mousemove", "--sync", str(start[0]), str(start[1]),
+        "mousedown", "1")
+    time.sleep(0.15)
+    run("xdotool", "mousemove", "--sync", str(end[0]), str(end[1]))
+    time.sleep(0.15)
+    run("xdotool", "mouseup", "1")
+    time.sleep(0.35)
+
+
+def main() -> int:
+    arg = argparse.ArgumentParser(description=__doc__)
+    arg.add_argument("--app", required=True, type=Path)
+    arg.add_argument("--out", required=True, type=Path)
+    args = arg.parse_args()
+    out = args.out.resolve()
+    if out.exists() and any(out.iterdir()):
+        arg.error("I61 requires an empty evidence directory")
+    out.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("TIKZARIUM_APP_TREE_SHA") != APP_TREE:
+        arg.error("B42 app/source tree changed: re-review screenshot coordinates first")
+    # The real app's default file field is "figure.tex" (reviewed screenshot).
+    # Use an isolated GUI process working directory instead of an unproved
+    # popup path TextEdit click. The app must write this .tex via its Save icon.
+    source = out / "figure.tex"
+    fixture = FIXTURE.encode("utf-8")
+    report = {
+        "schema_version": 1, "kind": "I61_B42_REAL_STUDIO_GESTURES",
+        "status": "FAIL", "gui": "LINUX_X11_HOSTED",
+        "app_tree_sha": APP_TREE,
+        "source_head_sha": os.environ.get("TIKZARIUM_SOURCE_SHA", "UNKNOWN"),
+        "host": platform.platform(), "physical_win10_miktex": "NOT_RUN",
+        "physical_mac_m1_m4": "NOT_RUN",
+        "manual_image_review": "NOT_RUN", "gui_save": "NOT_RUN",
+        "six_real_tools": "NOT_RUN", "real_xelatex_pdf": "NOT_RUN",
+        "gui_open_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
+        "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
+        "steps": [],
+    }
+    process = None
+    app_log = (out / "app.log").open("wb")
+    try:
+        env = os.environ.copy()
+        env.update({
+            "XDG_CONFIG_HOME": str(out / "config"),
+            "XDG_DATA_HOME": str(out / "data"),
+            "XDG_CACHE_HOME": str(out / "cache"),
+            "LIBGL_ALWAYS_SOFTWARE": "1",
+            "WINIT_UNIX_BACKEND": "x11",
+        })
+        env.pop("WAYLAND_DISPLAY", None)
+        process = subprocess.Popen([str(args.app.resolve(strict=True))],
+                                   cwd=out, env=env, stdout=app_log, stderr=app_log)
+        found = None
+        until = time.monotonic() + 45
+        while time.monotonic() < until:
+            if process.poll() is not None:
+                raise RuntimeError(f"Studio process exited {process.returncode}")
+            match = subprocess.run(
+                ["xdotool", "search", "--onlyvisible", "--pid", str(process.pid),
+                 "--name", "TikZarium"],
+                capture_output=True, timeout=5, check=False)
+            if match.returncode == 0 and match.stdout.strip():
+                found = match.stdout.decode().splitlines()[-1]
+                break
+            time.sleep(0.25)
+        if not found:
+            raise RuntimeError("No real visible Studio process window")
+        run("xdotool", "windowmove", found, "0", "0")
+        run("xdotool", "windowsize", "--sync", found, "1366", "768")
+        run("xdotool", "windowactivate", "--sync", found)
+        time.sleep(1.6)
+        report["window_id"] = found
+        report["app_sha256"] = sha(args.app)
+        screenshot(out, "01-real-studio")
+
+        # Real File-popup screenshot confirms "figure.tex" as app default.
+        # GUI starts in out/, so clicking real Save writes out/figure.tex.
+        # Popup's editable custom path is separately NOT_RUN.
+        click(found, 321, 40)
+        screenshot(out, "02-file-menu-default-path")
+        click(found, 130, 209)
+        key("ctrl+a")
+        paste(fixture, out / "clipboard-source.txt")
+        screenshot(out, "04-source-pasted")
+        click(found, 177, 39)
+        wait(source.is_file, "Studio toolbar Save did not create default figure.tex in isolated cwd")
+        if source.read_bytes() != fixture:
+            raise RuntimeError("Real GUI Save altered opaque Unicode source")
+        report["file_menu_path_edit"] = "NOT_RUN_DEFAULT_FIGURE_TEX_USED"
+        report["gui_save"] = "PASS_REAL_X11_EXACT_BYTES"
+        report["steps"].append({"case": "paste_and_save", "sha256": sha(source)})
+        screenshot(out, "05-source-saved")
+
+        for index, (tool, group, tool_button, start, end) in enumerate(BUTTONS, 1):
+            before = source.read_bytes()
+            count = len(owners(before))
+            click(found, *group)
+            screenshot(out, f"{index:02d}-{tool}-group-popup")
+            click(found, *tool_button)
+            screenshot(out, f"{index:02d}-{tool}-selected")
+            gesture(found, start, end)
+            screenshot(out, f"{index:02d}-{tool}-pointer")
+            # Save is the actual Studio toolbar button, no synthetic file edits.
+            click(found, 177, 39)
+            time.sleep(0.5)
+            after = source.read_bytes()
+            authored = owners(after)
+            if len(authored) != count + 1 or authored[-1]["tool"] != tool:
+                raise RuntimeError(
+                    f"{tool}: real group/tool/pointer did not persist a new "
+                    f"native owned command (before={count}, after={authored})")
+            if not original_preserved(fixture, after):
+                raise RuntimeError(f"{tool}: source bytes outside C command changed")
+            if tool == "cubic" and b".. controls " not in after:
+                raise RuntimeError("Cubic did not produce native TikZ Bezier")
+            report["steps"].append({
+                "case": "real_group_and_pointer_" + tool,
+                "source_sha256": sha(source),
+                "owner_count": len(authored),
+                "owner_id": authored[-1]["id"],
+            })
+            screenshot(out, f"{index:02d}-{tool}-saved")
+
+        report["six_real_tools"] = "PASS_REAL_X11_SAVED_SOURCE"
+        key("F1")
+        screenshot(out, "20-f1-help")
+        key("F1")
+        screenshot(out, "21-f1-closed")
+        report["f1_keystrokes"] = "SENT_REAL_X11_VISUAL_REVIEW_REQUIRED"
+        report["final_source_sha256"] = sha(source)
+        click(found, 219, 39)  # Real Studio Build icon, external XeLaTeX.
+        pdf = source.with_suffix(".pdf")
+        # The app may retain the build PDF in memory until Export; Build success
+        # alone must not be interpreted as a persisted generated file.
+        time.sleep(3.0)
+        screenshot(out, "22-build-status")
+        click(found, 73, 77)  # Studio PDF tab, code pane still visible.
+        time.sleep(1.5)
+        screenshot(out, "23-pdf-view-before-export")
+        click(found, 259, 39)  # Real export action.
+        wait(pdf.is_file, "Studio Export did not write a real XeLaTeX PDF", 20)
+        if sha(source) != report["final_source_sha256"]:
+            raise RuntimeError("Saved source changed during PDF export")
+        metadata = run("pdfinfo", str(pdf))
+        if "Pages:           1" not in metadata:
+            raise RuntimeError("Expected one-page exact XeLaTeX PDF")
+        run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png",
+            "-r", "120", str(pdf), str(out / "24-exact-pdf"))
+        text = run("pdftotext", "-enc", "UTF-8", str(pdf), "-")
+        if "Не менять" not in text:
+            raise RuntimeError("Cyrillic opaque macro absent from real PDF")
+        fonts = run("pdffonts", str(pdf))
+        rows = audit_embedded_fonts(fonts)
+        (out / "pdffonts.txt").write_text(fonts + "\n", encoding="utf-8")
+        (out / "pdfinfo.txt").write_text(metadata + "\n", encoding="utf-8")
+        if not any("DejaVu" in line for line in rows):
+            raise RuntimeError("Expected DejaVu embedded font absent")
+        report["real_xelatex_pdf"] = "PASS_EXTERNAL_XELATEX_PDF_CYRILLIC_AND_ALL_FONTS_EMBEDDED"
+        report["pdf_sha256"] = sha(pdf)
+        screenshot(out, "25-pdf-exported")
+        report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
+    except Exception as exc:
+        report["error"] = f"{type(exc).__name__}: {exc}"
+    finally:
+        if process:
+            process.terminate()
+            try:
+                process.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+        app_log.close()
+        report["files"] = {
+            file.name: sha(file) for file in sorted(out.iterdir())
+            if file.is_file() and file.name != "report.json"
+        }
+        (out / "report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    print(json.dumps(report, ensure_ascii=False))
+    return 0 if report["status"].startswith("PASS_AUTOMATED") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

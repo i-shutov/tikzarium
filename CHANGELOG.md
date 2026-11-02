@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — I61 independent real B42 acceptance (candidate; NOT_RUN)
+
+- Re-lease existing #92 stacked QA onto B42 production HEAD `91e2d8201cd0` with native C six-gesture X11 driver; no changes to A/B/C/E/F production. Exact app-tree provenance remains fail-closed.
+- Replace broken doubled-escape `pdffonts` parser with all-font embedding audit; four offline positive/negative tests run before installing external XeLaTeX. Actual GUI source/Save/Open/Undo/help/PDF is NOT_RUN until new exact-head artifact acceptance. Physical Win10/Mac ARM NOT_RUN.
+
+
 ## Unreleased — B42 redesigned Studio and dedicated user's MiKTeX Windows Server QA (PENDING)
 
 - Follow-up from real B42 X11 screenshot review: restore a dark Midnight default and readable 14pt source/body fonts, relocate grouped palette away from source, search the live C registry instead of hard-coded packages, and keep manual PDF zoom stable when selecting PDF. Exact-head reacceptance PENDING.
