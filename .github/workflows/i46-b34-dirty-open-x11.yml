@@ -62,7 +62,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '0ebdd9e123dda4ea18024150cf284c905badcdb6'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf'
       - name: Install external Linux X11, XeLaTeX and PDF prerequisites
         run: |
           sudo apt-get update -q

@@ -13,3 +13,7 @@ One substantive acceptance vertical: run the same production egui panel handler 
 ## Explicit limits
 
 UNIT_EVENT is not a host GUI test. Linux TeX Live is not Windows MiKTeX. The catalogue does not advertise positioning/calc/fit as implemented visual adapters; no solver, package installer, extra catalogue or substituted engine is introduced. Real-X11 clicks remain proven only for positioning; physical Win10 and Mac ARM NOT_RUN. No new exact-head CI or artifact had run at the time of writing; merge requires its own visual inspection and later distinct postmerge evidence.
+
+## First exact-head CI and repair
+
+The first PR #84 commit `2b73fdc` was **not accepted**: n1-authoring workflow invalid (zero jobs), Rust fmt failed on three OS, and two X11 jobs rejected obsolete exact app/src tree before opening egui. Distinguish CI schema and test-code tree mismatches from product failure. Next repair keeps the same PR, restores the entire workflow from known-good main with a simple script call, formats Rust, re-pins the three QA workflows and respective exact-tree profiles. All new head CI and manual artifact reviews NOT_RUN at repair authoring.

@@ -1,7 +1,8 @@
-## Unreleased — I56 N2 all-four library source-event and XeLaTeX evidence (exact CI NOT_RUN)
+## Unreleased — I56 N2 four-library event / PDF QA (repaired exact CI NOT_RUN)
 
 - Extend the real egui handler Context::run(RawInput) Connect → Disconnect → Undo → disk byte-roundtrip test from one arrows.meta row to all four C-catalogue libraries (arrows.meta, positioning, calc, fit). Each starts in its own collapsed UI context, verifying exactly one CRLF import and unchanged Cyrillic/opaque source. This is UNIT_EVENT, **not hosted X11 or physical desktop**.
 - Generate all four unchanged C-owned TeX examples using n2-library-fixture. Compile via external Linux TeX Live XeLaTeX (not MiKTeX), no shell escape, inspect PDF pages, extracted labels, font embedding where applicable, PNG raster and unchanged source SHA-256. Preserve all files under existing N1 evidence artifact.
+- I56 initial HEAD had an invalid YAML workflow and rustfmt failures; X11 safety checks stopped at old app/src tree guards before GUI. Repaired in the same I56 PR: short YAML delegates to separately tested script, Rust formatted, three X11 workflow guards and their JSON profile leases aligned to exact test-only app tree `c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf`. No X11 status inferred from the old red preflight.
 - No TeX parser, solver, package auto-installer, second help catalogue or engine fallback. Exact-head CI, manual artifact review, main merge and postmerge CI **NOT_RUN at authoring**. Existing X11 library workflow proves positioning only; physical Windows 10/MiKTeX and Mac ARM/XeLaTeX remain **NOT_RUN**.
 
 ## Unreleased — I55 exact-branch/postmerge real-X11 N2+N3 QA (new CI NOT_RUN)

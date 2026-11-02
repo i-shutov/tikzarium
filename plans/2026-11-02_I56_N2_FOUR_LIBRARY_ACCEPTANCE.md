@@ -20,3 +20,7 @@ The native egui panel has four C-owned library imports: arrows.meta, positioning
 5. Before any merge check current main/head, every required CI gate, manual artifact review and expected_head_sha; run new postmerge CI on main.
 
 At authorship all new evidence gates NOT_RUN. This block expands N2 acceptance, does not implement N4 packs.
+
+## Repair/CI ownership
+
+The I56 test-only change alters the app/src Git tree, so I46/I47/I53 X11 workflows and coordinate profiles must be deliberately repinned to that new tree without changing production UI. The first I56 commit failed rustfmt/YAML and two preflight leases. Repair in the same PR, rerun exact HEAD, inspect PDF/PNG artifacts before merge. New acceptance at repair authorship NOT_RUN.
