@@ -2187,8 +2187,13 @@ mod tests {
                     vec![egui::Event::PointerMoved(end)],
                     width,
                 );
-                let (line, _) =
-                    b42_studio_event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)], width);
+                let (line, _) = b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![primary(end, false)],
+                    width,
+                );
                 let line = line.expect("Studio pointer release must focus authored command");
                 let owned = tikz_authoring::owned(&source);
                 assert_eq!(owned.len(), 1, "{tool:?}: missing or duplicate C command");
