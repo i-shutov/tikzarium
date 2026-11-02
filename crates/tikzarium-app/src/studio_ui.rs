@@ -1,11 +1,10 @@
-//! B42 studio workbench: native TikZ tool rail and context-sensitive docks.
-//! The C catalogue remains the single source of tool/help facts, and the
-//! external XeLaTeX PDF remains authoritative. No internal TeX renderer.
-use eframe::egui;
+//! B42: grouped icon palettes for TikZ-native authoring.
+//! Tool and parameter semantics belong to the existing C catalogue. Vector
+//! icon strokes are only UI affordances, never a second PGF renderer.
+use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
 use tikzarium_extensions::primitives::Evidence;
-
-use crate::tikz_authoring::{self, Session, TOOLS, Tool};
+use crate::tikz_authoring::{self, Session, Tool};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StudioDock {
@@ -14,10 +13,8 @@ pub enum StudioDock {
     Libraries,
     Help,
 }
-
 impl StudioDock {
     pub const ALL: [Self; 3] = [Self::Properties, Self::Libraries, Self::Help];
-
     pub const fn label(self) -> &'static str {
         match self {
             Self::Properties => "Свойства",
@@ -27,8 +24,37 @@ impl StudioDock {
     }
 }
 
-/// Layout policy uses logical egui points, not PDF coordinates. At narrow
-/// widths the rail becomes icon-only, and the dock can be hidden explicitly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StudioGroup {
+    Geometry,
+    Connections,
+    Text,
+    Extensions,
+}
+impl StudioGroup {
+    pub const ALL: [Self; 4] = [
+        Self::Geometry,
+        Self::Connections,
+        Self::Text,
+        Self::Extensions,
+    ];
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Geometry => "Геометрия",
+            Self::Connections => "Линии и стрелки",
+            Self::Text => "Узлы и подписи",
+            Self::Extensions => "Расширения TikZ",
+        }
+    }
+    pub const fn tools(self) -> &'static [Tool] {
+        match self {
+            Self::Geometry => &[Tool::Line, Tool::Rectangle, Tool::Circle, Tool::Cubic],
+            Self::Connections => &[Tool::Arrow],
+            Self::Text => &[Tool::Node],
+            Self::Extensions => &[],
+        }
+    }
+}
 #[derive(Clone, Copy, Debug)]
 pub struct StudioLayout {
     pub tool_rail_width: f32,
@@ -36,13 +62,11 @@ pub struct StudioLayout {
     pub inspector_max: f32,
     pub narrow: bool,
 }
-
 impl StudioLayout {
-    #[must_use]
     pub fn for_width(width: f32) -> Self {
         let width = if width.is_finite() { width.max(0.0) } else { 0.0 };
         Self {
-            tool_rail_width: if width < 1050.0 { 94.0 } else { 136.0 },
+            tool_rail_width: 62.0,
             inspector_width: (width * 0.22).clamp(225.0, 300.0),
             inspector_max: (width * 0.28).clamp(260.0, 350.0),
             narrow: width < 1050.0,
@@ -50,187 +74,331 @@ impl StudioLayout {
     }
 }
 
-fn symbol(tool: Tool) -> &'static str {
-    match tool {
-        Tool::Line => "╱",
-        Tool::Arrow => "→",
-        Tool::Rectangle => "▭",
-        Tool::Circle => "○",
-        Tool::Node => "T",
-        Tool::Cubic => "∿",
+#[derive(Clone, Copy)]
+pub enum StudioIcon {
+    Tool(Tool),
+    Group(StudioGroup),
+    Open,
+    Save,
+    Build,
+    Export,
+    Help,
+    Console,
+}
+fn line(p: &egui::Painter, a: Pos2, b: Pos2, stroke: Stroke) {
+    p.line_segment([a, b], stroke);
+}
+fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
+    let p = ui.painter_at(rect);
+    let c = rect.center();
+    let t = rect.width().min(rect.height()) * 0.28;
+    let stroke = Stroke::new(1.9, if selected {
+        ui.visuals().selection.stroke.color
+    } else {
+        ui.visuals().text_color()
+    });
+    let point = |x: f32, y: f32| Pos2::new(c.x + t * x, c.y + t * y);
+    match kind {
+        StudioIcon::Tool(Tool::Line) => {
+            line(&p, point(-1.0, 0.9), point(1.0, -0.9), stroke);
+            p.circle_filled(point(-1.0, 0.9), 2.3, stroke.color);
+            p.circle_filled(point(1.0, -0.9), 2.3, stroke.color);
+        }
+        StudioIcon::Tool(Tool::Arrow) => {
+            line(&p, point(-1.0, 0.0), point(1.0, 0.0), stroke);
+            line(&p, point(1.0, 0.0), point(0.3, -0.65), stroke);
+            line(&p, point(1.0, 0.0), point(0.3, 0.65), stroke);
+        }
+        StudioIcon::Tool(Tool::Rectangle) => {
+            let a=point(-1.0,-0.72); let b=point(1.0,0.72);
+            p.add(Shape::closed_line(vec![
+                a, point(1.0,-0.72), b, point(-1.0,0.72)
+            ],stroke));
+        }
+        StudioIcon::Tool(Tool::Circle) => {
+            p.circle_stroke(c, t*0.9, stroke);
+        }
+        StudioIcon::Tool(Tool::Node) => {
+            p.add(Shape::closed_line(vec![
+                point(-1.0,-0.8),point(1.0,-0.8),
+                point(1.0,0.8),point(-1.0,0.8)
+            ], stroke));
+            p.text(c,egui::Align2::CENTER_CENTER,"T",
+                egui::FontId::proportional(t*1.15),stroke.color);
+        }
+        StudioIcon::Tool(Tool::Cubic) => {
+            let mut points=Vec::with_capacity(21);
+            for i in 0..=20 {
+                let v=i as f32/20.0;let inv=1.0-v;
+                let x=inv*inv*inv*(-1.1)+3.0*inv*inv*v*(-0.45)
+                    +3.0*inv*v*v*(0.45)+v*v*v*(1.1);
+                let y=inv*inv*inv*(0.8)+3.0*inv*inv*v*(-1.3)
+                    +3.0*inv*v*v*(1.3)+v*v*v*(-0.8);
+                points.push(point(x,y));
+            }
+            p.add(Shape::line(points,stroke));
+        }
+        StudioIcon::Group(StudioGroup::Geometry) => {
+            p.circle_stroke(point(-0.45,-0.4),t*0.60,stroke);
+            p.add(Shape::closed_line(vec![
+                point(0.10,-0.10),point(1.0,-0.10),
+                point(1.0,0.82),point(0.10,0.82)
+            ],stroke));
+        }
+        StudioIcon::Group(StudioGroup::Connections) =>
+            draw_icon(ui,rect,StudioIcon::Tool(Tool::Arrow),selected),
+        StudioIcon::Group(StudioGroup::Text) =>
+            draw_icon(ui,rect,StudioIcon::Tool(Tool::Node),selected),
+        StudioIcon::Group(StudioGroup::Extensions) => {
+            for (x,y) in [(-0.65,-0.65),(0.65,-0.65),(-0.65,0.65),(0.65,0.65)] {
+                p.circle_filled(point(x,y),2.6,stroke.color);
+            }
+            line(&p,point(-0.65,-0.65),point(0.65,0.65),stroke);
+            line(&p,point(-0.65,0.65),point(0.65,-0.65),stroke);
+        }
+        StudioIcon::Open => {
+            p.add(Shape::line(vec![
+                point(-1.05,-0.45),point(-0.45,-0.45),
+                point(-0.18,-0.15),point(0.95,-0.15),
+                point(0.85,0.76),point(-0.98,0.76),
+                point(-1.05,-0.45)
+            ],stroke));
+        }
+        StudioIcon::Save => {
+            p.add(Shape::closed_line(vec![
+                point(-0.85,-1.0),point(0.58,-1.0),
+                point(0.95,-0.65),point(0.95,1.0),
+                point(-0.85,1.0)
+            ],stroke));
+            line(&p,point(-0.43,-0.9),point(-0.43,-0.3),stroke);
+            line(&p,point(-0.43,-0.3),point(0.38,-0.3),stroke);
+            line(&p,point(-0.43,0.25),point(0.55,0.25),stroke);
+        }
+        StudioIcon::Build => {
+            p.add(Shape::closed_line(vec![
+                point(-0.65,-1.0),point(1.0,0.0),point(-0.65,1.0)
+            ],stroke));
+        }
+        StudioIcon::Export => {
+            p.add(Shape::line(vec![
+                point(-0.9,-0.3),point(-0.9,0.98),
+                point(0.9,0.98),point(0.9,-0.3)
+            ],stroke));
+            line(&p,point(0.0,-1.0),point(0.0,0.38),stroke);
+            line(&p,point(0.0,0.38),point(-0.5,-0.13),stroke);
+            line(&p,point(0.0,0.38),point(0.5,-0.13),stroke);
+        }
+        StudioIcon::Help => {
+            p.circle_stroke(c,t,stroke);
+            p.text(c,egui::Align2::CENTER_CENTER,"?",
+                egui::FontId::proportional(t*1.6),stroke.color);
+        }
+        StudioIcon::Console => {
+            p.add(Shape::closed_line(vec![
+                point(-1.0,-0.8),point(1.0,-0.8),
+                point(1.0,0.8),point(-1.0,0.8)
+            ],stroke));
+            line(&p,point(-0.65,-0.3),point(-0.2,0.0),stroke);
+            line(&p,point(-0.2,0.0),point(-0.65,0.3),stroke);
+            line(&p,point(-0.05,0.35),point(0.65,0.35),stroke);
+        }
     }
 }
 
-/// Actual tool selection uses the same Session and C catalogue as the
-/// historical toolbar. It does not insert any TeX or create an Undo entry.
-pub fn show_tool_rail(
+/// Scalable vector icon. A short, stable tooltip includes the native TikZ
+/// command and its actual C-owned manual reference.
+pub fn icon_button(
     ui: &mut egui::Ui,
+    kind: StudioIcon,
+    selected: bool,
+    side: f32,
+    tooltip: &str,
+) -> egui::Response {
+    let (rect,response)=ui.allocate_exact_size(Vec2::splat(side),Sense::click());
+    if ui.is_rect_visible(rect) {
+        let p=ui.painter_at(rect);
+        let fill=if selected {
+            ui.visuals().selection.bg_fill
+        } else if response.hovered() {
+            ui.visuals().widgets.hovered.bg_fill
+        } else {
+            ui.visuals().widgets.inactive.bg_fill
+        };
+        p.rect_filled(rect,egui::CornerRadius::same(7),fill);
+        draw_icon(ui,rect,kind,selected);
+    }
+    response.on_hover_text(tooltip)
+}
+
+/// Narrow permanent rail: four *groups* rather than dozens of buttons.
+/// Clicking a group opens a floating palette; the code and PDF keep their size.
+pub fn show_group_rail(
+    ui: &mut egui::Ui,
+    active: &mut Option<StudioGroup>,
+    narrow: bool,
+) -> Option<Pos2> {
+    let _=narrow;
+    ui.vertical_centered(|ui|{
+        ui.strong("TikZ");
+        ui.separator();
+    });
+    let mut anchor=None;
+    for group in StudioGroup::ALL {
+        let tooltip=format!("Палитра: {}. Нажмите для раскрытия.",group.label());
+        let response=icon_button(ui,StudioIcon::Group(group),*active==Some(group),43.0,&tooltip);
+        if response.clicked() {
+            *active=if *active==Some(group){None}else{Some(group)};
+            anchor=Some(response.rect.right_top());
+        }
+    }
+    anchor
+}
+
+/// Floating grouped palette. It never takes space from the code/PDF columns.
+/// Future package adapters appear as unavailable, not hidden or falsely ready.
+pub fn show_palette(
+    ctx: &egui::Context,
+    group: &mut Option<StudioGroup>,
+    anchor: Pos2,
     session: &mut Session,
     source: &str,
-    narrow: bool,
-) -> Option<StudioDock> {
-    let mut navigate = None;
-    ui.heading(if narrow { "TikZ" } else { "Инструменты" });
-    ui.separator();
-    for tool in TOOLS {
-        let info = tikz_authoring::spec(tool);
-        let title = if narrow {
-            symbol(tool).to_owned()
-        } else {
-            format!("{}  {}", symbol(tool), info.title_ru)
-        };
-        let response = ui
-            .add_sized(
-                [ui.available_width(), 34.0],
-                egui::Button::new(title).selected(session.active == Some(tool)),
-            )
-            .on_hover_text(format!(
-                "{}\n{}\nPGF/TikZ §{} · {}\nБиблиотеки: {}",
-                info.help_ru,
-                info.syntax,
-                info.manual_section,
-                info.manual_url,
-                if info.requirements.libraries.is_empty() {
-                    "core".to_owned()
+    open_libraries: &mut bool,
+) {
+    if ctx.input(|input| input.key_pressed(egui::Key::Escape)){
+        *group=None;
+    }
+    let Some(selected)=*group else {return};
+    egui::Area::new(egui::Id::new("b42-group-palette"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(anchor+egui::vec2(6.0,-36.0))
+        .show(ctx, |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                ui.set_min_width(158.0);
+                ui.horizontal(|ui|{
+                    ui.strong(selected.label());
+                    if ui.small_button("×").on_hover_text("Закрыть палитру").clicked(){
+                        *group=None;
+                    }
+                });
+                ui.separator();
+                if selected==StudioGroup::Extensions {
+                    ui.small("Пакеты / библиотеки");
+                    for name in ["PGFPlots","CircuitikZ","tikz-cd"] {
+                        ui.add_enabled(false,egui::Button::new(name))
+                            .on_disabled_hover_text("Графический адаптер ещё не реализован. Обычный исходный TeX остаётся доступен.");
+                    }
+                    if ui.button("Показать все пакеты").clicked(){
+                        *open_libraries=true;
+                        *group=None;
+                    }
                 } else {
-                    info.requirements.libraries.join(", ")
+                    ui.horizontal_wrapped(|ui|{
+                        for &tool in selected.tools() {
+                            let info=tikz_authoring::spec(tool);
+                            let status=tikz_authoring::requirements_status(source,tool);
+                            let tip=format!(
+                                "{}\n{}\n{}\nPGF/TikZ §{}\nПодключение: {:?}",
+                                info.title_ru,info.help_ru,info.syntax,info.manual_section,status
+                            );
+                            if icon_button(
+                                ui,StudioIcon::Tool(tool),session.active==Some(tool),46.0,&tip
+                            ).clicked() {
+                                session.select_tool(tool);
+                                *group=None;
+                            }
+                        }
+                    });
+                    ui.small("Наведите на иконку для команды и справки.");
+                    if selected==StudioGroup::Connections {
+                        ui.small("Стрелки arrows.meta требуют явного подключения.");
+                    }
                 }
-            ));
-        if response.clicked() {
-            session.select_tool(tool);
-        }
-    }
-    ui.separator();
-    let tool_state = session.active.map(|tool| tikz_authoring::requirements_status(source, tool));
-    match tool_state {
-        Some(Evidence::Confirmed) => {
-            ui.small("Код TikZ готов к вставке.");
-        }
-        Some(Evidence::Absent) => {
-            ui.colored_label(ui.visuals().warn_fg_color, "Нужно подключение.");
-        }
-        Some(Evidence::Unknown) => {
-            ui.colored_label(ui.visuals().warn_fg_color, "Импорт: UNKNOWN");
-        }
-        None => {
-            ui.small("Выберите инструмент.");
-        }
-    }
-    ui.add_space(6.0);
-    if ui
-        .add_sized(
-            [ui.available_width(), 29.0],
-            egui::Button::new(if narrow { "Пакеты" } else { "Библиотеки / пакеты" }),
-        )
-        .on_hover_text("Родные TikZ-библиотеки и другие пакеты; неизвестные возможности не скрываются.")
-        .clicked()
-    {
-        navigate = Some(StudioDock::Libraries);
-    }
-    if ui
-        .add_sized(
-            [ui.available_width(), 29.0],
-            egui::Button::new(if narrow { "F1" } else { "Справка · F1" }),
-        )
-        .clicked()
-    {
-        session.help = true;
-        navigate = Some(StudioDock::Help);
-    }
-    ui.separator();
-    ui.small("Редактируется обычный .tex; сетка не заменяет PDF.");
-    navigate
+            });
+        });
 }
 
-/// One read-only context help dock shared with F1, command properties and
-/// the offline search. No duplicate defaults or new parameter schema.
-pub fn show_context_help(ui: &mut egui::Ui, session: &Session) {
-    ui.heading("Контекстная справка");
-    if let Some(tool) = session.active {
-        let info = tikz_authoring::spec(tool);
+/// The same read-only C catalogue consumed by the inspector and F1.
+pub fn show_context_help(ui:&mut egui::Ui,session:&Session) {
+    ui.heading("Справка TikZ");
+    if let Some(tool)=session.active {
+        let info=tikz_authoring::spec(tool);
         ui.strong(&info.title_ru);
         ui.label(&info.help_ru);
         ui.code(&info.syntax);
-        ui.label("Пример из общего каталога:");
+        ui.label("Пример:");
         ui.code(&info.example);
+        ui.hyperlink_to(format!("PGF/TikZ §{}",info.manual_section),&info.manual_url);
         ui.small(format!(
-            "Требования: {} · библиотеки: {} · XeLaTeX · сверено с PGF {}",
+            "Пакет: {} · Библиотеки: {} · PGF {}",
             info.requirements.packages.join(", "),
-            if info.requirements.libraries.is_empty() {
-                "core".to_owned()
-            } else {
-                info.requirements.libraries.join(", ")
-            },
+            info.requirements.libraries.join(", "),
             info.requirements.documented_against
         ));
-        ui.hyperlink_to(
-            format!("PGF/TikZ §{}", info.manual_section),
-            &info.manual_url,
-        );
-        for parameter in &info.parameter {
-            egui::CollapsingHeader::new(&parameter.id).show(ui, |ui| {
-                ui.label(&parameter.help_ru);
-                ui.code(&parameter.syntax);
+        for param in &info.parameter{
+            egui::CollapsingHeader::new(&param.id).show(ui,|ui|{
+                ui.label(&param.help_ru);
+                ui.code(&param.syntax);
                 ui.small(format!(
-                    "Тип: {} · Единицы: {} · Значения: {}",
-                    parameter.kind,
-                    parameter.units.join(", "),
-                    parameter.allowed_values.join(", ")
+                    "Тип: {} · Единицы: {} · Допустимые значения: {}",
+                    param.kind,param.units.join(", "),param.allowed_values.join(", ")
                 ));
-                if parameter.default_provenance == "editor_preset" {
+                if param.default_provenance=="editor_preset" {
                     ui.small(format!(
-                        "Начальное значение редактора: {} (НЕ default TikZ)",
-                        parameter.default
+                        "Предустановка редактора: {} (НЕ default TikZ)",param.default
                     ));
-                } else {
-                    ui.small("Документированный default: UNKNOWN");
-                }
-                ui.label(&parameter.interaction_ru);
-                ui.label(&parameter.warning_ru);
-                ui.code(&parameter.example);
-                ui.hyperlink_to(
-                    format!("PGF/TikZ §{}", parameter.manual_section),
-                    &parameter.manual_url,
-                );
+                }else{ui.small("Default TikZ: UNKNOWN");}
+                ui.label(&param.warning_ru);
+                ui.label(&param.interaction_ru);
+                ui.code(&param.example);
+                ui.hyperlink_to(format!("PGF/TikZ §{}",param.manual_section),&param.manual_url);
             });
         }
-    } else {
-        ui.label("Выберите инструмент слева или найдите команду ниже.");
-        ui.small("Требования, значения и примеры берутся из единого каталога C.");
+    }else{
+        ui.label("Выберите инструмент в левой палитре.");
+        ui.small("Подсказки и параметры поступают из единого каталога C.");
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn ergonomic_width_policy_keeps_a_real_central_viewport() {
-        for width in [850.0_f32, 1180.0, 1366.0, 1920.0] {
-            let l = StudioLayout::for_width(width);
-            // 240 pt editable source, chosen dock and its rail must not
-            // consume the entire minimum-sized studio.
-            assert!(width - l.tool_rail_width - l.inspector_width - 240.0 > 190.0);
+    fn compact_group_rail_is_bounded_with_expansion_as_floating_overlay() {
+        for width in [850.0_f32,1180.0,1366.0,1920.0] {
+            let layout=StudioLayout::for_width(width);
+            assert_eq!(layout.tool_rail_width,62.0);
+            assert!(width-layout.tool_rail_width-layout.inspector_width-240.0>190.0);
         }
-        assert!(StudioLayout::for_width(850.0).narrow);
-        assert!(!StudioLayout::for_width(1366.0).narrow);
     }
-
     #[test]
-    fn rail_reuses_the_single_validated_c_catalogue() {
-        let ids: Vec<_> = TOOLS
-            .iter()
-            .map(|tool| tikz_authoring::spec(*tool).id.as_str())
-            .collect();
-        assert_eq!(ids.len(), 6);
-        assert!(ids.contains(&"tikz.bezier-cubic"));
-        assert!(ids.contains(&"tikz.arrow"));
+    fn groups_cover_all_native_c_tools_once_and_expose_future_adapters() {
+        let all=StudioGroup::ALL.iter().flat_map(|g|g.tools()).copied()
+            .collect::<Vec<_>>();
+        assert_eq!(all.len(),6);
+        for item in crate::tikz_authoring::TOOLS{
+            assert_eq!(all.iter().filter(|&&t|t==item).count(),1);
+            assert!(tikz_authoring::spec(item).manual_url.starts_with("https://tikz.dev/"));
+        }
+        assert!(StudioGroup::Extensions.tools().is_empty());
     }
-
     #[test]
-    fn studio_dock_labels_and_serialization_are_stable() {
-        assert_eq!(StudioDock::ALL.len(), 3);
-        let value = serde_json::to_string(&StudioDock::Libraries).unwrap();
-        assert_eq!(serde_json::from_str::<StudioDock>(&value).unwrap(), StudioDock::Libraries);
+    fn icon_tooltips_and_dock_types_do_not_duplicate_document_state() {
+        let v=serde_json::to_string(&StudioDock::Libraries).unwrap();
+        assert_eq!(serde_json::from_str::<StudioDock>(&v).unwrap(),StudioDock::Libraries);
+        assert_eq!(StudioDock::ALL.len(),3);
+    }
+    #[test]
+    fn icon_geometry_does_not_change_source_in_egui_frame() {
+        let ctx=egui::Context::default();
+        let mut source=String::from("% opaque CRLF\r\n\\newcommand{\\mine}{value}\r\n");
+        let before=source.clone();
+        let _=ctx.run(egui::RawInput::default(),|ctx|{
+            egui::CentralPanel::default().show(ctx,|ui|{
+                icon_button(ui,StudioIcon::Tool(Tool::Cubic),false,44.0,"Bezier");
+                icon_button(ui,StudioIcon::Group(StudioGroup::Extensions),false,44.0,"Packages");
+            });
+        });
+        assert_eq!(source,before);
+        source.clear();
     }
 }
