@@ -2,9 +2,8 @@
 //! Tool and parameter semantics belong to the existing C catalogue. Vector
 //! icon strokes are only UI affordances, never a second PGF renderer.
 use crate::tikz_authoring::{self, Session, Tool};
-use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke, Vec2};
+use eframe::egui::{self, Pos2, Rect, Sense, Shape, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
-use tikzarium_extensions::primitives::Evidence;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StudioDock {
@@ -330,6 +329,8 @@ pub fn show_palette(
     anchor: Pos2,
     session: &mut Session,
     source: &str,
+    extensions: &[tikzarium_extensions::ExtensionStatus],
+    extension_filter: &mut String,
     open_libraries: &mut bool,
 ) {
     if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
@@ -341,7 +342,11 @@ pub fn show_palette(
         .fixed_pos(anchor+egui::vec2(6.0,-36.0))
         .show(ctx, |ui| {
             egui::Frame::popup(ui.style()).show(ui, |ui| {
-                ui.set_min_width(158.0);
+                ui.set_min_width(if selected == StudioGroup::Extensions {
+                    265.0
+                } else {
+                    158.0
+                });
                 ui.horizontal(|ui|{
                     ui.strong(selected.label());
                     if ui.small_button("×").on_hover_text("Закрыть палитру").clicked(){
@@ -349,15 +354,39 @@ pub fn show_palette(
                     }
                 });
                 ui.separator();
-                if selected==StudioGroup::Extensions {
-                    ui.small("Пакеты / библиотеки");
-                    for name in ["PGFPlots","CircuitikZ","tikz-cd"] {
-                        ui.add_enabled(false,egui::Button::new(name))
-                            .on_disabled_hover_text("Графический адаптер ещё не реализован. Обычный исходный TeX остаётся доступен.");
-                    }
-                    if ui.button("Показать все пакеты").clicked(){
-                        *open_libraries=true;
-                        *group=None;
+                if selected == StudioGroup::Extensions {
+                    ui.small("Расширения из общего реестра");
+                    ui.add(
+                        egui::TextEdit::singleline(extension_filter)
+                            .hint_text("Поиск пакета…")
+                            .desired_width(242.0),
+                    );
+                    let filter = extension_filter.trim().to_lowercase();
+                    egui::ScrollArea::vertical()
+                        .max_height(270.0)
+                        .show(ui, |ui| {
+                            for item in extensions.iter().filter(|item| {
+                                filter.is_empty()
+                                    || item.manifest.id.to_lowercase().contains(&filter)
+                                    || item.manifest.display_name.to_lowercase().contains(&filter)
+                            }) {
+                                ui.strong(&item.manifest.display_name);
+                                ui.small(format!(
+                                    "Установлен: {:?} · Совместимость: {:?}",
+                                    item.installation, item.compilation
+                                ));
+                                ui.small(format!(
+                                    "GUI-инструмент: {} · просмотр: {}",
+                                    if item.visual_editable { "есть" } else { "пока нет" },
+                                    if item.inspectable { "есть" } else { "пока нет" },
+                                ));
+                                ui.separator();
+                            }
+                        });
+                    ui.small("Наличие ≠ подключение ≠ поддержка инструмента. Lua-only не XeLaTeX.");
+                    if ui.button("Управление библиотеками проекта").clicked() {
+                        *open_libraries = true;
+                        *group = None;
                     }
                 } else {
                     ui.horizontal_wrapped(|ui|{

@@ -470,6 +470,7 @@ struct TikzariumApp {
     prefs: UiPreferences,
     studio_group: Option<StudioGroup>,
     studio_palette_anchor: egui::Pos2,
+    studio_extension_filter: String,
     authoring: tikz_authoring::Session,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
@@ -502,7 +503,7 @@ impl TikzariumApp {
             jump_to_line: None,
             last_build_failed: false,
             log: String::new(),
-            status: "Save the starter as a .tex file, then Build".into(),
+            status: "Сохраните новый рисунок как .tex, затем соберите PDF".into(),
             preview_status: "No exact preview yet".into(),
             preview_texture: None,
             preview_lod_texture: None,
@@ -532,6 +533,7 @@ impl TikzariumApp {
             prefs,
             studio_group: None,
             studio_palette_anchor: egui::pos2(65.0, 120.0),
+            studio_extension_filter: String::new(),
             authoring: {
                 let mut state = tikz_authoring::Session::default();
                 state.reset(QUICKSTART);
@@ -981,7 +983,7 @@ impl TikzariumApp {
         if self.pending_open.is_some() {
             ui.disable();
         }
-        ui.heading("TeX / TikZ source");
+        ui.heading("Исходный TikZ / TeX");
         ui.small(
             self.document
                 .path
@@ -1230,10 +1232,17 @@ impl TikzariumApp {
                 }
             });
             ui.horizontal(|ui| {
+                let prior_focus = self.pdf_focus_in_split;
                 ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз");
                 ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF");
-                if self.pdf_focus_in_split {
+                if self.pdf_focus_in_split && !prior_focus {
                     self.fit_page_active = true;
+                    self.authoring.cancelled_pointer_capture |=
+                        self.authoring.guide_pointer_armed
+                            || self.authoring.drag_start.is_some();
+                    self.authoring.guide_pointer_armed = false;
+                    self.authoring.drag_start = None;
+                    self.authoring.alt_selection_capture = false;
                 }
                 ui.separator();
                 let filename = self
@@ -1982,9 +1991,14 @@ impl eframe::App for TikzariumApp {
             studio_ui::show_palette(
                 ctx,
                 &mut self.studio_group,
-                self.studio_palette_anchor,
+                egui::pos2(
+                    self.studio_palette_anchor.x + split_layout.source_default + 18.0,
+                    self.studio_palette_anchor.y,
+                ),
                 &mut self.authoring,
                 &self.document.source,
+                &self.package_statuses,
+                &mut self.studio_extension_filter,
                 &mut open_libraries,
             );
             if open_libraries {

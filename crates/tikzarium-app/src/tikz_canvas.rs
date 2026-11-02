@@ -291,7 +291,9 @@ fn show_guide_frame_mode(
         && project_state == Some(tikzarium_extensions::primitives::Evidence::Confirmed);
     // Missing XeLaTeX/tikz.sty is a build-time warning, not a veto on safe
     // source patches. Keep import UNKNOWN/ABSENT fail-closed independently.
-    if !ready || !caps.exact_build_prerequisites_verified() {
+    if (legacy_palette || session.active.is_some())
+        && (!ready || !caps.exact_build_prerequisites_verified())
+    {
         ui.colored_label(
             ui.visuals().warn_fg_color,
             if !caps.source_authoring_supported() || ready {

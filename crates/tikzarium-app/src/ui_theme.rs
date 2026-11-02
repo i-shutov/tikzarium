@@ -8,9 +8,9 @@ pub const STORAGE_KEY: &str = "tikzarium.preferences.v1";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UiTheme {
-    #[default]
     Light,
     Dark,
+    #[default]
     Midnight,
     Paper,
 }
@@ -65,6 +65,15 @@ impl UiTheme {
                 egui::vec2(8.0, 6.0)
             };
             style.spacing.interact_size.y = if compact { 23.0 } else { 29.0 };
+            style
+                .text_styles
+                .insert(egui::TextStyle::Body, egui::FontId::proportional(14.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Monospace, egui::FontId::monospace(14.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
         });
     }
 }
