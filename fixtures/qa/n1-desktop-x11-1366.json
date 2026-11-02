@@ -136,7 +136,7 @@
     698,
     13
   ],
-  "reviewed_app_tree_sha": "c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf",
+  "reviewed_app_tree_sha": "eefe044db4ea5dba41a02411ac4686aa557c31e1",
   "zoom_out_click": [
     523,
     99
@@ -200,5 +200,8 @@
     }
   ],
   "b37_preview_fidelity_visual_review": "NOT_RUN_ON_B39",
-  "bootstrap_caveat": "B39 tree exact; B37 UI clicks and modal positions provisional; only reviewed screenshots and saved TeX/PDF pass. Physical Win10/Mac NOT_RUN."
+  "bootstrap_caveat": "B39 tree exact; B37 UI clicks and modal positions provisional; only reviewed screenshots and saved TeX/PDF pass. Physical Win10/Mac NOT_RUN.",
+  "i58_evidence_level": "PROVISIONAL_B40_COORDINATES__REAL_X11_SCREENSHOTS_TEX_PDF_MUST_BE_REVIEWED",
+  "i58_source_head": "45c3117aa4dc7edf307fd92cd78f3adb04d27202",
+  "b40_source_history_fence": true
 }
