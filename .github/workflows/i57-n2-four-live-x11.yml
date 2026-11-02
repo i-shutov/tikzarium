@@ -1,7 +1,7 @@
 name: I57 N2 four actual X11 library source PDF Undo Open and C help
 on:
   pull_request:
-    branches: [main, qa/i58-b40-source-history-x11]
+    branches: [main, b40-egui-source-undo-transaction-fence]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
@@ -12,7 +12,7 @@ on:
       - 'crates/**'
       - 'Cargo.lock'
   push:
-    branches: [main, b40-egui-source-undo-transaction-fence]
+    branches: [main, qa/i58-b40-source-history-x11]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
