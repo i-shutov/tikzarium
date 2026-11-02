@@ -620,6 +620,7 @@ requirements_inherit = "tool"
 [[libraries]]
 id = "tikz.library.arrows-meta"
 name = "arrows.meta"
+probe_files = ["pgflibraryarrows.meta.code.tex"]
 title_ru = "Наконечники arrows.meta"
 syntax = '\usetikzlibrary{arrows.meta}'
 help_ru = "Добавляет настраиваемые виды наконечников стрелок, в том числе Stealth и Latex. Это библиотека PGF/TikZ, а не отдельный редактор."
@@ -647,6 +648,7 @@ documented_against = "3.1.12"
 [[libraries]]
 id = "tikz.library.positioning"
 name = "positioning"
+probe_files = ["tikzlibrarypositioning.code.tex"]
 title_ru = "Взаимное расположение узлов"
 syntax = '\usetikzlibrary{positioning}'
 help_ru = "Позволяет задавать положение узла относительно другого, например right=of a; сам TikZ рассчитывает смещение и якоря."
@@ -675,6 +677,7 @@ documented_against = "3.1.12"
 [[libraries]]
 id = "tikz.library.calc"
 name = "calc"
+probe_files = ["tikzlibrarycalc.code.tex"]
 title_ru = "Вычисление координат TikZ"
 syntax = '\usetikzlibrary{calc}'
 help_ru = "Разрешает выражения над координатами: суммы, доли отрезка и проекции вычисляет TikZ при компиляции."
@@ -702,6 +705,7 @@ documented_against = "3.1.12"
 [[libraries]]
 id = "tikz.library.fit"
 name = "fit"
+probe_files = ["tikzlibraryfit.code.tex"]
 title_ru = "Охватывающий узел fit"
 syntax = '\usetikzlibrary{fit}'
 help_ru = "Позволяет охватить набор названных узлов или координат отдельным узлом с опцией fit; размеры вычисляет TikZ."
@@ -724,6 +728,62 @@ example = '''
 [libraries.requirements]
 packages = ["tikz"]
 libraries = ["fit"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[libraries]]
+id = "tikz.library.shapes-geometric"
+name = "shapes.geometric"
+probe_files = ["tikzlibraryshapes.geometric.code.tex"]
+title_ru = "Геометрические формы"
+syntax = '\usetikzlibrary{shapes.geometric}'
+help_ru = "Дополнительные геометрические формы узлов: ромб, многоугольники и другие. Геометрию рассчитывает PGF."
+warning_ru = "Общая shapes поддерживается PGF для совместимости; используйте shapes.geometric явно. Графический адаптер этих форм не реализован."
+interaction_ru = "Работайте с обычными TikZ-узлами в исходном .tex; отдельного инструмента изменения произвольных форм пока нет."
+manual_section = "71.3"
+manual_url = "https://tikz.dev/library-shapes"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric}
+\begin{document}
+\begin{tikzpicture}
+\node[draw,diamond,aspect=2] {Diamond};
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["shapes.geometric"]
+engine = "xelatex"
+pgf_version_min = "UNKNOWN"
+documented_against = "3.1.12"
+
+[[libraries]]
+id = "tikz.library.shapes-misc"
+name = "shapes.misc"
+probe_files = ["tikzlibraryshapes.misc.code.tex"]
+title_ru = "Дополнительные формы"
+syntax = '\usetikzlibrary{shapes.misc}'
+help_ru = "Добавляет дополнительные формы узлов, например скруглённый прямоугольник и перечёркнутую фигуру."
+warning_ru = "Наличие файла и подключение проекта — разные факты; графический адаптер произвольных форм отсутствует."
+interaction_ru = "Нативный PGF строит форму при XeLaTeX; в GUI пока доступно подключение и редактируемый исходник."
+manual_section = "71.8"
+manual_url = "https://tikz.dev/library-shapes"
+example = '''
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.misc}
+\begin{document}
+\begin{tikzpicture}
+\node[draw,rounded rectangle] {Rounded};
+\end{tikzpicture}
+\end{document}
+'''
+[libraries.requirements]
+packages = ["tikz"]
+libraries = ["shapes.misc"]
 engine = "xelatex"
 pgf_version_min = "UNKNOWN"
 documented_against = "3.1.12"

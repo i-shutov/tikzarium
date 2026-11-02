@@ -192,8 +192,8 @@ impl TexEnvironment {
             .unwrap_or(TexDistribution::Unknown);
         let tool = match distribution {
             TexDistribution::MiKTeX => tool_next_to_engine(self.xelatex.as_deref(), "findtexmf"),
-            TexDistribution::TeXLive => tool_near_engine(self.xelatex.as_deref(), "kpsewhich")
-                .or_else(|| self.kpsewhich.clone()),
+            // Never probe the wrong TeX distribution via an unrelated PATH helper.
+            TexDistribution::TeXLive => tool_next_to_engine(self.xelatex.as_deref(), "kpsewhich"),
             TexDistribution::Unknown => None,
         };
         let Some(tool) = tool else {
@@ -241,10 +241,6 @@ fn tool_next_to_engine(engine: Option<&Path>, name: &str) -> Option<PathBuf> {
     candidate(&directory.join(filename))
 }
 
-fn tool_near_engine(engine: Option<&Path>, name: &str) -> Option<PathBuf> {
-    tool_next_to_engine(engine, name).or_else(|| find_executable(name))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -277,6 +273,20 @@ mod tests {
             pdf_renderer: None,
         };
         assert_eq!(env.probe_package("tikz.sty"), PackageProbe::Unavailable);
+    }
+
+    #[test]
+    fn texlive_probe_never_borrows_unrelated_path_helper() {
+        let dir = tempfile::tempdir().unwrap();
+        let engine = dir.path().join("xelatex");
+        std::fs::write(&engine, "").unwrap();
+        let selected = TexEnvironment {
+            xelatex: Some(engine),
+            xelatex_version: Some("XeTeX (TeX Live 2025)".into()),
+            kpsewhich: Some(dir.path().join("unrelated-kpsewhich")),
+            pdf_renderer: None,
+        };
+        assert_eq!(selected.probe_package("tikz.sty"), PackageProbe::Unavailable);
     }
 
     #[cfg(unix)]

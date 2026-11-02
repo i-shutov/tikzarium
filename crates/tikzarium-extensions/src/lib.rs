@@ -19,7 +19,7 @@ use std::{
     path::Path,
 };
 use thiserror::Error;
-use tikzarium_core::TexEnvironment;
+use tikzarium_core::{PackageProbe, TexEnvironment};
 
 pub const MANIFEST_SCHEMA_VERSION: u32 = 1;
 const MAX_MANIFEST_BYTES: usize = 64 * 1024;
@@ -212,9 +212,10 @@ impl Registry {
     /// Discovery is performed on demand by the caller, not on every UI frame.
     #[must_use]
     pub fn status(&self, tex: &TexEnvironment) -> Vec<ExtensionStatus> {
-        self.status_with_lookup(|file| {
-            tex.kpsewhich.as_ref()?;
-            Some(tex.package_file(file).is_some())
+        self.status_with_lookup(|file| match tex.probe_package(file) {
+            PackageProbe::Present(_) => Some(true),
+            PackageProbe::Missing => Some(false),
+            PackageProbe::Unavailable => None,
         })
     }
 
@@ -440,6 +441,19 @@ visual_features = []
                 .is_err()
         );
         assert_eq!(registry.manifests.len(), original);
+    }
+
+    #[test]
+    fn unavailable_probe_is_not_missing() {
+        let env = TexEnvironment {
+            xelatex: None,
+            xelatex_version: None,
+            kpsewhich: None,
+            pdf_renderer: None,
+        };
+        assert!(Registry::new().unwrap().status(&env).iter().all(|item| {
+            item.installation == InstallationState::Unknown && item.missing_files.is_empty()
+        }));
     }
 
     #[test]

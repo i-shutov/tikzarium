@@ -1,6 +1,7 @@
 //! Native egui workbench. XeLaTeX PDF is authoritative; no fake Rust render.
 use eframe::egui;
 use std::{
+    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, TryRecvError},
     time::Duration,
@@ -9,7 +10,7 @@ use tikzarium_core::{
     BuildArtifact, BuildDiagnostic, BuildError, BuildOptions, BuildRequest, BuildService, Document,
     Severity, TexEnvironment,
 };
-use tikzarium_extensions::{ExtensionStatus, Registry};
+use tikzarium_extensions::{ExtensionStatus, Registry, primitives::Evidence};
 
 mod font_proof;
 mod pdf_navigation;
@@ -459,6 +460,7 @@ struct TikzariumApp {
     file_field: String,
     tex: TexEnvironment,
     package_statuses: Vec<ExtensionStatus>,
+    library_installation: BTreeMap<String, Evidence>,
     diagnostics: Vec<BuildDiagnostic>,
     workspace: WorkspaceMode,
     bottom_view: BottomView,
@@ -594,11 +596,17 @@ impl TikzariumApp {
         let tex = TexEnvironment::discover();
         let registry = Registry::new().expect("built-in extension manifests must validate");
         let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
+        let library_installation =
+            tikzarium_extensions::project_imports::probe_library_installations(
+                tikz_authoring::catalog(),
+                &tex,
+            );
         Self {
             document: Document::scratch(QUICKSTART),
             file_field: DEFAULT_SCRATCH_FILENAME.to_owned(),
             tex,
             package_statuses,
+            library_installation,
             diagnostics: Vec::new(),
             workspace: WorkspaceMode::Split,
             bottom_view: BottomView::Issues,
@@ -1078,6 +1086,11 @@ impl TikzariumApp {
         self.package_statuses = Registry::new()
             .expect("built-in manifests must validate")
             .status(&self.tex);
+        self.library_installation =
+            tikzarium_extensions::project_imports::probe_library_installations(
+                tikz_authoring::catalog(),
+                &self.tex,
+            );
         self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
     }
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
@@ -1175,6 +1188,7 @@ impl TikzariumApp {
             &mut self.authoring,
             &mut self.document.source,
             self.tex.xelatex.is_some(),
+            &self.library_installation,
         ) {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
@@ -1421,6 +1435,7 @@ impl TikzariumApp {
                         &mut self.authoring,
                         &mut self.document.source,
                         self.tex.xelatex.is_some(),
+                        &self.library_installation,
                     ) {
                         self.jump_to_line = Some(line);
                         self.highlight_generated_line = true;
