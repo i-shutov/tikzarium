@@ -680,7 +680,10 @@ fn show_inspector_action_bar_frame(
         let summary = if let Some(tool) = session.active {
             let info = tikz_authoring::spec(tool);
             let summary = ui
-                .add(egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru)).truncate())
+                .add(
+                    egui::Label::new(format!("F1 · {} — {}", info.title_ru, info.help_ru))
+                        .truncate(),
+                )
                 .on_hover_text(format!(
                     "{}\n{}\nПример: {}\nPGF/TikZ §{} · {}",
                     info.help_ru, info.syntax, info.example, info.manual_section, info.manual_url
@@ -1575,7 +1578,10 @@ mod tests {
         session.reset(&source);
         assert!(session.active.is_none());
         assert!(!session.help);
-        assert_eq!(frame(&ctx, &mut session, &mut source, vec![]), Rect::NOTHING);
+        assert_eq!(
+            frame(&ctx, &mut session, &mut source, vec![]),
+            Rect::NOTHING
+        );
         let f1 = |pressed| egui::Event::Key {
             key: egui::Key::F1,
             physical_key: None,
@@ -1585,8 +1591,10 @@ mod tests {
         };
         let help = frame(&ctx, &mut session, &mut source, vec![f1(true)]);
         assert!(session.help);
-        assert!(help.is_positive() && help.bottom() < 320.0,
-            "F1 without a selected tool must render a visible Russian guidance row");
+        assert!(
+            help.is_positive() && help.bottom() < 320.0,
+            "F1 without a selected tool must render a visible Russian guidance row"
+        );
         frame(&ctx, &mut session, &mut source, vec![f1(false)]);
         assert_eq!(
             frame(&ctx, &mut session, &mut source, vec![f1(true)]),
