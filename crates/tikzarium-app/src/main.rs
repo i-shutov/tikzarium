@@ -1238,8 +1238,7 @@ impl TikzariumApp {
                 if self.pdf_focus_in_split && !prior_focus {
                     self.fit_page_active = true;
                     self.authoring.cancelled_pointer_capture |=
-                        self.authoring.guide_pointer_armed
-                            || self.authoring.drag_start.is_some();
+                        self.authoring.guide_pointer_armed || self.authoring.drag_start.is_some();
                     self.authoring.guide_pointer_armed = false;
                     self.authoring.drag_start = None;
                     self.authoring.alt_selection_capture = false;

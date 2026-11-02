@@ -339,7 +339,7 @@ pub fn show_palette(
     let Some(selected) = *group else { return };
     egui::Area::new(egui::Id::new("b42-group-palette"))
         .order(egui::Order::Foreground)
-        .fixed_pos(anchor+egui::vec2(6.0,-36.0))
+        .fixed_pos(anchor + egui::vec2(6.0, -36.0))
         .show(ctx, |ui| {
             egui::Frame::popup(ui.style()).show(ui, |ui| {
                 ui.set_min_width(if selected == StudioGroup::Extensions {
@@ -347,10 +347,14 @@ pub fn show_palette(
                 } else {
                     158.0
                 });
-                ui.horizontal(|ui|{
+                ui.horizontal(|ui| {
                     ui.strong(selected.label());
-                    if ui.small_button("×").on_hover_text("Закрыть палитру").clicked(){
-                        *group=None;
+                    if ui
+                        .small_button("×")
+                        .on_hover_text("Закрыть палитру")
+                        .clicked()
+                    {
+                        *group = None;
                     }
                 });
                 ui.separator();
@@ -377,36 +381,55 @@ pub fn show_palette(
                                 ));
                                 ui.small(format!(
                                     "GUI-инструмент: {} · просмотр: {}",
-                                    if item.visual_editable { "есть" } else { "пока нет" },
-                                    if item.inspectable { "есть" } else { "пока нет" },
+                                    if item.visual_editable {
+                                        "есть"
+                                    } else {
+                                        "пока нет"
+                                    },
+                                    if item.inspectable {
+                                        "есть"
+                                    } else {
+                                        "пока нет"
+                                    },
                                 ));
                                 ui.separator();
                             }
                         });
                     ui.small("Наличие ≠ подключение ≠ поддержка инструмента. Lua-only не XeLaTeX.");
-                    if ui.button("Управление библиотеками проекта").clicked() {
+                    if ui.button("Управление библиотеками проекта").clicked()
+                    {
                         *open_libraries = true;
                         *group = None;
                     }
                 } else {
-                    ui.horizontal_wrapped(|ui|{
+                    ui.horizontal_wrapped(|ui| {
                         for &tool in selected.tools() {
-                            let info=tikz_authoring::spec(tool);
-                            let status=tikz_authoring::requirements_status(source,tool);
-                            let tip=format!(
+                            let info = tikz_authoring::spec(tool);
+                            let status = tikz_authoring::requirements_status(source, tool);
+                            let tip = format!(
                                 "{}\n{}\n{}\nPGF/TikZ §{}\nПодключение: {:?}",
-                                info.title_ru,info.help_ru,info.syntax,info.manual_section,status
+                                info.title_ru,
+                                info.help_ru,
+                                info.syntax,
+                                info.manual_section,
+                                status
                             );
                             if icon_button(
-                                ui,StudioIcon::Tool(tool),session.active==Some(tool),46.0,&tip
-                            ).clicked() {
+                                ui,
+                                StudioIcon::Tool(tool),
+                                session.active == Some(tool),
+                                46.0,
+                                &tip,
+                            )
+                            .clicked()
+                            {
                                 session.select_tool(tool);
-                                *group=None;
+                                *group = None;
                             }
                         }
                     });
                     ui.small("Наведите на иконку для команды и справки.");
-                    if selected==StudioGroup::Connections {
+                    if selected == StudioGroup::Connections {
                         ui.small("Стрелки arrows.meta требуют явного подключения.");
                     }
                 }
