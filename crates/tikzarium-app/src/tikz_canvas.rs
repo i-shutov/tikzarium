@@ -231,8 +231,23 @@ fn show_guide_frame_with_palette(
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
-    mut palette_rects: Option<&mut [Rect; 6]>,
+    palette_rects: Option<&mut [Rect; 6]>,
 ) -> (Option<usize>, Rect) {
+    show_guide_frame_mode(ui, session, source, caps, palette_rects, true)
+}
+
+/// Both workspaces use EXACTLY the same gesture processing and source patching.
+/// Studio moves the existing C-owned palette into a persistent tool rail; it
+/// does not replace the native TikZ drawing handler or TeX with a Rust solver.
+fn show_guide_frame_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    mut palette_rects: Option<&mut [Rect; 6]>,
+    legacy_palette: bool,
+) -> (Option<usize>, Rect) {
+    if legacy_palette {
     ui.horizontal_wrapped(|ui| {
         ui.strong("TikZ · инструменты");
         for (index, tool) in TOOLS.into_iter().enumerate() {
@@ -256,6 +271,16 @@ fn show_guide_frame_with_palette(
         None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
     });
     ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+    } else {
+        ui.horizontal(|ui| {
+            ui.strong("Эскиз TikZ");
+            if let Some(tool) = session.active {
+                ui.small(format!("Выбран: {} · шаг 0,25 cm", tikz_authoring::spec(tool).title_ru));
+            } else {
+                ui.small("Выберите инструмент в палитре слева.");
+            }
+        });
+    }
     let project_state = session
         .active
         .map(|tool| tikz_authoring::requirements_status(source, tool));
@@ -560,6 +585,17 @@ pub fn show_guide(
     caps: Capabilities,
 ) -> Option<usize> {
     show_guide_frame(ui, session, source, caps).0
+}
+
+/// B42 studio guide: real egui pointer gestures and revision-checked C source
+/// patches are preserved; only the duplicate row of tool buttons is removed.
+pub fn show_guide_studio(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> Option<usize> {
+    show_guide_frame_mode(ui, session, source, caps, None, false).0
 }
 
 pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
