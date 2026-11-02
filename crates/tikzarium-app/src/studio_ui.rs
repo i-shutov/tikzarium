@@ -321,6 +321,13 @@ pub fn show_group_rail(
     anchor
 }
 
+/// Position the popup from the ACTUAL resizable source SidePanel boundary,
+/// never from its default width. No PDF-to-guide coordinate mapping is implied.
+/// The floating palette itself adds a small 6pt gap in show_palette.
+pub fn palette_anchor_at_source_edge(source_panel: Rect, rail_anchor: Pos2) -> Pos2 {
+    Pos2::new(source_panel.right() + 8.0, rail_anchor.y)
+}
+
 /// Floating grouped palette. It never takes space from the code/PDF columns.
 /// Future package adapters appear as unavailable, not hidden or falsely ready.
 /// Borrow the current read-only project facts as one UI context, not a
@@ -539,6 +546,21 @@ mod tests {
         );
         assert_eq!(StudioDock::ALL.len(), 3);
     }
+    #[test]
+    fn palette_follows_actual_source_pane_resize_not_default_width() {
+        // Simulated measured response rectangles from a resizable source panel.
+        let button = Pos2::new(61.0, 178.0);
+        let narrow = Rect::from_min_size(Pos2::new(62.0, 60.0), Vec2::new(240.0, 600.0));
+        let wide = Rect::from_min_size(Pos2::new(62.0, 60.0), Vec2::new(475.0, 600.0));
+        let a = palette_anchor_at_source_edge(narrow, button);
+        let b = palette_anchor_at_source_edge(wide, button);
+        assert_eq!(a.x, narrow.right() + 8.0);
+        assert_eq!(b.x, wide.right() + 8.0);
+        assert_eq!(b.x - a.x, 235.0);
+        assert_eq!(a.y, button.y);
+        assert_eq!(b.y, button.y);
+    }
+
     #[test]
     fn icon_geometry_does_not_change_source_in_egui_frame() {
         let ctx = egui::Context::default();
