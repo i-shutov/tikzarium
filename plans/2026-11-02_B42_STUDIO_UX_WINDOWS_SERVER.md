@@ -73,3 +73,23 @@ fallback for no active tool still applies. Reuse one C catalogue.
 Cover real `egui::Context::run(RawInput)` F1 down/up/down with persisted
 opaque TeX and no Undo entries. Independent actual desktop screenshots
 must still verify visible tab movement, not just the unit event.
+
+## Reacceptance on B42 exact-head after CI and QA corrections
+
+The early B42 exact HEAD `88877297726b0d788108e995b4dbec3e4bb22d92`
+failed `cargo fmt --all -- --check` on a single event-frame closure.
+The fix `f2273814aa160be5c0ec7b8779f9e4b7831ab6d7` is production
+semantics-neutral. Do not merge based on the earlier short-circuited tests;
+require new successful hosted Rust/test/Clippy and D QA on the final SHA.
+
+The old B41/B37 X11 drivers have source-tree guards; D owns new Studio
+calibration, six actual tool selections/gestures, inspector/Undo, F1,
+manual source Ctrl+Z, two CRLF/opaque-macro Open/Save files, and PDF raster.
+B bootstrap confirmed only the Geometry group popup on real X11.
+
+User-server audit must distinguish all embedded fonts, extracted expected
+Cyrillic text, and visually reviewed rendered glyphs as separate facts.
+The prior any-`yes` predicate was unsafe. The corrected B-owned
+`scripts/tools/qa_windows_server_user.ps1` does not auto-install packages,
+and produces partial states if Poppler PDF tools are unavailable. The
+dedicated Windows Server and physical Windows 10/M1/M4 remain NOT_RUN.
