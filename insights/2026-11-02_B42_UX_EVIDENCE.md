@@ -28,3 +28,19 @@ Actual executable/bootstrap [run 41412320640](https://github.com/i-shutov/tikzar
 This B42 correction changes default to Midnight, increases Body/Monospace font sizes, moves popup over the center workspace, omits empty-tool warning, and presents package entries from the actual C extension Registry with independent installed/engine/tool states rather than hard-coded three-name buttons. Focusing the PDF no longer resets manual zoom on every subsequent frame. Requires new exact-head Rust and GUI screenshots before acceptance. The old preview screenshot status stays historical, not a new PASS.
 
 B42 first Rust/D QA compiled and passed unit tests on Ubuntu, but strict Clippy found unused imports. These were removed in the current B42 head. All updated CI + actual final GUI **NOT_RUN** until complete. The Windows Server runner and physical Win10/M1/M4 remain NOT_RUN.
+
+## Studio-mode six-primitive event-frame evidence (B42 QA extension)
+
+An audit found that existing complete six-gesture `RawInput` tests called
+the **legacy** guide, while B42 added a Studio branch removing its tool row.
+Added `b42_studio_six_pointer_gestures_reopen_and_undo_use_actual_egui_frames`
+in the same B42 PR: 2 viewport widths × 6 native C tools, actual egui pointer
+press/move/release, focus line, C-produced command, file Save/Reopen,
+Russian/opaque source preservation, F1 and byte-exact visual Undo. No
+catalogue regeneration and no new solver. Existing legacy tests remain intact.
+
+Authoring checkpoint: branch commit `ea1d8cf14264ba1e83eb31ff37230d6ba14eeadd`.
+**No claim of test PASS until exact-head hosted CI completes**; no local
+Rust toolchain or physical Win10/M1/M4 runtime available in this environment.
+A real Studio grouped-palette click and real X11 source Ctrl+Z/Save/Open
+with independent screenshots remain a separate gate.
