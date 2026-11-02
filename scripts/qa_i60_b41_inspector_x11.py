@@ -73,10 +73,13 @@ def owned_circle(source: bytes) -> bytes:
 def assert_only_circle_radius(before: bytes, after: bytes) -> None:
     old = owned_circle(before)
     new = owned_circle(after)
-    if new == old or old.count(b"radius=1.00cm") != 1:
-        raise AssertionError("Expected one default-radius native Circle line")
-    if new != old.replace(b"radius=1.00cm", b"radius=2.75cm", 1):
-        raise AssertionError("Apply changed more than the selected Circle radius")
+    if (new == old or old.count(b"radius=1.00cm") != 1
+            or old.count(b'"radius":"1.00cm"') != 1):
+        raise AssertionError("Expected code plus C-owned radius metadata")
+    expected = old.replace(b"radius=1.00cm", b"radius=2.75cm", 1)
+    expected = expected.replace(b'"radius":"1.00cm"', b'"radius":"2.75cm"', 1)
+    if new != expected:
+        raise AssertionError("Apply changed more than Circle radius and C metadata")
     if after.replace(new, old, 1) != before:
         raise AssertionError("Apply affected unrelated source bytes or marker")
 
