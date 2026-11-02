@@ -1,4 +1,13 @@
-## Unreleased — I60 independent B41 real-X11 inspector acceptance (PR #90; PDF preview/F1 recheck pending)
+# Changelog
+
+## Unreleased — B42 redesigned Studio and dedicated user's MiKTeX Windows Server QA (PENDING)
+
+- Replaced repeated long tool buttons with native egui vector icons in four grouped floating palettes. No font-file asset or second PGF renderer; native C-catalogue commands and source-first semantics retained.
+- Added a concise icon toolbar, permanently editable TeX beside the center drawing/PDF, independent Properties/Libraries/Help tabs, persistent workspace preferences and collapsed-by-default diagnostics. Classic UI remains temporarily available for regression comparisons.
+- Added a manual main-SHA-gated GitHub Actions test for a dedicated user Windows Server runner and a no-auto-install MiKTeX/locked-Rust proof script. Runner connectivity and physical Windows10/M1/M4 are NOT_RUN; this is not GUI Session proof.
+- Exact-head Rust/GUI/Windows CI and separate post-merge CI NOT_RUN at authoring. No release claim.
+
+d — I60 independent B41 real-X11 inspector acceptance (PR #90; PDF preview/F1 recheck pending)
 
 - Extend the same stacked I60 QA gate to re-run existing I46 dirty Open, I47 six held-pointer gestures, I53 positioning/help and I57 four-library real-X11 workflows on the **exact B41 app/src tree**, preserving fail-closed source/PDF/hash predicates and explicitly provisional B40-derived coordinates. Old head X11 failures remain NOT_RUN until new exact QA head plus manual artifact review. No production-code changes.
 - Add a separate exact-B41-source-tree Linux/X11 workflow exercising the **real egui window**: native Circle pointer → actual property TextEdit → unchanged source while draft pending → pinned C-backed Apply changing only selected command and metadata → native TextEdit Ctrl+Z history fence → visual Undo → Save/Open two distinguishable files including a CRLF/opaque Cyrillic source, followed by GUI external XeLaTeX PDF. Captures immutable sources, PDF, screenshots and per-file SHA-256; no production Rust/C or external TeX package installation changes.

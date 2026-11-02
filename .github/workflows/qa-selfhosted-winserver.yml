@@ -1,0 +1,42 @@
+name: Manual user Windows Server MiKTeX QA (not Win10)
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: "The exact reviewed main SHA; no PR code on persistent runner"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  user-windows-server:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify expected main SHA before any user-server execution
+        shell: pwsh
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_main_sha }}
+        run: |
+          $actual = (git rev-parse HEAD).Trim()
+          if ($actual -cne $env:EXPECTED_SHA -or $actual -cne '${{ github.sha }}') {
+            throw 'Exact main SHA lease mismatch; refuse to run on user server'
+          }
+      - name: User MiKTeX offline proof and locked Rust test
+        shell: pwsh
+        run: |
+          ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -CheckRust
+      - name: Upload honest evidence including failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tikzarium-user-winserver-${{ github.run_id }}
+          path: ${{ runner.temp }}/tikzarium-user-miktex/
+          if-no-files-found: warn
