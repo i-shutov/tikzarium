@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "app_tree": "d290bdad0de0058b538a26be0209a97f2626f76a",
+  "coordinate_status": "B41_INDEPENDENT_SCREENSHOT_41397220307_CIRCLE_RADIUS_APPLY_UNDO_ACCEPTED__PDF_PREVIEW_F1_RECHECK_PENDING",
+  "coordinate_reference": "I60 exact tree 5fa3b794 run 41397220307, source/PDF hashes 20/20; screenshot 13 PDF pane white; 13 and 14 same SHA means F1 not proven. Fit Page + F1 recheck separately.",
+  "source": [
+    120,
+    190
+  ],
+  "path": [
+    310,
+    18
+  ],
+  "save": [
+    553,
+    13
+  ],
+  "open": [
+    498,
+    13
+  ],
+  "build": [
+    698,
+    13
+  ],
+  "export": [
+    837,
+    13
+  ],
+  "circle": [
+    832,
+    166
+  ],
+  "guide_start": [
+    850,
+    334
+  ],
+  "guide_end": [
+    878,
+    334
+  ],
+  "radius": [
+    1165,
+    580
+  ],
+  "apply": [
+    1190,
+    96
+  ],
+  "undo": [
+    1140,
+    68
+  ],
+  "physical_windows_10_miktex": "NOT_RUN",
+  "physical_mac_arm_xelatex": "NOT_RUN",
+  "pdf_fit_page": [
+    740,
+    99
+  ]
+}

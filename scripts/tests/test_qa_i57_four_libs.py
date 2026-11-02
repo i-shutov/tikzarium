@@ -68,8 +68,8 @@ class MatrixTests(unittest.TestCase):
 
     def test_real_x11_and_main_push_gate_not_promoted_to_physical(self):
         flow = (ROOT / ".github/workflows/i57-n2-four-live-x11.yml").read_text()
-        for literal in ("pull_request:", "branches: [main, b40-egui-source-undo-transaction-fence]",
-                        "branches: [main, qa/i58-b40-source-history-x11]", "push:", "workflow_dispatch:",
+        for literal in ("pull_request:", "branches: [main, b40-egui-source-undo-transaction-fence, b41-egui-pinned-parameter-apply]",
+                        "branches: [main, qa/i58-b40-source-history-x11, qa/i60-b41-inspector-real-x11, b41-egui-pinned-parameter-apply]", "push:", "workflow_dispatch:",
                         "xvfb-run", "qa_i57_four_libs_x11.py", "qa_i53_live_libraries_x11.py",
                         "git rev-parse HEAD", self.tree,
                         "github.event.pull_request.head.sha || github.sha"):

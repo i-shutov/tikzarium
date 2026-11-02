@@ -6,6 +6,8 @@ on:
       - qa/i53-b38-live-libraries
       - qa/i54-b39-n2-n3-desktop-reaccept
       - feat/b38-n2-n3-inspector-20261101
+      - qa/i60-b41-inspector-real-x11
+      - b41-egui-pinned-parameter-apply
       - main
   workflow_dispatch:
 permissions:
@@ -27,10 +29,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Exact checkout and B40 exact source production tree
+      - name: Exact checkout and B41 exact source production tree
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'd290bdad0de0058b538a26be0209a97f2626f76a'
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
       - name: Install external Linux X11 and XeLaTeX prerequisites
         run: |
