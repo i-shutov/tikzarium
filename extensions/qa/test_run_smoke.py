@@ -2,11 +2,36 @@
 from pathlib import Path
 import tempfile
 import unittest
+from subprocess import CompletedProcess
+from unittest.mock import patch
 
-from run_smoke import verdict, valid_pdf, write_record
+from run_smoke import execute_fixture, verdict, valid_pdf, write_record
 
 
 class FixtureRunnerTests(unittest.TestCase):
+    def test_all_direct_extension_fixtures_pass_verified_offline_policy(self):
+        with tempfile.TemporaryDirectory() as temp:
+            fixture_dir = Path(temp) / "fixtures"
+            output_dir = Path(temp) / "evidence"
+            fixture_dir.mkdir()
+            output_dir.mkdir()
+            (fixture_dir / "core.tex").write_text(
+                "\\documentclass{article}\n\\begin{document}A\\end{document}\n",
+                encoding="utf-8",
+            )
+            response = CompletedProcess(["xelatex"], 1, b"", b"expected test failure")
+            with patch("run_smoke.subprocess.run", return_value=response) as called:
+                record = execute_fixture(
+                    "core", fixture_dir, output_dir, "selected-miktex",
+                    "pdfinfo", "MiKTeX-XeTeX 25.12", 15,
+                    ("--disable-installer",),
+                )
+            args = called.call_args.args[0]
+            self.assertEqual(args[0:2], ["selected-miktex", "--disable-installer"])
+            self.assertIn("-no-shell-escape", args)
+            self.assertTrue(record["source_preserved"])
+            self.assertEqual(record["verdict"], "failed")  # no valid PDF
+
     def test_positive_needs_pdf_page_source_and_glyphs(self):
         args = dict(
             negative=False, exit_code=0, pdf_valid=True, page_count=1,
