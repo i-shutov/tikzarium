@@ -111,9 +111,12 @@ jobs:
         shell: pwsh
         run: |
           python -m unittest discover -s scripts/tools -p test_qa_engine_policy.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Engine-policy regression failed' }
           python -m unittest discover -s scripts/tools -p test_qa_smoke.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Direct XeLaTeX smoke regression failed' }
           $env:PYTHONPATH = 'scripts/tools'
           python -c "import os; from qa_engine_policy import probe_engine_policy; p = probe_engine_policy(os.environ['TIKZARIUM_XELATEX']); print('Selected QA distribution:', p.distribution, 'offline flags:', p.offline_args); assert p.distribution == 'MiKTeX' and p.offline_args == ('--disable-installer',)"
+          if ($LASTEXITCODE -ne 0) { throw 'MiKTeX selected-engine probe failed' }
 
       - name: Verify selected engine and required installed files (no tlmgr)
         shell: pwsh
