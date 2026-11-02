@@ -1730,11 +1730,7 @@ impl TikzariumApp {
 /// remaining viewport. The bottom bar is full width, and on-demand diagnostics
 /// stack ABOVE it; editable source and provisional guide cannot render beneath
 /// an after-the-fact CentralPanel overlay.
-fn show_studio_status_panel(
-    ctx: &egui::Context,
-    status: &str,
-    xelatex_ready: bool,
-) -> egui::Rect {
+fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bool) -> egui::Rect {
     egui::TopBottomPanel::bottom("b42-status")
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -2845,7 +2841,6 @@ mod split_layout_tests {
             assert!(!session.undo_available());
         }
     }
-
 
     #[test]
     fn b42_status_is_full_width_and_does_not_occlude_editable_source_or_guide() {
