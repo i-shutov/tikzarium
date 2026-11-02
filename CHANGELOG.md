@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — I62 real N1 GUI Help, Undo and two-file I/O acceptance (QA ONLY)
+
+- Extend existing stacked #92 independent Linux/X11 driver to test actual F1 open/close, TextEdit Ctrl+Z, visual Undo, second CRLF/opaque-source GUI Open/Save/Reopen and dirty Open cancel; separate NOT_RUN until exact-head CI and manual artifacts. No B/C/A production edits.
+- Diagnose exact I61 QA head f3aa1ea7 cancellation before GUI (45-minute Azure apt mirror stall); use canonical Ubuntu archive and bounded package retries/HTTP timeouts, never replace external XeLaTeX or waive evidence.
+
 ## Unreleased — I61 independent real B42 acceptance (six-gesture subvertical PASS; N1 NOT_ACCEPTED)
 
 - CI transition: historical B41 I51/I53/I57 fixed-tree X11 workflows remain manually runnable at matching B41 revision, no automatic false-red main runs; I61 exact-B42 six-gesture/source/PDF regression now runs for main PRs and pushes. Real B42 Open/Undo/Apply/F1 and physical targets are still unaccepted release gates.

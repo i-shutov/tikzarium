@@ -51,8 +51,13 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p test_qa_i61_studio_fonts.py -v
       - name: Hosted Linux/X11 and external TeX Live XeLaTeX prerequisites
         run: |
-          sudo apt-get update -q
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          # Exact f3aa1ea run cancelled after 45min downloading 129MB apt packages.
+          # Avoid the observed severely slow Azure archive and bound HTTP stalls.
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
             xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev \

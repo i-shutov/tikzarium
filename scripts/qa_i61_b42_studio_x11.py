@@ -117,6 +117,21 @@ def gesture(window: str, start: tuple[int, int], end: tuple[int, int]) -> None:
     time.sleep(0.35)
 
 
+
+def held_f1() -> None:
+    # An instantaneous key tap may miss egui's next input frame.
+    run("xdotool", "keydown", "F1")
+    time.sleep(0.34)
+    run("xdotool", "keyup", "F1")
+    time.sleep(0.48)
+
+
+def dock_signature(out: Path, label: str) -> str:
+    # Compare the right-hand actual Studio tab bar, not its changing canvas.
+    return run("convert", str(out / (label + ".png")), "-crop",
+               "330x42+1025+94", "+repage", "-format", "%#", "info:")
+
+
 def main() -> int:
     arg = argparse.ArgumentParser(description=__doc__)
     arg.add_argument("--app", required=True, type=Path)
@@ -144,6 +159,8 @@ def main() -> int:
         "six_real_tools": "NOT_RUN", "real_xelatex_pdf": "NOT_RUN",
         "gui_open_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
         "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
+        "f1_two_state": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
+        "dirty_open_cancel": "NOT_RUN", "inspector_apply": "NOT_RUN",
         "steps": [],
     }
     process = None
@@ -268,6 +285,144 @@ def main() -> int:
         report["real_xelatex_pdf"] = "PASS_EXTERNAL_XELATEX_PDF_CYRILLIC_AND_ALL_FONTS_EMBEDDED"
         report["pdf_sha256"] = sha(pdf)
         screenshot(out, "25-pdf-exported")
+
+        # I62: real desktop assertions follow the already-proven six gestures
+        # and PDF. Source bytes and screenshots must be independently reviewed.
+        click(found, 28, 77)  # Return to the guide from the PDF viewport.
+        click(found, 1055, 109)  # Real Properties tab.
+        click(found, 402, 39)  # Help toolbar ON.
+        click(found, 402, 39)  # Help toolbar OFF; deterministic initial state.
+        screenshot(out, "26-properties-before-f1")
+        properties = dock_signature(out, "26-properties-before-f1")
+        held_f1()
+        screenshot(out, "27-f1-help-open")
+        opened = dock_signature(out, "27-f1-help-open")
+        held_f1()
+        screenshot(out, "28-f1-help-closed")
+        closed = dock_signature(out, "28-f1-help-closed")
+        if opened == properties or closed != properties:
+            raise RuntimeError("Real F1 failed Properties -> Help -> Properties tab transition")
+        report["f1_two_state"] = "PASS_REAL_X11_TAB_CHANGE_MANUAL_LABEL_REVIEW_REQUIRED"
+
+        # TextEdit Ctrl+Z and Session visual inverse-patch Undo are different.
+        six_bytes = source.read_bytes()
+        manual = b"% I62_NATIVE_UNDO_MARKER"
+        click(found, 180, 380)
+        key("ctrl+End")
+        paste(manual, out / "clipboard-manual-undo.txt")
+        screenshot(out, "29-manual-source-edited")
+        click(found, 177, 39)
+        wait(lambda: manual in source.read_bytes(), "Real manual GUI edit was not persisted")
+        if source.read_bytes() != six_bytes + manual:
+            raise RuntimeError("Manual edit rewrote unrelated source bytes")
+        click(found, 180, 380)
+        key("ctrl+End")
+        key("ctrl+z")
+        screenshot(out, "30-native-ctrl-z")
+        click(found, 177, 39)
+        wait(lambda: source.read_bytes() == six_bytes,
+             "Native Ctrl+Z failed to restore exactly six-tool source")
+        report["native_text_undo"] = "PASS_REAL_X11_SAVED_SOURCE_BYTES"
+
+        click(found, 30, 150)  # Geometry group.
+        click(found, 599, 169)  # Native shared-C line.
+        gesture(found, (845, 400), (948, 421))
+        click(found, 177, 39)
+        wait(lambda: len(owners(source.read_bytes())) == 7,
+             "Seventh actual GUI gesture did not persist a native command")
+        screenshot(out, "31-seven-before-visual-undo")
+        click(found, 1085, 157)  # Visible inspector visual Undo.
+        screenshot(out, "32-visual-undo-click")
+        click(found, 177, 39)
+        wait(lambda: source.read_bytes() == six_bytes,
+             "Visual inverse-patch Undo failed to restore six-tool source")
+        report["visual_undo"] = "PASS_REAL_X11_INVERSE_SOURCE_BYTES"
+
+        # The second file is an explicit test INPUT, never forged GUI output.
+        secondary = out / "second-crlf.tex"
+        secondary_input = (
+            "\\documentclass{standalone}\r\n"
+            "\\usepackage{tikz}\r\n"
+            "% I62 preserve original CRLF comment\r\n"
+            "\\newcommand{\\OpaqueSecond}{Не менять}\r\n"
+            "\\begin{document}\r\n"
+            "\\begin{tikzpicture}\r\n"
+            "\\node at (0,0) {\\OpaqueSecond};\r\n"
+            "\\end{tikzpicture}\r\n"
+            "\\end{document}\r\n"
+        ).encode("utf-8")
+        secondary.write_bytes(secondary_input)
+        click(found, 321, 40)
+        time.sleep(0.45)
+        screenshot(out, "33-file-menu-before-open")
+        click(found, 440, 93)  # Actual B42 File-menu TextEdit center.
+        key("ctrl+a")
+        paste(b"second-crlf.tex", out / "clipboard-open-path.txt")
+        screenshot(out, "34-second-path-entered")
+        click(found, 351, 124)  # Actual GUI 'Открыть путь'.
+        time.sleep(0.75)
+        screenshot(out, "35-second-opened")
+        append = b"% I62_GUI_SECOND_SAVED"
+        click(found, 177, 380)
+        key("ctrl+End")
+        paste(append, out / "clipboard-second-edit.txt")
+        click(found, 177, 39)
+        wait(lambda: append in secondary.read_bytes(),
+             "Real second-file GUI Open/Edit/Save did not persist")
+        if secondary.read_bytes() != secondary_input + append:
+            raise RuntimeError("Second-file GUI Save normalized CRLF or opaque bytes")
+        if source.read_bytes() != six_bytes:
+            raise RuntimeError("Second-file Save corrupted first document")
+        screenshot(out, "36-second-crlf-saved")
+        report["gui_two_file_crlf"] = "PASS_REAL_X11_TWO_FILE_GUI_OPEN_SAVE"
+
+        # Explicit external test-fixture modification proves Ctrl+O reads disk.
+        external = b"% I62_EXTERNAL_BEFORE_REOPEN"
+        secondary.write_bytes(secondary_input + append + external)
+        key("ctrl+o")
+        time.sleep(0.65)
+        screenshot(out, "37-second-reopened")
+        after_reopen = b"% I62_AFTER_GUI_REOPEN"
+        click(found, 177, 380)
+        key("ctrl+End")
+        paste(after_reopen, out / "clipboard-reopen-edit.txt")
+        click(found, 177, 39)
+        wait(lambda: after_reopen in secondary.read_bytes(),
+             "Reopened GUI document cannot be edited and saved")
+        if secondary.read_bytes() != secondary_input + append + external + after_reopen:
+            raise RuntimeError("GUI Ctrl+O failed to reload external CRLF source")
+        report["gui_open_reopen"] = "PASS_REAL_X11_BYTE_EXACT_RELOAD"
+
+        # Real dirty Open -> Cancel: never discard the original unsaved edit.
+        pending = b"% I62_DIRTY_CANCEL_SURVIVES"
+        click(found, 177, 380)
+        key("ctrl+End")
+        paste(pending, out / "clipboard-dirty-source.txt")
+        screenshot(out, "38-dirty-source")
+        click(found, 321, 40)
+        time.sleep(0.44)
+        click(found, 440, 93)
+        key("ctrl+a")
+        paste(b"figure.tex", out / "clipboard-first-path.txt")
+        click(found, 351, 124)
+        time.sleep(0.55)
+        screenshot(out, "39-pending-dirty-open")
+        key("Escape")
+        time.sleep(0.40)
+        screenshot(out, "40-dirty-open-cancelled")
+        click(found, 177, 39)
+        wait(lambda: pending in secondary.read_bytes(),
+             "Dirty Open Cancel discarded unsaved source")
+        if secondary.read_bytes() != secondary_input + append + external + after_reopen + pending:
+            raise RuntimeError("Dirty Open cancel corrupted second source")
+        if source.read_bytes() != six_bytes:
+            raise RuntimeError("Dirty Open changed original first document")
+        report["dirty_open_cancel"] = "PASS_REAL_X11_CANCEL_AND_SAVE_BYTES"
+        report["steps"].append({
+            "case": "f1_native_visual_undo_two_file_crlf_reopen_dirty_cancel",
+            "first_source_sha256": sha(source), "second_source_sha256": sha(secondary)
+        })
+
         report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
