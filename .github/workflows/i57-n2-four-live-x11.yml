@@ -1,7 +1,7 @@
 name: I57 N2 four actual X11 library source PDF Undo Open and C help
 on:
   pull_request:
-    branches: [main]
+    branches: [main, b40-egui-source-undo-transaction-fence]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
@@ -12,7 +12,7 @@ on:
       - 'crates/**'
       - 'Cargo.lock'
   push:
-    branches: [main]
+    branches: [main, qa/i58-b40-source-history-x11]
     paths:
       - '.github/workflows/i57-n2-four-live-x11.yml'
       - 'scripts/qa_i57_four_libs_x11.py'
@@ -42,10 +42,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Exact SHA and unchanged reviewed B39/I56 app source tree
+      - name: Verify exact B40 app tree and independent I58 X11 provenance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
       - name: External Linux/X11 and TeX Live prerequisites (not Windows MiKTeX)
         run: |

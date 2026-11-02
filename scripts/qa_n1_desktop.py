@@ -326,6 +326,7 @@ def main() -> int:
               "fit_page": "NOT_RUN", "responsive_fit": "NOT_RUN",
               "compact_fit_page": "NOT_RUN", "compact_fit_width": "NOT_RUN",
               "b30_held_pointer_undo": "NOT_RUN",
+              "b40_source_history": "NOT_RUN",
               "x11_button1_mask_trace": [],
               "f1_help_visual": "NOT_RUN",
               "reviewed_app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
@@ -451,6 +452,31 @@ def main() -> int:
                                     "sha256": sha256(source), "id": found[-1]["id"],
                                     "save_attempts": save_attempts})
             screenshot("pointer-" + case["tool"] + ".png")
+            if case["tool"] == "line" and profile.get("b40_source_history_fence"):
+                # I58 independent real X11 probe: initial paste filled native
+                # TextEdit undo history; B40's guide insertion changed Session
+                # revision. Refocusing source then Ctrl+Z MUST NOT resurrect a
+                # pre-gesture native snapshot or erase an authored TikZ line.
+                # This is a GUI/byte predicate, not a physical target OS test.
+                b40_before = source.read_bytes()
+                click(profile["source_click"])
+                key("ctrl+z")
+                click(profile["save_click"])
+                time.sleep(0.6)
+                b40_after = source.read_bytes()
+                screenshot("b40-source-ctrl-z-after-guide.png")
+                if b40_after != b40_before:
+                    raise RuntimeError(
+                        "B40 source-focused native Ctrl+Z crossed a guide "
+                        "revision or rewrote arbitrary TeX")
+                if not original_preserved(FIXTURE.encode("utf-8"), b40_after):
+                    raise RuntimeError("B40 source native Undo damaged user TeX")
+                report["b40_source_history"] = (
+                    "PASS_REAL_X11_SOURCE_FOCUSED_CTRL_Z_EXACT_SOURCE_BYTES")
+                report["steps"].append({
+                    "case": "b40_source_focused_ctrl_z_after_guide",
+                    "status": "PASS_REAL_X11_EXACT_BYTES",
+                    "sha256": sha256(source)})
             if case["tool"] == "line" and profile.get("undo_held_pointer"):
                 # B30: actual X11 keyboard Undo WHILE the pointer remains held
                 # over the guide; then a real mouse-up, Save, and source-byte

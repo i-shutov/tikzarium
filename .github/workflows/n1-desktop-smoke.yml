@@ -2,6 +2,7 @@ name: I51 B37 real X11 native TikZ six gestures, held Undo and PDF
 on:
   push:
     branches:
+      - qa/i58-b40-source-history-x11
       - qa/i51-b36-real-x11-pdf-focus
       - qa/i46-b34-dirty-open-real-x11
       - qa/i45-b31-zoom-label-live-reaccept
@@ -26,6 +27,7 @@ on:
       - 'CHANGELOG.md'
   pull_request:
     branches:
+      - b40-egui-source-undo-transaction-fence
       - b/b36-compact-pdf-focus
       - b/b32-safe-open-source-undo-20261101
       - feat/b27-egui-undo-held-pointer-20261101
@@ -64,11 +66,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Verify exact B39 app source tree; prior B37 coordinates require independent visual reacceptance
+      - name: Verify exact B40 source tree; prior B37 coordinates require independent visual reacceptance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'
       - name: Install isolated hosted GUI and external XeLaTeX prerequisites
         run: |
           sudo apt-get update -q

@@ -252,6 +252,22 @@ fn source_caret_target(
         .expand2(egui::vec2(2.0, 2.0))
 }
 
+/// A confirmed authored source transaction and TextEdit share one mutable .tex
+/// buffer, but egui's native undo snapshots predate that transaction. Fence
+/// them before the next code editor frame. A no-op selection/F1 must *not*
+/// clear the user's ordinary text Undo history.
+fn fence_source_editor_undo_on_revision_change(
+    previous_revision: u64,
+    session: &tikz_authoring::Session,
+    reset_undo_history: &mut bool,
+) -> bool {
+    if session.source_revision() == previous_revision {
+        return false;
+    }
+    *reset_undo_history = true;
+    true
+}
+
 /// Switching documents must not reuse egui TextEdit's native Undo snapshots:
 /// those snapshots belong to the old .tex buffer, not the new source file.
 fn show_source_text_edit(
@@ -1043,6 +1059,7 @@ impl TikzariumApp {
     }
 
     fn show_authoring_inspector(&mut self, ui: &mut egui::Ui) {
+        let previous_revision = self.authoring.source_revision();
         tikz_libraries::show_help_search(ui, &mut self.help_query);
         if let Some(line) = tikz_libraries::show_library_panel(
             ui,
@@ -1052,10 +1069,6 @@ impl TikzariumApp {
         ) {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
-            // The C/N2 patch changed the source outside TextEdit. Fence
-            // egui's old native undo snapshots before rendering the code,
-            // so Ctrl/Cmd+Z cannot resurrect pre-patch text behind Session.
-            self.reset_source_editor_undo_history = true;
         }
         ui.separator();
         let caps = self.primitive_capabilities();
@@ -1077,6 +1090,11 @@ impl TikzariumApp {
                 }
             });
         }
+        fence_source_editor_undo_on_revision_change(
+            previous_revision,
+            &self.authoring,
+            &mut self.reset_source_editor_undo_history,
+        );
     }
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
@@ -1163,20 +1181,10 @@ impl TikzariumApp {
         ui.small("The guide pad edits N1-owned source through the shared TikZ catalogue. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
         if self.workspace == WorkspaceMode::Split && !self.pdf_focus_in_split {
             let caps = self.primitive_capabilities();
-            let guide_undo_key = ui.input(|input| {
-                input.key_pressed(egui::Key::Z)
-                    && input.modifiers.command
-                    && !input.modifiers.shift
-                    && !input.modifiers.alt
-            });
+            let previous_revision = self.authoring.source_revision();
             if let Some(line) =
                 tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
             {
-                // Fallback Undo can run inside the guide after the source
-                // panel has rendered; fence its native history next frame.
-                if guide_undo_key {
-                    self.reset_source_editor_undo_history = true;
-                }
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
                 // The source SidePanel has already been rendered this frame.
@@ -1184,6 +1192,11 @@ impl TikzariumApp {
                 // and highlighted without requiring another mouse interaction.
                 ui.ctx().request_repaint();
             }
+            fence_source_editor_undo_on_revision_change(
+                previous_revision,
+                &self.authoring,
+                &mut self.reset_source_editor_undo_history,
+            );
         } else if self.workspace == WorkspaceMode::Split {
             ui.small("Точный PDF занимает центральную область. Код и свойства остаются видимыми; для нового жеста выберите «Рисовать TikZ».");
         } else {
@@ -1546,6 +1559,7 @@ impl eframe::App for TikzariumApp {
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
+                let previous_revision = self.authoring.source_revision();
                 if self.pending_open.is_some() {
                     ui.disable();
                 }
@@ -1557,6 +1571,11 @@ impl eframe::App for TikzariumApp {
                     self.jump_to_line = Some(line);
                     self.highlight_generated_line = true;
                 }
+                fence_source_editor_undo_on_revision_change(
+                    previous_revision,
+                    &self.authoring,
+                    &mut self.reset_source_editor_undo_history,
+                );
                 ui.separator();
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
@@ -1720,6 +1739,190 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b40_native_source_undo_never_resurrects_text_across_visual_transactions() {
+        // Real egui::Context RawInput frames run the production source TextEdit.
+        // A manual edit must retain its bytes through a primitive patch, visual
+        // Undo and a subsequent native Ctrl+Z. This is UNIT_EVENT, not Win/Mac.
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            session: &mut tikz_authoring::Session,
+            reset: &mut bool,
+            events: Vec<egui::Event>,
+            modifiers: egui::Modifiers,
+            focus: bool,
+        ) {
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(900.0, 620.0),
+                    )),
+                    events,
+                    modifiers,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let output = show_source_text_edit(ui, source, reset);
+                        tikz_canvas::observe_source_text_edit(&output.response, session, source);
+                        if focus {
+                            output.response.request_focus();
+                        }
+                    });
+                },
+            );
+        }
+        let ctx = egui::Context::default();
+        let mut source = "% комментарий\r\n\\documentclass{standalone}\r\n\\usepackage{tikz}\r\n\\begin{document}\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n\\myOpaque{не менять}\r\n\\end{document}\r\n".to_owned();
+        let original = source.clone();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        let mut reset = false;
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![egui::Event::Text("ручная правка".into())],
+            Default::default(),
+            false,
+        );
+        assert_ne!(source, original);
+        let manually_edited = source.clone();
+        let before = session.source_revision();
+        session
+            .insert(
+                &mut source,
+                tikz_authoring::Tool::Line,
+                tikz_authoring::Draft::for_tool(tikz_authoring::Tool::Line),
+            )
+            .unwrap();
+        assert!(fence_source_editor_undo_on_revision_change(
+            before, &session, &mut reset,
+        ));
+        let with_primitive = source.clone();
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
+        assert!(!reset);
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        let command = egui::Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let z = |pressed| egui::Event::Key {
+            key: egui::Key::Z,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: command,
+        };
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(true)],
+            command,
+            false,
+        );
+        assert_eq!(
+            source, with_primitive,
+            "native Undo must not cross an authored patch"
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(false)],
+            command,
+            false,
+        );
+        let before_undo = session.source_revision();
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, manually_edited);
+        assert!(fence_source_editor_undo_on_revision_change(
+            before_undo,
+            &session,
+            &mut reset,
+        ));
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            false,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![],
+            Default::default(),
+            true,
+        );
+        frame(
+            &ctx,
+            &mut source,
+            &mut session,
+            &mut reset,
+            vec![z(true)],
+            command,
+            false,
+        );
+        assert_eq!(
+            source, manually_edited,
+            "stale native Undo must not erase manual TeX"
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b40-тест.tex");
+        std::fs::write(&path, source.as_bytes()).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), manually_edited.as_bytes());
+        assert!(source.contains("\\myOpaque{не менять}"));
+        assert!(source.contains("\r\n"));
+        let unchanged_revision = session.source_revision();
+        session.select_tool(tikz_authoring::Tool::Rectangle);
+        assert!(!fence_source_editor_undo_on_revision_change(
+            unchanged_revision,
+            &session,
+            &mut reset,
+        ));
+        assert!(
+            !reset,
+            "a pure selection must not erase native editor history"
+        );
+    }
 
     #[test]
     fn b26_fit_page_button_remains_selected_on_resize_and_new_pdf_raster() {
