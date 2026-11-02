@@ -2021,9 +2021,11 @@ impl eframe::App for TikzariumApp {
                     self.studio_palette_anchor.y,
                 ),
                 &mut self.authoring,
-                &self.document.source,
-                &self.package_statuses,
-                &mut self.studio_extension_filter,
+                studio_ui::PaletteData {
+                    source: &self.document.source,
+                    extensions: &self.package_statuses,
+                    filter: &mut self.studio_extension_filter,
+                },
                 &mut open_libraries,
             );
             if open_libraries {

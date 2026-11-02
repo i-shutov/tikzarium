@@ -323,16 +323,27 @@ pub fn show_group_rail(
 
 /// Floating grouped palette. It never takes space from the code/PDF columns.
 /// Future package adapters appear as unavailable, not hidden or falsely ready.
+/// Borrow the current read-only project facts as one UI context, not a
+/// second registry and not a license to mutate user source or install TeX.
+pub struct PaletteData<'a> {
+    pub source: &'a str,
+    pub extensions: &'a [tikzarium_extensions::ExtensionStatus],
+    pub filter: &'a mut String,
+}
+
 pub fn show_palette(
     ctx: &egui::Context,
     group: &mut Option<StudioGroup>,
     anchor: Pos2,
     session: &mut Session,
-    source: &str,
-    extensions: &[tikzarium_extensions::ExtensionStatus],
-    extension_filter: &mut String,
+    data: PaletteData<'_>,
     open_libraries: &mut bool,
 ) {
+    let PaletteData {
+        source,
+        extensions,
+        filter: extension_filter,
+    } = data;
     if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
         *group = None;
     }
