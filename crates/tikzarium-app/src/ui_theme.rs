@@ -1,4 +1,5 @@
 //! Persistent egui appearance. This styling NEVER changes figure source or PDF colors.
+use crate::studio_ui::StudioDock;
 use eframe::egui::{self, Color32, Stroke};
 use serde::{Deserialize, Serialize};
 use tikzarium_core::FigureFonts;
@@ -8,8 +9,8 @@ pub const STORAGE_KEY: &str = "tikzarium.preferences.v1";
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UiTheme {
     Light,
-    #[default]
     Dark,
+    #[default]
     Midnight,
     Paper,
 }
@@ -64,6 +65,15 @@ impl UiTheme {
                 egui::vec2(8.0, 6.0)
             };
             style.spacing.interact_size.y = if compact { 23.0 } else { 29.0 };
+            style
+                .text_styles
+                .insert(egui::TextStyle::Body, egui::FontId::proportional(14.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Monospace, egui::FontId::monospace(14.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
         });
     }
 }
@@ -71,6 +81,11 @@ impl UiTheme {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct UiPreferences {
+    pub studio_mode: bool,
+    pub studio_tool_rail: bool,
+    pub studio_inspector_open: bool,
+    pub studio_console_open: bool,
+    pub studio_dock: StudioDock,
     pub theme: UiTheme,
     pub compact: bool,
     pub show_font_lab: bool,
@@ -83,8 +98,13 @@ impl Default for UiPreferences {
     fn default() -> Self {
         let fonts = FigureFonts::default();
         Self {
+            studio_mode: true,
+            studio_tool_rail: true,
+            studio_inspector_open: true,
+            studio_console_open: false,
+            studio_dock: StudioDock::default(),
             theme: UiTheme::default(),
-            compact: true,
+            compact: false,
             show_font_lab: false,
             text_family: fonts.text_family,
             sans_family: fonts.sans_family,
@@ -136,12 +156,15 @@ mod tests {
     #[test]
     fn preferences_default_and_legacy_partial_data() {
         let defaults = UiPreferences::default();
-        assert!(defaults.compact);
+        assert!(!defaults.compact);
+        assert!(defaults.studio_mode);
+        assert_eq!(defaults.studio_dock, StudioDock::Properties);
         assert_eq!(defaults.math_font, "latinmodern-math.otf");
         let old = r#"{"theme":"Paper"}"#;
         let restored: UiPreferences = serde_json::from_str(old).unwrap();
         assert_eq!(restored.theme, UiTheme::Paper);
-        assert!(restored.compact);
+        assert!(!restored.compact);
+        assert!(restored.studio_mode);
     }
 
     #[test]

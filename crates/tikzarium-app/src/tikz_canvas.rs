@@ -231,31 +231,59 @@ fn show_guide_frame_with_palette(
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
-    mut palette_rects: Option<&mut [Rect; 6]>,
+    palette_rects: Option<&mut [Rect; 6]>,
 ) -> (Option<usize>, Rect) {
-    ui.horizontal_wrapped(|ui| {
-        ui.strong("TikZ · инструменты");
-        for (index, tool) in TOOLS.into_iter().enumerate() {
-            let info = tikz_authoring::spec(tool);
-            let button = ui
-                .add(egui::Button::new(&info.title_ru).selected(session.active == Some(tool)))
-                .on_hover_text(format!(
-                    "{}\n{}\nPGF/TikZ §{}\n{}",
-                    info.help_ru, info.syntax, info.manual_section, info.manual_url
+    show_guide_frame_mode(ui, session, source, caps, palette_rects, true)
+}
+
+/// Both workspaces use EXACTLY the same gesture processing and source patching.
+/// Studio moves the existing C-owned palette into a persistent tool rail; it
+/// does not replace the native TikZ drawing handler or TeX with a Rust solver.
+fn show_guide_frame_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    mut palette_rects: Option<&mut [Rect; 6]>,
+    legacy_palette: bool,
+) -> (Option<usize>, Rect) {
+    if legacy_palette {
+        ui.horizontal_wrapped(|ui| {
+            ui.strong("TikZ · инструменты");
+            for (index, tool) in TOOLS.into_iter().enumerate() {
+                let info = tikz_authoring::spec(tool);
+                let button = ui
+                    .add(egui::Button::new(&info.title_ru).selected(session.active == Some(tool)))
+                    .on_hover_text(format!(
+                        "{}\n{}\nPGF/TikZ §{}\n{}",
+                        info.help_ru, info.syntax, info.manual_section, info.manual_url
+                    ));
+                if let Some(rects) = palette_rects.as_deref_mut() {
+                    rects[index] = button.rect;
+                }
+                if button.clicked() {
+                    session.select_tool(tool);
+                }
+            }
+        });
+        ui.strong(match session.active {
+            Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
+            None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
+        });
+        ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+    } else {
+        ui.horizontal(|ui| {
+            ui.strong("Эскиз TikZ");
+            if let Some(tool) = session.active {
+                ui.small(format!(
+                    "Выбран: {} · шаг 0,25 cm",
+                    tikz_authoring::spec(tool).title_ru
                 ));
-            if let Some(rects) = palette_rects.as_deref_mut() {
-                rects[index] = button.rect;
+            } else {
+                ui.small("Выберите инструмент в палитре слева.");
             }
-            if button.clicked() {
-                session.select_tool(tool);
-            }
-        }
-    });
-    ui.strong(match session.active {
-        Some(tool) => format!("ВЫБРАН: {}", tikz_authoring::spec(tool).title_ru),
-        None => "ИНСТРУМЕНТ НЕ ВЫБРАН".to_owned(),
-    });
-    ui.small("ПОЛЕ ВВОДА · шаг 0.25 cm. Esc отменяет клик/жест до отпускания мыши. Alt+клик на #ID выбирает команду. Это не PDF; стили и преобразования выполняет TeX.");
+        });
+    }
     let project_state = session
         .active
         .map(|tool| tikz_authoring::requirements_status(source, tool));
@@ -263,7 +291,9 @@ fn show_guide_frame_with_palette(
         && project_state == Some(tikzarium_extensions::primitives::Evidence::Confirmed);
     // Missing XeLaTeX/tikz.sty is a build-time warning, not a veto on safe
     // source patches. Keep import UNKNOWN/ABSENT fail-closed independently.
-    if !ready || !caps.exact_build_prerequisites_verified() {
+    if (legacy_palette || session.active.is_some())
+        && (!ready || !caps.exact_build_prerequisites_verified())
+    {
         ui.colored_label(
             ui.visuals().warn_fg_color,
             if !caps.source_authoring_supported() || ready {
@@ -279,8 +309,13 @@ fn show_guide_frame_with_palette(
             },
         );
     }
+    let height = if legacy_palette {
+        HEIGHT
+    } else {
+        (ui.available_height() - 36.0).clamp(200.0, 700.0)
+    };
     let (rect, response) = ui.allocate_exact_size(
-        Vec2::new(ui.available_width().max(180.0), HEIGHT),
+        Vec2::new(ui.available_width().max(180.0), height),
         Sense::click_and_drag(),
     );
     let painter = ui.painter_at(rect);
@@ -562,6 +597,17 @@ pub fn show_guide(
     show_guide_frame(ui, session, source, caps).0
 }
 
+/// B42 studio guide: real egui pointer gestures and revision-checked C source
+/// patches are preserved; only the duplicate row of tool buttons is removed.
+pub fn show_guide_studio(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> Option<usize> {
+    show_guide_frame_mode(ui, session, source, caps, None, false).0
+}
+
 pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
     if ctx.input(|input| input.key_pressed(egui::Key::F1)) {
         session.help = !session.help;
@@ -825,13 +871,15 @@ pub fn show_inspector(
     let mut jump = None;
     ui.heading("TikZ · параметры и справка");
     ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
-    ui.small(format!(
-        "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · B-инструмент=реализован · C-справка=доступна",
-        if caps.installed { "CONFIRMED" } else { "UNKNOWN" },
-        evidence_label(caps.loaded),
-        if caps.engine_compatible { "CONFIRMED" } else { "UNKNOWN" },
-    ));
-    ui.small(caps.explanation());
+    ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
+        ui.small(format!(
+            "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · GUI-инструмент=реализован · справка=доступна",
+            if caps.installed { "CONFIRMED" } else { "UNKNOWN" },
+            evidence_label(caps.loaded),
+            if caps.engine_compatible { "CONFIRMED" } else { "UNKNOWN" },
+        ));
+        ui.small(caps.explanation());
+    });
     let choices = tikz_authoring::owned(source);
     egui::ComboBox::from_id_salt("n1-owned-command")
         .selected_text(
@@ -2073,6 +2121,114 @@ mod tests {
                 assert_eq!(reopened_source, source);
                 session.undo(&mut source).unwrap();
                 assert_eq!(source, original, "{tool:?}: source Undo damaged opaque TeX");
+            }
+        }
+    }
+
+    // UNIT_EVENT: exercise the Studio guide, not the legacy tool-row guide.
+    // Group-palette selection is tested separately: Studio deliberately shares
+    // this production pointer handler and the C-owned source patch path.
+    fn b42_studio_event_frame(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        viewport_width: f32,
+    ) -> (Option<usize>, Rect) {
+        let mut observed = None;
+        let mut guide_rect = Rect::NOTHING;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(
+                    Pos2::ZERO,
+                    Vec2::new(viewport_width, 640.0),
+                )),
+                events,
+                ..Default::default()
+            },
+            |ctx| {
+                handle_help_shortcut(ctx, session);
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    (observed, guide_rect) =
+                        show_guide_frame_mode(ui, session, source, READY, None, false);
+                });
+            },
+        );
+        (observed, guide_rect)
+    }
+
+    #[test]
+    fn b42_studio_six_pointer_gestures_reopen_and_undo_use_actual_egui_frames() {
+        for width in [850.0, 1366.0] {
+            for tool in TOOLS {
+                let ctx = egui::Context::default();
+                let mut source = EVENT_SOURCE.to_owned();
+                let before = source.clone();
+                let mut session = Session::default();
+                session.reset(&source);
+                session.select_tool(tool);
+                assert_eq!(source, before, "{tool:?}: selection changed source");
+                let (_, guide) =
+                    b42_studio_event_frame(&ctx, &mut session, &mut source, vec![], width);
+                assert!(guide.width() > 190.0 && guide.height() > 190.0);
+                let start = screen_point(guide, Point::new(1.0, 1.0));
+                let end = screen_point(guide, Point::new(3.0, 2.0));
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(start), primary(start, true)],
+                    width,
+                );
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(end)],
+                    width,
+                );
+                let (line, _) = b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![primary(end, false)],
+                    width,
+                );
+                let line = line.expect("Studio pointer release must focus authored command");
+                let owned = tikz_authoring::owned(&source);
+                assert_eq!(owned.len(), 1, "{tool:?}: missing or duplicate C command");
+                assert_eq!(owned[0].tool, tool);
+                assert_eq!(owned[0].line, line);
+                assert!(source.contains(&tikz_authoring::command(tool, &owned[0].draft).unwrap()));
+                assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                assert!(source.contains("% пользовательский непрозрачный материал"));
+                let directory = tempfile::tempdir().unwrap();
+                let file = directory.path().join("studio.tex");
+                std::fs::write(&file, &source).unwrap();
+                let saved = std::fs::read_to_string(&file).unwrap();
+                assert_eq!(saved, source);
+                let mut reopened = Session::default();
+                reopened.reset(&saved);
+                assert_eq!(reopened.choose(&saved, 1).unwrap(), line);
+                let after_drawing = source.clone();
+                let help_before = session.help;
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::Key {
+                        key: egui::Key::F1,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers: egui::Modifiers::default(),
+                    }],
+                    width,
+                );
+                assert_ne!(session.help, help_before, "{tool:?}: Studio F1 failed");
+                assert_eq!(source, after_drawing, "{tool:?}: F1 touched source");
+                session.undo(&mut source).unwrap();
+                assert_eq!(source, before, "{tool:?}: Studio Undo changed user TeX");
             }
         }
     }

@@ -1,3 +1,5 @@
+# Legacy B41 coordinate profile; the current B42 Studio uses I61 real-X11 source/PDF QA.
+# Historical B41 branch/explicit dispatch remain available with exact B41 provenance.
 name: I51 B37 real X11 dirty-Open preserve user TeX and PDF
 on:
   push:
@@ -10,7 +12,6 @@ on:
       - qa/i54-b39-n2-n3-desktop-reaccept
       - qa/i60-b41-inspector-real-x11
       - b41-egui-pinned-parameter-apply
-      - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
       - 'scripts/qa_i46_dirty_open_x11.py'
@@ -30,7 +31,6 @@ on:
       - b40-egui-source-undo-transaction-fence
       - b/b32-safe-open-source-undo-20261101
       - b/b36-compact-pdf-focus
-      - main
     paths:
       - '.github/workflows/i46-b34-dirty-open-x11.yml'
       - 'scripts/qa_i46_dirty_open_x11.py'

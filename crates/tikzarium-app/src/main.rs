@@ -15,6 +15,7 @@ mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod source_fonts;
+mod studio_ui;
 mod tikz_authoring;
 mod tikz_canvas;
 mod tikz_libraries;
@@ -31,9 +32,14 @@ use pdf_navigation::{
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
 use source_fonts::scan_explicit_font_hints;
+use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
+// The Linux Save action cannot use a native dialog: this is an actual, editable
+// initial destination, never just a hint. typed_save_destination still forbids
+// overwriting a pre-existing file without a deliberate path change.
+const DEFAULT_SCRATCH_FILENAME: &str = "figure.tex";
 
 // Fixed 500pt source + 250pt inspector left the exact PDF/guide unusable
 // at the native 850pt minimum window width. Reserve central space first.
@@ -77,13 +83,15 @@ fn show_split_source_panel(
     ctx: &egui::Context,
     layout: SplitPanelLayout,
     add_contents: impl FnOnce(&mut egui::Ui),
-) {
+) -> egui::Rect {
     egui::SidePanel::left("source")
         .resizable(true)
         .default_width(layout.source_default)
         .min_width(240.0)
         .max_width(layout.source_max)
-        .show(ctx, add_contents);
+        .show(ctx, add_contents)
+        .response
+        .rect
 }
 
 /// Fit an entire rasterized XeLaTeX PDF page in the actual remaining preview
@@ -357,6 +365,25 @@ fn pending_open_save_destination(
     Ok(save_path)
 }
 
+/// A dirty scratch must retain its own safe Save-and-open destination even
+/// after the File menu field has been changed to the file being opened.
+/// Never suggest a path that is occupied or aliases the incoming target.
+fn initial_pending_open_save_path(
+    document: &Document,
+    open_target: &Path,
+    scratch_candidate: &Path,
+) -> String {
+    let candidate = document.path.as_deref().unwrap_or(scratch_candidate);
+    let Some(text) = candidate.to_str() else {
+        return String::new();
+    };
+    if pending_open_save_destination(document, text, open_target).is_ok() {
+        text.to_owned()
+    } else {
+        String::new()
+    }
+}
+
 /// Real egui controls; returning the save-button rect additionally allows
 /// pointer event-frame tests to exercise the exact production click handler.
 fn pending_open_controls(
@@ -466,6 +493,9 @@ struct TikzariumApp {
     pending_open_save_path: String,
     pending_open_validation_error: Option<String>,
     prefs: UiPreferences,
+    studio_group: Option<StudioGroup>,
+    studio_palette_anchor: egui::Pos2,
+    studio_extension_filter: String,
     authoring: tikz_authoring::Session,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
@@ -475,6 +505,83 @@ struct TikzariumApp {
     font_proof_status: String,
     font_proof_report: String,
     font_proof_texture: Option<egui::TextureHandle>,
+}
+
+// B42: the path TextEdit must not close its menu just by gaining focus.
+// egui 0.33 defaults to CloseOnClick, including clicks inside the menu.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum StudioFileAction {
+    OpenPath,
+    SaveAs,
+}
+
+struct StudioFileMenuResponse {
+    action: Option<StudioFileAction>,
+    #[cfg(test)]
+    trigger_rect: egui::Rect,
+    #[cfg(test)]
+    path_rect: Option<egui::Rect>,
+    #[cfg(test)]
+    open_rect: Option<egui::Rect>,
+}
+
+fn show_studio_file_menu(
+    ui: &mut egui::Ui,
+    file_field: &mut String,
+    ready: bool,
+) -> StudioFileMenuResponse {
+    let mut result = StudioFileMenuResponse {
+        action: None,
+        #[cfg(test)]
+        trigger_rect: egui::Rect::NOTHING,
+        #[cfg(test)]
+        path_rect: None,
+        #[cfg(test)]
+        open_rect: None,
+    };
+    let (trigger, _) = egui::containers::menu::MenuButton::new("Файл")
+        .config(
+            egui::containers::menu::MenuConfig::default()
+                .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
+        )
+        .ui(ui, |ui| {
+            ui.label("TeX-проект:");
+            let path_edit = ui.add(
+                egui::TextEdit::singleline(file_field)
+                    .desired_width(260.0)
+                    .hint_text("figure.tex"),
+            );
+            #[cfg(test)]
+            {
+                result.path_rect = Some(path_edit.rect);
+            }
+            #[cfg(not(test))]
+            let _ = path_edit;
+
+            let open = ui.add_enabled(ready, egui::Button::new("Открыть путь"));
+            #[cfg(test)]
+            {
+                result.open_rect = Some(open.rect);
+            }
+            if open.clicked() {
+                result.action = Some(StudioFileAction::OpenPath);
+                ui.close();
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("Сохранить как…"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::SaveAs);
+                ui.close();
+            }
+        });
+    #[cfg(test)]
+    {
+        result.trigger_rect = trigger.rect;
+    }
+    #[cfg(not(test))]
+    let _ = trigger;
+    result
 }
 
 impl TikzariumApp {
@@ -489,7 +596,7 @@ impl TikzariumApp {
         let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
         Self {
             document: Document::scratch(QUICKSTART),
-            file_field: String::new(),
+            file_field: DEFAULT_SCRATCH_FILENAME.to_owned(),
             tex,
             package_statuses,
             diagnostics: Vec::new(),
@@ -498,7 +605,7 @@ impl TikzariumApp {
             jump_to_line: None,
             last_build_failed: false,
             log: String::new(),
-            status: "Save the starter as a .tex file, then Build".into(),
+            status: "Сохраните новый рисунок как .tex, затем соберите PDF".into(),
             preview_status: "No exact preview yet".into(),
             preview_texture: None,
             preview_lod_texture: None,
@@ -526,6 +633,9 @@ impl TikzariumApp {
             pending_open_save_path: String::new(),
             pending_open_validation_error: None,
             prefs,
+            studio_group: None,
+            studio_palette_anchor: egui::pos2(65.0, 120.0),
+            studio_extension_filter: String::new(),
             authoring: {
                 let mut state = tikz_authoring::Session::default();
                 state.reset(QUICKSTART);
@@ -551,12 +661,11 @@ impl TikzariumApp {
         }
         if self.document.dirty() {
             self.pending_open_validation_error = None;
-            self.pending_open_save_path = self
-                .document
-                .path
-                .as_ref()
-                .map(|current| current.display().to_string())
-                .unwrap_or_default();
+            self.pending_open_save_path = initial_pending_open_save_path(
+                &self.document,
+                &path,
+                Path::new(DEFAULT_SCRATCH_FILENAME),
+            );
             self.pending_open = Some(path);
             return;
         }
@@ -975,7 +1084,7 @@ impl TikzariumApp {
         if self.pending_open.is_some() {
             ui.disable();
         }
-        ui.heading("TeX / TikZ source");
+        ui.heading("Исходный TikZ / TeX");
         ui.small(
             self.document
                 .path
@@ -1097,12 +1206,290 @@ impl TikzariumApp {
         );
     }
 
+    /// The main toolbar is four clear vector icons, not a long wall of
+    /// textual action buttons. Infrequent commands live in two menus.
+    fn show_studio_toolbar(&mut self, ctx: &egui::Context) {
+        let ready = self.receiver.is_none() && self.pending_open.is_none();
+        egui::TopBottomPanel::top("b42-studio-toolbar").show(ctx, |ui| {
+            if self.pending_open.is_some() {
+                ui.disable();
+            }
+            ui.horizontal(|ui| {
+                ui.strong(egui::RichText::new("TikZarium").size(20.0));
+                ui.separator();
+                if studio_ui::icon_button(ui, StudioIcon::Open, false, 34.0, "Открыть TeX · Ctrl+O")
+                    .clicked()
+                    && ready
+                {
+                    self.open_document_dialog();
+                }
+                if studio_ui::icon_button(
+                    ui,
+                    StudioIcon::Save,
+                    false,
+                    34.0,
+                    "Сохранить исходник · Ctrl+S",
+                )
+                .clicked()
+                    && ready
+                {
+                    self.save();
+                }
+                if studio_ui::icon_button(
+                    ui,
+                    StudioIcon::Build,
+                    self.receiver.is_some(),
+                    34.0,
+                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter",
+                )
+                .clicked()
+                    && ready
+                {
+                    self.build();
+                }
+                if studio_ui::icon_button(
+                    ui,
+                    StudioIcon::Export,
+                    false,
+                    34.0,
+                    "Экспорт PDF. Только актуальный результат XeLaTeX.",
+                )
+                .clicked()
+                    && self.pdf.is_some()
+                    && !self.preview_stale()
+                {
+                    self.export();
+                }
+                if self.receiver.is_some()
+                    && ui
+                        .small_button("■")
+                        .on_hover_text("Отменить сборку")
+                        .clicked()
+                    && let Some(cancel) = &self.cancellation
+                {
+                    cancel.cancel();
+                }
+                ui.separator();
+                match show_studio_file_menu(ui, &mut self.file_field, ready).action {
+                    Some(StudioFileAction::OpenPath) => {
+                        self.open_path(PathBuf::from(self.file_field.trim()));
+                    }
+                    Some(StudioFileAction::SaveAs) => {
+                        self.save_as();
+                    }
+                    None => {}
+                }
+                ui.menu_button("Вид", |ui| {
+                    if ui
+                        .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
+                        .changed()
+                        && !self.prefs.studio_tool_rail
+                    {
+                        // A hidden rail must not leave a floating tool palette.
+                        self.studio_group = None;
+                    }
+                    ui.checkbox(&mut self.prefs.studio_inspector_open, "Инспектор");
+                    ui.checkbox(&mut self.prefs.studio_console_open, "Диагностика");
+                    ui.separator();
+                    self.prefs.draw_toolbar(ui, ctx);
+                    if ui.button("Классический режим").clicked() {
+                        self.prefs.studio_mode = false;
+                        ui.close();
+                    }
+                    if ui.button("Шрифты рисунка").clicked() {
+                        self.prefs.show_font_lab = true;
+                        ui.close();
+                    }
+                });
+                if studio_ui::icon_button(
+                    ui,
+                    StudioIcon::Help,
+                    self.prefs.studio_dock == StudioDock::Help && self.prefs.studio_inspector_open,
+                    32.0,
+                    "Контекстная справка F1 из общего TikZ-каталога",
+                )
+                .clicked()
+                {
+                    studio_ui::toggle_studio_help_button(
+                        &mut self.authoring,
+                        &mut self.prefs.studio_dock,
+                        &mut self.prefs.studio_inspector_open,
+                    );
+                }
+                if studio_ui::icon_button(
+                    ui,
+                    StudioIcon::Console,
+                    self.prefs.studio_console_open,
+                    32.0,
+                    "Показать или скрыть диагностику и журнал XeLaTeX",
+                )
+                .clicked()
+                {
+                    self.prefs.studio_console_open = !self.prefs.studio_console_open;
+                }
+            });
+            ui.horizontal(|ui| {
+                let prior_focus = self.pdf_focus_in_split;
+                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз");
+                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF");
+                if self.pdf_focus_in_split && !prior_focus {
+                    self.fit_page_active = true;
+                    self.authoring.cancelled_pointer_capture |=
+                        self.authoring.guide_pointer_armed || self.authoring.drag_start.is_some();
+                    self.authoring.guide_pointer_armed = false;
+                    self.authoring.drag_start = None;
+                    self.authoring.alt_selection_capture = false;
+                }
+                ui.separator();
+                let filename = self
+                    .document
+                    .path
+                    .as_ref()
+                    .map_or_else(|| "Новый .tex".to_owned(), |p| p.display().to_string());
+                ui.add(egui::Label::new(filename).truncate());
+                if self.document.dirty() {
+                    ui.colored_label(ui.visuals().warn_fg_color, "● Изменено");
+                }
+                if self.preview_stale() {
+                    ui.colored_label(ui.visuals().warn_fg_color, "PDF устарел");
+                }
+            });
+        });
+    }
+
+    /// One contextual dock at a time. Unlike the legacy UI, library inventory,
+    /// parameter editing and full help do not stack into one endless scroll.
+    fn show_studio_inspector(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            for tab in StudioDock::ALL {
+                ui.selectable_value(&mut self.prefs.studio_dock, tab, tab.label());
+            }
+        });
+        ui.separator();
+        if self.authoring.active.is_some() || self.authoring.undo_available() {
+            let prior = self.authoring.source_revision();
+            if let Some(line) = tikz_canvas::show_inspector_action_bar(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+            ) {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+            }
+            fence_source_editor_undo_on_revision_change(
+                prior,
+                &self.authoring,
+                &mut self.reset_source_editor_undo_history,
+            );
+            ui.separator();
+        }
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| match self.prefs.studio_dock {
+                StudioDock::Properties => {
+                    if self.authoring.active.is_none() {
+                        ui.heading("Выберите инструмент");
+                        ui.label("Нажмите на группу иконок слева, затем выберите команду TikZ.");
+                        ui.small("Параметры и примеры появятся здесь из единого каталога.");
+                        ui.separator();
+                        ui.small("Исходный .tex остаётся редактируемым. Точный результат — внешний XeLaTeX.");
+                    } else {
+                        let prior = self.authoring.source_revision();
+                        let caps = self.primitive_capabilities();
+                        if let Some(line) = tikz_canvas::show_inspector(
+                            ui,
+                            &mut self.authoring,
+                            &mut self.document.source,
+                            caps,
+                        ) {
+                            self.jump_to_line = Some(line);
+                            self.highlight_generated_line = true;
+                        }
+                        fence_source_editor_undo_on_revision_change(
+                            prior,
+                            &self.authoring,
+                            &mut self.reset_source_editor_undo_history,
+                        );
+                    }
+                }
+                StudioDock::Libraries => {
+                    ui.heading("Библиотеки проекта");
+                    ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
+                    let prior = self.authoring.source_revision();
+                    if let Some(line) = tikz_libraries::show_library_panel(
+                        ui,
+                        &mut self.authoring,
+                        &mut self.document.source,
+                        self.tex.xelatex.is_some(),
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    fence_source_editor_undo_on_revision_change(
+                        prior,
+                        &self.authoring,
+                        &mut self.reset_source_editor_undo_history,
+                    );
+                    ui.collapsing("Реестр доступности пакетов", |ui| {
+                        for item in &self.package_statuses {
+                            ui.strong(&item.manifest.display_name);
+                            ui.small(format!(
+                                "Установка: {:?} · XeLaTeX: {:?} · GUI-адаптер: {}",
+                                item.installation,
+                                item.compilation,
+                                if item.visual_editable {
+                                    "да"
+                                } else {
+                                    "нет"
+                                }
+                            ));
+                        }
+                    });
+                }
+                StudioDock::Help => {
+                    tikz_libraries::show_help_search(ui, &mut self.help_query);
+                    ui.separator();
+                    studio_ui::show_context_help(ui, &self.authoring);
+                }
+            });
+    }
+
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
+        // Studio uses the full central area for ONE primary task: interactive
+        // TikZ authoring OR exact PDF. The previous 170pt pad above a huge
+        // empty preview was the principal ergonomic failure on 1366x768.
+        // Both modes keep the original editable code pane alongside them.
+        if self.prefs.studio_mode && !self.pdf_focus_in_split {
+            let prior = self.authoring.source_revision();
+            let caps = self.primitive_capabilities();
+            if let Some(line) = tikz_canvas::show_guide_studio(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+                caps,
+            ) {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+                ui.ctx().request_repaint();
+            }
+            fence_source_editor_undo_on_revision_change(
+                prior,
+                &self.authoring,
+                &mut self.reset_source_editor_undo_history,
+            );
+            ui.separator();
+            ui.small("Интерактивный эскиз TikZ. Точная геометрия и шрифты — во вкладке PDF после XeLaTeX.");
+            return;
+        }
         let canvas_width = ui.available_width();
         let mut displayed_zoom_percent = pdf_zoom_percent(self.zoom);
         ui.horizontal_wrapped(|ui| {
-            ui.heading("Canvas · exact PDF (read-only)");
-            if self.workspace == WorkspaceMode::Split {
+            ui.heading(if self.prefs.studio_mode {
+                "Рисунок / PDF"
+            } else {
+                "Canvas · exact PDF (read-only)"
+            });
+            if self.workspace == WorkspaceMode::Split && !self.prefs.studio_mode {
                 ui.label("Центр:");
                 show_split_center_focus_switch(
                     ui,
@@ -1178,13 +1565,23 @@ impl TikzariumApp {
         }
         ui.label(&self.preview_status);
         ui.small(&self.page_navigation_status);
-        ui.small("The guide pad edits N1-owned source through the shared TikZ catalogue. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
+        if !self.prefs.studio_mode {
+            ui.small("The guide pad edits N1-owned source through the shared TikZ catalogue. This exact PDF is read-only and is NOT coordinate-aligned with the guide.");
+        }
         if self.workspace == WorkspaceMode::Split && !self.pdf_focus_in_split {
             let caps = self.primitive_capabilities();
             let previous_revision = self.authoring.source_revision();
-            if let Some(line) =
+            let inserted = if self.prefs.studio_mode {
+                tikz_canvas::show_guide_studio(
+                    ui,
+                    &mut self.authoring,
+                    &mut self.document.source,
+                    caps,
+                )
+            } else {
                 tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
-            {
+            };
+            if let Some(line) = inserted {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
                 // The source SidePanel has already been rendered this frame.
@@ -1413,6 +1810,26 @@ impl TikzariumApp {
     }
 }
 
+/// Reserve the Studio status row before any side/central panel consumes the
+/// remaining viewport. The bottom bar is full width, and on-demand diagnostics
+/// stack ABOVE it; editable source and provisional guide cannot render beneath
+/// an after-the-fact CentralPanel overlay.
+fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bool) -> egui::Rect {
+    egui::TopBottomPanel::bottom("b42-status")
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(status).small());
+                if xelatex_ready {
+                    ui.small("XeLaTeX: настроен");
+                } else {
+                    ui.colored_label(ui.visuals().warn_fg_color, "XeLaTeX не выбран");
+                }
+            });
+        })
+        .response
+        .rect
+}
+
 impl eframe::App for TikzariumApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, STORAGE_KEY, &self.prefs);
@@ -1427,7 +1844,16 @@ impl eframe::App for TikzariumApp {
         // Pending dirty-Open decisions own the keyboard: do not change source
         // through a global help/visual Undo shortcut behind the modal.
         if self.pending_open.is_none() {
+            let had_help = self.authoring.help;
             tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
+            if self.prefs.studio_mode {
+                studio_ui::route_studio_help_toggle(
+                    had_help,
+                    self.authoring.help,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
+            }
             if self.workspace == WorkspaceMode::Split
                 && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
                     ctx,
@@ -1466,98 +1892,120 @@ impl eframe::App for TikzariumApp {
             }
         }
         let file_actions_enabled = self.receiver.is_none() && self.pending_open.is_none();
-        egui::TopBottomPanel::top("tools").show(ctx, |ui| {
-            if self.pending_open.is_some() {
-                ui.disable();
-            }
-            ui.horizontal_wrapped(|ui| {
-                ui.heading("TikZarium");
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Open"))
-                    .on_hover_text("Ctrl+O / Cmd+O")
-                    .clicked()
-                {
-                    self.open_document_dialog();
+        if self.prefs.studio_mode {
+            self.workspace = WorkspaceMode::Split;
+            self.show_studio_toolbar(ctx);
+        } else {
+            egui::TopBottomPanel::top("tools").show(ctx, |ui| {
+                if self.pending_open.is_some() {
+                    ui.disable();
                 }
-                ui.label("Path:");
-                ui.add(
-                    egui::TextEdit::singleline(&mut self.file_field)
-                        .desired_width(280.0)
-                        .hint_text("path/to/figure.tex"),
-                );
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Open path"))
-                    .clicked()
-                {
-                    self.open_path(PathBuf::from(self.file_field.trim()));
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Save"))
-                    .on_hover_text("Ctrl+S / Cmd+S")
-                    .clicked()
-                {
-                    self.save();
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Save As…"))
-                    .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
-                    .clicked()
-                {
-                    self.save_as();
-                }
-                if ui
-                    .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
-                    .on_hover_text("Ctrl+Enter / Cmd+Enter")
-                    .clicked()
-                {
-                    self.build();
-                }
-                if ui
-                    .add_enabled(self.receiver.is_some(), egui::Button::new("Cancel"))
-                    .clicked()
-                    && let Some(cancel) = &self.cancellation
-                {
-                    cancel.cancel();
-                }
-                if ui
-                    .add_enabled(
-                        self.pdf.is_some() && !self.preview_stale(),
-                        egui::Button::new("Export PDF"),
-                    )
-                    .clicked()
-                {
-                    self.export();
-                }
-                if ui
-                    .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
-                    .clicked()
-                {
-                    self.refresh_tex();
-                }
+                ui.horizontal_wrapped(|ui| {
+                    ui.heading("TikZarium");
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Open"))
+                        .on_hover_text("Ctrl+O / Cmd+O")
+                        .clicked()
+                    {
+                        self.open_document_dialog();
+                    }
+                    ui.label("Path:");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.file_field)
+                            .desired_width(280.0)
+                            .hint_text("path/to/figure.tex"),
+                    );
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Open path"))
+                        .clicked()
+                    {
+                        self.open_path(PathBuf::from(self.file_field.trim()));
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Save"))
+                        .on_hover_text("Ctrl+S / Cmd+S")
+                        .clicked()
+                    {
+                        self.save();
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Save As…"))
+                        .on_hover_text("Ctrl+Shift+S / Cmd+Shift+S")
+                        .clicked()
+                    {
+                        self.save_as();
+                    }
+                    if ui
+                        .add_enabled(file_actions_enabled, egui::Button::new("Build (XeLaTeX)"))
+                        .on_hover_text("Ctrl+Enter / Cmd+Enter")
+                        .clicked()
+                    {
+                        self.build();
+                    }
+                    if ui
+                        .add_enabled(self.receiver.is_some(), egui::Button::new("Cancel"))
+                        .clicked()
+                        && let Some(cancel) = &self.cancellation
+                    {
+                        cancel.cancel();
+                    }
+                    if ui
+                        .add_enabled(
+                            self.pdf.is_some() && !self.preview_stale(),
+                            egui::Button::new("Export PDF"),
+                        )
+                        .clicked()
+                    {
+                        self.export();
+                    }
+                    if ui
+                        .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
+                        .clicked()
+                    {
+                        self.refresh_tex();
+                    }
+                });
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Workspace:");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Source, "Source");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
+                    ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
+                    ui.separator();
+                    self.prefs.draw_toolbar(ui, ctx);
+                    if ui.button("Figure fonts").clicked() {
+                        self.prefs.show_font_lab = !self.prefs.show_font_lab;
+                    }
+                    ui.checkbox(&mut self.show_packages, "Library inventory");
+                    ui.checkbox(&mut self.show_log, "Diagnostics / log");
+                    if self.document.dirty() {
+                        ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
+                    }
+                    if self.preview_stale() {
+                        ui.colored_label(egui::Color32::YELLOW, "PDF stale");
+                    }
+                    ui.label(&self.status);
+                });
             });
-            ui.horizontal_wrapped(|ui| {
-                ui.label("Workspace:");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Source, "Source");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Split, "Split");
-                ui.selectable_value(&mut self.workspace, WorkspaceMode::Canvas, "Canvas");
-                ui.separator();
-                self.prefs.draw_toolbar(ui, ctx);
-                if ui.button("Figure fonts").clicked() {
-                    self.prefs.show_font_lab = !self.prefs.show_font_lab;
-                }
-                ui.checkbox(&mut self.show_packages, "Library inventory");
-                ui.checkbox(&mut self.show_log, "Diagnostics / log");
-                if self.document.dirty() {
-                    ui.colored_label(egui::Color32::YELLOW, "Unsaved edits");
-                }
-                if self.preview_stale() {
-                    ui.colored_label(egui::Color32::YELLOW, "PDF stale");
-                }
-                ui.label(&self.status);
-            });
-        });
+        }
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
-        if self.workspace == WorkspaceMode::Split {
+        if self.prefs.studio_mode {
+            show_studio_status_panel(ctx, &self.status, self.tex.xelatex.is_some());
+        }
+        if self.prefs.studio_mode && self.prefs.studio_inspector_open {
+            let studio = studio_ui::StudioLayout::for_width(ctx.available_rect().width());
+            egui::SidePanel::right("b42-studio-inspector")
+                .resizable(true)
+                .default_width(studio.inspector_width)
+                .min_width(225.0)
+                .max_width(studio.inspector_max)
+                .show(ctx, |ui| {
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
+                    self.show_studio_inspector(ui);
+                });
+        }
+        if !self.prefs.studio_mode && self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
                 let previous_revision = self.authoring.source_revision();
                 if self.pending_open.is_some() {
@@ -1582,7 +2030,9 @@ impl eframe::App for TikzariumApp {
                     .show(ui, |ui| self.show_authoring_inspector(ui));
             });
         }
-        if self.show_log {
+        if (!self.prefs.studio_mode && self.show_log)
+            || (self.prefs.studio_mode && self.prefs.studio_console_open)
+        {
             egui::TopBottomPanel::bottom("log")
                 .resizable(true)
                 .default_height(145.0)
@@ -1657,11 +2107,36 @@ impl eframe::App for TikzariumApp {
                         });
                 });
         }
-        if self.workspace == WorkspaceMode::Split {
-            show_split_source_panel(ctx, split_layout, |ui| {
-                self.show_source_editor(ui);
-            });
+        if self.prefs.studio_mode
+            && self.workspace == WorkspaceMode::Split
+            && self.prefs.studio_tool_rail
+        {
+            egui::SidePanel::left("b42-tool-groups")
+                .resizable(false)
+                .exact_width(
+                    studio_ui::StudioLayout::for_width(ctx.available_rect().width())
+                        .tool_rail_width,
+                )
+                .show(ctx, |ui| {
+                    if self.pending_open.is_some() {
+                        ui.disable();
+                    }
+                    if let Some(anchor) = studio_ui::show_group_rail(
+                        ui,
+                        &mut self.studio_group,
+                        studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
+                    ) {
+                        self.studio_palette_anchor = anchor;
+                    }
+                });
         }
+        let actual_source_rect = if self.workspace == WorkspaceMode::Split {
+            Some(show_split_source_panel(ctx, split_layout, |ui| {
+                self.show_source_editor(ui);
+            }))
+        } else {
+            None
+        };
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.pending_open.is_some() {
                 ui.disable();
@@ -1672,6 +2147,29 @@ impl eframe::App for TikzariumApp {
                 self.show_source_editor(ui);
             }
         });
+        if self.prefs.studio_mode
+            && self.prefs.studio_tool_rail
+            && self.pending_open.is_none()
+            && let Some(source_rect) = actual_source_rect
+        {
+            let mut open_libraries = false;
+            studio_ui::show_palette(
+                ctx,
+                &mut self.studio_group,
+                studio_ui::palette_anchor_at_source_edge(source_rect, self.studio_palette_anchor),
+                &mut self.authoring,
+                studio_ui::PaletteData {
+                    source: &self.document.source,
+                    extensions: &self.package_statuses,
+                    filter: &mut self.studio_extension_filter,
+                },
+                &mut open_libraries,
+            );
+            if open_libraries {
+                self.prefs.studio_dock = StudioDock::Libraries;
+                self.prefs.studio_inspector_open = true;
+            }
+        }
         if let Some(path) = self.pending_open.clone() {
             let previous_destination = self.pending_open_save_path.clone();
             let decision = show_pending_open_dialog(
@@ -1724,7 +2222,7 @@ impl eframe::App for TikzariumApp {
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size(egui::vec2(1250.0, 800.0))
+            .with_inner_size(egui::vec2(1366.0, 768.0))
             .with_min_inner_size(egui::vec2(850.0, 560.0)),
         ..Default::default()
     };
@@ -2429,6 +2927,176 @@ mod split_layout_tests {
     }
 
     #[test]
+    fn b42_status_is_full_width_and_does_not_occlude_editable_source_or_guide() {
+        // The production status panel must be allocated BEFORE any inspector,
+        // source SidePanel or CentralPanel, at minimum and normal viewport.
+        // RawInput layout evidence only, not a physical OS-window screenshot.
+        for (width, height) in [(850.0, 560.0), (1366.0, 768.0)] {
+            let ctx = egui::Context::default();
+            let mut source = QUICKSTART.to_owned();
+            let original = source.clone();
+            let mut session = tikz_authoring::Session::default();
+            session.reset(&source);
+            let mut status_rect = egui::Rect::NOTHING;
+            let mut source_rect = egui::Rect::NOTHING;
+            let mut guide_rect = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(width, height),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("b42-status-test-toolbar").show(ctx, |ui| {
+                        ui.label("Studio: source + native TikZ guide");
+                    });
+                    status_rect = show_studio_status_panel(ctx, "Сохраните рисунок", false);
+                    egui::SidePanel::right("b42-status-test-inspector")
+                        .exact_width(225.0)
+                        .show(ctx, |ui| {
+                            ui.label("Русские пояснения C");
+                        });
+                    egui::SidePanel::left("b42-status-test-tools")
+                        .exact_width(62.0)
+                        .show(ctx, |ui| {
+                            ui.label("TikZ");
+                        });
+                    source_rect = show_split_source_panel(
+                        ctx,
+                        SplitPanelLayout::for_width(ctx.available_rect().width()),
+                        |ui| {
+                            ui.add(egui::TextEdit::multiline(&mut source).code_editor());
+                        },
+                    );
+                    guide_rect = egui::CentralPanel::default()
+                        .show(ctx, |ui| {
+                            tikz_canvas::show_guide_studio(
+                                ui,
+                                &mut session,
+                                &mut source,
+                                tikz_canvas::Capabilities {
+                                    installed: true,
+                                    loaded: Evidence::Confirmed,
+                                    engine_compatible: true,
+                                    implemented: true,
+                                },
+                            );
+                        })
+                        .response
+                        .rect;
+                },
+            );
+            assert!(status_rect.is_positive());
+            assert!(source_rect.is_positive());
+            assert!(guide_rect.is_positive());
+            assert!(
+                status_rect.width() >= width - 2.0,
+                "status row not full width at {width}: {status_rect:?}"
+            );
+            assert!(
+                source_rect.bottom() <= status_rect.top() + 1.0,
+                "source hidden under status at {width}"
+            );
+            assert!(
+                guide_rect.bottom() <= status_rect.top() + 1.0,
+                "guide hidden under status at {width}"
+            );
+            assert_eq!(source, original);
+            assert!(!session.undo_available());
+        }
+    }
+
+    #[test]
+    fn b42_studio_save_icon_event_persists_default_utf8_scratch_without_overwriting() {
+        // The exact production icon handler is driven by egui pointer frames.
+        // This is UNIT_EVENT, not an actual X11/Win10/macOS desktop run.
+        fn frame(
+            ctx: &egui::Context,
+            document: &mut Document,
+            destination: &Path,
+            rect: &mut egui::Rect,
+            events: Vec<egui::Event>,
+        ) -> bool {
+            let mut saved = false;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("b42-save-icon-event").show(ctx, |ui| {
+                        ui.horizontal(|ui| {
+                            let response = studio_ui::icon_button(
+                                ui,
+                                StudioIcon::Save,
+                                false,
+                                34.0,
+                                "Сохранить исходник · Ctrl+S",
+                            );
+                            *rect = response.rect;
+                            if response.clicked() {
+                                let path =
+                                    typed_save_destination(document, destination.to_str().unwrap())
+                                        .unwrap();
+                                document.save_to(&path).unwrap();
+                                saved = true;
+                            }
+                        });
+                    });
+                },
+            );
+            saved
+        }
+
+        assert_eq!(DEFAULT_SCRATCH_FILENAME, "figure.tex");
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join(DEFAULT_SCRATCH_FILENAME);
+        let original = "% исходный комментарий\r\n\\MyOpaque{Не менять}\r\n";
+        let mut document = Document::scratch(original);
+        let ctx = egui::Context::default();
+        let mut rect = egui::Rect::NOTHING;
+        assert!(!frame(&ctx, &mut document, &path, &mut rect, vec![]));
+        assert!(rect.is_positive());
+        let pos = rect.center();
+        let button = |pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        assert!(!frame(
+            &ctx,
+            &mut document,
+            &path,
+            &mut rect,
+            vec![egui::Event::PointerMoved(pos), button(true)],
+        ));
+        assert!(frame(
+            &ctx,
+            &mut document,
+            &path,
+            &mut rect,
+            vec![button(false)],
+        ));
+        assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
+        assert_eq!(Document::load(&path).unwrap().source, original);
+        assert!(!document.dirty());
+
+        let another_scratch = Document::scratch("% другой черновик\r\n");
+        assert!(
+            typed_save_destination(&another_scratch, path.to_str().unwrap()).is_err(),
+            "the suggested scratch name must never overwrite a prior document"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
+    }
+
+    #[test]
     fn b33_typed_save_rejects_existing_open_target_and_accepts_new_utf8_file() {
         let dir = tempfile::tempdir().unwrap();
         let target = dir.path().join("чужой-файл.tex");
@@ -2517,6 +3185,91 @@ mod split_layout_tests {
             pending_open_save_destination(&already_open, target.to_str().unwrap(), &target,)
                 .is_ok(),
             "reopening the same loaded file must remain possible"
+        );
+    }
+
+    #[test]
+    fn b42_dirty_open_scratch_preserves_safe_destination_on_real_egui_save_click() {
+        // UNIT_EVENT: drive the production Save-and-open button. The File menu
+        // may have changed its field to the incoming file; never save there.
+        fn frame(
+            ctx: &egui::Context,
+            document: &Document,
+            target: &Path,
+            input: &mut String,
+            events: Vec<egui::Event>,
+        ) -> (Option<PendingOpenAction>, egui::Rect) {
+            let mut result = (None, egui::Rect::NOTHING);
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let (action, rect, _) =
+                            pending_open_controls(ui, document, target, input, None);
+                        result = (action, rect);
+                    });
+                },
+            );
+            result
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("открыть.tex");
+        let safe = dir.path().join("мой-черновик.tex");
+        let original = "% чужой CRLF\r\n\\foreignMacro{Не менять}\r\n";
+        let scratch_source = "% набросок\r\n\\opaqueUser{оставить}\r\n";
+        std::fs::write(&target, original).unwrap();
+        let mut scratch = Document::scratch(scratch_source);
+        assert!(scratch.dirty());
+        let mut input = initial_pending_open_save_path(&scratch, &target, &safe);
+        assert_eq!(input, safe.to_str().unwrap());
+        let ctx = egui::Context::default();
+        let (_, button) = frame(&ctx, &scratch, &target, &mut input, vec![]);
+        assert!(button.is_positive());
+        let at = button.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &ctx,
+            &scratch,
+            &target,
+            &mut input,
+            vec![egui::Event::PointerMoved(at), pointer(true)],
+        );
+        assert_eq!(
+            frame(&ctx, &scratch, &target, &mut input, vec![pointer(false)]).0,
+            Some(PendingOpenAction::Save(safe.clone()))
+        );
+        scratch.save_to(&safe).unwrap();
+        assert_eq!(std::fs::read(&safe).unwrap(), scratch_source.as_bytes());
+        assert_eq!(Document::load(&target).unwrap().source, original);
+        assert_eq!(Document::load(&safe).unwrap().source, scratch_source);
+        assert_eq!(
+            initial_pending_open_save_path(&Document::scratch(scratch_source), &target, &safe),
+            "",
+            "occupied destination must not be suggested again"
+        );
+        assert_eq!(
+            initial_pending_open_save_path(&Document::scratch(scratch_source), &target, &target),
+            "",
+            "incoming target must not be proposed as scratch Save"
+        );
+        let mut loaded = Document::load(&target).unwrap();
+        loaded.source.push_str("% ручная правка\r\n");
+        assert_eq!(
+            initial_pending_open_save_path(&loaded, &target, &safe),
+            target.to_str().unwrap()
         );
     }
 
@@ -3124,5 +3877,150 @@ mod split_layout_tests {
         assert!(restored.1 < pdf.1 - 150.0);
         assert_eq!(source, original);
         assert!(!authoring.undo_available());
+    }
+}
+
+#[cfg(test)]
+mod b42_file_popup_tests {
+    use super::*;
+
+    fn frame(
+        ctx: &egui::Context,
+        file_field: &mut String,
+        events: Vec<egui::Event>,
+        modifiers: egui::Modifiers,
+    ) -> StudioFileMenuResponse {
+        let mut result = None;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
+                )),
+                events,
+                modifiers,
+                ..Default::default()
+            },
+            |ctx| {
+                egui::TopBottomPanel::top("b42-file-popup-event").show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.strong("TikZarium");
+                        ui.separator();
+                        result = Some(show_studio_file_menu(ui, file_field, true));
+                    });
+                });
+                egui::CentralPanel::default().show(ctx, |_ui| {});
+            },
+        );
+        result.expect("the production File menu was not laid out")
+    }
+
+    fn pointer(pos: egui::Pos2, pressed: bool) -> egui::Event {
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::default(),
+        }
+    }
+
+    fn click(
+        ctx: &egui::Context,
+        file_field: &mut String,
+        pos: egui::Pos2,
+    ) -> (StudioFileMenuResponse, StudioFileMenuResponse) {
+        frame(
+            ctx,
+            file_field,
+            vec![egui::Event::PointerMoved(pos), pointer(pos, true)],
+            Default::default(),
+        );
+        let released = frame(
+            ctx,
+            file_field,
+            vec![pointer(pos, false)],
+            Default::default(),
+        );
+        let settled = frame(ctx, file_field, vec![], Default::default());
+        (released, settled)
+    }
+
+    #[test]
+    fn b42_file_textedit_click_keeps_popup_open_then_real_open_action() {
+        // I62 repro: old ui.menu_button closed the popup upon focusing TextEdit.
+        // UNIT_EVENT through the actual production menu, NOT physical X11.
+        let directory = tempfile::tempdir().unwrap();
+        let second = directory.path().join("second-crlf.tex");
+        let untouched = "% Не менять\r\n\\OpaqueSecond{тест}\r\n";
+        std::fs::write(&second, untouched).unwrap();
+
+        let ctx = egui::Context::default();
+        let mut field = "figure.tex".to_owned();
+        let initial = frame(&ctx, &mut field, vec![], Default::default());
+        assert!(initial.trigger_rect.is_positive());
+        let (_, opened) = click(&ctx, &mut field, initial.trigger_rect.center());
+        assert!(opened.path_rect.is_some(), "File popup did not open");
+
+        let (_, focused) = click(&ctx, &mut field, opened.path_rect.unwrap().center());
+        assert!(
+            focused.path_rect.is_some(),
+            "clicking inside File TextEdit must not dismiss the popup"
+        );
+        let control = egui::Modifiers {
+            ctrl: true,
+            command: true,
+            ..Default::default()
+        };
+        frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Key {
+                key: egui::Key::A,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: control,
+            }],
+            control,
+        );
+        frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Key {
+                key: egui::Key::A,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: control,
+            }],
+            Default::default(),
+        );
+        let entered = frame(
+            &ctx,
+            &mut field,
+            vec![egui::Event::Text("second-crlf.tex".into())],
+            Default::default(),
+        );
+        assert_eq!(
+            field, "second-crlf.tex",
+            "focused File TextEdit must replace the path"
+        );
+        assert!(
+            entered.path_rect.is_some(),
+            "typing must not close the menu"
+        );
+
+        let visible = frame(&ctx, &mut field, vec![], Default::default());
+        let open_rect = visible
+            .open_rect
+            .expect("Open button not visible after editing");
+        let (activated, closed) = click(&ctx, &mut field, open_rect.center());
+        assert_eq!(activated.action, Some(StudioFileAction::OpenPath));
+        assert!(
+            closed.path_rect.is_none(),
+            "Open must explicitly close File"
+        );
+        assert_eq!(std::fs::read(&second).unwrap(), untouched.as_bytes());
+        assert_eq!(Document::load(&second).unwrap().source, untouched);
     }
 }
