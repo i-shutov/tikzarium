@@ -2125,6 +2125,109 @@ mod tests {
         }
     }
 
+    // UNIT_EVENT: exercise the Studio guide, not the legacy tool-row guide.
+    // Group-palette selection is tested separately: Studio deliberately shares
+    // this production pointer handler and the C-owned source patch path.
+    fn b42_studio_event_frame(
+        ctx: &egui::Context,
+        session: &mut Session,
+        source: &mut String,
+        events: Vec<egui::Event>,
+        viewport_width: f32,
+    ) -> (Option<usize>, Rect) {
+        let mut observed = None;
+        let mut guide_rect = Rect::NOTHING;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(
+                    Pos2::ZERO,
+                    Vec2::new(viewport_width, 640.0),
+                )),
+                events,
+                ..Default::default()
+            },
+            |ctx| {
+                handle_help_shortcut(ctx, session);
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    (observed, guide_rect) =
+                        show_guide_frame_mode(ui, session, source, READY, None, false);
+                });
+            },
+        );
+        (observed, guide_rect)
+    }
+
+    #[test]
+    fn b42_studio_six_pointer_gestures_reopen_and_undo_use_actual_egui_frames() {
+        for width in [850.0, 1366.0] {
+            for tool in TOOLS {
+                let ctx = egui::Context::default();
+                let mut source = EVENT_SOURCE.to_owned();
+                let before = source.clone();
+                let mut session = Session::default();
+                session.reset(&source);
+                session.select_tool(tool);
+                assert_eq!(source, before, "{tool:?}: selection changed source");
+                let (_, guide) =
+                    b42_studio_event_frame(&ctx, &mut session, &mut source, vec![], width);
+                assert!(guide.width() > 190.0 && guide.height() > 190.0);
+                let start = screen_point(guide, Point::new(1.0, 1.0));
+                let end = screen_point(guide, Point::new(3.0, 2.0));
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(start), primary(start, true)],
+                    width,
+                );
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::PointerMoved(end)],
+                    width,
+                );
+                let (line, _) =
+                    b42_studio_event_frame(&ctx, &mut session, &mut source, vec![primary(end, false)], width);
+                let line = line.expect("Studio pointer release must focus authored command");
+                let owned = tikz_authoring::owned(&source);
+                assert_eq!(owned.len(), 1, "{tool:?}: missing or duplicate C command");
+                assert_eq!(owned[0].tool, tool);
+                assert_eq!(owned[0].line, line);
+                assert!(source.contains(&tikz_authoring::command(tool, &owned[0].draft).unwrap()));
+                assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+                assert!(source.contains("% пользовательский непрозрачный материал"));
+                let directory = tempfile::tempdir().unwrap();
+                let file = directory.path().join("studio.tex");
+                std::fs::write(&file, &source).unwrap();
+                let saved = std::fs::read_to_string(&file).unwrap();
+                assert_eq!(saved, source);
+                let mut reopened = Session::default();
+                reopened.reset(&saved);
+                assert_eq!(reopened.choose(&saved, 1).unwrap(), line);
+                let after_drawing = source.clone();
+                let help_before = session.help;
+                b42_studio_event_frame(
+                    &ctx,
+                    &mut session,
+                    &mut source,
+                    vec![egui::Event::Key {
+                        key: egui::Key::F1,
+                        physical_key: None,
+                        pressed: true,
+                        repeat: false,
+                        modifiers: egui::Modifiers::default(),
+                    }],
+                    width,
+                );
+                assert_ne!(session.help, help_before, "{tool:?}: Studio F1 failed");
+                assert_eq!(source, after_drawing, "{tool:?}: F1 touched source");
+                session.undo(&mut source).unwrap();
+                assert_eq!(source, before, "{tool:?}: Studio Undo changed user TeX");
+            }
+        }
+    }
+
     #[test]
     fn actual_egui_pointer_frames_create_six_c_catalogue_commands_and_preserve_source() {
         for tool in TOOLS {
