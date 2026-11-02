@@ -1738,9 +1738,13 @@ impl eframe::App for TikzariumApp {
         if self.pending_open.is_none() {
             let had_help = self.authoring.help;
             tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
-            if self.prefs.studio_mode && !had_help && self.authoring.help {
-                self.prefs.studio_dock = StudioDock::Help;
-                self.prefs.studio_inspector_open = true;
+            if self.prefs.studio_mode {
+                studio_ui::route_studio_help_toggle(
+                    had_help,
+                    self.authoring.help,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
             }
             if self.workspace == WorkspaceMode::Split
                 && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
