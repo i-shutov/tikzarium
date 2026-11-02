@@ -62,3 +62,14 @@ B42 real-RawInput six-gesture test covers code patches independently.
 Acceptance still requires a real X11 resize/rail hide/reopen screenshot
 sequence plus six live Studio gestures, genuine source Ctrl+Z and PDF.
 Synthetic rectangles and `UNIT_EVENT` do not prove real resizable GUI.
+
+## B42 F1 Studio dock coherence
+
+In B42, the first F1 switches to the shared C Help tab, but the second F1
+previously only cleared `Session::help` while leaving the Help tab visually
+unchanged. Keep the control honest: F1 on opens the inspector's Help tab;
+F1 off returns to Properties when Help is selected. The existing B41 F1
+fallback for no active tool still applies. Reuse one C catalogue.
+Cover real `egui::Context::run(RawInput)` F1 down/up/down with persisted
+opaque TeX and no Undo entries. Independent actual desktop screenshots
+must still verify visible tab movement, not just the unit event.
