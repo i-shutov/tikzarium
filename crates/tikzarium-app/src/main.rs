@@ -2864,11 +2864,9 @@ mod split_layout_tests {
                             );
                             *rect = response.rect;
                             if response.clicked() {
-                                let path = typed_save_destination(
-                                    document,
-                                    destination.to_str().unwrap(),
-                                )
-                                .unwrap();
+                                let path =
+                                    typed_save_destination(document, destination.to_str().unwrap())
+                                        .unwrap();
                                 document.save_to(&path).unwrap();
                                 saved = true;
                             }
