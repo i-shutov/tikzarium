@@ -4,7 +4,6 @@ use eframe::egui::{self, Color32, Stroke};
 use serde::{Deserialize, Serialize};
 use tikzarium_core::FigureFonts;
 
-
 pub const STORAGE_KEY: &str = "tikzarium.preferences.v1";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]

@@ -1821,7 +1821,6 @@ impl eframe::App for TikzariumApp {
                     ui.label(&self.status);
                 });
             });
-
         }
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.prefs.studio_mode && self.prefs.studio_inspector_open {

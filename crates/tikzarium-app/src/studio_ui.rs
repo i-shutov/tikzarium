@@ -6,7 +6,6 @@ use eframe::egui::{self, Color32, Pos2, Rect, Sense, Shape, Stroke, Vec2};
 use serde::{Deserialize, Serialize};
 use tikzarium_extensions::primitives::Evidence;
 
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StudioDock {
     #[default]
