@@ -65,6 +65,55 @@ jobs:
           sha256sum -c source-before.sha256
           sha256sum *.tex *.pdf *.png > artifacts.sha256
           { xelatex --version; pdftoppm -v 2>&1; } > environment.txt
+      - name: N2 four C-catalogue libraries through external Linux XeLaTeX and PDF inspection
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/n1-authoring/n2"
+          mkdir -p "$root"
+          for name in arrows.meta positioning calc fit; do
+            cargo run --quiet --locked -p tikzarium-extensions --bin n2-library-fixture -- "$name" > "$root/$name.tex"
+            test "$(grep -Fxc "\\usetikzlibrary{$name}" "$root/$name.tex")" -eq 1
+            grep -Fq '\documentclass{standalone}' "$root/$name.tex"
+            grep -Fq '\usepackage{tikz}' "$root/$name.tex"
+          done
+          (
+            cd "$root"
+            { xelatex --version; kpsewhich tikz.sty; } > environment-linux-texlive.txt
+            sha256sum *.tex > source-before.sha256
+            for name in arrows.meta positioning calc fit; do
+              xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder "$name.tex" > "$name.console.log"
+              test -s "$name.pdf"
+              if grep -Fq 'Missing character:' "$name.log"; then
+                echo "Missing XeLaTeX glyph in N2 library $name" >&2
+                exit 1
+              fi
+              pdfinfo "$name.pdf" > "$name.pdfinfo.txt"
+              grep -Eq '^Pages: *1        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n1-app-authoring-linux
+          path: |
+            ${{ runner.temp }}/n1-authoring/
+            ${{ runner.temp }}/n1-lock/lock-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
+ "$name.pdfinfo.txt"
+              pdftotext -enc UTF-8 "$name.pdf" "$name.extracted.txt"
+              pdffonts "$name.pdf" > "$name.fonts.txt"
+              awk 'NR>2 && NF && $(NF-4)!="yes" {bad=1} END {exit bad}' "$name.fonts.txt"
+              if [[ "$name" == "positioning" || "$name" == "fit" ]]; then
+                grep -Fq 'A' "$name.extracted.txt"
+                grep -Fq 'B' "$name.extracted.txt"
+                awk 'END {if(NR<=2) exit 1}' "$name.fonts.txt"
+              fi
+              pdftoppm -f 1 -singlefile -scale-to 1200 -png "$name.pdf" "$name"
+              test -s "$name.png"
+            done
+            sha256sum -c source-before.sha256
+            sha256sum *.tex *.pdf *.png > artifacts.sha256
+          )
+          git diff --exit-code -- Cargo.lock
       - name: Preserve actual source and evidence
         if: always()
         uses: actions/upload-artifact@v4

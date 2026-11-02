@@ -1,3 +1,9 @@
+## Unreleased — I56 N2 all-four library source-event and XeLaTeX evidence (exact CI NOT_RUN)
+
+- Extend the real egui handler Context::run(RawInput) Connect → Disconnect → Undo → disk byte-roundtrip test from one arrows.meta row to all four C-catalogue libraries (arrows.meta, positioning, calc, fit). Each starts in its own collapsed UI context, verifying exactly one CRLF import and unchanged Cyrillic/opaque source. This is UNIT_EVENT, **not hosted X11 or physical desktop**.
+- Generate all four unchanged C-owned TeX examples using n2-library-fixture. Compile via external Linux TeX Live XeLaTeX (not MiKTeX), no shell escape, inspect PDF pages, extracted labels, font embedding where applicable, PNG raster and unchanged source SHA-256. Preserve all files under existing N1 evidence artifact.
+- No TeX parser, solver, package auto-installer, second help catalogue or engine fallback. Exact-head CI, manual artifact review, main merge and postmerge CI **NOT_RUN at authoring**. Existing X11 library workflow proves positioning only; physical Windows 10/MiKTeX and Mac ARM/XeLaTeX remain **NOT_RUN**.
+
 ## Unreleased — I55 exact-branch/postmerge real-X11 N2+N3 QA (new CI NOT_RUN)
 
 - PR #83 I54 independently accepted against exact QA SHA `00eacbf`, then merged into B #81 as `84ebe1f`. I46/I47/I53 real Linux/X11 artifacts independently rehashed **21/21, 46/46, 28/28**; manual screenshot review confirms source-safe modal, six TikZ gestures, Connect/Disconnect/Undo/two-file Open and Russian C-catalogue search expanded to syntax/example. These do not substitute for physical Windows 10/Mac ARM.
