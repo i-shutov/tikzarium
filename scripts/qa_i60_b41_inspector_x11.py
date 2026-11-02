@@ -308,8 +308,25 @@ def main() -> int:
         report["pdf_sha256"] = digest(pdf.read_bytes())
         report["pdf"] = "REAL_GUI_EXTERNAL_XELATEX_PDF_CYRILLIC_FONT_PASS"
         screenshot("13-external-pdf.png")
+        # The PDF pane can be white at the exact Export frame even though
+        # Poppler proves ink in the file. Probe a real Fit Page control and
+        # retain evidence; never label a blank screenshot as preview PASS.
+        click("pdf_fit_page")
+        time.sleep(1.2)
+        screenshot("13b-pdf-fit-page-after-raster.png")
+        report["pdf_preview"] = "SCREENSHOT_REVIEW_PENDING"
+
+        # Reopen resets the active tool: blindly pressing F1 afterward can
+        # generate an identical frame, i.e. no help action at all. Select the
+        # real Circle palette item before checking the native F1 shortcut.
+        click("circle")
+        screenshot("14a-circle-selected-before-f1.png")
         key("F1")
-        screenshot("14-russian-f1.png")
+        screenshot("14b-russian-f1.png")
+        if (out / "14a-circle-selected-before-f1.png").read_bytes() == (
+                out / "14b-russian-f1.png").read_bytes():
+            raise AssertionError("F1 key produced byte-identical screenshot; help NOT proven")
+        report["f1"] = "REAL_X11_EVENT_FRAME_CHANGED__RUSSIAN_DETAILS_REVIEW_PENDING"
         if source_field() != inserted or doc.read_bytes() != inserted:
             raise AssertionError("F1/help or PDF altered committed source")
         if control.read_bytes() != CONTROL:
