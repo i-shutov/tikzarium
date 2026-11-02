@@ -328,3 +328,5 @@ QA-only correction introduces screenshot-reviewed `modal_input_with_error=[675,3
 
 ### I58 B40 independent QA lease (2026-11-02, D/integrator, NOT ACCEPTED)
 - Independent Linux/X11 regression adds source-focused Ctrl+Z after native TikZ guide insertion, plus fail-closed B40 app tree leases for I46/I47/I53/I57, preserving source/XeLaTeX PDF evidence. No production changes; physical Win10 and macOS ARM remain NOT_RUN. See `plans/2026-11-02_I58_B40_REAL_X11_ACCEPTANCE.md`.
+
+- I58 QA source history: four independent hosted Linux/X11 suites on `ee36c446` passed with 208/208 artifact SHA-256 and seven XeLaTeX PDFs; source-focused Ctrl+Z preserved B40 native TikZ edits after guide insertion. Physical Win10 and Mac ARM still NOT_RUN (see I58 insights).

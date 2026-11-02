@@ -42,7 +42,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Exact SHA and unchanged reviewed B39/I56 app source tree
+      - name: Verify exact B40 app tree and independent I58 X11 provenance
         run: |
           test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
           test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'eefe044db4ea5dba41a02411ac4686aa557c31e1'

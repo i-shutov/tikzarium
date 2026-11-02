@@ -15,3 +15,6 @@ I47 additionally tests a specific B40 hazard: user source pasted through native 
 A green unit or CI alone is insufficient. Download every screenshot/source/PDF/report; audit their declared SHA-256; manually review source editor / inspector / generated command / PDF vs XeLaTeX, and verify the expected B40 Ctrl+Z screenshot. Before this review all desktop results are `NOT_ACCEPTED`. Existing screenshot coordinates were not silently declared calibrated.
 
 This QA PR targets the **B40 branch**, not `main`. B40 PR #85 remains draft until its exact new HEAD runs, independent QA evidence and manual review pass. After merge to main, rerun separate post-merge CI. Physical Windows 10 x64 external MiKTeX and Mac ARM M1/M4 external XeLaTeX remain **NOT_RUN**.
+
+## Acceptance checkpoint
+The independent hosted Linux/X11 exact-QA tree acceptance at `ee36c446...` has succeeded on four suites; see `insights/2026-11-02_I58_B40_REAL_X11_QA.md` for 208/208 SHA and seven PDF proof, manual critical screenshot review and outstanding physical target gaps. PR #85 B40 remains draft until its own updated exact-head CI.
