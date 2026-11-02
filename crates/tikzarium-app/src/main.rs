@@ -1240,8 +1240,7 @@ impl TikzariumApp {
                 if studio_ui::icon_button(
                     ui,
                     StudioIcon::Help,
-                    self.prefs.studio_dock == StudioDock::Help
-                        && self.prefs.studio_inspector_open,
+                    self.prefs.studio_dock == StudioDock::Help && self.prefs.studio_inspector_open,
                     32.0,
                     "Контекстная справка F1 из общего TikZ-каталога",
                 )

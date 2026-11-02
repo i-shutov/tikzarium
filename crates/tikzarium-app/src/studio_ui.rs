@@ -661,10 +661,7 @@ mod tests {
             let mut rect = Rect::NOTHING;
             let _ = ctx.run(
                 egui::RawInput {
-                    screen_rect: Some(Rect::from_min_size(
-                        Pos2::ZERO,
-                        egui::vec2(850.0, 560.0),
-                    )),
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, egui::vec2(850.0, 560.0))),
                     events,
                     ..Default::default()
                 },
@@ -766,7 +763,10 @@ mod tests {
         frame(&ctx, &mut session, &mut dock, &mut open, vec![key(true)]);
         assert!(session.help);
         assert_eq!(dock, StudioDock::Help);
-        assert_eq!(source, "% русский CRLF\r\n\\opaqueMacro{не переписывать}\r\n");
+        assert_eq!(
+            source,
+            "% русский CRLF\r\n\\opaqueMacro{не переписывать}\r\n"
+        );
         assert!(!session.undo_available());
     }
 
