@@ -43,3 +43,22 @@ production pointer handler. Palette group icon selection, the full desktop
 layout, source native Ctrl+Z and external XeLaTeX still require independent
 real X11 evidence. The test is **UNIT_EVENT**, not Linux/X11 process QA and
 not physical Windows 10 or macOS ARM acceptance.
+
+## B42 resized-source palette placement and hidden-rail consistency
+
+Reproducible code-path UX defect: `main.rs` positioned the floating
+tool palette using `SplitPanelLayout::source_default`, while the editable
+source SidePanel is `resizable(true)`. After the user changed its width,
+the palette no longer started at the actual source/guide boundary and could
+obscure the code or float unexpectedly. The View menu could also hide the
+tool rail without closing an already open floating palette.
+
+The production fix now reads the real `SidePanel::show(...).response.rect`,
+anchors the palette at `source_rect.right()+8pt`, gates the popup on the
+visible rail and closes its open group when the rail is disabled. A separate
+test covers both wide and narrow actual-boundary input rectangles; the
+B42 real-RawInput six-gesture test covers code patches independently.
+
+Acceptance still requires a real X11 resize/rail hide/reopen screenshot
+sequence plus six live Studio gestures, genuine source Ctrl+Z and PDF.
+Synthetic rectangles and `UNIT_EVENT` do not prove real resizable GUI.
