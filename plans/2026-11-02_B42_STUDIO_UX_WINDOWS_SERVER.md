@@ -18,3 +18,13 @@ no hidden installer, actual PDF inventory/hash, cargo --locked; self-hosted
 runner is not known connected yet. Windows Server != Windows10.
 B42 exact-head hosted CI + real X11 screenshots and user-server external
 test are release gates, never infer them from source changes alone.
+
+## UX revision after actual X11 bootstrap
+
+- Default theme Midnight, retained 4 persistent UI themes.
+- Monospace text 14pt, body 14pt, small 12pt for readable code/help.
+- Popover over canvas rather than over source (actual screenshot showed overlap).
+- Extension popup is data-driven from C Registry (no fixed top-three list); search and 270pt scroll cap for growth.
+- Eliminate duplicate first-load orange error with no selected tool.
+- PDF focus changes only on selection transition; preserve manual zoom.
+- Re-run real X11 screenshot and all original source/Undo/TeX checks on revised exact HEAD before merging.

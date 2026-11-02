@@ -2,6 +2,8 @@
 
 ## Unreleased — B42 redesigned Studio and dedicated user's MiKTeX Windows Server QA (PENDING)
 
+- Follow-up from real B42 X11 screenshot review: restore a dark Midnight default and readable 14pt source/body fonts, relocate grouped palette away from source, search the live C registry instead of hard-coded packages, and keep manual PDF zoom stable when selecting PDF. Exact-head reacceptance PENDING.
+
 - Replaced repeated long tool buttons with native egui vector icons in four grouped floating palettes. No font-file asset or second PGF renderer; native C-catalogue commands and source-first semantics retained.
 - Added a concise icon toolbar, permanently editable TeX beside the center drawing/PDF, independent Properties/Libraries/Help tabs, persistent workspace preferences and collapsed-by-default diagnostics. Classic UI remains temporarily available for regression comparisons.
 - Added a manual main-SHA-gated GitHub Actions test for a dedicated user Windows Server runner and a no-auto-install MiKTeX/locked-Rust proof script. Runner connectivity and physical Windows10/M1/M4 are NOT_RUN; this is not GUI Session proof.
