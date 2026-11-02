@@ -303,6 +303,23 @@ pub fn route_studio_help_toggle(
     }
 }
 
+/// The toolbar Help icon is a toggle, just like F1. A hidden inspector
+/// with a remembered Help tab must reopen, not close.
+pub fn toggle_studio_help_button(
+    session: &mut Session,
+    dock: &mut StudioDock,
+    inspector_open: &mut bool,
+) {
+    if *inspector_open && *dock == StudioDock::Help {
+        session.help = false;
+        *dock = StudioDock::Properties;
+    } else {
+        session.help = true;
+        *dock = StudioDock::Help;
+        *inspector_open = true;
+    }
+}
+
 /// Narrow permanent rail: four *groups* rather than dozens of buttons.
 /// Clicking a group opens a floating palette; the code and PDF keep their size.
 pub fn show_group_rail(
@@ -628,6 +645,128 @@ mod tests {
         assert!(!session.help);
         assert_eq!(dock, StudioDock::Properties);
         assert_eq!(source, before);
+        assert!(!session.undo_available());
+    }
+
+    #[test]
+    fn b42_real_help_toolbar_pointer_and_f1_toggle_the_visible_dock() {
+        // UNIT_EVENT on the same production icon Response and F1 route.
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            dock: &mut StudioDock,
+            open: &mut bool,
+            events: Vec<egui::Event>,
+        ) -> Rect {
+            let mut rect = Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(
+                        Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    let old = session.help;
+                    crate::tikz_canvas::handle_help_shortcut(ctx, session);
+                    route_studio_help_toggle(old, session.help, dock, open);
+                    egui::TopBottomPanel::top("b42-help-click").show(ctx, |ui| {
+                        let response = icon_button(
+                            ui,
+                            StudioIcon::Help,
+                            *dock == StudioDock::Help && *open,
+                            32.0,
+                            "Контекстная справка F1 из общего TikZ-каталога",
+                        );
+                        rect = response.rect;
+                        if response.clicked() {
+                            toggle_studio_help_button(session, dock, open);
+                        }
+                    });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Редактируемый TeX; точный PDF строит XeLaTeX");
+                    });
+                },
+            );
+            rect
+        }
+
+        let ctx = egui::Context::default();
+        let source = "% русский CRLF\r\n\\opaqueMacro{не переписывать}\r\n";
+        let mut session = Session::default();
+        session.reset(source);
+        let mut dock = StudioDock::Properties;
+        let mut open = false;
+        let rect = frame(&ctx, &mut session, &mut dock, &mut open, vec![]);
+        assert!(rect.is_positive());
+        let at = rect.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        for visible in [true, false] {
+            frame(
+                &ctx,
+                &mut session,
+                &mut dock,
+                &mut open,
+                vec![egui::Event::PointerMoved(at), pointer(true)],
+            );
+            frame(
+                &ctx,
+                &mut session,
+                &mut dock,
+                &mut open,
+                vec![pointer(false)],
+            );
+            assert_eq!(session.help, visible);
+            assert_eq!(
+                dock,
+                if visible {
+                    StudioDock::Help
+                } else {
+                    StudioDock::Properties
+                }
+            );
+            assert!(open);
+        }
+        dock = StudioDock::Help;
+        open = false;
+        frame(
+            &ctx,
+            &mut session,
+            &mut dock,
+            &mut open,
+            vec![egui::Event::PointerMoved(at), pointer(true)],
+        );
+        frame(
+            &ctx,
+            &mut session,
+            &mut dock,
+            &mut open,
+            vec![pointer(false)],
+        );
+        assert!(session.help && open && dock == StudioDock::Help);
+
+        let key = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
+        frame(&ctx, &mut session, &mut dock, &mut open, vec![key(true)]);
+        assert!(!session.help);
+        assert_eq!(dock, StudioDock::Properties);
+        frame(&ctx, &mut session, &mut dock, &mut open, vec![key(false)]);
+        frame(&ctx, &mut session, &mut dock, &mut open, vec![key(true)]);
+        assert!(session.help);
+        assert_eq!(dock, StudioDock::Help);
+        assert_eq!(source, "% русский CRLF\r\n\\opaqueMacro{не переписывать}\r\n");
         assert!(!session.undo_available());
     }
 

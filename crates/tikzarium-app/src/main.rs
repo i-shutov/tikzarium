@@ -365,6 +365,25 @@ fn pending_open_save_destination(
     Ok(save_path)
 }
 
+/// A dirty scratch must retain its own safe Save-and-open destination even
+/// after the File menu field has been changed to the file being opened.
+/// Never suggest a path that is occupied or aliases the incoming target.
+fn initial_pending_open_save_path(
+    document: &Document,
+    open_target: &Path,
+    scratch_candidate: &Path,
+) -> String {
+    let candidate = document.path.as_deref().unwrap_or(scratch_candidate);
+    let Some(text) = candidate.to_str() else {
+        return String::new();
+    };
+    if pending_open_save_destination(document, text, open_target).is_ok() {
+        text.to_owned()
+    } else {
+        String::new()
+    }
+}
+
 /// Real egui controls; returning the save-button rect additionally allows
 /// pointer event-frame tests to exercise the exact production click handler.
 fn pending_open_controls(
@@ -565,12 +584,11 @@ impl TikzariumApp {
         }
         if self.document.dirty() {
             self.pending_open_validation_error = None;
-            self.pending_open_save_path = self
-                .document
-                .path
-                .as_ref()
-                .map(|current| current.display().to_string())
-                .unwrap_or_default();
+            self.pending_open_save_path = initial_pending_open_save_path(
+                &self.document,
+                &path,
+                Path::new(DEFAULT_SCRATCH_FILENAME),
+            );
             self.pending_open = Some(path);
             return;
         }
@@ -1222,15 +1240,18 @@ impl TikzariumApp {
                 if studio_ui::icon_button(
                     ui,
                     StudioIcon::Help,
-                    self.prefs.studio_dock == StudioDock::Help,
+                    self.prefs.studio_dock == StudioDock::Help
+                        && self.prefs.studio_inspector_open,
                     32.0,
                     "Контекстная справка F1 из общего TikZ-каталога",
                 )
                 .clicked()
                 {
-                    self.authoring.help = true;
-                    self.prefs.studio_dock = StudioDock::Help;
-                    self.prefs.studio_inspector_open = true;
+                    studio_ui::toggle_studio_help_button(
+                        &mut self.authoring,
+                        &mut self.prefs.studio_dock,
+                        &mut self.prefs.studio_inspector_open,
+                    );
                 }
                 if studio_ui::icon_button(
                     ui,
@@ -3101,6 +3122,91 @@ mod split_layout_tests {
             pending_open_save_destination(&already_open, target.to_str().unwrap(), &target,)
                 .is_ok(),
             "reopening the same loaded file must remain possible"
+        );
+    }
+
+    #[test]
+    fn b42_dirty_open_scratch_preserves_safe_destination_on_real_egui_save_click() {
+        // UNIT_EVENT: drive the production Save-and-open button. The File menu
+        // may have changed its field to the incoming file; never save there.
+        fn frame(
+            ctx: &egui::Context,
+            document: &Document,
+            target: &Path,
+            input: &mut String,
+            events: Vec<egui::Event>,
+        ) -> (Option<PendingOpenAction>, egui::Rect) {
+            let mut result = (None, egui::Rect::NOTHING);
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 560.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let (action, rect, _) =
+                            pending_open_controls(ui, document, target, input, None);
+                        result = (action, rect);
+                    });
+                },
+            );
+            result
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("открыть.tex");
+        let safe = dir.path().join("мой-черновик.tex");
+        let original = "% чужой CRLF\r\n\\foreignMacro{Не менять}\r\n";
+        let scratch_source = "% набросок\r\n\\opaqueUser{оставить}\r\n";
+        std::fs::write(&target, original).unwrap();
+        let mut scratch = Document::scratch(scratch_source);
+        assert!(scratch.dirty());
+        let mut input = initial_pending_open_save_path(&scratch, &target, &safe);
+        assert_eq!(input, safe.to_str().unwrap());
+        let ctx = egui::Context::default();
+        let (_, button) = frame(&ctx, &scratch, &target, &mut input, vec![]);
+        assert!(button.is_positive());
+        let at = button.center();
+        let pointer = |pressed| egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &ctx,
+            &scratch,
+            &target,
+            &mut input,
+            vec![egui::Event::PointerMoved(at), pointer(true)],
+        );
+        assert_eq!(
+            frame(&ctx, &scratch, &target, &mut input, vec![pointer(false)]).0,
+            Some(PendingOpenAction::Save(safe.clone()))
+        );
+        scratch.save_to(&safe).unwrap();
+        assert_eq!(std::fs::read(&safe).unwrap(), scratch_source.as_bytes());
+        assert_eq!(Document::load(&target).unwrap().source, original);
+        assert_eq!(Document::load(&safe).unwrap().source, scratch_source);
+        assert_eq!(
+            initial_pending_open_save_path(&Document::scratch(scratch_source), &target, &safe),
+            "",
+            "occupied destination must not be suggested again"
+        );
+        assert_eq!(
+            initial_pending_open_save_path(&Document::scratch(scratch_source), &target, &target),
+            "",
+            "incoming target must not be proposed as scratch Save"
+        );
+        let mut loaded = Document::load(&target).unwrap();
+        loaded.source.push_str("% ручная правка\r\n");
+        assert_eq!(
+            initial_pending_open_save_path(&loaded, &target, &safe),
+            target.to_str().unwrap()
         );
     }
 

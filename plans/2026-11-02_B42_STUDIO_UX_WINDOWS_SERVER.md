@@ -154,3 +154,32 @@ the production status handler, editor TextEdit and native guide at 850x560
 and 1366x768. Assert full width, status non-overlap, source byte integrity
 and no spurious Undo. UNIT_EVENT, not physical Win10/M1/M4 or real X11.
 Exact-head Rust/QA and independent desktop screenshots are acceptance gates.
+
+
+## B42 Help toggle and dirty-Open scratch continuity (2026-11-02)
+
+Two B42 UX inconsistencies were reproduced directly in the production
+event paths. The toolbar Help icon unconditionally set Help=true; a
+second click on a selected Help icon did not leave the Help tab, unlike
+the already supported F1 toggle. The B-owned toolbar handler now changes
+the same visible Properties/Help dock, including reopening a hidden
+inspector with a remembered Help tab. A real egui Context::run(RawInput)
+press/release test covers two icon clicks, hidden dock, subsequent F1
+and preservation of Cyrillic/CRLF/opaque TeX and visual Undo.
+
+After the earlier first-Save figure.tex fix, dirty Open of an unsaved
+scratch still initialized its independent Save-and-open path as empty.
+The File menu path may already refer to the incoming document and must
+not be reused. A B helper suggests the scratch filename only after
+the pre-existing occupied-path and open-target checks succeed; if
+occupied, aliased or equal to the incoming file it stays blank and
+requires explicit user input. Already loaded documents retain their
+current legitimate Save path. A real egui pointer test clicks the
+existing production Save-and-open handler, verifies target preservation
+and reopens both files byte-exactly.
+
+Only B files and these plans/insights are changed; no C generator,
+A/D/E/F source, TeX/CAS/solver or PDF-to-coordinates. Classification:
+UNIT_EVENT only, not physical Windows 10/M1/M4 or full Linux/X11.
+#91 remains draft pending exact-head hosted fmt/test/Clippy and
+independent D #92 real six-tool source-to-XeLaTeX acceptance.

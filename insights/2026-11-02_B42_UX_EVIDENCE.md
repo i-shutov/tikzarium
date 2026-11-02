@@ -166,3 +166,26 @@ B-owned UNIT_EVENT uses the same status handler and actual egui panel layout
 at 850x560 / 1366x768 to assert full width, nonoverlapping source/guide,
 unchanged TeX and Undo. No invented PDF coordinate authority. Hosted exact-head
 CI and independent real X11 remain separate and pending at authoring.
+
+
+## B42 Help icon and dirty-Open continuity QA (2026-11-02)
+
+Source audit isolated two concrete B-owned UX defects:
+
+1. In Studio, the Help toolbar handler always forced Help on, while
+   F1 already toggled the dock. Second icon click was visually inert.
+   A single B transition now toggles to Properties; when the inspector
+   is hidden with Help remembered, clicking reopens Help. The selected
+   icon now reflects actual inspector visibility.
+2. Dirty Open initialized Save-and-open only from document.path.
+   For a dirty scratch this was empty despite B42 having a real
+   figure.tex scratch Save default. The new initial suggestion uses
+   the existing typed-save and open-target guards, never the incoming
+   File-menu target. Occupied, aliased or target candidates fail closed.
+
+Added direct egui RawInput click tests on production Help icon and modal
+Save button, F1 interoperability, CRLF/Russian/unknown macro preservation
+and no false visual Undo. These tests do not mean true desktop GUI
+acceptance. D #92 Studio X11 six gestures, manual source Ctrl+Z,
+two-file Save/Open and exact XeLaTeX PDF remain gates; physical
+Windows10/M1/M4 and the owner's Windows Server remain NOT_RUN.
