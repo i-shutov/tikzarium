@@ -775,9 +775,7 @@ fn selected_pending_parameters(session: &Session, source: &str) -> bool {
     let Some(item) = matches.next() else {
         return false;
     };
-    matches.next().is_none()
-        && session.active == Some(item.tool)
-        && item.draft != session.draft
+    matches.next().is_none() && session.active == Some(item.tool) && item.draft != session.draft
 }
 
 /// This is the real pinned inspector action, not a second source generator.
@@ -1025,10 +1023,7 @@ mod tests {
         let mut jump = None;
         let _ = ctx.run(
             egui::RawInput {
-                screen_rect: Some(Rect::from_min_size(
-                    Pos2::ZERO,
-                    Vec2::new(680.0, 500.0),
-                )),
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(680.0, 500.0))),
                 events,
                 modifiers,
                 ..Default::default()
@@ -1046,12 +1041,7 @@ mod tests {
                         .get_mut("radius")
                         .expect("circle draft radius");
                     *parameter_rect = parameter_control(ui, radius, value);
-                    jump = show_pinned_apply_parameters(
-                        ui,
-                        session,
-                        source,
-                        Some(apply_rect),
-                    );
+                    jump = show_pinned_apply_parameters(ui, session, source, Some(apply_rect));
                 });
             },
         );
