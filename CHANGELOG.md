@@ -1,3 +1,9 @@
+## Unreleased — B41 pinned C-backed parameter Apply (PR #89, exact-head compact QA pending)
+
+- In the native egui inspector, move the selected-command Apply action above the independently scrolling property list, next to visual Undo, with a Russian draft-not-committed warning. The button activates only for a unique, byte-validated C-owned command with changed parameters; both Apply controls reuse the same revision-checked Session/C minimal source patch. The ordinary editable .tex file and opaque macros remain authoritative.
+- Add real `egui::Context::run(RawInput)` UNIT_EVENT coverage for radius TextEdit → Ctrl+A/type → Apply/Undo → byte-exact disk round-trip, plus a second **260-pt production SidePanel and scrollable inspector** event test targeting the actual wrapped pinned action and preventing double writes. File I/O in a unit test is **not** a GUI Save/Reopen.
+- B41 exact earlier SHA `671fb4f`: Rust/D QA (93/93 app, 56/56 core), hosted Windows/macOS Rust, XeLaTeX, Unicode and hosted Windows Server MiKTeX PASS. Three D-owned real-X11 suites rejected the changed app tree before GUI; genuine B41 X11 + combined inspector/manual Ctrl+Z acceptance and all physical Win10/M1/M4 remain **NOT_RUN**. New compact test on the next head needs fresh exact-SHA CI and manual X11 QA; this entry is not release acceptance. PDF from external XeLaTeX alone is authoritative; provisional guide not calibrated.
+
 ## Unreleased — I59 direct XeLaTeX QA MiKTeX offline policy (candidate exact-head CI NOT_RUN)
 
 - Close an offline safety discrepancy: production Rust already passes `--disable-installer` on MiKTeX, but direct Python figure-glyph and five scientific extension XeLaTeX QA fixtures previously did not. New shared read-only distribution/version check verifies the option on the selected MiKTeX binary before adding it to these QA subprocesses; TeX Live continues without the MiKTeX-only flag, unknown/ambiguous compilers are refused.

@@ -645,6 +645,7 @@ fn show_inspector_action_bar_frame(
     source: &mut String,
     undo_rect: Option<&mut Rect>,
     help_rect: Option<&mut Rect>,
+    apply_rect: Option<&mut Rect>,
 ) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
@@ -666,7 +667,7 @@ fn show_inspector_action_bar_frame(
         // Long Bézier/node inspectors scroll below the fold. The committed
         // source action must stay reachable without hunting for a lower button.
         if session.selected.is_some()
-            && let Some(line) = show_pinned_apply_parameters(ui, session, source, None)
+            && let Some(line) = show_pinned_apply_parameters(ui, session, source, apply_rect)
         {
             jump = Some(line);
         }
@@ -701,7 +702,7 @@ pub fn show_inspector_action_bar(
     session: &mut Session,
     source: &mut String,
 ) -> Option<usize> {
-    show_inspector_action_bar_frame(ui, session, source, None, None)
+    show_inspector_action_bar_frame(ui, session, source, None, None, None)
 }
 
 fn parameter_help(p: &ParameterSpec) -> String {
@@ -1224,6 +1225,136 @@ mod tests {
     }
 
     #[test]
+    fn b41_compact_real_inspector_bar_pointer_apply_stays_above_scroll() {
+        // Real production action bar, in an actual 260-pt right SidePanel with
+        // the normal scrollable inspector underneath. The earlier radius
+        // TextEdit test uses a separate wide panel; this covers the compact
+        // wrapped layout without claiming a full X11/physical GUI session.
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            source: &mut String,
+            events: Vec<egui::Event>,
+            apply_rect: &mut Rect,
+        ) -> Option<usize> {
+            let mut jump = None;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(
+                        Pos2::ZERO,
+                        Vec2::new(900.0, 380.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::SidePanel::right("b41-compact-real-inspector")
+                        .exact_width(260.0)
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            jump = show_inspector_action_bar_frame(
+                                ui,
+                                session,
+                                source,
+                                None,
+                                None,
+                                Some(apply_rect),
+                            );
+                            ui.separator();
+                            egui::ScrollArea::vertical()
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    let _ = show_inspector(ui, session, source, READY);
+                                });
+                        });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("PDF is rendered by external XeLaTeX");
+                    });
+                },
+            );
+            jump
+        }
+
+        let ctx = egui::Context::default();
+        let mut source = EVENT_SOURCE.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        session
+            .insert(&mut source, Tool::Circle, Draft::for_tool(Tool::Circle))
+            .unwrap();
+        let inserted = source.clone();
+        let mut apply_rect = Rect::NOTHING;
+        frame(&ctx, &mut session, &mut source, vec![], &mut apply_rect);
+        assert!(apply_rect.is_positive(), "pinned Apply must be rendered");
+        assert!(
+            apply_rect.min.x > 580.0
+                && apply_rect.max.x < 900.0
+                && apply_rect.min.y >= 0.0
+                && apply_rect.max.y < 160.0,
+            "Apply must be visible above the scrolling inspector at 260pt: {apply_rect:?}"
+        );
+        let at = apply_rect.center();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            &mut apply_rect,
+        );
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert_eq!(source, inserted, "unchanged Apply must remain disabled");
+
+        session.draft.values.insert("radius".into(), "2.75cm".into());
+        assert!(selected_pending_parameters(&session, &source));
+        frame(&ctx, &mut session, &mut source, vec![], &mut apply_rect);
+        let at = apply_rect.center();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![egui::Event::PointerMoved(at), primary(at, true)],
+            &mut apply_rect,
+        );
+        let jump = frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert!(jump.is_some(), "actual wrapped pinned Apply must dispatch");
+        assert!(source.contains("2.75cm"));
+        assert!(!selected_pending_parameters(&session, &source));
+        let committed = source.clone();
+        let rev = session.source_revision();
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, true)],
+            &mut apply_rect,
+        );
+        frame(
+            &ctx,
+            &mut session,
+            &mut source,
+            vec![primary(at, false)],
+            &mut apply_rect,
+        );
+        assert_eq!(source, committed, "no-op must not patch twice");
+        assert_eq!(session.source_revision(), rev);
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, inserted, "Undo must restore the exact previous TeX");
+        assert!(source.contains(r"\myOpaqueMacro{a_b}"));
+    }
+
+    #[test]
     fn inspector_undo_button_uses_real_egui_pointer_and_focuses_source() {
         fn frame(
             ctx: &egui::Context,
@@ -1246,6 +1377,7 @@ mod tests {
                             session,
                             source,
                             rect.as_deref_mut(),
+                            None,
                             None,
                         );
                     });
@@ -1353,7 +1485,7 @@ mod tests {
                 |ctx| {
                     handle_help_shortcut(ctx, session);
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help));
+                        show_inspector_action_bar_frame(ui, session, source, None, Some(&mut help), None);
                     });
                 },
             );

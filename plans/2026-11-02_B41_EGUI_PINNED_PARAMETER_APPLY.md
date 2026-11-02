@@ -17,3 +17,7 @@ B41 keeps a compact **pinned Apply** next to Undo whenever a C-owned command is 
 5. UNIT_EVENT is not real Linux/X11 nor physical Win10/M1/M4. D owns independent GUI runner; only external XeLaTeX PDF is authoritative.
 
 Ownership: B may touch tikz_canvas.rs, plans/, insights/. A/C/D/E/F production code is excluded. Do not merge old #37/#43 or #44. One PR only; integrate after exact-head checks and independent X11 parameter + source Undo.
+
+## B41 compact production-handler hardening (2026-11-02)
+
+Independent integrator review identified that the original wide 680pt UNIT_EVENT called a pinned Apply helper directly, whereas the real desktop invokes the `horizontal_wrapped` action bar above a separate scrollable inspector. The B-owned follow-up adds a narrow 260pt real egui SidePanel + ScrollArea frame targeting that **production action-bar handler**, checking visible button geometry, disabled no-op, one C patch, revised line jump, no duplicate Apply and exact Undo. This remains UNIT_EVENT, NOT real X11 acceptance. The separate radius TextEdit pointer test is retained; end-to-end inspector field + native source Ctrl+Z + GUI Save/Open requires independent D/integrator X11 verification. Also record the B41 changelog entry requested by integration; no A/C/D/E/F edits.
