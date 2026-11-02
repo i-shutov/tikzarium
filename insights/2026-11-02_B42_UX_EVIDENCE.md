@@ -44,3 +44,20 @@ Authoring checkpoint: branch commit `ea1d8cf14264ba1e83eb31ff37230d6ba14eeadd`.
 Rust toolchain or physical Win10/M1/M4 runtime available in this environment.
 A real Studio grouped-palette click and real X11 source Ctrl+Z/Save/Open
 with independent screenshots remain a separate gate.
+
+## Resizable source/palette defect and correction
+
+Static code audit of B42 identified a reproducible mismatch:
+`show_split_source_panel` has `resizable(true)`, yet the palette X
+position was `studio_palette_anchor.x + split_layout.source_default + 18`.
+The default width is not the current source panel width after a resize.
+Likewise, turning off the tool rail did not prevent `show_palette` from
+continuing to render the old selected group.
+
+Changed only B-owned `main.rs`/`studio_ui.rs`: use the measured egui
+source SidePanel response rectangle, hide/close the palette with the rail,
+and regression-check measured-boundary arithmetic for both 240pt/475pt
+source widths. App code commit `2909e4684c8743462ccf205adf51c1ee94ac0c8b`;
+helper/test commit `312ffd86d648ae0a99937b18735cf7d8de064304`.
+Full GUI manual resize verification: **NOT_RUN** until exact-head X11
+artifact and screenshots are reviewed. Physical Win10/M1/M4: **NOT_RUN**.
