@@ -1,7 +1,27 @@
+# B42 six native GUI gestures, persisted source, external XeLaTeX PDF.
+# Exact app-tree profile is fail-closed; Open/Undo/Apply/F1 and physical OS not covered.
 name: I61 B42 real Studio icon-to-native-source/PDF (independent D QA)
 on:
   push:
-    branches: [qa/i61-b42-studio-source-pdf]
+    branches: [qa/i61-b42-studio-source-pdf, main]
+    paths:
+      - '.github/workflows/i61-b42-studio-x11.yml'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'scripts/qa_n1_desktop.py'
+      - 'scripts/tests/test_qa_i61_studio_fonts.py'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/i61-b42-studio-x11.yml'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'scripts/qa_n1_desktop.py'
+      - 'scripts/tests/test_qa_i61_studio_fonts.py'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,3 +1,5 @@
+# Legacy B41 coordinate profile; the current B42 Studio uses I61 real-X11 source/PDF QA.
+# Historical B41 branch/explicit dispatch remain available with exact B41 provenance.
 name: I53 B39 actual X11 library Connect Disconnect PDF Undo and GUI Reopen
 on:
   push:
@@ -8,7 +10,6 @@ on:
       - feat/b38-n2-n3-inspector-20261101
       - qa/i60-b41-inspector-real-x11
       - b41-egui-pinned-parameter-apply
-      - main
   workflow_dispatch:
 permissions:
   contents: read

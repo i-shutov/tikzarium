@@ -1,3 +1,5 @@
+# Legacy B41 coordinate profile; the current B42 Studio uses I61 real-X11 source/PDF QA.
+# Historical B41 branch/explicit dispatch remain available with exact B41 provenance.
 name: I51 B37 real X11 native TikZ six gestures, held Undo and PDF
 on:
   push:
@@ -12,7 +14,6 @@ on:
       - qa/i54-b39-n2-n3-desktop-reaccept
       - qa/i60-b41-inspector-real-x11
       - b41-egui-pinned-parameter-apply
-      - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
       - 'scripts/qa_n1_desktop.py'
@@ -35,7 +36,6 @@ on:
       - b/b32-safe-open-source-undo-20261101
       - feat/b27-egui-undo-held-pointer-20261101
       - b/b31-compact-xelatex-fit
-      - main
     paths:
       - '.github/workflows/n1-desktop-smoke.yml'
       - 'scripts/qa_n1_desktop.py'

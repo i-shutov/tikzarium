@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased — I61 independent real B42 acceptance (candidate; NOT_RUN)
+## Unreleased — I61 independent real B42 acceptance (six-gesture subvertical PASS; N1 NOT_ACCEPTED)
+
+- CI transition: historical B41 I51/I53/I57 fixed-tree X11 workflows remain manually runnable at matching B41 revision, no automatic false-red main runs; I61 exact-B42 six-gesture/source/PDF regression now runs for main PRs and pushes. Real B42 Open/Undo/Apply/F1 and physical targets are still unaccepted release gates.
 
 - Re-lease existing #92 stacked QA onto B42 production HEAD `91e2d8201cd0` with native C six-gesture X11 driver; no changes to A/B/C/E/F production. Exact app-tree provenance remains fail-closed.
 - Replace broken doubled-escape `pdffonts` parser with all-font embedding audit; four offline positive/negative tests run before installing external XeLaTeX. Actual GUI source/Save/Open/Undo/help/PDF is NOT_RUN until new exact-head artifact acceptance. Physical Win10/Mac ARM NOT_RUN.
