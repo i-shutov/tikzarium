@@ -571,25 +571,23 @@ mod tests {
         session.reset(&source);
         let mut dock = StudioDock::Properties;
         let mut open = false;
-        let frame = |event: egui::Event,
-                     session: &mut Session,
-                     dock: &mut StudioDock,
-                     open: &mut bool| {
-            let _ = ctx.run(
-                egui::RawInput {
-                    events: vec![event],
-                    ..Default::default()
-                },
-                |ctx| {
-                    let old = session.help;
-                    crate::tikz_canvas::handle_help_shortcut(ctx, session);
-                    route_studio_help_toggle(old, session.help, dock, open);
-                    egui::CentralPanel::default().show(ctx, |ui| {
-                        ui.label("Исходник редактируем, PDF — внешний XeLaTeX");
-                    });
-                },
-            );
-        };
+        let frame =
+            |event: egui::Event, session: &mut Session, dock: &mut StudioDock, open: &mut bool| {
+                let _ = ctx.run(
+                    egui::RawInput {
+                        events: vec![event],
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        let old = session.help;
+                        crate::tikz_canvas::handle_help_shortcut(ctx, session);
+                        route_studio_help_toggle(old, session.help, dock, open);
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("Исходник редактируем, PDF — внешний XeLaTeX");
+                        });
+                    },
+                );
+            };
         let key = |pressed: bool| egui::Event::Key {
             key: egui::Key::F1,
             physical_key: None,
