@@ -8,7 +8,7 @@ $reportPath=Join-Path $OutputDir 'windows-server-qa.json'
 $report=[ordered]@{
  schema_version=1;status='INCOMPLETE';environment='USER_WINDOWS_SERVER'
  physical_windows10='NOT_RUN';mac_m1_m4='NOT_RUN';interactive_gui='NOT_RUN'
- cargo='NOT_RUN';font_audit='NOT_RUN';package_autoinstall='DISABLED_BY_FLAG'
+ cargo='NOT_RUN';font_audit='NOT_RUN';text_audit='NOT_RUN';raster='NOT_RUN';package_autoinstall='DISABLED_BY_FLAG'
 }
 $exit=1
 try {
@@ -71,17 +71,72 @@ try {
   }
   $report.source_sha256=$sourceHash.ToLowerInvariant()
   $report.pdf_sha256=(Get-FileHash $pdf -Algorithm SHA256).Hash.ToLowerInvariant()
+  # A single /yes/ anywhere in pdffonts is insufficient: each PDF font
+  # needs its own embedding verdict. pdftotext is an independent Cyrillic
+  # content check; neither means glyphs were visually accepted on a GUI.
   $fonts=Get-Command pdffonts -ErrorAction SilentlyContinue
   $info=Get-Command pdfinfo -ErrorAction SilentlyContinue
   if($fonts -and $info){
-   $details=(& $info.Source $pdf | Out-String)
-   $fontsText=(& $fonts.Source $pdf | Out-String)
-   $details | Set-Content (Join-Path $OutputDir 'pdfinfo.txt')
-   $fontsText | Set-Content (Join-Path $OutputDir 'pdffonts.txt')
-   if($details -notmatch '(?m)^Pages:\s+1\s*$' -or $fontsText -notmatch '\byes\b'){
-    throw 'PDF page count or embedded font verification failed'
+   $details=(& $info.Source $pdf 2>&1 | Out-String)
+   $infoExit=$LASTEXITCODE
+   $fontsText=(& $fonts.Source $pdf 2>&1 | Out-String)
+   $fontsExit=$LASTEXITCODE
+   $details | Set-Content -LiteralPath (Join-Path $OutputDir 'pdfinfo.txt') -Encoding utf8
+   $fontsText | Set-Content -LiteralPath (Join-Path $OutputDir 'pdffonts.txt') -Encoding utf8
+   if($infoExit -ne 0 -or $fontsExit -ne 0 -or
+      $details -notmatch '(?m)^Pages:\s+1\s*$'){
+    throw 'PDF metadata or one-page contract failed'
    }
-   $report.font_audit='PASS'
+   $lines=@($fontsText -split '\r?\n' | Where-Object { $_.Trim() })
+   if($lines.Count -lt 3 -or $lines[0] -notmatch '\bemb\b'){
+    throw 'pdffonts output missing table header or font records'
+   }
+   $fontRows=@($lines | Select-Object -Skip 2)
+   if($fontRows.Count -eq 0){throw 'PDF has no font records'}
+   foreach($row in $fontRows){
+    $match=[regex]::Match($row,
+      '\s+(yes|no)\s+(yes|no)\s+(yes|no)\s+\d+\s+\d+\s*$',
+      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if(-not $match.Success){throw "Unparseable pdffonts record: $row"}
+    if($match.Groups[1].Value -ine 'yes'){
+     throw "Nonembedded PDF font: $row"
+    }
+   }
+   if(($fontRows -join ' ') -notmatch '(?i)DejaVu.?Serif'){
+    throw 'Cyrillic fixture did not embed the expected DejaVu Serif family'
+   }
+   $report.font_count=$fontRows.Count
+   $report.font_audit='PASS_ALL_FONT_ROWS_EMBEDDED'
+  }else{
+   $report.font_audit='NOT_RUN_PDFINFO_OR_PDFFONTS_MISSING'
+  }
+  $extractor=Get-Command pdftotext -ErrorAction SilentlyContinue
+  if($extractor){
+   $extracted=Join-Path $OutputDir 'pdftotext.txt'
+   & $extractor.Source '-enc' 'UTF-8' $pdf $extracted
+   if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $extracted)){
+    throw 'pdftotext extraction failed'
+   }
+   $actualText=Get-Content -LiteralPath $extracted -Raw -Encoding utf8
+   foreach($expected in @('Тест XeLaTeX','Кириллица','Точка')){
+    if(-not $actualText.Contains($expected)){
+     throw "Expected Cyrillic content absent in PDF extraction: $expected"
+    }
+   }
+   $report.text_audit='PASS_EXPECTED_CYRILLIC_EXTRACTED'
+  }else{
+   $report.text_audit='NOT_RUN_PDFTOTEXT_MISSING'
+  }
+  $rasterizer=Get-Command pdftoppm -ErrorAction SilentlyContinue
+  if($rasterizer){
+   $prefix=Join-Path $OutputDir 'cyrillic-render'
+   & $rasterizer.Source '-f' '1' '-l' '1' '-singlefile' '-png' '-r' '144' $pdf $prefix
+   if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath ($prefix+'.png'))){
+    throw 'PDF raster generation failed'
+   }
+   $report.raster='GENERATED_REQUIRES_MANUAL_GLYPH_REVIEW'
+  }else{
+   $report.raster='NOT_RUN_PDFTOPPM_MISSING'
   }
   $after=@(Inventory (Join-Path $OutputDir 'packages-after.txt'))
   if($before.Count -ne $after.Count -or (Compare-Object $before $after)){
@@ -100,9 +155,10 @@ try {
     $report.cargo='PASS_WINDOWS_SERVER_NOT_WIN10'
    }
   }
-  $report.status=if($report.font_audit -eq 'PASS'){
-   'PASS_USER_WINDOWS_SERVER_TEX_AND_PDF'
-  }else{'PARTIAL_PDF_FONTS_NOT_RUN'}
+  $report.status=if($report.font_audit -eq 'PASS_ALL_FONT_ROWS_EMBEDDED' -and
+                     $report.text_audit -eq 'PASS_EXPECTED_CYRILLIC_EXTRACTED'){
+   'PASS_USER_WINDOWS_SERVER_TEX_FONT_AND_EXTRACTED_TEXT'
+  }else{'PARTIAL_PDF_FONT_OR_TEXT_AUDIT_NOT_RUN'}
   $exit=0
  }finally{Pop-Location}
 }catch{
