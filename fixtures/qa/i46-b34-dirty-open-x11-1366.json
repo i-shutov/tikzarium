@@ -33,7 +33,7 @@
     536,
     429
   ],
-  "reviewed_app_tree_sha": "0ebdd9e123dda4ea18024150cf284c905badcdb6",
+  "reviewed_app_tree_sha": "c3b0f6ed5e4ad8c738d8ab8a26d13733c34c61bf",
   "bootstrap_caveat": "B39 tree exact; B37 UI clicks and modal positions provisional; only reviewed screenshots and saved TeX/PDF pass. Physical Win10/Mac NOT_RUN.",
   "modal_save_reviewed_rect": [
     465,

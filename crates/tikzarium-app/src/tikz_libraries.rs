@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn b39_actual_egui_pointer_connect_disconnect_keeps_details_open_and_undo_safe() {
+    fn i56_four_library_egui_pointer_connect_disconnect_keeps_details_open_and_undo_safe() {
         // UNIT_EVENT: genuine Context::run frames and Response::clicked()
         // with observed hit rectangles, NOT an X11 or physical Win/Mac run.
         fn primary(pos: egui::Pos2, pressed: bool) -> egui::Event {
@@ -314,8 +314,8 @@ mod tests {
                 .unwrap_or_else(|| panic!("expected actual egui target {kind:?}; got {found:?}"))
         }
 
-        let ctx = egui::Context::default();
-        ctx.style_mut(|style| style.animation_time = 0.0);
+        // Four independent genuine egui Context::run event cycles. This is
+        // UNIT_EVENT evidence, never a claim of physical desktop/X11 testing.
         let original = concat!(
             "\\documentclass{standalone}\r\n",
             "\\usepackage{tikz}\r\n",
@@ -323,66 +323,96 @@ mod tests {
             "\\opaqueMacro{текст и % знак}\r\n",
             "\\end{document}\r\n",
         );
-        let mut source = original.to_owned();
-        let mut session = Session::default();
-        session.reset(&source);
-        let (_, initial) = frame(&ctx, &mut session, &mut source, vec![]);
-        click(
-            &ctx,
-            &mut session,
-            &mut source,
-            target(&initial, LibraryUiTarget::Panel),
-        );
-        let (_, panel_open) = frame(&ctx, &mut session, &mut source, vec![]);
-        click(
-            &ctx,
-            &mut session,
-            &mut source,
-            target(&panel_open, LibraryUiTarget::Entry(0)),
-        );
-        let (_, entry_open) = frame(&ctx, &mut session, &mut source, vec![]);
-        assert_eq!(source, original, "opening UI must never patch TeX");
-        let connected = click(
-            &ctx,
-            &mut session,
-            &mut source,
-            target(
-                &entry_open,
-                LibraryUiTarget::Action(0, LibraryChange::Connect),
-            ),
-        );
-        assert!(
-            connected.is_some(),
-            "actual egui Connect button did not fire"
-        );
-        assert!(session.undo_available());
-        assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
-        assert!(source.contains("\\opaqueMacro{текст и % знак}\r\n"));
-
-        // The status-bearing label has changed; the same row MUST remain
-        // expanded, so Disconnect is available without clicking the row again.
-        let (_, after_connect) = frame(&ctx, &mut session, &mut source, vec![]);
-        let disconnected = click(
-            &ctx,
-            &mut session,
-            &mut source,
-            target(
-                &after_connect,
-                LibraryUiTarget::Action(0, LibraryChange::Disconnect),
-            ),
-        );
-        assert!(
-            disconnected.is_some(),
-            "actual egui Disconnect button did not fire"
-        );
-        assert_eq!(source, original);
-        session.undo(&mut source).unwrap();
-        assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
-        session.undo(&mut source).unwrap();
-        assert_eq!(source, original);
         let dir = tempfile::tempdir().unwrap();
-        let file = dir.path().join("b39-library-clicks.tex");
-        std::fs::write(&file, &source).unwrap();
-        assert_eq!(std::fs::read_to_string(file).unwrap(), original);
+        let libraries = &tikz_authoring::catalog().libraries;
+        assert_eq!(
+            libraries.len(),
+            4,
+            "N2 catalogue changed; revalidate the panel"
+        );
+
+        for (index, library) in libraries.iter().enumerate() {
+            // Every row starts with a fresh collapsed panel and session.
+            let ctx = egui::Context::default();
+            ctx.style_mut(|style| style.animation_time = 0.0);
+            let mut source = original.to_owned();
+            let mut session = Session::default();
+            session.reset(&source);
+            let (_, initial) = frame(&ctx, &mut session, &mut source, vec![]);
+            click(
+                &ctx,
+                &mut session,
+                &mut source,
+                target(&initial, LibraryUiTarget::Panel),
+            );
+            let (_, panel_open) = frame(&ctx, &mut session, &mut source, vec![]);
+            click(
+                &ctx,
+                &mut session,
+                &mut source,
+                target(&panel_open, LibraryUiTarget::Entry(index)),
+            );
+            let (_, entry_open) = frame(&ctx, &mut session, &mut source, vec![]);
+            assert_eq!(source, original, "expanding {} mutated TeX", library.name);
+            let connected = click(
+                &ctx,
+                &mut session,
+                &mut source,
+                target(
+                    &entry_open,
+                    LibraryUiTarget::Action(index, LibraryChange::Connect),
+                ),
+            );
+            assert!(
+                connected.is_some(),
+                "egui Connect for {} did not fire",
+                library.name
+            );
+            assert!(session.undo_available());
+            let declaration = format!("\\usetikzlibrary{{{}}}\r\n", library.name);
+            assert_eq!(
+                source.matches(&declaration).count(),
+                1,
+                "import multiplicity {}",
+                library.name
+            );
+            assert_eq!(
+                source.replacen(&declaration, "", 1),
+                original,
+                "Connect for {} changed unrelated CRLF/opaque TeX",
+                library.name
+            );
+            // Status ABSENT -> CONFIRMED must not collapse the open row.
+            let (_, after_connect) = frame(&ctx, &mut session, &mut source, vec![]);
+            let disconnected = click(
+                &ctx,
+                &mut session,
+                &mut source,
+                target(
+                    &after_connect,
+                    LibraryUiTarget::Action(index, LibraryChange::Disconnect),
+                ),
+            );
+            assert!(
+                disconnected.is_some(),
+                "egui Disconnect for {} did not fire",
+                library.name
+            );
+            assert_eq!(
+                source, original,
+                "Disconnect did not restore {}",
+                library.name
+            );
+            session.undo(&mut source).unwrap();
+            assert_eq!(source.matches(&declaration).count(), 1);
+            assert_eq!(source.replacen(&declaration, "", 1), original);
+            session.undo(&mut source).unwrap();
+            assert_eq!(source, original);
+            let file = dir
+                .path()
+                .join(format!("n2-{}.tex", library.name.replace('.', "-")));
+            std::fs::write(&file, &source).unwrap();
+            assert_eq!(std::fs::read(&file).unwrap(), original.as_bytes());
+        }
     }
 }
