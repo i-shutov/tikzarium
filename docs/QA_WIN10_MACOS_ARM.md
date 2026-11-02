@@ -108,3 +108,22 @@ using an appropriately reviewed package-manager source; on a macOS
 ARM64 test host use a native ARM64 Poppler build. Record exact version.
 This document neither installs system utilities automatically on the
 user's machine nor proves a physical-host smoke.
+
+## Direct Python QA on a preinstalled MiKTeX host — I59
+
+Production CLI and the native app invoke MiKTeX XeLaTeX with a verified
+`--disable-installer` option. The independent direct Python font/glyph
+recheck (`scripts/tools/qa_smoke.py`) and scientific extension smoke
+(`extensions/qa/run_smoke.py`) also need to use that option. A read-only
+`--version` probe must identify the selected compiler before any QA TeX
+source is executed; for MiKTeX the helper additionally verifies that the
+**same** executable accepts `--disable-installer --version`. The QA invocation
+then passes `--disable-installer` and retains `-no-shell-escape`. Unknown
+or ambiguous compiler identity is a refusal, not a fallback to TeX Live.
+
+To audit the rule before running user fixtures, invoke
+`python -m unittest discover -s scripts/tools -p test_qa_engine_policy.py -v`.
+The real MiKTeX execution gate in GitHub Actions is **hosted Windows Server
+CI_ONLY**. Successful test mocks or hosted CI cannot establish the current
+settings, actual package inventory, GUI behavior or installed version on the
+user's physical Windows 10. That separate manual release gate is NOT_RUN.

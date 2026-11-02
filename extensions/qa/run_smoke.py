@@ -18,6 +18,11 @@ import subprocess
 import sys
 import time
 
+# Reuse one auditable direct-engine policy; never silently bypass the
+# production Rust MiKTeX --disable-installer contract in QA.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "tools"))
+from qa_engine_policy import probe_engine_policy  # noqa: E402
+
 SOURCES = {
     "core": "org.tikzarium.core",
     "pgfplots": "org.tikzarium.pgfplots",
@@ -115,7 +120,7 @@ def write_record(path: Path, values: dict[str, object]) -> None:
 
 def execute_fixture(name: str, fixtures: Path, root: Path,
                     tex: str, pdfinfo: str, version: str,
-                    timeout: float) -> dict[str, object]:
+                    timeout: float, offline_args: tuple[str, ...]) -> dict[str, object]:
     source = fixtures / f"{name}.tex"
     source_hash = sha256_file(source)
     destination = root / name
@@ -125,7 +130,7 @@ def execute_fixture(name: str, fixtures: Path, root: Path,
     tex_log = destination / f"{name}.log"
     pdf = destination / f"{name}.pdf"
     command = [
-        tex, *FLAGS, f"-output-directory={destination}", f"{name}.tex",
+        tex, *offline_args, *FLAGS, f"-output-directory={destination}", f"{name}.tex",
     ]
     started = time.monotonic()
     try:
@@ -202,18 +207,17 @@ def main(argv: list[str] | None = None) -> int:
     pdfinfo = shutil.which("pdfinfo")
     if not tex or not pdfinfo:
         parser.error("xelatex and pdfinfo are required (no engine fallback)")
-    version_lines = subprocess.run(
-        [tex, "--version"], capture_output=True, text=True,
-        check=True, timeout=15, errors="replace",
-    ).stdout.splitlines()
-    if not version_lines:
-        parser.error("xelatex --version returned no identifying version")
-    version = version_lines[0]
+    try:
+        policy = probe_engine_policy(tex)
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        parser.error(f"Direct XeLaTeX offline policy failed: {exc}")
+    version = policy.version
     output.mkdir(parents=True, exist_ok=True)
     names = list(dict.fromkeys(args.fixture or SOURCES))
     records = []
     for name in names:
-        result = execute_fixture(name, fixtures, output, tex, pdfinfo, version, args.timeout)
+        result = execute_fixture(name, fixtures, output, tex, pdfinfo, version, args.timeout,
+                                 policy.offline_args)
         records.append(result)
         print(f"{name}: {result['verdict']} (exit {result['exit_code']})")
     success = all(

@@ -6,10 +6,44 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from qa_smoke import checked_child, inspect_pdf, load_manifest, run_case, source_snapshot
+from qa_engine_policy import EnginePolicy
+from qa_smoke import (check_missing_glyphs, checked_child, inspect_pdf,
+                      load_manifest, run_case, source_snapshot)
 
 
 class FixtureHarnessTests(unittest.TestCase):
+    def test_direct_glyph_audit_refuses_unverified_miktex_no_install_switch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            src = root / "font.tex"
+            src.write_text("Unicode", encoding="utf-8")
+            with patch("qa_smoke.shutil.which", return_value="xelatex"), patch(
+                "qa_smoke.probe_engine_policy",
+                side_effect=ValueError("unverified MiKTeX offline switch")
+            ), patch("qa_smoke.command") as compile:
+                passed, report = check_missing_glyphs(src, root, "font")
+            self.assertFalse(passed)
+            self.assertEqual(report["glyph_audit"], "FAIL")
+            self.assertIn("Offline engine policy", report["glyph_error"])
+            compile.assert_not_called()
+
+    def test_direct_glyph_audit_includes_miktex_offline_flag(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            src = root / "font.tex"
+            src.write_text("Unicode", encoding="utf-8")
+            policy = EnginePolicy("MiKTeX", "MiKTeX-XeTeX 25.12",
+                                  ("--disable-installer",))
+            with patch("qa_smoke.shutil.which", return_value="xelatex"), patch(
+                "qa_smoke.probe_engine_policy", return_value=policy
+            ), patch("qa_smoke.command",
+                     return_value=CompletedProcess(["xelatex"], 1, "", "missing")) as compile:
+                passed, report = check_missing_glyphs(src, root, "font")
+            self.assertFalse(passed)  # no PDF/log from mocked TeX
+            self.assertEqual(report["glyph_engine_distribution"], "MiKTeX")
+            args = compile.call_args.args[0]
+            self.assertEqual(args[:2], ["xelatex", "--disable-installer"])
+
     def test_rejects_traversal_and_absolute_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
