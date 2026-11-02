@@ -1348,6 +1348,32 @@ impl TikzariumApp {
     }
 
     fn show_pdf_canvas(&mut self, ui: &mut egui::Ui) {
+        // Studio uses the full central area for ONE primary task: interactive
+        // TikZ authoring OR exact PDF. The previous 170pt pad above a huge
+        // empty preview was the principal ergonomic failure on 1366x768.
+        // Both modes keep the original editable code pane alongside them.
+        if self.prefs.studio_mode && !self.pdf_focus_in_split {
+            let prior = self.authoring.source_revision();
+            let caps = self.primitive_capabilities();
+            if let Some(line) = tikz_canvas::show_guide_studio(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+                caps,
+            ) {
+                self.jump_to_line = Some(line);
+                self.highlight_generated_line = true;
+                ui.ctx().request_repaint();
+            }
+            fence_source_editor_undo_on_revision_change(
+                prior,
+                &self.authoring,
+                &mut self.reset_source_editor_undo_history,
+            );
+            ui.separator();
+            ui.small("Интерактивный эскиз TikZ. Точная геометрия и шрифты — во вкладке PDF после XeLaTeX.");
+            return;
+        }
         let canvas_width = ui.available_width();
         let mut displayed_zoom_percent = pdf_zoom_percent(self.zoom);
         ui.horizontal_wrapped(|ui| {

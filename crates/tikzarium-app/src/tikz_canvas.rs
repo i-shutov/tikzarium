@@ -309,8 +309,13 @@ fn show_guide_frame_mode(
             },
         );
     }
+    let height = if legacy_palette {
+        HEIGHT
+    } else {
+        (ui.available_height() - 36.0).clamp(200.0, 700.0)
+    };
     let (rect, response) = ui.allocate_exact_size(
-        Vec2::new(ui.available_width().max(180.0), HEIGHT),
+        Vec2::new(ui.available_width().max(180.0), height),
         Sense::click_and_drag(),
     );
     let painter = ui.painter_at(rect);
