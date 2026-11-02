@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I63 dual B42 source-tree lease & real File Open focus snapshots
+
+- Pin workflow + script to current B42 app/source Git tree `72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb`; reject mismatches before TeX Live installation. Capture real focus/Ctrl+A/paste screenshots while retaining all six native gestures, source/Undo/Open/PDF assertions. NOT_RUN full GUI and physical hosts until exact-head artifact audit.
+
 ## Unreleased — I63 B42 P0 File Open integration lease (actual X11 NOT_RUN at commit)
 
 - Merge frozen B42 File TextEdit click-to-edit production repair into existing stacked #92 as a second-parent exact SHA, preserving all prior D QA changes; move I61 app-source-tree guard to `72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb`. Do not disable source-tree provenance or replace external TeX Live with MiKTeX in Linux/X11 QA.

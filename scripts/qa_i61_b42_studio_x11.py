@@ -20,7 +20,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 
 # Candidate click coordinates are tied to the exact app/src Git tree and
 # previously inspected B42 bootstrap screenshots, not a general GUI contract.
-APP_TREE = "64df229392c03a99ca29238bcc2e5f422c4d7409"
+APP_TREE = "72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb"
 BUTTONS = [
     ("line", (30, 150), (599, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (653, 169), (681, 425), (765, 477)),
@@ -355,8 +355,10 @@ def main() -> int:
         click(found, 321, 40)
         time.sleep(0.45)
         screenshot(out, "33-file-menu-before-open")
-        click(found, 440, 93)  # Actual B42 File-menu TextEdit center.
+        click(found, 440, 93)  # Exact root-pixel point inside File TextEdit.
+        screenshot(out, "33a-file-path-focused")
         key("ctrl+a")
+        screenshot(out, "33b-file-path-selected")
         paste(b"second-crlf.tex", out / "clipboard-open-path.txt")
         screenshot(out, "34-second-path-entered")
         click(found, 351, 124)  # Actual GUI 'Открыть путь'.
@@ -375,6 +377,7 @@ def main() -> int:
             raise RuntimeError("Second-file Save corrupted first document")
         screenshot(out, "36-second-crlf-saved")
         report["gui_two_file_crlf"] = "PASS_REAL_X11_TWO_FILE_GUI_OPEN_SAVE"
+        report["file_menu_path_edit"] = "PASS_REAL_X11_EDITABLE_FILE_PATH"
 
         # Explicit external test-fixture modification proves Ctrl+O reads disk.
         external = b"% I62_EXTERNAL_BEFORE_REOPEN"
