@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — I64 real pinned Inspector Apply → one minimal TikZ source edit → Undo (PENDING)
+
+- Extend the SAME I61 hosted Linux/X11 six gestures/Save/Open/CRLF/F1/Undo/XeLaTeX script with real selected Node property TextEdit and pinned shared-C Apply, prove draft-only source integrity, one-command patch and exact visual Undo. No new workflow/PR/B code. I63 earlier head SUCCESS and original 64/64 SHA/manual reviewed; new I64 head acceptance pending, physical Win10/M1/M4 NOT_RUN.
+
 ## Unreleased — I63 dual B42 source-tree lease & real File Open focus snapshots
 
 - Pin workflow + script to current B42 app/source Git tree `72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb`; reject mismatches before TeX Live installation. Capture real focus/Ctrl+A/paste screenshots while retaining all six native gestures, source/Undo/Open/PDF assertions. NOT_RUN full GUI and physical hosts until exact-head artifact audit.

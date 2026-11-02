@@ -304,6 +304,53 @@ def main() -> int:
             raise RuntimeError("Real F1 failed Properties -> Help -> Properties tab transition")
         report["f1_two_state"] = "PASS_REAL_X11_TAB_CHANGE_MANUAL_LABEL_REVIEW_REQUIRED"
 
+        # I64: an actual GUI Inspector edit, not a headless Rust event or
+        # a direct Session patch. Node #6 is selected; use one shared-C draft.
+        inspector_before = source.read_bytes()
+        before_items = owners(inspector_before)
+        if len(before_items) != 6 or before_items[-1]["tool"] != "node":
+            raise RuntimeError("Inspector Apply requires selected native Node #6")
+        screenshot(out, "28a-inspector-before-draft")
+        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
+        key("ctrl+a")
+        paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
+        screenshot(out, "28b-inspector-draft-only")
+        click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
+        if source.read_bytes() != inspector_before:
+            raise RuntimeError("Inspector draft unexpectedly changed saved source")
+        click(found, 1235, 157)  # Actual pinned 'Применить параметры' control.
+        screenshot(out, "28c-inspector-applied")
+        click(found, 177, 39)
+        wait(lambda: source.read_bytes() != inspector_before,
+             "Real pinned Inspector Apply did not persist a source patch")
+        inspector_applied = source.read_bytes()
+        before_lines = inspector_before.splitlines(keepends=True)
+        after_lines = inspector_applied.splitlines(keepends=True)
+        if len(before_lines) != len(after_lines):
+            raise RuntimeError("Inspector Apply changed source line count")
+        altered = [i for i, (left, right) in enumerate(zip(before_lines, after_lines))
+                   if left != right]
+        if (
+            len(altered) != 1
+            or b"\\node at (10.50cm,5.00cm)" not in after_lines[altered[0]]
+            or b'"x":"10.50cm"' not in after_lines[altered[0]]
+            or len(owners(inspector_applied)) != 6
+            or not original_preserved(fixture, inspector_applied)
+        ):
+            raise RuntimeError("Inspector Apply did not make a minimal C-owned Node x patch")
+        report["steps"].append({
+            "case": "real_pinned_inspector_node_x_apply_minimal_source_patch",
+            "before_sha256": hashlib.sha256(inspector_before).hexdigest(),
+            "after_sha256": sha(source),
+            "changed_line_number": altered[0] + 1,
+        })
+        click(found, 1085, 157)  # Same real inspector's visual Undo.
+        screenshot(out, "28d-inspector-apply-undo")
+        click(found, 177, 39)
+        wait(lambda: source.read_bytes() == inspector_before,
+             "Visual Undo after pinned Inspector Apply failed byte-exact source restore")
+        report["inspector_apply"] = "PASS_REAL_X11_C_CATALOGUE_NODE_X_APPLY_AND_UNDO"
+
         # TextEdit Ctrl+Z and Session visual inverse-patch Undo are different.
         six_bytes = source.read_bytes()
         manual = b"% I62_NATIVE_UNDO_MARKER"
