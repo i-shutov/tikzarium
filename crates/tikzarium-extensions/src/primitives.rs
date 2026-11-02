@@ -347,7 +347,9 @@ impl Catalog {
                         || (file.starts_with('.') || file.starts_with('-'))
                         || file.contains("..")
                         || !file.ends_with(".tex")
-                        || !file.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+                        || !file
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
                 })
                 || library.requirements.packages != ["tikz"]
                 || library.requirements.libraries != [library.name.as_str()]

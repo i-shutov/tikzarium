@@ -1,8 +1,8 @@
 //! B38: existing C/N2 library source transactions and N3 offline help in egui.
 //! The external XeLaTeX PDF, not the provisional guide, is authoritative.
 use crate::tikz_authoring::{self, LibraryChange, Session};
-use std::collections::BTreeMap;
 use eframe::egui;
+use std::collections::BTreeMap;
 use tikzarium_extensions::{
     help_search::{self, HelpEntry},
     primitives::Evidence,

@@ -8,7 +8,10 @@ use crate::{
     primitive_edit::SourceTarget,
     primitives::{Capabilities, Catalog, Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
 };
-use std::{collections::{BTreeMap, BTreeSet}, ops::Range};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+};
 use tikzarium_core::{PackageProbe, TexEnvironment};
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
@@ -28,27 +31,30 @@ pub fn library_installations_with_lookup(
     catalog: &Catalog,
     mut lookup: impl FnMut(&str) -> PackageProbe,
 ) -> BTreeMap<String, Evidence> {
-    catalog.libraries.iter().map(|library| {
-        let mut missing = false;
-        let mut unavailable = false;
-        for file in &library.probe_files {
-            match lookup(file) {
-                PackageProbe::Present(_) => {}
-                PackageProbe::Missing => missing = true,
-                PackageProbe::Unavailable => unavailable = true,
+    catalog
+        .libraries
+        .iter()
+        .map(|library| {
+            let mut missing = false;
+            let mut unavailable = false;
+            for file in &library.probe_files {
+                match lookup(file) {
+                    PackageProbe::Present(_) => {}
+                    PackageProbe::Missing => missing = true,
+                    PackageProbe::Unavailable => unavailable = true,
+                }
             }
-        }
-        let observed = if missing {
-            Evidence::Absent
-        } else if unavailable || library.probe_files.is_empty() {
-            Evidence::Unknown
-        } else {
-            Evidence::Confirmed
-        };
-        (library.name.clone(), observed)
-    }).collect()
+            let observed = if missing {
+                Evidence::Absent
+            } else if unavailable || library.probe_files.is_empty() {
+                Evidence::Unknown
+            } else {
+                Evidence::Confirmed
+            };
+            (library.name.clone(), observed)
+        })
+        .collect()
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {

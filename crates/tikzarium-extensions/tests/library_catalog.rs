@@ -14,10 +14,10 @@ fn target(source: &str, revision: u64) -> SourceTarget {
 }
 
 #[test]
-fn four_libraries_are_in_the_same_schema_as_six_native_tools() {
+fn six_libraries_are_in_the_same_schema_as_six_native_tools() {
     let catalog = Catalog::bundled().unwrap();
     assert_eq!(catalog.tools.len(), 6);
-    assert_eq!(catalog.libraries.len(), 4);
+    assert_eq!(catalog.libraries.len(), 6);
     for name in N2_LIBRARY_NAMES {
         let record = catalog.library(name).expect("declarative record");
         assert_eq!(record.name, name);
@@ -137,7 +137,7 @@ fn opaque_conditional_import_is_unknown_not_missing_or_installed() {
 }
 
 #[test]
-fn four_library_connect_disconnect_proposals_are_reversible_with_crlf_and_unicode() {
+fn six_library_connect_disconnect_proposals_are_reversible_with_crlf_and_unicode() {
     let catalog = Catalog::bundled().unwrap();
     for name in N2_LIBRARY_NAMES {
         let mut source = "\\documentclass{article}\r\n% Живой комментарий\r\n\\begin{document}\r\n\\Unknown{сохранить}\r\n\\end{document}\r\n".to_owned();

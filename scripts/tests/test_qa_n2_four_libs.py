@@ -12,7 +12,10 @@ class N2FourLibraries(unittest.TestCase):
     def test_examples_are_from_one_real_c_catalogue(self):
         spec = tomllib.loads(CATALOGUE.read_text(encoding="utf-8"))
         names = [item["name"] for item in spec["libraries"]]
-        self.assertEqual(names, ["arrows.meta", "positioning", "calc", "fit"])
+        # The historic I56 fixture deliberately covers the original four.
+        # N2 Studio extends the same C catalogue with explicit shapes entries.
+        self.assertEqual(names[:4], ["arrows.meta", "positioning", "calc", "fit"])
+        self.assertEqual(names[4:], ["shapes.geometric", "shapes.misc"])
         source = SOURCE.read_text(encoding="utf-8")
         self.assertIn("for name in arrows.meta positioning calc fit;", source)
         self.assertIn("--bin n2-library-fixture", source)

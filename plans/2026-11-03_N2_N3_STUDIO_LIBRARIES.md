@@ -19,3 +19,6 @@ PGF manual https://tikz.dev/library-shapes Section 71: umbrella shapes compatibi
 3. Native Win10 x64 MiKTeX and Mac ARM M1/M4 XeLaTeX GUI smoke, package/font/theme invariance and installer remain NOT_RUN until real hardware. N4 domain packs cannot displace N2/N3/N5.
 
 Merge only exact-head CI + evidence audit + expected_head_sha, then separate postmerge checks and checkpoint.
+## Initial QA feedback and correction
+
+PR #93 original GUI artifact `13187149288`: N1 subvertical passed again; N2 first click was blocked by an expected dirty-scratch modal on GUI Open, not by library logic. The driver now explicitly confirms discard before touching Libraries and validates a changed dock screenshot. Four→six C catalogue regression tests are updated; historically scoped I56 four-library test remains four. Rust formatting corrected to exact hosted diagnostics. All reacceptance evidence remains PENDING until new exact-head workflow and manual original review.

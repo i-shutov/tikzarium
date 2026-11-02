@@ -108,14 +108,27 @@ def main():
         paste(b"n2-crlf.tex", out / "clipboard-open.txt")
         screenshot(out, "03-open-target")
         click(window, 351, 124)
-        time.sleep(0.8)
-        screenshot(out, "04-after-gui-open")
+        time.sleep(0.5)
+        screenshot(out, "04-scratch-dirty-open-modal")
+        # A new scratch buffer is deliberately DIRTY. Opening another file
+        # triggers the correct product confirmation; this QA driver must
+        # explicitly click the genuine "Отбросить и открыть" button.
+        # B42 I64 already accepted this modal; never treat it as a bug.
+        click(window, 601, 478)
+        time.sleep(0.6)
+        screenshot(out, "04a-after-gui-open-confirmed")
+        if sha(out / "04-scratch-dirty-open-modal.png") == sha(
+            out / "04a-after-gui-open-confirmed.png"
+        ):
+            raise RuntimeError("N2 initial dirty-scratch Open modal was not dismissed")
         if source.read_bytes() != FIXTURE:
             raise RuntimeError("Open modified initial CRLF fixture")
 
         # Right-hand Libraries dock: coordinate lease from accepted B42 image.
         click(window, 1190, 109)
         screenshot(out, "05-libraries-tab")
+        if sha(out / "05-libraries-tab.png") == sha(out / "04a-after-gui-open-confirmed.png"):
+            raise RuntimeError("Real Libraries tab click did not change the Studio dock")
         click(window, 1200, 203)
         screenshot(out, "06-libraries-catalogue")
         click(window, 1165, 244)

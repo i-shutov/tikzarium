@@ -286,7 +286,10 @@ mod tests {
             kpsewhich: Some(dir.path().join("unrelated-kpsewhich")),
             pdf_renderer: None,
         };
-        assert_eq!(selected.probe_package("tikz.sty"), PackageProbe::Unavailable);
+        assert_eq!(
+            selected.probe_package("tikz.sty"),
+            PackageProbe::Unavailable
+        );
     }
 
     #[cfg(unix)]
