@@ -1,0 +1,11 @@
+# N3 search semantics and X11 external-reload provenance — 2026-11-03
+
+Read fresh main cc92441b, AGENTS, PRODUCT_SPEC, ARCHITECTURE, ROADMAP, full-scope plan, recent plan/insight/CHANGELOG, exact merged PR #93, CI job logs, and ORIGINAL premerge/postmerge Linux/X11 artifacts. There were no open PRs. The accepted historical N1 six gestures remain unchanged, and app/src is not edited in this integration.
+
+Independent source-image comparison: from original premerge success 41557979254 / artifact 13196270179, source-pane crop x0..560 y100..650 changed in 1592 pixels between 12-undo-restored-source and 13-reopened-external-change. In postmerge failure 41560989884 / artifact 13197340119 the same crop changed in ZERO pixels and full screenshots 12/13 were byte-identical. Yet 13a showed a real source TextEdit append. Thus the first missing observable step was Open/reload, and a stale-buffer Save is correctly rejected by Document::save_to on an externally changed file. No evidence warrants disabling conflict detection or blaming the B production code without a separate reproducible user action.
+
+Scoped corrective acceptance uses the actual Studio File menu and Open path action (the same accepted initial GUI path), window activation, source-region pixel threshold before edit, post-Save screenshot, and exact external+GUI marker bytes. The pixel predicate is a fail-closed guard, NOT semantic OCR or real GUI PASS until manual review. A click miss or focus/modal issue will remain FAIL with original artifact evidence; never rerun unchanged #41560989884.
+
+N3 user-visible deficiency: common-C HelpEntry search matched descriptions, example and original names, but did not index parameter kind, units, allowed_values, default and editor-preset provenance. The shared Rust search API now exposes these fields without changing the C schema; the existing Studio Help panel consumes this API. Tests cover node_content, dimension, pt and editor_preset; unknown actual PGF defaults remain UNKNOWN.
+
+State at authoring: historical hosted N1 PASS, premerge N2 hosted PASS, postmerge N2 FAIL, candidate exact-head CI and manual new artifact audit PENDING. Physical Win10/MiKTeX, Mac M1/M4/XeLaTeX GUI and signed installer NOT_RUN. No workflow added; no physical-platform claims.

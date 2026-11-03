@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — N3 semantic help search + observable external source reload (CANDIDATE)
+
+- Extend existing single-C-catalogue Russian offline help search to index parameter kinds, units, allowed choices and editor presets, not just prose/examples. No new TeX parser, invented upstream defaults, duplicated tool schemas or package installation.
+- Strengthen the existing Linux/X11 N2+N3 user flow after post-merge FAIL #41560989884: a real Studio File-menu Open replaces the unobserved Ctrl+O, the source-pane image must change visibly before editing, then real TextEdit appends a distinct marker, GUI Save records its own screenshot, and exact CRLF/opaque bytes and external XeLaTeX Unicode PDF/fonts must match. Document::save_to external-conflict protection stays intact.
+- The original premerge real GUI pass remains HISTORICAL. This revision's exact-head GUI/CI and manual original-artifact audit are PENDING. Physical Windows 10/MiKTeX, Mac ARM M1/M4/XeLaTeX, signed installer and broad N3 completion remain NOT_RUN/PENDING; no N4 packages.
+
 ## Unreleased — N2/N3 source libraries + external installation evidence (candidate; Studio X11 NOT_RUN)
 
 - Enrich the ONE C library catalogue to six entries including `shapes.geometric`/`shapes.misc` with manually specified PGF probe paths (notably `pgflibraryarrows.meta.code.tex`), Russian help and verified source examples. No speculative CAD tools.

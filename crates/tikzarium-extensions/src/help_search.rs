@@ -107,12 +107,32 @@ impl<'a> HelpEntry<'a> {
             self.manual().1,
             requirements.documented_against.as_str(),
         ];
+        // N3: parameter metadata comes from the SAME C catalogue as F1
+        // and Inspector. Editor presets are not documented TikZ defaults.
+        let parameter_metadata = match self {
+            Self::Parameter(_, parameter) => {
+                [
+                    parameter.kind.as_str(),
+                    parameter.default.as_str(),
+                    parameter.default_provenance.as_str(),
+                ]
+                .iter()
+                .any(|value| value.to_lowercase().contains(needle))
+                    || parameter
+                        .units
+                        .iter()
+                        .chain(parameter.allowed_values.iter())
+                        .any(|value| value.to_lowercase().contains(needle))
+            }
+            _ => false,
+        };
         base.iter().any(|part| part.to_lowercase().contains(needle))
             || requirements
                 .libraries
                 .iter()
                 .chain(requirements.packages.iter())
                 .any(|name| name.to_lowercase().contains(needle))
+            || parameter_metadata
     }
 }
 
@@ -229,6 +249,37 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn n3_offline_search_indexes_c_parameter_semantics() {
+        let catalog = Catalog::bundled().unwrap();
+        assert!(
+            search(&catalog, "node_content")
+                .iter()
+                .any(|entry| entry.id() == "tikz.node:content"),
+            "parameter kind must be searchable from the C catalogue"
+        );
+        assert!(
+            search(&catalog, "dimension")
+                .iter()
+                .any(|entry| entry.id() == "tikz.circle:radius"),
+            "parameter kind must be searchable without a second schema"
+        );
+        let presets = search(&catalog, "editor_preset");
+        assert!(!presets.is_empty());
+        assert!(
+            presets
+                .iter()
+                .all(|entry| matches!(entry, HelpEntry::Parameter(_, _))),
+            "editor presets must not be surfaced as TikZ tool/library defaults"
+        );
+        assert!(
+            search(&catalog, "pt")
+                .iter()
+                .any(|entry| entry.id() == "tikz.circle:radius"),
+            "parameter units must be searchable"
+        );
     }
 
     #[test]
