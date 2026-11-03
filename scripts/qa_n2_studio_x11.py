@@ -175,10 +175,12 @@ def main():
         report["connected_source_sha256"] = sha(source)
         screenshot(out, "10-connect-saved")
 
-        # Same stable-id expanded row supplies Disconnect (not package uninstall).
-        # Capture the inverse-action layout: project-loaded changes to CONFIRMED.
+        # The real source patch reveals a new shared Undo/status action bar.
+        # Artifact 13195353061 screenshot 10a pins actual Disconnect at
+        # x1105..1298, y644..676; the earlier y563 hit preview text.
+        # This is a coordinate re-lease, not a production SourcePatch defect.
         screenshot(out, "10a-before-disconnect")
-        click(window, 1212, 563)
+        click(window, 1200, 660)
         screenshot(out, "11-after-disconnect")
         click(window, 177, 39)
         wait(lambda: source.read_bytes() == FIXTURE,
