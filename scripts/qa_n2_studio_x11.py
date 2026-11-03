@@ -89,7 +89,8 @@ def main():
         "app_tree_sha": APP_TREE, "real_gui": "NOT_RUN",
         "library_panel": "NOT_RUN", "library_entry": "NOT_RUN",
         "library_connect": "NOT_RUN", "library_disconnect": "NOT_RUN",
-        "library_undo": "NOT_RUN", "gui_save_open": "NOT_RUN",
+        "library_undo": "NOT_RUN", "gui_reopen": "NOT_RUN",
+        "gui_save_open": "NOT_RUN",
         "xelatex_pdf": "NOT_RUN", "manual_artifact_review": "NOT_RUN",
         "five_statuses": "MANUAL_SCREENSHOT_REVIEW_REQUIRED",
         "physical_windows10_miktex": "NOT_RUN", "physical_mac_arm": "NOT_RUN",
@@ -199,19 +200,52 @@ def main():
         if external == connected:
             raise RuntimeError("No external fixture marker")
         source.write_bytes(external)
-        key("ctrl+o")
-        time.sleep(0.75)
+        # Postmerge run 41560989884: Ctrl+O sometimes left the OLD source
+        # visible. Drive genuine Studio File -> Open path, already accepted
+        # in the initial fixture Open, rather than assume shortcut delivery.
+        run("xdotool", "windowactivate", "--sync", window)
+        click(window, 321, 40)
+        screenshot(out, "12b-file-reopen-menu")
+        click(window, 351, 124)
+        time.sleep(0.8)
         screenshot(out, "13-reopened-external-change")
-        # Equality to an externally modified disk file is a tautology; it
-        # does not prove the GUI actually reopened that file. Following the
-        # independently accepted I64 user workflow, append via the ACTUAL
-        # source TextEdit after Ctrl+O and verify all preceding disk bytes.
+        # Must prove the source TEXT changed on screen before typing into it.
+        # A tooltip, cursor blink or modal alone is not positive reload proof.
+        def crop_source(label: str) -> Path:
+            path = out / (label + "-source-crop.png")
+            run("convert", str(out / (label + ".png")),
+                "-crop", "540x520+0+115", "+repage", str(path))
+            return path
+        before = crop_source("12-undo-restored-source")
+        after = crop_source("13-reopened-external-change")
+        compare = subprocess.run(
+            ["compare", "-metric", "AE", "-fuzz", "5%",
+             str(before), str(after), "null:"],
+            capture_output=True, text=True, check=False, timeout=20,
+        )
+        if compare.returncode not in (0, 1):
+            raise RuntimeError("Cannot audit GUI source-region image delta: "
+                               + compare.stderr[-500:])
+        try:
+            changed_pixels = int(compare.stderr.strip().split()[0])
+        except (ValueError, IndexError) as error:
+            raise RuntimeError("Invalid ImageMagick source delta metric") from error
+        report["reopen_source_changed_pixels"] = changed_pixels
+        if changed_pixels < 350:
+            raise RuntimeError(
+                "N2 File/Open did not visibly reload the EXTERNAL TeX revision "
+                "(source delta <350 pixels): never edit/save a stale buffer"
+            )
+        report["gui_reopen"] = "HOSTED_X11_SOURCE_CHANGED_MANUAL_REVIEW_REQUIRED"
+        # External disk equality alone is tautological. Append through REAL
+        # source TextEdit and require both original external and new GUI bytes.
         reopened_append = b"% N2_GUI_AFTER_REAL_REOPEN"
         click(window, 177, 380)
         key("ctrl+End")
         paste(reopened_append, out / "clipboard-reopen-edit.txt")
         screenshot(out, "13a-gui-edited-reopened-source")
         click(window, 177, 39)
+        screenshot(out, "13b-after-gui-save")
         wait(lambda: reopened_append in source.read_bytes(),
              "N2 GUI re-opened source could not be edited and saved")
         if source.read_bytes() != external + reopened_append:
@@ -219,6 +253,7 @@ def main():
                 "N2 GUI Ctrl+O did not reload the external CRLF revision "
                 "or Save altered unrelated user bytes"
             )
+        report["gui_reopen"] = "PASS_REAL_X11_EXTERNAL_RELOAD_AND_GUI_SAVE"
         report["gui_save_open"] = "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE"
 
         click(window, 219, 39)  # Actual external XeLaTeX Build.
