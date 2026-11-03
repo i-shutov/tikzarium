@@ -2,6 +2,7 @@
 //! The external XeLaTeX PDF, not the provisional guide, is authoritative.
 use crate::tikz_authoring::{self, LibraryChange, Session};
 use eframe::egui;
+use std::collections::BTreeMap;
 use tikzarium_extensions::{
     help_search::{self, HelpEntry},
     primitives::Evidence,
@@ -97,8 +98,9 @@ pub fn show_library_panel(
     session: &mut Session,
     source: &mut String,
     has_xelatex: bool,
+    installation: &BTreeMap<String, Evidence>,
 ) -> Option<usize> {
-    show_library_panel_tracking(ui, session, source, has_xelatex, |_, _| {})
+    show_library_panel_tracking(ui, session, source, has_xelatex, installation, |_, _| {})
 }
 
 // The observer only records the actual egui hit rectangles for UNIT_EVENT
@@ -108,6 +110,7 @@ fn show_library_panel_tracking(
     session: &mut Session,
     source: &mut String,
     has_xelatex: bool,
+    installation: &BTreeMap<String, Evidence>,
     mut observe: impl FnMut(LibraryUiTarget, egui::Rect),
 ) -> Option<usize> {
     let mut jump = None;
@@ -122,7 +125,7 @@ fn show_library_panel_tracking(
                     catalog,
                     &library.name,
                     &project,
-                    Evidence::Unknown,
+                    installation.get(&library.name).copied().unwrap_or(Evidence::Unknown),
                     if has_xelatex { Some("xelatex") } else { None },
                 ).expect("bundled C library record");
                 let direct = project.status(ImportKind::TikzLibrary, &library.name);
@@ -144,7 +147,12 @@ fn show_library_panel_tracking(
                         evidence_label(capabilities.tool_implemented),
                         evidence_label(capabilities.help_available)
                     ));
-                    ui.small("Installed UNKNOWN: файл библиотеки отдельно не проверялся. Engine target ≠ XeLaTeX PASS; tool ≠ полный визуальный адаптер.");
+                    ui.small(match capabilities.installed {
+                        Evidence::Confirmed => "Installed CONFIRMED: файл найден в выбранной внешней TeX-дистрибуции. Это НЕ PDF PASS.",
+                        Evidence::Absent => "Installed ABSENT: файл не найден. Установка пакетов — отдельное действие пользователя.",
+                        Evidence::Unknown => "Installed UNKNOWN: чтение реестра выбранной TeX-дистрибуции недоступно.",
+                    });
+                    ui.small("Engine target ≠ XeLaTeX PASS; tool ≠ полный визуальный адаптер.");
                     ui.label(&library.warning_ru);
                     ui.hyperlink_to(
                         format!("PGF/TikZ §{}", library.manual_section),
@@ -240,7 +248,7 @@ mod tests {
         let _ = ctx.run(egui::RawInput::default(), |ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
                 show_help_search(ui, &mut query);
-                show_library_panel(ui, &mut session, &mut source, false);
+                show_library_panel(ui, &mut session, &mut source, false, &BTreeMap::new());
             });
         });
         assert_eq!(source, original);
@@ -283,6 +291,7 @@ mod tests {
                             session,
                             source,
                             false,
+                            &BTreeMap::new(),
                             |target, rect| found.push((target, rect)),
                         );
                     });
@@ -327,7 +336,7 @@ mod tests {
         let libraries = &tikz_authoring::catalog().libraries;
         assert_eq!(
             libraries.len(),
-            4,
+            6,
             "N2 catalogue changed; revalidate the panel"
         );
 

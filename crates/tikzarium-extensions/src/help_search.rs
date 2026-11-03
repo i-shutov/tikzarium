@@ -170,7 +170,7 @@ mod tests {
         let items = entries(&catalog);
         assert_eq!(items.len(), expected);
         assert_eq!(catalog.tools.len(), 6);
-        assert_eq!(catalog.libraries.len(), 4);
+        assert_eq!(catalog.libraries.len(), 6);
         let ids = items
             .iter()
             .map(|entry| entry.id())
@@ -178,6 +178,8 @@ mod tests {
         assert_eq!(ids.len(), items.len());
         assert!(ids.contains("tikz.arrow:tip"));
         assert!(ids.contains("tikz.library.arrows-meta"));
+        assert!(ids.contains("tikz.library.shapes-geometric"));
+        assert!(ids.contains("tikz.library.shapes-misc"));
     }
 
     #[test]

@@ -6,7 +6,14 @@ use std::{
 };
 use thiserror::Error;
 pub const SCHEMA_VERSION: u32 = 1;
-pub const N2_LIBRARY_NAMES: [&str; 4] = ["arrows.meta", "positioning", "calc", "fit"];
+pub const N2_LIBRARY_NAMES: [&str; 6] = [
+    "arrows.meta",
+    "positioning",
+    "calc",
+    "fit",
+    "shapes.geometric",
+    "shapes.misc",
+];
 const IDS: [&str; 6] = [
     "tikz.line",
     "tikz.arrow",
@@ -67,6 +74,8 @@ pub struct ToolSpec {
 pub struct LibrarySpec {
     pub id: String,
     pub name: String,
+    /// Literal PGF file(s) to probe in the selected TeX distribution.
+    pub probe_files: Vec<String>,
     pub title_ru: String,
     pub syntax: String,
     pub help_ru: String,
@@ -331,6 +340,17 @@ impl Catalog {
                 || !seen_libraries.insert(library.name.as_str())
                 || library.id != expected_id
                 || library.syntax != expected_syntax
+                || library.probe_files.len() != 1
+                || library.probe_files.iter().any(|file| {
+                    file.is_empty()
+                        || file.len() > 128
+                        || (file.starts_with('.') || file.starts_with('-'))
+                        || file.contains("..")
+                        || !file.ends_with(".tex")
+                        || !file
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+                })
                 || library.requirements.packages != ["tikz"]
                 || library.requirements.libraries != [library.name.as_str()]
                 || library.requirements.engine != "xelatex"

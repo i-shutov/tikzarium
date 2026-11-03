@@ -9,7 +9,7 @@ Owner-corrected scope, 2026-10-31. Replaces the earlier S0–S7 universal-CAD pl
 | Block | Delivered user workflow | Exit criterion |
 | --- | --- | --- |
 | N1 — Native primitive authoring | Draw line/arrow/rectangle/circle/node/Bézier, edit parameters, immediately see the changed TikZ command and its explanation, compile via external XeLaTeX | Six real tool workflows: canvas/input → source → PDF → save/reopen/undo; no unrelated source damage |
-| N2 — Connected libraries | Project library panel; positioning/calc/arrows.meta/fit/shapes tool contributions; explicit preamble changes; installed/loaded/compatible/tool/help states | Connect and disconnect a library with visible diff/undo; correct tool state; raw code remains usable without an adapter |
+| N2 — Connected libraries | Project library panel; positioning/calc/arrows.meta/fit/shapes.geometric/shapes.misc catalogue and source adapters; explicit preamble changes; installed/loaded/compatible/tool/help states | Connect and disconnect a library with visible diff/undo; correct tool state; raw code remains usable without an adapter |
 | N3 — Full authoring assistance | F1/hover, parameter explanations, syntax hints, completion, examples and manual navigation from the same catalogue used by tools | Every exposed control has verified semantic help, requirement and example; no invented defaults; works offline for shipped help |
 | N4 — Domain tool packs | PGFPlots axes/series, CircuitikZ components, tikz-cd arrows/grids; then geometry/graphs/Petri/trees/physics/chemistry packages using their native commands | Each pack has a concrete end-to-end drawing workflow, generated-source tests and real XeLaTeX fixtures, with explicit limits |
 | N5 — Everyday-use acceptance | Compact layout, typography/themes, project recovery, safe exports, package diagnostics, packaging, R4 regression where licensed | Physical Win10+MiKTeX and Mac ARM smoke, exact-SHA evidence, no critical defects; release scope explicitly listed |
@@ -25,6 +25,10 @@ N1 includes basic help from the first tool; N3 deepens assistance, it is not per
 - Integrator: shared contract review, source compatibility, substantial vertical merges and plans/insights synchronization.
 
 Do not replace this with four independent incompatible prototypes. C publishes the small shared contract; B uses it, A remains the compiler host and D checks actual outcomes. Read active branches before editing and group commits to avoid redundant full CI for each file.
+
+## Accepted/next boundary — 2026-11-03
+
+N1 passed hosted real Linux/X11 on merged main `3fb25ca7`; physical Windows 10/MiKTeX and Mac ARM remain NOT_RUN. N2/N3 now target real Studio library Connect/Undo/Save/Open/XeLaTeX plus independently observed installed/loaded/compatible/tool/help and one offline Russian C catalogue. The PGF umbrella `shapes` is compatibility-only; prefer explicit `shapes.geometric`/`shapes.misc`. An installed library does not imply a GUI adapter.
 
 ## Progress vocabulary
 

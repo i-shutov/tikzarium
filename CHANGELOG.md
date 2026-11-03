@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — N2/N3 source libraries + external installation evidence (candidate; Studio X11 NOT_RUN)
+
+- Enrich the ONE C library catalogue to six entries including `shapes.geometric`/`shapes.misc` with manually specified PGF probe paths (notably `pgflibraryarrows.meta.code.tex`), Russian help and verified source examples. No speculative CAD tools.
+- Cache per-library read-only file observations from the selected user XeLaTeX at startup and explicit Refresh; preserve five independent installed/loaded/engine/tool/help axes. `Unavailable` remains UNKNOWN, not ABSENT.
+- Fix core/manifest MiKTeX `findtexmf` support and stop inspecting an arbitrary PATH TeX Live helper. C/library negative tests and real egui event-source preservation cover declared contracts.
+- First PR #93 CI: Rust formatting preflight failed (corrected), a legacy four-library count assertion failed (updated), while real Linux/X11 N1 remained PASS. N2 QA driver clicked through an expected dirty-scratch Open modal and failed before any library action; this was a QA control-flow defect, not proven production regression. Exact-head rerun and original Library Connect/Save/Undo/Open/PDF acceptance still required. Physical Windows10/M1/M4 and installers NOT_RUN.
+
 ## Unreleased — I64 real pinned Inspector Apply → one minimal TikZ source edit → Undo (PENDING)
 
 - Extend the SAME I61 hosted Linux/X11 six gestures/Save/Open/CRLF/F1/Undo/XeLaTeX script with real selected Node property TextEdit and pinned shared-C Apply, prove draft-only source integrity, one-command patch and exact visual Undo. No new workflow/PR/B code. I63 earlier head SUCCESS and original 64/64 SHA/manual reviewed; new I64 head acceptance pending, physical Win10/M1/M4 NOT_RUN.

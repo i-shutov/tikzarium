@@ -7,9 +7,11 @@ on:
     paths:
       - '.github/workflows/i61-b42-studio-x11.yml'
       - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_n1_desktop.py'
       - 'scripts/tests/test_qa_i61_studio_fonts.py'
       - 'crates/**'
+      - 'extensions/primitives/catalog-v1.toml'
       - 'Cargo.toml'
       - 'Cargo.lock'
   pull_request:
@@ -17,9 +19,11 @@ on:
     paths:
       - '.github/workflows/i61-b42-studio-x11.yml'
       - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_n1_desktop.py'
       - 'scripts/tests/test_qa_i61_studio_fonts.py'
       - 'crates/**'
+      - 'extensions/primitives/catalog-v1.toml'
       - 'Cargo.toml'
       - 'Cargo.lock'
   workflow_dispatch:
@@ -43,7 +47,7 @@ jobs:
           toolchain: '1.91.0'
       - name: Exact B42 app source-tree lease (fail closed before GUI)
         run: |
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '72499c6e31d4cf6a2a36d16fb7bc8b10a9d66acb'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '9b106f390f7a6d509733c47ae77f808638d61c2c'
           # Catch disagreement between workflow and Python QA before heavy TeX install.
           grep -Fqx "APP_TREE = \"$(git rev-parse HEAD:crates/tikzarium-app/src)\"" scripts/qa_i61_b42_studio_x11.py
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
@@ -77,10 +81,16 @@ jobs:
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/i61-runtime"
           xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
             bash -c 'openbox --sm-disable >/tmp/i61-openbox.log 2>&1 & python3 scripts/qa_i61_b42_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/i61-evidence"'
+      - name: Real N2 Studio Library Connect/Undo/Save/Open and XeLaTeX PDF
+        run: |
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -c 'openbox --sm-disable >/tmp/n2-openbox.log 2>&1 & python3 scripts/qa_n2_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/n2-evidence"'
       - name: Upload actual GUI screenshots, saved source, PDF, log and SHA ledger
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: i61-b42-source-pdf-${{ github.run_id }}
-          path: ${{ runner.temp }}/i61-evidence/
+          path: |
+            ${{ runner.temp }}/i61-evidence/
+            ${{ runner.temp }}/n2-evidence/
           if-no-files-found: warn

@@ -8,9 +8,53 @@ use crate::{
     primitive_edit::SourceTarget,
     primitives::{Capabilities, Catalog, Evidence, N2_LIBRARY_NAMES, PrimitiveError, SourcePatch},
 };
-use std::{collections::BTreeSet, ops::Range};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+};
+use tikzarium_core::{PackageProbe, TexEnvironment};
 
 const BEGIN_DOCUMENT: &str = "\\begin{document}";
+
+/// C owns filenames; caller caches this observation on startup/TeX Refresh.
+/// Installation is independent of source imports, tool adapters and help.
+#[must_use]
+pub fn probe_library_installations(
+    catalog: &Catalog,
+    tex: &TexEnvironment,
+) -> BTreeMap<String, Evidence> {
+    library_installations_with_lookup(catalog, |file| tex.probe_package(file))
+}
+
+#[must_use]
+pub fn library_installations_with_lookup(
+    catalog: &Catalog,
+    mut lookup: impl FnMut(&str) -> PackageProbe,
+) -> BTreeMap<String, Evidence> {
+    catalog
+        .libraries
+        .iter()
+        .map(|library| {
+            let mut missing = false;
+            let mut unavailable = false;
+            for file in &library.probe_files {
+                match lookup(file) {
+                    PackageProbe::Present(_) => {}
+                    PackageProbe::Missing => missing = true,
+                    PackageProbe::Unavailable => unavailable = true,
+                }
+            }
+            let observed = if missing {
+                Evidence::Absent
+            } else if unavailable || library.probe_files.is_empty() {
+                Evidence::Unknown
+            } else {
+                Evidence::Confirmed
+            };
+            (library.name.clone(), observed)
+        })
+        .collect()
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImportKind {
@@ -650,4 +694,40 @@ pub fn plan_import(
         expected_anchor: BEGIN_DOCUMENT,
         declarations,
     })
+}
+
+#[cfg(test)]
+mod n2_probe_contract_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn exact_files_and_three_observations_are_not_inferred_from_names() {
+        let catalog = Catalog::bundled().unwrap();
+        let expected = [
+            ("arrows.meta", "pgflibraryarrows.meta.code.tex"),
+            ("positioning", "tikzlibrarypositioning.code.tex"),
+            ("calc", "tikzlibrarycalc.code.tex"),
+            ("fit", "tikzlibraryfit.code.tex"),
+            ("shapes.geometric", "tikzlibraryshapes.geometric.code.tex"),
+            ("shapes.misc", "tikzlibraryshapes.misc.code.tex"),
+        ];
+        for (name, file) in expected {
+            assert_eq!(catalog.library(name).unwrap().probe_files, [file]);
+        }
+        let actual = library_installations_with_lookup(&catalog, |file| {
+            if file == "tikzlibraryfit.code.tex" {
+                PackageProbe::Missing
+            } else if file.starts_with("tikzlibraryshapes.") {
+                PackageProbe::Unavailable
+            } else {
+                PackageProbe::Present(PathBuf::from(file))
+            }
+        });
+        assert_eq!(actual.get("arrows.meta"), Some(&Evidence::Confirmed));
+        assert_eq!(actual.get("fit"), Some(&Evidence::Absent));
+        assert_eq!(actual.get("shapes.geometric"), Some(&Evidence::Unknown));
+        assert_eq!(actual.get("shapes.misc"), Some(&Evidence::Unknown));
+        assert_eq!(actual.len(), 6);
+    }
 }
