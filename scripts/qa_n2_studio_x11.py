@@ -292,16 +292,27 @@ def main():
         key("ctrl+Home")
         for _ in range(4):  # Literal import is the fifth source line.
             key("Down")
-        key("End")
-        key("Left")  # Just before the literal closing brace.
-        for _ in range(len("arrows.meta")):
-            key("shift+Left")
-        paste(b"arro", out / "clipboard-n3-prefix.txt")
+        # The 4e6dc6e0 original screenshot/source proved this old
+        # End/Left/Shift+Left range selected "rrows.meta}" and left an
+        # extra "a": \\usetikzlibrary{aarro. Select the whole *literal*
+        # single source line via real TextEdit, not a filesystem rewrite.
+        # The subsequent C completion still must patch only "arro".
+        key("Home")
+        key("shift+End")
+        paste(b"\\\\usetikzlibrary{arro}", out / "clipboard-n3-prefix.txt")
         screenshot(out, "17-n3-prefix-in-source-editor")
-        click(window, 177, 39)  # GUI Save must preserve all unrelated CRLF.
+        click(window, 177, 39)  # GUI Save must preserve unrelated CRLF.
         wait(lambda: source.read_bytes() == n3_prefix,
-             "N3 native TextEdit did not save exactly one incomplete library prefix")
+             "N3 native TextEdit failed to replace the one literal import line")
         report["n3_prefix_native_textedit"] = "PASS_REAL_X11_ONE_NAME_CRLF"
+        # Save moves focus off TextEdit. Re-focus its visible fifth line and
+        # place the actual caret BEFORE '}' using Home + counted Right keys.
+        # Avoid the prior unobserved Left-from-End caret assumption.
+        click(window, 177, 229)
+        key("Home")
+        for _ in range(len(r"\\usetikzlibrary{arro")):
+            key("Right")
+        screenshot(out, "17a-n3-real-caret-before-brace")
         held_f1()
         screenshot(out, "18-n3-caret-f1")
         if dock_signature(out, "17-n3-prefix-in-source-editor") == \
