@@ -1,0 +1,7 @@
+# N3 caret completion — evidence and boundaries (2026-11-03)
+
+Read exact main 5f2c790e, AGENTS, PRODUCT_SPEC, ARCHITECTURE, ROADMAP, full-scope plan, latest N3/N5 plans/insights, CHANGELOG, all open PRs (none), issue #35, postmerge concrete job logs and artifact inventories. Native/D jobs [41594097297](https://github.com/i-shutov/tikzarium/actions/runs/41594097297) and [41594097197](https://github.com/i-shutov/tikzarium/actions/runs/41594097197) passed on unchanged main; earlier [41576724035](https://github.com/i-shutov/tikzarium/actions/runs/41576724035) proves prior real N2 Linux/X11, not current candidate GUI.
+
+Current B source TextEdit had no C semantic caret input, though F1 for active gesture and offline catalogue search existed. This candidate adds a deliberately narrow, source-first C recognizer and the production Studio Help completion action with revision-checked old-byte patch + Undo. Five independent status observations are shown without inferring package installation or actual engine compile. A stale caret, opaque TeX, comment, multi-name list or after-document insertion refuses completion. Underlying ordinary .tex and external XeLaTeX unchanged.
+
+NOT YET ACCEPTED: source code commit, unit/API tests, exact-head CI, actual new X11 UI, PDF, fonts and artifacts must each be checked independently. Broad N3 key/parameter completion and physical Windows10/M1/M4 remain NOT_RUN. No CI-only workflow, no B/D ownership branch modification, no N4 expansion.
