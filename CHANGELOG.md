@@ -4,7 +4,7 @@
 
 - Add offline provenance-locked native preview packager, taking independently verified CI app/CLI binaries; reject wrong PE32+ AMD64/Mach-O ARM64 or hash mismatch. No compilation, silent installers, TeX distribution, fonts or source rewriting.
 - Package Windows 10 x64 portable ZIP and native macOS ARM .app directory inside tar.gz with executable bit and Info.plist, plus CRLF/opaque Cyrillic QA fixture, Russian physical acceptance steps, exact-source/CI PROVENANCE.json and per-file SHA-256 manifest. Both outputs UNSIGNED and NOT installers. Explicit NOT_RUN physical Win10/M1/M4, Mac Gatekeeper/launch/notarization, fonts/themes/IME/installer.
-- Local Python negative architecture/hash and archive metadata tests 3/3 PASS; external Linux TeX Live fixture XeLaTeX/PDF DejaVuSerif check is not macOS/Windows acceptance. Existing main postmerge hosted MiKTeX job FAIL before TeX on upstream installer connection timeout, not verified product failure; no CI rerun or workflow edits.
+- Local Python negative architecture/hash and archive metadata tests 3/3 PASS; the existing D QA matrix now runs the N5 packager test module on three hosted OS and adds a CLI tamper-before-output regression. This closes a real missing-CI-coverage gate in the same N5 user-facing PR; exact-head CI still required. External Linux TeX Live fixture XeLaTeX/PDF DejaVuSerif check is not macOS/Windows acceptance. Existing main postmerge hosted MiKTeX job FAIL before TeX on upstream installer connection timeout, not verified product failure; no CI rerun or workflow edits.
 
 ## Unreleased — N3 semantic help search + observable external source reload (CANDIDATE)
 

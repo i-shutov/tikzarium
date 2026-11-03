@@ -3,6 +3,8 @@ import importlib.util
 import json
 import plistlib
 import struct
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -84,6 +86,34 @@ class N5Packaging(unittest.TestCase):
                     with zipfile.ZipFile(archive) as z:
                         self.assertIn(root + 'tikzarium-app.exe', z.namelist())
                         self.assertNotIn(root + 'TikZarium.app/Contents/MacOS/tikzarium-app', z.namelist())
+
+    def test_cli_rejects_modified_upstream_bytes_before_archive(self):
+        # End-to-end CLI gate with SYNTHETIC headers: tests packaging, not running an app.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            app = root / 'app.exe'
+            cli = root / 'cli.exe'
+            output = root / 'candidate.zip'
+            good_bytes = fake_win()
+            app.write_bytes(good_bytes)
+            cli.write_bytes(good_bytes)
+            command = [
+                sys.executable, str(MODULE), '--platform', pkg.WIN,
+                '--app', str(app), '--cli', str(cli),
+                '--app-sha256', pkg.sha256(good_bytes),
+                '--cli-sha256', pkg.sha256(good_bytes),
+                '--source-sha', SHA, '--ci-run-url', CI, '--output', str(output),
+            ]
+            good = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(good.returncode, 0, good.stderr)
+            with zipfile.ZipFile(output) as z:
+                self.assertEqual(z.read('Tikzarium-preview/tikzarium-app.exe'), good_bytes)
+            output.unlink()
+            app.write_bytes(good_bytes + b'unsigned-tamper')
+            bad = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(bad.returncode, 0)
+            self.assertIn('SHA-256 mismatch', bad.stderr)
+            self.assertFalse(output.exists(), 'mismatched upstream must not create archive')
 
     def test_invalid_archive_target_fails(self):
         with tempfile.TemporaryDirectory() as d:

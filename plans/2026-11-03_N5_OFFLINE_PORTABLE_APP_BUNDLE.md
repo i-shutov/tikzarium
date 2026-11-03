@@ -8,7 +8,7 @@ Ship reproducible **unsigned preview packaging**, not fake installers. Consume o
 
 ## Acceptance and nonclaims
 
-1. Local Python negative packaging tests: truncated and cross-architecture executable rejection, manifest fidelity, .app Info.plist/permission, no bogus installer/Gatekeeper PASS.
+1. Python negative packaging tests: truncated and cross-architecture executable rejection, exact upstream SHA mismatch before any archive output, manifest fidelity, deterministic ZIP/TAR, .app Info.plist/permission, no bogus installer/Gatekeeper PASS. The existing D QA matrix now invokes these tests on hosted Linux/Windows/macOS; an actual exact-head PASS is required.
 2. Verify original exact-head main CI source/provenance, outer archive hashes, internal binaries against independently recorded CI hashes; manually inspect both produced package trees.
 3. Compile source fixture with external Linux TeX Live XeLaTeX and audit Cyrillic/font embedding **as a fixture-only check**; does NOT establish MiKTeX, app UI or user hardware acceptance.
 4. GitHub PR requires exact-head CI and manual evidence audit before merge; postmerge separate CI. No workflow modifications/dispatch; only one meaningful code+tests+plan+insight+changelog slice.
