@@ -160,7 +160,10 @@ def main():
         time.sleep(0.45)
         screenshot(out, "08-connect-button-target")
 
-        click(window, 1212, 635)  # PROVISIONAL from B42 dock; source bytes decide, never synthetic PASS.
+        # Original run 41556652239 screenshot 08: actual Connect button
+        # spans x1105..1341, y549..577. Old (1212,635) expanded the
+        # following positioning row rather than clicking the C SourcePatch.
+        click(window, 1212, 563)
         screenshot(out, "09-after-connect")
         click(window, 177, 39)  # GUI Save, not direct disk patch.
         wait(lambda: IMPORT in source.read_bytes(),
@@ -172,8 +175,10 @@ def main():
         report["connected_source_sha256"] = sha(source)
         screenshot(out, "10-connect-saved")
 
-        # Same expanded row supplies Disconnect; its action does not uninstall PGF.
-        click(window, 1212, 635)
+        # Same stable-id expanded row supplies Disconnect (not package uninstall).
+        # Capture the inverse-action layout: project-loaded changes to CONFIRMED.
+        screenshot(out, "10a-before-disconnect")
+        click(window, 1212, 563)
         screenshot(out, "11-after-disconnect")
         click(window, 177, 39)
         wait(lambda: source.read_bytes() == FIXTURE,
