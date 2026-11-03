@@ -30,6 +30,10 @@ Do not replace this with four independent incompatible prototypes. C publishes t
 
 N1 passed hosted real Linux/X11 on merged main `3fb25ca7`; physical Windows 10/MiKTeX and Mac ARM remain NOT_RUN. N2/N3 now target real Studio library Connect/Undo/Save/Open/XeLaTeX plus independently observed installed/loaded/compatible/tool/help and one offline Russian C catalogue. The PGF umbrella `shapes` is compatibility-only; prefer explicit `shapes.geometric`/`shapes.misc`. An installed library does not imply a GUI adapter.
 
+## N5 packaging checkpoint — 2026-11-03
+
+N1 and the first N2 library workflow are accepted on hosted Linux/X11 on merged main bbcc2504 (99/99 source/artifact SHA). Full N3 control/completion coverage remains PENDING. The N5 offline native packaging candidate makes independently hash-checked Windows x64 portable ZIP and Mac ARM64 Finder .app (unsigned) from existing CI binaries, with CRLF/Unicode fixture, provenance and a physical QA runbook. This is user-facing packaging preparation, NOT signed installers and NOT proof of physical Win10/M1/M4 GUI. The current main-push hosted MiKTeX failure occurs at the external pinned installer download before product tests; distinguish network/setup FAIL from regression and avoid blind reruns. Native launch, actual external MiKTeX on Windows 10, Mac XeLaTeX, Retina/IME, themes, signing/notarization and full N5 remain NOT_RUN. N4 stays off the first release critical path.
+
 ## Progress vocabulary
 
 The existing XeLaTeX source workbench, PDF navigation, font/theme support and package audits are reusable infrastructure. The six-primitives mouse-authoring workflow, library-driven tool palette and integrated explanatory UI are new acceptance targets, not already accepted functionality. Code in a PR, green hosted CI and physical desktop acceptance are separate states.
