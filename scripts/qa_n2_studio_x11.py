@@ -16,7 +16,7 @@ import subprocess
 import time
 
 from qa_i61_b42_studio_x11 import (
-    APP_TREE, audit_embedded_fonts, click, key, paste, run, screenshot, sha, wait,
+    APP_TREE, audit_embedded_fonts, click, dock_signature, held_f1, key, paste, run, screenshot, sha, wait,
 )
 
 FIXTURE = (
@@ -279,8 +279,94 @@ def main():
             "-r", "120", str(pdf), str(out / "16-rendered-pdf"))
         report["xelatex_pdf"] = "PASS_EXTERNAL_XELATEX_UNICODE_EMBEDDED_FONTS"
         report["pdf_sha256"] = sha(pdf)
+        # N3 exact-head source-caret integration: the same REAL Studio process,
+        # existing N2 CRLF/opaque document, native TextEdit and genuine F1.
+        # This is not a direct source mutation: only TextEdit may type the
+        # incomplete prefix; only the C-backed Help button may complete it.
+        n3_full = source.read_bytes()
+        if n3_full.count(IMPORT) != 1:
+            raise RuntimeError("N3 requires exactly one previously connected arrows.meta")
+        n3_prefix = n3_full.replace(IMPORT, b"\\usetikzlibrary{arro}\r\n", 1)
+        click(window, 28, 77)  # Sketch; the source remains editable beside it.
+        click(window, 177, 380)  # Focus genuine source TextEdit.
+        key("ctrl+Home")
+        for _ in range(4):  # Literal import is the fifth source line.
+            key("Down")
+        # Original 4e6dc6 screenshot showed the old End/Left sequence
+        # selected "rrows.meta}" (extra 'a', missing brace). The following
+        # c97be058 full-line Shift+End selection normalized ONE CRLF to LF.
+        # Work in the *existing* line only: Home, 16 chars of literal
+        # command prefix, select exactly 11 chars of the library name.
+        # Source bytes (including the untouched CRLF) are authoritative.
+        key("Home")
+        for _ in range(len(r"\usetikzlibrary{")):
+            key("Right")
+        for _ in range(len("arrows.meta")):
+            key("shift+Right")
+        paste(b"arro", out / "clipboard-n3-prefix.txt")
+        screenshot(out, "17-n3-prefix-in-source-editor")
+        click(window, 177, 39)  # GUI Save must preserve unrelated CRLF.
+        wait(lambda: source.read_bytes() == n3_prefix,
+             "N3 native TextEdit did not preserve the exact one-name CRLF patch")
+        report["n3_prefix_native_textedit"] = "PASS_REAL_X11_ONE_NAME_CRLF"
+        # Save moves focus off TextEdit. Re-focus its visible fifth line and
+        # place the actual caret BEFORE '}' using Home + counted Right keys.
+        # Avoid the prior unobserved Left-from-End caret assumption.
+        click(window, 177, 229)
+        key("Home")
+        for _ in range(len(r"\usetikzlibrary{arro")):
+            key("Right")
+        screenshot(out, "17a-n3-real-caret-before-brace")
+        held_f1()
+        screenshot(out, "18-n3-caret-f1")
+        if dock_signature(out, "17-n3-prefix-in-source-editor") == \
+                dock_signature(out, "18-n3-caret-f1"):
+            raise RuntimeError("N3 source-caret F1 did not change Studio dock")
+        report["n3_caret_f1"] = "REAL_X11_HELP_SCREENSHOT_MANUAL_REVIEW_REQUIRED"
+        # Exact 223f7ae7 ORIGINAL 1440x900 screenshot places the C-backed
+        # Complete button at x1086..1266 / y548..577. Earlier x1210,y630
+        # clicked an unrelated Help-search disclosure, with source UNCHANGED.
+        # This coordinate is pinned to the current app/src tree and evidence.
+        screenshot(out, "19-n3-caret-complete-target")
+        click(window, 1178, 562)  # Real "Завершить имя: arrows.meta".
+        screenshot(out, "20-n3-complete-click")
+        click(window, 177, 39)
+        wait(lambda: source.read_bytes() == n3_full,
+             "N3 REAL F1 Complete did not patch only 'arro' -> 'arrows.meta'")
+        if b"\n" in n3_full.replace(b"\r\n", b""):
+            raise RuntimeError("N3 completed source lost CRLF")
+        report["n3_caret_complete"] = "PASS_REAL_X11_C_SOURCEPATCH_MINIMAL_BYTES"
+
+        # The completed code, not the incomplete prefix, must be compiled
+        # through the actual GUI button, exported and font/glyph audited.
+        old_pdf_mtime = pdf.stat().st_mtime_ns
+        click(window, 219, 39)
+        time.sleep(3.0)
+        screenshot(out, "21-n3-real-build")
+        click(window, 73, 77)
+        click(window, 259, 39)
+        wait(lambda: pdf.is_file() and pdf.stat().st_mtime_ns != old_pdf_mtime,
+             "N3 GUI Build/Export did not refresh the external XeLaTeX PDF", 25)
+        if "Фигура" not in run("pdftotext", "-enc", "UTF-8", str(pdf), "-"):
+            raise RuntimeError("N3 actual PDF lacks opaque Cyrillic macro text")
+        n3_fonts = run("pdffonts", str(pdf))
+        if not any("DejaVu" in row for row in audit_embedded_fonts(n3_fonts)):
+            raise RuntimeError("N3 actual XeLaTeX PDF lacks embedded DejaVu font")
+        (out / "n3-pdffonts.txt").write_text(n3_fonts + "\n", encoding="utf-8")
+        screenshot(out, "22-n3-completed-exact-pdf")
+        report["n3_xelatex_pdf"] = "PASS_REAL_GUI_EXTERNAL_XELATEX_CYRILLIC_FONTS"
+        report["n3_pdf_sha256"] = sha(pdf)
+
+        # Visual inverse transaction restores the user's typed prefix exactly;
+        # it must never revert the independent original macro or CRLF.
+        click(window, 1085, 157)
+        screenshot(out, "23-n3-visual-undo")
+        click(window, 177, 39)
+        wait(lambda: source.read_bytes() == n3_prefix,
+             "N3 visible inverse C SourcePatch Undo did not restore exact prefix")
+        report["n3_visual_undo"] = "PASS_REAL_X11_BYTE_EXACT_INVERSE"
         report["real_gui"] = "PASS_AUTOMATED_MANUAL_ARTIFACT_REVIEW_REQUIRED"
-        report["status"] = "PASS_AUTOMATED_REAL_STUDIO_REQUIRES_MANUAL_REVIEW"
+        report["status"] = "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW"
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
     finally:

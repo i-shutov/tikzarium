@@ -490,6 +490,7 @@ struct TikzariumApp {
     cancellation: Option<BuildService>,
     show_packages: bool,
     help_query: String,
+    source_caret: Option<(usize, u64)>,
     show_log: bool,
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
@@ -636,6 +637,7 @@ impl TikzariumApp {
             cancellation: None,
             show_packages: true,
             help_query: String::new(),
+            source_caret: None,
             show_log: true,
             pending_open: None,
             pending_open_save_path: String::new(),
@@ -686,6 +688,7 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
                 self.reset_source_editor_undo_history = true;
@@ -1122,6 +1125,12 @@ impl TikzariumApp {
                     &mut self.authoring,
                     &self.document.source,
                 );
+                if output.response.has_focus() {
+                    self.source_caret = output.state.cursor.char_range().and_then(|range| {
+                        (range.primary.index == range.secondary.index)
+                            .then_some((range.primary.index, self.authoring.source_revision()))
+                    });
+                }
                 if let Some(line) = self.jump_to_line.take() {
                     if let Some(position) = line_start_char_index(&self.document.source, line) {
                         use egui::text::{CCursor, CCursorRange};
@@ -1462,6 +1471,22 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    if let Some((caret, revision)) = self.source_caret {
+                        let prior = self.authoring.source_revision();
+                        if let Some(line) = tikz_libraries::show_source_caret_completion(
+                            ui, &mut self.authoring, &mut self.document.source,
+                            caret, revision, self.tex.xelatex.is_some(),
+                            &self.library_installation,
+                        ) {
+                            self.jump_to_line = Some(line);
+                            self.highlight_generated_line = true;
+                            self.source_caret = None;
+                        }
+                        fence_source_editor_undo_on_revision_change(
+                            prior, &self.authoring, &mut self.reset_source_editor_undo_history,
+                        );
+                        ui.separator();
+                    }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
                     ui.separator();
                     studio_ui::show_context_help(ui, &self.authoring);

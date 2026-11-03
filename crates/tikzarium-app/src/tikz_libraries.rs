@@ -7,6 +7,7 @@ use tikzarium_extensions::{
     help_search::{self, HelpEntry},
     primitives::Evidence,
     project_imports::{self, ImportKind, capabilities_for_library},
+    source_assist,
 };
 
 fn evidence_label(value: Evidence) -> &'static str {
@@ -82,6 +83,91 @@ pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
                 ui.small("Показаны первые 12 результатов; уточните запрос.");
             }
         });
+}
+
+/// Source-caret contextual N3 Help from the SAME C catalogue as F1/Inspector.
+pub fn show_source_caret_completion(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caret_chars: usize,
+    expected_revision: u64,
+    has_xelatex: bool,
+    installation: &BTreeMap<String, Evidence>,
+) -> Option<usize> {
+    if session.source_revision() != expected_revision {
+        return None;
+    }
+    let catalog = tikz_authoring::catalog();
+    let context = source_assist::library_caret(source, caret_chars, catalog)?;
+    ui.heading("Контекст .tex · библиотека TikZ");
+    ui.small("F1: только буквальное имя библиотеки в преамбуле; неизвестные макросы не интерпретируются.");
+    let project = project_imports::inspect(source);
+    let mut jump = None;
+    for name in &context.candidates {
+        let library = catalog
+            .library(name)
+            .expect("C completion only returns catalogued names");
+        let status = capabilities_for_library(
+            catalog,
+            name,
+            &project,
+            installation.get(name).copied().unwrap_or(Evidence::Unknown),
+            if has_xelatex { Some("xelatex") } else { None },
+        )
+        .expect("bundled C library");
+        egui::CollapsingHeader::new(format!("{} · {name}", library.title_ru))
+            .default_open(context.candidates.len() == 1)
+            .show(ui, |ui| {
+                ui.label(&library.help_ru);
+                ui.label("Синтаксис:");
+                ui.code(&library.syntax);
+                ui.label("Пример:");
+                ui.code(&library.example);
+                ui.small(format!(
+                    "installed={} · loaded={} · engine={} · tool={} · help={}",
+                    evidence_label(status.installed),
+                    evidence_label(status.project_loaded),
+                    evidence_label(status.engine_compatible),
+                    evidence_label(status.tool_implemented),
+                    evidence_label(status.help_available),
+                ));
+                ui.small(format!(
+                    "PGF {} · minimum {} · {}",
+                    library.requirements.documented_against,
+                    library.requirements.pgf_version_min,
+                    library.requirements.engine,
+                ));
+                ui.label(&library.warning_ru);
+                ui.label(&library.interaction_ru);
+                ui.hyperlink_to(
+                    format!("PGF/TikZ §{}", library.manual_section),
+                    &library.manual_url,
+                );
+                if ui
+                    .add_enabled(
+                        name != &context.typed,
+                        egui::Button::new(format!("Завершить имя: {name}")),
+                    )
+                    .clicked()
+                {
+                    match session.complete_library_name(
+                        source,
+                        caret_chars,
+                        name,
+                        expected_revision,
+                    ) {
+                        Ok(line) => {
+                            jump = Some(line);
+                            ui.ctx().request_repaint();
+                        }
+                        Err(error) => session.status = error,
+                    }
+                }
+            });
+    }
+    ui.small("Только точная правка имени и Undo. Это не установка пакетов, не PDF PASS.");
+    jump
 }
 
 /// Individual library installation stays UNKNOWN until a specific file probe.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — N3 C-backed source-caret library completion (DRAFT)
+
+- Native Studio TextEdit caret now scopes F1 offline help to one literal \usetikzlibrary{...} name. Six C library names yield original syntax, examples, Russian explanation, provenance and five separately observed availability axes; clicking Complete applies exactly one revision-checked C patch with visual Undo.
+- No opaque/macro/multi-name/comment/body guessing, auto-installation or compiler change. C lexical/negative/stale/CRLF tests and app Session integration regression added. Exact-head CI, real GUI X11 source/Undo/Save/Open/XeLaTeX screenshots/PDF/hash and physical Windows10/M1/M4 are NOT_RUN until proved; no new workflow.
+
+
 ## Unreleased — N5 native unsigned portable preview packaging (CANDIDATE, physical GUI NOT_RUN)
 
 - Add offline provenance-locked native preview packager, taking independently verified CI app/CLI binaries; reject wrong PE32+ AMD64/Mach-O ARM64 or hash mismatch. No compilation, silent installers, TeX distribution, fonts or source rewriting.

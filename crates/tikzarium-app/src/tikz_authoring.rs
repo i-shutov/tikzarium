@@ -5,6 +5,7 @@ use std::{collections::BTreeMap, ops::Range, sync::LazyLock};
 use tikzarium_extensions::primitives::{Catalog, Evidence, SourcePatch, ToolSpec};
 use tikzarium_extensions::project_disconnect::{self, DisconnectDecision, DisconnectPlan};
 use tikzarium_extensions::project_imports::{self, ImportDecision, ImportKind, ImportPlan};
+use tikzarium_extensions::source_assist;
 
 static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
     Catalog::bundled().expect("bundled primitive catalogue must pass its own validation")
@@ -601,6 +602,39 @@ impl Session {
         Ok(line)
     }
 
+    /// C-owned source completion, only after exact caret/revision validation.
+    pub fn complete_library_name(
+        &mut self,
+        source: &mut String,
+        caret_chars: usize,
+        name: &str,
+        expected_revision: u64,
+    ) -> Result<usize, String> {
+        if self.revision != expected_revision || self.observed_source != *source {
+            self.sync(source)?;
+            return Err("Контекст исходника устарел: установите курсор заново".into());
+        }
+        let patch =
+            source_assist::completion_patch(source, caret_chars, name, self.revision, catalog())
+                .ok_or("Неподдерживаемый или изменённый контекст; правьте .tex вручную")?;
+        let line = source[..patch.range.start]
+            .bytes()
+            .filter(|b| *b == b'\n')
+            .count()
+            + 1;
+        let inverse = patch
+            .apply(source, &mut self.revision)
+            .map_err(|error| error.to_string())?;
+        self.observed_source.clone_from(source);
+        self.undo.push(inverse);
+        self.selected = None;
+        self.cancelled_pointer_capture |= self.guide_pointer_armed || self.drag_start.is_some();
+        self.guide_pointer_armed = false;
+        self.drag_start = None;
+        self.status = format!("C/N3: имя {name} дополнено; Undo доступен, пакеты не установлены");
+        Ok(line)
+    }
+
     pub fn choose(&mut self, source: &str, id: u64) -> Result<usize, String> {
         self.sync(source)?;
         let item = one_owned(source, id)?;
@@ -738,6 +772,31 @@ impl Session {
 mod tests {
     use super::*;
     const SOURCE: &str = "\\documentclass{standalone}\n\\usepackage{tikz}\n\\usetikzlibrary{arrows.meta}\n\\begin{document}\n\\begin{tikzpicture}\n% opaque user material\n\\myMacro{x}\n\\end{tikzpicture}\n\\end{document}\n";
+    #[test]
+    fn n3_completion_is_one_undoable_source_patch_and_stale_edits_fail() {
+        let mut source = "\\documentclass{article}\r\n\\usetikzlibrary{arro}\r\n\\begin{document}\r\n\\myOpaque{Кириллица}\r\n\\end{document}\r\n".to_owned();
+        let before = source.clone();
+        let caret = source[..source.find("arro}").unwrap() + 4].chars().count();
+        let mut session = Session::default();
+        session.reset(&source);
+        let revision = session.source_revision();
+        session
+            .complete_library_name(&mut source, caret, "arrows.meta", revision)
+            .unwrap();
+        assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
+        assert!(source.contains("\\myOpaque{Кириллица}\r\n"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source, before);
+        source.push_str("% manual\r\n");
+        let changed = source.clone();
+        assert!(
+            session
+                .complete_library_name(&mut source, caret, "arrows.meta", revision)
+                .is_err()
+        );
+        assert_eq!(source, changed);
+    }
+
     #[test]
     fn all_six_app_gestures_use_the_c_generator_and_roundtrip() {
         for tool in TOOLS {
