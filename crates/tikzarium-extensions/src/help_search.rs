@@ -269,7 +269,9 @@ mod tests {
         let presets = search(&catalog, "editor_preset");
         assert!(!presets.is_empty());
         assert!(
-            presets.iter().all(|entry| matches!(entry, HelpEntry::Parameter(_, _))),
+            presets
+                .iter()
+                .all(|entry| matches!(entry, HelpEntry::Parameter(_, _))),
             "editor presets must not be surfaced as TikZ tool/library defaults"
         );
         assert!(
