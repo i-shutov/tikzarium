@@ -69,6 +69,9 @@ class N5Packaging(unittest.TestCase):
                 self.assertIn(b'\\OpaqueNfive', src)
                 archive = Path(temp) / ('preview' + extension)
                 pkg.write_archive(platform, archive, entries)
+                second = Path(temp) / ('second' + extension)
+                pkg.write_archive(platform, second, entries)
+                self.assertEqual(archive.read_bytes(), second.read_bytes(), 'preview must be reproducible')
                 if platform == pkg.MAC:
                     with tarfile.open(archive) as t:
                         names = t.getnames()
