@@ -323,14 +323,12 @@ def main():
                 dock_signature(out, "18-n3-caret-f1"):
             raise RuntimeError("N3 source-caret F1 did not change Studio dock")
         report["n3_caret_f1"] = "REAL_X11_HELP_SCREENSHOT_MANUAL_REVIEW_REQUIRED"
-        # Conservative candidate from the reviewed 1366x768 dock geometry.
-        # On FAIL keep both images: never silently change click coordinates.
-        run("xdotool", "mousemove", "--sync", "1230", "525")
-        for _ in range(3):
-            run("xdotool", "click", "5")
-        time.sleep(0.4)
+        # Exact 223f7ae7 ORIGINAL 1440x900 screenshot places the C-backed
+        # Complete button at x1086..1266 / y548..577. Earlier x1210,y630
+        # clicked an unrelated Help-search disclosure, with source UNCHANGED.
+        # This coordinate is pinned to the current app/src tree and evidence.
         screenshot(out, "19-n3-caret-complete-target")
-        click(window, 1210, 630)  # C catalogue "Завершить имя".
+        click(window, 1178, 562)  # Real "Завершить имя: arrows.meta".
         screenshot(out, "20-n3-complete-click")
         click(window, 177, 39)
         wait(lambda: source.read_bytes() == n3_full,
