@@ -614,12 +614,16 @@ impl Session {
             self.sync(source)?;
             return Err("Контекст исходника устарел: установите курсор заново".into());
         }
-        let patch = source_assist::completion_patch(
-            source, caret_chars, name, self.revision, catalog(),
-        )
-        .ok_or("Неподдерживаемый или изменённый контекст; правьте .tex вручную")?;
-        let line = source[..patch.range.start].bytes().filter(|b| *b == b'\n').count() + 1;
-        let inverse = patch.apply(source, &mut self.revision)
+        let patch =
+            source_assist::completion_patch(source, caret_chars, name, self.revision, catalog())
+                .ok_or("Неподдерживаемый или изменённый контекст; правьте .tex вручную")?;
+        let line = source[..patch.range.start]
+            .bytes()
+            .filter(|b| *b == b'\n')
+            .count()
+            + 1;
+        let inverse = patch
+            .apply(source, &mut self.revision)
             .map_err(|error| error.to_string())?;
         self.observed_source.clone_from(source);
         self.undo.push(inverse);
@@ -776,14 +780,20 @@ mod tests {
         let mut session = Session::default();
         session.reset(&source);
         let revision = session.source_revision();
-        session.complete_library_name(&mut source, caret, "arrows.meta", revision).unwrap();
+        session
+            .complete_library_name(&mut source, caret, "arrows.meta", revision)
+            .unwrap();
         assert!(source.contains("\\usetikzlibrary{arrows.meta}\r\n"));
         assert!(source.contains("\\myOpaque{Кириллица}\r\n"));
         session.undo(&mut source).unwrap();
         assert_eq!(source, before);
         source.push_str("% manual\r\n");
         let changed = source.clone();
-        assert!(session.complete_library_name(&mut source, caret, "arrows.meta", revision).is_err());
+        assert!(
+            session
+                .complete_library_name(&mut source, caret, "arrows.meta", revision)
+                .is_err()
+        );
         assert_eq!(source, changed);
     }
 

@@ -95,7 +95,9 @@ pub fn show_source_caret_completion(
     has_xelatex: bool,
     installation: &BTreeMap<String, Evidence>,
 ) -> Option<usize> {
-    if session.source_revision() != expected_revision { return None; }
+    if session.source_revision() != expected_revision {
+        return None;
+    }
     let catalog = tikz_authoring::catalog();
     let context = source_assist::library_caret(source, caret_chars, catalog)?;
     ui.heading("Контекст .tex · библиотека TikZ");
@@ -103,12 +105,17 @@ pub fn show_source_caret_completion(
     let project = project_imports::inspect(source);
     let mut jump = None;
     for name in &context.candidates {
-        let library = catalog.library(name).expect("C completion only returns catalogued names");
+        let library = catalog
+            .library(name)
+            .expect("C completion only returns catalogued names");
         let status = capabilities_for_library(
-            catalog, name, &project,
+            catalog,
+            name,
+            &project,
             installation.get(name).copied().unwrap_or(Evidence::Unknown),
             if has_xelatex { Some("xelatex") } else { None },
-        ).expect("bundled C library");
+        )
+        .expect("bundled C library");
         egui::CollapsingHeader::new(format!("{} · {name}", library.title_ru))
             .default_open(context.candidates.len() == 1)
             .show(ui, |ui| {
@@ -134,16 +141,26 @@ pub fn show_source_caret_completion(
                 ui.label(&library.warning_ru);
                 ui.label(&library.interaction_ru);
                 ui.hyperlink_to(
-                    format!("PGF/TikZ §{}", library.manual_section), &library.manual_url,
+                    format!("PGF/TikZ §{}", library.manual_section),
+                    &library.manual_url,
                 );
-                if ui.add_enabled(
-                    name != &context.typed,
-                    egui::Button::new(format!("Завершить имя: {name}")),
-                ).clicked() {
+                if ui
+                    .add_enabled(
+                        name != &context.typed,
+                        egui::Button::new(format!("Завершить имя: {name}")),
+                    )
+                    .clicked()
+                {
                     match session.complete_library_name(
-                        source, caret_chars, name, expected_revision,
+                        source,
+                        caret_chars,
+                        name,
+                        expected_revision,
                     ) {
-                        Ok(line) => { jump = Some(line); ui.ctx().request_repaint(); }
+                        Ok(line) => {
+                            jump = Some(line);
+                            ui.ctx().request_repaint();
+                        }
                         Err(error) => session.status = error,
                     }
                 }
