@@ -87,6 +87,7 @@ def main():
         "status": "FAIL", "host": platform.platform(),
         "source_head_sha": os.environ.get("TIKZARIUM_SOURCE_SHA", "UNKNOWN"),
         "app_tree_sha": APP_TREE, "real_gui": "NOT_RUN",
+        "library_panel": "NOT_RUN", "library_entry": "NOT_RUN",
         "library_connect": "NOT_RUN", "library_disconnect": "NOT_RUN",
         "library_undo": "NOT_RUN", "gui_save_open": "NOT_RUN",
         "xelatex_pdf": "NOT_RUN", "manual_artifact_review": "NOT_RUN",
@@ -97,6 +98,7 @@ def main():
     app_log = (out / "app.log").open("wb")
     try:
         process, window = launch(args.app, out, app_log)
+        report["real_gui"] = "HOSTED_LINUX_X11_WINDOW_OPENED"
         report["app_sha256"] = sha(args.app)
         report["window_id"] = window
         screenshot(out, "01-studio-initial")
@@ -131,8 +133,26 @@ def main():
             raise RuntimeError("Real Libraries tab click did not change the Studio dock")
         click(window, 1200, 203)
         screenshot(out, "06-libraries-catalogue")
-        click(window, 1165, 244)
+        report["library_panel"] = "REAL_X11_CATALOGUE_SCREENSHOT_RECORDED"
+        # The original 41544280356 screenshot puts the first arrows.meta
+        # HEADER at y≈286. The former (1165,244) clicked explanatory text,
+        # so no library action had ever been exercised.
+        click(window, 1150, 286)
         screenshot(out, "07-arrows-meta-help")
+        # Compare only the entry/details area, excluding title/hover. A
+        # mistaken explanatory-text click must fail BEFORE Connect is tried.
+        def detail_sig(name):
+            return run(
+                "convert", str(out / (name + ".png")), "-crop",
+                "300x440+1060+280", "+repage", "-format", "%#", "info:",
+            )
+        if detail_sig("06-libraries-catalogue") == detail_sig("07-arrows-meta-help"):
+            raise RuntimeError(
+                "N2 arrows.meta entry did not expand in actual Studio; "
+                "recalibrate from original screenshots before Connect"
+            )
+        report["library_entry"] = "HOSTED_X11_EXPANDED_DETAILS_MANUAL_REVIEW_REQUIRED"
+        report["five_statuses"] = "EXPANDED_ENTRY_SCREENSHOT_REVIEW_REQUIRED"
         # Scroll only the right dock, keeping the editable source visible.
         run("xdotool", "mousemove", "--sync", "1250", "540")
         for _ in range(3):
@@ -140,7 +160,7 @@ def main():
         time.sleep(0.45)
         screenshot(out, "08-connect-button-target")
 
-        click(window, 1212, 635)  # Candidate actual C SourcePatch Connect control.
+        click(window, 1212, 635)  # PROVISIONAL from B42 dock; source bytes decide, never synthetic PASS.
         screenshot(out, "09-after-connect")
         click(window, 177, 39)  # GUI Save, not direct disk patch.
         wait(lambda: IMPORT in source.read_bytes(),
@@ -175,10 +195,24 @@ def main():
         key("ctrl+o")
         time.sleep(0.75)
         screenshot(out, "13-reopened-external-change")
+        # Equality to an externally modified disk file is a tautology; it
+        # does not prove the GUI actually reopened that file. Following the
+        # independently accepted I64 user workflow, append via the ACTUAL
+        # source TextEdit after Ctrl+O and verify all preceding disk bytes.
+        reopened_append = b"% N2_GUI_AFTER_REAL_REOPEN"
+        click(window, 177, 380)
+        key("ctrl+End")
+        paste(reopened_append, out / "clipboard-reopen-edit.txt")
+        screenshot(out, "13a-gui-edited-reopened-source")
         click(window, 177, 39)
-        if source.read_bytes() != external:
-            raise RuntimeError("Actual Ctrl+O GUI Save lost externally changed CRLF")
-        report["gui_save_open"] = "PASS_REAL_X11_GUI_CRLF_OPEN_SAVE"
+        wait(lambda: reopened_append in source.read_bytes(),
+             "N2 GUI re-opened source could not be edited and saved")
+        if source.read_bytes() != external + reopened_append:
+            raise RuntimeError(
+                "N2 GUI Ctrl+O did not reload the external CRLF revision "
+                "or Save altered unrelated user bytes"
+            )
+        report["gui_save_open"] = "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE"
 
         click(window, 219, 39)  # Actual external XeLaTeX Build.
         time.sleep(3)
