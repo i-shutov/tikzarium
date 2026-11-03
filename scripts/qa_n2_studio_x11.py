@@ -299,7 +299,7 @@ def main():
         # The subsequent C completion still must patch only "arro".
         key("Home")
         key("shift+End")
-        paste(b"\\\\usetikzlibrary{arro}", out / "clipboard-n3-prefix.txt")
+        paste(b"\\usetikzlibrary{arro}", out / "clipboard-n3-prefix.txt")
         screenshot(out, "17-n3-prefix-in-source-editor")
         click(window, 177, 39)  # GUI Save must preserve unrelated CRLF.
         wait(lambda: source.read_bytes() == n3_prefix,
@@ -310,7 +310,7 @@ def main():
         # Avoid the prior unobserved Left-from-End caret assumption.
         click(window, 177, 229)
         key("Home")
-        for _ in range(len(r"\\usetikzlibrary{arro")):
+        for _ in range(len(r"\usetikzlibrary{arro")):
             key("Right")
         screenshot(out, "17a-n3-real-caret-before-brace")
         held_f1()
