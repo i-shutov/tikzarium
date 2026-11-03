@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import gzip
 import io
 import json
 import plistlib
@@ -153,13 +154,17 @@ def write_archive(platform: str, output: Path, files: dict[str, tuple[bytes, int
     else:
         if not str(output).endswith(".tar.gz"):
             raise ValueError("Mac preview must be .tar.gz")
-        with tarfile.open(output, "w:gz", format=tarfile.PAX_FORMAT) as t:
-            for name, (data, mode) in sorted(files.items()):
-                info = tarfile.TarInfo(name)
-                info.size, info.mode, info.mtime = len(data), mode, 0
-                info.uid = info.gid = 0
-                info.uname = info.gname = ""
-                t.addfile(info, io.BytesIO(data))
+        # tarfile "w:gz" embeds wall time + output filename in the gzip header.
+        # Stable gzip mtime/name and tar metadata make same inputs byte-identical.
+        with output.open("wb") as raw:
+            with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
+                with tarfile.open(fileobj=compressed, mode="w|", format=tarfile.PAX_FORMAT) as t:
+                    for name, (data, mode) in sorted(files.items()):
+                        info = tarfile.TarInfo(name)
+                        info.size, info.mode, info.mtime = len(data), mode, 0
+                        info.uid = info.gid = 0
+                        info.uname = info.gname = ""
+                        t.addfile(info, io.BytesIO(data))
 
 
 def main() -> None:
