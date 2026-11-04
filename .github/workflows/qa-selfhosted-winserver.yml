@@ -50,7 +50,7 @@ jobs:
               if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
                 $dir = Split-Path -Parent $candidate
                 $env:PATH = "$dir;$env:PATH"
-                $utf8 = New-Object System.Text.UTF8Encoding($false)
+                $utf8 = [System.Text.UTF8Encoding]::new($false)
                 [System.IO.File]::AppendAllText($env:GITHUB_PATH, "$dir`n", $utf8)
                 $git = Get-Command git.exe -ErrorAction SilentlyContinue
                 break
