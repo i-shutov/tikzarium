@@ -1,4 +1,4 @@
-# User-installed external MiKTeX on persistent Windows Server.
+﻿# User-installed external MiKTeX on persistent Windows Server.
 # NO installer, package writes, registry settings or hidden engine fallback.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDir,[switch]$CheckRust)
