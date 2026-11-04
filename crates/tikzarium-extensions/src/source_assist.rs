@@ -93,7 +93,6 @@ pub fn completion_patch(
     })
 }
 
-
 /// Read-only recognition of literal C-template parameters, not a TeX parser.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ParameterCaret {
@@ -110,20 +109,30 @@ fn literal_template_spans(template: &str, line: &str) -> Option<Vec<(String, Ran
     while let Some(relative) = template.get(at_template..)?.find(OPEN) {
         let open = at_template + relative;
         let literal = template.get(at_template..open)?;
-        if !line.get(at_source..)?.starts_with(literal) { return None; }
+        if !line.get(at_source..)?.starts_with(literal) {
+            return None;
+        }
         at_source += literal.len();
         let key_start = open + OPEN.len();
         let key_end = key_start + template.get(key_start..)?.find('}')?;
         let id = template.get(key_start..key_end)?;
         let next_start = key_end + 1;
-        let next = template.get(next_start..)?.find(OPEN)
+        let next = template
+            .get(next_start..)?
+            .find(OPEN)
             .map_or(template.len(), |pos| next_start + pos);
         let delimiter = template.get(next_start..next)?;
-        if delimiter.is_empty() { return None; }
+        if delimiter.is_empty() {
+            return None;
+        }
         let value_end = at_source + line.get(at_source..)?.find(delimiter)?;
         let value = line.get(at_source..value_end)?;
-        if value.is_empty() || value.len() > 256 || value.chars().any(|c|
-            matches!(c, '\\' | '%' | '{' | '}' | ';' | '\r' | '\n')) {
+        if value.is_empty()
+            || value.len() > 256
+            || value
+                .chars()
+                .any(|c| matches!(c, '\\' | '%' | '{' | '}' | ';' | '\r' | '\n'))
+        {
             return None;
         }
         spans.push((id.to_owned(), at_source..value_end));
@@ -136,38 +145,71 @@ fn literal_template_spans(template: &str, line: &str) -> Option<Vec<(String, Ran
 /// Matches exactly one literal source token under the Unicode TextEdit caret.
 /// Unsupported, macro-dependent, partial or commented syntax is UNKNOWN.
 #[must_use]
-pub fn parameter_caret(source: &str, caret_chars: usize, catalog: &Catalog) -> Option<ParameterCaret> {
-    if [r"\catcode", r"\begin{verbatim}", r"\begin{lstlisting}", r"\begin{minted}"]
-        .iter().any(|marker| source.contains(marker)) {
+pub fn parameter_caret(
+    source: &str,
+    caret_chars: usize,
+    catalog: &Catalog,
+) -> Option<ParameterCaret> {
+    if [
+        r"\catcode",
+        r"\begin{verbatim}",
+        r"\begin{lstlisting}",
+        r"\begin{minted}",
+    ]
+    .iter()
+    .any(|marker| source.contains(marker))
+    {
         return None;
     }
-    let byte = source.char_indices().nth(caret_chars).map(|(i, _)| i)
+    let byte = source
+        .char_indices()
+        .nth(caret_chars)
+        .map(|(i, _)| i)
         .or_else(|| (caret_chars == source.chars().count()).then_some(source.len()))?;
     let line_start = source.get(..byte)?.rfind('\n').map_or(0, |i| i + 1);
-    let line_end = source.get(byte..)?.find('\n').map_or(source.len(), |i| byte + i);
+    let line_end = source
+        .get(byte..)?
+        .find('\n')
+        .map_or(source.len(), |i| byte + i);
     let raw = source.get(line_start..line_end)?.trim_end_matches('\r');
     let line = raw.trim_start_matches(|c| c == ' ' || c == '\t');
     let leading = raw.len() - line.len();
-    if line.contains('%') || !(line.starts_with(r"\draw ") ||
-        line.starts_with(r"\draw[") || line.starts_with(r"\node ")) {
+    if line.contains('%')
+        || !(line.starts_with(r"\draw ")
+            || line.starts_with(r"\draw[")
+            || line.starts_with(r"\node "))
+    {
         return None;
     }
     let mut result = None;
     for tool in &catalog.tools {
-        let Some(spans) = literal_template_spans(&tool.syntax, line) else { continue };
+        let Some(spans) = literal_template_spans(&tool.syntax, line) else {
+            continue;
+        };
         for (id, span) in spans {
-            let Some(parameter) = tool.parameter.iter().find(|p| p.id == id) else { continue };
+            let Some(parameter) = tool.parameter.iter().find(|p| p.id == id) else {
+                continue;
+            };
             let value = line.get(span.clone())?;
-            if parameter.kind == "dimension" && !value.bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b".+-".contains(&b)) {
+            if parameter.kind == "dimension"
+                && !value
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b".+-".contains(&b))
+            {
                 continue;
             }
-            if parameter.kind == "choice" && !value.is_ascii() { continue; }
+            if parameter.kind == "choice" && !value.is_ascii() {
+                continue;
+            }
             let range = (line_start + leading + span.start)..(line_start + leading + span.end);
             if (range.start..=range.end).contains(&byte) {
-                if result.is_some() { return None; }
+                if result.is_some() {
+                    return None;
+                }
                 result = Some(ParameterCaret {
-                    tool_id: tool.id.clone(), parameter_id: id, range,
+                    tool_id: tool.id.clone(),
+                    parameter_id: id,
+                    range,
                 });
             }
         }
@@ -195,7 +237,9 @@ mod parameter_tests {
                 tool.example
             );
             let original = source.clone();
-            let prefix = source[..source.find(&tool.example).unwrap()].chars().count();
+            let prefix = source[..source.find(&tool.example).unwrap()]
+                .chars()
+                .count();
             for index in 0..tool.example.chars().count() {
                 if let Some(hit) = parameter_caret(&source, prefix + index, &c) {
                     assert_eq!(hit.tool_id, tool.id);

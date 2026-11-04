@@ -1878,7 +1878,6 @@ fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bo
         .rect
 }
 
-
 /// Read-only F1 parameter help directly under the source TextEdit caret.
 fn show_source_parameter_help(
     ui: &mut egui::Ui,
@@ -1887,12 +1886,17 @@ fn show_source_parameter_help(
     caps: tikz_canvas::Capabilities,
 ) -> bool {
     let catalog = tikz_authoring::catalog();
-    let Some(hit) = tikzarium_extensions::source_assist::parameter_caret(source, caret_chars, catalog)
-    else { return false };
+    let Some(hit) =
+        tikzarium_extensions::source_assist::parameter_caret(source, caret_chars, catalog)
+    else {
+        return false;
+    };
     let key = format!("{}:{}", hit.tool_id, hit.parameter_id);
     let Some(tikzarium_extensions::help_search::HelpEntry::Parameter(tool, parameter)) =
         tikzarium_extensions::help_search::exact(catalog, &key)
-    else { return false };
+    else {
+        return false;
+    };
     ui.heading("Параметр TikZ под курсором");
     ui.strong(format!("{} · {}", tool.title_ru, parameter.id));
     ui.label(&parameter.help_ru);
@@ -1901,13 +1905,21 @@ fn show_source_parameter_help(
     ui.small(format!(
         "Тип: {} · Единицы: {} · Допустимые значения: {}",
         parameter.kind,
-        if parameter.units.is_empty() { "—".to_owned() } else { parameter.units.join(", ") },
-        if parameter.allowed_values.is_empty() { "UNKNOWN / свободный ввод".to_owned() }
-        else { parameter.allowed_values.join(", ") },
+        if parameter.units.is_empty() {
+            "—".to_owned()
+        } else {
+            parameter.units.join(", ")
+        },
+        if parameter.allowed_values.is_empty() {
+            "UNKNOWN / свободный ввод".to_owned()
+        } else {
+            parameter.allowed_values.join(", ")
+        },
     ));
     if parameter.default_provenance == "editor_preset" {
         ui.small(format!(
-            "Предустановка редактора: {} (НЕ default TikZ)", parameter.default
+            "Предустановка редактора: {} (НЕ default TikZ)",
+            parameter.default
         ));
     } else {
         ui.small("Default TikZ: UNKNOWN");
@@ -1917,11 +1929,13 @@ fn show_source_parameter_help(
     ui.label("Пример");
     ui.code(&parameter.example);
     ui.hyperlink_to(
-        format!("PGF/TikZ §{}", parameter.manual_section), &parameter.manual_url
+        format!("PGF/TikZ §{}", parameter.manual_section),
+        &parameter.manual_url,
     );
     ui.small(format!(
         "C catalogue: {} · PGF {} · пакеты: {}",
-        tool.id, tool.requirements.documented_against,
+        tool.id,
+        tool.requirements.documented_against,
         tool.requirements.packages.join(", "),
     ));
     ui.small(format!(
@@ -2357,30 +2371,47 @@ mod split_layout_tests {
         session.reset(&source);
         let ctx = egui::Context::default();
         let mut saw_parameter = false;
-        let _ = ctx.run(egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO, egui::vec2(1180.0, 720.0),
-            )),
-            events: vec![egui::Event::Key {
-                key: egui::Key::F1,
-                physical_key: None, pressed: true, repeat: false,
-                modifiers: egui::Modifiers::default(),
-            }],
-            ..Default::default()
-        }, |ctx| {
-            tikz_canvas::handle_help_shortcut(ctx, &mut session);
-            egui::CentralPanel::default().show(ctx, |ui| {
-                saw_parameter = show_source_parameter_help(ui, &source, caret, tikz_canvas::Capabilities {
-                    installed: true,
-                    loaded: Evidence::Confirmed,
-                    engine_compatible: true,
-                    implemented: true,
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1180.0, 720.0),
+                )),
+                events: vec![egui::Event::Key {
+                    key: egui::Key::F1,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::default(),
+                }],
+                ..Default::default()
+            },
+            |ctx| {
+                tikz_canvas::handle_help_shortcut(ctx, &mut session);
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    saw_parameter = show_source_parameter_help(
+                        ui,
+                        &source,
+                        caret,
+                        tikz_canvas::Capabilities {
+                            installed: true,
+                            loaded: Evidence::Confirmed,
+                            engine_compatible: true,
+                            implemented: true,
+                        },
+                    );
                 });
-            });
-        });
+            },
+        );
         assert!(session.help, "actual F1 key must open the Help dock");
-        assert!(saw_parameter, "circle radius must resolve through the shared C catalogue");
-        assert_eq!(source, before, "read-only F1 must preserve Unicode/CRLF/opaque source");
+        assert!(
+            saw_parameter,
+            "circle radius must resolve through the shared C catalogue"
+        );
+        assert_eq!(
+            source, before,
+            "read-only F1 must preserve Unicode/CRLF/opaque source"
+        );
     }
 
     #[test]
