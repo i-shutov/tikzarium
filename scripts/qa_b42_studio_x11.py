@@ -91,7 +91,35 @@ def main() -> int:
         time.sleep(1.2)
         snapshot(options.out / "03-long-unicode-source-default-wrap-candidate.png")
         report["b43_long_source"] = "REAL_CLIPBOARD_PASTE_CANDIDATE_MANUAL_GUI_REVIEW"
-        report["b43_source_wrap_toggle"] = "NOT_RUN_PENDING_REVIEWED_CHECKBOX_COORDINATES"
+        # Reviewed real 1366x768 screenshot: candidate checkbox at x=480 y=109.
+        # Verify exact source clipboard bytes before/after click; the fourth
+        # PNG still needs independent visual review to prove the toggle.
+        cmd("xdotool", "mousemove", "175", "268")
+        cmd("xdotool", "click", "1")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+c")
+        before = subprocess.run(
+            ["xclip", "-selection", "clipboard", "-o"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=True,
+        ).stdout
+        if before != specimen.encode("utf-8"):
+            raise RuntimeError("Editor paste/clipboard differs from Unicode specimen")
+        cmd("xdotool", "mousemove", "480", "109")
+        cmd("xdotool", "click", "1")
+        time.sleep(0.7)
+        snapshot(options.out / "04-long-source-wrap-click-candidate.png")
+        cmd("xdotool", "mousemove", "175", "268")
+        cmd("xdotool", "click", "1")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+c")
+        after = subprocess.run(
+            ["xclip", "-selection", "clipboard", "-o"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=True,
+        ).stdout
+        if after != before:
+            raise RuntimeError("Wrap control click changed editable source bytes")
+        report["b43_clipboard_source_integrity"] = "PASS_REAL_X11_EXACT_SOURCE_BYTES"
+        report["b43_source_wrap_toggle"] = "CLICK_CANDIDATE_NEEDS_VISUAL_COMPARISON"
         report["status"] = "BOOTSTRAP_CAPTURED_REQUIRES_MANUAL_VISUAL_REVIEW"
         report["window_id"] = window
     except Exception as error:

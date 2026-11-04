@@ -1127,26 +1127,30 @@ impl TikzariumApp {
         ui.horizontal(|ui| {
             ui.strong("Исходник .tex");
             if self.document.dirty() {
-                ui.colored_label(ui.visuals().warn_fg_color, "●")
+                ui.colored_label(ui.visuals().warn_fg_color, "Изменён")
                     .on_hover_text("Несохранённые правки");
             }
             ui.with_layout(
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
-                    ui.checkbox(&mut self.prefs.source_soft_wrap, "↵ Перенос")
+                    ui.checkbox(&mut self.prefs.source_soft_wrap, "Перенос")
                         .on_hover_text(
                             "Переносить длинные строки только на экране. Не меняет TeX, CRLF и PDF. Выключите для горизонтальной прокрутки.",
                         );
                 },
             );
         });
-        let basename = self.document.path.as_deref()
+        let basename = self
+            .document
+            .path
+            .as_deref()
             .and_then(Path::file_name)
             .and_then(|name| name.to_str())
             .unwrap_or("figure.tex · новый документ");
-        let path_description = self.document.path.as_ref()
-            .map_or_else(|| "Новый TeX-документ — сохраните его явно".to_owned(),
-                |path| path.display().to_string());
+        let path_description = self.document.path.as_ref().map_or_else(
+            || "Новый TeX-документ — сохраните его явно".to_owned(),
+            |path| path.display().to_string(),
+        );
         ui.add(egui::Label::new(basename).truncate())
             .on_hover_text(path_description);
         ui.separator();
@@ -2466,7 +2470,8 @@ mod split_layout_tests {
             let _ = ctx.run(
                 egui::RawInput {
                     screen_rect: Some(egui::Rect::from_min_size(
-                        egui::Pos2::ZERO, egui::vec2(850.0, 620.0),
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 620.0),
                     )),
                     ..Default::default()
                 },
@@ -2474,9 +2479,8 @@ mod split_layout_tests {
                     egui::SidePanel::left("b43-source")
                         .exact_width(290.0)
                         .show(ctx, |ui| {
-                            let output = show_source_text_edit(
-                                ui, &mut source, &mut reset, soft_wrap,
-                            );
+                            let output =
+                                show_source_text_edit(ui, &mut source, &mut reset, soft_wrap);
                             observed_rows = output.galley.rows.len();
                         });
                     egui::CentralPanel::default().show(ctx, |ui| {

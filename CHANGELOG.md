@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-04 — B43 real UI evidence and Rust exact-head gate recovery (candidate)
+
+- Reviewed original running 1366×768 screenshot: source/canvas/inspector are visible and Cyrillic source wraps; `↵` and `●` header glyphs are unsupported. Replace with legible `Перенос` and `Изменён` labels without font downloads.
+- Apply exact rustfmt corrections identified from failing CI, keep exact full I61 app-tree guard and update its SHA in both workflow and Python. Existing B42 X11 adds a real candidate wrap-click fourth PNG and source clipboard bytes before/after; check outputs independently.
+- New CI/I61/source/PDF/font evidence PENDING; Linux package, Wayland and physical Windows/Mac NOT_RUN.
+
+
 ## 2026-11-04 — Linux B43: responsive canvas and visual-only source wrapping (candidate)
 
 - Calculate source maximum from the live egui rectangle after inspector/tool rail, reserving room for real canvas and exact PDF.
