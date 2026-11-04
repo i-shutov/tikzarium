@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-04 — Linux UX iteration 1: readable F1 statuses and contextual Help hierarchy (candidate)
+
+- Real I61 X11 `43-n3-f1-catalogue-radius.png` review found cramped 12pt run-on source-parameter metadata and five status fields, plus a redundant generic help block after successful F1. This is a user-facing readability issue, not a failure of N3 recognition.
+- Use separate readable body text for type/units/choices/default provenance; display five independent installed/project-loaded/engine/tool/help evidence rows without UNKNOWN → PASS; suppress generic fallback only when exact source parameter context exists. Shared C semantics and source editing remain unchanged.
+- Add unit regression for independent five-status semantics and retain the **same real X11 six-pointer/Save/Open/F1/PDF** evidence workflow, with exact app source tree lease updated for this code. Actual results and visual acceptance **PENDING**; Windows/macOS architectural support unchanged.
+- See `insights/2026-11-04_LINUX_N3_F1_ERGONOMICS_QA.md`.
+
+
 ## 2026-11-04 — Native Ctrl+O fast-release repair and real N3 caret F1 on Linux/X11 (candidate)
 
 - Exact-head Rust fmt across Linux/macOS/Windows rejected two one-line `Modifiers { shift: true, ..command }` literals in the new event regression, with no other proven Rust failure. Corrected both to rustfmt canonical multiline syntax and re-pinned existing I61 actual app source tree accordingly; original F1 evidence preserved, exact-head revalidation still required.

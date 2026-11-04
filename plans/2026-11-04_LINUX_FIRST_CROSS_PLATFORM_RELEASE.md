@@ -50,3 +50,7 @@ Iterate using *original screenshots from the running application*, never image-o
 ### Snapshot at decision
 
 At the decision, `main` was `4d3c580eedc3f8f1d1522bd9cafdd568109f85fa`, PR #98 had HEAD `97ec4d44a76b9447f6c07b8f2de4628a83157ac2`. PR #98 exact-head D QA matrix [41819923018](https://github.com/i-shutov/tikzarium/actions/runs/41819923018) and real X11 I61 [41819923672](https://github.com/i-shutov/tikzarium/actions/runs/41819923672) were FAIL; some other checks succeeded. The Windows Server manual run [41810809899](https://github.com/i-shutov/tikzarium/actions/runs/41810809899) attempt 2 got past Git and exact SHA but failed before TeX on PowerShell 5.1 UTF-8 Cyrillic parsing; the BOM fix was added to PR #98, not accepted as on-host PASS. **Recheck all SHAs and statuses each time**; this is not a release report.
+
+## UX iteration 1 — source-caret F1 readability (2026-11-04)
+
+After N3 [#98](https://github.com/i-shutov/tikzarium/pull/98) exact-head GUI acceptance, prioritize *actual* right-dock readability: body-sized type/units/allowed values, separately scannable five independent evidence statuses, no generic Help fallback behind correctly resolved caret context. Compare original X11 F1 before/after PNG at 1366×768 and check 1920×1080 separately where available. Do not replace user `.tex`, C catalogue, external XeLaTeX or native gestures. Gate: actual screenshots, exact-source tree, source CRLF/opaque/Undo, CI, PDF/font evidence. See `insights/2026-11-04_LINUX_N3_F1_ERGONOMICS_QA.md`.
