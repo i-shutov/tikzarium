@@ -1888,9 +1888,7 @@ fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bo
 /// The five states are independent. A boolean capability can only prove
 /// CONFIRMED or NOT CONFIRMED; never promote missing evidence to "absent".
 /// The exact C-owned HelpEntry::Parameter itself proves help availability.
-fn source_help_evidence_rows(
-    caps: tikz_canvas::Capabilities,
-) -> [(&'static str, &'static str); 5] {
+fn source_help_evidence_rows(caps: tikz_canvas::Capabilities) -> [(&'static str, &'static str); 5] {
     let confirmed = |value| {
         if value {
             "ПОДТВЕРЖДЕНО"
@@ -2412,7 +2410,6 @@ mod split_layout_tests {
         assert_eq!(absent[1].1, "НЕТ ПРЯМОГО ПОДКЛЮЧЕНИЯ");
         assert_eq!(absent[3].1, "НЕ ПОДТВЕРЖДЕНО");
     }
-
 
     #[test]
     fn n3_egui_f1_shows_source_caret_parameter_without_source_change() {
