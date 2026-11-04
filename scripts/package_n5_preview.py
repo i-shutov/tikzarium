@@ -52,6 +52,16 @@ def check_binary(data: bytes, platform: str) -> None:
         elf_type, machine, version = struct.unpack_from("<HHI", data, 16)
         if machine != 62 or version != 1 or elf_type not in (2, 3):
             raise ValueError("Linux binary must be an x86_64 ELF executable or PIE")
+        # ET_DYN can also describe a shared library. An actual launchable
+        # executable needs a non-zero entry point and valid program headers.
+        entry, phoff = struct.unpack_from("<QQ", data, 24)
+        ehsize, phentsize, phnum = struct.unpack_from("<HHH", data, 52)
+        if (not entry or phoff < 64 or ehsize != 64 or phentsize < 56 or
+                not phnum or phoff + phentsize * phnum > len(data)):
+            raise ValueError("Linux ELF has no valid executable entry/program headers")
+        if not any(struct.unpack_from("<I", data, phoff + i * phentsize)[0] == 1
+                   for i in range(phnum)):
+            raise ValueError("Linux ELF lacks loadable segments")
     elif platform == MAC:
         if len(data) < 32 or data[:4] != b"\xcf\xfa\xed\xfe":
             raise ValueError("Mac binary is not little-endian 64-bit Mach-O")
