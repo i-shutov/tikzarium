@@ -137,6 +137,57 @@ def main() -> int:
         if after != before:
             raise RuntimeError("Wrap control click changed editable source bytes")
         report["b43_clipboard_source_integrity"] = "PASS_REAL_X11_EXACT_SOURCE_BYTES"
+        # B43 horizontal navigation: the no-wrap checkbox was actually
+        # switched OFF above. Move the caret to the end of the *physical*
+        # first line, forcing native TextEdit + ScrollArea to expose its end.
+        # The resulting screenshot is independent visual evidence; a key
+        # event alone is not claimed as proof that scrolling happened.
+        cmd("xdotool", "mousemove", "175", "178")
+        cmd("xdotool", "click", "1")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+Home")
+        cmd("xdotool", "key", "--clearmodifiers", "End")
+        time.sleep(0.8)
+        snapshot(options.out / "05-long-line-end-caret-horizontal-candidate.png")
+        report["b43_horizontal_navigation"] = (
+            "REAL_X11_END_CARET_PNG_REQUIRES_MANUAL_SCROLL_REVIEW"
+        )
+        # Re-read the source from the actual TextEdit after navigation; never
+        # mistake the old clipboard fixture for a successful byte check.
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i"],
+            input=b"B43_POST_NAV_SENTINEL", timeout=8, check=True,
+        )
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+c")
+        time.sleep(0.25)
+        after_navigation = subprocess.run(
+            ["xclip", "-selection", "clipboard", "-o"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=True,
+        ).stdout
+        if after_navigation != before:
+            raise RuntimeError(
+                "Horizontal caret navigation unexpectedly changed Unicode source bytes"
+            )
+        report["b43_navigation_source_integrity"] = (
+            "PASS_REAL_X11_EXACT_SOURCE_BYTES"
+        )
+
+        # Wide-desktop acceptance candidate. Unlike a resized screenshot,
+        # the virtual X11 display itself must be at least 1920x1080.
+        cmd("xdotool", "windowsize", "--sync", window, "1920", "1080")
+        cmd("xdotool", "windowmove", window, "0", "0")
+        time.sleep(1.2)
+        wide_png = options.out / "06-wide-1920x1080-workspace-candidate.png"
+        snapshot(wide_png)
+        wide_pixels = cmd("identify", "-format", "%wx%h", str(wide_png))
+        if wide_pixels != "1920x1080":
+            raise RuntimeError(
+                f"Unexpected wide X11 framebuffer: {wide_pixels}, expected 1920x1080"
+            )
+        report["b43_wide_viewport"] = (
+            "CAPTURED_1920x1080_REQUIRES_MANUAL_3_COLUMN_DPI_REVIEW"
+        )
+        report["b43_wide_screenshot_pixels"] = wide_pixels
         report["b43_source_wrap_toggle"] = "CLICK_CANDIDATE_NEEDS_VISUAL_COMPARISON"
         report["status"] = "BOOTSTRAP_CAPTURED_REQUIRES_MANUAL_VISUAL_REVIEW"
         report["window_id"] = window
