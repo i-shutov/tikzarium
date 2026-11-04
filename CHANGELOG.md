@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — B43 real soft-wrap OFF repair after successful I61 X11 (candidate)
+
+- Exact-head `5db42b46` restored public hosted Actions: independent I61 Linux/X11 six-tool + N2/N3 + external XeLaTeX/PDF passed; B42 screenshot bootstrap, N1, PDF-font and D06 passed. CI and D QA remained RED because the same Rust UI unit test failed on Windows and Linux (`b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences`, `rows=[33,33]`). macOS Rust matrix was cancelled, NOT PASS.
+- Root cause confirmed in egui 0.33.3: `TextEdit::desired_width(f32::INFINITY)` is still clamped to available panel width; both checkbox states wrapped the long Unicode source even though X11 screenshot changed the checkbox. Add a real TextEdit layouter that explicitly uses infinite galley width when visual wrap is disabled; retain native code-editor focus, Cyrillic, source bytes, CRLF and Undo. Tighten the regression to assert no-wrap stays at physical source rows and wrap increases visual rows.
+- Original B42 screenshot 03/04 from previous run proves UI checkbox selected/unselected but source lines visibly wrap in BOTH — the earlier claim that the checkbox controlled wrapping was premature. Mark B43 no-wrap acceptance FAIL on old head, despite exact source clipboard equality. Current patched HEAD requires new Rust test and actual Linux/X11 before acceptance; no merge with red CI, and native Linux package/Wayland remain NOT_RUN.
+
 ## 2026-11-04 — B43 original X11 acceptance and F1 caret QA precision (candidate)
 
 - Public GitHub Actions now execute real checks. Original I61 PNG proves N3 QA clicked a **comment**, not the intended source library line; fix coordinate and verify selected native TextEdit literal `arro` before F1/Complete, preserving fail-closed source/PDF/Undo acceptance.

@@ -304,15 +304,34 @@ fn show_source_text_edit(
     let fenced = *reset_undo_history;
     // INFINITY disables wrapping. The alternative only changes visual galley
     // rows: not the source, CRLF, opaque macros, Undo or source-caret offsets.
+    // egui 0.33 clamps desired_width(INFINITY) to available_width:
+    // it does NOT turn wrapping off in a normal, non-justified SidePanel.
+    // Control the actual galley wrap width rather than widening the widget.
+    // Keep native code-editor font, Tab/focus/caret and Undo behavior.
     let edit_width = if soft_wrap {
         ui.available_width().max(140.0)
     } else {
         f32::INFINITY
     };
+    let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap_width: f32| {
+        let actual_wrap_width = if soft_wrap {
+            wrap_width
+        } else {
+            f32::INFINITY
+        };
+        let job = egui::text::LayoutJob::simple(
+            text.as_str().to_owned(),
+            egui::TextStyle::Monospace.resolve(ui.style()),
+            ui.visuals().widgets.inactive.text_color(),
+            actual_wrap_width,
+        );
+        ui.fonts_mut(|fonts| fonts.layout_job(job))
+    };
     let mut output = egui::TextEdit::multiline(source)
         .code_editor()
         .desired_width(edit_width)
         .desired_rows(36)
+        .layouter(&mut layouter)
         .interactive(!fenced)
         .show(ui);
     if fenced {
@@ -2577,8 +2596,12 @@ mod split_layout_tests {
             rows.push(observed_rows);
         }
         assert!(
+            rows[0] <= 4,
+            "unwrapped TextEdit must not soft-wrap one long TeX comment: {rows:?}"
+        );
+        assert!(
             rows[1] > rows[0],
-            "wrapping should create more display rows: {rows:?}"
+            "wrapped TextEdit must create additional visual rows: {rows:?}"
         );
         let mut prefs = UiPreferences::default();
         assert!(prefs.source_soft_wrap);
