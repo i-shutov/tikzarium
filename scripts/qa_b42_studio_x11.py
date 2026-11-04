@@ -96,8 +96,15 @@ def main() -> int:
         # PNG still needs independent visual review to prove the toggle.
         cmd("xdotool", "mousemove", "175", "268")
         cmd("xdotool", "click", "1")
+        # Poison clipboard before reading TextEdit, so stale paste content
+        # cannot masquerade as a successful Ctrl+C roundtrip.
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i"],
+            input=b"B43_CLIPBOARD_SENTINEL", timeout=8, check=True,
+        )
         cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
         cmd("xdotool", "key", "--clearmodifiers", "ctrl+c")
+        time.sleep(0.25)
         before = subprocess.run(
             ["xclip", "-selection", "clipboard", "-o"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=True,
@@ -110,8 +117,15 @@ def main() -> int:
         snapshot(options.out / "04-long-source-wrap-click-candidate.png")
         cmd("xdotool", "mousemove", "175", "268")
         cmd("xdotool", "click", "1")
+        # Poison clipboard before reading TextEdit, so stale paste content
+        # cannot masquerade as a successful Ctrl+C roundtrip.
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i"],
+            input=b"B43_CLIPBOARD_SENTINEL", timeout=8, check=True,
+        )
         cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
         cmd("xdotool", "key", "--clearmodifiers", "ctrl+c")
+        time.sleep(0.25)
         after = subprocess.run(
             ["xclip", "-selection", "clipboard", "-o"],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8, check=True,
