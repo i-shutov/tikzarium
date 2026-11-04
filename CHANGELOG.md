@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05 — Linux N5 native portable bundle and extracted-X11 launch (candidate)
+
+- B43 PR #100 squash-merged on main `26abc5461bba06d610394080ffe23bbbf92cc6bb` after **seven** exact PR HEAD green workflows and original X11 PNG/source/PDF/font/SHA review. Main push acceptance must be tracked separately.
+- New native Linux x86_64 target in existing cross-platform N5 offline packager: fail-closed ELF64 little-endian AMD64 executable/PIE program-header checks, immutable binary SHA256, deterministic `.tar.gz` and executable `launch.sh`, README, CRLF fixture and manifest/provenance. Windows PE and macOS ARM Mach-O compatibility unchanged.
+- Add actual hosted native Linux release build → archive extraction/hashes → offline extracted CLI → **real X11 launch of packaged release binary and original 1366×768 screenshot**, with logs/window geometry/artifact. Synthetic header tests are not an app QA substitute. The Linux N5 workflow runs only on relevant paths, so does not create perpetual CI-only churn.
+- Update stale README from 2026-10-31 W01/Windows-first summary to the currently accepted Linux-first product. **Current N5 build and screenshot acceptance PENDING until exact-head workflows finish; physical desktop/Wayland/other distros, DPI and release installer NOT_RUN.** See plans/2026-11-05_LINUX_N5_PORTABLE_RELEASE.md and insights/2026-11-05_LINUX_N5_PORTABLE_QA.md.
+
+
 ## 2026-11-04 — B43 full exact-head GREEN and real wide/horizontal UX gate (candidate)
 
 - On exact PR #100 HEAD \`a71efb96d7bd6ca44951a4f7ac7018f44e02f10a\`, seven pull-request workflow conclusions are SUCCESS: Rust CI (Linux fixture / hosted Windows & Mac), D QA matrix, I61 full real Linux/X11, B42 screenshot bootstrap, N1, PDF/font and D06. No hidden pre-step CI blockage. Original B42 artifact 13362594222 and I61/N2 artifact 13362229988 downloaded. SHA256 checks across B42 6/6, I61 75/75, N2 42/42 all match reports. I61 reports actual six GUI gestures, Undo/Save/Open/CRLF, N2/N3 library source edits and external XeLaTeX PDF; pdffonts confirms embedded DejaVuSerif in inspected figure.pdf. This is hosted X11, not native packaged Linux/Wayland or physical Win/Mac.
