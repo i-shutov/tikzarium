@@ -37,12 +37,14 @@ def fake_mac():
     return bytes(b)
 
 def fake_linux():
-    b = bytearray(64)
-    b[:4] = b'\\x7fELF'
+    b = bytearray(120)
+    b[:4] = b'\x7fELF'
     b[4:7] = bytes((2, 1, 1))
     struct.pack_into('<HHI', b, 16, 3, 62, 1)
+    struct.pack_into('<QQ', b, 24, 0x1000, 64)
+    struct.pack_into('<HHH', b, 52, 64, 56, 1)
+    struct.pack_into('<I', b, 64, 1)  # PT_LOAD
     return bytes(b)
-
 
 class N5Packaging(unittest.TestCase):
     def test_wrong_architecture_and_truncated_inputs_fail_closed(self):
@@ -69,6 +71,10 @@ class N5Packaging(unittest.TestCase):
             pkg.check_binary(bytes(bad), pkg.LINUX)
         bad = bytearray(fake_linux())
         struct.pack_into('<H', bad, 16, 1)  # ET_REL cannot launch.
+        with self.assertRaises(ValueError):
+            pkg.check_binary(bytes(bad), pkg.LINUX)
+        bad = bytearray(fake_linux())
+        struct.pack_into('<Q', bad, 24, 0)  # Shared object has no entry point.
         with self.assertRaises(ValueError):
             pkg.check_binary(bytes(bad), pkg.LINUX)
 
