@@ -1471,12 +1471,17 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    // Avoid a second generic "choose a tool" help card after a
+                    // successful caret lookup; the user's source is the context.
+                    let mut source_parameter_help_shown = false;
                     if let Some((caret, revision)) = self.source_caret {
                         // Source parameter F1 is read-only and must not steal
                         // or replace the existing library-name completion.
                         if revision == self.authoring.source_revision() {
                             let caps = self.primitive_capabilities();
-                            if show_source_parameter_help(ui, &self.document.source, caret, caps) {
+                            source_parameter_help_shown =
+                                show_source_parameter_help(ui, &self.document.source, caret, caps);
+                            if source_parameter_help_shown {
                                 ui.separator();
                             }
                         }
@@ -1496,8 +1501,10 @@ impl TikzariumApp {
                         ui.separator();
                     }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
-                    ui.separator();
-                    studio_ui::show_context_help(ui, &self.authoring);
+                    if !source_parameter_help_shown {
+                        ui.separator();
+                        studio_ui::show_context_help(ui, &self.authoring);
+                    }
                 }
             });
     }
@@ -1878,6 +1885,33 @@ fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bo
         .rect
 }
 
+/// The five states are independent. A boolean capability can only prove
+/// CONFIRMED or NOT CONFIRMED; never promote missing evidence to "absent".
+/// The exact C-owned HelpEntry::Parameter itself proves help availability.
+fn source_help_evidence_rows(
+    caps: tikz_canvas::Capabilities,
+) -> [(&'static str, &'static str); 5] {
+    let confirmed = |value| {
+        if value {
+            "ПОДТВЕРЖДЕНО"
+        } else {
+            "НЕ ПОДТВЕРЖДЕНО"
+        }
+    };
+    let loaded = match caps.loaded {
+        Evidence::Confirmed => "ПОДТВЕРЖДЕНО",
+        Evidence::Absent => "НЕТ ПРЯМОГО ПОДКЛЮЧЕНИЯ",
+        Evidence::Unknown => "UNKNOWN",
+    };
+    [
+        ("Установлен", confirmed(caps.installed)),
+        ("Подключён в проекте", loaded),
+        ("XeLaTeX совместим", confirmed(caps.engine_compatible)),
+        ("GUI-инструмент", confirmed(caps.implemented)),
+        ("Русская справка", "ПОДТВЕРЖДЕНО"),
+    ]
+}
+
 /// Read-only F1 parameter help directly under the source TextEdit caret.
 fn show_source_parameter_help(
     ui: &mut egui::Ui,
@@ -1900,29 +1934,34 @@ fn show_source_parameter_help(
     ui.heading("Параметр TikZ под курсором");
     ui.strong(format!("{} · {}", tool.title_ru, parameter.id));
     ui.label(&parameter.help_ru);
-    ui.label("Синтаксис");
+    ui.strong("Синтаксис");
     ui.code(&parameter.syntax);
-    ui.small(format!(
-        "Тип: {} · Единицы: {} · Допустимые значения: {}",
-        parameter.kind,
+    // Use readable body text and separate lines in the narrow right dock.
+    // The former 12pt run-on line was barely legible at real 1366×768.
+    ui.label(format!("Тип: {}", parameter.kind));
+    ui.label(format!(
+        "Единицы: {}",
         if parameter.units.is_empty() {
             "—".to_owned()
         } else {
             parameter.units.join(", ")
-        },
+        }
+    ));
+    ui.label(format!(
+        "Допустимые значения: {}",
         if parameter.allowed_values.is_empty() {
             "UNKNOWN / свободный ввод".to_owned()
         } else {
             parameter.allowed_values.join(", ")
-        },
+        }
     ));
     if parameter.default_provenance == "editor_preset" {
-        ui.small(format!(
-            "Предустановка редактора: {} (НЕ default TikZ)",
+        ui.label(format!(
+            "Пресет редактора: {} (это НЕ default TikZ)",
             parameter.default
         ));
     } else {
-        ui.small("Default TikZ: UNKNOWN");
+        ui.label("Default TikZ: UNKNOWN");
     }
     ui.label(&parameter.interaction_ru);
     ui.label(&parameter.warning_ru);
@@ -1932,19 +1971,20 @@ fn show_source_parameter_help(
         format!("PGF/TikZ §{}", parameter.manual_section),
         &parameter.manual_url,
     );
-    ui.small(format!(
-        "C catalogue: {} · PGF {} · пакеты: {}",
-        tool.id,
-        tool.requirements.documented_against,
-        tool.requirements.packages.join(", "),
+    ui.label(format!(
+        "Источник: C-каталог {} · PGF {}",
+        tool.id, tool.requirements.documented_against,
     ));
-    ui.small(format!(
-        "installed={} · project-loaded={:?} · engine-compatible={} · tool-implemented={} · help-available=confirmed",
-        if caps.installed { "confirmed" } else { "not confirmed" },
-        caps.loaded,
-        if caps.engine_compatible { "confirmed" } else { "not confirmed" },
-        if caps.implemented { "confirmed" } else { "not confirmed" },
-    ));
+    ui.label(format!("Пакеты: {}", tool.requirements.packages.join(", ")));
+    ui.separator();
+    ui.strong("Доступность · пять независимых статусов");
+    for (name, status) in source_help_evidence_rows(caps) {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(format!("{name}:"));
+            ui.strong(status);
+        });
+    }
+    ui.small("Наличие пакета и совместимость ещё не доказывают успешную сборку PDF.");
     true
 }
 
@@ -2348,6 +2388,31 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn n3_help_evidence_rows_do_not_promote_unknown_and_separate_all_five_states() {
+        let uncertain = source_help_evidence_rows(tikz_canvas::Capabilities {
+            installed: false,
+            loaded: Evidence::Unknown,
+            engine_compatible: false,
+            implemented: true,
+        });
+        assert_eq!(uncertain.len(), 5);
+        assert_eq!(uncertain[0], ("Установлен", "НЕ ПОДТВЕРЖДЕНО"));
+        assert_eq!(uncertain[1], ("Подключён в проекте", "UNKNOWN"));
+        assert_eq!(uncertain[2], ("XeLaTeX совместим", "НЕ ПОДТВЕРЖДЕНО"));
+        assert_eq!(uncertain[3], ("GUI-инструмент", "ПОДТВЕРЖДЕНО"));
+        assert_eq!(uncertain[4], ("Русская справка", "ПОДТВЕРЖДЕНО"));
+        let absent = source_help_evidence_rows(tikz_canvas::Capabilities {
+            installed: true,
+            loaded: Evidence::Absent,
+            engine_compatible: true,
+            implemented: false,
+        });
+        assert_eq!(absent[1].1, "НЕТ ПРЯМОГО ПОДКЛЮЧЕНИЯ");
+        assert_eq!(absent[3].1, "НЕ ПОДТВЕРЖДЕНО");
+    }
+
 
     #[test]
     fn n3_egui_f1_shows_source_caret_parameter_without_source_change() {
