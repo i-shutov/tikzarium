@@ -24,7 +24,7 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            xvfb xauth openbox xdotool imagemagick libgl1-mesa-dri libglx-mesa0 \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev
       - name: Parse user-server PowerShell audit without running it

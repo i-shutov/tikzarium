@@ -16,3 +16,7 @@ The accepted #99 screenshot improved F1 but long source lines and full absolute 
 Rust 1.91 locked fmt/clippy/test Linux+Windows+macOS; actual egui rows and width at 850/1000/1366/1920; save/reopen/Undo/unknown source; genuine Linux/X11 1366×768 screenshots both wrap modes, path-on-hover, F1 on a long line; exact authored source and external XeLaTeX PDF glyph/font and SHA artifacts; if possible a 1920×1080 screen. Separate native Linux release packaging and Wayland remain NOT_RUN.
 
 No merge without exact-head evidence, real visual evaluation, and expected_head_sha. Keep all fixes in the same substantive integration PR. 
+
+## Native evidence path for changed layout
+
+Existing B42 X11 bootstrap now captures the actual 1366×768 workspace and a third screenshot after an overlong Unicode/opaque TeX clipboard paste, without assuming previous button coordinates. It records NO unverified toggling, PDF, six tools or manual image PASS. Review the PNG and measured source/canvas/F1 positions, then update the *existing* I61 source-tree SHA/real event coordinates within this PR and execute the full source-to-XeLaTeX acceptance. This staged change explicitly preserves fail-closed I61 while GUI coordinates are unreviewed.

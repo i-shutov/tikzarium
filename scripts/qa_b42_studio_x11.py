@@ -64,6 +64,34 @@ def main() -> int:
         time.sleep(0.8)
         snapshot(options.out / "02-group-palette-candidate.png")
         report["palette_selection"] = "CANDIDATE_COORDINATE_NOT_VERIFIED"
+
+        # B43 layout PROBE, not a source-integrity acceptance: paste a long
+        # Unicode/opaque sample through the real X11 clipboard into the live
+        # editor, then capture where the visible code/canvas/right dock land.
+        # No new source is written to the user's filesystem or compiled.
+        specimen = (
+            "% " + "ДлинныйКомментарий_TikZ_".join(["неизвестный_макрос"] * 24)
+            + "\n\\myOpaque{не менять}\n"
+            + "\\draw[rounded corners=2pt, line width=1pt, opacity=0.7] "
+            + "(0,0) -- (1,1);\n"
+        )
+        specimen_path = options.out / "b43-clipboard-source.txt"
+        specimen_path.write_text(specimen, encoding="utf-8")
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i", str(specimen_path)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=8, check=True,
+        )
+        # Source pane receives the click: the titlebar and panel coordinates
+        # are visible in the 01 screenshot. No guessed checkbox click.
+        cmd("xdotool", "mousemove", "--sync", "175", "268")
+        cmd("xdotool", "click", "1")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+a")
+        cmd("xdotool", "key", "--clearmodifiers", "ctrl+v")
+        time.sleep(1.2)
+        snapshot(options.out / "03-long-unicode-source-default-wrap-candidate.png")
+        report["b43_long_source"] = "REAL_CLIPBOARD_PASTE_CANDIDATE_MANUAL_GUI_REVIEW"
+        report["b43_source_wrap_toggle"] = "NOT_RUN_PENDING_REVIEWED_CHECKBOX_COORDINATES"
         report["status"] = "BOOTSTRAP_CAPTURED_REQUIRES_MANUAL_VISUAL_REVIEW"
         report["window_id"] = window
     except Exception as error:
