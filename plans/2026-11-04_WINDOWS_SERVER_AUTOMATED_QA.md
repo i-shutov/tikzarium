@@ -24,3 +24,11 @@ Decision: 2026-11-04, owner-directed. Main delivery is native Windows x64, exter
 A **separate next vertical** is actual visible GUI egui on this Windows Server session: six pointer gestures, continuously editable CRLF/opaque .tex, parameter F1 and inspector, Connect/Disconnect, Undo/Save/Open/native dialogs/IME/DPI, externally compiled XeLaTeX PDF/fonts. This must capture original Windows Server screenshots/logs, enforce source/CRLF preservation, and report `WINDOWS_SERVER_GUI_PASS` only when observed. Service/Session 0, headless cargo and hosted Windows runners cannot satisfy GUI acceptance. Physical Windows 10 remains `NOT_RUN` until separately observed.
 
 Known QA honesty blocker: hosted MiKTeX workflow 41618563210 showed Python 1/16 FAIL behind green PowerShell job; do not treat any such workflow as a complete QA PASS until its exit handling is fixed and observed.
+
+## First observed runner job — 2026-11-04
+
+Manual dispatch [run 41808719116](https://github.com/i-shutov/tikzarium/actions/runs/41808719116), job 126502181741, **FAIL at environment setup; NO MiKTeX/Cargo product tests were executed**. The separate runner connected and the checkout action fetched the repository via GitHub REST archive. The log says `pwsh: command not found`; checkout fell back to a REST archive because `git` was not found in the runner's PATH. This proves GitHub scheduling and runner connectivity, not execution of the product.
+
+The integration candidate changes the SHA gate and script steps to built-in Windows PowerShell 5.1 (`shell: powershell`) and adds an explicit, no-installer Git-for-Windows preflight. It detects an existing Git executable in the usual Program Files location and exposes its directory to following steps, otherwise **fails honestly** with a manual-install diagnostic. The exact SHA guard remains mandatory and forbids the Git-less REST archive from substituting for a verified Git checkout. No auto installation, privilege escalation or FlowBridge runner modifications. Rerun only AFTER the integration workflow has been reviewed and merged or manually issued on the reviewed main SHA.
+
+Follow-up checks must confirm whether MiKTeX, Cargo and PDF utilities are installed and visible to this runner account; unknown until an actual job gets past the SHA preflight. Do not claim GUI acceptance from the headless QA script.
