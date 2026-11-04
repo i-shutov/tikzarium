@@ -76,7 +76,9 @@ jobs:
       - name: I40 track and validate Cargo.lock before isolated MiKTeX work
         run: |
           python -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Cargo.lock Python regressions failed' }
           python scripts/qa_cargo_lock.py --report .qa-artifacts/lock-miktex-windows-server.json
+          if ($LASTEXITCODE -ne 0) { throw 'Cargo.lock verification failed' }
       - name: Verify hosted Windows x64 (not Windows 10 acceptance)
         shell: pwsh
         run: |
@@ -111,9 +113,12 @@ jobs:
         shell: pwsh
         run: |
           python -m unittest discover -s scripts/tools -p test_qa_engine_policy.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'D06 engine policy regressions failed' }
           python -m unittest discover -s scripts/tools -p test_qa_smoke.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'D06 direct glyph/Unicode regressions failed' }
           $env:PYTHONPATH = 'scripts/tools'
           python -c "import os; from qa_engine_policy import probe_engine_policy; p = probe_engine_policy(os.environ['TIKZARIUM_XELATEX']); print('Selected QA distribution:', p.distribution, 'offline flags:', p.offline_args); assert p.distribution == 'MiKTeX' and p.offline_args == ('--disable-installer',)"
+          if ($LASTEXITCODE -ne 0) { throw 'D06 selected MiKTeX offline-policy check failed' }
 
       - name: Verify selected engine and required installed files (no tlmgr)
         shell: pwsh
