@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — N3 source-caret parameter F1 + D06 truthful Windows QA (candidate)
+
+- Resolve 27 exact literal placeholders across six C-catalogue TikZ command templates under the actual editable .tex TextEdit caret; node mode remains inspector-only. Inherit Russian syntax, parameter type/units/choices, verified editor preset vs TikZ default UNKNOWN, effect, example, manual anchor and package provenance from the SAME C registry; five independent availability signals remain visible.
+- No TeX parser or guessed macro expansion: comments, verbatim, catcode, opaque values, partial templates and unsupported paths fail closed to UNKNOWN. Read-only F1 does not change revision, Undo, source CRLF or Cyrillic. Add catalogue-driven 27-case Rust fixture, egui F1 key-frame test and real I61 Linux/X11 full-GUI F1/CRLF evidence capture using actual Studio file Open. Exact-head CI/X11 PNG original review remains PENDING at authoring.
+- Fix D06 hosted MiKTeX green despite 1/16 Python glyph-audit unit failure: isolate mocked XeLaTeX from the actual MiKTeX environment, and explicitly fail the multiline PowerShell step for each nonzero Python LASTEXITCODE. Recheck external MiKTeX, PDFs, fonts and original logs before declaring PASS.
+- Windows-first release remains Windows 10 x64 + user's separately installed MiKTeX. Windows Server interactive GUI / Windows 10 physical acceptance NOT_RUN; N4 and physical Mac/Linux qualification not on the first-release critical path.
+
+
 ## Unreleased — N3 C-backed source-caret library completion (DRAFT)
 
 - Native Studio TextEdit caret now scopes F1 offline help to one literal \usetikzlibrary{...} name. Six C library names yield original syntax, examples, Russian explanation, provenance and five separately observed availability axes; clicking Complete applies exactly one revision-checked C patch with visual Undo.
