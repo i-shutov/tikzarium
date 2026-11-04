@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — B43 exact-head rustfmt unblock after Linux/X11 GUI PASS (candidate)
+
+- At PR #100 HEAD `7add27f66889c200f346f13b38e203b93a8f7703`, genuine I61 Linux/X11 [41901598076](https://github.com/i-shutov/tikzarium/actions/runs/41901598076), B42 [41901598041](https://github.com/i-shutov/tikzarium/actions/runs/41901598041), N1 [41901598115](https://github.com/i-shutov/tikzarium/actions/runs/41901598115), PDF fonts [41901597985](https://github.com/i-shutov/tikzarium/actions/runs/41901597985) and D06 [41901597894](https://github.com/i-shutov/tikzarium/actions/runs/41901597894) succeeded; **Rust native CI** [41901597919](https://github.com/i-shutov/tikzarium/actions/runs/41901597919) and **D QA** [41901598146](https://github.com/i-shutov/tikzarium/actions/runs/41901598146) failed at `cargo fmt --all -- --check`, **before** executing the corrected no-wrap regression tests.
+- Exact Rust 1.91.0 logs (Linux + Windows) show a **single** rustfmt diff in `crates/tikzarium-app/src/main.rs:314`: collapse `if soft_wrap { wrap_width } else { f32::INFINITY }` onto one line. Apply this formatting-only change without altering tested layouter logic, without bypassing fail-closed I61 source SHA and without touching accepted N1/N2/N3.
+- The previously inspected B42 old-head screenshot with unchecked `Перенос` still visually wrapped long Cyrillic source, so it was NOT evidence of functioning no-wrap. The new `LayoutJob` galley change remains a candidate until `b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences` runs and proves distinct row counts, and original new-head screenshots show horizontal scrolling. Do **not merge** on I61 green alone; require full current-HEAD Rust CI/D QA, original GUI PNG/.tex/PDF/SHA, hosted cross-platform checks and manual visual review. Linux packaged release / Wayland NOT_RUN.
+
 ## 2026-11-04 — B43 real soft-wrap OFF repair after successful I61 X11 (candidate)
 
 - Exact-head `5db42b46` restored public hosted Actions: independent I61 Linux/X11 six-tool + N2/N3 + external XeLaTeX/PDF passed; B42 screenshot bootstrap, N1, PDF-font and D06 passed. CI and D QA remained RED because the same Rust UI unit test failed on Windows and Linux (`b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences`, `rows=[33,33]`). macOS Rust matrix was cancelled, NOT PASS.

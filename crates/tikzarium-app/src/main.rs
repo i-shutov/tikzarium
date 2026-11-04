@@ -314,11 +314,7 @@ fn show_source_text_edit(
         f32::INFINITY
     };
     let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap_width: f32| {
-        let actual_wrap_width = if soft_wrap {
-            wrap_width
-        } else {
-            f32::INFINITY
-        };
+        let actual_wrap_width = if soft_wrap { wrap_width } else { f32::INFINITY };
         let job = egui::text::LayoutJob::simple(
             text.as_str().to_owned(),
             egui::TextStyle::Monospace.resolve(ui.style()),
