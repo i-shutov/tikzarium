@@ -21,6 +21,7 @@ from pathlib import Path
 
 WIN = "windows10-x64"
 MAC = "macos-arm64"
+LINUX = "linux-x86_64"
 SOURCE_RE = re.compile(r"[0-9a-f]{40}\Z")
 HASH_RE = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -40,6 +41,17 @@ def check_binary(data: bytes, platform: str) -> None:
             raise ValueError("Windows binary is not AMD64")
         if struct.unpack_from("<H", data, offset + 24)[0] != 0x20B:
             raise ValueError("Windows binary is not PE32+ executable")
+    elif platform == LINUX:
+        # Header validation is deliberately narrower than execution:
+        # shared-library compatibility and an actual GUI still need real
+        # target-machine checks. Reject 32-bit, big-endian, non-x86_64 and
+        # relocatable/shared-library input masquerading as an executable.
+        if (len(data) < 64 or data[:4] != b"\x7fELF" or
+                data[4] != 2 or data[5] != 1 or data[6] != 1):
+            raise ValueError("Linux x86_64 ELF: invalid ELF64 little-endian header")
+        elf_type, machine, version = struct.unpack_from("<HHI", data, 16)
+        if machine != 62 or version != 1 or elf_type not in (2, 3):
+            raise ValueError("Linux binary must be an x86_64 ELF executable or PIE")
     elif platform == MAC:
         if len(data) < 32 or data[:4] != b"\xcf\xfa\xed\xfe":
             raise ValueError("Mac binary is not little-endian 64-bit Mach-O")
@@ -71,19 +83,27 @@ def fixture() -> bytes:
 
 def readme(platform: str, sha: str, ci_url: str) -> bytes:
     command = "./tikzarium-cli.exe doctor" if platform == WIN else "./tikzarium-cli doctor"
-    launch = "./tikzarium-app.exe" if platform == WIN else "open ./TikZarium.app"
+    launch = ("./tikzarium-app.exe" if platform == WIN
+              else "./launch.sh" if platform == LINUX
+              else "open ./TikZarium.app")
+    linux_note = ("Linux x86_64: комплект переносимый, не AppImage/.deb и не"
+                  " автономный контейнер библиотек; требуются совместимые"
+                  " системные X11/Wayland/OpenGL/GLIBC и установленный"
+                  " пользователем внешний XeLaTeX.\n" if platform == LINUX else "")
     return f"""# TikZarium — N5 native portable PREVIEW (не релиз)
 
 Git main: {sha}. Оригинальные release-бинарники: {ci_url}.
-Комплект **не является подписанным установщиком**, и статус Windows 10/M1/M4 GUI — **NOT_RUN**.
+Комплект **не является подписанным установщиком**, и статус Linux packaged desktop/Windows 10/M1/M4 GUI — **NOT_RUN**.
 
 ## Требования
 
+- Linux x86_64: внешний XeLaTeX (TeX Live), системные графические библиотеки; бинарник не содержит TeX.
 - Windows 10 x64: установленный самим пользователем MiKTeX/XeLaTeX.
 - macOS Apple Silicon M1/M4: установленный самим пользователем внешний XeLaTeX.
 - Poppler (pdftoppm, pdffonts, pdftotext) нужен для соответствующих функций/проверок.
 - Файл .tex требует доступный DejaVu Serif. Пользовательские шрифты и TeX в архив НЕ включены.
 - Нет автоматической установки пакетов, фоновой загрузки, переключения TeX-дистрибуций.
+- Linux bundle — обычный переносимый каталог, **не** .deb/AppImage и без гарантии работы на другом дистрибутиве.
 
 ## Как проверить
 
@@ -94,6 +114,7 @@ Git main: {sha}. Оригинальные release-бинарники: {ci_url}.
 5. Проверьте Inspector/F1, шесть библиотек и пять независимых статусов, Connect/Undo/Disconnect, File Open/Save, XeLaTeX PDF, кириллицу и встроенный шрифт.
 6. Сохраните реальные PNG/.tex/PDF/log с SHA-256 и отметьте физическую платформу.
 
+{linux_note}
 macOS .app здесь **unsigned/unnotarized**: Finder/Gatekeeper может ограничить запуск. Не отключайте системную безопасность глобально. Запуск в Finder, кодовая подпись, установка, масштаб Retina, IME и Unicode остаются NOT_RUN до реального Mac. Windows .zip — **portable preview**, не MSI/EXE-инсталлятор. doctor/наличие exe сами по себе не доказывают GUI или сборку PDF.
 
 Файл PROVENANCE.json сообщает происхождение, архитектуру, хеши и только фактически выполненные проверки упаковки. Источник примера с CRLF не является доказательством компиляции.
@@ -106,6 +127,12 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
     if platform == WIN:
         entries[root + "tikzarium-app.exe"] = app, 0o644
         entries[root + "tikzarium-cli.exe"] = cli, 0o644
+    elif platform == LINUX:
+        entries[root + "tikzarium-app"] = app, 0o755
+        entries[root + "tikzarium-cli"] = cli, 0o755
+        entries[root + "launch.sh"] = (b'#!/bin/sh\nset -eu\n'
+            b'cd -- "$(dirname -- "$0")"\n'
+            b'exec ./tikzarium-app "$@"\n'), 0o755
     else:
         plist = plistlib.dumps({
             "CFBundleDevelopmentRegion": "ru",
@@ -130,7 +157,8 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
         "platform": platform, "app_sha256": sha256(app), "cli_sha256": sha256(cli),
         "packaging": "local_offline_header_and_hash_verified",
         "physical_windows10": "NOT_RUN", "physical_mac_m1": "NOT_RUN",
-        "physical_mac_m4": "NOT_RUN", "signed_installer": "NOT_RUN",
+        "physical_mac_m4": "NOT_RUN", "linux_packaged_desktop": "NOT_RUN",
+        "linux_wayland": "NOT_RUN", "signed_installer": "NOT_RUN",
         "external_xelatex_gui_pdf": "NOT_RUN", "notarization": "NOT_RUN",
         "tex_or_fonts_bundled": False,
     }
@@ -153,7 +181,7 @@ def write_archive(platform: str, output: Path, files: dict[str, tuple[bytes, int
                 z.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=8)
     else:
         if not str(output).endswith(".tar.gz"):
-            raise ValueError("Mac preview must be .tar.gz")
+            raise ValueError("Mac/Linux preview must be .tar.gz")
         # tarfile "w:gz" embeds wall time + output filename in the gzip header.
         # Stable gzip mtime/name and tar metadata make same inputs byte-identical.
         with output.open("wb") as raw:
@@ -169,7 +197,7 @@ def write_archive(platform: str, output: Path, files: dict[str, tuple[bytes, int
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--platform", required=True, choices=(WIN, MAC))
+    p.add_argument("--platform", required=True, choices=(WIN, MAC, LINUX))
     p.add_argument("--app", type=Path, required=True)
     p.add_argument("--cli", type=Path, required=True)
     p.add_argument("--app-sha256", required=True, help="SHA from original CI artifact, NOT computed by this script")
@@ -190,7 +218,7 @@ def main() -> None:
     a.output.parent.mkdir(parents=True, exist_ok=True)
     write_archive(a.platform, a.output, make_bundle(a.platform, a.source_sha, a.ci_run_url, app, cli))
     print(f"{sha256(a.output.read_bytes())}  {a.output}")
-    print("PACKAGED ONLY. Native physical GUI, installer, TeX PDF remain NOT_RUN.")
+    print("PACKAGED ONLY. Physical desktop launch, installer and bundle-specific GUI/PDF remain NOT_RUN.")
 
 
 if __name__ == "__main__":
