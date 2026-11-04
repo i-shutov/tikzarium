@@ -91,6 +91,10 @@ def main() -> int:
         time.sleep(1.2)
         snapshot(options.out / "03-long-unicode-source-default-wrap-candidate.png")
         report["b43_long_source"] = "REAL_CLIPBOARD_PASTE_CANDIDATE_MANUAL_GUI_REVIEW"
+        # After an explicit source TextEdit click, the floating geometry
+        # palette should close rather than mask the canvas. Source and wrap
+        # are still separately verified; visual dismissal needs original PNG.
+        report["b43_palette_dismissed_on_source_click"] = "CANDIDATE_MANUAL_PNG_REVIEW"
         # Reviewed real 1366x768 screenshot: candidate checkbox at x=480 y=109.
         # Verify exact source clipboard bytes before/after click; the fourth
         # PNG still needs independent visual review to prove the toggle.

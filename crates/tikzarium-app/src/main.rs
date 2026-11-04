@@ -324,6 +324,18 @@ fn show_source_text_edit(
     output
 }
 
+/// A floating geometry palette should never cover the canvas while the user
+/// returns to the editable TeX. Only an actual pointer click in the TextEdit
+/// dismisses it: typing/F1/hover must keep tool selection and source unchanged.
+fn dismiss_studio_palette_on_source_click(
+    response: &egui::Response,
+    group: &mut Option<StudioGroup>,
+) {
+    if response.clicked() {
+        *group = None;
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 enum PendingOpenAction {
     Save(PathBuf),
@@ -1169,6 +1181,13 @@ impl TikzariumApp {
                     &output.response,
                     &mut self.authoring,
                     &self.document.source,
+                );
+                // A source click is an explicit return to editing. Keep the
+                // floating palette out of the canvas/source work area; it can
+                // be reopened from the icon rail at any time.
+                dismiss_studio_palette_on_source_click(
+                    &output.response,
+                    &mut self.studio_group,
                 );
                 if output.response.has_focus() {
                     self.source_caret = output.state.cursor.char_range().and_then(|range| {
@@ -2436,6 +2455,69 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b43_real_egui_source_click_dismisses_palette_without_touching_tex() {
+        // Production TextEdit click handling, not a synthetic button.
+        // UNIT_EVENT only: final visual confirmation still needs real X11 PNG.
+        fn frame(
+            ctx: &egui::Context,
+            source: &mut String,
+            reset: &mut bool,
+            group: &mut Option<StudioGroup>,
+            events: Vec<egui::Event>,
+        ) -> egui::Rect {
+            let mut actual_editor = egui::Rect::NOTHING;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(850.0, 620.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        let output = show_source_text_edit(ui, source, reset, true);
+                        actual_editor = output.response.rect;
+                        dismiss_studio_palette_on_source_click(&output.response, group);
+                    });
+                },
+            );
+            actual_editor
+        }
+        let ctx = egui::Context::default();
+        let original =
+            "% длинный русский комментарий\r\n\\myOpaque{сохранить}\r\n".to_owned();
+        let mut source = original.clone();
+        let mut reset = false;
+        let mut group = Some(StudioGroup::Geometry);
+        let rect = frame(&ctx, &mut source, &mut reset, &mut group, vec![]);
+        assert!(rect.is_positive(), "source editor must have an actual hit rectangle");
+        assert_eq!(group, Some(StudioGroup::Geometry));
+        let pos = rect.center();
+        for pressed in [true, false] {
+            frame(
+                &ctx,
+                &mut source,
+                &mut reset,
+                &mut group,
+                vec![
+                    egui::Event::PointerMoved(pos),
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed,
+                        modifiers: Default::default(),
+                    },
+                ],
+            );
+        }
+        assert_eq!(group, None, "source click must dismiss floating palette");
+        assert_eq!(source, original, "palette dismissal must not edit CRLF/opaque TeX");
+        assert!(!reset, "palette dismissal cannot reset native Undo");
+    }
 
     #[test]
     fn b43_after_dock_source_budget_reserves_live_canvas() {

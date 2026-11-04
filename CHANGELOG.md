@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-04 — B43 return-to-source focus and unobstructed canvas (candidate)
+
+- The original X11 long-source screenshot shows an undismissed floating geometry palette occluding the central drawing. A real click in the editable TeX now closes that palette, while hover/typing/F1 do not change selection and no source/CRLF/opaque/Undo bytes are rewritten.
+- Add an actual egui TextEdit pointer press/release UNIT_EVENT test, carry this behavior through the existing X11 screenshot bootstrap, update exact I61 app-src tree lease. Source/inspector proportions and visual-only wrap from existing B43 remain unchanged.
+- **Evidence blocker:** exact pre-change HEAD `44e09cc0` has seven failed workflow conclusions with zero reported job steps, no I61 artifact and job logs returning GitHub BlobNotFound; causes are not attributable to Rust or UX without runner logs. Fresh CI and real X11 screenshot/font/PDF acceptance for this candidate remain PENDING. Do not merge or rerun blindly.
+
+
 ## 2026-11-04 — B43 real UI evidence and Rust exact-head gate recovery (candidate)
 
 - Reviewed original running 1366×768 screenshot: source/canvas/inspector are visible and Cyrillic source wraps; `↵` and `●` header glyphs are unsupported. Replace with legible `Перенос` and `Изменён` labels without font downloads.

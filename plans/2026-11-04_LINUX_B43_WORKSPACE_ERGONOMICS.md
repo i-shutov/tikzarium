@@ -24,3 +24,8 @@ Existing B42 X11 bootstrap now captures the actual 1366×768 workspace and a thi
 ## Real X11 layout and CI recovery
 
 On original 1366×768 X11 app image from run 41862999794, editor ≈479px wide, central canvas ≈507px, inspector ≈298px; source wraps long Cyrillic text. Header's `↵` wrap glyph and `●` dirty glyph appear as missing-character boxes, so replace both with plain Russian words. Existing B42 bootstrap adds actual after-click screenshot plus raw clipboard source byte-integrity check; it does not replace full I61 PDF/gesture evidence. Exact failed rustfmt changes applied and I61 tree lease synchronized to the real app source tree; new exact-head acceptance and visual re-review remain required.
+
+
+## B43 follow-up: dismiss palette when editor takes pointer focus
+
+The original long-Unicode X11 image shows the Geometry palette lingering above the drawing after returning to editable source. Implement actual source-TextEdit click dismissal without disturbing active tool, F1, TeX, CRLF, or Undo. Add a native egui pointer event test and require original X11 screenshot of the unobstructed center before acceptance. New run gates remain NOT_RUN/FAIL until exact-head jobs execute and artifact SHA/PDF/font evidence is independently inspected; previous `44e09cc0` workflow failures have **no step logs**, so do not infer a product defect from their red result alone.
