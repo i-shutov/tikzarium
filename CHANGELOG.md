@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-11-04 — B43 full exact-head GREEN and real wide/horizontal UX gate (candidate)
+
+- On exact PR #100 HEAD \`a71efb96d7bd6ca44951a4f7ac7018f44e02f10a\`, seven pull-request workflow conclusions are SUCCESS: Rust CI (Linux fixture / hosted Windows & Mac), D QA matrix, I61 full real Linux/X11, B42 screenshot bootstrap, N1, PDF/font and D06. No hidden pre-step CI blockage. Original B42 artifact 13362594222 and I61/N2 artifact 13362229988 downloaded. SHA256 checks across B42 6/6, I61 75/75, N2 42/42 all match reports. I61 reports actual six GUI gestures, Undo/Save/Open/CRLF, N2/N3 library source edits and external XeLaTeX PDF; pdffonts confirms embedded DejaVuSerif in inspected figure.pdf. This is hosted X11, not native packaged Linux/Wayland or physical Win/Mac.
+- Independently viewed B42 1366x768 running app screenshot with no-wrap ON/OFF: source, central canvas and inspector coexist and long opaque/Cyrillic comment remains on one physical row OFF. **Missing evidence**: actual horizontal navigation/caret-end and a real 1920x1080 window. Extend existing B42 real X11 scenario (not a separate PR) to capture \`05-long-line-end-caret-horizontal-candidate.png\`, poison-and-copy source bytes after keyboard End, resize the actual X11 display/window to 1920x1080 and capture \`06-wide-1920x1080-workspace-candidate.png\` with framebuffer-size assertion. Treat screenshots as candidate until original manual review; do not claim horizontal scrolling or legible wide DPI before inspection.
+- Existing full I61 source-tree lease unchanged, because this change touches only B42 QA and release documents, not Rust \`app/src\`. New exact-head B42 and full CI must complete before merge. Linux packaging, native Wayland and user physical desktop remain NOT_RUN.
+
+
+## 2026-11-04 — B43 production-equivalent ScrollArea regression (candidate)
+
+- On exact HEAD `4ce4142384b2ba6ed8b7d120bba44384308e25bf`, Rustfmt passed across platforms. [D QA 41911049405](https://github.com/i-shutov/tikzarium/actions/runs/41911049405) executed real Rust workspace tests and exposed **one** failure out of 115 in `b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences`: `assertion failed: ui.available_width() > 260.0`, same on Linux, macOS and Windows. All 114 other app tests passed. This is a **test harness layout error**: its `SidePanel` contained an infinitely wide unwrapped `TextEdit` directly; production actually nests that edit in `ScrollArea::new([!soft_wrap, true]).auto_shrink([false, false])`, which constrains the left panel while allowing horizontal scrolling.
+- Update the test to use **exactly the production ScrollArea configuration**, without weakening either its central-canvas-width assertion or its visual-row-count assertions, and without modifying the proven source layouter. A previous-head original B42 `03`/`04` X11 screenshot pair explicitly shows wrapped/unwrapped long Cyrillic/opaque source; all 6 B42 and 117 I61/N2 file SHA256 entries checked against their reports (no mismatches). However horizontal scroll and 1920×1080/DPI remain unobserved; no fabricated PASS.
+- Re-pin exact I61 app/src tree in workflow and Python script after changing the test code. New exact-head Rust tests and original I61 X11 + B42 screenshots must be accepted before merge. Linux native installer/Wayland NOT_RUN; Windows Server remains secondary.
+
+## 2026-11-04 — B43 exact-head rustfmt unblock after Linux/X11 GUI PASS (candidate)
+
+- At PR #100 HEAD `7add27f66889c200f346f13b38e203b93a8f7703`, genuine I61 Linux/X11 [41901598076](https://github.com/i-shutov/tikzarium/actions/runs/41901598076), B42 [41901598041](https://github.com/i-shutov/tikzarium/actions/runs/41901598041), N1 [41901598115](https://github.com/i-shutov/tikzarium/actions/runs/41901598115), PDF fonts [41901597985](https://github.com/i-shutov/tikzarium/actions/runs/41901597985) and D06 [41901597894](https://github.com/i-shutov/tikzarium/actions/runs/41901597894) succeeded; **Rust native CI** [41901597919](https://github.com/i-shutov/tikzarium/actions/runs/41901597919) and **D QA** [41901598146](https://github.com/i-shutov/tikzarium/actions/runs/41901598146) failed at `cargo fmt --all -- --check`, **before** executing the corrected no-wrap regression tests.
+- Exact Rust 1.91.0 logs (Linux + Windows) show a **single** rustfmt diff in `crates/tikzarium-app/src/main.rs:314`: collapse `if soft_wrap { wrap_width } else { f32::INFINITY }` onto one line. Apply this formatting-only change without altering tested layouter logic, without bypassing fail-closed I61 source SHA and without touching accepted N1/N2/N3.
+- The previously inspected B42 old-head screenshot with unchecked `Перенос` still visually wrapped long Cyrillic source, so it was NOT evidence of functioning no-wrap. The new `LayoutJob` galley change remains a candidate until `b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences` runs and proves distinct row counts, and original new-head screenshots show horizontal scrolling. Do **not merge** on I61 green alone; require full current-HEAD Rust CI/D QA, original GUI PNG/.tex/PDF/SHA, hosted cross-platform checks and manual visual review. Linux packaged release / Wayland NOT_RUN.
+
+## 2026-11-04 — B43 real soft-wrap OFF repair after successful I61 X11 (candidate)
+
+- Exact-head `5db42b46` restored public hosted Actions: independent I61 Linux/X11 six-tool + N2/N3 + external XeLaTeX/PDF passed; B42 screenshot bootstrap, N1, PDF-font and D06 passed. CI and D QA remained RED because the same Rust UI unit test failed on Windows and Linux (`b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences`, `rows=[33,33]`). macOS Rust matrix was cancelled, NOT PASS.
+- Root cause confirmed in egui 0.33.3: `TextEdit::desired_width(f32::INFINITY)` is still clamped to available panel width; both checkbox states wrapped the long Unicode source even though X11 screenshot changed the checkbox. Add a real TextEdit layouter that explicitly uses infinite galley width when visual wrap is disabled; retain native code-editor focus, Cyrillic, source bytes, CRLF and Undo. Tighten the regression to assert no-wrap stays at physical source rows and wrap increases visual rows.
+- Original B42 screenshot 03/04 from previous run proves UI checkbox selected/unselected but source lines visibly wrap in BOTH — the earlier claim that the checkbox controlled wrapping was premature. Mark B43 no-wrap acceptance FAIL on old head, despite exact source clipboard equality. Current patched HEAD requires new Rust test and actual Linux/X11 before acceptance; no merge with red CI, and native Linux package/Wayland remain NOT_RUN.
+
+## 2026-11-04 — B43 original X11 acceptance and F1 caret QA precision (candidate)
+
+- Public GitHub Actions now execute real checks. Original I61 PNG proves N3 QA clicked a **comment**, not the intended source library line; fix coordinate and verify selected native TextEdit literal `arro` before F1/Complete, preserving fail-closed source/PDF/Undo acceptance.
+- Independently reviewed original B42 1366×768 source/canvas/inspector, toggled wrap ON→OFF without source bytes changing, unobstructed canvas and legible Cyrillic. Apply four exact Rustfmt corrections from actual Windows/macOS logs. Full new exact-head CI/visual/PDF acceptance pending; Linux-first unchanged.
+
+## 2026-11-04 — B43 return-to-source focus and unobstructed canvas (candidate)
+
+- The original X11 long-source screenshot shows an undismissed floating geometry palette occluding the central drawing. A real click in the editable TeX now closes that palette, while hover/typing/F1 do not change selection and no source/CRLF/opaque/Undo bytes are rewritten.
+- Add an actual egui TextEdit pointer press/release UNIT_EVENT test, carry this behavior through the existing X11 screenshot bootstrap, update exact I61 app-src tree lease. Source/inspector proportions and visual-only wrap from existing B43 remain unchanged.
+- **Evidence blocker:** exact pre-change HEAD `44e09cc0` has seven failed workflow conclusions with zero reported job steps, no I61 artifact and job logs returning GitHub BlobNotFound; causes are not attributable to Rust or UX without runner logs. Fresh CI and real X11 screenshot/font/PDF acceptance for this candidate remain PENDING. Do not merge or rerun blindly.
+
+
+## 2026-11-04 — B43 real UI evidence and Rust exact-head gate recovery (candidate)
+
+- Reviewed original running 1366×768 screenshot: source/canvas/inspector are visible and Cyrillic source wraps; `↵` and `●` header glyphs are unsupported. Replace with legible `Перенос` and `Изменён` labels without font downloads.
+- Apply exact rustfmt corrections identified from failing CI, keep exact full I61 app-tree guard and update its SHA in both workflow and Python. Existing B42 X11 adds a real candidate wrap-click fourth PNG and source clipboard bytes before/after; check outputs independently.
+- New CI/I61/source/PDF/font evidence PENDING; Linux package, Wayland and physical Windows/Mac NOT_RUN.
+
+
+## 2026-11-04 — Linux B43: responsive canvas and visual-only source wrapping (candidate)
+
+- Calculate source maximum from the live egui rectangle after inspector/tool rail, reserving room for real canvas and exact PDF.
+- A compact source header shows filename, dirty state and full path on hover. Default visual soft wrap is user-toggleable and persisted; opt out for horizontal scrolling. No TeX, CRLF, opaque macro, Unicode or Undo changes.
+- Rust width/egui wrap/source-preservation/serde tests added. Exact-head CI, real 1366×768 X11 PNG and original PDF/font/TeX SHA independently inspected **NOT YET**.
+- See plans/2026-11-04_LINUX_B43_WORKSPACE_ERGONOMICS.md and insights/2026-11-04_LINUX_B43_WORKSPACE_QA.md.
+
+
 ## 2026-11-04 — Linux UX iteration 1: readable F1 statuses and contextual Help hierarchy (candidate)
 
 - Real I61 X11 `43-n3-f1-catalogue-radius.png` review found cramped 12pt run-on source-parameter metadata and five status fields, plus a redundant generic help block after successful F1. This is a user-facing readability issue, not a failure of N3 recognition.

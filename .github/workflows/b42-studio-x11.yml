@@ -24,7 +24,7 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            xvfb xauth openbox xdotool imagemagick libgl1-mesa-dri libglx-mesa0 \
+            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev
       - name: Parse user-server PowerShell audit without running it
@@ -52,7 +52,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/b42-runtime"
           chmod 700 "$RUNNER_TEMP/b42-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/b42-runtime"
-          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+          xvfb-run -a -s '-screen 0 1920x1080x24 +extension GLX +render -noreset' \
             bash -c 'openbox --sm-disable >/tmp/b42-openbox.log 2>&1 & python3 scripts/qa_b42_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/b42-evidence"'
       - name: Upload actual screenshots and explicit NOT_RUN ledger
         if: always()

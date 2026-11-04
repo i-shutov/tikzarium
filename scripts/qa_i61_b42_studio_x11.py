@@ -20,7 +20,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 
 # Candidate click coordinates are tied to the exact app/src Git tree and
 # previously inspected B42 bootstrap screenshots, not a general GUI contract.
-APP_TREE = "d37bbd28fe6f1198e44a07094cf5391e7e1bf55e"
+APP_TREE = "48ed2245cd99c4c25b83fccbb81983deaed8247a"
 BUTTONS = [
     ("line", (30, 150), (599, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (653, 169), (681, 425), (765, 477)),

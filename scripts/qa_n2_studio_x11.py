@@ -93,6 +93,7 @@ def main():
         "gui_save_open": "NOT_RUN",
         "xelatex_pdf": "NOT_RUN", "manual_artifact_review": "NOT_RUN",
         "five_statuses": "MANUAL_SCREENSHOT_REVIEW_REQUIRED",
+        "n3_caret_target": "NOT_RUN",
         "physical_windows10_miktex": "NOT_RUN", "physical_mac_arm": "NOT_RUN",
     }
     process = None
@@ -312,10 +313,34 @@ def main():
         # Save moves focus off TextEdit. Re-focus its visible fifth line and
         # place the actual caret BEFORE '}' using Home + counted Right keys.
         # Avoid the prior unobserved Left-from-End caret assumption.
-        click(window, 177, 229)
+        # Exact 39f2ed2a X11 screenshot: y229 was the Cyrillic COMMENT;
+        # y239 targets the fifth row with the real library name.
+        click(window, 177, 239)
         key("Home")
         for _ in range(len(r"\usetikzlibrary{arro")):
             key("Right")
+        # Select the preceding real four characters inside native TextEdit.
+        # A clipboard sentinel prevents falsely accepting stale X11 content.
+        for _ in range(len("arro")):
+            key("shift+Left")
+        sentinel = out / "clipboard-n3-caret-sentinel.txt"
+        sentinel.write_bytes(b"__not_a_real_TikZ_library__")
+        subprocess.run(
+            ["xclip", "-selection", "clipboard", "-i", str(sentinel)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=8, check=True,
+        )
+        key("ctrl+c")
+        selected = run("xclip", "-selection", "clipboard", "-o")
+        (out / "clipboard-n3-caret-observed.txt").write_text(
+            selected, encoding="utf-8"
+        )
+        if selected != "arro":
+            raise RuntimeError(
+                f"N3 real source caret is not on library prefix: selected={selected!r}"
+            )
+        report["n3_caret_target"] = "PASS_REAL_X11_SELECTED_LITERAL_ARRO"
+        key("Right")  # Collapse selection at right boundary, immediately before '}'.
         screenshot(out, "17a-n3-real-caret-before-brace")
         held_f1()
         screenshot(out, "18-n3-caret-f1")
@@ -323,10 +348,9 @@ def main():
                 dock_signature(out, "18-n3-caret-f1"):
             raise RuntimeError("N3 source-caret F1 did not change Studio dock")
         report["n3_caret_f1"] = "REAL_X11_HELP_SCREENSHOT_MANUAL_REVIEW_REQUIRED"
-        # Exact 223f7ae7 ORIGINAL 1440x900 screenshot places the C-backed
-        # Complete button at x1086..1266 / y548..577. Earlier x1210,y630
-        # clicked an unrelated Help-search disclosure, with source UNCHANGED.
-        # This coordinate is pinned to the current app/src tree and evidence.
+        # The native TextEdit caret was byte-verified on 'arro' above.
+        # This Complete-button coordinate comes from an earlier layout;
+        # source-exact Save below fails closed if the UI has moved it.
         screenshot(out, "19-n3-caret-complete-target")
         click(window, 1178, 562)  # Real "Завершить имя: arrows.meta".
         screenshot(out, "20-n3-complete-click")
