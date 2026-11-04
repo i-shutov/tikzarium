@@ -29,3 +29,7 @@ On original 1366×768 X11 app image from run 41862999794, editor ≈479px wide, 
 ## B43 follow-up: dismiss palette when editor takes pointer focus
 
 The original long-Unicode X11 image shows the Geometry palette lingering above the drawing after returning to editable source. Implement actual source-TextEdit click dismissal without disturbing active tool, F1, TeX, CRLF, or Undo. Add a native egui pointer event test and require original X11 screenshot of the unobstructed center before acceptance. New run gates remain NOT_RUN/FAIL until exact-head jobs execute and artifact SHA/PDF/font evidence is independently inspected; previous `44e09cc0` workflow failures have **no step logs**, so do not infer a product defect from their red result alone.
+
+## Original public Actions and X11 review — 2026-11-04
+
+B42 original archive 13352791638 (sha256 fd5b5ef999bc6a90585c344ae004b0f15f39ff21bb5e0584ce094a7592f5521b): source/canvas/inspector visible, Unicode source readable, wrap ON→OFF, palette dismissed on source click, before/after source bytes equal. I61 original archive 13351594197 (sha256 9e241068ed1f895fad791b5ee89e075fc3b16d08d28baa2bd135f6d23fc8aa3b): six gestures/N2 real TeX/PDF passed, then source caret on the COMMENT row, hence generic F1 and missing completion; QA y coordinate and real selection validation repaired. Native CI rustfmt errors repaired. Exact HEAD rerun required; full N3 and Linux package still PENDING/NOT_RUN.

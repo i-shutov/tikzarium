@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-04 — B43 original X11 acceptance and F1 caret QA precision (candidate)
+
+- Public GitHub Actions now execute real checks. Original I61 PNG proves N3 QA clicked a **comment**, not the intended source library line; fix coordinate and verify selected native TextEdit literal `arro` before F1/Complete, preserving fail-closed source/PDF/Undo acceptance.
+- Independently reviewed original B42 1366×768 source/canvas/inspector, toggled wrap ON→OFF without source bytes changing, unobstructed canvas and legible Cyrillic. Apply four exact Rustfmt corrections from actual Windows/macOS logs. Full new exact-head CI/visual/PDF acceptance pending; Linux-first unchanged.
+
 ## 2026-11-04 — B43 return-to-source focus and unobstructed canvas (candidate)
 
 - The original X11 long-source screenshot shows an undismissed floating geometry palette occluding the central drawing. A real click in the editable TeX now closes that palette, while hover/typing/F1 do not change selection and no source/CRLF/opaque/Undo bytes are rewritten.

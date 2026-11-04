@@ -1185,10 +1185,7 @@ impl TikzariumApp {
                 // A source click is an explicit return to editing. Keep the
                 // floating palette out of the canvas/source work area; it can
                 // be reopened from the icon rail at any time.
-                dismiss_studio_palette_on_source_click(
-                    &output.response,
-                    &mut self.studio_group,
-                );
+                dismiss_studio_palette_on_source_click(&output.response, &mut self.studio_group);
                 if output.response.has_focus() {
                     self.source_caret = output.state.cursor.char_range().and_then(|range| {
                         (range.primary.index == range.secondary.index)
@@ -2488,13 +2485,15 @@ mod split_layout_tests {
             actual_editor
         }
         let ctx = egui::Context::default();
-        let original =
-            "% длинный русский комментарий\r\n\\myOpaque{сохранить}\r\n".to_owned();
+        let original = "% длинный русский комментарий\r\n\\myOpaque{сохранить}\r\n".to_owned();
         let mut source = original.clone();
         let mut reset = false;
         let mut group = Some(StudioGroup::Geometry);
         let rect = frame(&ctx, &mut source, &mut reset, &mut group, vec![]);
-        assert!(rect.is_positive(), "source editor must have an actual hit rectangle");
+        assert!(
+            rect.is_positive(),
+            "source editor must have an actual hit rectangle"
+        );
         assert_eq!(group, Some(StudioGroup::Geometry));
         let pos = rect.center();
         for pressed in [true, false] {
@@ -2515,7 +2514,10 @@ mod split_layout_tests {
             );
         }
         assert_eq!(group, None, "source click must dismiss floating palette");
-        assert_eq!(source, original, "palette dismissal must not edit CRLF/opaque TeX");
+        assert_eq!(
+            source, original,
+            "palette dismissal must not edit CRLF/opaque TeX"
+        );
         assert!(!reset, "palette dismissal cannot reset native Undo");
     }
 
