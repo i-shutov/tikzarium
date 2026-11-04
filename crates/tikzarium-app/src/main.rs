@@ -23,8 +23,8 @@ mod tikz_libraries;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
-    BottomView, EditorCommand, WorkspaceMode, diagnostic_targets_current_file, editor_command,
-    line_start_char_index, preview_is_stale, scaled_zoom,
+    BottomView, EditorCommand, WorkspaceMode, diagnostic_targets_current_file,
+    editor_command_from_events, line_start_char_index, preview_is_stale, scaled_zoom,
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
@@ -1472,6 +1472,14 @@ impl TikzariumApp {
                 }
                 StudioDock::Help => {
                     if let Some((caret, revision)) = self.source_caret {
+                        // Source parameter F1 is read-only and must not steal
+                        // or replace the existing library-name completion.
+                        if revision == self.authoring.source_revision() {
+                            let caps = self.primitive_capabilities();
+                            if show_source_parameter_help(ui, &self.document.source, caret, caps) {
+                                ui.separator();
+                            }
+                        }
                         let prior = self.authoring.source_revision();
                         if let Some(line) = tikz_libraries::show_source_caret_completion(
                             ui, &mut self.authoring, &mut self.document.source,
@@ -1870,6 +1878,76 @@ fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bo
         .rect
 }
 
+/// Read-only F1 parameter help directly under the source TextEdit caret.
+fn show_source_parameter_help(
+    ui: &mut egui::Ui,
+    source: &str,
+    caret_chars: usize,
+    caps: tikz_canvas::Capabilities,
+) -> bool {
+    let catalog = tikz_authoring::catalog();
+    let Some(hit) =
+        tikzarium_extensions::source_assist::parameter_caret(source, caret_chars, catalog)
+    else {
+        return false;
+    };
+    let key = format!("{}:{}", hit.tool_id, hit.parameter_id);
+    let Some(tikzarium_extensions::help_search::HelpEntry::Parameter(tool, parameter)) =
+        tikzarium_extensions::help_search::exact(catalog, &key)
+    else {
+        return false;
+    };
+    ui.heading("Параметр TikZ под курсором");
+    ui.strong(format!("{} · {}", tool.title_ru, parameter.id));
+    ui.label(&parameter.help_ru);
+    ui.label("Синтаксис");
+    ui.code(&parameter.syntax);
+    ui.small(format!(
+        "Тип: {} · Единицы: {} · Допустимые значения: {}",
+        parameter.kind,
+        if parameter.units.is_empty() {
+            "—".to_owned()
+        } else {
+            parameter.units.join(", ")
+        },
+        if parameter.allowed_values.is_empty() {
+            "UNKNOWN / свободный ввод".to_owned()
+        } else {
+            parameter.allowed_values.join(", ")
+        },
+    ));
+    if parameter.default_provenance == "editor_preset" {
+        ui.small(format!(
+            "Предустановка редактора: {} (НЕ default TikZ)",
+            parameter.default
+        ));
+    } else {
+        ui.small("Default TikZ: UNKNOWN");
+    }
+    ui.label(&parameter.interaction_ru);
+    ui.label(&parameter.warning_ru);
+    ui.label("Пример");
+    ui.code(&parameter.example);
+    ui.hyperlink_to(
+        format!("PGF/TikZ §{}", parameter.manual_section),
+        &parameter.manual_url,
+    );
+    ui.small(format!(
+        "C catalogue: {} · PGF {} · пакеты: {}",
+        tool.id,
+        tool.requirements.documented_against,
+        tool.requirements.packages.join(", "),
+    ));
+    ui.small(format!(
+        "installed={} · project-loaded={:?} · engine-compatible={} · tool-implemented={} · help-available=confirmed",
+        if caps.installed { "confirmed" } else { "not confirmed" },
+        caps.loaded,
+        if caps.engine_compatible { "confirmed" } else { "not confirmed" },
+        if caps.implemented { "confirmed" } else { "not confirmed" },
+    ));
+    true
+}
+
 impl eframe::App for TikzariumApp {
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, STORAGE_KEY, &self.prefs);
@@ -1906,17 +1984,10 @@ impl eframe::App for TikzariumApp {
                 self.reset_source_editor_undo_history = true;
             }
         }
-        let shortcut = ctx.input(|input| {
-            if input.key_pressed(egui::Key::S) {
-                editor_command(egui::Key::S, input.modifiers)
-            } else if input.key_pressed(egui::Key::O) {
-                editor_command(egui::Key::O, input.modifiers)
-            } else if input.key_pressed(egui::Key::Enter) {
-                editor_command(egui::Key::Enter, input.modifiers)
-            } else {
-                None
-            }
-        });
+        // Read modifiers from EACH key-down event. A real, short X11 Ctrl+O
+        // press and release may be coalesced into a single frame, leaving
+        // input.modifiers.command=false even though the O event was Ctrl+O.
+        let shortcut = ctx.input(|input| editor_command_from_events(&input.events));
         // A modal or running XeLaTeX run must not change the active file mid-build.
         if self.receiver.is_none() && self.pending_open.is_none() {
             match shortcut {
@@ -2277,6 +2348,64 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn n3_egui_f1_shows_source_caret_parameter_without_source_change() {
+        let catalog = tikz_authoring::catalog();
+        let example = &catalog.tool("tikz.circle").unwrap().example;
+        let source = format!(
+            "\\begin{{tikzpicture}}\r\n{}\r\n\\myOpaque{{не менять}}\r\n\\end{{tikzpicture}}\r\n",
+            example
+        );
+        let before = source.clone();
+        let caret_byte = source.find("radius=").unwrap() + "radius=".len() + 1;
+        let caret = source[..caret_byte].chars().count();
+        let mut session = tikz_authoring::Session::default();
+        session.reset(&source);
+        let ctx = egui::Context::default();
+        let mut saw_parameter = false;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1180.0, 720.0),
+                )),
+                events: vec![egui::Event::Key {
+                    key: egui::Key::F1,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::default(),
+                }],
+                ..Default::default()
+            },
+            |ctx| {
+                tikz_canvas::handle_help_shortcut(ctx, &mut session);
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    saw_parameter = show_source_parameter_help(
+                        ui,
+                        &source,
+                        caret,
+                        tikz_canvas::Capabilities {
+                            installed: true,
+                            loaded: Evidence::Confirmed,
+                            engine_compatible: true,
+                            implemented: true,
+                        },
+                    );
+                });
+            },
+        );
+        assert!(session.help, "actual F1 key must open the Help dock");
+        assert!(
+            saw_parameter,
+            "circle radius must resolve through the shared C catalogue"
+        );
+        assert_eq!(
+            source, before,
+            "read-only F1 must preserve Unicode/CRLF/opaque source"
+        );
+    }
 
     #[test]
     fn b40_native_source_undo_never_resurrects_text_across_visual_transactions() {

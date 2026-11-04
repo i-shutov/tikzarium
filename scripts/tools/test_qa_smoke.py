@@ -12,6 +12,17 @@ from qa_smoke import (check_missing_glyphs, checked_child, inspect_pdf,
 
 
 class FixtureHarnessTests(unittest.TestCase):
+
+    def test_persistent_winserver_ps51_unicode_qa_script_has_utf8_bom(self):
+        """Windows PowerShell 5.1 interprets BOM-less UTF-8 Cyrillic as ANSI."""
+        ps1 = Path(__file__).with_name("qa_windows_server_user.ps1")
+        raw = ps1.read_bytes()
+        self.assertTrue(raw.startswith(bytes.fromhex("efbbbf")),
+                        "Windows Server QA must declare UTF-8 BOM for PowerShell 5.1")
+        script = raw.decode("utf-8-sig")
+        for text in ("Тест XeLaTeX", "Кириллица", "Точка"):
+            self.assertIn(text, script)
+
     def test_direct_glyph_audit_refuses_unverified_miktex_no_install_switch(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -34,10 +45,14 @@ class FixtureHarnessTests(unittest.TestCase):
             src.write_text("Unicode", encoding="utf-8")
             policy = EnginePolicy("MiKTeX", "MiKTeX-XeTeX 25.12",
                                   ("--disable-installer",))
-            with patch("qa_smoke.shutil.which", return_value="xelatex"), patch(
-                "qa_smoke.probe_engine_policy", return_value=policy
-            ), patch("qa_smoke.command",
-                     return_value=CompletedProcess(["xelatex"], 1, "", "missing")) as compile:
+            # The hosted MiKTeX setup exports a real absolute XeLaTeX path.
+            # Isolate that environment input: this is a mock, not a real build.
+            with patch.dict("qa_smoke.os.environ", {"TIKZARIUM_XELATEX": "xelatex"}), patch(
+                "qa_smoke.shutil.which", return_value="xelatex"
+            ), patch("qa_smoke.probe_engine_policy", return_value=policy), patch(
+                "qa_smoke.command",
+                return_value=CompletedProcess(["xelatex"], 1, "", "missing")
+            ) as compile:
                 passed, report = check_missing_glyphs(src, root, "font")
             self.assertFalse(passed)  # no PDF/log from mocked TeX
             self.assertEqual(report["glyph_engine_distribution"], "MiKTeX")

@@ -1,5 +1,8 @@
 # Full-scope execution plan — TikZ-native tools, code and explanations
 
+**LATEST PLATFORM RELEASE SEQUENCE (2026-11-04):** First finish a **complete usable Linux desktop x86_64** editor with repeated real X11 GUI/ergonomics review. The original Windows/Mac platform descriptions below remain cross-platform architecture and future-release requirements, not blockers of the first Linux release. Preserve hosted Windows/macOS CI, user-installed XeLaTeX/MiKTeX requirements and native cross-platform Rust/egui. Current detailed precedence: `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+
+
 Owner correction recorded 2026-10-31. The initial S0–S7 CAD/solver-oriented version of this file and its calendar windows are superseded. Do not merge or execute that historical plan as the current specification.
 
 ## Non-negotiable deliverable

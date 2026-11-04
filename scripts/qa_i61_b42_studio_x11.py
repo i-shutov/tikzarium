@@ -20,7 +20,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 
 # Candidate click coordinates are tied to the exact app/src Git tree and
 # previously inspected B42 bootstrap screenshots, not a general GUI contract.
-APP_TREE = "c8dca09eeb7de708363054ef7b531087bfab86cf"
+APP_TREE = "5a6a04743494c4b70a564397744cefa68c1a3618"
 BUTTONS = [
     ("line", (30, 150), (599, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (653, 169), (681, 425), (765, 477)),
@@ -157,9 +157,10 @@ def main() -> int:
         "physical_mac_m1_m4": "NOT_RUN",
         "manual_image_review": "NOT_RUN", "gui_save": "NOT_RUN",
         "six_real_tools": "NOT_RUN", "real_xelatex_pdf": "NOT_RUN",
-        "gui_open_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
+        "gui_open_reopen": "NOT_RUN", "keyboard_reopen": "NOT_RUN",
+        "toolbar_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
         "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
-        "f1_two_state": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
+        "f1_two_state": "NOT_RUN", "source_parameter_f1": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
         "dirty_open_cancel": "NOT_RUN", "inspector_apply": "NOT_RUN",
         "steps": [],
     }
@@ -426,12 +427,45 @@ def main() -> int:
         report["gui_two_file_crlf"] = "PASS_REAL_X11_TWO_FILE_GUI_OPEN_SAVE"
         report["file_menu_path_edit"] = "PASS_REAL_X11_EDITABLE_FILE_PATH"
 
-        # Explicit external test-fixture modification proves Ctrl+O reads disk.
+        # External change is independent INPUT. Verify the native Ctrl+O
+        # shortcut by observing the ACTUAL TextEdit via its X11 clipboard,
+        # not merely an on-disk source comparison after a Save. A missed key
+        # event must never be disguised as a successful keyboard shortcut.
         external = b"% I62_EXTERNAL_BEFORE_REOPEN"
         secondary.write_bytes(secondary_input + append + external)
+        run("xdotool", "windowactivate", "--sync", found)
         key("ctrl+o")
         time.sleep(0.65)
         screenshot(out, "37-second-reopened")
+        click(found, 177, 380)
+        key("ctrl+a")
+        key("ctrl+c")
+        observed = run("xclip", "-selection", "clipboard", "-o")
+        (out / "clipboard-after-ctrl-o.txt").write_text(observed, encoding="utf-8")
+        if external.decode("utf-8") in observed:
+            report["keyboard_reopen"] = "PASS_REAL_X11_CTRL_O_RELOAD"
+        else:
+            report["keyboard_reopen"] = "FAIL_REAL_X11_CTRL_O_SOURCE_NOT_RELOADED"
+            # Continue the same substantial source/F1 vertical via the real
+            # visible Open toolbar icon. This is an independently testable GUI
+            # action, NOT a workaround that turns a keyboard FAIL into PASS.
+            screenshot(out, "37a-ctrl-o-missed-source")
+            click(found, 135, 39)
+            time.sleep(0.75)
+            screenshot(out, "37b-open-toolbar-recovery")
+            click(found, 177, 380)
+            key("ctrl+a")
+            key("ctrl+c")
+            recovered = run("xclip", "-selection", "clipboard", "-o")
+            (out / "clipboard-after-toolbar-open.txt").write_text(
+                recovered, encoding="utf-8"
+            )
+            if external.decode("utf-8") not in recovered:
+                raise RuntimeError(
+                    "Both Ctrl+O and real toolbar Open failed to reload "
+                    "externally updated source in visible TextEdit"
+                )
+            report["toolbar_reopen"] = "PASS_REAL_X11_VISIBLE_OPEN_SOURCE_RELOAD"
         after_reopen = b"% I62_AFTER_GUI_REOPEN"
         click(found, 177, 380)
         key("ctrl+End")
@@ -440,7 +474,7 @@ def main() -> int:
         wait(lambda: after_reopen in secondary.read_bytes(),
              "Reopened GUI document cannot be edited and saved")
         if secondary.read_bytes() != secondary_input + append + external + after_reopen:
-            raise RuntimeError("GUI Ctrl+O failed to reload external CRLF source")
+            raise RuntimeError("GUI Open failed to reload external CRLF source")
         report["gui_open_reopen"] = "PASS_REAL_X11_BYTE_EXACT_RELOAD"
 
         # Real dirty Open -> Cancel: never discard the original unsaved edit.
@@ -473,6 +507,63 @@ def main() -> int:
             "first_source_sha256": sha(source), "second_source_sha256": sha(secondary)
         })
 
+        # N3: actual TextEdit caret inside a literal C circle radius token,
+        # followed by native F1. This is a THIRD input file, not a forged GUI
+        # source output. Earlier six-tool and CRLF source proofs are unchanged.
+        n3_file = out / "n3-source-parameter-crlf.tex"
+        n3_input = (
+            "\\documentclass{standalone}\r\n"
+            "\\usepackage{tikz}\r\n"
+            "\\begin{document}\r\n"
+            "\\begin{tikzpicture}\r\n"
+            "\\draw (1cm,1cm) circle[radius=8mm];\r\n"
+            "\\end{tikzpicture}\r\n"
+            "\\myOpaque{не менять}\r\n"
+            "\\end{document}\r\n"
+        ).encode("utf-8")
+        n3_file.write_bytes(n3_input)
+        click(found, 321, 40)  # Existing real File menu.
+        time.sleep(0.36)
+        click(found, 440, 93)
+        key("ctrl+a")
+        paste(b"n3-source-parameter-crlf.tex", out / "clipboard-n3-file-path.txt")
+        click(found, 351, 124)
+        time.sleep(0.65)
+        screenshot(out, "41-n3-real-file-opened")
+        click(found, 1055, 109)  # Properties dock before F1 transition.
+        click(found, 177, 380)  # Real permanently editable code pane.
+        key("ctrl+Home")
+        for _ in range(4):  # Fifth physical source line is the C circle.
+            key("Down")
+        key("End")
+        for _ in range(4):  # Four chars back from 8mm]; -> inside 8mm.
+            key("Left")
+        screenshot(out, "42-n3-caret-in-circle-radius")
+        dock_before = dock_signature(out, "42-n3-caret-in-circle-radius")
+        held_f1()
+        screenshot(out, "43-n3-f1-catalogue-radius")
+        dock_after = dock_signature(out, "43-n3-f1-catalogue-radius")
+        if dock_after == dock_before:
+            raise RuntimeError("N3 actual F1 did not switch the visible Help dock")
+        # Read-only F1 may not modify the on-disk or in-editor source.
+        click(found, 177, 39)
+        if n3_file.read_bytes() != n3_input:
+            raise RuntimeError("N3 source caret help changed CRLF/opaque input")
+        if source.read_bytes() != six_bytes:
+            raise RuntimeError("N3 Help changed previously accepted six-tool document")
+        report["source_parameter_f1"] = "REAL_X11_F1_AND_SOURCE_BYTES_PASS_LABEL_REVIEW_REQUIRED"
+        report["steps"].append({
+            "case": "real_source_textedit_circle_radius_f1_shared_c_help",
+            "source_sha256": sha(n3_file),
+            "help_screenshot": "43-n3-f1-catalogue-radius.png",
+            "help_label_manual_review": "NOT_RUN",
+        })
+
+        if report["keyboard_reopen"].startswith("FAIL"):
+            raise RuntimeError(
+                "Ctrl+O Linux/X11 shortcut regression: toolbar recovery allowed "
+                "remaining real N3/F1 tests, but exact-head acceptance is FAIL"
+            )
         report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"

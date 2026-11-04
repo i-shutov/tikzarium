@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-11-04 — Native Ctrl+O fast-release repair and real N3 caret F1 on Linux/X11 (candidate)
+
+- Exact-head Rust fmt across Linux/macOS/Windows rejected two one-line `Modifiers { shift: true, ..command }` literals in the new event regression, with no other proven Rust failure. Corrected both to rustfmt canonical multiline syntax and re-pinned existing I61 actual app source tree accordingly; original F1 evidence preserved, exact-head revalidation still required.
+
+- Real I61 [41833261353](https://github.com/i-shutov/tikzarium/actions/runs/41833261353) independently confirmed: all six GUI pointer gestures, external XeLaTeX/Unicode and embedded PDF fonts, inspector Apply+Undo, two-file Open/CRLF, dirty Open Cancel, and **real F1 help on circle radius under the actual editable TextEdit caret**. Ctrl+O alone failed to reload the externally changed file; the visible Open toolbar did reload it and the full N3/F1 test then completed. Overall job **FAIL correctly** because the keyboard shortcut is a release requirement. Original artifact ID `13324366740`.
+- Correct global app file shortcuts to read **key-down event-local modifiers** instead of relying on end-of-frame `input.modifiers`, which can lose a fast Ctrl+O release under X11. Add Rust regression for pressed/released within one frame, no-command/Shift negative and Save/SaveAs/Build; preserve macOS Command abstraction. Re-pin the SAME I61 app tree in workflow and script. This production fix's exact-head real GUI/CI PASS is **PENDING**; no Windows10/Mac physical claims.
+
+## 2026-11-04 — Linux real-GUI exact-head failure localization (PR #98, in progress)
+
+- The exact-head I61 Linux/X11 run `41825209680` passed genuine six pointer tools, Save, XeLaTeX PDF/embedded fonts, inspector Apply/Undo and two-file CRLF Open/Save, but **FAILED** in real Ctrl+O external-file reload at `Reopened GUI document cannot be edited and saved`. The original `36-second-crlf-saved.png` and `37-second-reopened.png` show no visible reload; native keyboard acceptance is **NOT PASSED**. D QA, CLI/TeX, Rust and hosted cross-platform checks passed on the same head; no false blanket PASS.
+- Existing I61 full GUI scenario now captures the *actual in-editor selected source via X11 Ctrl+A/C* after Ctrl+O. If the external marker is missing, records an explicit `keyboard_reopen=FAIL`, exercises the visible native Open button for recovery, and continues testing real F1/caret/opaque/CRLF without suppressing the keyboard failure. Source-tree SHA lease unchanged: QA script only, no production egui edit or guessed keyboard fix. Exact-head CI and original visual acceptance **PENDING**.
+
+
+## Release-plan decision — 2026-11-04: first Linux full application, cross-platform code maintained
+
+- Owner moved first **complete, ergonomically accepted desktop release** to Linux x86_64. Native Rust/egui architecture, external XeLaTeX/MiKTeX selection, source/Undo/CRLF/opaque safety and single-C Russian help remain shared across Linux, Windows and macOS from day one.
+- Physical Windows10/MiKTeX and Mac ARM/XeLaTeX GUI qualification and their release packages follow the Linux release; hosted cross-platform CI remains mandatory. Registered Windows Server runner is secondary QA only. N4 domain packs not first-release blockers.
+- Adds `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md` with genuine Linux/X11 GUI, ergonomic iteration and native Linux packaging acceptance gates. **Documentation/release-priority change only; not a product GUI PASS.** Existing PR #98 code/CI must be checked independently.
+
+
+## Unreleased — N3 source-caret parameter F1 + D06 truthful Windows QA (candidate)
+
+- Resolve 27 exact literal placeholders across six C-catalogue TikZ command templates under the actual editable .tex TextEdit caret; node mode remains inspector-only. Inherit Russian syntax, parameter type/units/choices, verified editor preset vs TikZ default UNKNOWN, effect, example, manual anchor and package provenance from the SAME C registry; five independent availability signals remain visible.
+- No TeX parser or guessed macro expansion: comments, verbatim, catcode, opaque values, partial templates and unsupported paths fail closed to UNKNOWN. Read-only F1 does not change revision, Undo, source CRLF or Cyrillic. Add catalogue-driven 27-case Rust fixture, egui F1 key-frame test and real I61 Linux/X11 full-GUI F1/CRLF evidence capture using actual Studio file Open. Exact-head CI/X11 PNG original review remains PENDING at authoring.
+- Fix D06 hosted MiKTeX green despite 1/16 Python glyph-audit unit failure: isolate mocked XeLaTeX from the actual MiKTeX environment, and explicitly fail the multiline PowerShell step for each nonzero Python LASTEXITCODE. Recheck external MiKTeX, PDFs, fonts and original logs before declaring PASS.
+- Windows-first release remains Windows 10 x64 + user's separately installed MiKTeX. Windows Server interactive GUI / Windows 10 physical acceptance NOT_RUN; N4 and physical Mac/Linux qualification not on the first-release critical path.
+
+
 ## Unreleased — N3 C-backed source-caret library completion (DRAFT)
 
 - Native Studio TextEdit caret now scopes F1 offline help to one literal \usetikzlibrary{...} name. Six C library names yield original syntax, examples, Russian explanation, provenance and five separately observed availability axes; clicking Complete applies exactly one revision-checked C patch with visual Undo.
