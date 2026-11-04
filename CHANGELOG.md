@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — Linux real-GUI exact-head failure localization (PR #98, in progress)
+
+- The exact-head I61 Linux/X11 run `41825209680` passed genuine six pointer tools, Save, XeLaTeX PDF/embedded fonts, inspector Apply/Undo and two-file CRLF Open/Save, but **FAILED** in real Ctrl+O external-file reload at `Reopened GUI document cannot be edited and saved`. The original `36-second-crlf-saved.png` and `37-second-reopened.png` show no visible reload; native keyboard acceptance is **NOT PASSED**. D QA, CLI/TeX, Rust and hosted cross-platform checks passed on the same head; no false blanket PASS.
+- Existing I61 full GUI scenario now captures the *actual in-editor selected source via X11 Ctrl+A/C* after Ctrl+O. If the external marker is missing, records an explicit `keyboard_reopen=FAIL`, exercises the visible native Open button for recovery, and continues testing real F1/caret/opaque/CRLF without suppressing the keyboard failure. Source-tree SHA lease unchanged: QA script only, no production egui edit or guessed keyboard fix. Exact-head CI and original visual acceptance **PENDING**.
+
+
 ## Release-plan decision — 2026-11-04: first Linux full application, cross-platform code maintained
 
 - Owner moved first **complete, ergonomically accepted desktop release** to Linux x86_64. Native Rust/egui architecture, external XeLaTeX/MiKTeX selection, source/Undo/CRLF/opaque safety and single-C Russian help remain shared across Linux, Windows and macOS from day one.

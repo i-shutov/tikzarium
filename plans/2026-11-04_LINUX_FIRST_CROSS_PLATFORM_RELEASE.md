@@ -26,6 +26,8 @@ Iterate using *original screenshots from the running application*, never image-o
 
 ## Delivery sequence and evidence
 
+**Exact-head obstacle observed 2026-11-04:** real I61 job 126558081488 passed six gestures, external XeLaTeX/fonts and two-file CRLF Save but failed on Ctrl+O disk reload before reaching N3 caret F1. Treat keyboard handling and real Open as separate observed axes; instrument source TextEdit clipboard and non-suppressing visible-toolbar recovery so downstream F1 is still exercised while release remains red on broken Ctrl+O. Do not call screenshot-only F1 a completed gate.
+
 **L1 — Finish current N3 vertical.** Reuse the existing substantial PR #98; don't fork new B/QA micro-PRs. First resolve exact-head failing checks and assess original real X11 Source/F1 screenshots, CRLF/Undo/PDF; don't merge just because unit tests passed.
 
 **L2 — GUI usability cycles.** Review actual Linux workspace, tool palettes, source/preview balance, properties, contextual Help, library lifecycle and editing dialogs; implement coherent interface revisions with source and event tests, not cosmetic CI churn. Publish versioned screenshot atlases and annotated issues showing what changed, what remains wrong, and actual click/keyboard task results.

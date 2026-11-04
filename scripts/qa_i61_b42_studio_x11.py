@@ -157,7 +157,8 @@ def main() -> int:
         "physical_mac_m1_m4": "NOT_RUN",
         "manual_image_review": "NOT_RUN", "gui_save": "NOT_RUN",
         "six_real_tools": "NOT_RUN", "real_xelatex_pdf": "NOT_RUN",
-        "gui_open_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
+        "gui_open_reopen": "NOT_RUN", "keyboard_reopen": "NOT_RUN",
+        "toolbar_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
         "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
         "f1_two_state": "NOT_RUN", "source_parameter_f1": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
         "dirty_open_cancel": "NOT_RUN", "inspector_apply": "NOT_RUN",
@@ -426,12 +427,45 @@ def main() -> int:
         report["gui_two_file_crlf"] = "PASS_REAL_X11_TWO_FILE_GUI_OPEN_SAVE"
         report["file_menu_path_edit"] = "PASS_REAL_X11_EDITABLE_FILE_PATH"
 
-        # Explicit external test-fixture modification proves Ctrl+O reads disk.
+        # External change is independent INPUT. Verify the native Ctrl+O
+        # shortcut by observing the ACTUAL TextEdit via its X11 clipboard,
+        # not merely an on-disk source comparison after a Save. A missed key
+        # event must never be disguised as a successful keyboard shortcut.
         external = b"% I62_EXTERNAL_BEFORE_REOPEN"
         secondary.write_bytes(secondary_input + append + external)
+        run("xdotool", "windowactivate", "--sync", found)
         key("ctrl+o")
         time.sleep(0.65)
         screenshot(out, "37-second-reopened")
+        click(found, 177, 380)
+        key("ctrl+a")
+        key("ctrl+c")
+        observed = run("xclip", "-selection", "clipboard", "-o")
+        (out / "clipboard-after-ctrl-o.txt").write_text(observed, encoding="utf-8")
+        if external.decode("utf-8") in observed:
+            report["keyboard_reopen"] = "PASS_REAL_X11_CTRL_O_RELOAD"
+        else:
+            report["keyboard_reopen"] = "FAIL_REAL_X11_CTRL_O_SOURCE_NOT_RELOADED"
+            # Continue the same substantial source/F1 vertical via the real
+            # visible Open toolbar icon. This is an independently testable GUI
+            # action, NOT a workaround that turns a keyboard FAIL into PASS.
+            screenshot(out, "37a-ctrl-o-missed-source")
+            click(found, 135, 39)
+            time.sleep(0.75)
+            screenshot(out, "37b-open-toolbar-recovery")
+            click(found, 177, 380)
+            key("ctrl+a")
+            key("ctrl+c")
+            recovered = run("xclip", "-selection", "clipboard", "-o")
+            (out / "clipboard-after-toolbar-open.txt").write_text(
+                recovered, encoding="utf-8"
+            )
+            if external.decode("utf-8") not in recovered:
+                raise RuntimeError(
+                    "Both Ctrl+O and real toolbar Open failed to reload "
+                    "externally updated source in visible TextEdit"
+                )
+            report["toolbar_reopen"] = "PASS_REAL_X11_VISIBLE_OPEN_SOURCE_RELOAD"
         after_reopen = b"% I62_AFTER_GUI_REOPEN"
         click(found, 177, 380)
         key("ctrl+End")
@@ -440,7 +474,7 @@ def main() -> int:
         wait(lambda: after_reopen in secondary.read_bytes(),
              "Reopened GUI document cannot be edited and saved")
         if secondary.read_bytes() != secondary_input + append + external + after_reopen:
-            raise RuntimeError("GUI Ctrl+O failed to reload external CRLF source")
+            raise RuntimeError("GUI Open failed to reload external CRLF source")
         report["gui_open_reopen"] = "PASS_REAL_X11_BYTE_EXACT_RELOAD"
 
         # Real dirty Open -> Cancel: never discard the original unsaved edit.
@@ -525,6 +559,11 @@ def main() -> int:
             "help_label_manual_review": "NOT_RUN",
         })
 
+        if report["keyboard_reopen"].startswith("FAIL"):
+            raise RuntimeError(
+                "Ctrl+O Linux/X11 shortcut regression: toolbar recovery allowed "
+                "remaining real N3/F1 tests, but exact-head acceptance is FAIL"
+            )
         report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
