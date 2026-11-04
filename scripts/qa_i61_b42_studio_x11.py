@@ -159,7 +159,7 @@ def main() -> int:
         "six_real_tools": "NOT_RUN", "real_xelatex_pdf": "NOT_RUN",
         "gui_open_reopen": "NOT_RUN", "visual_undo": "NOT_RUN",
         "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
-        "f1_two_state": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
+        "f1_two_state": "NOT_RUN", "source_parameter_f1": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
         "dirty_open_cancel": "NOT_RUN", "inspector_apply": "NOT_RUN",
         "steps": [],
     }
@@ -471,6 +471,58 @@ def main() -> int:
         report["steps"].append({
             "case": "f1_native_visual_undo_two_file_crlf_reopen_dirty_cancel",
             "first_source_sha256": sha(source), "second_source_sha256": sha(secondary)
+        })
+
+        # N3: actual TextEdit caret inside a literal C circle radius token,
+        # followed by native F1. This is a THIRD input file, not a forged GUI
+        # source output. Earlier six-tool and CRLF source proofs are unchanged.
+        n3_file = out / "n3-source-parameter-crlf.tex"
+        n3_input = (
+            "\\documentclass{standalone}\r\n"
+            "\\usepackage{tikz}\r\n"
+            "\\begin{document}\r\n"
+            "\\begin{tikzpicture}\r\n"
+            "\\draw (1cm,1cm) circle[radius=8mm];\r\n"
+            "\\end{tikzpicture}\r\n"
+            "\\myOpaque{не менять}\r\n"
+            "\\end{document}\r\n"
+        ).encode("utf-8")
+        n3_file.write_bytes(n3_input)
+        click(found, 321, 40)  # Existing real File menu.
+        time.sleep(0.36)
+        click(found, 440, 93)
+        key("ctrl+a")
+        paste(b"n3-source-parameter-crlf.tex", out / "clipboard-n3-file-path.txt")
+        click(found, 351, 124)
+        time.sleep(0.65)
+        screenshot(out, "41-n3-real-file-opened")
+        click(found, 1055, 109)  # Properties dock before F1 transition.
+        click(found, 177, 380)  # Real permanently editable code pane.
+        key("ctrl+Home")
+        for _ in range(4):  # Fifth physical source line is the C circle.
+            key("Down")
+        key("End")
+        for _ in range(4):  # Four chars back from 8mm]; -> inside 8mm.
+            key("Left")
+        screenshot(out, "42-n3-caret-in-circle-radius")
+        dock_before = dock_signature(out, "42-n3-caret-in-circle-radius")
+        held_f1()
+        screenshot(out, "43-n3-f1-catalogue-radius")
+        dock_after = dock_signature(out, "43-n3-f1-catalogue-radius")
+        if dock_after == dock_before:
+            raise RuntimeError("N3 actual F1 did not switch the visible Help dock")
+        # Read-only F1 may not modify the on-disk or in-editor source.
+        click(found, 177, 39)
+        if n3_file.read_bytes() != n3_input:
+            raise RuntimeError("N3 source caret help changed CRLF/opaque input")
+        if source.read_bytes() != six_bytes:
+            raise RuntimeError("N3 Help changed previously accepted six-tool document")
+        report["source_parameter_f1"] = "REAL_X11_F1_AND_SOURCE_BYTES_PASS_LABEL_REVIEW_REQUIRED"
+        report["steps"].append({
+            "case": "real_source_textedit_circle_radius_f1_shared_c_help",
+            "source_sha256": sha(n3_file),
+            "help_screenshot": "43-n3-f1-catalogue-radius.png",
+            "help_label_manual_review": "NOT_RUN",
         })
 
         report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
