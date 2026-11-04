@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-04 — Linux B43: responsive canvas and visual-only source wrapping (candidate)
+
+- Calculate source maximum from the live egui rectangle after inspector/tool rail, reserving room for real canvas and exact PDF.
+- A compact source header shows filename, dirty state and full path on hover. Default visual soft wrap is user-toggleable and persisted; opt out for horizontal scrolling. No TeX, CRLF, opaque macro, Unicode or Undo changes.
+- Rust width/egui wrap/source-preservation/serde tests added. Exact-head CI, real 1366×768 X11 PNG and original PDF/font/TeX SHA independently inspected **NOT YET**.
+- See plans/2026-11-04_LINUX_B43_WORKSPACE_ERGONOMICS.md and insights/2026-11-04_LINUX_B43_WORKSPACE_QA.md.
+
+
 ## 2026-11-04 — Linux UX iteration 1: readable F1 statuses and contextual Help hierarchy (candidate)
 
 - Real I61 X11 `43-n3-f1-catalogue-radius.png` review found cramped 12pt run-on source-parameter metadata and five status fields, plus a redundant generic help block after successful F1. This is a user-facing readability issue, not a failure of N3 recognition.

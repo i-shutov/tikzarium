@@ -88,6 +88,8 @@ pub struct UiPreferences {
     pub studio_dock: StudioDock,
     pub theme: UiTheme,
     pub compact: bool,
+    /// Presentation-only soft wrap; the source and PDF never change.
+    pub source_soft_wrap: bool,
     pub show_font_lab: bool,
     pub text_family: String,
     pub sans_family: String,
@@ -105,6 +107,7 @@ impl Default for UiPreferences {
             studio_dock: StudioDock::default(),
             theme: UiTheme::default(),
             compact: false,
+            source_soft_wrap: true,
             show_font_lab: false,
             text_family: fonts.text_family,
             sans_family: fonts.sans_family,

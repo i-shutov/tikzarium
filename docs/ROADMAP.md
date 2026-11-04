@@ -1,5 +1,9 @@
 # Roadmap — TikZ-native visual authoring
 
+## L2 B43 candidate — workspace proportions and soft-wrapped editable TeX
+
+The first ergonomic improvement after accepted F1 PR #99 reserves the central canvas from the actual space remaining *after* inspector and icon rail, rather than from an estimate that ignores the rail. Editable source shows a short filename with full path on hover, dirty marker and a persisted, reversible visual-only ↵ Перенос switch. Long source lines can wrap without altering TeX/CRLF/opaque content; manual horizontal scrolling remains available. Strict Rust, genuine X11 and screenshot/PDF/source SHA acceptance are pending. See plans/2026-11-04_LINUX_B43_WORKSPACE_ERGONOMICS.md.
+
 ## Current decision: Linux-first complete editor (2026-11-04)
 
 **Linux x86_64 is the FIRST FULL RELEASE; Windows 10/MiKTeX and macOS ARM/XeLaTeX remain cross-platform architecture/hosted CI targets but physical GUI acceptance and release follow later.** The first release is gated by actual usable Linux GUI/ergonomics, not by physical Windows Server/Windows 10 tests or signed macOS installers. Iterate compact workspace, tool groups/icons, code/preview proportions, legible Russian F1/property panels, source editing, native dialogs/keyboard, all six gestures, library states and external XeLaTeX PDF using real X11 screenshot/artifact evidence. Older dated Windows-first or multi-platform N5 entries below are historical snapshots. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.

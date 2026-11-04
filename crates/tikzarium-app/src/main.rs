@@ -65,6 +65,22 @@ impl SplitPanelLayout {
             inspector_max,
         }
     }
+
+    /// Re-evaluate the source maximum AFTER the inspector and icon rail
+    /// have consumed their real egui rectangles. Respect the central canvas.
+    fn reserving_center(self, remaining_width: f32) -> Self {
+        let available = if remaining_width.is_finite() {
+            remaining_width.max(0.0)
+        } else {
+            0.0
+        };
+        let source_max = self.source_max.min((available - 260.0).max(240.0));
+        Self {
+            source_default: self.source_default.min(source_max),
+            source_max,
+            ..self
+        }
+    }
 }
 
 fn show_split_inspector_panel(
@@ -283,11 +299,19 @@ fn show_source_text_edit(
     ui: &mut egui::Ui,
     source: &mut String,
     reset_undo_history: &mut bool,
+    soft_wrap: bool,
 ) -> egui::text_edit::TextEditOutput {
     let fenced = *reset_undo_history;
+    // INFINITY disables wrapping. The alternative only changes visual galley
+    // rows: not the source, CRLF, opaque macros, Undo or source-caret offsets.
+    let edit_width = if soft_wrap {
+        ui.available_width().max(140.0)
+    } else {
+        f32::INFINITY
+    };
     let mut output = egui::TextEdit::multiline(source)
         .code_editor()
-        .desired_width(f32::INFINITY)
+        .desired_width(edit_width)
         .desired_rows(36)
         .interactive(!fenced)
         .show(ui);
@@ -1100,23 +1124,40 @@ impl TikzariumApp {
         if self.pending_open.is_some() {
             ui.disable();
         }
-        ui.heading("Исходный TikZ / TeX");
-        ui.small(
-            self.document
-                .path
-                .as_ref()
-                .map_or("Scratch: save as .tex", |p| {
-                    p.to_str().unwrap_or("Unicode path")
-                }),
-        );
+        ui.horizontal(|ui| {
+            ui.strong("Исходник .tex");
+            if self.document.dirty() {
+                ui.colored_label(ui.visuals().warn_fg_color, "●")
+                    .on_hover_text("Несохранённые правки");
+            }
+            ui.with_layout(
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                    ui.checkbox(&mut self.prefs.source_soft_wrap, "↵ Перенос")
+                        .on_hover_text(
+                            "Переносить длинные строки только на экране. Не меняет TeX, CRLF и PDF. Выключите для горизонтальной прокрутки.",
+                        );
+                },
+            );
+        });
+        let basename = self.document.path.as_deref()
+            .and_then(Path::file_name)
+            .and_then(|name| name.to_str())
+            .unwrap_or("figure.tex · новый документ");
+        let path_description = self.document.path.as_ref()
+            .map_or_else(|| "Новый TeX-документ — сохраните его явно".to_owned(),
+                |path| path.display().to_string());
+        ui.add(egui::Label::new(basename).truncate())
+            .on_hover_text(path_description);
         ui.separator();
-        egui::ScrollArea::both()
+        egui::ScrollArea::new([!self.prefs.source_soft_wrap, true])
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 let mut output = show_source_text_edit(
                     ui,
                     &mut self.document.source,
                     &mut self.reset_source_editor_undo_history,
+                    self.prefs.source_soft_wrap,
                 );
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
@@ -2279,8 +2320,13 @@ impl eframe::App for TikzariumApp {
                     }
                 });
         }
+        let source_layout = if self.prefs.studio_mode {
+            split_layout.reserving_center(ctx.available_rect().width())
+        } else {
+            split_layout
+        };
         let actual_source_rect = if self.workspace == WorkspaceMode::Split {
-            Some(show_split_source_panel(ctx, split_layout, |ui| {
+            Some(show_split_source_panel(ctx, source_layout, |ui| {
                 self.show_source_editor(ui);
             }))
         } else {
@@ -2386,6 +2432,73 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn b43_after_dock_source_budget_reserves_live_canvas() {
+        for width in [850.0_f32, 1000.0, 1366.0, 1920.0] {
+            let studio = studio_ui::StudioLayout::for_width(width);
+            let remaining = width - studio.tool_rail_width - studio.inspector_width;
+            let layout = SplitPanelLayout::for_width(width).reserving_center(remaining);
+            assert!(
+                remaining - layout.source_max >= 260.0,
+                "source stole central canvas at width {width}"
+            );
+            assert!(layout.source_default <= layout.source_max);
+            assert!(layout.source_default >= 240.0);
+            assert!(layout.source_max <= 600.0);
+        }
+        let fallback = SplitPanelLayout::for_width(850.0).reserving_center(f32::NAN);
+        assert!(fallback.source_max.is_finite());
+    }
+
+    #[test]
+    fn b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences() {
+        let original = format!(
+            "% {}\r\n\\myOpaque{{не трогать}}\r\n",
+            "ОченьДлинныйРусскийКомментарий_".repeat(30)
+        );
+        let mut rows = Vec::new();
+        for soft_wrap in [false, true] {
+            let ctx = egui::Context::default();
+            let mut source = original.clone();
+            let mut reset = false;
+            let mut observed_rows = 0;
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO, egui::vec2(850.0, 620.0),
+                    )),
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::SidePanel::left("b43-source")
+                        .exact_width(290.0)
+                        .show(ctx, |ui| {
+                            let output = show_source_text_edit(
+                                ui, &mut source, &mut reset, soft_wrap,
+                            );
+                            observed_rows = output.galley.rows.len();
+                        });
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        assert!(ui.available_width() > 260.0);
+                    });
+                },
+            );
+            assert_eq!(source, original, "wrapping must never edit TeX bytes");
+            assert!(!reset, "visual wrapping cannot fence native undo");
+            rows.push(observed_rows);
+        }
+        assert!(
+            rows[1] > rows[0],
+            "wrapping should create more display rows: {rows:?}"
+        );
+        let mut prefs = UiPreferences::default();
+        assert!(prefs.source_soft_wrap);
+        prefs.source_soft_wrap = false;
+        let json = serde_json::to_string(&prefs).unwrap();
+        let restored: UiPreferences = serde_json::from_str(&json).unwrap();
+        assert!(!restored.source_soft_wrap, "user preference must persist");
+    }
 
     #[test]
     fn n3_help_evidence_rows_do_not_promote_unknown_and_separate_all_five_states() {
@@ -2495,7 +2608,7 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset);
+                        let output = show_source_text_edit(ui, source, reset, false);
                         tikz_canvas::observe_source_text_edit(&output.response, session, source);
                         if focus {
                             output.response.request_focus();
@@ -3617,7 +3730,7 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset);
+                        let output = show_source_text_edit(ui, source, reset, false);
                         if focus_editor {
                             output.response.request_focus();
                         }
@@ -3812,7 +3925,7 @@ mod split_layout_tests {
                         if modal {
                             ui.disable();
                         }
-                        let output = show_source_text_edit(ui, source, reset);
+                        let output = show_source_text_edit(ui, source, reset, false);
                         if focus_editor {
                             output.response.request_focus();
                         }

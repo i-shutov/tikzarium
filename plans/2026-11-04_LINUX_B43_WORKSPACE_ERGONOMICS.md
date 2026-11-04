@@ -1,0 +1,18 @@
+# Linux B43 — responsive source, canvas and inspector
+
+Decision 2026-11-04: Linux desktop x86_64 full release first, shared Rust/egui and external XeLaTeX/MiKTeX paths for Windows 10 and macOS ARM maintained. N4 deferred.
+
+## Product defect and change
+
+The accepted #99 screenshot improved F1 but long source lines and full absolute path still crowded the narrow three-panel workbench. The previous split maximum estimated the right dock but not the *actual* 62pt icon rail. At a minimum 850pt window, resizable code could steal central canvas width.
+
+- After laying out right inspector and left tool rail, recalculate the resizable source panel's maximum from live available space, reserving 260 logical points for central canvas when the viewport allows. Preserve manual resize and minimum 240pt source. Below native minimum best effort; no fraudulent guarantee.
+- Source header short filename, full path hover and visible dirty indication.
+- Persisted source display-only wrap ON by default, explicit ↵ Перенос checkbox in the editor; OFF restores horizontal scrolling. TextEdit galley changes, not .tex bytes, user macros, CRLF, revision, F1 caret offsets, Undo or PDF.
+- Keep C catalogue, six native gestures, libraries and independent statuses, external no-fallback XeLaTeX and cross-platform paths unchanged.
+
+## Acceptance (NOT YET RUN on this candidate)
+
+Rust 1.91 locked fmt/clippy/test Linux+Windows+macOS; actual egui rows and width at 850/1000/1366/1920; save/reopen/Undo/unknown source; genuine Linux/X11 1366×768 screenshots both wrap modes, path-on-hover, F1 on a long line; exact authored source and external XeLaTeX PDF glyph/font and SHA artifacts; if possible a 1920×1080 screen. Separate native Linux release packaging and Wayland remain NOT_RUN.
+
+No merge without exact-head evidence, real visual evaluation, and expected_head_sha. Keep all fixes in the same substantive integration PR. 
