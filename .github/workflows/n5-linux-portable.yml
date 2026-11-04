@@ -125,6 +125,13 @@ jobs:
             test -s "$EVIDENCE/visible-window.txt"
             window_id="$(head -n1 "$EVIDENCE/visible-window.txt")"
             xdotool getwindowgeometry --shell "$window_id" > "$EVIDENCE/window-geometry.txt"
+            # Original N5 screenshot was a visible but clipped 1366x768 client
+            # at (2,40) on a 1366x768 screen. Reject inaccessible bottom UI.
+            source "$EVIDENCE/window-geometry.txt"
+            test "$X" -ge 0 && test "$Y" -ge 0
+            test "$WIDTH" -ge 850 && test "$HEIGHT" -ge 560
+            test "$((X + WIDTH))" -le 1366
+            test "$((Y + HEIGHT))" -le 768
             sleep 2
             import -window root "$EVIDENCE/linux-n5-packaged-1366x768.png"
             test -s "$EVIDENCE/linux-n5-packaged-1366x768.png"

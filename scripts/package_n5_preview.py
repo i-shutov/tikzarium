@@ -102,7 +102,7 @@ def readme(platform: str, sha: str, ci_url: str) -> bytes:
                   " пользователем внешний XeLaTeX.\n" if platform == LINUX else "")
     return f"""# TikZarium — N5 native portable PREVIEW (не релиз)
 
-Git main: {sha}. Оригинальные release-бинарники: {ci_url}.
+Исходный Git commit SHA: {sha}. Оригинальные release-бинарники: {ci_url}.
 Комплект **не является подписанным установщиком**, и статус Linux packaged desktop/Windows 10/M1/M4 GUI — **NOT_RUN**.
 
 ## Требования

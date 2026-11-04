@@ -24,3 +24,10 @@ Date: 2026-11-05. Priority Linux-first. Existing B43 baseline was merged as squa
 | Win10/Mac physical GUI | NOT_RUN |
 
 Do not infer any PASS before actual jobs/artifact review. A merely green archive test cannot pass physical release. Next update must record run ids, completed job conclusions, original PNG dimensions and pixels, extracted runtime stdout, SHA256 hashes, and any failures with exact step names.
+
+## Original artifact independent audit and desktop-fit issue (2026-11-05)
+
+- Four triggered workflows for exact head `f0a305b54d722cf4192c92b6d1a8efd223f20b0e`: N5 41930413745, D QA 41930413451, Rust CI 41930413503, fonts 41930413579 — all SUCCESS. I61 did not trigger for packaging-only paths: **not an exact-head PASS** for that version.
+- Original GitHub artifact 13371821446: archive.sha256 PASS, native-evidence.sha256 PASS, extracted MANIFEST.sha256 7/7 PASS. Real release ELF64 x86_64 PIE executables, GUI original PNG 1366×768, native CLI verified by hosted job. 0-byte launch log is normal for successful quiet start.
+- **Real UX defect discovered despite GREEN CI:** X=2,Y=40,WIDTH=1366,HEIGHT=768 on 1366×768 Xvfb. Client overflow of 40px clips the bottom status bar; initial .with_inner_size(1366,768) did not reserve titlebar/window-manager chrome.
+- Corrected default client to 1180×680, added test and fail-closed N5 package X11 geometry assertions. Updated independent I61 source tree lease to permit new source while still demanding real N1/N2/N3 GUI/XeLaTeX acceptance. New HEAD tests and original screenshot review **PENDING**. Physical target Linux/HiDPI/dialogs/Wayland still NOT_RUN. README previously called PR source commit “main”; corrected to source commit SHA.

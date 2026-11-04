@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — N5 real Linux portable viewport-fit regression (candidate)
+
+- Independently audited original N5 artifact and exact-head four successful workflows. Client X11 geometry (2,40;1366×768) overflowed 1366×768 compact screen by 40px, clipping the bottom status bar despite successful workflow.
+- Start production viewport at 1180×680 logical points, preserve resize/maximize and 850×560 minimum, add a Rust desktop-chrome test and a real N5 xdotool bounds gate. Refresh fail-closed I61 app-tree SHA in workflow and Python.
+- N5 Russian README now distinguishes PR source SHA from merged main. New exact-head Rust/GUI, original screenshot and PDF verification remain PENDING; physical Linux/DPI/Wayland NOT_RUN.
+
+
 ## 2026-11-05 — Linux N5 native portable bundle and extracted-X11 launch (candidate)
 
 - B43 PR #100 squash-merged on main `26abc5461bba06d610394080ffe23bbbf92cc6bb` after **seven** exact PR HEAD green workflows and original X11 PNG/source/PDF/font/SHA review. Main push acceptance must be tracked separately.

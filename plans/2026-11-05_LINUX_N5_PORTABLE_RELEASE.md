@@ -28,3 +28,7 @@ A `Tikzarium-linux-x86_64-preview.tar.gz` made from **real locked release Rust b
 - **PR code staged:** Linux packager + tests + portable-run workflow + README and plan. Implementation is not CI acceptance.
 - **Exact-head CI:** pending until new PR submits, jobs complete and original artifacts are inspected. Use GH run/CI URLs, SHA and digest, don't repeat an unrelated old PASS.
 - **Postmerge:** required separately; Windows Server secondary trusted-main QA and Wayland/physical Windows/Mac are not Linux release gates.
+
+## Compact desktop real X11 correction — 2026-11-05
+
+Original artifact 13371821446 from N5 successful run [41930413745](https://github.com/i-shutov/tikzarium/actions/runs/41930413745) on PR head `f0a305b54d722cf4192c92b6d1a8efd223f20b0e` was independently downloaded and audited. ZIP native-evidence/archive checksums and all seven package manifest entries passed. **But** its actual xdotool client geometry was X=2,Y=40,WIDTH=1366,HEIGHT=768, on a 1366×768 screen. The bottom 40px of the application was outside the viewport, not a fully usable compact-screen app. Old SUCCESS only established visible startup, not complete ergonomics. Fix production default 1180×680pt (resizable; min 850×560) with a source-level test, and make the hosted N5 workflow reject any off-screen client via actual X11 geometry. I61 YAML/Python app-source SHA lease is updated atomically. New HEAD exact GUI/CI and screenshot review PENDING. Physical Linux display/DPI/native dialogs/Wayland still NOT_RUN. Existing Windows/Mac/TeX paths unchanged.
