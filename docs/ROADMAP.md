@@ -1,5 +1,10 @@
 # Roadmap — TikZ-native visual authoring
 
+## Current decision: Linux-first complete editor (2026-11-04)
+
+**Linux x86_64 is the FIRST FULL RELEASE; Windows 10/MiKTeX and macOS ARM/XeLaTeX remain cross-platform architecture/hosted CI targets but physical GUI acceptance and release follow later.** The first release is gated by actual usable Linux GUI/ergonomics, not by physical Windows Server/Windows 10 tests or signed macOS installers. Iterate compact workspace, tool groups/icons, code/preview proportions, legible Russian F1/property panels, source editing, native dialogs/keyboard, all six gestures, library states and external XeLaTeX PDF using real X11 screenshot/artifact evidence. Older dated Windows-first or multi-platform N5 entries below are historical snapshots. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+
+
 Owner-corrected scope, 2026-10-31. Replaces the earlier S0–S7 universal-CAD plan and its unsupported calendar forecast. Existing useful runtime/GUI/font/QA work is retained.
 
 **Product loop:** TikZ primitive or library tool → properties and explanations → ordinary editable code shown beside the figure → independently installed XeLaTeX → exact PDF. Windows uses external MiKTeX; macOS ARM uses the user's external XeLaTeX. No new TeX interpreter, general geometry solver or PDF decompiler is on the critical path.
@@ -12,7 +17,7 @@ Owner-corrected scope, 2026-10-31. Replaces the earlier S0–S7 universal-CAD pl
 | N2 — Connected libraries | Project library panel; positioning/calc/arrows.meta/fit/shapes.geometric/shapes.misc catalogue and source adapters; explicit preamble changes; installed/loaded/compatible/tool/help states | Connect and disconnect a library with visible diff/undo; correct tool state; raw code remains usable without an adapter |
 | N3 — Full authoring assistance | F1/hover, parameter explanations, syntax hints, completion, examples and manual navigation from the same catalogue used by tools | Every exposed control has verified semantic help, requirement and example; no invented defaults; works offline for shipped help |
 | N4 — Domain tool packs | PGFPlots axes/series, CircuitikZ components, tikz-cd arrows/grids; then geometry/graphs/Petri/trees/physics/chemistry packages using their native commands | Each pack has a concrete end-to-end drawing workflow, generated-source tests and real XeLaTeX fixtures, with explicit limits |
-| N5 — Everyday-use acceptance | Compact layout, typography/themes, project recovery, safe exports, package diagnostics, packaging, R4 regression where licensed | Physical Win10+MiKTeX and Mac ARM smoke, exact-SHA evidence, no critical defects; release scope explicitly listed |
+| N5 — Everyday-use acceptance | Compact Linux desktop layout, typography/themes, project recovery, safe exports, package diagnostics, native packaging, R4 regression where licensed | Real Linux x86_64 X11 source-to-PDF and usability/ergonomics acceptance, original exact-SHA evidence, reproducible native Linux artifact, no critical defects; Windows 10/Mac ARM follow-on |
 
 N1 includes basic help from the first tool; N3 deepens assistance, it is not permission to postpone explanations. Native prerequisite work and QA proceed in parallel with N1. Broader package adapters need not wait for a generic WASM SDK. Version labels are assigned to accepted functional slices, not used to delay basic authoring until a speculative architecture is complete.
 

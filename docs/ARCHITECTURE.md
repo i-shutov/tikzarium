@@ -1,5 +1,8 @@
 # Architecture — TikZ-native authoring, external XeLaTeX
 
+**Release order (2026-11-04):** first full Linux x86_64 desktop GUI/ergonomics release with user-installed external XeLaTeX; Windows 10/MiKTeX and macOS ARM/external XeLaTeX are preserved as first-class **architectural and hosted CI** targets, with physical GUI qualification in later releases. The diagram below is an architectural illustration, not a first-release platform gate. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+
+
 Owner correction: 2026-10-31. Supersedes the universal CAD/geometry-engine dependency chain. This is the target architecture, not a claim that all authoring tools are already implemented.
 
 ## 1. Responsibilities
@@ -11,7 +14,7 @@ Project: ordinary .tex/.tikz + preamble + included resources
                          ↓ native command generation
                   Existing source document
                          ↓ external build service
- Windows: separately installed MiKTeX/XeLaTeX | macOS: external XeLaTeX
+ Linux: external XeLaTeX | Windows: MiKTeX | macOS: external XeLaTeX
                          ↓
              Exact PDF → preview / export / diagnostics
 ```

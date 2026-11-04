@@ -1,5 +1,12 @@
 # Changelog
 
+## Release-plan decision — 2026-11-04: first Linux full application, cross-platform code maintained
+
+- Owner moved first **complete, ergonomically accepted desktop release** to Linux x86_64. Native Rust/egui architecture, external XeLaTeX/MiKTeX selection, source/Undo/CRLF/opaque safety and single-C Russian help remain shared across Linux, Windows and macOS from day one.
+- Physical Windows10/MiKTeX and Mac ARM/XeLaTeX GUI qualification and their release packages follow the Linux release; hosted cross-platform CI remains mandatory. Registered Windows Server runner is secondary QA only. N4 domain packs not first-release blockers.
+- Adds `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md` with genuine Linux/X11 GUI, ergonomic iteration and native Linux packaging acceptance gates. **Documentation/release-priority change only; not a product GUI PASS.** Existing PR #98 code/CI must be checked independently.
+
+
 ## Unreleased — N3 source-caret parameter F1 + D06 truthful Windows QA (candidate)
 
 - Resolve 27 exact literal placeholders across six C-catalogue TikZ command templates under the actual editable .tex TextEdit caret; node mode remains inspector-only. Inherit Russian syntax, parameter type/units/choices, verified editor preset vs TikZ default UNKNOWN, effect, example, manual anchor and package provenance from the SAME C registry; five independent availability signals remain visible.

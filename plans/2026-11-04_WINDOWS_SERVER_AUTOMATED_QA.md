@@ -1,5 +1,8 @@
 # N5 Windows Server automated QA — first Windows-first release lane
 
+> **Historical infrastructure plan; superseded platform priority (2026-11-04).** The owner's **later** decision is a full **Linux-first** release, with code cross-platform from day one. This file remains a valid *secondary Windows Server QA/runbook*, not a release gate for Linux. It does not establish physical Windows 10 acceptance. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+
+
 Decision: 2026-11-04, owner-directed. Main delivery is native Windows x64, externally user-installed MiKTeX, editable .tex beside native egui figure and shared offline Russian C help. Do **not** claim physical Windows 10 certification from Windows Server 2025. macOS ARM/Linux physical qualification and release packaging are deferred; cross-platform source/hosted regression must remain healthy. N4 domain packs are off the first-release critical path.
 
 ## Dedicated runner / separation

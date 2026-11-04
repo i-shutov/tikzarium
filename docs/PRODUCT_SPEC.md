@@ -1,5 +1,10 @@
 # TikZarium — product requirements, owner-corrected scope
 
+## Current platform priority (owner, 2026-11-04)
+
+**First full release: Linux desktop x86_64**, external independently installed XeLaTeX (TeX Live reference), real X11 GUI event/screenshot acceptance, with **iterative ergonomics/usability approval** before shipment. Preserve original cross-platform Rust/egui design, Windows 10 x64 external MiKTeX and macOS ARM external XeLaTeX compatibility and hosted tests from the outset; their **physical platform qualification and separate release packaging come after Linux**. Do not construe the older "Required environment" list as requiring all three physical platforms before the first Linux release. The editor must be usable at compact 1366×768, with balanced canvas/code/help, readable Cyrillic, grouped icon palettes, correct F1, safe editing, Undo, Save/Open, native dialogs and PDF. Source safety and external-engine constraints remain unchanged. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+
+
 Date: 2026-10-31. This replaces the earlier general graphics/CAD interpretation, not the implemented XeLaTeX workbench.
 
 ## Product

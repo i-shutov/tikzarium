@@ -1,5 +1,10 @@
 # TikZarium engineering instructions
 
+## Latest owner decision — 2026-11-04 Linux-first release; cross-platform from day one
+
+**This is the current platform release priority and supersedes all Windows-first release sequencing below.** Deliver the first **complete, ergonomic Linux desktop** release, using real native Linux/X11 GUI source-to-XeLaTeX evidence and repeated visual usability review. Preserve Rust/egui cross-platform source architecture, hosted Windows/macOS build tests, external user MiKTeX on Windows 10 and user XeLaTeX on macOS ARM, but defer their physical GUI qualification and separate releases until after Linux. No Linux-only rewrite or deletion of Windows/Mac paths. Maintain the five independent package/tool/help statuses, minimal revision-checked source patches, CRLF/opaque preservation and strict external engine safety. Existing Windows Server 2025 runner is secondary QA and **not** a Linux release blocker. N4 packs remain deferred. **Authoritative delivery plan:** `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`. Earlier dated platform-priority paragraphs remain historical descriptions, not the current release target.
+
+
 ## Owner decision, 2026-10-31 — overrides the earlier CAD roadmap
 
 TikZarium is a **TikZ-native visual authoring editor**, not Photoshop/Corel, a general-purpose CAD engine or a replacement for TeX. Tools create/edit ordinary TikZ/PGF and selected-library commands; the installed XeLaTeX performs typesetting, expression evaluation and final rendering.
