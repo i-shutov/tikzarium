@@ -172,7 +172,7 @@ pub fn parameter_caret(
         .find('\n')
         .map_or(source.len(), |i| byte + i);
     let raw = source.get(line_start..line_end)?.trim_end_matches('\r');
-    let line = raw.trim_start_matches(|c| c == ' ' || c == '\t');
+    let line = raw.trim_start_matches([' ', '\t']);
     let leading = raw.len() - line.len();
     if line.contains('%')
         || !(line.starts_with(r"\draw ")
