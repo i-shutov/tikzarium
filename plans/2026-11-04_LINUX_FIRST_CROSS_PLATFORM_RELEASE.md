@@ -30,6 +30,8 @@ Iterate using *original screenshots from the running application*, never image-o
 
 **L1 — Finish current N3 vertical.** Reuse the existing substantial PR #98; don't fork new B/QA micro-PRs. First resolve exact-head failing checks and assess original real X11 Source/F1 screenshots, CRLF/Undo/PDF; don't merge just because unit tests passed.
 
+**Exact-head regression/fix candidate, 2026-11-04:** run 41833261353 isolated real Ctrl+O key handling as FAIL while visible Open/reopen, source byte safety, dirty-cancel and real source-caret F1 passed; implement event-local modifier resolution for cross-platform global file shortcuts and require an independent real X11 Ctrl+O rerun at the exact new app tree. Do not merge while red or hide a missing key path behind toolbar recovery.
+
 **L2 — GUI usability cycles.** Review actual Linux workspace, tool palettes, source/preview balance, properties, contextual Help, library lifecycle and editing dialogs; implement coherent interface revisions with source and event tests, not cosmetic CI churn. Publish versioned screenshot atlases and annotated issues showing what changed, what remains wrong, and actual click/keyboard task results.
 
 **L3 — Complete Linux vertical acceptance.** On an **exact source HEAD** run real X11 actions for all six tools → editable `.tex` → F1/inspector/Connect/Disconnect → Undo/Save/Open/CRLF/opaque → external XeLaTeX → original PDF/Unicode/all fonts/raster + PNG/.tex/log/SHA. Separately inspect whether an actual packaged Linux desktop launch works; do not equate hosted X11 with all distro/Wayland support.

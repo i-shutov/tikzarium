@@ -90,6 +90,24 @@ pub fn editor_command(key: Key, modifiers: Modifiers) -> Option<EditorCommand> {
     }
 }
 
+/// Find file commands from the key-down event's OWN modifiers, not the
+/// end-of-frame modifier state. On real X11 a fast Ctrl+O press/release can
+/// arrive in a single frame: `input.key_pressed(O)` is true but
+/// `input.modifiers.command` is already false after Ctrl is released.
+/// Preserve Cmd on macOS via egui's `modifiers.command` abstraction.
+#[must_use]
+pub fn editor_command_from_events(events: &[eframe::egui::Event]) -> Option<EditorCommand> {
+    events.iter().find_map(|event| match event {
+        eframe::egui::Event::Key {
+            key,
+            pressed: true,
+            modifiers,
+            ..
+        } => editor_command(*key, *modifiers),
+        _ => None,
+    })
+}
+
 /// Only navigate an error when the logged source can be identified as the open file.
 /// Relative TeX paths are resolved against the current document directory.
 /// For an unknown file we deliberately refuse to jump to a possibly wrong line.
@@ -273,6 +291,67 @@ mod tests {
         );
         assert_eq!(editor_command(Key::O, save_as), None);
         assert_eq!(editor_command(Key::S, Modifiers::default()), None);
+    }
+
+    #[test]
+    fn real_x11_rapid_ctrl_o_uses_keydown_modifiers_not_final_frame_state() {
+        use eframe::egui::Event;
+        let command = Modifiers {
+            command: true,
+            ctrl: true,
+            ..Default::default()
+        };
+        let key_event = |key, pressed, modifiers| Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers,
+        };
+        // X11 may batch both edges. The global frame's final modifiers are
+        // default, but the O key-down happened while Ctrl was actually held.
+        let events = vec![
+            key_event(Key::O, true, command),
+            key_event(Key::O, false, Modifiers::default()),
+        ];
+        assert_eq!(
+            editor_command_from_events(&events),
+            Some(EditorCommand::Open)
+        );
+        assert!(!Modifiers::default().command);
+        // Never interpret a naked 'o', key-up only, or Shift+O as Open.
+        assert_eq!(
+            editor_command_from_events(&[key_event(Key::O, true, Modifiers::default())]),
+            None
+        );
+        assert_eq!(
+            editor_command_from_events(&[key_event(Key::O, false, command)]),
+            None
+        );
+        assert_eq!(
+            editor_command_from_events(&[key_event(
+                Key::O,
+                true,
+                Modifiers { shift: true, ..command }
+            )]),
+            None
+        );
+        assert_eq!(
+            editor_command_from_events(&[key_event(Key::S, true, command)]),
+            Some(EditorCommand::Save)
+        );
+        assert_eq!(
+            editor_command_from_events(&[key_event(
+                Key::S,
+                true,
+                Modifiers { shift: true, ..command }
+            )]),
+            Some(EditorCommand::SaveAs)
+        );
+        assert_eq!(
+            editor_command_from_events(&[key_event(Key::Enter, true, command)]),
+            Some(EditorCommand::Build)
+        );
     }
 
     #[test]

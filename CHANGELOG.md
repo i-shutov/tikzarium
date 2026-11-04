@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-04 — Native Ctrl+O fast-release repair and real N3 caret F1 on Linux/X11 (candidate)
+
+- Real I61 [41833261353](https://github.com/i-shutov/tikzarium/actions/runs/41833261353) independently confirmed: all six GUI pointer gestures, external XeLaTeX/Unicode and embedded PDF fonts, inspector Apply+Undo, two-file Open/CRLF, dirty Open Cancel, and **real F1 help on circle radius under the actual editable TextEdit caret**. Ctrl+O alone failed to reload the externally changed file; the visible Open toolbar did reload it and the full N3/F1 test then completed. Overall job **FAIL correctly** because the keyboard shortcut is a release requirement. Original artifact ID `13324366740`.
+- Correct global app file shortcuts to read **key-down event-local modifiers** instead of relying on end-of-frame `input.modifiers`, which can lose a fast Ctrl+O release under X11. Add Rust regression for pressed/released within one frame, no-command/Shift negative and Save/SaveAs/Build; preserve macOS Command abstraction. Re-pin the SAME I61 app tree in workflow and script. This production fix's exact-head real GUI/CI PASS is **PENDING**; no Windows10/Mac physical claims.
+
 ## 2026-11-04 — Linux real-GUI exact-head failure localization (PR #98, in progress)
 
 - The exact-head I61 Linux/X11 run `41825209680` passed genuine six pointer tools, Save, XeLaTeX PDF/embedded fonts, inspector Apply/Undo and two-file CRLF Open/Save, but **FAILED** in real Ctrl+O external-file reload at `Reopened GUI document cannot be edited and saved`. The original `36-second-crlf-saved.png` and `37-second-reopened.png` show no visible reload; native keyboard acceptance is **NOT PASSED**. D QA, CLI/TeX, Rust and hosted cross-platform checks passed on the same head; no false blanket PASS.

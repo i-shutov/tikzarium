@@ -23,8 +23,8 @@ mod tikz_libraries;
 mod ui_state;
 mod ui_theme;
 use ui_state::{
-    BottomView, EditorCommand, WorkspaceMode, diagnostic_targets_current_file, editor_command,
-    line_start_char_index, preview_is_stale, scaled_zoom,
+    BottomView, EditorCommand, WorkspaceMode, diagnostic_targets_current_file,
+    editor_command_from_events, line_start_char_index, preview_is_stale, scaled_zoom,
 };
 
 use font_proof::{FontProofResult, spawn_font_proof};
@@ -1984,17 +1984,10 @@ impl eframe::App for TikzariumApp {
                 self.reset_source_editor_undo_history = true;
             }
         }
-        let shortcut = ctx.input(|input| {
-            if input.key_pressed(egui::Key::S) {
-                editor_command(egui::Key::S, input.modifiers)
-            } else if input.key_pressed(egui::Key::O) {
-                editor_command(egui::Key::O, input.modifiers)
-            } else if input.key_pressed(egui::Key::Enter) {
-                editor_command(egui::Key::Enter, input.modifiers)
-            } else {
-                None
-            }
-        });
+        // Read modifiers from EACH key-down event. A real, short X11 Ctrl+O
+        // press and release may be coalesced into a single frame, leaving
+        // input.modifiers.command=false even though the O event was Ctrl+O.
+        let shortcut = ctx.input(|input| editor_command_from_events(&input.events));
         // A modal or running XeLaTeX run must not change the active file mid-build.
         if self.receiver.is_none() && self.pending_open.is_none() {
             match shortcut {
