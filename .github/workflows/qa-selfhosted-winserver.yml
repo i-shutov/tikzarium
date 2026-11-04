@@ -33,11 +33,43 @@ jobs:
     runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
     timeout-minutes: 55
     steps:
+      # On a new Windows Server, Git for Windows can be installed but absent
+      # from the PATH inherited by the long-running runner process.
+      # Fail with a precise prerequisite diagnosis; never install software here.
+      - name: Preflight external Git for Windows
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $git = Get-Command git.exe -ErrorAction SilentlyContinue
+          if (-not $git) {
+            $candidatePaths = @(
+              "$env:ProgramFiles\Git\cmd\git.exe",
+              "${env:ProgramFiles(x86)}\Git\cmd\git.exe"
+            )
+            foreach ($candidate in $candidatePaths) {
+              if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                $dir = Split-Path -Parent $candidate
+                $env:PATH = "$dir;$env:PATH"
+                $utf8 = New-Object System.Text.UTF8Encoding($false)
+                [System.IO.File]::AppendAllText($env:GITHUB_PATH, "$dir`n", $utf8)
+                $git = Get-Command git.exe -ErrorAction SilentlyContinue
+                break
+              }
+            }
+          }
+          if (-not $git) {
+            throw 'Git for Windows is not installed or visible to runner; install Git for Windows 2.18+ and restart run.cmd. No fallback archive can satisfy exact git SHA gate.'
+          }
+          & git.exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'Git for Windows executable failed' }
+          if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+            Write-Host 'PowerShell 7 (pwsh) is not installed; Windows PowerShell 5.1 is used by this workflow.'
+          }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Verify expected main SHA before any user-server execution
-        shell: pwsh
+        shell: powershell
         env:
           EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_main_sha || github.sha }}
         run: |
@@ -46,7 +78,7 @@ jobs:
             throw 'Exact main SHA lease mismatch; refuse to run on user server'
           }
       - name: User MiKTeX offline proof and locked Rust test
-        shell: pwsh
+        shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -CheckRust
       - name: Upload honest evidence including failure
