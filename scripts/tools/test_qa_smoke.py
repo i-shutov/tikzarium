@@ -34,10 +34,14 @@ class FixtureHarnessTests(unittest.TestCase):
             src.write_text("Unicode", encoding="utf-8")
             policy = EnginePolicy("MiKTeX", "MiKTeX-XeTeX 25.12",
                                   ("--disable-installer",))
-            with patch("qa_smoke.shutil.which", return_value="xelatex"), patch(
-                "qa_smoke.probe_engine_policy", return_value=policy
-            ), patch("qa_smoke.command",
-                     return_value=CompletedProcess(["xelatex"], 1, "", "missing")) as compile:
+            # The hosted MiKTeX setup exports a real absolute XeLaTeX path.
+            # Isolate that environment input: this is a mock, not a real build.
+            with patch.dict("qa_smoke.os.environ", {"TIKZARIUM_XELATEX": "xelatex"}), patch(
+                "qa_smoke.shutil.which", return_value="xelatex"
+            ), patch("qa_smoke.probe_engine_policy", return_value=policy), patch(
+                "qa_smoke.command",
+                return_value=CompletedProcess(["xelatex"], 1, "", "missing")
+            ) as compile:
                 passed, report = check_missing_glyphs(src, root, "font")
             self.assertFalse(passed)  # no PDF/log from mocked TeX
             self.assertEqual(report["glyph_engine_distribution"], "MiKTeX")
