@@ -2578,9 +2578,20 @@ mod split_layout_tests {
                     egui::SidePanel::left("b43-source")
                         .exact_width(290.0)
                         .show(ctx, |ui| {
-                            let output =
-                                show_source_text_edit(ui, &mut source, &mut reset, soft_wrap);
-                            observed_rows = output.galley.rows.len();
+                            // Mirror the real source pane. Without this ScrollArea,
+                            // an unwrapped TeX line expands the *test* SidePanel
+                            // despite exact_width, stealing width from the canvas.
+                            egui::ScrollArea::new([!soft_wrap, true])
+                                .auto_shrink([false, false])
+                                .show(ui, |ui| {
+                                    let output = show_source_text_edit(
+                                        ui,
+                                        &mut source,
+                                        &mut reset,
+                                        soft_wrap,
+                                    );
+                                    observed_rows = output.galley.rows.len();
+                                });
                         });
                     egui::CentralPanel::default().show(ctx, |ui| {
                         assert!(ui.available_width() > 260.0);
