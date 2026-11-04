@@ -1,0 +1,9 @@
+# Приёмка безопасности и источников: N3/D06, 2026-11-04
+
+Свежий `main` перед веткой: `4d3c580eedc3f8f1d1522bd9cafdd568109f85fa`. Текущий код C определяет шестёрку шаблонов и 27 реально печатаемых полей; дополнительная настройка mode у node остаётся inspector-only. Новый распознаватель работает только с буквальной исходной строкой, никогда не утверждает, что произвольный макрос распознан, и не редактирует исходник. Не подменять отсутствие помощи статусом успешно разобранного TeX.
+
+D06 оригинальный job [41618563210](https://github.com/i-shutov/tikzarium/actions/runs/41618563210) / [125858081631](https://github.com/i-shutov/tikzarium/actions/runs/41618563210/job/125858081631): `test_direct_glyph_audit_includes_miktex_offline_flag ... FAIL` в `test_qa_smoke.py` при реально выбранном MiKTeX absolute path в `TIKZARIUM_XELATEX`, но step SUCCESS, поскольку в многострочном PowerShell следующий Python перезаписывал `$LASTEXITCODE`. Тестовый mock должен явно задать `TIKZARIUM_XELATEX=xelatex`; проверка `$LASTEXITCODE` должна идти после каждого Python, не только последнего. Нельзя объявлять D06 PASS по заголовку workflow до оригинальных logs/artifacts.
+
+I61 hosted Linux/X11 — реальный egui GUI, но это не Windows Server и не Windows 10. Его скрипт исторически имел source-tree lease `c8dca09e`, новой ветке соответствует `d14c0277f4274723f851220d06ff2aa172f6317c`. Сценарий сохраняет уже принятые 6 native gestures, visual Undo, Open/Save/Cancel и XeLaTeX PDF, добавляет F1 на третьем пользовательском файле с `\draw (1cm,1cm) circle[radius=8mm];`. Новый кадр и читаемая русская справка требует независимого визуального контроля; сравнение dock-signature без просмотра содержимого недостаточно.
+
+Текущая запись — опубликованный кандидат в интеграционной ветке; **QA и настоящие GUI исходные артефакты NOT_RUN до завершения CI**, физическая Windows Server interactive GUI — NOT_RUN. Процессы MiKTeX, пакеты, FlowBridge runner не затрагивались.
