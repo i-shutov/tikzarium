@@ -1,6 +1,17 @@
-name: Manual user Windows Server MiKTeX QA (not Win10)
+name: Windows Server MiKTeX QA (trusted main + manual; not Win10)
 
+# Never run untrusted pull_request code on this persistent Windows Server.
+# Automatic runs originate only from code accepted into main.
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/qa-selfhosted-winserver.yml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "crates/**"
+      - "examples/**"
+      - "scripts/tools/qa_windows_server_user.ps1"
   workflow_dispatch:
     inputs:
       expected_main_sha:
@@ -11,26 +22,63 @@ on:
 permissions:
   contents: read
 
+# Serialize access to the same persistent machine; never cancel a running proof.
+concurrency:
+  group: tikzarium-trusted-winserver-main
+  cancel-in-progress: false
+
 jobs:
   user-windows-server:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
     timeout-minutes: 55
     steps:
+      # On a new Windows Server, Git for Windows can be installed but absent
+      # from the PATH inherited by the long-running runner process.
+      # Fail with a precise prerequisite diagnosis; never install software here.
+      - name: Preflight external Git for Windows
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $git = Get-Command git.exe -ErrorAction SilentlyContinue
+          if (-not $git) {
+            $candidatePaths = @(
+              "$env:ProgramFiles\Git\cmd\git.exe",
+              "${env:ProgramFiles(x86)}\Git\cmd\git.exe"
+            )
+            foreach ($candidate in $candidatePaths) {
+              if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+                $dir = Split-Path -Parent $candidate
+                $env:PATH = "$dir;$env:PATH"
+                $utf8 = [System.Text.UTF8Encoding]::new($false)
+                [System.IO.File]::AppendAllText($env:GITHUB_PATH, "$dir`n", $utf8)
+                $git = Get-Command git.exe -ErrorAction SilentlyContinue
+                break
+              }
+            }
+          }
+          if (-not $git) {
+            throw 'Git for Windows is not installed or visible to runner; install Git for Windows 2.18+ and restart run.cmd. No fallback archive can satisfy exact git SHA gate.'
+          }
+          & git.exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'Git for Windows executable failed' }
+          if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+            Write-Host 'PowerShell 7 (pwsh) is not installed; Windows PowerShell 5.1 is used by this workflow.'
+          }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Verify expected main SHA before any user-server execution
-        shell: pwsh
+        shell: powershell
         env:
-          EXPECTED_SHA: ${{ inputs.expected_main_sha }}
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_main_sha || github.sha }}
         run: |
           $actual = (git rev-parse HEAD).Trim()
           if ($actual -cne $env:EXPECTED_SHA -or $actual -cne '${{ github.sha }}') {
             throw 'Exact main SHA lease mismatch; refuse to run on user server'
           }
       - name: User MiKTeX offline proof and locked Rust test
-        shell: pwsh
+        shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -CheckRust
       - name: Upload honest evidence including failure

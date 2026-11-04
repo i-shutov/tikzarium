@@ -22,8 +22,21 @@ try {
   $engine=$env:TIKZARIUM_XELATEX
   if([string]::IsNullOrWhiteSpace($engine)){
    $cmd=Get-Command xelatex -ErrorAction SilentlyContinue
-   if(-not $cmd){throw 'External XeLaTeX missing; no fallback'}
-   $engine=$cmd.Source
+   if($cmd){$engine=$cmd.Source}
+   else {
+    # Administrator-installed MiKTeX may be present under Program Files
+    # but absent from the PATH inherited by an already-running runner.
+    # Never auto-install TeX or change machine-wide PATH.
+    $candidates=@(
+      (Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe'),
+      (Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\xelatex.exe')
+    )
+    $engine=@($candidates | Where-Object {Test-Path -LiteralPath $_ -PathType Leaf} | Select-Object -First 1)
+    if($engine.Count -gt 0){$engine=$engine[0]}else{$engine=$null}
+   }
+  }
+  if([string]::IsNullOrWhiteSpace($engine)){
+   throw 'External XeLaTeX unavailable to the runner account; check system MiKTeX Program Files installation and restart runner for PATH refresh'
   }
   if(-not (Test-Path -LiteralPath $engine -PathType Leaf)){throw 'Selected XeLaTeX does not exist'}
   $banner=(& $engine '--disable-installer' '--version' 2>&1 | Out-String)
@@ -33,9 +46,15 @@ try {
   $report.engine=$engine
   $report.version=(($banner -split '\r?\n') | Where-Object { $_ })[0]
   $miktex=Get-Command miktex -ErrorAction SilentlyContinue
-  if(-not $miktex){throw 'MiKTeX read-only inventory utility is missing'}
+  $miktexExe=if($miktex){$miktex.Source}else{$null}
+  if(-not $miktexExe){
+   # Prefer the inventory CLI alongside the already verified MiKTeX XeLaTeX.
+   $candidate=Join-Path (Split-Path -Parent $engine) 'miktex.exe'
+   if(Test-Path -LiteralPath $candidate -PathType Leaf){$miktexExe=$candidate}
+  }
+  if(-not $miktexExe){throw 'MiKTeX read-only inventory utility is missing from PATH and selected MiKTeX bin directory'}
   function Inventory([string]$snapshot) {
-   $rows=@(& $miktex.Source packages list --template '{id}|{isInstalled}' 2>$null)
+   $rows=@(& $miktexExe packages list --template '{id}|{isInstalled}' 2>$null)
    if($LASTEXITCODE -ne 0 -or $rows.Count -eq 0){throw 'MiKTeX inventory unavailable'}
    $items=@($rows | ForEach-Object {[string]$_} | Sort-Object)
    foreach($line in $items){
