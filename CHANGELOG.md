@@ -2,6 +2,8 @@
 
 ## 2026-11-04 — Native Ctrl+O fast-release repair and real N3 caret F1 on Linux/X11 (candidate)
 
+- Exact-head Rust fmt across Linux/macOS/Windows rejected two one-line `Modifiers { shift: true, ..command }` literals in the new event regression, with no other proven Rust failure. Corrected both to rustfmt canonical multiline syntax and re-pinned existing I61 actual app source tree accordingly; original F1 evidence preserved, exact-head revalidation still required.
+
 - Real I61 [41833261353](https://github.com/i-shutov/tikzarium/actions/runs/41833261353) independently confirmed: all six GUI pointer gestures, external XeLaTeX/Unicode and embedded PDF fonts, inspector Apply+Undo, two-file Open/CRLF, dirty Open Cancel, and **real F1 help on circle radius under the actual editable TextEdit caret**. Ctrl+O alone failed to reload the externally changed file; the visible Open toolbar did reload it and the full N3/F1 test then completed. Overall job **FAIL correctly** because the keyboard shortcut is a release requirement. Original artifact ID `13324366740`.
 - Correct global app file shortcuts to read **key-down event-local modifiers** instead of relying on end-of-frame `input.modifiers`, which can lose a fast Ctrl+O release under X11. Add Rust regression for pressed/released within one frame, no-command/Shift negative and Save/SaveAs/Build; preserve macOS Command abstraction. Re-pin the SAME I61 app tree in workflow and script. This production fix's exact-head real GUI/CI PASS is **PENDING**; no Windows10/Mac physical claims.
 

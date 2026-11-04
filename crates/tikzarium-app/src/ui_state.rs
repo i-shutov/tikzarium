@@ -332,7 +332,10 @@ mod tests {
             editor_command_from_events(&[key_event(
                 Key::O,
                 true,
-                Modifiers { shift: true, ..command }
+                Modifiers {
+                    shift: true,
+                    ..command
+                }
             )]),
             None
         );
@@ -344,7 +347,10 @@ mod tests {
             editor_command_from_events(&[key_event(
                 Key::S,
                 true,
-                Modifiers { shift: true, ..command }
+                Modifiers {
+                    shift: true,
+                    ..command
+                }
             )]),
             Some(EditorCommand::SaveAs)
         );
