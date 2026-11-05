@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-11-05 — Linux 1.0 R3 native PDF export no-clobber completeness (candidate)
+
+- Independent review of exact PR #105 head `1df36978`: hosted N5/D QA/Rust/I61 complete SUCCESS. Original N5 artifact 13390653515 ZIP sha256 `fa054edc1254766f878aadfae2a1b1706cf25182169478d3ce98191cc3fc977e`; R2 original X11 PNG+geometry SHA256SUMS 6/6 independently matched. At 200%/1920×1080 actual extracted release client (2,40;1886×1023) fits, unlike old clipped 1120px. Physical screen remains NOT_RUN.
+- R3 independent real pointer click on the extracted PR binary with no XDG portal confirmed the native Open menu exists, does not crash, and reports the missing portal with manual typed-path fallback. This is NOT native-dialog acceptance: no real picker was shown.
+- Fix a user-data flaw introduced by the first R3 candidate: direct create_new + write could leave a truncated, visible PDF on write failure. Stage the entire bytes into a same-directory temporary file, sync, then `persist_noclobber`; refuse existing targets and clean temporary files on errors. Add Unicode-name, no-overwrite, byte-integrity and invalid-parent Rust tests. Current new exact-head CI/PDF/X11 review PENDING; R3 real XDG picker, R4 physical desktop and R5 tag still gated.
+
+
+## 2026-11-05 — Linux R2/R3 exact rustfmt recovery (candidate)
+
+- GitHub hosted Rust fmt on prior HEAD failed before Rust tests: exact main.rs formatting diffs. Apply original 0.33/Rust 1.91 formatter suggestions to R2/R3 integration code and correct a CRLF fixture (one actual escaped CRLF rather than literal backslash characters). Source-tree lease refreshed; this changes no accepted N1/N2/R1 behavior. New exact-head CI and GUI source/PDF artifacts PENDING.
+
+
+## 2026-11-05 — Linux 1.0 R3 native system file picker candidate
+
+- Add explicit Open, Save As and PDF Export native file-picker commands to the File menu. On Linux use rfd's XDG desktop portal, with manual typed-path workflow retained for portal-less and offline X11. Do not silently install a portal or TeX. Protect dirty-Open with existing confirmation, reject native Save As overwrites of occupied unrelated TeX, preserve Unicode PathBuf, and export new PDFs atomically with create_new (no overwrite races). Source/PDF integrity unaffected.
+- R3 is **NOT PASS** until real Ubuntu/X11 desktop with XDG backend shows actual dialogs, Cancel, Unicode/Open/Save/export and safe existing-file rejection; hosted Rust tests do not count as this acceptance. R2 exact-head visual DPI, R4 desktop and R5 publication remain gated.
+
+
+## 2026-11-05 — Linux 1.0 R2 DPI-safe viewport candidate
+
+- R2 prior real packaged X11 200% failure: 1920×1080 client at y22 plus height1120 clipped 62px. Reduce immutable 560pt minimum height to 440pt, preserve DPI/font choices, and request monitor-relative inner size only when actual outer window is oversized. Do not affect source, PDF, external XeLaTeX or accepted R1.
+- Add Rust 1.0/1.25/2.0 bounds test and exact-head N5 extracted release X11 three-scale PNG/geometry/sha gate. All new code, native-screen screenshots, and source/PDF regressions PENDING until CI and independent review. Physical Linux still NOT_RUN. R3/R4/R5 open.
+
+
 ## 2026-11-05 — Linux 1.0 release freeze: native unsaved-close guard (candidate)
 
 - **Safety defect:** reproducible dirty TeX loss on normal packaged Linux/X11 WM close despite successful dirty-Open testing. Use egui root `close_requested`/`CancelClose` and a blocking Russian Save/Discard/Cancel modal; do not exit after rejected path, failed save or Cancel. Same safe validation as scratch Save; do not overwrite unrelated TeX or change existing source/Undo from showing the dialog.

@@ -185,12 +185,15 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn hung_first_page_renderer_is_killed_with_bounded_wall_time() {
-        let (_dir, tool, pdf) = fake_poppler("while :; do :; done");
+        // A sleeping child genuinely remains alive without competing for CPU
+        // with the renderer timeout watcher on hosted Linux CI.
+        let (_dir, tool, pdf) = fake_poppler("exec sleep 10");
         let started = Instant::now();
-        assert!(matches!(
-            render_first_page_with_limits(&tool, &pdf, Duration::from_millis(150), 100),
-            Err(PreviewError::Timeout(_))
-        ));
+        let result = render_first_page_with_limits(&tool, &pdf, Duration::from_millis(150), 100);
+        assert!(
+            matches!(result, Err(PreviewError::Timeout(_))),
+            "hung renderer must be killed on timeout; got {result:?}"
+        );
         assert!(started.elapsed() < Duration::from_secs(5));
     }
 }

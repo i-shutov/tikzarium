@@ -370,9 +370,46 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
         )
 }
 
+/// Stage the complete PDF on the destination filesystem before exposing the
+/// final filename. A failed write must not leave a corrupt user-visible PDF;
+/// persist_noclobber also refuses existing files and symlinks.
+fn write_new_pdf_without_overwrite(path: &Path, pdf: &[u8]) -> std::io::Result<()> {
+    let folder = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let mut staged = tempfile::NamedTempFile::new_in(folder)?;
+    std::io::Write::write_all(staged.as_file_mut(), pdf)?;
+    staged.as_file().sync_all()?;
+    staged
+        .persist_noclobber(path)
+        .map(|_| ())
+        .map_err(|error| error.error)
+}
+
+/// A native Save dialog can still select a symlink or already occupied name.
+/// Fail closed unless writing to the exact current document. Unlike displaying
+/// path strings, this keeps non-UTF-8 Linux path bytes intact.
+fn checked_native_save_destination(document: &Document, path: PathBuf) -> Result<PathBuf, String> {
+    if path.as_os_str().is_empty() {
+        return Err("Выберите имя TeX-файла".into());
+    }
+    let current = document
+        .path
+        .as_deref()
+        .is_some_and(|existing| same_existing_path(existing, &path));
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) if !current => Err(
+            "Файл уже существует: сохранение поверх чужого документа запрещено; выберите другое имя".into()
+        ),
+        Ok(_) => Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(path),
+        Err(error) => Err(format!("Ошибка проверки файла перед сохранением: {error}")),
+    }
+}
+
 /// A typed path is not explicit permission to overwrite another TeX file.
-/// Linux without a native Save As dialog must fail closed on occupied paths;
-/// the platform file dialog on Windows/macOS handles intentional replacement.
+/// Both typed input and native picks reject unintended target replacement.
 fn typed_save_destination(document: &Document, input: &str) -> Result<PathBuf, String> {
     if input.trim().is_empty() {
         return Err("Укажите путь для сохранения TeX-документа.".into());
@@ -634,6 +671,7 @@ struct TikzariumApp {
     pending_close_save_path: String,
     pending_close_validation_error: Option<String>,
     close_approved: bool,
+    viewport_fit_requested: Option<egui::Vec2>,
     prefs: UiPreferences,
     studio_group: Option<StudioGroup>,
     studio_palette_anchor: egui::Pos2,
@@ -655,6 +693,9 @@ struct TikzariumApp {
 enum StudioFileAction {
     OpenPath,
     SaveAs,
+    OpenPicker,
+    SavePicker,
+    ExportPicker,
 }
 
 struct StudioFileMenuResponse {
@@ -714,6 +755,30 @@ fn show_studio_file_menu(
                 .clicked()
             {
                 result.action = Some(StudioFileAction::SaveAs);
+                ui.close();
+            }
+            ui.separator();
+            // These are genuine platform dialogs, separate from the manual
+            // typed-path workflow retained for offline/portal-less X11 tests.
+            if ui
+                .add_enabled(ready, egui::Button::new("Выбрать файл…"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::OpenPicker);
+                ui.close();
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("Сохранить через диалог…"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::SavePicker);
+                ui.close();
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("Экспорт PDF через диалог…"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::ExportPicker);
                 ui.close();
             }
         });
@@ -785,6 +850,7 @@ impl TikzariumApp {
             pending_close_save_path: String::new(),
             pending_close_validation_error: None,
             close_approved: false,
+            viewport_fit_requested: None,
             prefs,
             studio_group: None,
             studio_palette_anchor: egui::pos2(65.0, 120.0),
@@ -980,6 +1046,84 @@ impl TikzariumApp {
         // documents it is not an authorized overwrite destination. Route
         // through a platform Save As dialog or validated typed path instead.
         self.save_as()
+    }
+
+    /// Dialog selection is a *candidate path*, not authorization to destroy
+    /// unrelated files. Both Unicode and OS-native PathBuf names are kept intact.
+    fn save_as_picker(&mut self) -> bool {
+        let filename = self
+            .document
+            .path
+            .as_ref()
+            .and_then(|path| path.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or(DEFAULT_SCRATCH_FILENAME);
+        let path = rfd::FileDialog::new()
+            .add_filter("TeX / TikZ", &["tex", "tikz"])
+            .set_file_name(filename)
+            .save_file();
+        let Some(path) = path else {
+            self.status = "Выбор сохранения отменён или XDG file portal недоступен; путь можно ввести вручную".into();
+            return false;
+        };
+        match checked_native_save_destination(&self.document, path) {
+            Ok(path) => self.save_to_path(path),
+            Err(error) => {
+                self.status = error;
+                false
+            }
+        }
+    }
+
+    fn open_document_picker(&mut self) {
+        match rfd::FileDialog::new()
+            .add_filter("TeX / TikZ", &["tex", "tikz"])
+            .pick_file()
+        {
+            Some(path) => self.open_path(path), // dirty-open confirmation remains authoritative
+            None => {
+                self.status = "Выбор открытия отменён или XDG file portal недоступен; можно ввести путь вручную".into();
+            }
+        }
+    }
+
+    fn export_pdf_picker(&mut self) {
+        if self.preview_stale() || self.pdf.is_none() {
+            self.status = "Сначала соберите актуальный PDF с внешним XeLaTeX".into();
+            return;
+        }
+        let filename = self
+            .document
+            .path
+            .as_deref()
+            .and_then(|p| p.with_extension("pdf").file_name().map(|x| x.to_owned()))
+            .and_then(|x| x.into_string().ok())
+            .unwrap_or_else(|| "figure.pdf".into());
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("PDF", &["pdf"])
+            .set_file_name(&filename)
+            .save_file()
+        else {
+            self.status = "Выбор PDF отменён или XDG file portal недоступен".into();
+            return;
+        };
+        if !path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf"))
+        {
+            self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
+            return;
+        }
+        match write_new_pdf_without_overwrite(&path, self.pdf.as_deref().expect("checked above")) {
+            Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
+            Err(error) => {
+                self.status = format!(
+                    "PDF не записан (существующий файл не заменяется): {}: {error}",
+                    path.display()
+                );
+            }
+        }
     }
 
     fn preview_stale(&self) -> bool {
@@ -1530,6 +1674,11 @@ impl TikzariumApp {
                     Some(StudioFileAction::SaveAs) => {
                         self.save_as();
                     }
+                    Some(StudioFileAction::OpenPicker) => self.open_document_picker(),
+                    Some(StudioFileAction::SavePicker) => {
+                        self.save_as_picker();
+                    }
+                    Some(StudioFileAction::ExportPicker) => self.export_pdf_picker(),
                     None => {}
                 }
                 ui.menu_button("Вид", |ui| {
@@ -2222,6 +2371,23 @@ impl eframe::App for TikzariumApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // A persisted or new native window can be too large at fractional DPI.
+        let fitted = ctx.input(|input| {
+            let viewport = input.viewport();
+            fit_oversized_window(
+                viewport.monitor_size?,
+                viewport.inner_rect?.size(),
+                viewport.outer_rect?.size(),
+            )
+        });
+        if let Some(size) = fitted {
+            if self.viewport_fit_requested != Some(size) {
+                ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
+                self.viewport_fit_requested = Some(size);
+            }
+        } else {
+            self.viewport_fit_requested = None;
+        }
         self.intercept_close(ctx);
         self.poll_build(ctx);
         self.poll_pages(ctx);
@@ -2607,11 +2773,43 @@ impl eframe::App for TikzariumApp {
     }
 }
 
-/// A 1366×768 *screen* is not a 1366×768 client area: real N5
-/// Ubuntu/Openbox X11 launched that client at (2, 40), clipping the bottom
-/// 40 logical pixels and hiding the status bar. Reserve room for desktop chrome.
-/// This is only the initial size; users can resize/maximize and physical DPI
-/// requires separate evidence.
+// Native minimum height must be below the available 540 logical points at 200%
+// on a 1080px monitor, including window manager decorations.
+const RELEASE_MIN_INNER_SIZE: egui::Vec2 = egui::vec2(850.0, 440.0);
+
+/// Use *logical* egui points; never disable OS scaling to make room.
+/// At 200% the former 560pt minimum was 1120 physical pixels high on
+/// a 1080px monitor, before including X11 window decorations.
+fn fit_oversized_window(
+    monitor: egui::Vec2,
+    inner: egui::Vec2,
+    outer: egui::Vec2,
+) -> Option<egui::Vec2> {
+    if !monitor.is_finite()
+        || !inner.is_finite()
+        || !outer.is_finite()
+        || monitor.x <= 0.0
+        || monitor.y <= 0.0
+        || inner.x <= 0.0
+        || inner.y <= 0.0
+    {
+        return None;
+    }
+    const MARGIN: f32 = 16.0;
+    if outer.x + MARGIN <= monitor.x && outer.y + MARGIN <= monitor.y {
+        return None;
+    }
+    let chrome = egui::vec2((outer.x - inner.x).max(0.0), (outer.y - inner.y).max(0.0));
+    let target = egui::vec2(
+        inner.x.min((monitor.x - chrome.x - MARGIN).max(0.0)),
+        inner.y.min((monitor.y - chrome.y - MARGIN).max(0.0)),
+    );
+    (target.x > 0.0 && target.y > 0.0 && (target.x + 0.5 < inner.x || target.y + 0.5 < inner.y))
+        .then_some(target)
+}
+
+/// A 1366×768 screen is not the full drawable client rectangle.
+/// Reserve desktop chrome without changing user scale or figure typography.
 fn startup_inner_size() -> egui::Vec2 {
     egui::vec2(1180.0, 680.0)
 }
@@ -2620,7 +2818,7 @@ fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size(startup_inner_size())
-            .with_min_inner_size(egui::vec2(850.0, 560.0)),
+            .with_min_inner_size(RELEASE_MIN_INNER_SIZE),
         ..Default::default()
     };
     eframe::run_native(
@@ -2633,6 +2831,86 @@ fn main() -> eframe::Result<()> {
 #[cfg(test)]
 mod split_layout_tests {
     use super::*;
+
+    #[test]
+    fn r3_pdf_export_is_complete_unicode_and_never_overwrites_existing_bytes() {
+        let temp = tempfile::tempdir().unwrap();
+        let target = temp.path().join("Схема с пробелами.pdf");
+        let pdf = b"%PDF-1.7\n% complete output\n%%EOF\n";
+        write_new_pdf_without_overwrite(&target, pdf).unwrap();
+        assert_eq!(std::fs::read(&target).unwrap(), pdf);
+
+        let err = write_new_pdf_without_overwrite(&target, b"replacement").unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read(&target).unwrap(), pdf);
+
+        let missing_parent = temp.path().join("missing").join("figure.pdf");
+        assert!(write_new_pdf_without_overwrite(&missing_parent, pdf).is_err());
+        assert!(!missing_parent.exists());
+
+        let leftovers: Vec<_> = std::fs::read_dir(temp.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(leftovers, vec![target.file_name().unwrap().to_owned()]);
+    }
+
+    #[test]
+    fn r3_native_picker_path_is_not_permission_to_overwrite_unrelated_tex() {
+        let temp = tempfile::tempdir().unwrap();
+        let owned = temp.path().join("черновик.tex");
+        let foreign = temp.path().join("чужой.tex");
+        let fresh = temp.path().join("другая фигура.tex");
+        std::fs::write(&owned, "% сохранённое\r\n").unwrap();
+        std::fs::write(&foreign, "% чужой\r\n").unwrap();
+        let mut doc = Document::load(&owned).unwrap();
+        assert!(checked_native_save_destination(&doc, owned.clone()).is_ok());
+        assert!(checked_native_save_destination(&doc, fresh).is_ok());
+        assert!(checked_native_save_destination(&doc, foreign.clone()).is_err());
+        assert_eq!(
+            std::fs::read(&foreign).unwrap(),
+            b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\r\n"
+        );
+        doc.source.push_str("% opaque\r\n");
+        assert!(doc.dirty());
+    }
+
+    #[test]
+    fn r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace() {
+        assert_eq!(RELEASE_MIN_INNER_SIZE, egui::vec2(850.0, 440.0));
+        assert!(
+            fit_oversized_window(
+                egui::vec2(1366.0, 768.0),
+                egui::vec2(1180.0, 680.0),
+                egui::vec2(1180.0, 700.0),
+            )
+            .is_none()
+        );
+        assert!(
+            fit_oversized_window(
+                egui::vec2(1536.0, 864.0),
+                egui::vec2(1180.0, 680.0),
+                egui::vec2(1180.0, 700.0),
+            )
+            .is_none()
+        );
+        let at_200pct = fit_oversized_window(
+            egui::vec2(960.0, 540.0),
+            egui::vec2(960.0, 560.0),
+            egui::vec2(960.0, 571.0),
+        )
+        .unwrap();
+        assert!(at_200pct.y < 520.0 && at_200pct.y >= RELEASE_MIN_INNER_SIZE.y);
+        assert!(at_200pct.x >= RELEASE_MIN_INNER_SIZE.x);
+        assert!(
+            fit_oversized_window(
+                egui::vec2(f32::NAN, 540.0),
+                egui::vec2(960.0, 560.0),
+                egui::vec2(960.0, 571.0),
+            )
+            .is_none()
+        );
+    }
 
     #[test]
     fn r1_native_close_event_requires_confirmed_save_or_explicit_discard() {
