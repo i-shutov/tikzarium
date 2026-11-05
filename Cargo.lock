@@ -2722,7 +2722,7 @@ dependencies = [
 
 [[package]]
 name = "tikzarium-app"
-version = "0.1.0"
+version = "1.0.0-rc.1"
 dependencies = [
  "eframe",
  "image",
@@ -2736,7 +2736,7 @@ dependencies = [
 
 [[package]]
 name = "tikzarium-cli"
-version = "0.1.0"
+version = "1.0.0-rc.1"
 dependencies = [
  "tempfile",
  "tikzarium-core",
@@ -2745,7 +2745,7 @@ dependencies = [
 
 [[package]]
 name = "tikzarium-core"
-version = "0.1.0"
+version = "1.0.0-rc.1"
 dependencies = [
  "sha2",
  "tempfile",
@@ -2754,7 +2754,7 @@ dependencies = [
 
 [[package]]
 name = "tikzarium-extensions"
-version = "0.1.0"
+version = "1.0.0-rc.1"
 dependencies = [
  "serde",
  "tempfile",
