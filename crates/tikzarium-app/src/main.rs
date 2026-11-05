@@ -373,6 +373,20 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
 /// A native Save dialog can still select a symlink or already occupied name.
 /// Fail closed unless writing to the exact current document. Unlike displaying
 /// path strings, this keeps non-UTF-8 Linux path bytes intact.
+/// Stage the complete PDF on the destination filesystem before exposing the
+/// final filename. A failed write must not leave a corrupt user-visible PDF;
+/// persist_noclobber also refuses existing files and symlinks.
+fn write_new_pdf_without_overwrite(path: &Path, pdf: &[u8]) -> std::io::Result<()> {
+    let folder = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let mut staged = tempfile::NamedTempFile::new_in(folder)?;
+    std::io::Write::write_all(staged.as_file_mut(), pdf)?;
+    staged.as_file().sync_all()?;
+    staged.persist_noclobber(path).map(|_| ()).map_err(|error| error.error)
+}
+
 fn checked_native_save_destination(document: &Document, path: PathBuf) -> Result<PathBuf, String> {
     if path.as_os_str().is_empty() {
         return Err("Выберите имя TeX-файла".into());
@@ -1098,29 +1112,18 @@ impl TikzariumApp {
             self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
             return;
         }
-        // create_new is atomic and prevents symlink/racy overwrite of a PDF
-        // that appeared since the portal picker returned.
-        match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&path)
-        {
-            Ok(mut output) => match std::io::Write::write_all(
-                &mut output,
-                self.pdf.as_deref().expect("checked above"),
-            ) {
-                Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
-                Err(error) => {
-                    self.status = format!("Ошибка записи PDF {}: {error}", path.display())
-                }
-            },
+        match write_new_pdf_without_overwrite(
+            &path,
+            self.pdf.as_deref().expect("checked above"),
+        ) {
+            Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
             Err(error) => {
                 self.status = format!(
-                    "Нельзя перезаписывать существующий PDF или открыть {}: {error}. Выберите новое имя.",
+                    "PDF не записан (существующий файл не заменяется): {}: {error}",
                     path.display()
-                )
+                );
             }
-        };
+        }
     }
 
     fn preview_stale(&self) -> bool {
@@ -2828,6 +2831,29 @@ fn main() -> eframe::Result<()> {
 #[cfg(test)]
 mod split_layout_tests {
     use super::*;
+
+    #[test]
+    fn r3_pdf_export_is_complete_unicode_and_never_overwrites_existing_bytes() {
+        let temp = tempfile::tempdir().unwrap();
+        let target = temp.path().join("Схема с пробелами.pdf");
+        let pdf = b"%PDF-1.7\n% complete output\n%%EOF\n";
+        write_new_pdf_without_overwrite(&target, pdf).unwrap();
+        assert_eq!(std::fs::read(&target).unwrap(), pdf);
+
+        let err = write_new_pdf_without_overwrite(&target, b"replacement").unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read(&target).unwrap(), pdf);
+
+        let missing_parent = temp.path().join("missing").join("figure.pdf");
+        assert!(write_new_pdf_without_overwrite(&missing_parent, pdf).is_err());
+        assert!(!missing_parent.exists());
+
+        let leftovers: Vec<_> = std::fs::read_dir(temp.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(leftovers, vec![target.file_name().unwrap().to_owned()]);
+    }
 
     #[test]
     fn r3_native_picker_path_is_not_permission_to_overwrite_unrelated_tex() {
