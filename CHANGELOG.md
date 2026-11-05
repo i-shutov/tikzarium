@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — Linux 1.0 R3 native PDF export no-clobber completeness (candidate)
+
+- Independent review of exact PR #105 head `1df36978`: hosted N5/D QA/Rust/I61 complete SUCCESS. Original N5 artifact 13390653515 ZIP sha256 `fa054edc1254766f878aadfae2a1b1706cf25182169478d3ce98191cc3fc977e`; R2 original X11 PNG+geometry SHA256SUMS 6/6 independently matched. At 200%/1920×1080 actual extracted release client (2,40;1886×1023) fits, unlike old clipped 1120px. Physical screen remains NOT_RUN.
+- R3 independent real pointer click on the extracted PR binary with no XDG portal confirmed the native Open menu exists, does not crash, and reports the missing portal with manual typed-path fallback. This is NOT native-dialog acceptance: no real picker was shown.
+- Fix a user-data flaw introduced by the first R3 candidate: direct create_new + write could leave a truncated, visible PDF on write failure. Stage the entire bytes into a same-directory temporary file, sync, then `persist_noclobber`; refuse existing targets and clean temporary files on errors. Add Unicode-name, no-overwrite, byte-integrity and invalid-parent Rust tests. Current new exact-head CI/PDF/X11 review PENDING; R3 real XDG picker, R4 physical desktop and R5 tag still gated.
+
+
 ## 2026-11-05 — Linux R2/R3 exact rustfmt recovery (candidate)
 
 - GitHub hosted Rust fmt on prior HEAD failed before Rust tests: exact main.rs formatting diffs. Apply original 0.33/Rust 1.91 formatter suggestions to R2/R3 integration code and correct a CRLF fixture (one actual escaped CRLF rather than literal backslash characters). Source-tree lease refreshed; this changes no accepted N1/N2/R1 behavior. New exact-head CI and GUI source/PDF artifacts PENDING.
