@@ -127,7 +127,7 @@ def main() -> int:
                       + r"\setmainfont{DejaVu Serif}" + "\r\n"
                       + r"\begin{document}" + "\r\n"
                       + r"\begin{tikzpicture}" + "\r\n"
-                      + r"\node at (0,0) {R3-Picker-Canary};" + "\r\n"
+                      + r"\node at (0,0) {Фигура R3-Picker-Canary};" + "\r\n"
                       + r"\end{tikzpicture}" + "\r\n"
                       + r"\end{document}" + "\r\n").encode("utf-8")
     original.write_bytes(original_bytes)
@@ -216,6 +216,45 @@ def main() -> int:
                 raise RuntimeError("Native save lost modified bytes or overwrote original")
             snap(out, "06-native-save-completed")
             report["steps"].append("native_save_unicode_new_file_no_overwrite")
+
+            # Build the selected user source through the actual GUI and external
+            # XeLaTeX. The existing toolbar exporter is used as a completion
+            # signal; only the subsequent XDG picker qualifies native Export.
+            selected_source_sha = hashlib.sha256(content).hexdigest()
+            click(219, 39)  # Native Studio Build icon, proven in I61.
+            time.sleep(3.0)
+            click(73, 77)  # Exact PDF tab, source remains visible.
+            time.sleep(1.5)
+            click(259, 39)  # Existing explicit PDF export action.
+            built_pdf = saved.with_suffix(".pdf")
+            wait(built_pdf.exists, "actual XeLaTeX GUI PDF build and export", 25)
+            if not built_pdf.read_bytes().startswith(b"%PDF-"):
+                raise RuntimeError("GUI Build/Export did not produce a valid PDF")
+            if hashlib.sha256(saved.read_bytes()).hexdigest() != selected_source_sha:
+                raise RuntimeError("XeLaTeX GUI build changed saved user TeX bytes")
+            snap(out, "07-real-xelatex-pdf-ready")
+
+            native_pdf = work / "экспорт через XDG.pdf"
+            existing = set(windows())
+            open_file_menu(271)  # «Экспорт PDF через диалог…»
+            native_id = dialog_after_click(existing, "PDF Export")
+            snap(out, "08-real-native-pdf-export-picker")
+            choose_path(native_id, native_pdf.with_suffix(""))
+            wait(native_pdf.exists, "native PDF export exact .pdf filename", 20)
+            if native_pdf.read_bytes() != built_pdf.read_bytes():
+                raise RuntimeError("Native PDF export differs from GUI-generated XeLaTeX PDF")
+            font_table = cmd("pdffonts", str(native_pdf))
+            font_rows = [line.split() for line in font_table.splitlines()[2:] if line.strip()]
+            if not font_rows or not any("DejaVu" in line for line in font_table.splitlines()):
+                raise RuntimeError("No DejaVu fonts in exported GUI PDF")
+            if any(len(row) < 5 or row[-5].lower() != "yes" for row in font_rows):
+                raise RuntimeError("Native PDF export contains a non-embedded font")
+            extracted_text = cmd("pdftotext", str(native_pdf), "-")
+            if "Фигура" not in extracted_text or "R3-Picker-Canary" not in extracted_text:
+                raise RuntimeError("Native PDF export does not preserve Unicode text")
+            report["native_pdf_sha256"] = hashlib.sha256(native_pdf.read_bytes()).hexdigest()
+            snap(out, "09-native-pdf-export-completed")
+            report["steps"].append("native_export_exact_xelatex_pdf_unicode_embedded_fonts")
             report["status"] = "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED"
         except Exception as exc:
             report["error"] = repr(exc)
@@ -238,7 +277,7 @@ def main() -> int:
                 json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             with (out / "SHA256SUMS").open("w", encoding="utf-8") as f:
                 for path in sorted(out.iterdir()):
-                    if path.is_file():
+                    if path.is_file() and path.name != "SHA256SUMS":
                         f.write(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n")
             print(json.dumps(report, ensure_ascii=False))
 
