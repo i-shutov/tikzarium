@@ -243,7 +243,10 @@ mod tests {
             Duration::from_millis(150),
         )
         .unwrap_err();
-        assert!(error.contains("timed out"), "unexpected worker error: {error}");
+        assert!(
+            error.contains("timed out"),
+            "unexpected worker error: {error}"
+        );
         assert!(start.elapsed() < Duration::from_secs(5));
     }
 
