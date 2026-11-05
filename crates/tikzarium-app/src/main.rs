@@ -370,10 +370,6 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
         )
 }
 
-/// A typed path is not explicit permission to overwrite another TeX file.
-/// Linux without a native Save As dialog must fail closed on occupied paths;
-/// the platform file dialog on Windows/macOS handles intentional replacement.
-
 /// A native Save dialog can still select a symlink or already occupied name.
 /// Fail closed unless writing to the exact current document. Unlike displaying
 /// path strings, this keeps non-UTF-8 Linux path bytes intact.
@@ -395,6 +391,8 @@ fn checked_native_save_destination(document: &Document, path: PathBuf) -> Result
     }
 }
 
+/// A typed path is not explicit permission to overwrite another TeX file.
+/// Both typed input and native picks reject unintended target replacement.
 fn typed_save_destination(document: &Document, input: &str) -> Result<PathBuf, String> {
     if input.trim().is_empty() {
         return Err("Укажите путь для сохранения TeX-документа.".into());
@@ -2772,12 +2770,8 @@ impl eframe::App for TikzariumApp {
     }
 }
 
-/// A 1366×768 *screen* is not a 1366×768 client area: real N5
-/// Ubuntu/Openbox X11 launched that client at (2, 40), clipping the bottom
-/// 40 logical pixels and hiding the status bar. Reserve room for desktop chrome.
-/// This is only the initial size; users can resize/maximize and physical DPI
-/// requires separate evidence.
-
+// Native minimum height must be below the available 540 logical points at 200%
+// on a 1080px monitor, including window manager decorations.
 const RELEASE_MIN_INNER_SIZE: egui::Vec2 = egui::vec2(850.0, 440.0);
 
 /// Use *logical* egui points; never disable OS scaling to make room.
@@ -2811,6 +2805,8 @@ fn fit_oversized_window(
         .then_some(target)
 }
 
+/// A 1366×768 screen is not the full drawable client rectangle.
+/// Reserve desktop chrome without changing user scale or figure typography.
 fn startup_inner_size() -> egui::Vec2 {
     egui::vec2(1180.0, 680.0)
 }
