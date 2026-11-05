@@ -92,6 +92,65 @@ def fixture() -> bytes:
 
 
 def readme(platform: str, sha: str, ci_url: str) -> bytes:
+    if platform == LINUX:
+        return f"""# TikZarium — Linux 1.0.0-rc.1 portable candidate
+
+**Это КАНДИДАТ, не опубликованный релиз 1.0.**
+Исходный commit: {sha}. Сборка: {ci_url}.
+Версия Rust crates: 1.0.0-rc.1; версия финального релиза станет
+1.0.0 только после независимой физической Linux/X11 приёмки R4
+и финального R5 exact-head/postmerge подтверждения.
+
+## Требования и ограничения
+
+- Linux x86_64 / Ubuntu 24.04 X11 — заявленная целевая среда.
+  Совместимые системные библиотеки GLIBC, OpenGL/X11/GTK/XDG обязательны.
+  Wayland и другие дистрибутивы не квалифицированы.
+- Пользователь **самостоятельно устанавливает** XeLaTeX/TeX Live,
+  TikZ/PGF, Poppler (pdftoppm, pdffonts, pdftotext) и нужные
+  шрифты (например, DejaVu Serif); архив их НЕ содержит.
+- Никаких скрытых установок, shell escape, автозагрузок пакетов,
+  облачного сервиса или подмены движка.
+- GTK/XDG desktop portal обеспечивает нативные диалоги на
+  совместимом X11 desktop; если backend отсутствует, используйте
+  явно показанный ручной ввод пути, а не считайте диалог проверенным.
+- Это переносимый .tar.gz, не .deb/AppImage, не системный установщик,
+  не гарантия совместимости произвольной Linux-системы.
+
+## Первое использование
+
+1. Сверьте SHA256 исходного архива с артефактом GitHub exact SHA.
+2. Извлеките архив, откройте Tikzarium-preview/ и выполните
+   `sha256sum -c MANIFEST.sha256`. При несовпадении НЕ запускайте.
+3. Проверьте `./tikzarium-cli doctor`. Убедитесь, что внешний
+   XeLaTeX и PDF-зависимости доступны. Никакой пакет приложение не устанавливает.
+4. Перейдите в отдельный доступный для записи каталог проекта,
+   затем запустите `/путь/к/Tikzarium-preview/launch.sh`.
+   Launcher сохраняет рабочую директорию проекта.
+5. Шесть инструментов работают с обычным редактируемым .tex.
+   Проверьте Properties, Libraries, русскую F1, Undo, Save/Open,
+   защиту несохранённых правок при закрытии.
+6. Скомпилируйте исходник через **внешний XeLaTeX**, проверьте
+   точный PDF, кириллицу и встроенные шрифты; экспортируйте PDF
+   через системный диалог. Предварительный эскиз не заменяет PDF.
+7. Для R4 физической приёмки выполните
+   `./qa/r4_physical_x11_preflight.sh /путь/к/НОВОМУ-каталогу-доказательств`.
+   Скрипт OFFLINE и не правит проект, не запускает TeX/GUI, только
+   сверяет SHA и собирает окружение. R4 статус всё равно MANUAL_PENDING:
+   оригинальные PNG/.tex/PDF/log/SHA должны быть проверены отдельно.
+
+## Известные границы
+
+Полноценная физическая проверка Linux/X11 с настоящим монитором,
+реальным DPI и GTK-порталом пока **NOT_RUN**. Hosted Xvfb/CI
+запуск и PDF-тесты — не физический PASS. Версии Windows/MiKTeX,
+macOS ARM и native Wayland не включены в Linux 1.0.
+Не запускайте TikZarium через sudo; не переписывайте чужой .tex
+для проверки. Операции неподдерживаемых TeX-макросов — source-first/UNKNOWN.
+
+Подробная инструкция и критерии: `docs/LINUX_1_0_RC.md`
+в исходном репозитории. Это не гарантия полного TeX-интерпретатора.
+""".encode("utf-8")
     command = "./tikzarium-cli.exe doctor" if platform == WIN else "./tikzarium-cli doctor"
     launch = ("./tikzarium-app.exe" if platform == WIN
               else "./launch.sh" if platform == LINUX
@@ -172,6 +231,11 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
         entries[root + "TikZarium.app/Contents/MacOS/tikzarium-app"] = app, 0o755
         entries[root + "tikzarium-cli"] = cli, 0o755
     entries[root + "qa/figure-crlf.tex"] = fixture(), 0o644
+    if platform == LINUX:
+        qa = Path(__file__).with_name("r4_physical_x11_preflight.sh").read_bytes()
+        if not qa.startswith(b"#!/usr/bin/env bash\\n"):
+            raise ValueError("Linux R4 qualifier must be a standalone Bash script")
+        entries[root + "qa/r4_physical_x11_preflight.sh"] = qa, 0o755
     entries[root + "README_RU.md"] = readme(platform, source, ci_url), 0o644
     provenance = {
         "schema_version": 1, "source_sha": source, "original_ci_run": ci_url,
@@ -183,6 +247,9 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
         "external_xelatex_gui_pdf": "NOT_RUN", "notarization": "NOT_RUN",
         "tex_or_fonts_bundled": False,
     }
+    if platform == LINUX:
+        provenance["rc_version"] = "1.0.0-rc.1"
+        provenance["r4_physical_x11"] = "NOT_RUN"
     entries[root + "PROVENANCE.json"] = (json.dumps(provenance, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(), 0o644
     lines = [f"{sha256(data)}  {name.removeprefix(root)}" for name, (data, _) in sorted(entries.items())]
     entries[root + "MANIFEST.sha256"] = ("\n".join(lines) + "\n").encode(), 0o644
