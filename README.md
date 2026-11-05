@@ -1,11 +1,11 @@
 # TikZarium
 
-> **Linux 1.0 release freeze (2026-11-05):** R1 safe close, R2 200%-DPI bounds and R3 genuine GTK/XDG Open/Save/Export are accepted on main 4f3a2ebb using hosted X11. The versioned **1.0.0-rc.1** portable candidate uses the identical GUI-tested ELF and its own manifest/SHA256 and Russian first-use guide. **NOT stable 1.0**: physical Ubuntu24/x86_64/X11 desktop R4 remains NOT_RUN. See [issue #103](https://github.com/i-shutov/tikzarium/issues/103), [R4 runbook](docs/LINUX_1_0_PHYSICAL_QA_RU.md), and [R5 plan](plans/2026-11-05_LINUX_1_0_R5_RC.md). Old N5 Preview instructions below refer to the previous, not versioned RC.
+> **ACTIVE FIRST RELEASE — Windows 10 x64 (owner decision, 2026-11-05):** Native Rust/egui with independently user-installed MiKTeX/XeLaTeX, starting with exact-SHA portable Windows ZIP + real PE GUI/CLI role, then non-admin interactive Windows Server QA and separately a physical Windows 10 six-gesture GUI→TeX→PDF smoke. The Windows hosted build does not prove a Win10 GUI. FREEZE FEATURES, no TeX/font installs, no premature installer. [Current acceptance plan](plans/2026-11-05_WINDOWS_X64_RELEASE.md).\n\n> **Historical Linux release progress (retained, not today's platform priority):** R1 safe close, R2 200%-DPI bounds and R3 genuine GTK/XDG Open/Save/Export are accepted on main 4f3a2ebb using hosted X11. The versioned **1.0.0-rc.1** portable candidate uses the identical GUI-tested ELF and its own manifest/SHA256 and Russian first-use guide. **NOT stable 1.0**: physical Ubuntu24/x86_64/X11 desktop R4 remains NOT_RUN. See [issue #103](https://github.com/i-shutov/tikzarium/issues/103), [R4 runbook](docs/LINUX_1_0_PHYSICAL_QA_RU.md), and [R5 plan](plans/2026-11-05_LINUX_1_0_R5_RC.md). Old N5 Preview instructions below refer to the previous, not versioned RC.
 
 
-**Linux-first, cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
+**Cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
 
-**Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. This **is not a finished or physically qualified Linux desktop release**. The reproducible native package and its extracted X11 startup passed on main. Full *packaged* GUI→editable TeX→XeLaTeX PDF, DPI/dialogs/usability review and an observed real target desktop still gate the first complete release. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.
+**Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. The Linux 1.0.0-rc.1 is retained as a versioned release candidate, **not a physically qualified/stable Linux desktop release**. The reproducible native package and its extracted X11 startup passed on main. The active first-release gate is now Windows 10 x64 + the user's independently installed MiKTeX; physical Windows GUI, DPI/dialogs/usability, six gestures and Unicode/embedded-font PDF remain to be observed. Linux physical R4 stays NOT_RUN. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.
 
 ## Current user workflow
 
@@ -20,12 +20,18 @@
 
 | Target | Status / prerequisites |
 |---|---|
-| **Linux desktop x86_64, X11** | First release target. External user-installed XeLaTeX/TeX Live and TikZ packages, compatible X11/graphics system libraries; Poppler utilities for PDF preview/QA |
+| **Linux desktop x86_64, X11** | Preserved versioned 1.0.0-rc.1; physical Linux R4 NOT_RUN.  External user-installed XeLaTeX/TeX Live and TikZ packages, compatible X11/graphics system libraries; Poppler utilities for PDF preview/QA |
 | **Linux Wayland and other distributions** | Cross-platform architecture retained; **not physically qualified** |
-| **Windows 10 x64** | Later release target; independently installed **MiKTeX/XeLaTeX**, hosted Windows Rust/MiKTeX CI is **not** a physical Win10 GUI PASS |
-| **macOS ARM64 M1/M4** | Later release target; user's external XeLaTeX, hosted ARM64 build is **not** physical GUI or notarization PASS |
+| **Windows 10 x64** | **Current first-release target**; independently installed **MiKTeX/XeLaTeX**, hosted Windows Rust/MiKTeX CI is **not** a physical Win10 GUI PASS |
+| **macOS ARM64 M1/M4** | Future physical release target; user's external XeLaTeX, hosted ARM64 build is **not** physical GUI or notarization PASS |
 
-### Linux portable candidate (N5, work in progress)
+### Windows x64 portable candidate (current priority)
+
+The hosted Windows 2022 native CI builds **release** `tikzarium-app.exe` with GUI PE Subsystem 2 and `tikzarium-cli.exe` with Console Subsystem 3. It packages those exact binaries in `Tikzarium-Windows-x64-portable-candidate.zip`, with a CRLF specimen, `README_RU.md`, `PROVENANCE.json` and `MANIFEST.sha256`. Independent checks compare the ZIP against the original release EXEs and actually run the extracted CLI help from a Unicode/space path, without XeLaTeX. The [native CI workflow](https://github.com/i-shutov/tikzarium/actions/workflows/ci.yml) must be green at the **exact release source SHA**, and its original ZIP/audit artifacts manually inspected before adoption.
+
+On a Windows 10 desktop with your **already installed** system-wide MiKTeX, extract the downloaded ZIP, verify every file's SHA256 against `MANIFEST.sha256`, run `tikzarium-cli.exe doctor`, then `tikzarium-app.exe`. Manually test six real mouse drawing operations → ordinary editable `.tex`/F1/Inspector/libraries → Undo/Save/Open → actual **offline MiKTeX XeLaTeX** PDF with Cyrillic and embedded fonts. Save original screenshots, source/PDF, MiKTeX logs and SHA. No downloads or TeX package/font auto-installs are allowed. **Hosted Windows and Windows Server acceptance are not physical Windows 10 acceptance.** Portable ZIP is not an installer; no MSI/Setup until this physical smoke passes.
+
+### Linux portable candidate (accepted 1.0.0-rc.1, retained, not active platform priority)
 
 The `N5 Linux x86_64 portable release and packaged X11 launch` CI workflow builds real **release** Rust binaries, verifies native ELF64/x86_64 headers and source SHA, and packages a deterministic `.tar.gz` containing `tikzarium-app`, `tikzarium-cli`, `launch.sh`, a CRLF/Unicode specimen, `README_RU.md`, `MANIFEST.sha256` and `PROVENANCE.json`. It does **not** bundle or download MiKTeX/TeX Live, fonts, installers or unreviewed shared libraries.
 
