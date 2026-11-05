@@ -205,8 +205,12 @@ def main() -> int:
             open_file_menu(239)  # «Сохранить через диалог…»
             native_id = dialog_after_click(existing, "Save")
             snap(out, "05-real-save-picker")
-            choose_path(native_id, saved)
-            wait(saved.exists, "native Save As output", 15)
+            # GTK portal Save adds the selected TeX filter extension when the
+            # location is entered via Ctrl+L. Supply the stem, as a normal
+            # Save As user does in the Name field; assert the resulting on-disk
+            # path is the exact requested .tex (not .tex.tex).
+            choose_path(native_id, saved.with_suffix(""))
+            wait(saved.exists, "native Save As exact .tex output", 15)
             content = saved.read_bytes()
             if b"R3-Native-Save-Canary" not in content or original.read_bytes() != original_bytes:
                 raise RuntimeError("Native save lost modified bytes or overwrote original")
