@@ -235,7 +235,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn poppler_worker_kills_hung_process_and_reports_not_checked() {
-        let (_dir, path) = fake_poppler("while :; do :; done");
+        // A sleeping, exec-replaced child tests actual bounded killing without\n        // burning one CPU core and racing parallel GUI/Rust checks.\n        let (_dir, path) = fake_poppler("exec sleep 10");
         let start = Instant::now();
         let error = run_poppler(
             &mut Command::new(path),
@@ -243,7 +243,7 @@ mod tests {
             Duration::from_millis(150),
         )
         .unwrap_err();
-        assert!(error.contains("timed out"));
+        assert!(error.contains("timed out"), "unexpected worker error: {error}");
         assert!(start.elapsed() < Duration::from_secs(5));
     }
 
