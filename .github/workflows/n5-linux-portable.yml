@@ -71,7 +71,8 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
             xvfb xauth openbox xdotool wmctrl imagemagick libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
-            libxcursor-dev libxrandr-dev libudev-dev
+            libxcursor-dev libxrandr-dev libudev-dev \
+            xdg-desktop-portal xdg-desktop-portal-gtk dbus-x11 libglib2.0-bin
       - name: Run offline packaging and ELF architecture/manifest/reproducibility tests
         run: python3 -m unittest discover -s scripts/tests -p test_package_n5_preview.py -v
       - name: Native release binaries from exact HEAD (no compiler substitution)
@@ -284,6 +285,36 @@ jobs:
           assert report["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"]
           assert len(report["steps"]) == 5, report
           PY
+      - name: R3 real XDG/GTK native file picker on extracted release (not physical Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export N5_LAUNCHER="$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/launch.sh"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export XDG_CURRENT_DESKTOP=GNOME
+          export GDK_BACKEND=x11
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-r3-runtime"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/n5-r3-config"
+          mkdir -p "$XDG_RUNTIME_DIR" "$XDG_CONFIG_HOME/xdg-desktop-portal"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          printf '[preferred]\ndefault=gtk\norg.freedesktop.impl.portal.FileChooser=gtk\n' \
+            >"$XDG_CONFIG_HOME/xdg-desktop-portal/portals.conf"
+          export R3_EVIDENCE="$RUNNER_TEMP/n5-linux/packaged-r3-native"
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' \
+            dbus-run-session -- bash -euo pipefail -c '
+              openbox --sm-disable >"$RUNNER_TEMP/n5-linux/openbox-r3.log" 2>&1 &
+              python3 scripts/qa_r3_native_picker_x11.py \
+                --app "$N5_LAUNCHER" --out "$R3_EVIDENCE"
+            '
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          proof = json.loads((Path(os.environ["R3_EVIDENCE"]) / "report.json").read_text())
+          assert proof["source_sha"] == os.environ["SOURCE_SHA"], proof
+          assert proof["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"], proof
+          assert proof["status"] == "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED", proof
+          assert len(proof["steps"]) == 4, proof
+          PY
       - name: Upload original portable bundle and actual GUI proof
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -307,4 +338,6 @@ jobs:
             ${{ runner.temp }}/n5-linux/r2-desktop/
             ${{ runner.temp }}/n5-linux/packaged-r1-close/
             ${{ runner.temp }}/n5-linux/openbox-close.log
+            ${{ runner.temp }}/n5-linux/packaged-r3-native/
+            ${{ runner.temp }}/n5-linux/openbox-r3.log
           if-no-files-found: warn
