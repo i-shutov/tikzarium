@@ -2449,10 +2449,19 @@ impl eframe::App for TikzariumApp {
     }
 }
 
+/// A 1366×768 *screen* is not a 1366×768 client area: real N5
+/// Ubuntu/Openbox X11 launched that client at (2, 40), clipping the bottom
+/// 40 logical pixels and hiding the status bar. Reserve room for desktop chrome.
+/// This is only the initial size; users can resize/maximize and physical DPI
+/// requires separate evidence.
+fn startup_inner_size() -> egui::Vec2 {
+    egui::vec2(1180.0, 680.0)
+}
+
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size(egui::vec2(1366.0, 768.0))
+            .with_inner_size(startup_inner_size())
             .with_min_inner_size(egui::vec2(850.0, 560.0)),
         ..Default::default()
     };
@@ -2467,6 +2476,15 @@ fn main() -> eframe::Result<()> {
 mod split_layout_tests {
     use super::*;
     use tikzarium_extensions::primitives::Evidence;
+
+    #[test]
+    fn n5_packaged_startup_fits_compact_desktop_with_window_manager_chrome() {
+        let size = startup_inner_size();
+        assert!(size.x >= 850.0 && size.y >= 560.0);
+        // Hosted 1× 1366×768 X11 must show the entire client, not just title.
+        assert!(size.x <= 1366.0 - 96.0);
+        assert!(size.y <= 768.0 - 64.0);
+    }
 
     #[test]
     fn b43_real_egui_source_click_dismisses_palette_without_touching_tex() {

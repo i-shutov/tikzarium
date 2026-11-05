@@ -1,0 +1,161 @@
+# Linux-first N5 portable candidate. Distinct from physical desktop acceptance.
+# PR jobs run ONLY on disposable GitHub-hosted Ubuntu, never on self-hosted Windows.
+name: N5 Linux x86_64 portable release and packaged X11 launch
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/n5-linux-portable.yml'
+      - 'scripts/package_n5_preview.py'
+      - 'scripts/tests/test_package_n5_preview.py'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/n5-linux-portable.yml'
+      - 'scripts/package_n5_preview.py'
+      - 'scripts/tests/test_package_n5_preview.py'
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: n5-linux-portable-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  linux-portable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_RELEASE_DEBUG: '0'
+    steps:
+      - name: Exact source checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Exact-head provenance and no Cargo.lock drift
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git diff --exit-code -- Cargo.lock
+          uname -a
+      - name: Locked Rust 1.91.0 toolchain
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+      - name: Install host GUI development/runtime prerequisites (not TeX)
+        shell: bash
+        run: |
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            xvfb xauth openbox xdotool imagemagick libgl1-mesa-dri libglx-mesa0 \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
+            libxcursor-dev libxrandr-dev libudev-dev
+      - name: Run offline packaging and ELF architecture/manifest/reproducibility tests
+        run: python3 -m unittest discover -s scripts/tests -p test_package_n5_preview.py -v
+      - name: Native release binaries from exact HEAD (no compiler substitution)
+        shell: bash
+        run: |
+          rustc -vV
+          cargo build --locked --release -p tikzarium-app -p tikzarium-cli
+          git diff --exit-code -- Cargo.lock
+          file target/release/tikzarium-app target/release/tikzarium-cli
+      - name: Package reproducible native Linux x86_64 tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/n5-linux"
+          python3 scripts/package_n5_preview.py \
+            --platform linux-x86_64 \
+            --app target/release/tikzarium-app \
+            --cli target/release/tikzarium-cli \
+            --app-sha256 "$(sha256sum target/release/tikzarium-app | cut -d' ' -f1)" \
+            --cli-sha256 "$(sha256sum target/release/tikzarium-cli | cut -d' ' -f1)" \
+            --source-sha "$SOURCE_SHA" \
+            --ci-run-url "https://github.com/i-shutov/tikzarium/actions/runs/$GITHUB_RUN_ID" \
+            --output "$RUNNER_TEMP/n5-linux/Tikzarium-linux-x86_64-preview.tar.gz"
+          cd "$RUNNER_TEMP/n5-linux"
+          sha256sum Tikzarium-linux-x86_64-preview.tar.gz > archive.sha256
+          mkdir extracted
+          tar -xzf Tikzarium-linux-x86_64-preview.tar.gz -C extracted
+          cd extracted/Tikzarium-preview
+          sha256sum -c MANIFEST.sha256
+          test -x ./tikzarium-app && test -x ./tikzarium-cli && test -x ./launch.sh
+          ./tikzarium-cli help tikz.line > "$RUNNER_TEMP/n5-linux/cli-help.txt"
+          grep -F 'tikz.line' "$RUNNER_TEMP/n5-linux/cli-help.txt"
+      - name: Real extracted release GUI X11 launch and 1366x768 screenshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/n5-runtime"
+          chmod 700 "$RUNNER_TEMP/n5-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-runtime"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export EVIDENCE="$RUNNER_TEMP/n5-linux"
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
+            openbox --sm-disable > "$EVIDENCE/openbox.log" 2>&1 &
+            cd "$EVIDENCE/extracted/Tikzarium-preview"
+            ./launch.sh > "$EVIDENCE/native-launch.log" 2>&1 &
+            app_pid=$!
+            trap "kill $app_pid 2>/dev/null || true" EXIT
+            : > "$EVIDENCE/visible-window.txt"
+            for i in $(seq 1 30); do
+              if ! kill -0 "$app_pid" 2>/dev/null; then
+                echo "Packaged release app exited before window appeared" >&2
+                exit 1
+              fi
+              xdotool search --onlyvisible --name "TikZarium" > "$EVIDENCE/visible-window.txt" 2>/dev/null || true
+              if test -s "$EVIDENCE/visible-window.txt"; then break; fi
+              sleep 1
+            done
+            test -s "$EVIDENCE/visible-window.txt"
+            window_id="$(head -n1 "$EVIDENCE/visible-window.txt")"
+            xdotool getwindowgeometry --shell "$window_id" > "$EVIDENCE/window-geometry.txt"
+            # Original N5 screenshot was a visible but clipped 1366x768 client
+            # at (2,40) on a 1366x768 screen. Reject inaccessible bottom UI.
+            source "$EVIDENCE/window-geometry.txt"
+            test "$X" -ge 0 && test "$Y" -ge 0
+            test "$WIDTH" -ge 850 && test "$HEIGHT" -ge 560
+            test "$((X + WIDTH))" -le 1366
+            test "$((Y + HEIGHT))" -le 768
+            sleep 2
+            import -window root "$EVIDENCE/linux-n5-packaged-1366x768.png"
+            test -s "$EVIDENCE/linux-n5-packaged-1366x768.png"
+            identify -format "%wx%h\n" "$EVIDENCE/linux-n5-packaged-1366x768.png" | tee "$EVIDENCE/png-size.txt"
+            grep -Fx "1366x768" "$EVIDENCE/png-size.txt"
+          '
+          (
+            cd "$RUNNER_TEMP/n5-linux"
+            sha256sum linux-n5-packaged-1366x768.png native-launch.log archive.sha256 > native-evidence.sha256
+          )
+      - name: Upload original portable bundle and actual GUI proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tikzarium-linux-portable-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/n5-linux/Tikzarium-linux-x86_64-preview.tar.gz
+            ${{ runner.temp }}/n5-linux/archive.sha256
+            ${{ runner.temp }}/n5-linux/native-evidence.sha256
+            ${{ runner.temp }}/n5-linux/linux-n5-packaged-1366x768.png
+            ${{ runner.temp }}/n5-linux/window-geometry.txt
+            ${{ runner.temp }}/n5-linux/visible-window.txt
+            ${{ runner.temp }}/n5-linux/native-launch.log
+            ${{ runner.temp }}/n5-linux/openbox.log
+            ${{ runner.temp }}/n5-linux/png-size.txt
+            ${{ runner.temp }}/n5-linux/cli-help.txt
+          if-no-files-found: warn

@@ -1,5 +1,10 @@
 # Roadmap — TikZ-native visual authoring
 
+## N5 Linux packaged-desktop candidate — 2026-11-05
+
+After seven exact PR-head success workflows and source/PDF/PNG SHA review, B43 Linux UX was squash-merged as main `26abc5461bba06d610394080ffe23bbbf92cc6bb`. The next substantial first-release vertical is a **real Linux x86_64 portable bundle**: locked release Rust binaries, architecture/manifest checks, reproducible archive and an *extracted* native GUI launch under X11, not merely a synthetically assembled zip. See `plans/2026-11-05_LINUX_N5_PORTABLE_RELEASE.md`. That CI and original screenshot assessment remain **PENDING** until observed; physical Linux desktop, DPI/Wayland and native installer remain NOT_RUN. Windows/Mac paths continue to be tested but do not block Linux-first release.
+
+
 ## L2 B43 candidate — workspace proportions and soft-wrapped editable TeX
 
 A source TextEdit pointer click also dismisses the floating geometry group palette, avoiding a popup obscuring the central canvas after users return to their document. A production egui pointer event regression is added; **real X11 capture and exact-head CI remain unaccepted** because the previous HEAD had pre-step CI failures without job logs. This is a behavior fix inside the same PR, not a new N1/N2 feature.

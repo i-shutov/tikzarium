@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-11-05 — N5 restore Unix worker timeout test; cross-platform release gate (candidate)
+
+- On PR head `837c4ce6`, the real packaged Linux X11 release, full I61, fonts, B42 and Windows Rust passed, **but** Linux/macOS Rust and N1 failed with reproducible `E0423` in `pdf_navigation.rs:241`; it was a literal `\\n` in a Rust `//` comment that inadvertently commented out the Unix fixture path declaration. A Windows-only PASS did not cover this `#[cfg(unix)]` regression.
+- Restore actual source line breaks, retain real sleeping Unix child timeout/kill test (no spinning CPU), and update the exact app/src git-tree lease for full I61 Python and workflow atomically. Production Poppler timeout, source preservation, fonts, PDF, Windows/Mac and N5 package behavior unchanged.
+- Existing previous-head N5/I61 and PDF artifacts are not proof of the **new** HEAD. Release blocked until new exact-head Linux/macOS/Windows full Rust, N1, I61 and N5 X11 artifact checks all pass, with original PNG/.tex/PDF hashes reviewed. Physical Linux/HiDPI/Wayland NOT_RUN.
+
+
+## 2026-11-05 — N5 corrected X11 viewport and exact-head regression recovery (candidate)
+
+- Original Linux N5 extracted release [41937982111](https://github.com/i-shutov/tikzarium/actions/runs/41937982111) passed; independent screenshot and xdotool geometry show X=94, Y=71, 1180×680 fully within the 1366×768 screen. The N5 cropped-bottom-screen regression is fixed for hosted X11; physical Linux desktop/DPI/Wayland NOT_RUN.
+- Full six-gesture I61 [41937982066](https://github.com/i-shutov/tikzarium/actions/runs/41937982066) failed on the first tool. Original `01-line-group-popup.png` clearly shows button centers x=532/585/639/693; stale x=599 click selected **Rectangle**, not Line, and a real Rectangle command was generated. Recalibrate geometry/arrow/node and seventh-tool x coordinates using the original screenshot. Keep source-tree exact-SHA lease and the existing owner-command/Save/Open/Undo/PDF gates. Until rerun, six gestures and full N3/PDF remain NOT_RUN at this head.
+- D QA [41937982165](https://github.com/i-shutov/tikzarium/actions/runs/41937982165) Linux Rust: 115/116 app tests passed, one process-timeout test used a CPU-spinning POSIX shell loop and returned a non-timeout error. Replace fixture with `exec sleep 10` to test actual bounded kill without resource contention; preserve strict timeout and elapsed tests and include unexpected error diagnostic. Windows/macOS Rust succeeded; hosted Windows Poppler Chocolatey install failed before product tests, distinct infrastructure issue. No merge until exact-head full acceptance.
+
+
+## 2026-11-05 — N5 real Linux portable viewport-fit regression (candidate)
+
+- Independently audited original N5 artifact and exact-head four successful workflows. Client X11 geometry (2,40;1366×768) overflowed 1366×768 compact screen by 40px, clipping the bottom status bar despite successful workflow.
+- Start production viewport at 1180×680 logical points, preserve resize/maximize and 850×560 minimum, add a Rust desktop-chrome test and a real N5 xdotool bounds gate. Refresh fail-closed I61 app-tree SHA in workflow and Python.
+- N5 Russian README now distinguishes PR source SHA from merged main. New exact-head Rust/GUI, original screenshot and PDF verification remain PENDING; physical Linux/DPI/Wayland NOT_RUN.
+
+
+## 2026-11-05 — Linux N5 native portable bundle and extracted-X11 launch (candidate)
+
+- B43 PR #100 squash-merged on main `26abc5461bba06d610394080ffe23bbbf92cc6bb` after **seven** exact PR HEAD green workflows and original X11 PNG/source/PDF/font/SHA review. Main push acceptance must be tracked separately.
+- New native Linux x86_64 target in existing cross-platform N5 offline packager: fail-closed ELF64 little-endian AMD64 executable/PIE program-header checks, immutable binary SHA256, deterministic `.tar.gz` and executable `launch.sh`, README, CRLF fixture and manifest/provenance. Windows PE and macOS ARM Mach-O compatibility unchanged.
+- Add actual hosted native Linux release build → archive extraction/hashes → offline extracted CLI → **real X11 launch of packaged release binary and original 1366×768 screenshot**, with logs/window geometry/artifact. Synthetic header tests are not an app QA substitute. The Linux N5 workflow runs only on relevant paths, so does not create perpetual CI-only churn.
+- Update stale README from 2026-10-31 W01/Windows-first summary to the currently accepted Linux-first product. **Current N5 build and screenshot acceptance PENDING until exact-head workflows finish; physical desktop/Wayland/other distros, DPI and release installer NOT_RUN.** See plans/2026-11-05_LINUX_N5_PORTABLE_RELEASE.md and insights/2026-11-05_LINUX_N5_PORTABLE_QA.md.
+
+
 ## 2026-11-04 — B43 full exact-head GREEN and real wide/horizontal UX gate (candidate)
 
 - On exact PR #100 HEAD \`a71efb96d7bd6ca44951a4f7ac7018f44e02f10a\`, seven pull-request workflow conclusions are SUCCESS: Rust CI (Linux fixture / hosted Windows & Mac), D QA matrix, I61 full real Linux/X11, B42 screenshot bootstrap, N1, PDF/font and D06. No hidden pre-step CI blockage. Original B42 artifact 13362594222 and I61/N2 artifact 13362229988 downloaded. SHA256 checks across B42 6/6, I61 75/75, N2 42/42 all match reports. I61 reports actual six GUI gestures, Undo/Save/Open/CRLF, N2/N3 library source edits and external XeLaTeX PDF; pdffonts confirms embedded DejaVuSerif in inspected figure.pdf. This is hosted X11, not native packaged Linux/Wayland or physical Win/Mac.

@@ -36,11 +36,21 @@ def fake_mac():
     struct.pack_into('<I', b, 12, 2)
     return bytes(b)
 
+def fake_linux():
+    b = bytearray(120)
+    b[:4] = b'\x7fELF'
+    b[4:7] = bytes((2, 1, 1))
+    struct.pack_into('<HHI', b, 16, 3, 62, 1)
+    struct.pack_into('<QQ', b, 24, 0x1000, 64)
+    struct.pack_into('<HHH', b, 52, 64, 56, 1)
+    struct.pack_into('<I', b, 64, 1)  # PT_LOAD
+    return bytes(b)
 
 class N5Packaging(unittest.TestCase):
     def test_wrong_architecture_and_truncated_inputs_fail_closed(self):
-        for platform in (pkg.WIN, pkg.MAC):
-            for data in (b'', b'not-an-executable', fake_mac() if platform == pkg.WIN else fake_win()):
+        for platform in (pkg.WIN, pkg.MAC, pkg.LINUX):
+            wrong = fake_mac() if platform == pkg.WIN else fake_win()
+            for data in (b'', b'not-an-executable', wrong):
                 with self.subTest(platform=platform, payload=data[:8]), self.assertRaises(ValueError):
                     pkg.check_binary(data, platform)
         bad = bytearray(fake_win())
@@ -51,6 +61,22 @@ class N5Packaging(unittest.TestCase):
         struct.pack_into('<I', bad, 4, 0x01000007)
         with self.assertRaises(ValueError):
             pkg.check_binary(bytes(bad), pkg.MAC)
+        bad = bytearray(fake_linux())
+        bad[4] = 1  # 32-bit ELF cannot be passed as 64-bit Linux.
+        with self.assertRaises(ValueError):
+            pkg.check_binary(bytes(bad), pkg.LINUX)
+        bad = bytearray(fake_linux())
+        struct.pack_into('<H', bad, 18, 0xB7)  # ARM64 is not x86_64.
+        with self.assertRaises(ValueError):
+            pkg.check_binary(bytes(bad), pkg.LINUX)
+        bad = bytearray(fake_linux())
+        struct.pack_into('<H', bad, 16, 1)  # ET_REL cannot launch.
+        with self.assertRaises(ValueError):
+            pkg.check_binary(bytes(bad), pkg.LINUX)
+        bad = bytearray(fake_linux())
+        struct.pack_into('<Q', bad, 24, 0)  # Shared object has no entry point.
+        with self.assertRaises(ValueError):
+            pkg.check_binary(bytes(bad), pkg.LINUX)
 
     def test_mac_app_and_windows_portable_are_honest_and_integrity_locked(self):
         for platform, blob, extension in ((pkg.MAC, fake_mac(), '.tar.gz'), (pkg.WIN, fake_win(), '.zip')):
@@ -87,6 +113,36 @@ class N5Packaging(unittest.TestCase):
                         self.assertIn(root + 'tikzarium-app.exe', z.namelist())
                         self.assertNotIn(root + 'TikZarium.app/Contents/MacOS/tikzarium-app', z.namelist())
 
+    def test_linux_portable_is_reproducible_executable_and_no_bundled_tex(self):
+        with tempfile.TemporaryDirectory() as td:
+            blob = fake_linux()
+            pkg.check_binary(blob, pkg.LINUX)
+            entries = pkg.make_bundle(pkg.LINUX, SHA, CI, blob, blob)
+            root = 'Tikzarium-preview/'
+            self.assertEqual(entries[root + 'tikzarium-app'][1], 0o755)
+            self.assertEqual(entries[root + 'tikzarium-cli'][1], 0o755)
+            self.assertEqual(entries[root + 'launch.sh'][1], 0o755)
+            self.assertIn(b'exec ./tikzarium-app', entries[root + 'launch.sh'][0])
+            self.assertIn(b'Linux', entries[root + 'README_RU.md'][0])
+            self.assertNotIn(root + 'TikZarium.app/Contents/MacOS/tikzarium-app', entries)
+            provenance = json.loads(entries[root + 'PROVENANCE.json'][0])
+            self.assertEqual(provenance['platform'], pkg.LINUX)
+            self.assertEqual(provenance['linux_packaged_desktop'], 'NOT_RUN')
+            self.assertFalse(provenance['tex_or_fonts_bundled'])
+            manifest = entries[root + 'MANIFEST.sha256'][0].decode()
+            for name, (data, _) in entries.items():
+                if name.endswith('MANIFEST.sha256'):
+                    continue
+                self.assertIn(f'{pkg.sha256(data)}  {name.removeprefix(root)}\n', manifest)
+            a, b = Path(td) / 'a.tar.gz', Path(td) / 'b.tar.gz'
+            pkg.write_archive(pkg.LINUX, a, entries)
+            pkg.write_archive(pkg.LINUX, b, entries)
+            self.assertEqual(a.read_bytes(), b.read_bytes())
+            with tarfile.open(a, mode='r:gz') as t:
+                self.assertEqual(t.getmember(root + 'tikzarium-app').mode, 0o755)
+                self.assertEqual(t.getmember(root + 'launch.sh').mode, 0o755)
+                self.assertEqual(t.extractfile(root + 'tikzarium-app').read(), blob)
+
     def test_cli_rejects_modified_upstream_bytes_before_archive(self):
         # End-to-end CLI gate with SYNTHETIC headers: tests packaging, not running an app.
         with tempfile.TemporaryDirectory() as temp:
@@ -121,6 +177,8 @@ class N5Packaging(unittest.TestCase):
                 pkg.write_archive(pkg.WIN, Path(d) / 'bad.tar.gz', {})
             with self.assertRaises(ValueError):
                 pkg.write_archive(pkg.MAC, Path(d) / 'bad.zip', {})
+            with self.assertRaises(ValueError):
+                pkg.write_archive(pkg.LINUX, Path(d) / 'bad.zip', {})
 
 
 if __name__ == '__main__':

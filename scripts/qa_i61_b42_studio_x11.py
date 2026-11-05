@@ -20,14 +20,17 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 
 # Candidate click coordinates are tied to the exact app/src Git tree and
 # previously inspected B42 bootstrap screenshots, not a general GUI contract.
-APP_TREE = "48ed2245cd99c4c25b83fccbb81983deaed8247a"
+# Original N5 I61 41937982066 PNG: geometry popup X=500..762;
+# icon centers are 532/585/639/693, not old 599/653/707/761.
+# This source-tree lease deliberately requires renewed visual QA after UI changes.
+APP_TREE = "f531bae82b804dd3bb921c712dbe4f3dbda4c537"
 BUTTONS = [
-    ("line", (30, 150), (599, 169), (646, 350), (750, 377)),
-    ("rectangle", (30, 150), (653, 169), (681, 425), (765, 477)),
-    ("circle", (30, 150), (707, 169), (810, 351), (840, 351)),
-    ("cubic", (30, 150), (761, 169), (777, 470), (902, 460)),
-    ("arrow", (30, 199), (599, 216), (615, 535), (743, 552)),
-    ("node", (30, 248), (599, 266), (850, 550), (851, 550)),
+    ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
+    ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
+    ("circle", (30, 150), (639, 169), (810, 351), (840, 351)),
+    ("cubic", (30, 150), (693, 169), (777, 470), (902, 460)),
+    ("arrow", (30, 199), (532, 216), (615, 535), (743, 552)),
+    ("node", (30, 248), (532, 266), (850, 550), (851, 550)),
 ]
 
 
@@ -290,7 +293,7 @@ def main() -> int:
         # I62: real desktop assertions follow the already-proven six gestures
         # and PDF. Source bytes and screenshots must be independently reviewed.
         click(found, 28, 77)  # Return to the guide from the PDF viewport.
-        click(found, 1055, 109)  # Real Properties tab.
+        click(found, 1091, 109)  # Real Properties tab after N5 resize.
         click(found, 402, 39)  # Help toolbar ON.
         click(found, 402, 39)  # Help toolbar OFF; deterministic initial state.
         screenshot(out, "26-properties-before-f1")
@@ -373,7 +376,7 @@ def main() -> int:
         report["native_text_undo"] = "PASS_REAL_X11_SAVED_SOURCE_BYTES"
 
         click(found, 30, 150)  # Geometry group.
-        click(found, 599, 169)  # Native shared-C line.
+        click(found, 532, 169)  # Native shared-C line.
         gesture(found, (845, 400), (948, 421))
         click(found, 177, 39)
         wait(lambda: len(owners(source.read_bytes())) == 7,
