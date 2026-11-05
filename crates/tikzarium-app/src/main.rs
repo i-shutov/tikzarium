@@ -506,7 +506,6 @@ fn show_pending_open_dialog(
     result
 }
 
-
 #[derive(Debug, PartialEq, Eq)]
 enum PendingCloseAction {
     Save(PathBuf),
@@ -522,11 +521,7 @@ fn close_requires_confirmation(dirty: bool, approved: bool) -> bool {
     dirty && !approved
 }
 
-fn intercept_dirty_viewport_close(
-    ctx: &egui::Context,
-    dirty: bool,
-    approved: bool,
-) -> bool {
+fn intercept_dirty_viewport_close(ctx: &egui::Context, dirty: bool, approved: bool) -> bool {
     if !close_requires_confirmation(dirty, approved)
         || !ctx.input(|input| input.viewport().close_requested())
     {
@@ -807,7 +802,6 @@ impl TikzariumApp {
             font_proof_texture: None,
         }
     }
-
 
     fn modal_active(&self) -> bool {
         self.pending_open.is_some() || self.pending_close
@@ -2562,7 +2556,9 @@ impl eframe::App for TikzariumApp {
             }
         }
         self.pending_close_ui(ctx);
-        if !self.pending_close && let Some(path) = self.pending_open.clone() {
+        if !self.pending_close
+            && let Some(path) = self.pending_open.clone()
+        {
             let previous_destination = self.pending_open_save_path.clone();
             let decision = show_pending_open_dialog(
                 ctx,
