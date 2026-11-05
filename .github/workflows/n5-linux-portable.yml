@@ -321,7 +321,15 @@ jobs:
           assert proof["source_sha"] == os.environ["SOURCE_SHA"], proof
           assert proof["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"], proof
           assert proof["status"] == "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED", proof
-          assert len(proof["steps"]) == 4, proof
+          assert proof["steps"] == [
+              "genuine_portal_open_window_visible",
+              "native_open_selected_unicode_CRLF_source",
+              "portal_cancel_keeps_editable_source",
+              "native_save_unicode_new_file_no_overwrite",
+              "native_export_exact_xelatex_pdf_unicode_embedded_fonts",
+          ], proof
+          # The real native Export path must include verified, nonempty PDF evidence.
+          assert len(proof.get("native_pdf_sha256", "")) == 64, proof
           PY
       - name: Upload original portable bundle and actual GUI proof
         if: always()
