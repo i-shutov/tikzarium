@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-11-05 — Windows release lane, native GUI executable role (candidate)
+## 2026-11-05 — Windows x64 native portable ZIP hosted acceptance (candidate)\n\n- Build portable Windows x64 ZIP from the exact reviewed hosted Windows native release PE32+ GUI/CLI binaries, fail-closed SHA + complete archive manifest/source provenance, then **execute extracted CLI help** from a Unicode/space directory with XeLaTeX unavailable. Include independent tamper/duplicate/PE-role unit tests, original ZIP + JSON audit CI artifacts; no TeX/font bundles, installer or physical GUI claims.\n- Separate self-hosted trusted-main Rust/PE/portable and MiKTeX checks so an unavailable Rust toolchain cannot silently suppress the distinct XeLaTeX diagnostic; MiKTeX requires a non-admin interactive user session. No reinstall or elevated MiKTeX bypass. Current platform priority supersedes older Linux-first document preambles.\n- Original PR-head CI, Windows ZIP, embedded PDF/font/PNG audit, persistent runner and physical Windows 10 GUI: **PENDING until reviewed**.\n\n## 2026-11-05 — Windows release lane, native GUI executable role (candidate)
 
 - Owner changed active priority to Windows x64. Linux RC and hosted evidence preserved without claiming physical Linux/Windows success.
 - Original hosted Windows artifact 13401159253 main 4382ca3e had both app.exe and cli.exe PE Subsystem 3 Console; GUI needs 2. Added Rust release-only native GUI subsystem, fail-closed PE roles in Windows portable package, negative unit tests and real Windows build header gate.

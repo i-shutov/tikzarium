@@ -71,6 +71,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Verify expected main SHA before any user-server execution
+        id: exact_main_sha
         shell: powershell
         env:
           EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_main_sha || github.sha }}
@@ -83,7 +84,10 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_rust.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
-      - name: Existing external MiKTeX offline proof (separate gate)
+      - name: Existing external MiKTeX offline proof (independent of Rust result)
+        # A failed Rust compile must not conceal a separate MiKTeX diagnostic;
+        # NEVER run this step unless exact trusted-main checkout succeeded.
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"

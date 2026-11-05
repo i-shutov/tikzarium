@@ -1,5 +1,6 @@
 # Architecture — TikZ-native authoring, external XeLaTeX
 
+**2026-11-05 — АКТУАЛЬНЫЙ ПОРЯДОК РЕЛИЗА:** Windows 10 x64 native egui, внешний уже установленный пользователем MiKTeX/XeLaTeX; Linux 1.0.0-rc.1 принят как RC, Mac ARM и Linux остаются архитектурными и CI-платформами. Заморозка функций. Прежний Linux-first абзац от 2026-11-04 ниже является историческим. Критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
 **Release order (2026-11-04):** first full Linux x86_64 desktop GUI/ergonomics release with user-installed external XeLaTeX; Windows 10/MiKTeX and macOS ARM/external XeLaTeX are preserved as first-class **architectural and hosted CI** targets, with physical GUI qualification in later releases. The diagram below is an architectural illustration, not a first-release platform gate. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
 
 
