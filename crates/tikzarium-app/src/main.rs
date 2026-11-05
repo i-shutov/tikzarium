@@ -370,9 +370,6 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
         )
 }
 
-/// A native Save dialog can still select a symlink or already occupied name.
-/// Fail closed unless writing to the exact current document. Unlike displaying
-/// path strings, this keeps non-UTF-8 Linux path bytes intact.
 /// Stage the complete PDF on the destination filesystem before exposing the
 /// final filename. A failed write must not leave a corrupt user-visible PDF;
 /// persist_noclobber also refuses existing files and symlinks.
@@ -384,9 +381,15 @@ fn write_new_pdf_without_overwrite(path: &Path, pdf: &[u8]) -> std::io::Result<(
     let mut staged = tempfile::NamedTempFile::new_in(folder)?;
     std::io::Write::write_all(staged.as_file_mut(), pdf)?;
     staged.as_file().sync_all()?;
-    staged.persist_noclobber(path).map(|_| ()).map_err(|error| error.error)
+    staged
+        .persist_noclobber(path)
+        .map(|_| ())
+        .map_err(|error| error.error)
 }
 
+/// A native Save dialog can still select a symlink or already occupied name.
+/// Fail closed unless writing to the exact current document. Unlike displaying
+/// path strings, this keeps non-UTF-8 Linux path bytes intact.
 fn checked_native_save_destination(document: &Document, path: PathBuf) -> Result<PathBuf, String> {
     if path.as_os_str().is_empty() {
         return Err("Выберите имя TeX-файла".into());
