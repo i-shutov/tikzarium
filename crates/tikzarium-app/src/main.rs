@@ -377,14 +377,13 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
 /// A native Save dialog can still select a symlink or already occupied name.
 /// Fail closed unless writing to the exact current document. Unlike displaying
 /// path strings, this keeps non-UTF-8 Linux path bytes intact.
-fn checked_native_save_destination(
-    document: &Document,
-    path: PathBuf,
-) -> Result<PathBuf, String> {
+fn checked_native_save_destination(document: &Document, path: PathBuf) -> Result<PathBuf, String> {
     if path.as_os_str().is_empty() {
         return Err("Выберите имя TeX-файла".into());
     }
-    let current = document.path.as_deref()
+    let current = document
+        .path
+        .as_deref()
         .is_some_and(|existing| same_existing_path(existing, &path));
     match std::fs::symlink_metadata(&path) {
         Ok(_) if !current => Err(
@@ -746,15 +745,24 @@ fn show_studio_file_menu(
             ui.separator();
             // These are genuine platform dialogs, separate from the manual
             // typed-path workflow retained for offline/portal-less X11 tests.
-            if ui.add_enabled(ready, egui::Button::new("Выбрать файл…")).clicked() {
+            if ui
+                .add_enabled(ready, egui::Button::new("Выбрать файл…"))
+                .clicked()
+            {
                 result.action = Some(StudioFileAction::OpenPicker);
                 ui.close();
             }
-            if ui.add_enabled(ready, egui::Button::new("Сохранить через диалог…")).clicked() {
+            if ui
+                .add_enabled(ready, egui::Button::new("Сохранить через диалог…"))
+                .clicked()
+            {
                 result.action = Some(StudioFileAction::SavePicker);
                 ui.close();
             }
-            if ui.add_enabled(ready, egui::Button::new("Экспорт PDF через диалог…")).clicked() {
+            if ui
+                .add_enabled(ready, egui::Button::new("Экспорт PDF через диалог…"))
+                .clicked()
+            {
                 result.action = Some(StudioFileAction::ExportPicker);
                 ui.close();
             }
@@ -1029,7 +1037,10 @@ impl TikzariumApp {
     /// Dialog selection is a *candidate path*, not authorization to destroy
     /// unrelated files. Both Unicode and OS-native PathBuf names are kept intact.
     fn save_as_picker(&mut self) -> bool {
-        let filename = self.document.path.as_ref()
+        let filename = self
+            .document
+            .path
+            .as_ref()
             .and_then(|path| path.file_name())
             .and_then(|name| name.to_str())
             .unwrap_or(DEFAULT_SCRATCH_FILENAME);
@@ -1067,36 +1078,51 @@ impl TikzariumApp {
             self.status = "Сначала соберите актуальный PDF с внешним XeLaTeX".into();
             return;
         }
-        let filename = self.document.path.as_deref()
+        let filename = self
+            .document
+            .path
+            .as_deref()
             .and_then(|p| p.with_extension("pdf").file_name().map(|x| x.to_owned()))
             .and_then(|x| x.into_string().ok())
             .unwrap_or_else(|| "figure.pdf".into());
         let Some(path) = rfd::FileDialog::new()
             .add_filter("PDF", &["pdf"])
             .set_file_name(&filename)
-            .save_file() else {
-                self.status = "Выбор PDF отменён или XDG file portal недоступен".into();
-                return;
-            };
-        if !path.extension().and_then(|ext| ext.to_str())
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf")) {
+            .save_file()
+        else {
+            self.status = "Выбор PDF отменён или XDG file portal недоступен".into();
+            return;
+        };
+        if !path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf"))
+        {
             self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
             return;
         }
         // create_new is atomic and prevents symlink/racy overwrite of a PDF
         // that appeared since the portal picker returned.
-        match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)
+        {
             Ok(mut output) => match std::io::Write::write_all(
                 &mut output,
                 self.pdf.as_deref().expect("checked above"),
             ) {
                 Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
-                Err(error) => self.status = format!("Ошибка записи PDF {}: {error}", path.display()),
+                Err(error) => {
+                    self.status = format!("Ошибка записи PDF {}: {error}", path.display())
+                }
             },
-            Err(error) => self.status = format!(
-                "Нельзя перезаписывать существующий PDF или открыть {}: {error}. Выберите новое имя.",
-                path.display()
-            ),
+            Err(error) => {
+                self.status = format!(
+                    "Нельзя перезаписывать существующий PDF или открыть {}: {error}. Выберите новое имя.",
+                    path.display()
+                )
+            }
         };
     }
 
@@ -2763,8 +2789,13 @@ fn fit_oversized_window(
     inner: egui::Vec2,
     outer: egui::Vec2,
 ) -> Option<egui::Vec2> {
-    if !monitor.is_finite() || !inner.is_finite() || !outer.is_finite()
-        || monitor.x <= 0.0 || monitor.y <= 0.0 || inner.x <= 0.0 || inner.y <= 0.0
+    if !monitor.is_finite()
+        || !inner.is_finite()
+        || !outer.is_finite()
+        || monitor.x <= 0.0
+        || monitor.y <= 0.0
+        || inner.x <= 0.0
+        || inner.y <= 0.0
     {
         return None;
     }
@@ -2777,8 +2808,7 @@ fn fit_oversized_window(
         inner.x.min((monitor.x - chrome.x - MARGIN).max(0.0)),
         inner.y.min((monitor.y - chrome.y - MARGIN).max(0.0)),
     );
-    (target.x > 0.0 && target.y > 0.0
-        && (target.x + 0.5 < inner.x || target.y + 0.5 < inner.y))
+    (target.x > 0.0 && target.y > 0.0 && (target.x + 0.5 < inner.x || target.y + 0.5 < inner.y))
         .then_some(target)
 }
 
@@ -2816,7 +2846,10 @@ mod split_layout_tests {
         assert!(checked_native_save_destination(&doc, owned.clone()).is_ok());
         assert!(checked_native_save_destination(&doc, fresh).is_ok());
         assert!(checked_native_save_destination(&doc, foreign.clone()).is_err());
-        assert_eq!(std::fs::read(&foreign).unwrap(), b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\r\n");
+        assert_eq!(
+            std::fs::read(&foreign).unwrap(),
+            b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\r\n"
+        );
         doc.source.push_str("% opaque\r\n");
         assert!(doc.dirty());
     }
@@ -2824,28 +2857,38 @@ mod split_layout_tests {
     #[test]
     fn r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace() {
         assert_eq!(RELEASE_MIN_INNER_SIZE, egui::vec2(850.0, 440.0));
-        assert!(fit_oversized_window(
-            egui::vec2(1366.0, 768.0),
-            egui::vec2(1180.0, 680.0),
-            egui::vec2(1180.0, 700.0),
-        ).is_none());
-        assert!(fit_oversized_window(
-            egui::vec2(1536.0, 864.0),
-            egui::vec2(1180.0, 680.0),
-            egui::vec2(1180.0, 700.0),
-        ).is_none());
+        assert!(
+            fit_oversized_window(
+                egui::vec2(1366.0, 768.0),
+                egui::vec2(1180.0, 680.0),
+                egui::vec2(1180.0, 700.0),
+            )
+            .is_none()
+        );
+        assert!(
+            fit_oversized_window(
+                egui::vec2(1536.0, 864.0),
+                egui::vec2(1180.0, 680.0),
+                egui::vec2(1180.0, 700.0),
+            )
+            .is_none()
+        );
         let at_200pct = fit_oversized_window(
             egui::vec2(960.0, 540.0),
             egui::vec2(960.0, 560.0),
             egui::vec2(960.0, 571.0),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(at_200pct.y < 520.0 && at_200pct.y >= RELEASE_MIN_INNER_SIZE.y);
         assert!(at_200pct.x >= RELEASE_MIN_INNER_SIZE.x);
-        assert!(fit_oversized_window(
-            egui::vec2(f32::NAN, 540.0),
-            egui::vec2(960.0, 560.0),
-            egui::vec2(960.0, 571.0),
-        ).is_none());
+        assert!(
+            fit_oversized_window(
+                egui::vec2(f32::NAN, 540.0),
+                egui::vec2(960.0, 560.0),
+                egui::vec2(960.0, 571.0),
+            )
+            .is_none()
+        );
     }
 
     #[test]
