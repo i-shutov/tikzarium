@@ -790,7 +790,7 @@ impl TikzariumApp {
             pending_close_save_path: String::new(),
             pending_close_validation_error: None,
             close_approved: false,
-            prefs:
+            prefs,
             studio_group: None,
             studio_palette_anchor: egui::pos2(65.0, 120.0),
             studio_extension_filter: String::new(),
