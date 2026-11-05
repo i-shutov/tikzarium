@@ -69,7 +69,7 @@ jobs:
         shell: pwsh
         run: |
           python -c "import sys; from pathlib import Path; sys.path.insert(0, 'scripts'); from package_n5_preview import WIN, check_binary; check_binary(Path('target/release/tikzarium-app.exe').read_bytes(), WIN, role='app'); check_binary(Path('target/release/tikzarium-cli.exe').read_bytes(), WIN, role='cli'); print('Windows PE GUI=2 CLI=3 PASS')"
-      - name: Windows x64 portable ZIP: original release binary SHA, manifest, extracted CLI
+      - name: "Windows x64 portable ZIP: original release binary SHA, manifest, extracted CLI"
         if: runner.os == 'Windows'
         shell: pwsh
         env:
