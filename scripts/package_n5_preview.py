@@ -99,7 +99,10 @@ def readme(platform: str, sha: str, ci_url: str) -> bytes:
     linux_note = ("Linux x86_64: комплект переносимый, не AppImage/.deb и не"
                   " автономный контейнер библиотек; требуются совместимые"
                   " системные X11/Wayland/OpenGL/GLIBC и установленный"
-                  " пользователем внешний XeLaTeX.\n" if platform == LINUX else "")
+                  " пользователем внешний XeLaTeX. launch.sh сохраняет"
+                  " рабочий каталог проекта: запускайте /путь/к/Tikzarium-preview/launch.sh"
+                  " из нужной папки документов, не из каталога программы.\n"
+                  if platform == LINUX else "")
     return f"""# TikZarium — N5 native portable PREVIEW (не релиз)
 
 Исходный Git commit SHA: {sha}. Оригинальные release-бинарники: {ci_url}.
@@ -140,9 +143,17 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
     elif platform == LINUX:
         entries[root + "tikzarium-app"] = app, 0o755
         entries[root + "tikzarium-cli"] = cli, 0o755
-        entries[root + "launch.sh"] = (b'#!/bin/sh\nset -eu\n'
-            b'cd -- "$(dirname -- "$0")"\n'
-            b'exec ./tikzarium-app "$@"\n'), 0o755
+        # Resolve the bundled ELF while preserving the caller's project CWD.
+        # Old cd into this (possibly read-only) bundle redirected GUI Save/PDF.
+        entries[root + "launch.sh"] = (
+            b'#!/bin/sh\nset -eu\n'
+            b'case "$0" in\n'
+            b'  /*|*/*) launcher="$0" ;;\n'
+            b'  *) launcher="$(command -v "$0")" ;;\n'
+            b'esac\n'
+            b'bundle_dir="$(CDPATH= cd -- "$(dirname -- "$launcher")" && pwd -P)"\n'
+            b'exec "$bundle_dir/tikzarium-app" "$@"\n'
+        ), 0o755
     else:
         plist = plistlib.dumps({
             "CFBundleDevelopmentRegion": "ru",

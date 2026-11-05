@@ -2,7 +2,7 @@
 
 **Linux-first, cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
 
-**Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. This **is not a finished or physically qualified Linux desktop release**. The first complete Linux release still needs a reproducible native package, launch from that package, DPI/dialogs/usability review and an observed real target desktop. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.
+**Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. This **is not a finished or physically qualified Linux desktop release**. The reproducible native package and its extracted X11 startup passed on main. Full *packaged* GUI→editable TeX→XeLaTeX PDF, DPI/dialogs/usability review and an observed real target desktop still gate the first complete release. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.
 
 ## Current user workflow
 
@@ -35,6 +35,8 @@ sha256sum -c MANIFEST.sha256
 ./tikzarium-cli doctor
 ./launch.sh
 ```
+
+On Linux, `launch.sh` starts the bundled executable **without changing the caller's working directory**. To save `figure.tex` and PDFs in a writable project folder, use `cd /path/to/project && /path/to/Tikzarium-preview/launch.sh` (paths containing spaces/Cyrillic are supported).
 
 The portable archive is **not** a `.deb`, AppImage, system-wide installer, or guarantee of ABI compatibility with every distribution. A synthetic-header unit test proves packaging contracts only; only the separately recorded X11 run of the **extracted real binary**, original screenshots and actual PDF evidence establish runtime behavior. At the time this description was committed, that new N5 gate remained **PENDING**.
 

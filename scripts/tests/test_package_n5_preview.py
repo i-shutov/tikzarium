@@ -1,5 +1,6 @@
 """Offline N5 packaging gates: synthetic headers are never product GUI evidence."""
 import importlib.util
+import os
 import json
 import plistlib
 import struct
@@ -122,7 +123,7 @@ class N5Packaging(unittest.TestCase):
             self.assertEqual(entries[root + 'tikzarium-app'][1], 0o755)
             self.assertEqual(entries[root + 'tikzarium-cli'][1], 0o755)
             self.assertEqual(entries[root + 'launch.sh'][1], 0o755)
-            self.assertIn(b'exec ./tikzarium-app', entries[root + 'launch.sh'][0])
+            self.assertIn(b'exec "$bundle_dir/tikzarium-app" "$@"', entries[root + 'launch.sh'][0])
             self.assertIn(b'Linux', entries[root + 'README_RU.md'][0])
             self.assertNotIn(root + 'TikZarium.app/Contents/MacOS/tikzarium-app', entries)
             provenance = json.loads(entries[root + 'PROVENANCE.json'][0])
@@ -142,6 +143,45 @@ class N5Packaging(unittest.TestCase):
                 self.assertEqual(t.getmember(root + 'tikzarium-app').mode, 0o755)
                 self.assertEqual(t.getmember(root + 'launch.sh').mode, 0o755)
                 self.assertEqual(t.extractfile(root + 'tikzarium-app').read(), blob)
+
+    @unittest.skipUnless(os.name == 'posix', 'Shell execution requires POSIX; other packaging checks remain cross-platform')
+    def test_linux_launcher_preserves_project_cwd_and_unicode_args(self):
+        """Execute the shipped shell script: output must follow the user, not the bundle."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            bundle = root / 'Приложение с пробелом'
+            project = root / 'Проект с пробелом'
+            bundle.mkdir()
+            project.mkdir()
+            entries = pkg.make_bundle(pkg.LINUX, SHA, CI, fake_linux(), fake_linux())
+            launcher = bundle / 'launch.sh'
+            launcher.write_bytes(entries['Tikzarium-preview/launch.sh'][0])
+            launcher.chmod(0o755)
+            # Probe child only here; real packaged Rust ELF is tested in X11 below.
+            executable = bundle / 'tikzarium-app'
+            executable.write_text(
+                '#!/bin/sh\n'
+                'printf "CWD=%s\\n" "$PWD"\n'
+                'printf "ARG=%s\\n" "$@"\n',
+                encoding='utf-8',
+            )
+            executable.chmod(0o755)
+            output = subprocess.run(
+                [str(launcher), 'Фигура A.tex', 'a space'], cwd=project,
+                capture_output=True, text=True, check=True,
+            )
+            self.assertEqual(output.stdout.splitlines(), [
+                f'CWD={project.resolve()}', 'ARG=Фигура A.tex', 'ARG=a space',
+            ])
+            env = os.environ.copy()
+            env['PATH'] = str(bundle) + os.pathsep + env.get('PATH', '')
+            through_path = subprocess.run(
+                ['launch.sh', 'путь'], cwd=project, env=env,
+                capture_output=True, text=True, check=True,
+            )
+            self.assertEqual(through_path.stdout.splitlines(), [
+                f'CWD={project.resolve()}', 'ARG=путь',
+            ])
 
     def test_cli_rejects_modified_upstream_bytes_before_archive(self):
         # End-to-end CLI gate with SYNTHETIC headers: tests packaging, not running an app.

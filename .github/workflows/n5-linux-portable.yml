@@ -33,7 +33,7 @@ concurrency:
 jobs:
   linux-portable:
     runs-on: ubuntu-24.04
-    timeout-minutes: 55
+    timeout-minutes: 75
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CARGO_INCREMENTAL: '0'
@@ -50,6 +50,13 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           git diff --exit-code -- Cargo.lock
           uname -a
+      - name: Fail-closed reviewed Studio source-tree lease for packaged proof
+        shell: bash
+        run: |
+          app_tree="$(git rev-parse HEAD:crates/tikzarium-app/src)"
+          grep -Fqx "APP_TREE = \"$app_tree\"" scripts/qa_i61_b42_studio_x11.py
+          echo "TIKZARIUM_APP_TREE_SHA=$app_tree" >> "$GITHUB_ENV"
+          echo "TIKZARIUM_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
       - name: Locked Rust 1.91.0 toolchain
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
@@ -142,6 +149,69 @@ jobs:
             cd "$RUNNER_TEMP/n5-linux"
             sha256sum linux-n5-packaged-1366x768.png native-launch.log archive.sha256 > native-evidence.sha256
           )
+      - name: Install external XeLaTeX only on disposable hosted Ubuntu
+        shell: bash
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            xclip texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+          xelatex --version | head -n 2
+          command -v pdffonts
+      - name: Real extracted portable launcher six-tool/N2/N3/F1/Undo/Save/Open/XeLaTeX
+        shell: bash
+        run: |
+          set -euo pipefail
+          export N5_LAUNCHER="$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/launch.sh"
+          test -x "$N5_LAUNCHER"
+          test -x "$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/tikzarium-app"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = "$TIKZARIUM_APP_TREE_SHA"
+          mkdir -p "$RUNNER_TEMP/n5-full-runtime"
+          chmod 700 "$RUNNER_TEMP/n5-full-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-full-runtime"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+            bash -euo pipefail -c '
+              openbox --sm-disable >"$RUNNER_TEMP/n5-linux/openbox-full.log" 2>&1 &
+              python3 scripts/qa_i61_b42_studio_x11.py \
+                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-i61"
+              python3 scripts/qa_n2_studio_x11.py \
+                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-n2"
+            '
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "n5-linux"
+          bundle = evidence / "extracted" / "Tikzarium-preview"
+          elf_hash = hashlib.sha256((bundle / "tikzarium-app").read_bytes()).hexdigest()
+          launcher_hash = hashlib.sha256((bundle / "launch.sh").read_bytes()).hexdigest()
+          assert f"{elf_hash}  tikzarium-app\n" in (bundle / "MANIFEST.sha256").read_text()
+          verified = {}
+          for name in ("packaged-i61", "packaged-n2"):
+              report = json.loads((evidence / name / "report.json").read_text())
+              assert report["status"].startswith("PASS_AUTOMATED"), (name, report)
+              assert report["source_head_sha"] == os.environ["SOURCE_SHA"]
+              assert report["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"]
+              # GUI script receives the real launch.sh; manifest locks actual ELF.
+              assert report["app_sha256"] == launcher_hash
+              verified[name] = report
+          assert verified["packaged-i61"]["six_real_tools"].startswith("PASS_")
+          assert verified["packaged-i61"]["real_xelatex_pdf"].startswith("PASS_")
+          assert verified["packaged-i61"]["gui_open_reopen"].startswith("PASS_")
+          assert verified["packaged-n2"]["n3_caret_complete"].startswith("PASS_")
+          assert verified["packaged-n2"]["n3_xelatex_pdf"].startswith("PASS_")
+          assert verified["packaged-n2"]["gui_save_open"].startswith("PASS_")
+          proof = {
+              "status": "PASS_HOSTED_X11_AUTOMATED_MANUAL_REVIEW_REQUIRED",
+              "source_head_sha": os.environ["SOURCE_SHA"],
+              "app_elf_sha256": elf_hash, "launcher_sha256": launcher_hash,
+              "i61": verified["packaged-i61"]["status"],
+              "n2_n3": verified["packaged-n2"]["status"],
+              "physical_linux": "NOT_RUN", "hidpi_native_dialogs": "NOT_RUN",
+              "wayland": "NOT_RUN",
+          }
+          (evidence / "packaged-full-proof.json").write_text(
+              json.dumps(proof, indent=2) + "\n")
+          print(json.dumps(proof))
+          PY
       - name: Upload original portable bundle and actual GUI proof
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -158,4 +228,8 @@ jobs:
             ${{ runner.temp }}/n5-linux/openbox.log
             ${{ runner.temp }}/n5-linux/png-size.txt
             ${{ runner.temp }}/n5-linux/cli-help.txt
+            ${{ runner.temp }}/n5-linux/openbox-full.log
+            ${{ runner.temp }}/n5-linux/packaged-full-proof.json
+            ${{ runner.temp }}/n5-linux/packaged-i61/
+            ${{ runner.temp }}/n5-linux/packaged-n2/
           if-no-files-found: warn
