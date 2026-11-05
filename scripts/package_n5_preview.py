@@ -233,7 +233,7 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
     entries[root + "qa/figure-crlf.tex"] = fixture(), 0o644
     if platform == LINUX:
         qa = Path(__file__).with_name("r4_physical_x11_preflight.sh").read_bytes()
-        if not qa.startswith(b"#!/usr/bin/env bash\\n"):
+        if not qa.startswith(b"#!/usr/bin/env bash\n"):
             raise ValueError("Linux R4 qualifier must be a standalone Bash script")
         entries[root + "qa/r4_physical_x11_preflight.sh"] = qa, 0o755
     entries[root + "README_RU.md"] = readme(platform, source, ci_url), 0o644
