@@ -13,3 +13,9 @@ Product: Rust/egui GUI with six real TikZ gestures, editable .tex beside canvas,
 | W4 installer/release | Only after W0–W3 and cross-platform exact-head/postmerge Rust CI, reviewed portable ZIP/provenance and installer on target. No final Windows tag/installer before qualified smoke. |
 
 Dedicated runner tikzarium-winserver must execute only reviewed trusted main at exact SHA; never run untrusted PR/fork code on persistent Windows Server. FlowBridge runner and directories strictly excluded. No blind CI reruns, no CI-only micro-PRs; use one substantial code+tests+plans/insights/CHANGELOG vertical. Merge only after original exact-head CI/artifact review and expected_head_sha, postmerge separately.
+
+## User-directed Windows Server CI (trusted main only)
+
+On the dedicated `tikzarium-winserver` self-hosted runner, run locked Rust workspace tests, release app/CLI build, real PE32+ role audit, original native-binary SHA and optional portable ZIP in a separate step **before** MiKTeX. The MiKTeX step explicitly reports privileged token/Session0 as an environment blocker, without uninstall/reinstall, package writes or security bypass. This prevents the MiKTeX preflight from masking actual Windows Rust CI results. Preserve `contents:read`, SHA gate, no PR/fork code, serial concurrency and original artifacts. User confirms MiKTeX is already system-wide for all users: absence of installation is NOT the blocker; previous job 41998880215 failed due to the elevated token.
+
+Windows reference benchmark (not implementation scope): insights/2026-11-05_TIKZ_EDITOR_REFERENCE.md. PR must pass exact-head hosted CI and manual artifact review before trusted main can use it on the user server.

@@ -12,6 +12,8 @@ on:
       - "crates/**"
       - "examples/**"
       - "scripts/tools/qa_windows_server_user.ps1"
+      - "scripts/tools/qa_windows_server_rust.ps1"
+      - "scripts/package_n5_preview.py"
   workflow_dispatch:
     inputs:
       expected_main_sha:
@@ -77,10 +79,14 @@ jobs:
           if ($actual -cne $env:EXPECTED_SHA -or $actual -cne '${{ github.sha }}') {
             throw 'Exact main SHA lease mismatch; refuse to run on user server'
           }
-      - name: User MiKTeX offline proof and locked Rust test
+      - name: Dedicated Windows Server Rust tests, PE validation, portable build
         shell: powershell
         run: |
-          ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -CheckRust
+          ./scripts/tools/qa_windows_server_rust.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
+      - name: Existing external MiKTeX offline proof (separate gate)
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
       - name: Upload honest evidence including failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
