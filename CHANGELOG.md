@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — N5 restore Unix worker timeout test; cross-platform release gate (candidate)
+
+- On PR head `837c4ce6`, the real packaged Linux X11 release, full I61, fonts, B42 and Windows Rust passed, **but** Linux/macOS Rust and N1 failed with reproducible `E0423` in `pdf_navigation.rs:241`; it was a literal `\\n` in a Rust `//` comment that inadvertently commented out the Unix fixture path declaration. A Windows-only PASS did not cover this `#[cfg(unix)]` regression.
+- Restore actual source line breaks, retain real sleeping Unix child timeout/kill test (no spinning CPU), and update the exact app/src git-tree lease for full I61 Python and workflow atomically. Production Poppler timeout, source preservation, fonts, PDF, Windows/Mac and N5 package behavior unchanged.
+- Existing previous-head N5/I61 and PDF artifacts are not proof of the **new** HEAD. Release blocked until new exact-head Linux/macOS/Windows full Rust, N1, I61 and N5 X11 artifact checks all pass, with original PNG/.tex/PDF hashes reviewed. Physical Linux/HiDPI/Wayland NOT_RUN.
+
+
 ## 2026-11-05 — N5 corrected X11 viewport and exact-head regression recovery (candidate)
 
 - Original Linux N5 extracted release [41937982111](https://github.com/i-shutov/tikzarium/actions/runs/41937982111) passed; independent screenshot and xdotool geometry show X=94, Y=71, 1180×680 fully within the 1366×768 screen. The N5 cropped-bottom-screen regression is fixed for hosted X11; physical Linux desktop/DPI/Wayland NOT_RUN.
