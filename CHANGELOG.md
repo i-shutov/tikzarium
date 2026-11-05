@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05 — Linux N5 real portable launcher project directory and packaged source-to-PDF (candidate)
+
+- Verified current merged main `ddf018a7d57f963fd8491c82ef303e9223e3f41c`: postmerge hosted Rust/D QA/N1/I61/N5/D06 workflows SUCCESS. Secondary trusted Windows Server QA failed, not a Linux gate.
+- Fix a real portable UX defect: the existing `launch.sh` cd'ed into the extracted application directory before launching egui, so relative GUI Save/Export went there rather than to the user's working project, potentially failing for read-only bundle. Now resolve the ELF relative to the launcher while preserving caller CWD. Executed offline shell tests cover spaces, Unicode, arguments and PATH lookup.
+- Extend the same Linux N5 **product** workflow beyond extracted release GUI boot to the actual extracted launcher → six native mouse tools → editable TeX/CRLF → Save/Open/F1/Undo → external XeLaTeX PDF Unicode/fonts, plus real N2/N3 library and completion path. Fail-closed source-tree, manifest and original PNG/.tex/PDF/SHA upload.
+- New PR exact-head CI and manual original-artifact review PENDING. Physical Linux, HiDPI, native dialogs, Wayland NOT_RUN. Existing Windows/Mac Rust/TeX paths unchanged.
+
+
 ## 2026-11-05 — N5 restore Unix worker timeout test; cross-platform release gate (candidate)
 
 - On PR head `837c4ce6`, the real packaged Linux X11 release, full I61, fonts, B42 and Windows Rust passed, **but** Linux/macOS Rust and N1 failed with reproducible `E0423` in `pdf_navigation.rs:241`; it was a literal `\\n` in a Rust `//` comment that inadvertently commented out the Unix fixture path declaration. A Windows-only PASS did not cover this `#[cfg(unix)]` regression.

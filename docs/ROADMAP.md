@@ -1,5 +1,10 @@
 # Roadmap — TikZ-native visual authoring
 
+## L4 Linux packaged first-use source-to-PDF (candidate, 2026-11-05)
+
+Accepted main `ddf018a7d57f963fd8491c82ef303e9223e3f41c` passed Linux-hosted N5 extracted release **window** launch, I61 source-build full X11, N1, Rust and D QA independently. Missing evidence is the complete **packaged release launcher** GUI→source→XeLaTeX PDF vertical. Resolve launcher/CWD defect and invoke full existing native I61 and N2/N3 mouse/keyboard tests on the extracted release launcher in the N5 workflow, rather than treating the source-built/debug GUI proof as packaged release proof. New PR-head CI/manual PNG/source/PDF SHA review PENDING, physical Linux/HiDPI/native dialogs/Wayland NOT_RUN. See `plans/2026-11-05_LINUX_N5_PACKAGED_FIRST_USE.md`.
+
+
 ## N5 Linux packaged-desktop candidate — 2026-11-05
 
 After seven exact PR-head success workflows and source/PDF/PNG SHA review, B43 Linux UX was squash-merged as main `26abc5461bba06d610394080ffe23bbbf92cc6bb`. The next substantial first-release vertical is a **real Linux x86_64 portable bundle**: locked release Rust binaries, architecture/manifest checks, reproducible archive and an *extracted* native GUI launch under X11, not merely a synthetically assembled zip. See `plans/2026-11-05_LINUX_N5_PORTABLE_RELEASE.md`. That CI and original screenshot assessment remain **PENDING** until observed; physical Linux desktop, DPI/Wayland and native installer remain NOT_RUN. Windows/Mac paths continue to be tested but do not block Linux-first release.
