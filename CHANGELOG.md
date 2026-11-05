@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — Windows release lane, native GUI executable role (candidate)
+
+- Owner changed active priority to Windows x64. Linux RC and hosted evidence preserved without claiming physical Linux/Windows success.
+- Original hosted Windows artifact 13401159253 main 4382ca3e had both app.exe and cli.exe PE Subsystem 3 Console; GUI needs 2. Added Rust release-only native GUI subsystem, fail-closed PE roles in Windows portable package, negative unit tests and real Windows build header gate.
+- Trusted Windows Server job 41998880215 got checkout/SHA PASS but MiKTeX failed before PDF due to elevated privileges. No bypass, no package installations and no Windows GUI/Win10 PASS. See plans/2026-11-05_WINDOWS_X64_RELEASE.md.
+
+
 ## 2026-11-05 — R5 Linux 1.0.0-rc.1 native reproducible candidate (PENDING)
 
 - Confirmed exact postmerge main 4f3a2ebb: N5/Rust/D QA/I61/N1/D06 SUCCESS; original N5 artifact13395297726 checks: archive manifest 6/6, R1 9/9, R2 6/6, R3 14/14 SHA. This is NOT physical Linux.

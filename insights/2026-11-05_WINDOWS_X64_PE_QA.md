@@ -1,0 +1,5 @@
+# Windows native release baseline and block evidence — 2026-11-05
+
+Main 4382ca3e, public i-shutov/tikzarium, no open PRs. Original hosted Windows run 41998880106 artifact 13401159253 ZIP SHA256 e4d3119f212bf7c5bee86d195654be317831e5c7384e7ba6065b9a41f706a20a. Real app.exe PE32+ AMD64 Subsystem=3 SHA256 a0ecd44757dc6107651b5f2d0af90b649048be7fc4a4589789fc2266be8491e0 (FAIL normal GUI). CLI.exe Subsystem=3 SHA256 afd478f97aa5f7b803b769a4e8bd01ab1d7012d6da684ebbbad29888f43ba97b (PASS console role). Actual Windows GUI and physical Windows 10 NOT_RUN.
+
+Trusted Windows Server run 41998880215 performed preflight Git/checkout/exact SHA PASS; user MiKTeX XeLaTeX failed at security risk running with elevated privileges, prior to product PDF or GUI. No override, no new TeX installation. Require non-elevated logged-in interactive desktop. Distinguish Server 2025, hosted 2022 compile, actual Win10. This PR changes Rust GUI PE role and makes package roles fail closed; new CI/test/original rebuilt binary verification PENDING. Linux RC must not regress.
