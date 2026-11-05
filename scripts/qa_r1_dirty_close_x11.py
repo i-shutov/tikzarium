@@ -112,10 +112,11 @@ def main() -> int:
             screenshot(out, "02-dirty-before-close")
             report["steps"].append("real_source_edit_and_clipboard_verified")
 
-            # Xdotool windowclose calls XDestroyWindow: it destroys the
-            # client window and can trigger a winit X11 TranslateCoordinates
-            # panic. Use windowquit (WM_DELETE_WINDOW) for a graceful close.
-            run("xdotool", "windowquit", window)
+            # xdotool windowclose invokes XDestroyWindow, bypassing native
+            # save confirmation and potentially crashing the winit X11 client.
+            # Ubuntu 24.04 xdotool lacks windowquit. Request _NET_CLOSE_WINDOW
+            # through Openbox: this is the actual WM_DELETE_WINDOW close path.
+            run("wmctrl", "-i", "-c", window)
             time.sleep(1.1)
             if process.poll() is not None or not window_ids():
                 raise RuntimeError("DATA LOSS: dirty WM close terminated the process")
@@ -148,7 +149,7 @@ def main() -> int:
             wait(output.exists, "Save .tex", 12)
             if "releasecanary" not in output.read_text("utf-8"):
                 raise RuntimeError("Saved document lacks the canary")
-            run("xdotool", "windowquit", window)
+            run("wmctrl", "-i", "-c", window)
             wait(lambda: process.poll() is not None, "clean WM close", 12)
             report["steps"].append("save_then_clean_WM_close")
             report["status"] = "PASS_HOSTED_X11_MANUAL_REVIEW_REQUIRED"
