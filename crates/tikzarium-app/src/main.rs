@@ -1,3 +1,6 @@
+// Windows native GUI release should not spawn an unwanted console window.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+
 //! Native egui workbench. XeLaTeX PDF is authoritative; no fake Rust render.
 use eframe::egui;
 use std::{

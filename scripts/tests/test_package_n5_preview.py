@@ -20,13 +20,15 @@ SHA = 'a' * 40
 CI = 'https://github.com/i-shutov/tikzarium/actions/runs/41576723954'
 
 
-def fake_win():
+def fake_win(role='app'):
     b = bytearray(256)
     b[:2] = b'MZ'
     struct.pack_into('<I', b, 0x3c, 128)
     b[128:132] = b'PE\0\0'
     struct.pack_into('<H', b, 132, 0x8664)
+    struct.pack_into('<H', b, 148, 96)
     struct.pack_into('<H', b, 152, 0x20b)
+    struct.pack_into('<H', b, 220, 2 if role == 'app' else 3)
     return bytes(b)
 
 
@@ -79,11 +81,27 @@ class N5Packaging(unittest.TestCase):
         with self.assertRaises(ValueError):
             pkg.check_binary(bytes(bad), pkg.LINUX)
 
+    def test_windows_gui_and_cli_pe_subsystem_gate(self):
+        pkg.check_binary(fake_win('app'), pkg.WIN, role='app')
+        pkg.check_binary(fake_win('cli'), pkg.WIN, role='cli')
+        with self.assertRaisesRegex(ValueError, 'Windows app PE subsystem 3; expected 2'):
+            pkg.check_binary(fake_win('cli'), pkg.WIN, role='app')
+        with self.assertRaisesRegex(ValueError, 'Windows cli PE subsystem 2; expected 3'):
+            pkg.check_binary(fake_win('app'), pkg.WIN, role='cli')
+        with self.assertRaisesRegex(ValueError, 'Unknown Windows binary role'):
+            pkg.check_binary(fake_win(), pkg.WIN, role='x')
+        invalid = bytearray(fake_win())
+        struct.pack_into('<H', invalid, 148, 68)
+        with self.assertRaisesRegex(ValueError, 'optional header is truncated'):
+            pkg.check_binary(bytes(invalid), pkg.WIN, role='app')
+        with self.assertRaisesRegex(ValueError, 'Windows cli PE subsystem'):
+            pkg.make_bundle(pkg.WIN, SHA, CI, fake_win('app'), fake_win('app'))
+
     def test_mac_app_and_windows_portable_are_honest_and_integrity_locked(self):
-        for platform, blob, extension in ((pkg.MAC, fake_mac(), '.tar.gz'), (pkg.WIN, fake_win(), '.zip')):
+        for platform, app_blob, cli_blob, extension in ((pkg.MAC, fake_mac(), fake_mac(), '.tar.gz'), (pkg.WIN, fake_win('app'), fake_win('cli'), '.zip')):
             with self.subTest(platform=platform), tempfile.TemporaryDirectory() as temp:
-                pkg.check_binary(blob, platform)
-                entries = pkg.make_bundle(platform, SHA, CI, blob, blob)
+                pkg.check_binary(app_blob, platform)
+                entries = pkg.make_bundle(platform, SHA, CI, app_blob, cli_blob)
                 root = 'Tikzarium-preview/'
                 manifest = entries[root + 'MANIFEST.sha256'][0].decode()
                 for name, (data, _) in entries.items():
@@ -190,22 +208,22 @@ class N5Packaging(unittest.TestCase):
             app = root / 'app.exe'
             cli = root / 'cli.exe'
             output = root / 'candidate.zip'
-            good_bytes = fake_win()
-            app.write_bytes(good_bytes)
-            cli.write_bytes(good_bytes)
+            app_bytes, cli_bytes = fake_win('app'), fake_win('cli')
+            app.write_bytes(app_bytes)
+            cli.write_bytes(cli_bytes)
             command = [
                 sys.executable, str(MODULE), '--platform', pkg.WIN,
                 '--app', str(app), '--cli', str(cli),
-                '--app-sha256', pkg.sha256(good_bytes),
-                '--cli-sha256', pkg.sha256(good_bytes),
+                '--app-sha256', pkg.sha256(app_bytes),
+                '--cli-sha256', pkg.sha256(cli_bytes),
                 '--source-sha', SHA, '--ci-run-url', CI, '--output', str(output),
             ]
             good = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(good.returncode, 0, good.stderr)
             with zipfile.ZipFile(output) as z:
-                self.assertEqual(z.read('Tikzarium-preview/tikzarium-app.exe'), good_bytes)
+                self.assertEqual(z.read('Tikzarium-preview/tikzarium-app.exe'), app_bytes)
             output.unlink()
-            app.write_bytes(good_bytes + b'unsigned-tamper')
+            app.write_bytes(app_bytes + b'unsigned-tamper')
             bad = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(bad.returncode, 0)
             self.assertIn('SHA-256 mismatch', bad.stderr)

@@ -25,7 +25,11 @@ jobs:
             executable_suffix: ""
     runs-on: ${{ matrix.os }}
     steps:
+      # Build exact review HEAD, not GitHub's synthetic PR merge ref.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.91.0
@@ -35,6 +39,10 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.13'
+      - name: Verify exact HEAD checkout for release provenance
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python -c "import os,subprocess,sys; actual=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(); expected=os.environ['SOURCE_SHA']; print('source',actual,'expected',expected); sys.exit(0 if actual==expected else 1)"
       - name: Verify physical architecture of hosted runner
         if: runner.os == 'macOS'
         shell: bash
@@ -56,6 +64,39 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
         run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
+      - name: Verify real release PE Windows GUI and CLI role
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -c "import sys; from pathlib import Path; sys.path.insert(0, 'scripts'); from package_n5_preview import WIN, check_binary; check_binary(Path('target/release/tikzarium-app.exe').read_bytes(), WIN, role='app'); check_binary(Path('target/release/tikzarium-cli.exe').read_bytes(), WIN, role='cli'); print('Windows PE GUI=2 CLI=3 PASS')"
+      - name: "Windows x64 portable ZIP: original release binary SHA, manifest, extracted CLI"
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $destination='.qa-artifacts/windows-portable'
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          python -m unittest discover -s scripts/tests -p test_qa_windows_portable.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Portable ZIP independent negative unit tests failed' }
+          $app='target/release/tikzarium-app.exe'
+          $cli='target/release/tikzarium-cli.exe'
+          $appSha=(Get-FileHash -LiteralPath $app -Algorithm SHA256).Hash.ToLowerInvariant()
+          $cliSha=(Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant()
+          $output="$destination/Tikzarium-Windows-x64-portable-candidate.zip"
+          $ciUrl="https://github.com/i-shutov/tikzarium/actions/runs/$env:GITHUB_RUN_ID"
+          python scripts/package_n5_preview.py --platform windows10-x64 --app $app --cli $cli --app-sha256 $appSha --cli-sha256 $cliSha --source-sha $env:SOURCE_SHA --ci-run-url $ciUrl --output $output
+          if ($LASTEXITCODE -ne 0) { throw 'Offline Windows ZIP packaging failed' }
+          python scripts/qa_windows_portable.py --zip $output --app $app --cli $cli --source-sha $env:SOURCE_SHA --report "$destination/windows-zip-audit.json" --run-extracted-cli
+          if ($LASTEXITCODE -ne 0) { throw 'Windows portable ZIP original binary/manifest/actual CLI gate failed' }
+      - name: Upload Windows portable ZIP and original audit (NOT Win10 GUI proof)
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-windows-x64-portable-candidate
+          path: .qa-artifacts/windows-portable/
+          if-no-files-found: warn
       - name: Upload Windows binaries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

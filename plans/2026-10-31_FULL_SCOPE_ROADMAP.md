@@ -1,5 +1,6 @@
 # Full-scope execution plan — TikZ-native tools, code and explanations
 
+**CURRENT OVERRIDE — 2026-11-05 WINDOWS x64 FIRST:** Native Windows 10 x64 GUI and independently installed MiKTeX first; full six-gesture SourcePatch/libraries/F1/real PDF smoke before installer. Existing Linux 1.0.0-rc.1 retained; Linux/macOS Rust/GUI CI supported; no new features. The 2026-11-04 Linux-first paragraph below is historical only. See `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
 **LATEST PLATFORM RELEASE SEQUENCE (2026-11-04):** First finish a **complete usable Linux desktop x86_64** editor with repeated real X11 GUI/ergonomics review. The original Windows/Mac platform descriptions below remain cross-platform architecture and future-release requirements, not blockers of the first Linux release. Preserve hosted Windows/macOS CI, user-installed XeLaTeX/MiKTeX requirements and native cross-platform Rust/egui. Current detailed precedence: `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
 
 

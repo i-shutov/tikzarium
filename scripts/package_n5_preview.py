@@ -30,7 +30,7 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def check_binary(data: bytes, platform: str) -> None:
+def check_binary(data: bytes, platform: str, role: str | None = None) -> None:
     if platform == WIN:
         if len(data) < 0x40 or data[:2] != b"MZ":
             raise ValueError("Windows x64 PE: missing DOS header")
@@ -41,6 +41,16 @@ def check_binary(data: bytes, platform: str) -> None:
             raise ValueError("Windows binary is not AMD64")
         if struct.unpack_from("<H", data, offset + 24)[0] != 0x20B:
             raise ValueError("Windows binary is not PE32+ executable")
+        if role is not None:
+            if role not in ("app", "cli"):
+                raise ValueError("Unknown Windows binary role")
+            optional_size = struct.unpack_from("<H", data, offset + 20)[0]
+            if optional_size < 70 or offset + 24 + optional_size > len(data):
+                raise ValueError("Windows PE optional header is truncated")
+            subsystem = struct.unpack_from("<H", data, offset + 24 + 68)[0]
+            expected = 2 if role == "app" else 3
+            if subsystem != expected:
+                raise ValueError(f"Windows {role} PE subsystem {subsystem}; expected {expected}")
     elif platform == LINUX:
         # Header validation is deliberately narrower than execution:
         # shared-library compatibility and an actual GUI still need real
@@ -138,6 +148,8 @@ def make_bundle(platform: str, source: str, ci_url: str, app: bytes, cli: bytes)
     root = "Tikzarium-preview/"
     entries: dict[str, tuple[bytes, int]] = {}
     if platform == WIN:
+        check_binary(app, WIN, role="app")
+        check_binary(cli, WIN, role="cli")
         entries[root + "tikzarium-app.exe"] = app, 0o644
         entries[root + "tikzarium-cli.exe"] = cli, 0o644
     elif platform == LINUX:
@@ -235,7 +247,7 @@ def main() -> None:
     for title, data, expected in (("app", app, a.app_sha256), ("cli", cli, a.cli_sha256)):
         if not HASH_RE.fullmatch(expected) or sha256(data) != expected:
             p.error(f"{title} exact upstream SHA-256 mismatch")
-        check_binary(data, a.platform)
+        check_binary(data, a.platform, role=title)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     write_archive(a.platform, a.output, make_bundle(a.platform, a.source_sha, a.ci_run_url, app, cli))
     print(f"{sha256(a.output.read_bytes())}  {a.output}")

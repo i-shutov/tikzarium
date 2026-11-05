@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-11-05 — Windows ZIP CP1252 console-output regression (candidate)
+
+- Exact PR-head Windows CI [42099748244](https://github.com/i-shutov/tikzarium/actions/runs/42099748244) compiled GUI PE=2/CLI=3, passed four portable negative tests, successfully packaged the Windows ZIP and executed extracted CLI, but failed at final console output: Python 3.13 used cp1252 and could not print Cyrillic in JSON (`UnicodeEncodeError`). The UTF-8 audit file remained intact. This is a CI/report encoding defect; exact-head check remains FAIL, not accepted.
+- Print ASCII-escaped console JSON only, preserve full UTF-8 audit bytes, add a strict cp1252 test; reverify exact new HEAD and original assets before expected-head merge. No MiKTeX security bypass, no Windows 10 claim.
+
+## 2026-11-05 — Windows x64 native portable ZIP hosted acceptance (candidate)
+
+- Build portable Windows x64 ZIP from the exact reviewed hosted Windows native release PE32+ GUI/CLI binaries, fail-closed SHA + complete archive manifest/source provenance, then **execute extracted CLI help** from a Unicode/space directory with XeLaTeX unavailable. Include independent tamper/duplicate/PE-role unit tests, original ZIP + JSON audit CI artifacts; no TeX/font bundles, installer or physical GUI claims.\n- Separate self-hosted trusted-main Rust/PE/portable and MiKTeX checks so an unavailable Rust toolchain cannot silently suppress the distinct XeLaTeX diagnostic; MiKTeX requires a non-admin interactive user session. No reinstall or elevated MiKTeX bypass. Current platform priority supersedes older Linux-first document preambles.\n- Original PR-head CI, Windows ZIP, embedded PDF/font/PNG audit, persistent runner and physical Windows 10 GUI: **PENDING until reviewed**.
+
+## 2026-11-05 — Windows release lane, native GUI executable role (candidate)
+
+- Owner changed active priority to Windows x64. Linux RC and hosted evidence preserved without claiming physical Linux/Windows success.
+- Original hosted Windows artifact 13401159253 main 4382ca3e had both app.exe and cli.exe PE Subsystem 3 Console; GUI needs 2. Added Rust release-only native GUI subsystem, fail-closed PE roles in Windows portable package, negative unit tests and real Windows build header gate.
+- Trusted Windows Server job 41998880215 got checkout/SHA PASS but MiKTeX failed before PDF due to elevated privileges. No bypass, no package installations and no Windows GUI/Win10 PASS. See plans/2026-11-05_WINDOWS_X64_RELEASE.md.
+
+
 ## 2026-11-05 — R5 Linux 1.0.0-rc.1 native reproducible candidate (PENDING)
 
 - Confirmed exact postmerge main 4f3a2ebb: N5/Rust/D QA/I61/N1/D06 SUCCESS; original N5 artifact13395297726 checks: archive manifest 6/6, R1 9/9, R2 6/6, R3 14/14 SHA. This is NOT physical Linux.

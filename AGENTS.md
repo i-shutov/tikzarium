@@ -1,6 +1,8 @@
 # TikZarium engineering instructions
 
-## Latest owner decision — 2026-11-04 Linux-first release; cross-platform from day one
+**LATEST OWNER DECISION — 2026-11-05: ACTIVE RELEASE WINDOWS x64 FIRST.** Target physical Windows 10 x64 + user-installed MiKTeX/XeLaTeX. Linux 1.0.0-rc.1 on main 4382ca3e remains accepted as RC but physical Linux R4/stable tag is NOT_RUN. Preserve all Linux/macOS code and hosted CI, freeze features. Earlier Linux-first platform order below is historical. Source of current gates: plans/2026-11-05_WINDOWS_X64_RELEASE.md. Never equate hosted Windows 2022 or Windows Server 2025 with physical Windows 10, and never run untrusted PR code on persistent Windows Server.
+
+## Historical owner decision — 2026-11-04 Linux-first release; superseded by 2026-11-05 Windows x64
 
 **This is the current platform release priority and supersedes all Windows-first release sequencing below.** Deliver the first **complete, ergonomic Linux desktop** release, using real native Linux/X11 GUI source-to-XeLaTeX evidence and repeated visual usability review. Preserve Rust/egui cross-platform source architecture, hosted Windows/macOS build tests, external user MiKTeX on Windows 10 and user XeLaTeX on macOS ARM, but defer their physical GUI qualification and separate releases until after Linux. No Linux-only rewrite or deletion of Windows/Mac paths. Maintain the five independent package/tool/help statuses, minimal revision-checked source patches, CRLF/opaque preservation and strict external engine safety. Existing Windows Server 2025 runner is secondary QA and **not** a Linux release blocker. N4 packs remain deferred. **Authoritative delivery plan:** `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`. Earlier dated platform-priority paragraphs remain historical descriptions, not the current release target.
 

@@ -1,0 +1,23 @@
+# Windows x64 release priority — 2026-11-05
+
+Owner decision: switch active release engineering from Linux to Windows x64, while freezing features. Accepted Linux 1.0.0-rc.1 is preserved; physical Ubuntu R4 remains NOT_RUN and no stable Linux tag is implied. Preserve macOS ARM and Linux Rust/CI pathways.
+
+Product: Rust/egui GUI with six real TikZ gestures, editable .tex beside canvas, Properties/Libraries/Russian F1 from single C catalogue; five independent library statuses with UNKNOWN, minimal revision-checked SourcePatch/Undo/Save/Open preserving CRLF and opaque macros; external user-installed MiKTeX/XeLaTeX exact PDF Unicode/embedded fonts. No TeX/fonts bundled, no auto installs, compiler fallback, shell escape or N4.
+
+| Gate | Status / evidence required |
+| --- | --- |
+| W0 native PE package | Original main 4382ca3e hosted Windows artifact 13401159253 (SHA256 e4d3119f212bf7c5bee86d195654be317831e5c7384e7ba6065b9a41f706a20a): app.exe and cli.exe both Subsystem 3 Console. GUI requires 2, CLI remains 3. New source fix is CANDIDATE until rebuilt real Windows CI and SHA, portable ZIP manifest. |
+| W1 MiKTeX external offline | Windows Server 2025 dedicated runner got trusted main 41998880215 checkout/SHA PASS but stopped with xelatex security risk running with elevated privileges. Need non-admin interactive account; no security bypass or reinstallation, no PDF tested. |
+| W2 Windows Server interactive GUI | Real logged-in user desktop (not Windows service/session0), 6 pointer gestures → editable source/F1/libraries → Undo/Save/Open → MiKTeX XeLaTeX PDF/Unicode/fonts, native dialogs/IME/DPI; original PNG/.tex/PDF/log/SHA. NOT_RUN. Server is not Windows10. |
+| W3 physical Windows 10 x64 | Same genuine portable GUI/TeX/PDF full smoke on actual Windows 10 desktop and user MiKTeX; must separately verify actual dialogs/IME/DPI and hashes. NOT_RUN; necessary to claim Windows10 release. |
+| W4 installer/release | Only after W0–W3 and cross-platform exact-head/postmerge Rust CI, reviewed portable ZIP/provenance and installer on target. No final Windows tag/installer before qualified smoke. |
+
+Dedicated runner tikzarium-winserver must execute only reviewed trusted main at exact SHA; never run untrusted PR/fork code on persistent Windows Server. FlowBridge runner and directories strictly excluded. No blind CI reruns, no CI-only micro-PRs; use one substantial code+tests+plans/insights/CHANGELOG vertical. Merge only after original exact-head CI/artifact review and expected_head_sha, postmerge separately.
+
+## User-directed Windows Server CI (trusted main only)
+
+On the dedicated `tikzarium-winserver` self-hosted runner, run locked Rust workspace tests, release app/CLI build, real PE32+ role audit, original native-binary SHA and optional portable ZIP in a separate step **before** MiKTeX. The MiKTeX step explicitly reports privileged token/Session0 as an environment blocker, without uninstall/reinstall, package writes or security bypass. This prevents the MiKTeX preflight from masking actual Windows Rust CI results. Preserve `contents:read`, SHA gate, no PR/fork code, serial concurrency and original artifacts. User confirms MiKTeX is already system-wide for all users: absence of installation is NOT the blocker; previous job 41998880215 failed due to the elevated token.
+
+Windows reference benchmark (not implementation scope): insights/2026-11-05_TIKZ_EDITOR_REFERENCE.md. PR must pass exact-head hosted CI and manual artifact review before trusted main can use it on the user server.
+
+## Hosted Windows x64 release artifact gate (current candidate)\n\nCI `.github/workflows/ci.yml` checks out the exact PR HEAD for native release, builds app/CLI in release mode, verifies GUI subsystem=2 and CLI=3, generates the complete portable Windows x64 ZIP, verifies its exact manifest and against original release binary SHA, and actually executes the **extracted** CLI help from a Unicode/space path with TeX disabled. Upload ZIP and JSON provenance separately from original exe artifacts. New independent tamper tests cover package manifest, binary modifications and unknown entries. Neither hosted Windows 2022 nor a PDF/console-only test proves interactive Windows GUI/physical Win10. No installer until W1-W3.\n\nDo not run untrusted PR code on self-hosted Windows. Self-hosted MiKTeX diagnostic remains behind exact trusted-main checkout but is independent of Rust failure; elevated user still reports environment BLOCKED.\n

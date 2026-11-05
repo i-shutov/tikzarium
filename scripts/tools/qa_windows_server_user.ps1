@@ -19,6 +19,17 @@ try {
   if($LASTEXITCODE -ne 0 -or $report.sha -notmatch '^[0-9a-f]{40}$'){throw 'Git SHA not established'}
   $os=Get-CimInstance Win32_OperatingSystem
   $report.os=$os.Caption;$report.build=$os.BuildNumber
+  $report.runner_session_id=(Get-Process -Id $PID).SessionId
+  $principal=New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
+  $report.runner_elevated=$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+  if($report.runner_session_id -eq 0){
+   $report.status='ENVIRONMENT_BLOCKED_SESSION0'
+   throw 'MiKTeX GUI/PDF QA NOT_RUN: Session0, not logged-in interactive desktop'
+  }
+  if($report.runner_elevated){
+   $report.status='ENVIRONMENT_BLOCKED_ELEVATED'
+   throw 'MiKTeX GUI/PDF QA NOT_RUN: elevated runner token; use a non-admin user session, do not override MiKTeX security'
+  }
   $engine=$env:TIKZARIUM_XELATEX
   if([string]::IsNullOrWhiteSpace($engine)){
    $cmd=Get-Command xelatex -ErrorAction SilentlyContinue
@@ -184,7 +195,7 @@ try {
   $exit=if($complete){0}else{2}
  }finally{Pop-Location}
 }catch{
- $report.status='FAIL'
+ if($report.status -eq 'INCOMPLETE'){$report.status='FAIL'}
  $report.error=$_.Exception.Message
  Write-Error $report.error -ErrorAction Continue
 }finally{
