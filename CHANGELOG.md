@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — N5 corrected X11 viewport and exact-head regression recovery (candidate)
+
+- Original Linux N5 extracted release [41937982111](https://github.com/i-shutov/tikzarium/actions/runs/41937982111) passed; independent screenshot and xdotool geometry show X=94, Y=71, 1180×680 fully within the 1366×768 screen. The N5 cropped-bottom-screen regression is fixed for hosted X11; physical Linux desktop/DPI/Wayland NOT_RUN.
+- Full six-gesture I61 [41937982066](https://github.com/i-shutov/tikzarium/actions/runs/41937982066) failed on the first tool. Original `01-line-group-popup.png` clearly shows button centers x=532/585/639/693; stale x=599 click selected **Rectangle**, not Line, and a real Rectangle command was generated. Recalibrate geometry/arrow/node and seventh-tool x coordinates using the original screenshot. Keep source-tree exact-SHA lease and the existing owner-command/Save/Open/Undo/PDF gates. Until rerun, six gestures and full N3/PDF remain NOT_RUN at this head.
+- D QA [41937982165](https://github.com/i-shutov/tikzarium/actions/runs/41937982165) Linux Rust: 115/116 app tests passed, one process-timeout test used a CPU-spinning POSIX shell loop and returned a non-timeout error. Replace fixture with `exec sleep 10` to test actual bounded kill without resource contention; preserve strict timeout and elapsed tests and include unexpected error diagnostic. Windows/macOS Rust succeeded; hosted Windows Poppler Chocolatey install failed before product tests, distinct infrastructure issue. No merge until exact-head full acceptance.
+
+
 ## 2026-11-05 — N5 real Linux portable viewport-fit regression (candidate)
 
 - Independently audited original N5 artifact and exact-head four successful workflows. Client X11 geometry (2,40;1366×768) overflowed 1366×768 compact screen by 40px, clipping the bottom status bar despite successful workflow.
