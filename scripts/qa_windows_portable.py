@@ -103,6 +103,12 @@ def audit(archive: Path, app: Path, cli: Path, source_sha: str, run_extracted_cl
     return result
 
 
+def console_json(result: dict) -> str:
+    # A Windows CP1252 console cannot print raw Cyrillic even though the
+    # UTF-8 audit file remains correct. Escape non-ASCII only for stdout.
+    return json.dumps(result, ensure_ascii=True, sort_keys=True)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--zip", type=Path, required=True)
@@ -115,7 +121,7 @@ def main() -> None:
     a.report.parent.mkdir(parents=True, exist_ok=True)
     result = audit(a.zip, a.app, a.cli, a.source_sha, a.run_extracted_cli)
     a.report.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    print(console_json(result))
 
 
 if __name__ == "__main__":

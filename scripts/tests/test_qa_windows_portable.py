@@ -51,6 +51,14 @@ class WindowsArtifactAcceptance(unittest.TestCase):
         self.assertEqual(report["hosted_extracted_cli"], "NOT_RUN")
         self.assertEqual(report["physical_windows10"], "NOT_RUN")
 
+    def test_cp1252_console_json_keeps_unicode_round_trip(self):
+        evidence = {"text": "Фигура — Не менять", "sha": SHA}
+        console = qa.console_json(evidence)
+        console.encode("cp1252", errors="strict")
+        self.assertEqual(json.loads(console), evidence)
+        self.assertIn(r"\u0424", console)
+        self.assertNotIn("Фигура", console)
+
     def test_wrong_source_or_pe_role_fails(self):
         with self.assertRaisesRegex(ValueError, "source SHA"):
             qa.audit(self.zip, self.app, self.cli, "a" * 40)
