@@ -144,6 +144,7 @@ class N5Packaging(unittest.TestCase):
                 self.assertEqual(t.getmember(root + 'launch.sh').mode, 0o755)
                 self.assertEqual(t.extractfile(root + 'tikzarium-app').read(), blob)
 
+    @unittest.skipUnless(os.name == 'posix', 'Shell execution requires POSIX; other packaging checks remain cross-platform')
     def test_linux_launcher_preserves_project_cwd_and_unicode_args(self):
         """Execute the shipped shell script: output must follow the user, not the bundle."""
         with tempfile.TemporaryDirectory() as td:
@@ -170,7 +171,7 @@ class N5Packaging(unittest.TestCase):
                 capture_output=True, text=True, check=True,
             )
             self.assertEqual(output.stdout.splitlines(), [
-                f'CWD={project}', 'ARG=Фигура A.tex', 'ARG=a space',
+                f'CWD={project.resolve()}', 'ARG=Фигура A.tex', 'ARG=a space',
             ])
             env = os.environ.copy()
             env['PATH'] = str(bundle) + os.pathsep + env.get('PATH', '')
@@ -179,7 +180,7 @@ class N5Packaging(unittest.TestCase):
                 capture_output=True, text=True, check=True,
             )
             self.assertEqual(through_path.stdout.splitlines(), [
-                f'CWD={project}', 'ARG=путь',
+                f'CWD={project.resolve()}', 'ARG=путь',
             ])
 
     def test_cli_rejects_modified_upstream_bytes_before_archive(self):
