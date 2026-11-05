@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Linux R2/R3 exact rustfmt recovery (candidate)
+
+- GitHub hosted Rust fmt on prior HEAD failed before Rust tests: exact main.rs formatting diffs. Apply original 0.33/Rust 1.91 formatter suggestions to R2/R3 integration code and correct a CRLF fixture (one actual escaped CRLF rather than literal backslash characters). Source-tree lease refreshed; this changes no accepted N1/N2/R1 behavior. New exact-head CI and GUI source/PDF artifacts PENDING.
+
+
 ## 2026-11-05 — Linux 1.0 R3 native system file picker candidate
 
 - Add explicit Open, Save As and PDF Export native file-picker commands to the File menu. On Linux use rfd's XDG desktop portal, with manual typed-path workflow retained for portal-less and offline X11. Do not silently install a portal or TeX. Protect dirty-Open with existing confirmation, reject native Save As overwrites of occupied unrelated TeX, preserve Unicode PathBuf, and export new PDFs atomically with create_new (no overwrite races). Source/PDF integrity unaffected.

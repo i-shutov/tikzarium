@@ -2810,17 +2810,16 @@ mod split_layout_tests {
         let owned = temp.path().join("черновик.tex");
         let foreign = temp.path().join("чужой.tex");
         let fresh = temp.path().join("другая фигура.tex");
-        std::fs::write(&owned, "% сохранённое\\r\\n").unwrap();
-        std::fs::write(&foreign, "% чужой\\r\\n").unwrap();
+        std::fs::write(&owned, "% сохранённое\r\n").unwrap();
+        std::fs::write(&foreign, "% чужой\r\n").unwrap();
         let mut doc = Document::load(&owned).unwrap();
         assert!(checked_native_save_destination(&doc, owned.clone()).is_ok());
         assert!(checked_native_save_destination(&doc, fresh).is_ok());
         assert!(checked_native_save_destination(&doc, foreign.clone()).is_err());
-        assert_eq!(std::fs::read(&foreign).unwrap(), b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\\r\\n");
-        doc.source.push_str("% opaque\\r\\n");
+        assert_eq!(std::fs::read(&foreign).unwrap(), b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\r\n");
+        doc.source.push_str("% opaque\r\n");
         assert!(doc.dirty());
     }
-
 
     #[test]
     fn r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace() {
@@ -2848,7 +2847,6 @@ mod split_layout_tests {
             egui::vec2(960.0, 571.0),
         ).is_none());
     }
-
 
     #[test]
     fn r1_native_close_event_requires_confirmed_save_or_explicit_discard() {
