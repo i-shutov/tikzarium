@@ -506,6 +506,90 @@ fn show_pending_open_dialog(
     result
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum PendingCloseAction {
+    Save(PathBuf),
+    Discard,
+    Cancel,
+    Reject(String),
+}
+
+/// The native close button and Alt+F4 must not discard the user's only
+/// copy of an edited TeX document. A successful Save/explicit Discard is the
+/// only path that may approve the subsequent root viewport Close command.
+fn close_requires_confirmation(dirty: bool, approved: bool) -> bool {
+    dirty && !approved
+}
+
+fn intercept_dirty_viewport_close(ctx: &egui::Context, dirty: bool, approved: bool) -> bool {
+    if !close_requires_confirmation(dirty, approved)
+        || !ctx.input(|input| input.viewport().close_requested())
+    {
+        return false;
+    }
+    ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+    true
+}
+
+/// A scratch buffer must never be silently saved over an existing file.
+/// Do not borrow the File menu's path: it can be the last Open target.
+fn initial_pending_close_save_path(document: &Document) -> String {
+    let candidate = document
+        .path
+        .as_deref()
+        .unwrap_or(Path::new(DEFAULT_SCRATCH_FILENAME));
+    let Some(path) = candidate.to_str() else {
+        return String::new();
+    };
+    typed_save_destination(document, path)
+        .ok()
+        .map_or_else(String::new, |_| path.to_owned())
+}
+
+/// A native modal so WM_DELETE_WINDOW (and the window-manager keyboard
+/// close) is intercepted without altering the .tex buffer or undo history.
+fn show_pending_close_dialog(
+    ctx: &egui::Context,
+    document: &Document,
+    save_input: &mut String,
+    validation_error: Option<&str>,
+) -> Option<PendingCloseAction> {
+    let mut action = None;
+    egui::Modal::new(egui::Id::new("tikzarium-pending-close")).show(ctx, |ui| {
+        ui.heading("Несохранённые изменения");
+        ui.separator();
+        ui.label("Текущий TeX-документ изменён. Сохранить перед выходом?");
+        ui.label("Путь сохранения:");
+        ui.add(
+            egui::TextEdit::singleline(save_input)
+                .desired_width(400.0)
+                .hint_text("новый файл .tex"),
+        );
+        ui.small("Существующий чужой файл не будет перезаписан автоматически.");
+        if let Some(error) = validation_error {
+            ui.colored_label(ui.visuals().error_fg_color, error);
+        }
+        ui.horizontal(|ui| {
+            if ui.button("Сохранить и выйти").clicked() {
+                action = Some(match typed_save_destination(document, save_input) {
+                    Ok(path) => PendingCloseAction::Save(path),
+                    Err(error) => PendingCloseAction::Reject(error),
+                });
+            }
+            if ui.button("Не сохранять и выйти").clicked() {
+                action = Some(PendingCloseAction::Discard);
+            }
+            if ui.button("Отмена").clicked() {
+                action = Some(PendingCloseAction::Cancel);
+            }
+        });
+    });
+    if action.is_none() && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        action = Some(PendingCloseAction::Cancel);
+    }
+    action
+}
+
 struct TikzariumApp {
     document: Document,
     file_field: String,
@@ -546,6 +630,10 @@ struct TikzariumApp {
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
     pending_open_validation_error: Option<String>,
+    pending_close: bool,
+    pending_close_save_path: String,
+    pending_close_validation_error: Option<String>,
+    close_approved: bool,
     prefs: UiPreferences,
     studio_group: Option<StudioGroup>,
     studio_palette_anchor: egui::Pos2,
@@ -693,6 +781,10 @@ impl TikzariumApp {
             pending_open: None,
             pending_open_save_path: String::new(),
             pending_open_validation_error: None,
+            pending_close: false,
+            pending_close_save_path: String::new(),
+            pending_close_validation_error: None,
+            close_approved: false,
             prefs,
             studio_group: None,
             studio_palette_anchor: egui::pos2(65.0, 120.0),
@@ -708,6 +800,68 @@ impl TikzariumApp {
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
             font_proof_texture: None,
+        }
+    }
+
+    fn modal_active(&self) -> bool {
+        self.pending_open.is_some() || self.pending_close
+    }
+
+    fn intercept_close(&mut self, ctx: &egui::Context) {
+        if !intercept_dirty_viewport_close(ctx, self.document.dirty(), self.close_approved) {
+            return;
+        }
+        if !self.pending_close {
+            self.pending_close = true;
+            self.pending_close_save_path = initial_pending_close_save_path(&self.document);
+            self.pending_close_validation_error = None;
+        }
+        ctx.request_repaint();
+    }
+
+    fn accept_close(&mut self, ctx: &egui::Context) {
+        self.close_approved = true;
+        self.pending_close = false;
+        self.pending_close_save_path.clear();
+        self.pending_close_validation_error = None;
+        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+    }
+
+    fn pending_close_ui(&mut self, ctx: &egui::Context) {
+        if !self.pending_close {
+            return;
+        }
+        let previous_destination = self.pending_close_save_path.clone();
+        let action = show_pending_close_dialog(
+            ctx,
+            &self.document,
+            &mut self.pending_close_save_path,
+            self.pending_close_validation_error.as_deref(),
+        );
+        if self.pending_close_save_path != previous_destination {
+            self.pending_close_validation_error = None;
+        }
+        match action {
+            Some(PendingCloseAction::Save(path)) => {
+                if self.save_to_path(path) {
+                    self.accept_close(ctx);
+                } else {
+                    self.pending_close_validation_error = Some(self.status.clone());
+                    ctx.request_repaint();
+                }
+            }
+            Some(PendingCloseAction::Discard) => self.accept_close(ctx),
+            Some(PendingCloseAction::Cancel) => {
+                self.pending_close = false;
+                self.pending_close_validation_error = None;
+                self.pending_close_save_path.clear();
+            }
+            Some(PendingCloseAction::Reject(error)) => {
+                self.status = error.clone();
+                self.pending_close_validation_error = Some(error);
+                ctx.request_repaint();
+            }
+            None => {}
         }
     }
 
@@ -1148,7 +1302,7 @@ impl TikzariumApp {
         self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
     }
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
-        if self.pending_open.is_some() {
+        if self.modal_active() {
             ui.disable();
         }
         ui.horizontal(|ui| {
@@ -1308,9 +1462,9 @@ impl TikzariumApp {
     /// The main toolbar is four clear vector icons, not a long wall of
     /// textual action buttons. Infrequent commands live in two menus.
     fn show_studio_toolbar(&mut self, ctx: &egui::Context) {
-        let ready = self.receiver.is_none() && self.pending_open.is_none();
+        let ready = self.receiver.is_none() && !self.modal_active();
         egui::TopBottomPanel::top("b42-studio-toolbar").show(ctx, |ui| {
-            if self.pending_open.is_some() {
+            if self.modal_active() {
                 ui.disable();
             }
             ui.horizontal(|ui| {
@@ -2068,6 +2222,7 @@ impl eframe::App for TikzariumApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.intercept_close(ctx);
         self.poll_build(ctx);
         self.poll_pages(ctx);
         self.poll_preview_lod(ctx);
@@ -2075,7 +2230,7 @@ impl eframe::App for TikzariumApp {
         self.show_font_lab(ctx);
         // Pending dirty-Open decisions own the keyboard: do not change source
         // through a global help/visual Undo shortcut behind the modal.
-        if self.pending_open.is_none() {
+        if !self.modal_active() {
             let had_help = self.authoring.help;
             tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
             if self.prefs.studio_mode {
@@ -2103,7 +2258,7 @@ impl eframe::App for TikzariumApp {
         // input.modifiers.command=false even though the O event was Ctrl+O.
         let shortcut = ctx.input(|input| editor_command_from_events(&input.events));
         // A modal or running XeLaTeX run must not change the active file mid-build.
-        if self.receiver.is_none() && self.pending_open.is_none() {
+        if self.receiver.is_none() && !self.modal_active() {
             match shortcut {
                 Some(EditorCommand::Open) => self.open_document_dialog(),
                 Some(EditorCommand::Save) => {
@@ -2116,13 +2271,13 @@ impl eframe::App for TikzariumApp {
                 None => {}
             }
         }
-        let file_actions_enabled = self.receiver.is_none() && self.pending_open.is_none();
+        let file_actions_enabled = self.receiver.is_none() && !self.modal_active();
         if self.prefs.studio_mode {
             self.workspace = WorkspaceMode::Split;
             self.show_studio_toolbar(ctx);
         } else {
             egui::TopBottomPanel::top("tools").show(ctx, |ui| {
-                if self.pending_open.is_some() {
+                if self.modal_active() {
                     ui.disable();
                 }
                 ui.horizontal_wrapped(|ui| {
@@ -2224,7 +2379,7 @@ impl eframe::App for TikzariumApp {
                 .min_width(225.0)
                 .max_width(studio.inspector_max)
                 .show(ctx, |ui| {
-                    if self.pending_open.is_some() {
+                    if self.modal_active() {
                         ui.disable();
                     }
                     self.show_studio_inspector(ui);
@@ -2233,7 +2388,7 @@ impl eframe::App for TikzariumApp {
         if !self.prefs.studio_mode && self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
                 let previous_revision = self.authoring.source_revision();
-                if self.pending_open.is_some() {
+                if self.modal_active() {
                     ui.disable();
                 }
                 if let Some(line) = tikz_canvas::show_inspector_action_bar(
@@ -2262,7 +2417,7 @@ impl eframe::App for TikzariumApp {
                 .resizable(true)
                 .default_height(145.0)
                 .show(ctx, |ui| {
-                    if self.pending_open.is_some() {
+                    if self.modal_active() {
                         ui.disable();
                     }
                     ui.horizontal(|ui| {
@@ -2343,7 +2498,7 @@ impl eframe::App for TikzariumApp {
                         .tool_rail_width,
                 )
                 .show(ctx, |ui| {
-                    if self.pending_open.is_some() {
+                    if self.modal_active() {
                         ui.disable();
                     }
                     if let Some(anchor) = studio_ui::show_group_rail(
@@ -2368,7 +2523,7 @@ impl eframe::App for TikzariumApp {
             None
         };
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.pending_open.is_some() {
+            if self.modal_active() {
                 ui.disable();
             }
             if self.workspace.show_canvas() {
@@ -2379,7 +2534,7 @@ impl eframe::App for TikzariumApp {
         });
         if self.prefs.studio_mode
             && self.prefs.studio_tool_rail
-            && self.pending_open.is_none()
+            && !self.modal_active()
             && let Some(source_rect) = actual_source_rect
         {
             let mut open_libraries = false;
@@ -2400,7 +2555,10 @@ impl eframe::App for TikzariumApp {
                 self.prefs.studio_inspector_open = true;
             }
         }
-        if let Some(path) = self.pending_open.clone() {
+        self.pending_close_ui(ctx);
+        if !self.pending_close
+            && let Some(path) = self.pending_open.clone()
+        {
             let previous_destination = self.pending_open_save_path.clone();
             let decision = show_pending_open_dialog(
                 ctx,
@@ -2475,6 +2633,69 @@ fn main() -> eframe::Result<()> {
 #[cfg(test)]
 mod split_layout_tests {
     use super::*;
+
+    #[test]
+    fn r1_native_close_event_requires_confirmed_save_or_explicit_discard() {
+        assert!(close_requires_confirmation(true, false));
+        assert!(!close_requires_confirmation(false, false));
+        assert!(!close_requires_confirmation(true, true));
+
+        let ctx = egui::Context::default();
+        let mut input = egui::RawInput::default();
+        input
+            .viewports
+            .entry(egui::ViewportId::ROOT)
+            .or_default()
+            .events
+            .push(egui::ViewportEvent::Close);
+        let mut intercepted = false;
+        let output = ctx.run(input, |ctx| {
+            intercepted = intercept_dirty_viewport_close(ctx, true, false);
+        });
+        assert!(intercepted);
+        assert!(output.viewport_output.values().any(|viewport| {
+            viewport
+                .commands
+                .iter()
+                .any(|command| matches!(command, egui::ViewportCommand::CancelClose))
+        }));
+    }
+
+    #[test]
+    fn r1_close_save_target_is_safe_for_unicode_and_occupied_scratch() {
+        let temp = tempfile::tempdir().unwrap();
+        let current = temp.path().join("текущий.tex");
+        let occupied = temp.path().join("чужой.tex");
+        std::fs::write(&current, "% сохранённый\r\n").unwrap();
+        std::fs::write(&occupied, "% защищённый\r\n").unwrap();
+
+        let mut document = Document::load(&current).unwrap();
+        document.source.push_str("% правка Ω\r\n");
+        assert!(document.dirty());
+        assert_eq!(
+            initial_pending_close_save_path(&document),
+            current.to_str().unwrap()
+        );
+        assert_eq!(
+            typed_save_destination(&document, current.to_str().unwrap()).unwrap(),
+            current
+        );
+        assert!(typed_save_destination(&document, occupied.to_str().unwrap()).is_err());
+        assert!(typed_save_destination(&document, "").is_err());
+        assert_eq!(
+            std::fs::read(&occupied).unwrap(),
+            b"% \xd0\xb7\xd0\xb0\xd1\x89\xd0\xb8\xd1\x89\xd1\x91\xd0\xbd\xd0\xbd\xd1\x8b\xd0\xb9\r\n"
+        );
+
+        let scratch = Document::scratch("% исходник\r\n");
+        let new_path = temp.path().join("рисунок-Ω.tex");
+        assert_eq!(
+            typed_save_destination(&scratch, new_path.to_str().unwrap()).unwrap(),
+            new_path
+        );
+        assert!(!new_path.exists());
+    }
+
     use tikzarium_extensions::primitives::Evidence;
 
     #[test]
