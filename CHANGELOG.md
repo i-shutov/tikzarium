@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Linux 1.0 R2 DPI-safe viewport candidate
+
+- R2 prior real packaged X11 200% failure: 1920×1080 client at y22 plus height1120 clipped 62px. Reduce immutable 560pt minimum height to 440pt, preserve DPI/font choices, and request monitor-relative inner size only when actual outer window is oversized. Do not affect source, PDF, external XeLaTeX or accepted R1.
+- Add Rust 1.0/1.25/2.0 bounds test and exact-head N5 extracted release X11 three-scale PNG/geometry/sha gate. All new code, native-screen screenshots, and source/PDF regressions PENDING until CI and independent review. Physical Linux still NOT_RUN. R3/R4/R5 open.
+
+
 ## 2026-11-05 — Linux 1.0 release freeze: native unsaved-close guard (candidate)
 
 - **Safety defect:** reproducible dirty TeX loss on normal packaged Linux/X11 WM close despite successful dirty-Open testing. Use egui root `close_requested`/`CancelClose` and a blocking Russian Save/Discard/Cancel modal; do not exit after rejected path, failed save or Cancel. Same safe validation as scratch Save; do not overwrite unrelated TeX or change existing source/Undo from showing the dialog.

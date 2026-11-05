@@ -634,6 +634,7 @@ struct TikzariumApp {
     pending_close_save_path: String,
     pending_close_validation_error: Option<String>,
     close_approved: bool,
+    viewport_fit_requested: Option<egui::Vec2>,
     prefs: UiPreferences,
     studio_group: Option<StudioGroup>,
     studio_palette_anchor: egui::Pos2,
@@ -785,6 +786,7 @@ impl TikzariumApp {
             pending_close_save_path: String::new(),
             pending_close_validation_error: None,
             close_approved: false,
+            viewport_fit_requested: None,
             prefs,
             studio_group: None,
             studio_palette_anchor: egui::pos2(65.0, 120.0),
@@ -2222,6 +2224,23 @@ impl eframe::App for TikzariumApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // A persisted or new native window can be too large at fractional DPI.
+        let fitted = ctx.input(|input| {
+            let viewport = input.viewport();
+            fit_oversized_window(
+                viewport.monitor_size?,
+                viewport.inner_rect?.size(),
+                viewport.outer_rect?.size(),
+            )
+        });
+        if let Some(size) = fitted {
+            if self.viewport_fit_requested != Some(size) {
+                ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
+                self.viewport_fit_requested = Some(size);
+            }
+        } else {
+            self.viewport_fit_requested = None;
+        }
         self.intercept_close(ctx);
         self.poll_build(ctx);
         self.poll_pages(ctx);
@@ -2612,6 +2631,36 @@ impl eframe::App for TikzariumApp {
 /// 40 logical pixels and hiding the status bar. Reserve room for desktop chrome.
 /// This is only the initial size; users can resize/maximize and physical DPI
 /// requires separate evidence.
+
+const RELEASE_MIN_INNER_SIZE: egui::Vec2 = egui::vec2(850.0, 440.0);
+
+/// Use *logical* egui points; never disable OS scaling to make room.
+/// At 200% the former 560pt minimum was 1120 physical pixels high on
+/// a 1080px monitor, before including X11 window decorations.
+fn fit_oversized_window(
+    monitor: egui::Vec2,
+    inner: egui::Vec2,
+    outer: egui::Vec2,
+) -> Option<egui::Vec2> {
+    if !monitor.is_finite() || !inner.is_finite() || !outer.is_finite()
+        || monitor.x <= 0.0 || monitor.y <= 0.0 || inner.x <= 0.0 || inner.y <= 0.0
+    {
+        return None;
+    }
+    const MARGIN: f32 = 16.0;
+    if outer.x + MARGIN <= monitor.x && outer.y + MARGIN <= monitor.y {
+        return None;
+    }
+    let chrome = egui::vec2((outer.x - inner.x).max(0.0), (outer.y - inner.y).max(0.0));
+    let target = egui::vec2(
+        inner.x.min((monitor.x - chrome.x - MARGIN).max(0.0)),
+        inner.y.min((monitor.y - chrome.y - MARGIN).max(0.0)),
+    );
+    (target.x > 0.0 && target.y > 0.0
+        && (target.x + 0.5 < inner.x || target.y + 0.5 < inner.y))
+        .then_some(target)
+}
+
 fn startup_inner_size() -> egui::Vec2 {
     egui::vec2(1180.0, 680.0)
 }
@@ -2620,7 +2669,7 @@ fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size(startup_inner_size())
-            .with_min_inner_size(egui::vec2(850.0, 560.0)),
+            .with_min_inner_size(RELEASE_MIN_INNER_SIZE),
         ..Default::default()
     };
     eframe::run_native(
@@ -2633,6 +2682,34 @@ fn main() -> eframe::Result<()> {
 #[cfg(test)]
 mod split_layout_tests {
     use super::*;
+
+    #[test]
+    fn r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace() {
+        assert_eq!(RELEASE_MIN_INNER_SIZE, egui::vec2(850.0, 440.0));
+        assert!(fit_oversized_window(
+            egui::vec2(1366.0, 768.0),
+            egui::vec2(1180.0, 680.0),
+            egui::vec2(1180.0, 700.0),
+        ).is_none());
+        assert!(fit_oversized_window(
+            egui::vec2(1536.0, 864.0),
+            egui::vec2(1180.0, 680.0),
+            egui::vec2(1180.0, 700.0),
+        ).is_none());
+        let at_200pct = fit_oversized_window(
+            egui::vec2(960.0, 540.0),
+            egui::vec2(960.0, 560.0),
+            egui::vec2(960.0, 571.0),
+        ).unwrap();
+        assert!(at_200pct.y < 520.0 && at_200pct.y >= RELEASE_MIN_INNER_SIZE.y);
+        assert!(at_200pct.x >= RELEASE_MIN_INNER_SIZE.x);
+        assert!(fit_oversized_window(
+            egui::vec2(f32::NAN, 540.0),
+            egui::vec2(960.0, 560.0),
+            egui::vec2(960.0, 571.0),
+        ).is_none());
+    }
+
 
     #[test]
     fn r1_native_close_event_requires_confirmed_save_or_explicit_discard() {

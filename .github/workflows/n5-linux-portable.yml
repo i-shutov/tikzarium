@@ -149,6 +149,53 @@ jobs:
             cd "$RUNNER_TEMP/n5-linux"
             sha256sum linux-n5-packaged-1366x768.png native-launch.log archive.sha256 > native-evidence.sha256
           )
+      - name: R2 three-scale actual extracted X11 desktop geometry and PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          export N5_LAUNCHER="$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/launch.sh"
+          export EVIDENCE="$RUNNER_TEMP/n5-linux/r2-desktop"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          mkdir -p "$EVIDENCE"
+          for spec in "1366x768:1.0" "1920x1080:1.25" "1920x1080:2.0"; do
+            screen="${spec%%:*}"
+            scale="${spec##*:}"
+            name="${screen}-scale-${scale//./_}"
+            export R2_DIR="$EVIDENCE/$name"
+            export R2_WIDTH="${screen%x*}" R2_HEIGHT="${screen#*x}"
+            export WINIT_X11_SCALE_FACTOR="$scale"
+            export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-r2-runtime-$name"
+            mkdir -p "$R2_DIR" "$XDG_RUNTIME_DIR"
+            chmod 700 "$XDG_RUNTIME_DIR"
+            xvfb-run -a -s "-screen 0 ${screen}x24 +extension GLX +render -noreset" bash -euo pipefail -c '
+              openbox --sm-disable >"$R2_DIR/openbox.log" 2>&1 &
+              wm_pid=$!
+              "$N5_LAUNCHER" >"$R2_DIR/app.log" 2>&1 &
+              app_pid=$!
+              trap "kill $app_pid $wm_pid 2>/dev/null || true" EXIT
+              window_id=""
+              for i in $(seq 1 30); do
+                kill -0 "$app_pid" || { echo "App exited before X11 viewport" >&2; exit 1; }
+                window_id="$(xdotool search --onlyvisible --name TikZarium 2>/dev/null | head -n1 || true)"
+                test -z "$window_id" || break
+                sleep 1
+              done
+              test -n "$window_id"
+              sleep 3
+              xdotool getwindowgeometry --shell "$window_id" > "$R2_DIR/geometry.txt"
+              source "$R2_DIR/geometry.txt"
+              echo "$WINIT_X11_SCALE_FACTOR: x=$X y=$Y w=$WIDTH h=$HEIGHT on $R2_WIDTH x $R2_HEIGHT"
+              test "$X" -ge 0 && test "$Y" -ge 0
+              test "$WIDTH" -ge 850 && test "$HEIGHT" -ge 440
+              test "$((X + WIDTH))" -le "$R2_WIDTH"
+              test "$((Y + HEIGHT))" -le "$R2_HEIGHT"
+              import -window root "$R2_DIR/desktop.png"
+              identify -format "%wx%h\n" "$R2_DIR/desktop.png" >"$R2_DIR/png-size.txt"
+              test "$(cat "$R2_DIR/png-size.txt")" = "${R2_WIDTH}x${R2_HEIGHT}"
+            '
+          done
+          (cd "$EVIDENCE" && find . -type f \( -name 'desktop.png' -o -name 'geometry.txt' \) | LC_ALL=C sort | while read -r file; do sha256sum "$file"; done >SHA256SUMS)
+
       - name: Install external XeLaTeX only on disposable hosted Ubuntu
         shell: bash
         run: |
@@ -257,6 +304,7 @@ jobs:
             ${{ runner.temp }}/n5-linux/packaged-full-proof.json
             ${{ runner.temp }}/n5-linux/packaged-i61/
             ${{ runner.temp }}/n5-linux/packaged-n2/
+            ${{ runner.temp }}/n5-linux/r2-desktop/
             ${{ runner.temp }}/n5-linux/packaged-r1-close/
             ${{ runner.temp }}/n5-linux/openbox-close.log
           if-no-files-found: warn
