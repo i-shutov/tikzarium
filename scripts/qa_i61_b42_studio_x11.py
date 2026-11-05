@@ -23,7 +23,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # Original N5 I61 41937982066 PNG: geometry popup X=500..762;
 # icon centers are 532/585/639/693, not old 599/653/707/761.
 # This source-tree lease deliberately requires renewed visual QA after UI changes.
-APP_TREE = "6a40e157ffb4aee538b80cff54c465e8526b5ceb"
+APP_TREE = "b499dabdd033a07ae88c864de609d0c7c09ee32d"
 BUTTONS = [
     ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),

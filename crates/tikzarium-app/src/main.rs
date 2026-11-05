@@ -1033,7 +1033,6 @@ impl TikzariumApp {
         self.save_as()
     }
 
-
     /// Dialog selection is a *candidate path*, not authorization to destroy
     /// unrelated files. Both Unicode and OS-native PathBuf names are kept intact.
     fn save_as_picker(&mut self) -> bool {
