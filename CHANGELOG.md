@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-05 — Linux 1.0 release freeze: native unsaved-close guard (candidate)
+
+- **Safety defect:** reproducible dirty TeX loss on normal packaged Linux/X11 WM close despite successful dirty-Open testing. Use egui root `close_requested`/`CancelClose` and a blocking Russian Save/Discard/Cancel modal; do not exit after rejected path, failed save or Cancel. Same safe validation as scratch Save; do not overwrite unrelated TeX or change existing source/Undo from showing the dialog.
+- Shared Rust unit tests cover root viewport Close interception and Unicode/occupied path validation. Add real **extracted portable release** X11 WM-close/Cancel/source-preservation/clean-Save regression to the N5 workflow with original screenshots and SHA; preserve the existing exact I61 app-tree lease.
+- This is **PENDING** exact PR-head Rust/macOS/Windows, hosted X11, original artifact and manual review. R2 (200% clipped status), R3 (Linux file pickers), R4 (qualified X11 desktop) and R5 (versioned final release) remain separate open blockers. No 1.0 tag or physical-machine PASS. See `plans/2026-11-05_LINUX_1_0_R1_SAFE_CLOSE.md` and `insights/2026-11-05_LINUX_1_0_R1_CLOSE_QA.md`.
+
+
 ## 2026-11-05 — Linux N5 real portable launcher project directory and packaged source-to-PDF (candidate)
 
 - Verified current merged main `ddf018a7d57f963fd8491c82ef303e9223e3f41c`: postmerge hosted Rust/D QA/N1/I61/N5/D06 workflows SUCCESS. Secondary trusted Windows Server QA failed, not a Linux gate.
