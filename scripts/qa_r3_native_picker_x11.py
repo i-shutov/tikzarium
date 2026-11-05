@@ -55,10 +55,13 @@ def click(x: int, y: int) -> None:
 
 
 def clipboard(text: str) -> None:
+    # xclip forks a persistent X11 selection-owner. Capturing stdout/stderr
+    # keeps the daemon's inherited pipes open and subprocess.communicate hangs,
+    # even when the original xclip invocation succeeded.
     r = subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode("utf-8"),
-                       capture_output=True, timeout=8)
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8)
     if r.returncode:
-        raise RuntimeError("xclip unavailable: " + r.stderr.decode("utf-8", "replace"))
+        raise RuntimeError(f"xclip could not own X11 clipboard (exit={r.returncode})")
 
 
 def copied_tex() -> str:
