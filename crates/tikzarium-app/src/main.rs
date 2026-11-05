@@ -1115,10 +1115,7 @@ impl TikzariumApp {
             self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
             return;
         }
-        match write_new_pdf_without_overwrite(
-            &path,
-            self.pdf.as_deref().expect("checked above"),
-        ) {
+        match write_new_pdf_without_overwrite(&path, self.pdf.as_deref().expect("checked above")) {
             Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
             Err(error) => {
                 self.status = format!(
