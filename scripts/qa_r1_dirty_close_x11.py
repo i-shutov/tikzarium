@@ -112,9 +112,10 @@ def main() -> int:
             screenshot(out, "02-dirty-before-close")
             report["steps"].append("real_source_edit_and_clipboard_verified")
 
-            # xdotool windowclose asks the window manager to send WM_DELETE_WINDOW,
-            # not kill/terminate.  eframe must cancel the close and show a modal.
-            run("xdotool", "windowclose", window)
+            # Xdotool windowclose calls XDestroyWindow: it destroys the
+            # client window and can trigger a winit X11 TranslateCoordinates
+            # panic. Use windowquit (WM_DELETE_WINDOW) for a graceful close.
+            run("xdotool", "windowquit", window)
             time.sleep(1.1)
             if process.poll() is not None or not window_ids():
                 raise RuntimeError("DATA LOSS: dirty WM close terminated the process")
@@ -129,13 +130,25 @@ def main() -> int:
             screenshot(out, "04-cancel-keeps-source")
             report["steps"].append("escape_cancel_preserves_exact_source_bytes")
 
+            # Normal desktop Alt+F4 must take the same guarded path.
+            key("alt+F4")
+            time.sleep(0.8)
+            if process.poll() is not None or not window_ids():
+                raise RuntimeError("DATA LOSS: Alt+F4 closed dirty source")
+            screenshot(out, "05-keyboard-close-confirmation")
+            key("Escape")
+            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            if copied_source() != source_before:
+                raise RuntimeError("Keyboard close Cancel changed source")
+            report["steps"].append("Alt_F4_cancel_preserves_source")
+
             # A subsequent ordinary Save must work; clean close must exit.
             key("ctrl+s")
             output = out / "figure.tex"
             wait(output.exists, "Save .tex", 12)
             if "releasecanary" not in output.read_text("utf-8"):
                 raise RuntimeError("Saved document lacks the canary")
-            run("xdotool", "windowclose", window)
+            run("xdotool", "windowquit", window)
             wait(lambda: process.poll() is not None, "clean WM close", 12)
             report["steps"].append("save_then_clean_WM_close")
             report["status"] = "PASS_HOSTED_X11_MANUAL_REVIEW_REQUIRED"
