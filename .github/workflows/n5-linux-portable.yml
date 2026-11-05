@@ -8,6 +8,8 @@ on:
     paths:
       - '.github/workflows/n5-linux-portable.yml'
       - 'scripts/package_n5_preview.py'
+      - 'scripts/package_linux_release_candidate.py'
+      - 'scripts/tests/test_linux_release_candidate.py'
       - 'scripts/tests/test_package_n5_preview.py'
       - 'scripts/qa_i61_b42_studio_x11.py'
       - 'scripts/qa_n2_studio_x11.py'
@@ -21,6 +23,8 @@ on:
     paths:
       - '.github/workflows/n5-linux-portable.yml'
       - 'scripts/package_n5_preview.py'
+      - 'scripts/package_linux_release_candidate.py'
+      - 'scripts/tests/test_linux_release_candidate.py'
       - 'scripts/tests/test_package_n5_preview.py'
       - 'scripts/qa_i61_b42_studio_x11.py'
       - 'scripts/qa_n2_studio_x11.py'
@@ -83,6 +87,8 @@ jobs:
             xdg-desktop-portal xdg-desktop-portal-gtk dbus-x11 libglib2.0-bin
       - name: Run offline packaging and ELF architecture/manifest/reproducibility tests
         run: python3 -m unittest discover -s scripts/tests -p test_package_n5_preview.py -v
+      - name: R5 versioned release-candidate packaging regressions (offline only)
+        run: python3 -m unittest discover -s scripts/tests -p test_linux_release_candidate.py -v
       - name: Native release binaries from exact HEAD (no compiler substitution)
         shell: bash
         run: |
@@ -331,6 +337,60 @@ jobs:
           # The real native Export path must include verified, nonempty PDF evidence.
           assert len(proof.get("native_pdf_sha256", "")) == 64, proof
           PY
+      - name: R5 assemble reproducible Linux 1.0 RC from the exact GUI-tested binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/n5-linux"
+          # R1/R2/R3 + six-tools/F1/libraries/XeLaTeX completed above using
+          # the same native ELF. This RC only relabels and documents that ELF.
+          python3 "$GITHUB_WORKSPACE/scripts/package_linux_release_candidate.py" \
+            --app "$GITHUB_WORKSPACE/target/release/tikzarium-app" \
+            --cli "$GITHUB_WORKSPACE/target/release/tikzarium-cli" \
+            --app-sha256 "$(sha256sum "$GITHUB_WORKSPACE/target/release/tikzarium-app" | cut -d' ' -f1)" \
+            --cli-sha256 "$(sha256sum "$GITHUB_WORKSPACE/target/release/tikzarium-cli" | cut -d' ' -f1)" \
+            --source-sha "$SOURCE_SHA" \
+            --ci-run-url "https://github.com/i-shutov/tikzarium/actions/runs/$GITHUB_RUN_ID" \
+            --output Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz
+          sha256sum Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz > rc-archive.sha256
+          mkdir -p rc-extracted
+          tar -xzf Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz -C rc-extracted
+          (
+            cd rc-extracted/Tikzarium-1.0.0-rc.1
+            sha256sum -c MANIFEST.sha256
+            cmp -s tikzarium-app "$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/tikzarium-app"
+            cmp -s tikzarium-cli "$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/tikzarium-cli"
+            test -x ./launch.sh
+          )
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "n5-linux"
+          candidate = root / "rc-extracted/Tikzarium-1.0.0-rc.1"
+          p = json.loads((candidate / "PROVENANCE.json").read_text())
+          assert p["version"] == "1.0.0-rc.1"
+          assert p["source_sha"] == os.environ["SOURCE_SHA"]
+          assert p["release_stage"] == "CANDIDATE_NOT_FINAL"
+          assert p["physical_linux_x86_64_x11"] == "NOT_RUN"
+          for name, key in [("tikzarium-app","app_sha256"),("tikzarium-cli","cli_sha256")]:
+              assert hashlib.sha256((candidate / name).read_bytes()).hexdigest() == p[key]
+          (root / "rc-attestation.json").write_text(
+              json.dumps({"status":"PASS_RC_PACKAGE_HOSTED_NOT_PHYSICAL",
+                "source_sha":p["source_sha"],"version":p["version"],
+                "binary_sha256":p["app_sha256"],
+                "physical_linux":"NOT_RUN"}, sort_keys=True,indent=2) + "\n")
+          PY
+          # Actual release binaries, not only synthetic headers, reproduce exactly.
+          python3 "$GITHUB_WORKSPACE/scripts/package_linux_release_candidate.py" \
+            --app "$GITHUB_WORKSPACE/target/release/tikzarium-app" \
+            --cli "$GITHUB_WORKSPACE/target/release/tikzarium-cli" \
+            --app-sha256 "$(sha256sum "$GITHUB_WORKSPACE/target/release/tikzarium-app" | cut -d' ' -f1)" \
+            --cli-sha256 "$(sha256sum "$GITHUB_WORKSPACE/target/release/tikzarium-cli" | cut -d' ' -f1)" \
+            --source-sha "$SOURCE_SHA" \
+            --ci-run-url "https://github.com/i-shutov/tikzarium/actions/runs/$GITHUB_RUN_ID" \
+            --output rc-second.tar.gz
+          cmp -s Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz rc-second.tar.gz
+          rm -f rc-second.tar.gz
       - name: Upload original portable bundle and actual GUI proof
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -338,6 +398,9 @@ jobs:
           name: tikzarium-linux-portable-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/n5-linux/Tikzarium-linux-x86_64-preview.tar.gz
+            ${{ runner.temp }}/n5-linux/Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz
+            ${{ runner.temp }}/n5-linux/rc-archive.sha256
+            ${{ runner.temp }}/n5-linux/rc-attestation.json
             ${{ runner.temp }}/n5-linux/archive.sha256
             ${{ runner.temp }}/n5-linux/native-evidence.sha256
             ${{ runner.temp }}/n5-linux/linux-n5-packaged-1366x768.png

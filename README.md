@@ -1,5 +1,8 @@
 # TikZarium
 
+> **Linux 1.0 release freeze (2026-11-05):** R1 safe close, R2 200%-DPI bounds and R3 genuine GTK/XDG Open/Save/Export are accepted on main 4f3a2ebb using hosted X11. The versioned **1.0.0-rc.1** portable candidate uses the identical GUI-tested ELF and its own manifest/SHA256 and Russian first-use guide. **NOT stable 1.0**: physical Ubuntu24/x86_64/X11 desktop R4 remains NOT_RUN. See [issue #103](https://github.com/i-shutov/tikzarium/issues/103), [R4 runbook](docs/LINUX_1_0_PHYSICAL_QA_RU.md), and [R5 plan](plans/2026-11-05_LINUX_1_0_R5_RC.md). Old N5 Preview instructions below refer to the previous, not versioned RC.
+
+
 **Linux-first, cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
 
 **Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. This **is not a finished or physically qualified Linux desktop release**. The reproducible native package and its extracted X11 startup passed on main. Full *packaged* GUI→editable TeX→XeLaTeX PDF, DPI/dialogs/usability review and an observed real target desktop still gate the first complete release. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.

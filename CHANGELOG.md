@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-05 — R5 Linux 1.0.0-rc.1 native reproducible candidate (PENDING)
+
+- Confirmed exact postmerge main 4f3a2ebb: N5/Rust/D QA/I61/N1/D06 SUCCESS; original N5 artifact13395297726 checks: archive manifest 6/6, R1 9/9, R2 6/6, R3 14/14 SHA. This is NOT physical Linux.
+- Pin workspace version and Cargo.lock to 1.0.0-rc.1. Offline release packaging checks original native ELF/CLI SHA, deterministic tar.gz, versioned first-use Russian README, provenance, manifest and explicit CANDIDATE_NOT_FINAL.
+- Use the same already full-X11-tested native release ELF in the RC and compare binary hashes byte-for-byte. Additional actual ELF reproducibility and negative unit tests are in the existing N5 pipeline, not separate CI-only workflows.
+- Physical Ubuntu24 x86_64/X11 workstation acceptance R4 remains NOT_RUN. Final 1.0 tag/release blocked. Preserve R1/R2/R3/N1/N2/N3, Windows/macOS hosted paths and no TeX/font bundling, install/fallback/shell escape.
+- New exact branch CI, postmerge and original GUI/PDF SHA evidence: PENDING at this candidate point. See issue #103, plans/2026-11-05_LINUX_1_0_R5_RC.md, insights/2026-11-05_LINUX_1_0_R5_QA.md.
+
+
 ## 2026-11-05 — Linux 1.0 R3 native PDF export no-clobber completeness (candidate)
 
 - Independent review of exact PR #105 head `1df36978`: hosted N5/D QA/Rust/I61 complete SUCCESS. Original N5 artifact 13390653515 ZIP sha256 `fa054edc1254766f878aadfae2a1b1706cf25182169478d3ce98191cc3fc977e`; R2 original X11 PNG+geometry SHA256SUMS 6/6 independently matched. At 200%/1920×1080 actual extracted release client (2,40;1886×1023) fits, unlike old clipped 1120px. Physical screen remains NOT_RUN.
