@@ -156,6 +156,11 @@ def main() -> int:
             cmd("xdotool", "windowmove", app_id, "0", "0")
             cmd("wmctrl", "-i", "-a", app_id)
             time.sleep(1.0)
+            # The bundled quickstart is initially dirty scratch. Save it first:
+            # Open on a dirty source intentionally invokes the separately proven
+            # R1 dirty-open confirmation, not an immediate file replacement.
+            key("ctrl+s")
+            wait((work / "figure.tex").exists, "initial scratch save", 12)
             snap(out, "01-before-dialog")
 
             existing = set(windows())
