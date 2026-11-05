@@ -373,6 +373,29 @@ fn same_existing_path(a: &Path, b: &Path) -> bool {
 /// A typed path is not explicit permission to overwrite another TeX file.
 /// Linux without a native Save As dialog must fail closed on occupied paths;
 /// the platform file dialog on Windows/macOS handles intentional replacement.
+
+/// A native Save dialog can still select a symlink or already occupied name.
+/// Fail closed unless writing to the exact current document. Unlike displaying
+/// path strings, this keeps non-UTF-8 Linux path bytes intact.
+fn checked_native_save_destination(
+    document: &Document,
+    path: PathBuf,
+) -> Result<PathBuf, String> {
+    if path.as_os_str().is_empty() {
+        return Err("Выберите имя TeX-файла".into());
+    }
+    let current = document.path.as_deref()
+        .is_some_and(|existing| same_existing_path(existing, &path));
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) if !current => Err(
+            "Файл уже существует: сохранение поверх чужого документа запрещено; выберите другое имя".into()
+        ),
+        Ok(_) => Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(path),
+        Err(error) => Err(format!("Ошибка проверки файла перед сохранением: {error}")),
+    }
+}
+
 fn typed_save_destination(document: &Document, input: &str) -> Result<PathBuf, String> {
     if input.trim().is_empty() {
         return Err("Укажите путь для сохранения TeX-документа.".into());
@@ -656,6 +679,9 @@ struct TikzariumApp {
 enum StudioFileAction {
     OpenPath,
     SaveAs,
+    OpenPicker,
+    SavePicker,
+    ExportPicker,
 }
 
 struct StudioFileMenuResponse {
@@ -715,6 +741,21 @@ fn show_studio_file_menu(
                 .clicked()
             {
                 result.action = Some(StudioFileAction::SaveAs);
+                ui.close();
+            }
+            ui.separator();
+            // These are genuine platform dialogs, separate from the manual
+            // typed-path workflow retained for offline/portal-less X11 tests.
+            if ui.add_enabled(ready, egui::Button::new("Выбрать файл…")).clicked() {
+                result.action = Some(StudioFileAction::OpenPicker);
+                ui.close();
+            }
+            if ui.add_enabled(ready, egui::Button::new("Сохранить через диалог…")).clicked() {
+                result.action = Some(StudioFileAction::SavePicker);
+                ui.close();
+            }
+            if ui.add_enabled(ready, egui::Button::new("Экспорт PDF через диалог…")).clicked() {
+                result.action = Some(StudioFileAction::ExportPicker);
                 ui.close();
             }
         });
@@ -982,6 +1023,81 @@ impl TikzariumApp {
         // documents it is not an authorized overwrite destination. Route
         // through a platform Save As dialog or validated typed path instead.
         self.save_as()
+    }
+
+
+    /// Dialog selection is a *candidate path*, not authorization to destroy
+    /// unrelated files. Both Unicode and OS-native PathBuf names are kept intact.
+    fn save_as_picker(&mut self) -> bool {
+        let filename = self.document.path.as_ref()
+            .and_then(|path| path.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or(DEFAULT_SCRATCH_FILENAME);
+        let path = rfd::FileDialog::new()
+            .add_filter("TeX / TikZ", &["tex", "tikz"])
+            .set_file_name(filename)
+            .save_file();
+        let Some(path) = path else {
+            self.status = "Выбор сохранения отменён или XDG file portal недоступен; путь можно ввести вручную".into();
+            return false;
+        };
+        match checked_native_save_destination(&self.document, path) {
+            Ok(path) => self.save_to_path(path),
+            Err(error) => {
+                self.status = error;
+                false
+            }
+        }
+    }
+
+    fn open_document_picker(&mut self) {
+        match rfd::FileDialog::new()
+            .add_filter("TeX / TikZ", &["tex", "tikz"])
+            .pick_file()
+        {
+            Some(path) => self.open_path(path), // dirty-open confirmation remains authoritative
+            None => {
+                self.status = "Выбор открытия отменён или XDG file portal недоступен; можно ввести путь вручную".into();
+            }
+        }
+    }
+
+    fn export_pdf_picker(&mut self) {
+        if self.preview_stale() || self.pdf.is_none() {
+            self.status = "Сначала соберите актуальный PDF с внешним XeLaTeX".into();
+            return;
+        }
+        let filename = self.document.path.as_deref()
+            .and_then(|p| p.with_extension("pdf").file_name().map(|x| x.to_owned()))
+            .and_then(|x| x.into_string().ok())
+            .unwrap_or_else(|| "figure.pdf".into());
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("PDF", &["pdf"])
+            .set_file_name(&filename)
+            .save_file() else {
+                self.status = "Выбор PDF отменён или XDG file portal недоступен".into();
+                return;
+            };
+        if !path.extension().and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("pdf")) {
+            self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
+            return;
+        }
+        // create_new is atomic and prevents symlink/racy overwrite of a PDF
+        // that appeared since the portal picker returned.
+        match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(mut output) => match std::io::Write::write_all(
+                &mut output,
+                self.pdf.as_deref().expect("checked above"),
+            ) {
+                Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
+                Err(error) => self.status = format!("Ошибка записи PDF {}: {error}", path.display()),
+            },
+            Err(error) => self.status = format!(
+                "Нельзя перезаписывать существующий PDF или открыть {}: {error}. Выберите новое имя.",
+                path.display()
+            ),
+        };
     }
 
     fn preview_stale(&self) -> bool {
@@ -1532,6 +1648,11 @@ impl TikzariumApp {
                     Some(StudioFileAction::SaveAs) => {
                         self.save_as();
                     }
+                    Some(StudioFileAction::OpenPicker) => self.open_document_picker(),
+                    Some(StudioFileAction::SavePicker) => {
+                        self.save_as_picker();
+                    }
+                    Some(StudioFileAction::ExportPicker) => self.export_pdf_picker(),
                     None => {}
                 }
                 ui.menu_button("Вид", |ui| {
@@ -2682,6 +2803,24 @@ fn main() -> eframe::Result<()> {
 #[cfg(test)]
 mod split_layout_tests {
     use super::*;
+
+    #[test]
+    fn r3_native_picker_path_is_not_permission_to_overwrite_unrelated_tex() {
+        let temp = tempfile::tempdir().unwrap();
+        let owned = temp.path().join("черновик.tex");
+        let foreign = temp.path().join("чужой.tex");
+        let fresh = temp.path().join("другая фигура.tex");
+        std::fs::write(&owned, "% сохранённое\\r\\n").unwrap();
+        std::fs::write(&foreign, "% чужой\\r\\n").unwrap();
+        let mut doc = Document::load(&owned).unwrap();
+        assert!(checked_native_save_destination(&doc, owned.clone()).is_ok());
+        assert!(checked_native_save_destination(&doc, fresh).is_ok());
+        assert!(checked_native_save_destination(&doc, foreign.clone()).is_err());
+        assert_eq!(std::fs::read(&foreign).unwrap(), b"% \xd1\x87\xd1\x83\xd0\xb6\xd0\xbe\xd0\xb9\\r\\n");
+        doc.source.push_str("% opaque\\r\\n");
+        assert!(doc.dirty());
+    }
+
 
     #[test]
     fn r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace() {

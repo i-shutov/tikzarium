@@ -11,3 +11,6 @@ The N5 workflow executes the *packaged release launcher* under Xvfb/Openbox sepa
 
 ## R3 release blocker
 Linux native Open/Save/Export dialogs remain necessary. Preserve typed-path fallback and safe overwrite/dirty-source protections. Native portal proof needed before R3 PASS. R4 physical X11 and R5 final 1.0 release remain NOT_RUN/PENDING.
+
+## R3 code candidate added in the same PR
+The File menu offers genuine OS file-pickers for Open, Save As, PDF export through rfd 0.15 default XDG portal on Linux. Portal-less Xvfb retains its existing manually validated typed-path controls. Native picker selection is *not* authorization to overwrite an unrelated document; PDF export uses `OpenOptions::create_new` atomically. No hidden downloads/TeX management. Actual native-dialog clicks, Cancel, Unicode path and overwrite protection remain **UNACCEPTED** until a real Linux/X11 portal backend is observed. Exact-head Rust build, Cargo.lock stability and N1/N2/R1 regressions required.

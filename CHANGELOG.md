@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Linux 1.0 R3 native system file picker candidate
+
+- Add explicit Open, Save As and PDF Export native file-picker commands to the File menu. On Linux use rfd's XDG desktop portal, with manual typed-path workflow retained for portal-less and offline X11. Do not silently install a portal or TeX. Protect dirty-Open with existing confirmation, reject native Save As overwrites of occupied unrelated TeX, preserve Unicode PathBuf, and export new PDFs atomically with create_new (no overwrite races). Source/PDF integrity unaffected.
+- R3 is **NOT PASS** until real Ubuntu/X11 desktop with XDG backend shows actual dialogs, Cancel, Unicode/Open/Save/export and safe existing-file rejection; hosted Rust tests do not count as this acceptance. R2 exact-head visual DPI, R4 desktop and R5 publication remain gated.
+
+
 ## 2026-11-05 — Linux 1.0 R2 DPI-safe viewport candidate
 
 - R2 prior real packaged X11 200% failure: 1920×1080 client at y22 plus height1120 clipped 62px. Reduce immutable 560pt minimum height to 440pt, preserve DPI/font choices, and request monitor-relative inner size only when actual outer window is oversized. Do not affect source, PDF, external XeLaTeX or accepted R1.
