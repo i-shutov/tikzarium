@@ -5,6 +5,10 @@
 - Original exact-head Windows D QA and hosted MiKTeX artifacts expose code-24 ERROR_BAD_LENGTH in TikZarium CLI's token guard; direct hosted MiKTeX PDF does not establish app/CLI PDF success.
 - Fix the Rust TokenElevation GetTokenInformation buffer-length argument to use the exact required length (4 bytes), not the aligned 8-byte allocation capacity; preserve fail-closed semantics and add a live native Windows token query test. New-HEAD Windows CI, original outputs and safe child/PDF remain PENDING. No account/UAC policy change or elevated TeX bypass.
 
+## 2026-11-06 — Hosted Windows TeX preflight (PR #110 candidate)
+
+- Forbid unsafe elevated/high/unknown direct XeLaTeX and auto-installer steps in hosted D06 and D QA. Read-only token inspection occurs before TeX provisioning; blocked jobs upload token evidence and remain red, **not** a PDF PASS. Python static regressions assert ordering. Personal Server MiKTeX, Linux/macOS QA, system-wide MiKTeX configuration and UAC untouched.
+
 ## 2026-11-06 — Windows administrator token safety, W1 candidate (NOT MERGED)
 
 - Owner requires same local Administrators-group account (including built-in Administrator) in both ordinary/asInvoker and elevated GUI runs; no separate account. Group membership, process TokenElevation, integrity RID, UAC linked-token presence and session now have independent, read-only Windows diagnostics.
