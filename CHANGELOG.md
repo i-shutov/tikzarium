@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-06 — Windows hosted-to-personal-server artifact verifier regression (PR #110 candidate)
+
+- [Exact HEAD CI #42174567540](https://github.com/i-shutov/tikzarium/actions/runs/42174567540): original native Windows Rust tests, GUI PE=2/CLI=3, no dynamic VC runtime, portable ZIP and extracted CLI PASS, but hosted re-verification incorrectly rejected the original ZIP's SHA manifest. The producer uses Python ordinal `sorted()`; the PowerShell consumer used locale-sensitive `Sort-Object -CaseSensitive`, which is not an equivalent byte ordering. Corrected to `[StringComparer]::Ordinal` without relaxing per-member hash/manifest checks.
+- Added genuine Windows hosted positive stage-verifier smoke and negative tampered-manifest test with an adjusted outer SHA audit; the test requires full rejection and distinguishes **hosted self-test** from **personal Windows Server** provenance. Trusted-main server transfer is unchanged in scope and still cannot claim GUI/physical Windows 10 acceptance. Fresh exact-new-HEAD CI and original artifacts are REQUIRED before merge.
+- Hosted D QA/MiKTeX at that old HEAD blocked **before TeX execution** under elevated token; this is an explicit safe NOT_RUN, not a MiKTeX installation failure. Same-user filtered child launcher remains unimplemented, and server Cargo visibility remains a separate environment blocker.
+
 ## 2026-11-06 — Windows token Win32 ERROR_BAD_LENGTH hardening (PR #110 candidate)
 
 - Original exact-head Windows D QA and hosted MiKTeX artifacts expose code-24 ERROR_BAD_LENGTH in TikZarium CLI's token guard; direct hosted MiKTeX PDF does not establish app/CLI PDF success.
