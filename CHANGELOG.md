@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 — Temporary MEDIUM LUA-token setter research (candidate)
+
+- Disposable hosted Windows only: create a third ephemeral LUA restricted token, attempt MEDIUM integrity using SetTokenInformation on that handle alone and re-read elevation, SID, integrity and session; close handles, no child/TeX/parent-token or UAC change.
+- Expanded strict JSON schema v2 and negative regression matrix distinguish creation failure, setter denied, verified token properties. Even MEDIUM is not safe-launcher/PDF acceptance; personal Server and Win10 remain blocked/unrun, Linux RC/macOS/Linux preserved.
+
 ## 2026-11-06 — Windows LUA restricted-token comparison (research draft)
 
 - Disposable hosted Windows now inspects both the prior disabled-admin restricted-token candidate and Microsoft's `DISABLE_MAX_PRIVILEGE | LUA_TOKEN` variant. Captures real elevation, integrity, enabled admin role, same user SID and session; closes token handles without launching children or TeX. No UAC/accounts/registry/MiKTeX/desktop policy changes.
