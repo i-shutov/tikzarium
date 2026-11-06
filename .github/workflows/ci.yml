@@ -64,7 +64,7 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
         run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
-      - name: Windows portable CRT: negative tests and actual release PE imports
+      - name: "Windows portable CRT: negative tests and actual release PE imports"
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
