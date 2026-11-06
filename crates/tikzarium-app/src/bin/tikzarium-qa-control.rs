@@ -490,7 +490,9 @@ impl Control {
                     && let Some(tool_name) = name.strip_prefix("tool.")
                     && self.authoring.active.map(Tool::id) != Some(tool_name)
                 {
-                    return Err(format!("virtual click did not activate production tool: {name}"));
+                    return Err(format!(
+                        "virtual click did not activate production tool: {name}"
+                    ));
                 }
                 output
             }
@@ -792,8 +794,15 @@ mod api_tests {
             qa.authoring.active,
             Some(Tool::Line),
             "virtual click did not route: popup group={:?} anchor={:?} tool_rect={:?} source={:?} inspector={:?} window={}x{} dpi={} after_layout={:?}",
-            qa.group, qa.anchor, tool_rect, source_rect, inspector_rect,
-            qa.width, qa.height, qa.dpi, qa.last_layout.get("tool.line")
+            qa.group,
+            qa.anchor,
+            tool_rect,
+            source_rect,
+            inspector_rect,
+            qa.width,
+            qa.height,
+            qa.dpi,
+            qa.last_layout.get("tool.line")
         );
         assert_eq!(qa.authoring.selected, None);
         let scaled = qa
