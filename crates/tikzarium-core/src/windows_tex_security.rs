@@ -55,7 +55,9 @@ pub(crate) fn require_safe_tex_child() -> io::Result<()> {
         static WARNED: AtomicBool = AtomicBool::new(false);
         let (elevated, integrity_rid) = native::query_current_token()?;
         check_tex_privilege(elevated, integrity_rid)?;
-        if privilege_warning_required(elevated, integrity_rid) && !WARNED.swap(true, Ordering::Relaxed) {
+        if privilege_warning_required(elevated, integrity_rid)
+            && !WARNED.swap(true, Ordering::Relaxed)
+        {
             eprintln!(
                 "TikZarium warning: external document tools inherit this user's elevated Administrator rights. Compile only trusted documents. Shell-escape/offline policies remain unchanged; this is not a sandbox."
             );

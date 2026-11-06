@@ -5044,18 +5044,23 @@ mod elevated_user_warning_ui_tests {
         let output = ctx.run(
             egui::RawInput {
                 screen_rect: Some(egui::Rect::from_min_size(
-                    egui::Pos2::ZERO, egui::vec2(850.0, 560.0),
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
                 )),
                 ..Default::default()
             },
             |ctx| {
                 rect = show_current_user_privilege_banner(
-                    ctx, "⚠ Administrator: XeLaTeX с текущими правами; только доверенный документ.",
+                    ctx,
+                    "⚠ Administrator: XeLaTeX с текущими правами; только доверенный документ.",
                 );
                 egui::CentralPanel::default().show(ctx, |_ui| {});
             },
         );
         assert!(rect.is_positive(), "warning must occupy GUI space");
-        assert!(!output.shapes.is_empty(), "warning must paint real egui shapes");
+        assert!(
+            !output.shapes.is_empty(),
+            "warning must paint real egui shapes"
+        );
     }
 }
