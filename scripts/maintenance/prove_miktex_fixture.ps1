@@ -1,5 +1,5 @@
 # Owner-directed ONE fixed known-source MiKTeX diagnostic, not arbitrary document execution.
-# Does not disable MiKTeX warnings/protections or weaken production token guards.
+# Current-user Administrator is supported; no UAC/account changes or warning suppression.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDir)
 $ErrorActionPreference='Stop'
@@ -7,7 +7,7 @@ if($env:GITHUB_REPOSITORY -cne 'i-shutov/tikzarium' -or $env:GITHUB_REF -cne 're
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 . (Join-Path $PSScriptRoot 'native_process.ps1')
-$report=[ordered]@{status='INCOMPLETE';source_sha=$env:GITHUB_SHA;scope='FIXED_REVIEWED_MAINTENANCE_FIXTURE_ONLY';production_elevated_guard='UNCHANGED';gui='NOT_RUN';shell_escape='DISABLED';package_install='DISABLED';warning_suppression=$false;physical_windows10='NOT_RUN'}
+$report=[ordered]@{status='INCOMPLETE';source_sha=$env:GITHUB_SHA;scope='FIXED_REVIEWED_MAINTENANCE_FIXTURE_ONLY';execution_policy='CURRENT_USER_ADMIN_SUPPORTED_NOT_SANDBOX';gui='NOT_RUN';shell_escape='DISABLED';package_install='DISABLED';warning_suppression=$false;physical_windows10='NOT_RUN'}
 $exit=1
 . (Join-Path $PSScriptRoot 'tex_launch_gate.ps1')
 $texGate=Get-TikzariumMaintenanceTexGate
@@ -15,10 +15,10 @@ $report.tex_token_gate=$texGate.status
 $report.tex_token_elevated=$texGate.token_is_elevated
 $report.tex_token_integrity_rid=$texGate.token_integrity_rid
 $report.tex_token_session_id=$texGate.session_id
-if($texGate.status -cne 'ELIGIBLE_NON_ELEVATED_TOKEN'){
-  $report.status='ENVIRONMENT_BLOCKED_ELEVATED_OR_UNKNOWN'
+if($texGate.status -cne 'ELIGIBLE_CURRENT_USER_TOKEN'){
+  $report.status='ENVIRONMENT_BLOCKED_UNSUPPORTED_TOKEN'
   $report | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $OutputDir 'miktex-fixed-fixture.json') -Encoding UTF8
-  Write-Host 'MiKTeX fixed fixture NOT_RUN: process token not verified non-elevated MEDIUM'
+  Write-Host 'MiKTeX fixed fixture NOT_RUN: unknown/SYSTEM or noninteractive maintenance context'
   exit 3
 }
 try {
@@ -35,6 +35,8 @@ try {
  $source=Join-Path $work 'trusted-compiler-smoke.tex'
  Copy-Item -LiteralPath $input -Destination $source -Force
  $report.fixture_sha256=$expected
+ $pdf=Join-Path $work 'trusted-compiler-smoke.pdf'
+ if(Test-Path -LiteralPath $pdf){Remove-Item -LiteralPath $pdf -Force}
  $result=Invoke-TikzNative -Exe $engine -Arguments @('--disable-installer','--disable-write18','--dont-parse-first-line','-halt-on-error','-interaction=nonstopmode','-file-line-error','-recorder',('-output-directory='+$work),$source) -WorkingDirectory $work -LogPrefix (Join-Path $OutputDir 'fixed-xelatex') -TimeoutSeconds 120
  $report.tex_exit=$result.exit_code;$report.tex_timed_out=$result.timed_out;$report.stderr=$result.stderr
  $after=Invoke-TikzNative -Exe $miktex -Arguments $inventoryArgs -WorkingDirectory $OutputDir -LogPrefix (Join-Path $OutputDir 'packages-after') -TimeoutSeconds 90
@@ -43,7 +45,6 @@ try {
  $rowsAfter=@($after.stdout -split '\r?\n' | Where-Object {$_ -match '\|(true|false)$'} | Sort-Object)
  if($rowsBefore.Count -lt 1 -or (Compare-Object $rowsBefore $rowsAfter)){throw 'Package inventory changed or was not canonical'}
  $report.packages_unchanged=$true;$report.package_rows=$rowsAfter.Count
- $pdf=Join-Path $work 'trusted-compiler-smoke.pdf'
  if($result.exit_code -ne 0 -or $result.timed_out -or -not (Test-Path -LiteralPath $pdf)){throw 'Real fixed-fixture XeLaTeX did not produce PDF'}
  if((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){throw 'Source changed during compilation'}
  $report.pdf_sha256=(Get-FileHash -LiteralPath $pdf -Algorithm SHA256).Hash.ToLowerInvariant()
