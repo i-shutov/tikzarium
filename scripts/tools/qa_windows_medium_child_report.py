@@ -23,6 +23,20 @@ def check(d):
              "BLOCKED_PARENT_TOKEN_CHANGED","BLOCKED_PROBE_EXCEPTION"}
     if status not in blocked|{CANDIDATE}:
         raise ValueError("unrecognized status")
+    if status=="BLOCKED_PROBE_EXCEPTION":
+        # A generic "MethodInvocationException" is not actionable evidence.
+        # Require the unwrapped native/.NET error type and a fixed stage code.
+        stages={"OPEN_PARENT_TOKEN","CREATE_RESTRICTED_TOKEN",
+                "LOWER_TO_MEDIUM","MEASURE_CANDIDATE",
+                "FIND_SYSTEM_EXECUTABLE","CREATE_PROCESS_AS_USER",
+                "MEASURE_CHILD","TERMINATE_AND_WAIT","VERIFY_PARENT_TOKEN"}
+        if d.get("ProbeStage") not in stages:
+            raise ValueError("probe exception lacks known diagnostic stage")
+        if not isinstance(d.get("ErrorType"),str) or not d["ErrorType"] or d["ErrorType"]=="MethodInvocationException":
+            raise ValueError("probe exception lacks unwrapped error type")
+        if type(d.get("NativeErrorCode")) is not int or d["NativeErrorCode"]<0:
+            raise ValueError("probe exception lacks numeric Win32 code")
+        return True
     for k in ("SuspendedCreated","ChildTokenRead","ChildTerminationConfirmed",
               "ParentTokenUnchanged","ParentElevated","RestrictedTokenCreated",
               "MediumSetSucceeded","CandidateElevated","CandidateAdminEnabled",
