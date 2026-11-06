@@ -193,10 +193,14 @@ public static class TzRestrictedChildProbe {
                     r.CandidateAdminEnabled=AdminEnabled(candidate,admin);
                     r.CandidateSameUser=Sid(parent)==Sid(candidate);
                     r.CandidateSameSession=r.ParentSession==Integer(candidate,12);
+                    // IsTokenRestricted reports ONLY the restricting-SID list.
+                    // We explicitly passed RestrictedSidCount=0; FALSE is expected
+                    // despite the deny-only Administrators SID and removed privileges.
+                    // Do not misinterpret this API result as an elevation verdict.
                     r.CandidateIsRestricted=IsTokenRestricted(candidate);
                     if(r.CandidateElevated || r.CandidateIntegrity!=0x2000 ||
                        r.CandidateAdminEnabled || !r.CandidateSameUser ||
-                       !r.CandidateSameSession || !r.CandidateIsRestricted) {
+                       !r.CandidateSameSession || r.CandidateIsRestricted) {
                         r.Status="BLOCKED_CANDIDATE_FACTS";return r;
                     }
                     // Real suspended process creation, NEVER thread resume. System32 OS
@@ -230,7 +234,7 @@ public static class TzRestrictedChildProbe {
                             r.ChildIsRestricted=IsTokenRestricted(child);
                             r.Status=(!r.ChildElevated && r.ChildIntegrity==0x2000 &&
                                 !r.ChildAdminEnabled && r.ChildSameUser &&
-                                r.ChildSameSession && r.ChildIsRestricted)
+                                r.ChildSameSession && !r.ChildIsRestricted)
                                 ? "SUSPENDED_MEDIUM_CHILD_CANDIDATE_NOT_APPROVED"
                                 : "BLOCKED_CHILD_FACTS";
                             return r;
