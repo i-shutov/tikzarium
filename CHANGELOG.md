@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
+- Follow-up evidence-driven fix: original hosted Win32 error 5 at `MEASURE_CHILD` exposed `TOKEN_QUERY`-only handle passed to `DuplicateToken` (requires `TOKEN_DUPLICATE`). Request only `QUERY|DUPLICATE`, preserve child-inspection error/cleanup evidence and strengthen negative contracts; still no live child or TeX approval.
+- Subsequent hosted JSON on corrected restricted-SID semantics reported an opaque `BLOCKED_PROBE_EXCEPTION/MethodInvocationException`; instrumented stable stage codes and unwrapped .NET/Win32 exception type/code, with negative validation and cleanup-stage preservation. CI green is not a child-token PASS. All child/TeX release gates remain closed.
+
+- Follow-up PR #116 security review: real hosted JSON exposed `CandidateIsRestricted=false` on a deny-only LUA MEDIUM token. Corrected candidate/child gate and negative contracts to match Microsoft's documented `IsTokenRestricted` semantics (it checks restricting SID lists only); real token elevation, integrity, Admin role and SID/session remain mandatory. The original hosted test did **not** spawn a child; no TeX/desktop approval implied.
+
+- Disposable Windows CI: derive temporary same-account LUA restricted MEDIUM token; attempt suspended-only System32 whoami child via CreateProcessAsUserW, read actual child primary token, terminate+wait, no ResumeThread/TeX, no inherited handles or interactive desktop request. Record exact errors and keep desktop ACL and process isolation unapproved.
+- Independent strict JSON and negative tests reject forged elevated/admin/SID/session/integrity/termination/PDF evidence. A process creation result is only research, never a secure XeLaTeX launcher or Server/Win10 GUI/PDF PASS.
+
+
+## 2026-11-06 — Personal Windows elevated-TeX containment (safety draft)
+- Independent original personal Server artifact #13527814610: Cargo 1.91 native compile/link/run PASS, but a pinned XeLaTeX PDF was produced with actual elevated-privilege warnings from xelatex and miktex-dvipdfmx; this is NOT an approved release PDF PASS.
+- Shared read-only current-token gate now blocks all maintenance MiKTeX invocations under HIGH, elevated, Session 0 or unknown token. Verified medium non-elevated administrator account remains eligible. Hosted PS5.1 synthetic test added.
+- Automatic Rust and MSVC provisioning flags removed from recurring personal-server workflow; existing Cargo is only inspected/used. No account, registry, UAC, TeX or font changes.
+
+
+## 2026-11-06 — Temporary MEDIUM LUA-token setter research (candidate)
+
+- Disposable hosted Windows only: create a third ephemeral LUA restricted token, attempt MEDIUM integrity using SetTokenInformation on that handle alone and re-read elevation, SID, integrity and session; close handles, no child/TeX/parent-token or UAC change.
+- Expanded strict JSON schema v2 and negative regression matrix distinguish creation failure, setter denied, verified token properties. Even MEDIUM is not safe-launcher/PDF acceptance; personal Server and Win10 remain blocked/unrun, Linux RC/macOS/Linux preserved.
+
+## 2026-11-06 — Windows LUA restricted-token comparison (research draft)
+
+- Disposable hosted Windows now inspects both the prior disabled-admin restricted-token candidate and Microsoft's `DISABLE_MAX_PRIVILEGE | LUA_TOKEN` variant. Captures real elevation, integrity, enabled admin role, same user SID and session; closes token handles without launching children or TeX. No UAC/accounts/registry/MiKTeX/desktop policy changes.
+- Independent strict JSON verifier plus negative/tampered regression suite rejects forged safe-token results and any accidental child/PDF PASS. Even a non-elevated LUA token is not yet a reviewed child launcher, PDF result or security sandbox. Physical Windows Server and Win10 GUI/PDF still NOT_RUN/BLOCKED; Cargo blocker unchanged.
+- Linux RC 1.0.0-rc.1, macOS/Linux CI and FlowBridge isolation preserved.
+
+
+## 2026-11-06 — Same-administrator Windows UAC linked child candidate (draft)
+
+- Added disposable-hosted-Windows-only native CreateProcessWithTokenW experiment: verify linked token same SID, limited/non-elevated/MEDIUM, create only Windows System32 whoami.exe SUSPENDED, inspect real child token, terminate without resuming; export JSON. Static negative contract and original Windows artifact included.
+- Initial hosted Windows candidate returned BLOCKED_NO_UAC_LINKED_TOKEN (HIGH/DEFAULT/Session 2; no child/TeX). Added strict Session0 refusal and observed child-termination requirement before any hypothetical positive candidate report. No approved launcher or Windows account/UAC change. Personal built-in Administrator Server still NO_UAC_LINKED_TOKEN and TeX BLOCKED; GUI/Win10 NOT_RUN. Linux RC/macOS/Linux CI preserved.
+
+
+
 ## 2026-11-06 — Windows native/ZIP stage invocation from relative output path (candidate)
 
 - Fix real hosted Windows verifier failure after successful original/tampered ZIP tests: relative `.qa-artifacts/` became invalid when the script changed into the stage directory before invoking CLI. Canonicalize output and EXE paths before `Push-Location`; reproduce CI's relative path in an independent real Windows process test. Preserve exact source/PE/ZIP/manifest/hash fail-closed checks and no elevated TeX. Exact new-head CI PENDING.

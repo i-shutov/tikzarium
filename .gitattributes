@@ -1,3 +1,5 @@
 # Keep only the versioned Rust dependency lock byte-identical across hosted OS.
 # Do not impose line ending normalization on user-managed .tex/.tikz sources.
 Cargo.lock text eol=lf
+# Reviewed fixed maintenance fixture is checked byte-for-byte before execution.
+scripts/maintenance/trusted-compiler-smoke.tex text eol=lf

@@ -571,7 +571,6 @@ impl Control {
                     mac_cmd: command,
                     shift: truth(req, "shift")?,
                     alt: truth(req, "alt")?,
-                    ..Default::default()
                 };
                 let pressed = req
                     .get("down")

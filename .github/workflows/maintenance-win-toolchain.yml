@@ -1,0 +1,89 @@
+name: Personal Windows Cargo and MiKTeX repair
+on:
+  pull_request:
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml', '.gitattributes']
+  push:
+    branches: [main]
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml', '.gitattributes']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # A hosted-only PR selftest must never replace a pending trusted-main job.
+  # Main maintenance remains serialized with the dedicated server QA workflow.
+  group: ${{ github.event_name == 'pull_request' && format('tikzarium-maintenance-pr-{0}', github.event.pull_request.number) || 'tikzarium-trusted-winserver-main' }}
+  cancel-in-progress: false
+jobs:
+  ps51-selftest:
+    runs-on: windows-2022
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: PS5.1 native process, checksum and exact fixture regressions
+        shell: powershell
+        run: ./scripts/maintenance/test_native_process.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-native-process-test"
+      - name: Non-elevated XeLaTeX gate regression; token fixtures only, no TeX
+        shell: powershell
+        run: ./scripts/maintenance/test_tex_launch_gate.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: tikzarium-native-ps51-${{ github.run_id }}
+          path: ${{ runner.temp }}/tikzarium-native-process-test/
+  personal-server:
+    needs: ps51-selftest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
+    timeout-minutes: 45
+    steps:
+      - name: Existing Git PATH for this job only
+        shell: powershell
+        run: |
+          $dir='C:\Program Files\Git\cmd'
+          if(-not (Test-Path -LiteralPath "$dir\git.exe")){throw 'Existing Git missing'}
+          [IO.File]::AppendAllText($env:GITHUB_PATH,"$dir`n",(New-Object Text.UTF8Encoding($false)))
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Confirm this is current reviewed main
+        id: lease
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $actual=(git rev-parse HEAD).Trim()
+          $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'User-Agent'='Tikzarium-maintenance'}
+          $branch=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers
+          if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA -or $actual -cne $branch.commit.sha){throw 'Current main SHA changed: refusing stale maintenance'}
+      - name: Discover existing private Rust and preflight MiKTeX token
+        id: diagnosis
+        continue-on-error: true
+        shell: powershell
+        run: ./scripts/maintenance/repair_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
+      - name: Fixed reviewed offline MiKTeX fixture (not arbitrary documents)
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: ./scripts/maintenance/prove_miktex_fixture.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
+      - name: Check existing Microsoft linker without provisioning
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: ./scripts/maintenance/complete_msvc.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
+      - name: Require both genuine Cargo executable and fixed MiKTeX PDF evidence
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        shell: powershell
+        run: ./scripts/maintenance/summarize_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: tikzarium-personal-toolchain-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tikzarium-toolchain-repair/
+            !${{ runner.temp }}/tikzarium-toolchain-repair/vs_BuildTools.exe
+          if-no-files-found: warn
