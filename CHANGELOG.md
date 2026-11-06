@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-07 — Windows Administrator owner correction (PR #121, pre-merge candidate)
+- Elevated/current-user XeLaTeX and PDF tools now permitted under the existing administrator account; no token/UAC/account changes, no shell escape, no automatic TeX/font/package install; unsupported unknown/SYSTEM contexts retained. This is NOT a sandbox.
+- Persistent egui warning shown even without a console (GUI PE2); read-only token probe and spawn-time child security checks remain separate. Native token classification and real egui frame regression tests added.
+- Replace false Python-dependent CRT failure with native PowerShell 5.1 PE/import audit, negative fixtures and original native CLI execution. W1 personal Server product PDF and independent font/Unicode audit require trusted-main postmerge proof; W2 Server interactive GUI and W3 physical Win10 remain NOT_RUN. Linux RC and macOS/Linux CI preserved.
+
+
 ## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
 - Follow-up evidence-driven fix: original hosted Win32 error 5 at `MEASURE_CHILD` exposed `TOKEN_QUERY`-only handle passed to `DuplicateToken` (requires `TOKEN_DUPLICATE`). Request only `QUERY|DUPLICATE`, preserve child-inspection error/cleanup evidence and strengthen negative contracts; still no live child or TeX approval.
 - Subsequent hosted JSON on corrected restricted-SID semantics reported an opaque `BLOCKED_PROBE_EXCEPTION/MethodInvocationException`; instrumented stable stage codes and unwrapped .NET/Win32 exception type/code, with negative validation and cleanup-stage preservation. CI green is not a child-token PASS. All child/TeX release gates remain closed.

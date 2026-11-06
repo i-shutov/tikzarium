@@ -18,6 +18,28 @@ fn check_tex_privilege(_elevated: bool, integrity_rid: u32) -> io::Result<()> {
     }
 }
 
+/// Read-only query for a visible GUI warning, including PE subsystem 2 without a console.
+/// The actual external-child guard independently rechecks current token on spawn.
+pub fn external_document_privilege_notice() -> io::Result<Option<&'static str>> {
+    #[cfg(windows)]
+    {
+        let (elevated, integrity_rid) = native::query_current_token()?;
+        check_tex_privilege(elevated, integrity_rid)?;
+        Ok(privilege_warning_required(elevated, integrity_rid).then_some(
+            "⚠ XeLaTeX и PDF-инструменты запускаются с текущими повышенными правами Administrator. Компилируйте только доверенные документы: это не песочница. Предупреждения MiKTeX не подавляются.",
+        ))
+    }
+    #[cfg(not(windows))]
+    {
+        Ok(None)
+    }
+}
+
+#[cfg(any(windows, test))]
+fn privilege_warning_required(elevated: bool, integrity_rid: u32) -> bool {
+    elevated || integrity_rid >= 0x3000
+}
+
 /// Apply the same current-user policy to XeLaTeX and PDF helpers.
 /// Historical API name retained for callers: this is NOT an OS sandbox.
 pub fn require_safe_external_document_child() -> io::Result<()> {
@@ -33,7 +55,7 @@ pub(crate) fn require_safe_tex_child() -> io::Result<()> {
         static WARNED: AtomicBool = AtomicBool::new(false);
         let (elevated, integrity_rid) = native::query_current_token()?;
         check_tex_privilege(elevated, integrity_rid)?;
-        if (elevated || integrity_rid >= 0x3000) && !WARNED.swap(true, Ordering::Relaxed) {
+        if privilege_warning_required(elevated, integrity_rid) && !WARNED.swap(true, Ordering::Relaxed) {
             eprintln!(
                 "TikZarium warning: external document tools inherit this user's elevated Administrator rights. Compile only trusted documents. Shell-escape/offline policies remain unchanged; this is not a sandbox."
             );
@@ -156,7 +178,7 @@ mod native {
 
 #[cfg(test)]
 mod tests {
-    use super::check_tex_privilege;
+    use super::{check_tex_privilege, privilege_warning_required};
 
     #[cfg(windows)]
     #[test]
@@ -181,6 +203,14 @@ mod tests {
         for (elevated, rid) in [(true, 0x3000), (true, 0x2000), (false, 0x3000)] {
             assert!(check_tex_privilege(elevated, rid).is_ok());
         }
+    }
+
+    #[test]
+    fn high_or_elevated_current_user_requires_visible_warning() {
+        assert!(privilege_warning_required(true, 0x2000));
+        assert!(privilege_warning_required(false, 0x3000));
+        assert!(privilege_warning_required(true, 0x3000));
+        assert!(!privilege_warning_required(false, 0x2000));
     }
 
     #[test]
