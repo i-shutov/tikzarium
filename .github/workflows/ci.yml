@@ -83,6 +83,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'MEDIUM child native probe failed' }
           python scripts/tools/qa_windows_medium_child_report.py '.qa-artifacts/windows-medium-child-candidate.json'
           if ($LASTEXITCODE -ne 0) { throw 'MEDIUM child claims contradict actual tokens' }
+      - name: Preserve original hosted MEDIUM child JSON even on failure
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-medium-restricted-child-research
+          path: .qa-artifacts/windows-medium-child-candidate.json
+          if-no-files-found: warn
       - name: Same-admin UAC-linked suspended-child candidate (hosted only; NO TeX)
         if: runner.os == 'Windows'
         shell: pwsh
