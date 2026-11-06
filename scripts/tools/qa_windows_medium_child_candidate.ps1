@@ -171,8 +171,8 @@ public static class TzRestrictedChildProbe {
             if(!r.ParentElevated || r.ParentIntegrity<0x3000) {
                 r.Status="BLOCKED_PARENT_NOT_HIGH";return r;
             }
-            var sid=new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid,null);
-            byte[] bytes=new byte[sid.BinaryLength];sid.GetBinaryForm(bytes,0);
+            var adminId=new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid,null);
+            byte[] bytes=new byte[adminId.BinaryLength];adminId.GetBinaryForm(bytes,0);
             IntPtr admin=Marshal.AllocHGlobal(bytes.Length);
             try {
                 Marshal.Copy(bytes,0,admin,bytes.Length);
@@ -267,6 +267,10 @@ try {
         TexPdf = 'NOT_RUN'
         ApprovedLauncher = $false
         AccountPolicyChanged = $false
+        DesktopIsolationVerified = $false
+        AclSecurityVerified = $false
+        Executable = 'WINDOWS_SYSTEM32_WHOAMI_SUSPENDED_ONLY'
+        Desktop = 'NONINTERACTIVE_DEFAULT_NOT_AUDITED'
     }
 }
 $dir = Split-Path -Parent $OutputPath
