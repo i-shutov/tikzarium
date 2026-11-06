@@ -77,7 +77,13 @@ try{
      (ShaBytes $data[($prefix+'tikzarium-cli.exe')]) -cne $cliHash){
    throw 'ZIP EXE differs from original hosted native EXE'
   }
-  $manifestExpected=@(foreach($name in ($names | Where-Object {$_ -cne 'MANIFEST.sha256'} | Sort-Object -CaseSensitive)){
+  # The producer uses Python sorted() (Unicode ordinal/code-point ordering).
+  # Sort-Object -CaseSensitive is *culture* aware on Windows and can order
+  # lower-case 'qa/' before upper-case 'PROVENANCE.json' / 'README_RU.md',
+  # rejecting a genuine, unchanged portable ZIP. Never loosen hash checks.
+  $manifestNames=[string[]]@($names | Where-Object {$_ -cne 'MANIFEST.sha256'})
+  [Array]::Sort($manifestNames,[StringComparer]::Ordinal)
+  $manifestExpected=@(foreach($name in $manifestNames){
    "$((ShaBytes $data[($prefix+$name)]))  $name"
   })
   $expected=($manifestExpected -join [char]10)+[char]10
