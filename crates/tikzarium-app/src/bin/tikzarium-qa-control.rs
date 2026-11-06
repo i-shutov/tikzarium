@@ -208,6 +208,11 @@ impl Control {
             events,
             ..Default::default()
         };
+        // Fixed-width QA panels must not consume the entire logical
+        // viewport at 200% DPI. Observe responsive real egui geometry.
+        let logical_width = self.width as f32 / self.dpi;
+        let source_width = (logical_width * 0.38).clamp(210.0, 375.0);
+        let inspector_width = (logical_width * 0.24).clamp(180.0, 285.0);
         let mut layout = BTreeMap::new();
         let mut next_anchor = None;
         let mut notice = String::new();
@@ -227,7 +232,7 @@ impl Control {
                 notice = format!("visual source undo at line {line}");
             }
             egui::SidePanel::left("qa-source")
-                .exact_width(375.0)
+                .exact_width(source_width)
                 .show(ctx, |ui| {
                     let source_panel = ui.max_rect();
                     observed(&mut layout, "panel.source".into(), source_panel);
@@ -269,7 +274,7 @@ impl Control {
             }
             if *inspector {
                 egui::SidePanel::right("qa-inspector")
-                    .exact_width(285.0)
+                    .exact_width(inspector_width)
                     .show(ctx, |ui| {
                         observed(&mut layout, "panel.inspector".into(), ui.max_rect());
                         ui.horizontal(|ui| {
@@ -753,7 +758,7 @@ mod api_tests {
         let root = tempfile::tempdir().unwrap();
         let mut qa = Control::new(root.path().into()).unwrap();
         let output = qa
-            .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":2.0}))
+            .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":1.0}))
             .unwrap();
         assert!(output["layout"]["group.geometry"]["pixels"].is_array());
         assert!(output["layout"]["guide.canvas"]["center_px"].is_array());
@@ -765,6 +770,11 @@ mod api_tests {
             .unwrap();
         assert_eq!(qa.authoring.active, Some(Tool::Line));
         assert_eq!(qa.authoring.selected, None);
+        let scaled = qa
+            .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":2.0}))
+            .unwrap();
+        assert!(scaled["layout"]["group.geometry"]["pixels"].is_array());
+        assert!(scaled["layout"]["guide.canvas"]["center_px"].is_array());
     }
     #[test]
     fn all_six_semantic_actions_are_real_source_transactions() {
