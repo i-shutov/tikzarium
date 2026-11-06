@@ -2,6 +2,8 @@
 
 ## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
 
+- Follow-up PR #116 security review: real hosted JSON exposed `CandidateIsRestricted=false` on a deny-only LUA MEDIUM token. Corrected candidate/child gate and negative contracts to match Microsoft's documented `IsTokenRestricted` semantics (it checks restricting SID lists only); real token elevation, integrity, Admin role and SID/session remain mandatory. The original hosted test did **not** spawn a child; no TeX/desktop approval implied.
+
 - Disposable Windows CI: derive temporary same-account LUA restricted MEDIUM token; attempt suspended-only System32 whoami child via CreateProcessAsUserW, read actual child primary token, terminate+wait, no ResumeThread/TeX, no inherited handles or interactive desktop request. Record exact errors and keep desktop ACL and process isolation unapproved.
 - Independent strict JSON and negative tests reject forged elevated/admin/SID/session/integrity/termination/PDF evidence. A process creation result is only research, never a secure XeLaTeX launcher or Server/Win10 GUI/PDF PASS.
 
