@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
+- Follow-up evidence-driven fix: original hosted Win32 error 5 at `MEASURE_CHILD` exposed `TOKEN_QUERY`-only handle passed to `DuplicateToken` (requires `TOKEN_DUPLICATE`). Request only `QUERY|DUPLICATE`, preserve child-inspection error/cleanup evidence and strengthen negative contracts; still no live child or TeX approval.
+- Subsequent hosted JSON on corrected restricted-SID semantics reported an opaque `BLOCKED_PROBE_EXCEPTION/MethodInvocationException`; instrumented stable stage codes and unwrapped .NET/Win32 exception type/code, with negative validation and cleanup-stage preservation. CI green is not a child-token PASS. All child/TeX release gates remain closed.
+
+- Follow-up PR #116 security review: real hosted JSON exposed `CandidateIsRestricted=false` on a deny-only LUA MEDIUM token. Corrected candidate/child gate and negative contracts to match Microsoft's documented `IsTokenRestricted` semantics (it checks restricting SID lists only); real token elevation, integrity, Admin role and SID/session remain mandatory. The original hosted test did **not** spawn a child; no TeX/desktop approval implied.
+
+- Disposable Windows CI: derive temporary same-account LUA restricted MEDIUM token; attempt suspended-only System32 whoami child via CreateProcessAsUserW, read actual child primary token, terminate+wait, no ResumeThread/TeX, no inherited handles or interactive desktop request. Record exact errors and keep desktop ACL and process isolation unapproved.
+- Independent strict JSON and negative tests reject forged elevated/admin/SID/session/integrity/termination/PDF evidence. A process creation result is only research, never a secure XeLaTeX launcher or Server/Win10 GUI/PDF PASS.
+
+
 ## 2026-11-06 — Personal Windows elevated-TeX containment (safety draft)
 - Independent original personal Server artifact #13527814610: Cargo 1.91 native compile/link/run PASS, but a pinned XeLaTeX PDF was produced with actual elevated-privilege warnings from xelatex and miktex-dvipdfmx; this is NOT an approved release PDF PASS.
 - Shared read-only current-token gate now blocks all maintenance MiKTeX invocations under HIGH, elevated, Session 0 or unknown token. Verified medium non-elevated administrator account remains eligible. Hosted PS5.1 synthetic test added.
