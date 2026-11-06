@@ -32,8 +32,8 @@ function Get-TikzariumMaintenanceTexGate {
   try {
     $inspector=Join-Path $PSScriptRoot '..\tools\qa_windows_token.ps1'
     $facts=& $inspector
-    return Test-TikzariumMaintenanceTexTokenFacts -Facts $facts
+    return (Test-TikzariumMaintenanceTexTokenFacts -Facts $facts)
   } catch {
-    return Test-TikzariumMaintenanceTexTokenFacts -Facts $null
+    return (Test-TikzariumMaintenanceTexTokenFacts -Facts $null)
   }
 }

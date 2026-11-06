@@ -21,4 +21,11 @@ $workflow=Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\..\.github\workf
 if($repair -notmatch 'Get-TikzariumMaintenanceTexGate' -or
    $prove -notmatch 'Get-TikzariumMaintenanceTexGate'){throw 'Both TeX entrypoints must preflight'}
 if($workflow -match '(?m)^\s*run:.*-Provision(Rust|Msvc)\b'){throw 'Automatic installer switch detected'}
+$live=Get-TikzariumMaintenanceTexGate
+$observed=& (Join-Path $PSScriptRoot '..\tools\qa_windows_token.ps1')
+if($live.status -notin @('BLOCKED_ELEVATED','BLOCKED_SESSION0','BLOCKED_INTEGRITY','ELIGIBLE_NON_ELEVATED_TOKEN')){throw 'Read-only live Windows token gate failed'}
+if(($observed.token_is_elevated -or $observed.token_integrity_rid -ge 12288) -and
+   $live.status -cne 'BLOCKED_ELEVATED'){throw 'Live HIGH token would not block TeX'}
+if($observed.session_id -eq 0 -and $live.status -cne 'BLOCKED_SESSION0'){throw 'Live Session0 would not block TeX'}
+Write-Host ('HOSTED_WINDOWS_REAL_TOKEN_PREFLIGHT={0}; no TeX invoked' -f $live.status)
 Write-Host 'MAINTENANCE_TEX_GATE_CONTRACT_PASS; no actual XeLaTeX executed'

@@ -13,3 +13,7 @@ Trusted-main personal Windows Server maintenance [run #42270086656](https://gith
 The shared PowerShell maintenance gate queries the **current process token**, using the already committed read-only token inspector. Under HIGH/elevated/Session0/ambiguous state it blocks both the maintenance `xelatex --version` path and the fixed PDF path *before invoking* TeX or MiKTeX inventory tools. Synthetic PS5.1 tests check filtered admin MEDIUM eligibility, HIGH DEFAULT Administrator blocking, type coercion, Session0 and unknown facts. No auto-elevation/de-elevation, alternate logon, UAC changes, warning bypass, or TeX/installer downloads. The workflow no longer passes `-ProvisionRust` or `-ProvisionMsvc`; existing Cargo can be tested in the dedicated runner cache.
 
 Expected on present built-in Administrator with HIGH integrity: Cargo can PASS separately; MiKTeX returns ENVIRONMENT_BLOCKED_ELEVATED_OR_UNKNOWN; no PDF PASS. Project release gate stays blocked pending a separately approved same-user child launcher and real Server/Win10 interactive GUI verification.
+
+## Hosted real-token preflight regression
+
+The existing disposable-hosted Windows PS5.1 test now exercises the **actual current-process token inspector**, not just synthetic input fixtures, and compares the returned gate with a separate read-only token inspection. It must prove that a HIGH/elevated disposable hosted token gets `BLOCKED_ELEVATED` and Session 0 gets `BLOCKED_SESSION0`. Tests never launch MiKTeX. A complete exact-head hosted run and original logs are required before merge.
