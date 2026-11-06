@@ -1,10 +1,10 @@
 name: Personal Windows Cargo and MiKTeX repair
 on:
   pull_request:
-    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml']
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml', '.gitattributes']
   push:
     branches: [main]
-    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml']
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml', '.gitattributes']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Native stderr and exit-code regression on Windows PowerShell 5.1
+      - name: PS5.1 native process, checksum and exact fixture regressions
         shell: powershell
         run: ./scripts/maintenance/test_native_process.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-native-process-test"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -32,7 +32,7 @@ jobs:
     needs: ps51-selftest
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
-    timeout-minutes: 24
+    timeout-minutes: 45
     steps:
       - name: Existing Git PATH for this job only
         shell: powershell
@@ -45,6 +45,7 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - name: Confirm this is current reviewed main
+        id: lease
         shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
@@ -54,12 +55,30 @@ jobs:
           $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'User-Agent'='Tikzarium-maintenance'}
           $branch=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers
           if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA -or $actual -cne $branch.commit.sha){throw 'Current main SHA changed: refusing stale maintenance'}
-      - name: Explicit owner-requested isolated Rust provisioning and read-only MiKTeX diagnosis
+      - name: Repair isolated Rust and record real installed MiKTeX version
+        id: diagnosis
+        continue-on-error: true
         shell: powershell
         run: ./scripts/maintenance/repair_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair" -ProvisionRust
+      - name: Fixed reviewed offline MiKTeX fixture (not arbitrary documents)
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: ./scripts/maintenance/prove_miktex_fixture.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
+      - name: Complete missing Microsoft linker only when proven necessary
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: ./scripts/maintenance/complete_msvc.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair" -ProvisionMsvc
+      - name: Require both genuine Cargo executable and fixed MiKTeX PDF evidence
+        if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
+        shell: powershell
+        run: ./scripts/maintenance/summarize_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: tikzarium-personal-toolchain-${{ github.run_id }}
-          path: ${{ runner.temp }}/tikzarium-toolchain-repair/
+          path: |
+            ${{ runner.temp }}/tikzarium-toolchain-repair/
+            !${{ runner.temp }}/tikzarium-toolchain-repair/vs_BuildTools.exe
           if-no-files-found: warn
