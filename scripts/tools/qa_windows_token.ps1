@@ -10,6 +10,9 @@ public sealed class TikzTokenSnapshot {
     public int IntegrityRid { get; set; }
     public int ElevationType { get; set; }
     public string LinkedToken { get; set; }
+    public bool LinkedIsElevated { get; set; }
+    public int LinkedIntegrityRid { get; set; }
+    public int LinkedElevationType { get; set; }
 }
 public static class TikzTokenInspector {
     [DllImport("kernel32.dll")] private static extern IntPtr GetCurrentProcess();
@@ -44,6 +47,20 @@ public static class TikzTokenInspector {
         try { return Marshal.ReadInt32(memory); }
         finally { Marshal.FreeHGlobal(memory); }
     }
+    private static int QueryIntegrityRid(IntPtr token) {
+        IntPtr label = Query(token, 25); // TokenIntegrityLevel
+        try {
+            IntPtr sid = Marshal.ReadIntPtr(label);
+            if (sid == IntPtr.Zero) throw new InvalidOperationException("Null integrity SID");
+            IntPtr countPtr = GetSidSubAuthorityCount(sid);
+            if (countPtr == IntPtr.Zero) throw new InvalidOperationException("No integrity SID count");
+            byte count = Marshal.ReadByte(countPtr);
+            if (count == 0) throw new InvalidOperationException("No integrity RID");
+            IntPtr rid = GetSidSubAuthority(sid, (uint)(count - 1));
+            if (rid == IntPtr.Zero) throw new InvalidOperationException("No integrity RID pointer");
+            return Marshal.ReadInt32(rid);
+        } finally { Marshal.FreeHGlobal(label); }
+    }
     public static TikzTokenSnapshot Capture() {
         IntPtr token;
         if (!OpenProcessToken(GetCurrentProcess(), 0x0008u, out token))
@@ -52,18 +69,7 @@ public static class TikzTokenInspector {
             var result = new TikzTokenSnapshot();
             result.IsElevated = QueryInt(token, 20) != 0; // TokenElevation
             result.ElevationType = QueryInt(token, 18); // TokenElevationType
-            IntPtr label = Query(token, 25); // TokenIntegrityLevel
-            try {
-                IntPtr sid = Marshal.ReadIntPtr(label);
-                if (sid == IntPtr.Zero) throw new InvalidOperationException("Null integrity SID");
-                IntPtr countPtr = GetSidSubAuthorityCount(sid);
-                if (countPtr == IntPtr.Zero) throw new InvalidOperationException("No integrity SID count");
-                byte count = Marshal.ReadByte(countPtr);
-                if (count == 0) throw new InvalidOperationException("No integrity RID");
-                IntPtr rid = GetSidSubAuthority(sid, (uint)(count - 1));
-                if (rid == IntPtr.Zero) throw new InvalidOperationException("No integrity RID pointer");
-                result.IntegrityRid = Marshal.ReadInt32(rid);
-            } finally { Marshal.FreeHGlobal(label); }
+            result.IntegrityRid = QueryIntegrityRid(token);
             result.LinkedToken = "NOT_APPLICABLE";
             // TokenLinkedToken availability is diagnostic only; NO child is launched.
             if (result.ElevationType == 2) { // TokenElevationTypeFull
@@ -71,8 +77,24 @@ public static class TikzTokenInspector {
                     IntPtr linked = Query(token, 19); // TokenLinkedToken
                     try {
                         IntPtr handle = Marshal.ReadIntPtr(linked);
-                        result.LinkedToken = handle == IntPtr.Zero ? "ABSENT" : "PRESENT_UNVALIDATED";
-                        if (handle != IntPtr.Zero) CloseHandle(handle);
+                        if (handle == IntPtr.Zero) {
+                            result.LinkedToken = "ABSENT";
+                        } else {
+                            try {
+                                // Inspect the *linked* access token, not just its handle.
+                                // This does not alter privileges or launch another process.
+                                result.LinkedIsElevated = QueryInt(handle, 20) != 0;
+                                result.LinkedElevationType = QueryInt(handle, 18);
+                                result.LinkedIntegrityRid = QueryIntegrityRid(handle);
+                                bool limited = !result.LinkedIsElevated
+                                    && result.LinkedElevationType == 3
+                                    && result.LinkedIntegrityRid >= 0x1000
+                                    && result.LinkedIntegrityRid < 0x3000;
+                                result.LinkedToken = limited
+                                    ? "PRESENT_LIMITED_TOKEN_QUERY_ONLY"
+                                    : "PRESENT_NOT_A_VERIFIED_LIMITED_TOKEN";
+                            } finally { CloseHandle(handle); }
+                        }
                     } finally { Marshal.FreeHGlobal(linked); }
                 } catch (Win32Exception) { result.LinkedToken = "UNKNOWN_QUERY_FAILED"; }
             } else if (result.ElevationType == 1) {
@@ -97,7 +119,6 @@ $integrity = switch ($true) {
     default { 'UNKNOWN_OR_UNTRUSTED' }
 }
 [pscustomobject]@{
-    account_name = $id.Name
     administrator_sid_in_token = $adminSidPresent
     administrator_role_enabled = $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
     token_is_elevated = [bool]$t.IsElevated
@@ -105,6 +126,9 @@ $integrity = switch ($true) {
     token_integrity_rid = [int]$t.IntegrityRid
     token_integrity = $integrity
     uac_linked_token = $t.LinkedToken
+    uac_linked_token_is_elevated = $t.LinkedIsElevated
+    uac_linked_token_elevation_type = switch ($t.LinkedElevationType) { 1 {'DEFAULT'} 2 {'FULL'} 3 {'LIMITED'} default {'UNKNOWN_OR_NOT_APPLICABLE'} }
+    uac_linked_token_integrity_rid = [int]$t.LinkedIntegrityRid
     session_id = (Get-Process -Id $PID).SessionId
     linked_child_launcher = 'NOT_IMPLEMENTED_NOT_APPROVED'
 }

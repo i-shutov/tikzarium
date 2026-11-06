@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 — Verify linked UAC token rights before proposing XeLaTeX child (candidate)
+
+- Replace misleading nonzero TokenLinkedToken handle-only probe with read-only queries of linked token elevation, elevation type and mandatory integrity. Mark only non-elevated limited linked tokens as `PRESENT_LIMITED_TOKEN_QUERY_ONLY`; a present-but-not-limited token is rejected as a child candidate. No child process, restricted token, UAC/account mutation, system TeX or install.
+- Remove host account name from potentially public CI token evidence; keep actual elevation/role/integrity/session. Extend Windows static contract, preserve new exact-head tests. No Windows GUI/MiKTeX child PASS until genuine user-hosted acceptance.
+
 ## 2026-11-06 — Windows hosted-to-personal-server artifact verifier regression (PR #110 candidate)
 
 - [Exact HEAD CI #42174567540](https://github.com/i-shutov/tikzarium/actions/runs/42174567540): original native Windows Rust tests, GUI PE=2/CLI=3, no dynamic VC runtime, portable ZIP and extracted CLI PASS, but hosted re-verification incorrectly rejected the original ZIP's SHA manifest. The producer uses Python ordinal `sorted()`; the PowerShell consumer used locale-sensitive `Sort-Object -CaseSensitive`, which is not an equivalent byte ordering. Corrected to `[StringComparer]::Ordinal` without relaxing per-member hash/manifest checks.

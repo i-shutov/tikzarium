@@ -10,8 +10,16 @@ class WindowsTokenReleaseContract(unittest.TestCase):
         for field in ("OpenProcessToken", "TokenElevation", "TokenElevationType",
                       "TokenIntegrityLevel", "TokenLinkedToken", "session_id",
                       "administrator_sid_in_token", "PRESENT_UNVALIDATED",
-                      "NOT_IMPLEMENTED_NOT_APPROVED"):
+                      "NOT_IMPLEMENTED_NOT_APPROVED",
+                      "PRESENT_LIMITED_TOKEN_QUERY_ONLY",
+                      "PRESENT_NOT_A_VERIFIED_LIMITED_TOKEN",
+                      "uac_linked_token_integrity_rid",
+                      "uac_linked_token_is_elevated"):
             self.assertIn(field, source)
+        self.assertNotIn('account_name = $id.Name', source)
+        self.assertIn('result.LinkedIsElevated = QueryInt(handle, 20) != 0', source)
+        self.assertIn('result.LinkedElevationType = QueryInt(handle, 18)', source)
+        self.assertIn('result.LinkedIntegrityRid = QueryIntegrityRid(handle)', source)
         for unsafe in ("CreateProcessWithTokenW(", "CreateRestrictedToken(",
                        "SetTokenInformation(", "Start-Process -Verb RunAs"):
             self.assertNotIn(unsafe, source)
