@@ -766,9 +766,18 @@ mod api_tests {
             .unwrap();
         let info = qa.layout();
         assert!(info["tool.line"]["center_px"].is_array());
+        let tool_rect = qa.last_layout.get("tool.line").copied().unwrap();
+        let source_rect = qa.last_layout.get("panel.source").copied().unwrap();
+        let inspector_rect = qa.last_layout.get("panel.inspector").copied().unwrap();
         qa.handle(&json!({"op":"input.click","target":"tool.line"}))
             .unwrap();
-        assert_eq!(qa.authoring.active, Some(Tool::Line));
+        assert_eq!(
+            qa.authoring.active,
+            Some(Tool::Line),
+            "virtual click did not route: popup group={:?} anchor={:?} tool_rect={:?} source={:?} inspector={:?} window={}x{} dpi={} after_layout={:?}",
+            qa.group, qa.anchor, tool_rect, source_rect, inspector_rect,
+            qa.width, qa.height, qa.dpi, qa.last_layout.get("tool.line")
+        );
         assert_eq!(qa.authoring.selected, None);
         let scaled = qa
             .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":2.0}))
