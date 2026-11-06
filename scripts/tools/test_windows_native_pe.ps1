@@ -33,7 +33,8 @@ try {
  [IO.File]::WriteAllBytes($p,(New-Object byte[] 20));MustFail {Get-TikzariumPortablePe -Path $p -ExpectedSubsystem 3}
  $bad=Fixture 'KERNEL32.dll' 3;$bad[0]=0
  [IO.File]::WriteAllBytes($p,$bad);MustFail {Get-TikzariumPortablePe -Path $p -ExpectedSubsystem 3}
- $bad=Fixture 'KERNEL32.dll' 3;[BitConverter]::GetBytes([uint32]0xfffffff0).CopyTo($bad,1036)
+ # PS5.1 parses 0xfffffff0 as signed -16; use the explicit positive decimal.
+ $bad=Fixture 'KERNEL32.dll' 3;[BitConverter]::GetBytes([uint32]4294967280).CopyTo($bad,1036)
  [IO.File]::WriteAllBytes($p,$bad);MustFail {Get-TikzariumPortablePe -Path $p -ExpectedSubsystem 3}
  Write-Host 'PASS: PE GUI/CLI, import names, both VC runtime negatives, truncated/MZ/RVA negatives; no Python required'
 } finally {Remove-Item -LiteralPath $root -Recurse -Force}

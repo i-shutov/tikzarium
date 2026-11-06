@@ -1,4 +1,4 @@
-# Existing user MiKTeX + actual TikZarium CLI. Current Administrator is supported.
+﻿# Existing user MiKTeX + actual TikZarium CLI. Current Administrator is supported.
 # No UAC/account/registry/package/font changes. Warnings are retained, not errors.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDir,[switch]$CheckRust)
@@ -6,6 +6,7 @@ $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 $report=[ordered]@{schema_version=2;status='INCOMPLETE';environment='USER_WINDOWS_SERVER';physical_windows10='NOT_RUN';mac_m1_m4='NOT_RUN';interactive_gui='NOT_RUN';cargo='NOT_RUN';font_audit='PENDING_INDEPENDENT_UPLOADED_PDF_AUDIT';text_audit='PENDING_INDEPENDENT_UPLOADED_PDF_AUDIT';raster='NOT_RUN';package_autoinstall='DISABLED_BY_PRODUCT';shell_escape='DISABLED_BY_PRODUCT';execution_policy='CURRENT_USER_ADMIN_SUPPORTED_NOT_SANDBOX'}
+$report.expected_text=@('Тест XeLaTeX','Кириллица','Точка')
 $exitCode=1
 try {
  $root=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -26,9 +27,7 @@ try {
   if([string]::IsNullOrWhiteSpace($engine)){
    $cmd=Get-Command xelatex.exe -ErrorAction SilentlyContinue
    if($cmd){$engine=$cmd.Source}
-   else {
-    $engine=Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe'
-   }
+   else {$engine=Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe'}
   }
   if(-not (Test-Path -LiteralPath $engine -PathType Leaf)){throw 'Existing external XeLaTeX not found; no installation attempted'}
   $version=Invoke-TikzNative -Exe $engine -Arguments @('--disable-installer','--version') -WorkingDirectory $root -LogPrefix (Join-Path $OutputDir 'xelatex-version') -TimeoutSeconds 30

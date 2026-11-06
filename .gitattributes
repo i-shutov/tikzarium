@@ -3,3 +3,5 @@
 Cargo.lock text eol=lf
 # Reviewed fixed maintenance fixture is checked byte-for-byte before execution.
 scripts/maintenance/trusted-compiler-smoke.tex text eol=lf
+# This repository-owned proof fixture is compared byte-for-byte across Windows/Linux.
+examples/windows-cyrillic.tex text eol=lf
