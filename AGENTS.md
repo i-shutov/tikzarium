@@ -1,5 +1,8 @@
 # TikZarium engineering instructions
 
+**LATEST OWNER OVERRIDE — 2026-11-06, WINDOWS ADMIN ACCOUNT.** Same local Administrators-group account (including built-in Administrator on personal Server) is the target. Admin group membership != elevated process token. Measure TokenElevation, integrity RID, UAC elevation type/linked token and session independently. Filtered non-elevated asInvoker admin process may use existing MiKTeX; elevated/high XeLaTeX must be refused until an independently approved SAME-USER filtered child launcher is proven on both actual Windows Server and Windows 10. No new non-admin account/login, no UAC, registry, account, MiKTeX or font change. A restricted token without UAC linked token is research CANDIDATE, not equivalent/PASS. Authority: https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6676540344. Details: insights/2026-11-06_WINDOWS_ADMIN_TOKEN_RELEASE.md.
+
+
 **LATEST OWNER DECISION — 2026-11-05: ACTIVE RELEASE WINDOWS x64 FIRST.** Target physical Windows 10 x64 + user-installed MiKTeX/XeLaTeX. Linux 1.0.0-rc.1 on main 4382ca3e remains accepted as RC but physical Linux R4/stable tag is NOT_RUN. Preserve all Linux/macOS code and hosted CI, freeze features. Earlier Linux-first platform order below is historical. Source of current gates: plans/2026-11-05_WINDOWS_X64_RELEASE.md. Never equate hosted Windows 2022 or Windows Server 2025 with physical Windows 10, and never run untrusted PR code on persistent Windows Server.
 
 ## Historical owner decision — 2026-11-04 Linux-first release; superseded by 2026-11-05 Windows x64

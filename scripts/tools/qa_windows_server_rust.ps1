@@ -20,7 +20,15 @@ try {
   $report.os=(Get-CimInstance Win32_OperatingSystem).Caption
   $report.session_id=(Get-Process -Id $PID).SessionId
   $principal=New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
-  $report.runner_elevated=$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+  $report.administrator_role_enabled=$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+  try {
+   $report.security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
+   $report.runner_elevated=$report.security.token_is_elevated
+  } catch {
+   $report.security='UNKNOWN_TOKEN_PROBE_FAILED'
+   $report.token_probe_error=$_.Exception.Message
+   # Native Rust/PE proof is independent of any MiKTeX token condition.
+  }
   $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
   if(-not $cargo) {
    $candidate=Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe'

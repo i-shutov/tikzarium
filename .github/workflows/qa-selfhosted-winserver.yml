@@ -12,6 +12,7 @@ on:
       - "crates/**"
       - "examples/**"
       - "scripts/tools/qa_windows_server_user.ps1"
+      - "scripts/tools/qa_windows_token.ps1"
       - "scripts/tools/qa_windows_server_rust.ps1"
       - "scripts/package_n5_preview.py"
   workflow_dispatch:

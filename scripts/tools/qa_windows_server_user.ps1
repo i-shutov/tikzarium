@@ -19,16 +19,28 @@ try {
   if($LASTEXITCODE -ne 0 -or $report.sha -notmatch '^[0-9a-f]{40}$'){throw 'Git SHA not established'}
   $os=Get-CimInstance Win32_OperatingSystem
   $report.os=$os.Caption;$report.build=$os.BuildNumber
-  $report.runner_session_id=(Get-Process -Id $PID).SessionId
-  $principal=New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
-  $report.runner_elevated=$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-  if($report.runner_session_id -eq 0){
-   $report.status='ENVIRONMENT_BLOCKED_SESSION0'
-   throw 'MiKTeX GUI/PDF QA NOT_RUN: Session0, not logged-in interactive desktop'
+  # Group membership, token elevation, integrity and session are distinct.
+  # Do not require a separate non-admin Windows account or change UAC.
+  try {
+   $security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
+  } catch {
+   $report.status='ENVIRONMENT_BLOCKED_TOKEN_QUERY'
+   throw "MiKTeX PDF NOT_RUN: cannot classify Windows process token: $($_.Exception.Message)"
   }
-  if($report.runner_elevated){
-   $report.status='ENVIRONMENT_BLOCKED_ELEVATED'
-   throw 'MiKTeX GUI/PDF QA NOT_RUN: elevated runner token; use a non-admin user session, do not override MiKTeX security'
+  $report.security=$security
+  $report.runner_session_id=$security.session_id
+  $report.runner_elevated=$security.token_is_elevated
+  if($security.session_id -eq 0){
+   $report.status='ENVIRONMENT_BLOCKED_SESSION0'
+   throw 'MiKTeX GUI/PDF QA NOT_RUN: Session0, not interactive desktop'
+  }
+  if($security.token_is_elevated -or $security.token_integrity_rid -ge 12288){
+   $report.status='ENVIRONMENT_BLOCKED_ELEVATED_NO_APPROVED_CHILD'
+   throw 'MiKTeX PDF NOT_RUN: elevated/high process token. Same-admin filtered child launch is not approved; no new account required.'
+  }
+  if($security.token_integrity_rid -lt 4096){
+   $report.status='ENVIRONMENT_BLOCKED_TOKEN_UNKNOWN'
+   throw 'MiKTeX PDF NOT_RUN: unknown or untrusted integrity level'
   }
   $engine=$env:TIKZARIUM_XELATEX
   if([string]::IsNullOrWhiteSpace($engine)){

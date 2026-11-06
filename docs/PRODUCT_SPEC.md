@@ -1,5 +1,7 @@
 # TikZarium — product requirements, owner-corrected scope
 
+**Owner release override — 2026-11-06: local Windows ADMINISTRATORS accounts supported.** This is not equivalent to an elevated process. Test asInvoker filtered/medium and explicitly elevated/high GUI separately under the SAME administrator account, including the built-in Administrator; record token elevation, integrity, UAC linked-token availability and session. Direct TeX under high/elevated token is forbidden until a narrow same-account child launcher passes real review and native smoke. An unavailable linked token does NOT authorize an unproven restricted-token workaround. No new non-admin account, UAC or MiKTeX change. [Authoritative owner correction](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6676540344). [Token safety plan](../insights/2026-11-06_WINDOWS_ADMIN_TOKEN_RELEASE.md). Both normal/elevated physical GUI/PDF gates remain NOT_RUN.
+
 **Текущая платформа первого релиза (решение владельца 2026-11-05): Windows 10 x64 с установленным пользователем MiKTeX/XeLaTeX.** Заморозка функций; Windows portable ZIP и реальные GUI/TeX/PDF smoke до инсталлятора. Linux 1.0.0-rc.1 остаётся принятой кандидатной сборкой (без физической R4 и стабильного тега), Linux/macOS CI сохранены. Раздел 2026-11-04 ниже — исторический. Актуальные критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
 ## Current platform priority (owner, 2026-11-04)
 

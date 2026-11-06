@@ -1,4 +1,5 @@
 //! Discover local TeX tools. Discovery does not execute TeX documents.
+use crate::windows_tex_security::require_safe_tex_child;
 use std::{
     env,
     ffi::OsStr,
@@ -79,6 +80,7 @@ pub struct TexEngineIdentity {
 /// The first nonempty version line is displayed, but the full output is used
 /// for classification because distributors may put the name on a later line.
 pub fn inspect_xelatex(path: &Path) -> std::io::Result<TexEngineIdentity> {
+    require_safe_tex_child()?;
     // An executable still being published on Unix can temporarily refuse
     // execve() with ETXTBSY (26). Retry only that OS condition, with a
     // bounded delay; all other failures remain errors and never trigger
@@ -199,6 +201,10 @@ impl TexEnvironment {
         let Some(tool) = tool else {
             return PackageProbe::Unavailable;
         };
+        // A package probe must not inherit an elevated admin token either.
+        if require_safe_tex_child().is_err() {
+            return PackageProbe::Unavailable;
+        }
         let output = Command::new(tool)
             .arg(OsStr::new(name))
             .stdin(std::process::Stdio::null())

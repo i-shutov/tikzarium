@@ -1,0 +1,20 @@
+# Windows administrator account token safety — 2026-11-06 (release candidate)
+
+**Owner authority:** [#108 correction, 2026-11-06](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6676540344). Main baseline `7ac6f6489de9b27084c2a37f1f4fa3bc760fbef9` / PR #109 already merged. Feature freeze; no new accounts, logons, UAC/registry changes, TeX/font installations or FlowBridge changes.
+
+## Reproduced evidence and independent blockers
+
+[Dedicated Windows Server trusted-main #42164776716](https://github.com/i-shutov/tikzarium/actions/runs/42164776716) checked out exact main successfully, but Rust tests/build **NOT_RUN** due to runner cargo.exe visibility; external system-wide MiKTeX remains installed and its elevated launch **ENVIRONMENT_BLOCKED**, not missing. The two gates are independent; native server GUI six gestures and physical Windows 10 GUI remain NOT_RUN. [Hosted Windows/macOS postmerge #42164776798](https://github.com/i-shutov/tikzarium/actions/runs/42164776798) SUCCESS is CI-only, not physical Windows10.
+
+## Security invariant implemented in this candidate
+
+- Local Administrators SID membership, enabled Administrator role, TokenElevation, TokenIntegrityLevel RID, TokenElevationType, TokenLinkedToken presence and session ID are **separate fields**. IsInRole(Administrator) is not proof of current token elevation or account membership. A normal UAC-filtered medium token of the same local administrator is eligible for normal external MiKTeX.
+- New live Windows read-only token diagnostic probes Win32 GetTokenInformation classes 18/19/20/25, integrity SID and session, and stores evidence in hosted and dedicated-main reports; a linked token is labelled **PRESENT_UNVALIDATED**, never proof of a usable child launcher. Elevated/high/unknown token blocks external MiKTeX preflight. Session 0 blocks interactive QA separately.
+- Core production XeLaTeX version probe, direct build spawn and TeX package helper now call a read-only GetTokenInformation TokenElevation+TokenIntegrityLevel fail-closed guard. No TeX invocation with elevated/high or unreadable token, even when --disable-installer and --no-shell-escape are configured. The entire GUI process is not elevated or lowered by TikZarium.
+- A narrow same-administrator filtered-token child launcher is **NOT_IMPLEMENTED, NOT_ACCEPTED**. CreateProcessWithTokenW requires SeImpersonatePrivilege and careful cwd/environment/handles/profile/cancellation; presence of TokenLinkedToken is not the same as a safe child. The built-in Administrator may have only a full unlinked token. CreateRestrictedToken alone is NOT equivalent to a UAC-filtered standard token, nor proof that MiKTeX permits execution.
+
+Microsoft reference contracts: [TOKEN_ELEVATION_TYPE](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-token_elevation_type), [GetTokenInformation](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-gettokeninformation), [CreateProcessWithTokenW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithtokenw).
+
+## QA and acceptance boundary
+
+Hosted exact-head Windows native Rust/fmt/Clippy/tests plus *live token introspection* must complete before merge, with original PE subsystem app=2/CLI=3, independent dynamic CRT import parser, binary/ZIP SHA and hosted macOS/Linux regressions. No untrusted PR runs on permanent self-hosted Windows Server. AFTER merge, trusted-main native Rust/PE/ZIP and independent MiKTeX preflight on personal Server are separate. If cargo invisible, Rust NOT_RUN. If token elevated and no proven filtered child, MiKTeX NOT_RUN/BLOCKED. **Do not request a non-admin user**. Both normal asInvoker and elevated admin GUI launches must run six gestures, source/Libraries/F1/Undo/Save/Open, native dialogs/IME/DPI and real offline user MiKTeX Unicode embedded-font PDF on Server and physical Windows 10, preserving original PNG/.tex/PDF/log/SHA; explicitly BLOCKED where no safe elevation transition exists. No installer or stable Windows tag before these gates. Linux 1.0.0-rc.1 preserved, Linux physical R4 NOT_RUN, macOS ARM CI preserved.

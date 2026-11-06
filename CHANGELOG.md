@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-06 — Windows administrator token safety, W1 candidate (NOT MERGED)
+
+- Owner requires same local Administrators-group account (including built-in Administrator) in both ordinary/asInvoker and elevated GUI runs; no separate account. Group membership, process TokenElevation, integrity RID, UAC linked-token presence and session now have independent, read-only Windows diagnostics.
+- Production XeLaTeX version/build and adjacent package helper spawn paths fail closed with elevated/high/unknown Win32 process token; filter-medium administrative account remains eligible. Rust negative classification tests, Windows hosted live token probe, trusted-main per-server reports, unchanged Linux/Mac paths.
+- Same-user UAC linked-token filtered child launcher NOT IMPLEMENTED or approved. Presence of a linked token does NOT qualify elevated TeX. Restricted token without UAC linked token remains a research candidate; no elevated TeX, no silent UAC change or MiKTeX security bypass.
+- Personal-server Cargo visibility remains an independent blocker; GUI, MiKTeX/PDF under elevated runner and physical Windows10 NOT_RUN. No stable tag, installer, TeX/font downloads. See insights/2026-11-06_WINDOWS_ADMIN_TOKEN_RELEASE.md.
+
+
 ## 2026-11-06 — Windows portable VC runtime import hardening (candidate)
 
 - New original-binary audit found both Windows GUI and CLI imported VCRUNTIME140.dll, not bundled in the W0 portable ZIP. This is a clean Windows10 first-use risk; no actual missing-DLL failure has been observed on the target.

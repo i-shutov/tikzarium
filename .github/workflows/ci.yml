@@ -52,6 +52,17 @@ jobs:
         run: |
           python -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
           python scripts/qa_cargo_lock.py --report .qa-artifacts/lock-${{ matrix.target_name }}.json
+      - name: Windows administrator token audit (read-only; NOT GUI/PDF proof)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m unittest discover -s scripts/tools -p test_qa_windows_token.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Windows token release contract tests failed' }
+          $s = & ./scripts/tools/qa_windows_token.ps1
+          New-Item -ItemType Directory -Force .qa-artifacts | Out-Null
+          $s | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 .qa-artifacts/windows-token.json
+          if ($null -eq $s.token_is_elevated -or $s.token_integrity_rid -lt 4096) { throw 'Windows token audit incomplete' }
       - name: Check source formatting
         run: cargo fmt --all -- --check
       - name: Check crates compile
@@ -114,6 +125,7 @@ jobs:
             target/release/tikzarium-app.exe
             target/release/tikzarium-cli.exe
             .qa-artifacts/lock-windows-x64.json
+            .qa-artifacts/windows-token.json
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'

@@ -1,5 +1,8 @@
 # Windows x64 release priority — 2026-11-05
 
+**LATEST OWNER OVERRIDE — 2026-11-06, WINDOWS ADMIN ACCOUNT.** Same local Administrators-group account (including built-in Administrator on personal Server) is the target. Admin group membership != elevated process token. Measure TokenElevation, integrity RID, UAC elevation type/linked token and session independently. Filtered non-elevated asInvoker admin process may use existing MiKTeX; elevated/high XeLaTeX must be refused until an independently approved SAME-USER filtered child launcher is proven on both actual Windows Server and Windows 10. No new non-admin account/login, no UAC, registry, account, MiKTeX or font change. A restricted token without UAC linked token is research CANDIDATE, not equivalent/PASS. Authority: https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6676540344. Details: insights/2026-11-06_WINDOWS_ADMIN_TOKEN_RELEASE.md.
+
+
 Owner decision: switch active release engineering from Linux to Windows x64, while freezing features. Accepted Linux 1.0.0-rc.1 is preserved; physical Ubuntu R4 remains NOT_RUN and no stable Linux tag is implied. Preserve macOS ARM and Linux Rust/CI pathways.
 
 Product: Rust/egui GUI with six real TikZ gestures, editable .tex beside canvas, Properties/Libraries/Russian F1 from single C catalogue; five independent library statuses with UNKNOWN, minimal revision-checked SourcePatch/Undo/Save/Open preserving CRLF and opaque macros; external user-installed MiKTeX/XeLaTeX exact PDF Unicode/embedded fonts. No TeX/fonts bundled, no auto installs, compiler fallback, shell escape or N4.
@@ -7,7 +10,7 @@ Product: Rust/egui GUI with six real TikZ gestures, editable .tex beside canvas,
 | Gate | Status / evidence required |
 | --- | --- |
 | W0 native PE package | Original main 4382ca3e hosted Windows artifact 13401159253 (SHA256 e4d3119f212bf7c5bee86d195654be317831e5c7384e7ba6065b9a41f706a20a): app.exe and cli.exe both Subsystem 3 Console. GUI requires 2, CLI remains 3. New source fix is CANDIDATE until rebuilt real Windows CI and SHA, portable ZIP manifest. |
-| W1 MiKTeX external offline | Windows Server 2025 dedicated runner got trusted main 41998880215 checkout/SHA PASS but stopped with xelatex security risk running with elevated privileges. Need non-admin interactive account; no security bypass or reinstallation, no PDF tested. |
+| W1 MiKTeX external offline | Windows Server 2025 dedicated runner got trusted main 41998880215 checkout/SHA PASS but stopped with xelatex security risk running with elevated privileges. Administrator account is supported; TeX direct only when the PROCESS token is confirmed non-elevated and medium/low integrity. Elevated app requires proven same-account filtered child; no new user, UAC changes, security bypass or MiKTeX reinstall. PDF NOT_RUN. |
 | W2 Windows Server interactive GUI | Real logged-in user desktop (not Windows service/session0), 6 pointer gestures → editable source/F1/libraries → Undo/Save/Open → MiKTeX XeLaTeX PDF/Unicode/fonts, native dialogs/IME/DPI; original PNG/.tex/PDF/log/SHA. NOT_RUN. Server is not Windows10. |
 | W3 physical Windows 10 x64 | Same genuine portable GUI/TeX/PDF full smoke on actual Windows 10 desktop and user MiKTeX; must separately verify actual dialogs/IME/DPI and hashes. NOT_RUN; necessary to claim Windows10 release. |
 | W4 installer/release | Only after W0–W3 and cross-platform exact-head/postmerge Rust CI, reviewed portable ZIP/provenance and installer on target. No final Windows tag/installer before qualified smoke. |

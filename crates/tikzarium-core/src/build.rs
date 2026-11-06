@@ -4,6 +4,7 @@ use crate::{
     diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
     discovery::{TexDistribution, inspect_xelatex},
     preview::{Preview, render_first_page},
+    windows_tex_security::require_safe_tex_child,
 };
 use std::{
     collections::HashSet,
@@ -181,6 +182,8 @@ impl BuildService {
         if identity.distribution == TexDistribution::MiKTeX {
             command.arg("--disable-installer");
         }
+        // Recheck immediately before spawn: no-shell-escape is NOT a token sandbox.
+        require_safe_tex_child()?;
         let mut child = command
             .current_dir(cwd)
             .arg("-interaction=nonstopmode")

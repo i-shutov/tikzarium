@@ -8,6 +8,7 @@ pub mod document;
 pub mod font_audit;
 pub mod fonts;
 pub mod preview;
+mod windows_tex_security;
 
 pub use build::{
     BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls,
