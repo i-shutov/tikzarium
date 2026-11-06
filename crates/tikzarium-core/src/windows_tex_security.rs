@@ -80,19 +80,33 @@ mod native {
         }
         let word = mem::size_of::<usize>();
         let mut buffer = vec![0usize; (size as usize).div_ceil(word)];
-        let capacity = (buffer.len() * word) as u32;
-        // SAFETY: writable, pointer-aligned owned buffer of at least requested size.
+        // Win32 classes such as TokenElevation have an exact 4-byte payload.
+        // Rounding the *allocation* up to pointer alignment is required, but
+        // passing that rounded capacity as BufferLength can return ERROR_BAD_LENGTH
+        // (24) on real Windows. Pass the exact size returned by the first query.
+        let required_len = size;
+        debug_assert!((buffer.len() * word) >= required_len as usize);
+        let mut returned_len = 0;
+        // SAFETY: writable, pointer-aligned owned buffer of at least required_len.
         if unsafe {
             GetTokenInformation(
                 token,
                 class,
                 buffer.as_mut_ptr().cast(),
-                capacity,
-                &mut size,
+                required_len,
+                &mut returned_len,
             )
         } == 0
         {
-            return Err(io::Error::last_os_error());
+            return Err(io::Error::other(format!(
+                "GetTokenInformation class {class} ({required_len} bytes): {}",
+                io::Error::last_os_error()
+            )));
+        }
+        if returned_len < 4 || returned_len > required_len {
+            return Err(io::Error::other(format!(
+                "GetTokenInformation class {class} returned invalid length {returned_len}/{required_len}"
+            )));
         }
         Ok(buffer)
     }
@@ -133,6 +147,21 @@ mod native {
 #[cfg(test)]
 mod tests {
     use super::check_tex_privilege;
+
+    /// Runs on the actual hosted Windows token, not a synthetic boolean.
+    /// In particular TokenElevation is four bytes even on 64-bit Windows.
+    #[cfg(windows)]
+    #[test]
+    fn live_windows_token_information_is_readable_without_bad_length() {
+        let (elevated, integrity_rid) =
+            super::native::query_current_token().expect("real Windows token information");
+        assert!(integrity_rid >= 0x1000, "unknown token integrity RID");
+        assert_eq!(
+            super::require_safe_tex_child().is_ok(),
+            !elevated && (0x1000..0x3000).contains(&integrity_rid),
+            "read-only token audit and fail-closed TeX guard must agree"
+        );
+    }
 
     #[test]
     fn filtered_administrator_medium_token_is_eligible() {
