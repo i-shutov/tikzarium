@@ -31,8 +31,16 @@ class WindowsTokenReleaseContract(unittest.TestCase):
                       "DuplicateToken(",
                       "candidate_is_non_elevated", "NO_CHILD_NO_TEX"):
             self.assertIn(value, source)
+        # An independent, ephemeral restricted LUA token may have its
+        # integrity label lowered for INSPECTION on disposable hosted Windows.
+        # The parent token and any child process must remain untouched.
+        self.assertIn("TryLowerTemporaryTokenToMedium(mediumLua)", source)
+        self.assertIn("SetTokenInformation(candidate, 25", source)
+        self.assertIn("CloseHandle(mediumLua)", source)
         for forbidden in ("CreateProcessAsUser(", "CreateProcessWithTokenW(",
-                          "SetTokenInformation(", "Start-Process -Verb RunAs"):
+                          "SetTokenInformation(source,",
+                          "SetTokenInformation(adjustableSource,",
+                          "Start-Process -Verb RunAs"):
             self.assertNotIn(forbidden, source)
 
     def test_external_pdf_processors_are_guarded_under_windows_admin(self):
