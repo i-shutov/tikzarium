@@ -15,10 +15,10 @@ def sample():
         RestrictedTokenCreated=True,MediumSetSucceeded=True,
         CandidateElevated=False,CandidateIntegrity=8192,
         CandidateAdminEnabled=False,CandidateSameUser=True,
-        CandidateSameSession=True,CandidateIsRestricted=True,
+        CandidateSameSession=True,CandidateIsRestricted=False,
         SuspendedCreated=True,ChildTokenRead=True,ChildElevated=False,
         ChildIntegrity=8192,ChildAdminEnabled=False,ChildSameUser=True,
-        ChildSameSession=True,ChildIsRestricted=True,ChildTerminationConfirmed=True)
+        ChildSameSession=True,ChildIsRestricted=False,ChildTerminationConfirmed=True)
 
 class SuspendedChildQA(unittest.TestCase):
     def test_candidate_does_not_approve_tex(self):
@@ -33,11 +33,11 @@ class SuspendedChildQA(unittest.TestCase):
             {"ParentTokenUnchanged":False},{"RestrictedTokenCreated":False},
             {"CandidateIntegrity":12288},{"CandidateElevated":True},
             {"CandidateAdminEnabled":True},{"CandidateSameUser":False},
-            {"CandidateSameSession":False},{"CandidateIsRestricted":False},
+            {"CandidateSameSession":False},{"CandidateIsRestricted":True},
             {"SuspendedCreated":False},{"ChildTokenRead":False},
             {"ChildElevated":True},{"ChildIntegrity":12288},
             {"ChildAdminEnabled":True},{"ChildSameUser":False},
-            {"ChildSameSession":False},{"ChildIsRestricted":False},
+            {"ChildSameSession":False},{"ChildIsRestricted":True},
             {"ChildTerminationConfirmed":False},{"Status":"PASS"}):
             with self.subTest(change=change):
                 x=sample();x.update(change)
