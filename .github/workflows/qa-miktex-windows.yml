@@ -94,6 +94,24 @@ jobs:
       - name: D06 MiKTeX package inventory stdout/stderr parser regression
         shell: pwsh
         run: ./scripts/tools/test_qa_miktex_inventory.ps1
+      # This ephemeral hosted runner is often fully elevated. A warning from
+      # MiKTeX is evidence of UNSAFE token inheritance, not PDF acceptance.
+      # Stop BEFORE installer/version probe or any direct TeX subprocess.
+      - name: Preflight actual Windows process token before ALL MiKTeX execution
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $record='.qa-artifacts/miktex-windows-server'
+          New-Item -ItemType Directory -Force -Path $record | Out-Null
+          $token = & ./scripts/tools/qa_windows_token.ps1
+          $blocked = $token.token_is_elevated -or $token.token_integrity_rid -ge 12288 -or $token.token_integrity_rid -lt 4096
+          [pscustomobject]@{
+            source_sha = $env:TIKZARIUM_SOURCE_SHA
+            token = $token
+            external_tex = $(if($blocked){'BLOCKED_UNSAFE_TOKEN_NOT_RUN'}else{'ELIGIBLE_TOKEN_ONLY_NOT_YET_RUN'})
+            physical_windows10 = 'NOT_RUN'
+          } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $record 'windows-token-preflight.json') -Encoding utf8
+          if($blocked) { throw 'Hosted Windows MiKTeX BLOCKED: actual elevated/high/unknown process token. No direct XeLaTeX or automatic installs.' }
       - name: Isolated private MiKTeX installation with pinned installer and declared packages
         shell: pwsh
         run: ./scripts/tools/qa_setup_miktex.ps1

@@ -3,26 +3,23 @@ name: Windows Server MiKTeX QA (trusted main + manual; not Win10)
 # Never run untrusted pull_request code on this persistent Windows Server.
 # Automatic runs originate only from code accepted into main.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/qa-selfhosted-winserver.yml"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "crates/**"
-      - "examples/**"
-      - "scripts/tools/qa_windows_server_user.ps1"
-      - "scripts/tools/qa_windows_server_rust.ps1"
-      - "scripts/package_n5_preview.py"
+  workflow_run:
+    workflows: ['TikZarium CI']
+    types: [completed]
   workflow_dispatch:
     inputs:
       expected_main_sha:
-        description: "The exact reviewed main SHA; no PR code on persistent runner"
+        description: 'Exact current main commit SHA (40 lowercase hex)'
+        required: true
+        type: string
+      source_ci_run_id:
+        description: 'Successful trusted-main TikZarium CI run ID'
         required: true
         type: string
 
 permissions:
   contents: read
+  actions: read
 
 # Serialize access to the same persistent machine; never cancel a running proof.
 concurrency:
@@ -31,7 +28,10 @@ concurrency:
 
 jobs:
   user-windows-server:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
     timeout-minutes: 55
     steps:
@@ -69,18 +69,63 @@ jobs:
           }
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_main_sha }}
           persist-credentials: false
-      - name: Verify expected main SHA before any user-server execution
+      - name: Validate exact current main and successful hosted push CI
         id: exact_main_sha
         shell: powershell
         env:
-          EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_main_sha || github.sha }}
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_main_sha }}
+          SOURCE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          $actual = (git rev-parse HEAD).Trim()
-          if ($actual -cne $env:EXPECTED_SHA -or $actual -cne '${{ github.sha }}') {
-            throw 'Exact main SHA lease mismatch; refuse to run on user server'
+          $ErrorActionPreference='Stop'
+          if($env:EXPECTED_SHA -cnotmatch '^[0-9a-f]{40}$' -or $env:SOURCE_RUN_ID -notmatch '^[0-9]+$') {
+            throw 'Exact source SHA and decimal source CI run ID are required'
           }
+          $actual=(git rev-parse HEAD).Trim()
+          if($LASTEXITCODE -ne 0 -or $actual -cne $env:EXPECTED_SHA){throw 'Trusted checkout SHA mismatch'}
+          $headers=@{'Authorization'="Bearer $env:GH_TOKEN";'User-Agent'='TikZarium-trusted-main-check';'Accept'='application/vnd.github+json'}
+          $branch=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers
+          if($branch.commit.sha -cne $actual){throw 'Main advanced: refusing stale hosted artifact'}
+          $ci=Invoke-RestMethod -Uri "https://api.github.com/repos/i-shutov/tikzarium/actions/runs/$env:SOURCE_RUN_ID" -Headers $headers
+          if($ci.name -cne 'TikZarium CI' -or $ci.event -cne 'push' -or
+             $ci.head_branch -cne 'main' -or $ci.head_sha -cne $actual -or
+             $ci.status -cne 'completed' -or $ci.conclusion -cne 'success'){
+            throw 'Hosted source CI is not a successful exact-current-main push workflow'
+          }
+          Write-Host "Trusted source: $actual; reviewed CI: $env:SOURCE_RUN_ID"
+      - name: Download original native release EXE from successful main CI
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: tikzarium-windows-server-build
+          run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/tikzarium-hosted/native
+      - name: Download original portable ZIP and audit from same main CI
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: tikzarium-windows-x64-portable-candidate
+          run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/tikzarium-hosted/portable
+      - name: Verify and smoke original native hosted EXE and ZIP on personal Server (no Cargo/TeX)
+        id: hosted_stage
+        shell: powershell
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_main_sha }}
+          SOURCE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
+        run: |
+          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot "$env:RUNNER_TEMP\tikzarium-hosted\native" -PortableRoot "$env:RUNNER_TEMP\tikzarium-hosted\portable" -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:EXPECTED_SHA -SourceRunId $env:SOURCE_RUN_ID -VerificationHost personal-server
+      - name: Read-only administrator elevation, integrity and UAC linked-token inventory
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        shell: powershell
+        run: |
+          $token = & ./scripts/tools/qa_windows_token.ps1
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\tikzarium-user-miktex" | Out-Null
+          $token | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\windows-admin-token.json" -Encoding utf8
       - name: Dedicated Windows Server Rust tests, PE validation, portable build
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_rust.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"

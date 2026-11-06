@@ -1,6 +1,7 @@
 //! Rasterize exact XeLaTeX PDF for the on-screen viewport.
 //! Without a rasterizer the canonical PDF remains valid and exportable.
 //! I07: first-page preview must never wait forever or read arbitrary PNG bytes.
+use crate::windows_tex_security::require_safe_tex_child;
 use std::{
     fs::{self, File},
     io::{self, Read},
@@ -49,6 +50,9 @@ fn render_first_page_with_limits(
     if !pdftoppm.is_file() {
         return Err(PreviewError::MissingTool(pdftoppm.into()));
     }
+    // Processing an untrusted PDF through Poppler is external code.
+    // On Windows do not pass an elevated Administrator token to that child.
+    require_safe_tex_child()?;
     let temp = tempfile::tempdir()?;
     let prefix = temp.path().join("page1");
     let mut child = Command::new(pdftoppm)

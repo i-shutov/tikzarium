@@ -8,6 +8,7 @@ pub mod document;
 pub mod font_audit;
 pub mod fonts;
 pub mod preview;
+mod windows_tex_security;
 
 pub use build::{
     BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls,
@@ -25,3 +26,4 @@ pub use fonts::{
     FigureFonts, FontInputError, missing_glyph_messages, tex_escape_plain_text, validate_font_name,
 };
 pub use preview::{Preview, PreviewError, render_first_page};
+pub use windows_tex_security::require_safe_external_document_child;

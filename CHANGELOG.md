@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-11-06 — Windows native/ZIP stage invocation from relative output path (candidate)
+
+- Fix real hosted Windows verifier failure after successful original/tampered ZIP tests: relative `.qa-artifacts/` became invalid when the script changed into the stage directory before invoking CLI. Canonicalize output and EXE paths before `Push-Location`; reproduce CI's relative path in an independent real Windows process test. Preserve exact source/PE/ZIP/manifest/hash fail-closed checks and no elevated TeX. Exact new-head CI PENDING.
+
+## 2026-11-06 — Guard external Poppler PDF helpers under elevated Windows parent (candidate)
+
+- Windows Administrator release freeze security: existing direct XeLaTeX guard also prevents Poppler `pdfinfo` and `pdftoppm` processes from inheriting high/elevated token when reading user-controlled PDF bytes. Core preview and GUI page navigation fail closed instead of spawning elevated external PDF parsers; Linux/macOS behaviors remain unchanged.
+- Add Python release contract for both PDF helper spawn boundaries. This is not a verified same-account low-privilege child and elevated Windows GUI→PDF remains BLOCKED until proper security and physical QA. Hosted exact-head regression PENDING.
+
+## 2026-11-06 — Verify linked UAC token rights before proposing XeLaTeX child (candidate)
+
+- Replace misleading nonzero TokenLinkedToken handle-only probe with read-only queries of linked token elevation, elevation type and mandatory integrity. Mark only non-elevated limited linked tokens as `PRESENT_LIMITED_TOKEN_QUERY_ONLY`; a present-but-not-limited token is rejected as a child candidate. No child process, restricted token, UAC/account mutation, system TeX or install.
+- Remove host account name from potentially public CI token evidence; keep actual elevation/role/integrity/session. Extend Windows static contract, preserve new exact-head tests. No Windows GUI/MiKTeX child PASS until genuine user-hosted acceptance.
+
+## 2026-11-06 — Windows hosted-to-personal-server artifact verifier regression (PR #110 candidate)
+
+- [Exact HEAD CI #42174567540](https://github.com/i-shutov/tikzarium/actions/runs/42174567540): original native Windows Rust tests, GUI PE=2/CLI=3, no dynamic VC runtime, portable ZIP and extracted CLI PASS, but hosted re-verification incorrectly rejected the original ZIP's SHA manifest. The producer uses Python ordinal `sorted()`; the PowerShell consumer used locale-sensitive `Sort-Object -CaseSensitive`, which is not an equivalent byte ordering. Corrected to `[StringComparer]::Ordinal` without relaxing per-member hash/manifest checks.
+- Added genuine Windows hosted positive stage-verifier smoke and negative tampered-manifest test with an adjusted outer SHA audit; the test requires full rejection and distinguishes **hosted self-test** from **personal Windows Server** provenance. Trusted-main server transfer is unchanged in scope and still cannot claim GUI/physical Windows 10 acceptance. Fresh exact-new-HEAD CI and original artifacts are REQUIRED before merge.
+- Hosted D QA/MiKTeX at that old HEAD blocked **before TeX execution** under elevated token; this is an explicit safe NOT_RUN, not a MiKTeX installation failure. Same-user filtered child launcher remains unimplemented, and server Cargo visibility remains a separate environment blocker.
+
+## 2026-11-06 — Windows token Win32 ERROR_BAD_LENGTH hardening (PR #110 candidate)
+
+- Original exact-head Windows D QA and hosted MiKTeX artifacts expose code-24 ERROR_BAD_LENGTH in TikZarium CLI's token guard; direct hosted MiKTeX PDF does not establish app/CLI PDF success.
+- Fix the Rust TokenElevation GetTokenInformation buffer-length argument to use the exact required length (4 bytes), not the aligned 8-byte allocation capacity; preserve fail-closed semantics and add a live native Windows token query test. New-HEAD Windows CI, original outputs and safe child/PDF remain PENDING. No account/UAC policy change or elevated TeX bypass.
+
+## 2026-11-06 — Hosted Windows TeX preflight (PR #110 candidate)
+
+- Forbid unsafe elevated/high/unknown direct XeLaTeX and auto-installer steps in hosted D06 and D QA. Read-only token inspection occurs before TeX provisioning; blocked jobs upload token evidence and remain red, **not** a PDF PASS. Python static regressions assert ordering. Personal Server MiKTeX, Linux/macOS QA, system-wide MiKTeX configuration and UAC untouched.
+
+## 2026-11-06 — Windows administrator token safety, W1 candidate (NOT MERGED)
+
+- Owner requires same local Administrators-group account (including built-in Administrator) in both ordinary/asInvoker and elevated GUI runs; no separate account. Group membership, process TokenElevation, integrity RID, UAC linked-token presence and session now have independent, read-only Windows diagnostics.
+- Production XeLaTeX version/build and adjacent package helper spawn paths fail closed with elevated/high/unknown Win32 process token; filter-medium administrative account remains eligible. Rust negative classification tests, Windows hosted live token probe, trusted-main per-server reports, unchanged Linux/Mac paths.
+- Same-user UAC linked-token filtered child launcher NOT IMPLEMENTED or approved. Presence of a linked token does NOT qualify elevated TeX. Restricted token without UAC linked token remains a research candidate; no elevated TeX, no silent UAC change or MiKTeX security bypass.
+- Personal-server Cargo visibility remains an independent blocker; GUI, MiKTeX/PDF under elevated runner and physical Windows10 NOT_RUN. No stable tag, installer, TeX/font downloads. See insights/2026-11-06_WINDOWS_ADMIN_TOKEN_RELEASE.md.
+
+
 ## 2026-11-06 — Windows portable VC runtime import hardening (candidate)
 
 - New original-binary audit found both Windows GUI and CLI imported VCRUNTIME140.dll, not bundled in the W0 portable ZIP. This is a clean Windows10 first-use risk; no actual missing-DLL failure has been observed on the target.
