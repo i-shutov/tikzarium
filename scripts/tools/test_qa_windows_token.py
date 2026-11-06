@@ -24,6 +24,16 @@ class WindowsTokenReleaseContract(unittest.TestCase):
                        "SetTokenInformation(", "Start-Process -Verb RunAs"):
             self.assertNotIn(unsafe, source)
 
+    def test_restricted_token_dry_run_is_volatile_and_never_spawns(self):
+        source = (ROOT / "scripts/tools/qa_windows_restricted_token_candidate.ps1").read_text(encoding="utf-8")
+        for value in ("CreateRestrictedToken(", "DISABLE_MAX_PRIVILEGE",
+                      "BuiltinAdministratorsSid", "CheckTokenMembership",
+                      "candidate_is_non_elevated", "NO_CHILD_NO_TEX"):
+            self.assertIn(value, source)
+        for forbidden in ("CreateProcessAsUser(", "CreateProcessWithTokenW(",
+                          "SetTokenInformation(", "Start-Process -Verb RunAs"):
+            self.assertNotIn(forbidden, source)
+
     def test_personal_server_does_not_demand_new_user_or_run_elevated_tex(self):
         s = (ROOT / "scripts/tools/qa_windows_server_user.ps1").read_text(encoding="utf-8")
         self.assertIn("qa_windows_token.ps1", s)

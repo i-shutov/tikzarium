@@ -63,6 +63,11 @@ jobs:
           New-Item -ItemType Directory -Force .qa-artifacts | Out-Null
           $s | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 .qa-artifacts/windows-token.json
           if ($null -eq $s.token_is_elevated -or $s.token_integrity_rid -lt 4096) { throw 'Windows token audit incomplete' }
+      - name: Explore restricted-token rights on disposable Windows without spawning a child
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./scripts/tools/qa_windows_restricted_token_candidate.ps1 -OutputPath '.qa-artifacts/windows-restricted-token-candidate.json'
       - name: Check source formatting
         run: cargo fmt --all -- --check
       - name: Check crates compile
@@ -142,6 +147,7 @@ jobs:
             target/release/tikzarium-cli.exe
             .qa-artifacts/lock-windows-x64.json
             .qa-artifacts/windows-token.json
+            .qa-artifacts/windows-restricted-token-candidate.json
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'
