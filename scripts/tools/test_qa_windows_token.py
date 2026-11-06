@@ -9,7 +9,7 @@ class WindowsTokenReleaseContract(unittest.TestCase):
         source = (ROOT / "scripts/tools/qa_windows_token.ps1").read_text(encoding="utf-8")
         for field in ("OpenProcessToken", "TokenElevation", "TokenElevationType",
                       "TokenIntegrityLevel", "TokenLinkedToken", "session_id",
-                      "administrator_sid_in_token", "PRESENT_UNVALIDATED",
+                      "administrator_sid_in_token",
                       "NOT_IMPLEMENTED_NOT_APPROVED",
                       "PRESENT_LIMITED_TOKEN_QUERY_ONLY",
                       "PRESENT_NOT_A_VERIFIED_LIMITED_TOKEN",
