@@ -241,10 +241,13 @@ mod tests {
     fn poppler_worker_kills_hung_process_and_reports_not_checked() {
         // A sleeping, exec-replaced child tests actual bounded killing without
         // burning one CPU core and racing parallel GUI/Rust checks.
-        let (_dir, path) = fake_poppler("exec sleep 10");
+        // Invoke the fixed OS shell directly: temporary shell files may
+        // transiently return ETXTBSY when many hosted test binaries run
+        // concurrently. This must test the worker timeout, not a race
+        // between writing and executing an unrelated fixture file.
         let start = Instant::now();
         let error = run_poppler(
-            &mut Command::new(path),
+            Command::new("/bin/sh").args(["-c", "exec sleep 10"]),
             "fixture",
             Duration::from_millis(150),
         )
