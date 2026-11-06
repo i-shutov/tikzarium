@@ -64,8 +64,13 @@ try {
   New-Item -ItemType Directory -Force -Path $dest | Out-Null
   Copy-Item -LiteralPath $app -Destination (Join-Path $dest 'tikzarium-app.exe')
   Copy-Item -LiteralPath $cli -Destination (Join-Path $dest 'tikzarium-cli.exe')
+  $report.crt_imports='NOT_RUN_PYTHON_NOT_INSTALLED'
   $python=Get-Command python.exe -ErrorAction SilentlyContinue
   if($python) {
+   & python.exe scripts/qa_windows_crt.py $app $cli
+   if($LASTEXITCODE -ne 0){throw 'Windows native release depends on external VC runtime or has invalid PE imports'}
+   $report.crt_imports='PASS_NO_DYNAMIC_VCRUNTIME'
+
    $zip=Join-Path $OutputDir 'Tikzarium-Windows-x64-portable-candidate.zip'
    $runUrl="https://github.com/i-shutov/tikzarium/actions/runs/$env:GITHUB_RUN_ID"
    & python.exe scripts/package_n5_preview.py --platform windows10-x64 --app $app --cli $cli --app-sha256 $report.app_sha256 --cli-sha256 $report.cli_sha256 --source-sha $sha --ci-run-url $runUrl --output $zip

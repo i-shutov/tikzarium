@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-06 — Windows portable VC runtime import hardening (candidate)
+
+- New original-binary audit found both Windows GUI and CLI imported VCRUNTIME140.dll, not bundled in the W0 portable ZIP. This is a clean Windows10 first-use risk; no actual missing-DLL failure has been observed on the target.
+- Candidate Windows x64 MSVC static CRT flag plus real PE import-table parser, malformed/VC runtime negative tests, hosted native release import gate and independent trusted-main server proof when Python is available. No installer/runtime/TeX download, no Linux/macOS flag changes.
+- Exact-head Windows rebuild/CI/real PE import list/original artifact manual review PENDING, Windows Server Rust/MiKTeX/GUI and physical Win10 remain NOT_RUN. See insights/2026-11-06_WINDOWS_X64_CRT_DEPENDENCY_QA.md.
+
+
 ## 2026-11-05 — Windows ZIP CP1252 console-output regression (candidate)
 
 - Exact PR-head Windows CI [42099748244](https://github.com/i-shutov/tikzarium/actions/runs/42099748244) compiled GUI PE=2/CLI=3, passed four portable negative tests, successfully packaged the Windows ZIP and executed extracted CLI, but failed at final console output: Python 3.13 used cp1252 and could not print Cyrillic in JSON (`UnicodeEncodeError`). The UTF-8 audit file remained intact. This is a CI/report encoding defect; exact-head check remains FAIL, not accepted.

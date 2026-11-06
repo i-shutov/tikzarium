@@ -64,6 +64,14 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
         run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
+      - name: "Windows portable CRT: negative tests and actual release PE imports"
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tests -p test_qa_windows_crt.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'PE import parser negative tests failed' }
+          python scripts/qa_windows_crt.py target/release/tikzarium-app.exe target/release/tikzarium-cli.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Portable EXE depends on external VC runtime or has invalid imports' }
       - name: Verify real release PE Windows GUI and CLI role
         if: runner.os == 'Windows'
         shell: pwsh
