@@ -53,6 +53,19 @@ class SuspendedChildQA(unittest.TestCase):
         self.assertTrue(check(x))
         x["Status"]="BLOCKED_CHILD_FACTS"
         with self.assertRaises(ValueError):check(x)
+    def test_unwrapped_exception_diagnostics_required(self):
+        x = sample()
+        x.update(Status="BLOCKED_PROBE_EXCEPTION",
+                 ErrorType="Win32Exception", NativeErrorCode=1314,
+                 ProbeStage="CREATE_PROCESS_AS_USER")
+        self.assertTrue(check(x))
+        for change in ({"ErrorType":"MethodInvocationException"},
+                       {"ErrorType":""},{"NativeErrorCode":-1},
+                       {"NativeErrorCode":"1314"},{"ProbeStage":"UNKNOWN"},
+                       {"ProbeStage":""}):
+            with self.subTest(change=change):
+                y=copy.deepcopy(x); y.update(change)
+                with self.assertRaises(ValueError):check(y)
     def test_source_is_suspended_os_exe_only(self):
         s=Path(__file__).with_name("qa_windows_medium_child_candidate.ps1").read_text("utf-8")
         for value in ("CreateRestrictedToken(", "LUA_TOKEN=4",
