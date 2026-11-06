@@ -26,8 +26,8 @@ class WindowsTokenReleaseContract(unittest.TestCase):
     def test_production_engine_has_token_guard_before_spawning(self):
         d = (ROOT / "crates/tikzarium-core/src")
         for path in ("discovery.rs", "build.rs"):
-            self.assertIn("require_safe_tex_child", (d / path).read_text())
-        text = (d / "windows_tex_security.rs").read_text()
+            self.assertIn("require_safe_tex_child", (d / path).read_text(encoding="utf-8"))
+        text = (d / "windows_tex_security.rs").read_text(encoding="utf-8")
         for value in ("TOKEN_ELEVATION_CLASS", "TOKEN_INTEGRITY_CLASS",
                       "PermissionDenied", "check_tex_privilege"):
             self.assertIn(value, text)
