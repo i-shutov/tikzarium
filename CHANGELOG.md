@@ -3,7 +3,7 @@
 ## 2026-11-06 — Same-administrator Windows UAC linked child candidate (draft)
 
 - Added disposable-hosted-Windows-only native CreateProcessWithTokenW experiment: verify linked token same SID, limited/non-elevated/MEDIUM, create only Windows System32 whoami.exe SUSPENDED, inspect real child token, terminate without resuming; export JSON. Static negative contract and original Windows artifact included.
-- This does NOT run a child, TeX or PDF, approve any safe launcher, or change Windows accounts, UAC, MiKTeX, Rust/FlowBridge. On user's built-in Administrator Server NO_UAC_LINKED_TOKEN persists and elevated TeX remains BLOCKED; physical GUI and Win10 NOT_RUN. Linux RC/macOS/Linux CI preserved.
+- Initial hosted Windows candidate returned BLOCKED_NO_UAC_LINKED_TOKEN (HIGH/DEFAULT/Session 2; no child/TeX). Added strict Session0 refusal and observed child-termination requirement before any hypothetical positive candidate report. No approved launcher or Windows account/UAC change. Personal built-in Administrator Server still NO_UAC_LINKED_TOKEN and TeX BLOCKED; GUI/Win10 NOT_RUN. Linux RC/macOS/Linux CI preserved.
 
 
 

@@ -32,6 +32,10 @@ public sealed class TzLinkedReport {
     public int ChildElevationType {get;set;}
     public int ChildSession {get;set;}
     public bool ChildSameSession {get;set;}
+    public bool ChildTerminationConfirmed {get;set;} = false;
+    public bool ChildTerminateReturned {get;set;} = false;
+    public int ChildTerminationError {get;set;} = 0;
+    public uint ChildWaitResult {get;set;} = 0xffffffff;
     public string TexPdf {get;set;} = "NOT_RUN";
     public bool ApprovedLauncher {get;set;} = false;
     public bool AccountPolicyChanged {get;set;} = false;
@@ -117,6 +121,7 @@ public static class TzLinkedChildProbe {
             if(!ProcessIdToSessionId((uint)System.Diagnostics.Process.GetCurrentProcess().Id,out parentSession))
                 throw new Win32Exception(Marshal.GetLastWin32Error(),"Parent session query failed");
             r.ParentSession=(int)parentSession;
+            if (parentSession==0) { r.Status="BLOCKED_SESSION0"; return r; }
             if(!r.ParentElevated && r.ParentIntegrity>=0x1000 && r.ParentIntegrity<0x3000) {
                 r.Status="PARENT_ALREADY_NON_ELEVATED_NO_CHILD";return r;
             }
@@ -183,8 +188,13 @@ public static class TzLinkedChildProbe {
                         return r;
                     } finally {CloseHandle(child);}
                 } finally {
-                    TerminateProcess(pi.process,0);
-                    WaitForSingleObject(pi.process,4000);
+                    // Never claim a candidate without observing process termination.
+                    // Never ResumeThread, even if cleanup fails.
+                    r.ChildTerminateReturned=TerminateProcess(pi.process,0);
+                    r.ChildTerminationError=r.ChildTerminateReturned ? 0 : Marshal.GetLastWin32Error();
+                    r.ChildWaitResult=WaitForSingleObject(pi.process,4000);
+                    r.ChildTerminationConfirmed=r.ChildWaitResult==0; // WAIT_OBJECT_0
+                    if (!r.ChildTerminationConfirmed) r.Status="BLOCKED_CHILD_CLEANUP_UNCONFIRMED";
                     CloseHandle(pi.thread);
                     CloseHandle(pi.process);
                 }
