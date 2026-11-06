@@ -11,9 +11,16 @@ $report.os=(Get-CimInstance Win32_OperatingSystem).Caption
 $report.session_id=(Get-Process -Id $PID).SessionId
 $report.native_powershell=$PSVersionTable.PSVersion.ToString()
 $repoRoot=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+. (Join-Path $PSScriptRoot 'tex_launch_gate.ps1')
+$texGate=Get-TikzariumMaintenanceTexGate
+$report.tex_token_gate=$texGate.status
+$report.tex_token_elevated=$texGate.token_is_elevated
+$report.tex_token_integrity_rid=$texGate.token_integrity_rid
+$report.tex_token_session_id=$texGate.session_id
 $actual=(& 'C:\Program Files\Git\cmd\git.exe' -C $repoRoot rev-parse HEAD | Out-String).Trim()
 if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA){throw 'Checkout SHA mismatch'}
 try {
+ if($texGate.status -cne 'ELIGIBLE_NON_ELEVATED_TOKEN'){throw 'MiKTeX NOT_RUN: token preflight blocked elevated or unknown token'}
  $engine=$env:TIKZARIUM_XELATEX
  if([string]::IsNullOrWhiteSpace($engine)) {
   $cmd=Get-Command xelatex.exe -ErrorAction SilentlyContinue
@@ -38,7 +45,10 @@ try {
  $report.miktex_files=$packages
  $oldLog=Join-Path $env:LOCALAPPDATA 'MiKTeX\miktex\log\findtexmf.log'
  if(Test-Path -LiteralPath $oldLog){Get-Content -LiteralPath $oldLog -Tail 60 | Set-Content (Join-Path $OutputDir 'findtexmf-original-log-tail.txt') -Encoding UTF8}
-} catch {$report.miktex='DIAGNOSTIC_EXCEPTION';$report.miktex_error=$_.Exception.Message}
+} catch {
+ if($texGate.status -cne 'ELIGIBLE_NON_ELEVATED_TOKEN'){$report.miktex='ENVIRONMENT_BLOCKED_ELEVATED_OR_UNKNOWN'}
+ else {$report.miktex='DIAGNOSTIC_EXCEPTION';$report.miktex_error=$_.Exception.Message}
+}
 $report | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $OutputDir 'toolchain-repair.json') -Encoding UTF8
 try {
  $cache=$env:RUNNER_TOOL_CACHE

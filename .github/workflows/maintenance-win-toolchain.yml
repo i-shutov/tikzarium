@@ -25,6 +25,9 @@ jobs:
       - name: PS5.1 native process, checksum and exact fixture regressions
         shell: powershell
         run: ./scripts/maintenance/test_native_process.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-native-process-test"
+      - name: Non-elevated XeLaTeX gate regression; token fixtures only, no TeX
+        shell: powershell
+        run: ./scripts/maintenance/test_tex_launch_gate.ps1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -57,21 +60,21 @@ jobs:
           $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'User-Agent'='Tikzarium-maintenance'}
           $branch=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers
           if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA -or $actual -cne $branch.commit.sha){throw 'Current main SHA changed: refusing stale maintenance'}
-      - name: Repair isolated Rust and record real installed MiKTeX version
+      - name: Discover existing private Rust and preflight MiKTeX token
         id: diagnosis
         continue-on-error: true
         shell: powershell
-        run: ./scripts/maintenance/repair_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair" -ProvisionRust
+        run: ./scripts/maintenance/repair_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
       - name: Fixed reviewed offline MiKTeX fixture (not arbitrary documents)
         if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
         continue-on-error: true
         shell: powershell
         run: ./scripts/maintenance/prove_miktex_fixture.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
-      - name: Complete missing Microsoft linker only when proven necessary
+      - name: Check existing Microsoft linker without provisioning
         if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
         continue-on-error: true
         shell: powershell
-        run: ./scripts/maintenance/complete_msvc.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair" -ProvisionMsvc
+        run: ./scripts/maintenance/complete_msvc.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair"
       - name: Require both genuine Cargo executable and fixed MiKTeX PDF evidence
         if: ${{ !cancelled() && steps.lease.outcome == 'success' }}
         shell: powershell

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-06 — Personal Windows elevated-TeX containment (safety draft)
+- Independent original personal Server artifact #13527814610: Cargo 1.91 native compile/link/run PASS, but a pinned XeLaTeX PDF was produced with actual elevated-privilege warnings from xelatex and miktex-dvipdfmx; this is NOT an approved release PDF PASS.
+- Shared read-only current-token gate now blocks all maintenance MiKTeX invocations under HIGH, elevated, Session 0 or unknown token. Verified medium non-elevated administrator account remains eligible. Hosted PS5.1 synthetic test added.
+- Automatic Rust and MSVC provisioning flags removed from recurring personal-server workflow; existing Cargo is only inspected/used. No account, registry, UAC, TeX or font changes.
+
+
 ## 2026-11-06 — Temporary MEDIUM LUA-token setter research (candidate)
 
 - Disposable hosted Windows only: create a third ephemeral LUA restricted token, attempt MEDIUM integrity using SetTokenInformation on that handle alone and re-read elevation, SID, integrity and session; close handles, no child/TeX/parent-token or UAC change.
