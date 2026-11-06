@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-06 — Same-administrator Windows UAC linked child candidate (draft)
+
+- Added disposable-hosted-Windows-only native CreateProcessWithTokenW experiment: verify linked token same SID, limited/non-elevated/MEDIUM, create only Windows System32 whoami.exe SUSPENDED, inspect real child token, terminate without resuming; export JSON. Static negative contract and original Windows artifact included.
+- Initial hosted Windows candidate returned BLOCKED_NO_UAC_LINKED_TOKEN (HIGH/DEFAULT/Session 2; no child/TeX). Added strict Session0 refusal and observed child-termination requirement before any hypothetical positive candidate report. No approved launcher or Windows account/UAC change. Personal built-in Administrator Server still NO_UAC_LINKED_TOKEN and TeX BLOCKED; GUI/Win10 NOT_RUN. Linux RC/macOS/Linux CI preserved.
+
+
+
 ## 2026-11-06 — Windows native/ZIP stage invocation from relative output path (candidate)
 
 - Fix real hosted Windows verifier failure after successful original/tampered ZIP tests: relative `.qa-artifacts/` became invalid when the script changed into the stage directory before invoking CLI. Canonicalize output and EXE paths before `Push-Location`; reproduce CI's relative path in an independent real Windows process test. Preserve exact source/PE/ZIP/manifest/hash fail-closed checks and no elevated TeX. Exact new-head CI PENDING.
