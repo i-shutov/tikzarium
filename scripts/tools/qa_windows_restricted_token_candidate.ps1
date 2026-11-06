@@ -4,7 +4,7 @@
 param([Parameter(Mandatory)][string]$OutputPath)
 $ErrorActionPreference = 'Stop'
 $report = [ordered]@{
-  schema_version = 1
+  schema_version = 2
   status = 'INCOMPLETE'
   child_process = 'NOT_RUN'
   external_xelatex = 'NOT_RUN'
@@ -41,11 +41,24 @@ public sealed class TikzariumRestrictedTokenCandidate {
     public bool LuaAdminGroupEnabled { get; set; }
     public bool LuaSameUser { get; set; }
     public bool LuaSameSession { get; set; }
+    public bool MediumTokenCreated { get; set; }
+    public int MediumCreateError { get; set; }
+    public bool MediumSetAttempted { get; set; }
+    public bool MediumSetSucceeded { get; set; }
+    public int MediumSetError { get; set; }
+    public bool MediumElevated { get; set; }
+    public int MediumElevationType { get; set; }
+    public int MediumIntegrityRid { get; set; }
+    public bool MediumAdminGroupEnabled { get; set; }
+    public bool MediumSameUser { get; set; }
+    public bool MediumSameSession { get; set; }
 }
 
 public static class TikzariumRestrictedTokenDryRun {
     const uint TOKEN_DUPLICATE = 0x0002;
     const uint TOKEN_QUERY = 0x0008;
+    const uint TOKEN_ADJUST_DEFAULT = 0x0080;
+    const uint SE_GROUP_INTEGRITY = 0x0020;
     const uint DISABLE_MAX_PRIVILEGE = 0x0001;
     const uint LUA_TOKEN = 0x0004; // Microsoft; never use SANDBOX_INERT
 
@@ -66,6 +79,9 @@ public static class TikzariumRestrictedTokenDryRun {
         ref SidAndAttributes disabledSids, uint removedPrivilegeCount,
         IntPtr removedPrivileges, uint restrictingSidCount,
         IntPtr restrictingSids, out IntPtr restricted);
+    [DllImport("advapi32.dll", SetLastError=true)]
+    private static extern bool SetTokenInformation(IntPtr token, int infoClass,
+        IntPtr info, int informationLength);
     [DllImport("advapi32.dll", SetLastError=true)]
     private static extern bool DuplicateToken(
         IntPtr existingPrimaryToken, int impersonationLevel, out IntPtr impersonationToken);
@@ -147,6 +163,26 @@ public static class TikzariumRestrictedTokenDryRun {
         } finally { CloseHandle(impersonation); }
     }
 
+    // SetTokenInformation is permitted ONLY on a new, temporary LUA token.
+    // Do not modify the current process, spawn a child or run TeX.
+    private static int TryLowerTemporaryTokenToMedium(IntPtr candidate) {
+        var sid = new SecurityIdentifier("S-1-16-8192");
+        byte[] bytes = new byte[sid.BinaryLength];
+        sid.GetBinaryForm(bytes, 0);
+        int structSize = Marshal.SizeOf(typeof(SidAndAttributes));
+        int total = checked(structSize + bytes.Length);
+        IntPtr memory = Marshal.AllocHGlobal(total);
+        try {
+            IntPtr sidAddress = IntPtr.Add(memory, structSize);
+            Marshal.Copy(bytes, 0, sidAddress, bytes.Length);
+            Marshal.StructureToPtr(new SidAndAttributes {
+                Sid = sidAddress, Attributes = SE_GROUP_INTEGRITY }, memory, false);
+            if (!SetTokenInformation(candidate, 25 /* TokenIntegrityLevel */, memory, total))
+                return Marshal.GetLastWin32Error();
+            return 0;
+        } finally { Marshal.FreeHGlobal(memory); }
+    }
+
     public static TikzariumRestrictedTokenCandidate Inspect() {
         IntPtr source;
         if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_DUPLICATE, out source))
@@ -195,6 +231,37 @@ public static class TikzariumRestrictedTokenDryRun {
                         result.LuaSameSession = ReadInt(lua, 12) == result.ParentSession;
                     } finally { CloseHandle(lua); }
                 }
+                // Research path independent of the two earlier read-only variants.
+                // Acquire adjust rights on a separate handle; the original token
+                // remains unchanged, and no candidate is attached to a process.
+                IntPtr adjustableSource;
+                if (!OpenProcessToken(GetCurrentProcess(),
+                        TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ADJUST_DEFAULT,
+                        out adjustableSource)) {
+                    result.MediumCreateError = Marshal.GetLastWin32Error();
+                } else {
+                    try {
+                        IntPtr mediumLua;
+                        if (!CreateRestrictedToken(adjustableSource,
+                                DISABLE_MAX_PRIVILEGE | LUA_TOKEN, 1, ref disabled,
+                                0, IntPtr.Zero, 0, IntPtr.Zero, out mediumLua)) {
+                            result.MediumCreateError = Marshal.GetLastWin32Error();
+                        } else {
+                            try {
+                                result.MediumTokenCreated = true;
+                                result.MediumSetAttempted = true;
+                                result.MediumSetError = TryLowerTemporaryTokenToMedium(mediumLua);
+                                result.MediumSetSucceeded = result.MediumSetError == 0;
+                                result.MediumElevated = ReadInt(mediumLua, 20) != 0;
+                                result.MediumElevationType = ReadInt(mediumLua, 18);
+                                result.MediumIntegrityRid = ReadIntegrityRid(mediumLua);
+                                result.MediumAdminGroupEnabled = AdminGroupEnabled(mediumLua, adminSid);
+                                result.MediumSameUser = SameUser(source, mediumLua);
+                                result.MediumSameSession = ReadInt(mediumLua, 12) == result.ParentSession;
+                            } finally { CloseHandle(mediumLua); }
+                        }
+                    } finally { CloseHandle(adjustableSource); }
+                }
                 return result;
             } finally { Marshal.FreeHGlobal(adminSid); }
         } finally { CloseHandle(source); }
@@ -223,6 +290,26 @@ public static class TikzariumRestrictedTokenDryRun {
   $report.lua_token_admin_sid_enabled = $t.LuaAdminGroupEnabled
   $report.lua_token_same_user = $t.LuaSameUser
   $report.lua_token_same_session = $t.LuaSameSession
+  $report.medium_lua_token_created = $t.MediumTokenCreated
+  $report.medium_lua_create_error = $t.MediumCreateError
+  $report.medium_lua_set_attempted = $t.MediumSetAttempted
+  $report.medium_lua_set_succeeded = $t.MediumSetSucceeded
+  $report.medium_lua_set_error = $t.MediumSetError
+  $report.medium_lua_elevated = $t.MediumElevated
+  $report.medium_lua_elevation_type = $t.MediumElevationType
+  $report.medium_lua_integrity_rid = $t.MediumIntegrityRid
+  $report.medium_lua_admin_sid_enabled = $t.MediumAdminGroupEnabled
+  $report.medium_lua_same_user = $t.MediumSameUser
+  $report.medium_lua_same_session = $t.MediumSameSession
+  $report.medium_lua_is_non_elevated = $t.MediumTokenCreated -and $t.MediumSetSucceeded -and
+      -not $t.MediumElevated -and -not $t.MediumAdminGroupEnabled -and
+      $t.MediumSameUser -and $t.MediumSameSession -and
+      $t.MediumIntegrityRid -ge 0x1000 -and $t.MediumIntegrityRid -lt 0x3000
+  $report.medium_lua_status = if (-not $t.MediumTokenCreated) {
+    'MEDIUM_TOKEN_UNAVAILABLE_NO_CHILD_NO_TEX'
+  } elseif (-not $t.MediumSetSucceeded) {
+    'MEDIUM_SET_REJECTED_NO_CHILD_NO_TEX'
+  } else { 'MEDIUM_SET_INSPECTED_NO_CHILD_NO_TEX' }
   $report.lua_token_is_non_elevated = $t.LuaTokenCreated -and -not $t.LuaElevated -and
       -not $t.LuaAdminGroupEnabled -and $t.LuaSameUser -and $t.LuaSameSession -and
       $t.LuaIntegrityRid -ge 0x1000 -and $t.LuaIntegrityRid -lt 0x3000

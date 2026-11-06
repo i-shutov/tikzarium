@@ -1,5 +1,7 @@
 # Windows x64 release priority — 2026-11-05
 
+**Next disposable-hosted research only:** attempt `SetTokenInformation(TokenIntegrityLevel=MEDIUM)` on a separate temporary LUA restricted token; report independently measured elevation/integrity/user/session/admin role and exact failures. This does NOT launch children/TeX or qualify security. Personal Server and Win10 GUI/PDF remain BLOCKED/NOT_RUN; see insights/2026-11-06_WINDOWS_MEDIUM_LUA_TOKEN_PROBE.md.
+
 **Research gate 2026-11-06 (Draft):** Disposable hosted Windows only compares existing restricted token with Microsoft documented LUA_TOKEN=0x4, checks actual TokenElevation/integrity/admin SID, same-user SID and session. No child/TeX or account/UAC changes. Negative JSON contracts reject false safe-token claims; inspected token is not an approved launcher. Personal server still HIGH/NO_UAC_LINKED_TOKEN; MiKTeX BLOCKED. Details: insights/2026-11-06_WINDOWS_LUA_RESTRICTED_TOKEN_RESEARCH.md.
 
 
