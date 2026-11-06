@@ -116,7 +116,7 @@ jobs:
           EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_main_sha }}
           SOURCE_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
         run: |
-          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot "$env:RUNNER_TEMP\tikzarium-hosted\native" -PortableRoot "$env:RUNNER_TEMP\tikzarium-hosted\portable" -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:EXPECTED_SHA -SourceRunId $env:SOURCE_RUN_ID
+          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot "$env:RUNNER_TEMP\tikzarium-hosted\native" -PortableRoot "$env:RUNNER_TEMP\tikzarium-hosted\portable" -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:EXPECTED_SHA -SourceRunId $env:SOURCE_RUN_ID -VerificationHost personal-server
       - name: Read-only administrator elevation, integrity and UAC linked-token inventory
         if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
         shell: powershell
