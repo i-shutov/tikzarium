@@ -68,6 +68,21 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/tools/qa_windows_restricted_token_candidate.ps1 -OutputPath '.qa-artifacts/windows-restricted-token-candidate.json'
+      - name: Same-admin UAC-linked suspended-child candidate (hosted only; NO TeX)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tools -p test_qa_windows_filtered_child_candidate.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Filtered-child static contract failed' }
+          ./scripts/tools/qa_windows_filtered_child_candidate.ps1 -OutputPath '.qa-artifacts/windows-filtered-child-candidate.json'
+          $result = Get-Content '.qa-artifacts/windows-filtered-child-candidate.json' -Raw | ConvertFrom-Json
+          if ($result.TexPdf -cne 'NOT_RUN' -or $result.ApprovedLauncher -ne $false -or
+              $result.AccountPolicyChanged -ne $false) { throw 'Child experiment cannot approve or launch TeX' }
+          if ($result.Status -eq 'SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED' -and
+              ($result.ChildElevated -or -not $result.ChildSameUser -or
+               $result.ChildIntegrity -lt 8192 -or $result.ChildIntegrity -ge 12288)) {
+            throw 'Child token claim contradicts actual Windows token fields'
+          }
       - name: Check source formatting
         run: cargo fmt --all -- --check
       - name: Check crates compile
@@ -148,6 +163,7 @@ jobs:
             .qa-artifacts/lock-windows-x64.json
             .qa-artifacts/windows-token.json
             .qa-artifacts/windows-restricted-token-candidate.json
+            .qa-artifacts/windows-filtered-child-candidate.json
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'

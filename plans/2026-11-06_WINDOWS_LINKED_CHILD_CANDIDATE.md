@@ -1,0 +1,9 @@
+# Windows x64 W1 — same-administrator limited UAC child candidate, 2026-11-06
+
+Owner correction: https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6676540344. Windows-first, feature freeze. Personal Server and physical Windows 10 must support local Administrators account; no new account, UAC/policy/registry changes, MiKTeX or Rust installation. Preserve FlowBridge and Linux 1.0.0-rc.1.
+
+The original personal Server trusted-main run #42189672211 measured Session 2, HIGH integrity, elevated, TokenElevationType DEFAULT, NO_UAC_LINKED_TOKEN. Portable native hosted EXE/ZIP and CLI passed W1 staging on that Server; local Cargo is not visible, and MiKTeX PDF under elevated token is BLOCKED. Its built-in Administrator cannot use a linked limited token that does not exist. Restricted-token research produced HIGH/elevated and remains only a candidate.
+
+This release-scope experiment does not modify production code or start TeX. On disposable GitHub-hosted Windows only, it inspects parent and UAC-linked limited token, verifies non-elevated MEDIUM + same user SID, creates one Windows System32 whoami.exe process with CreateProcessWithTokenW and CREATE_SUSPENDED, inspects the ACTUAL child token, and terminates the suspended child without ResumeThread. Outputs original JSON with distinct NOT_RUN/BLOCKED states. No user code, shell, credentials, TeX/PDF, GUI, account or security policy mutation.
+
+Even SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED is research, not evidence of a secure working XeLaTeX launcher. Approval requires separate manual security review of path/arguments/environment/handles/session, real lifecycle and cancellation, offline MiKTeX PDF with Unicode/embedded fonts under normal and elevated admin GUI on both personal Windows Server and physical Windows 10, plus original screenshots/source/PDF/log/hashes. Do not merge before exact-head Windows/macOS/Linux CI, original artifact review and expected HEAD. No stable tag/installer.
