@@ -35,6 +35,13 @@ class WindowsTokenReleaseContract(unittest.TestCase):
                           "SetTokenInformation(", "Start-Process -Verb RunAs"):
             self.assertNotIn(forbidden, source)
 
+    def test_external_pdf_processors_are_guarded_under_windows_admin(self):
+        core = ROOT / "crates/tikzarium-core/src"
+        app = ROOT / "crates/tikzarium-app/src"
+        self.assertIn("require_safe_tex_child()?", (core / "preview.rs").read_text(encoding="utf-8"))
+        self.assertIn("require_safe_external_document_child()", (app / "pdf_navigation.rs").read_text(encoding="utf-8"))
+        self.assertIn("pub use windows_tex_security::require_safe_external_document_child", (core / "lib.rs").read_text(encoding="utf-8"))
+
     def test_personal_server_does_not_demand_new_user_or_run_elevated_tex(self):
         s = (ROOT / "scripts/tools/qa_windows_server_user.ps1").read_text(encoding="utf-8")
         self.assertIn("qa_windows_token.ps1", s)

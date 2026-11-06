@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 — Guard external Poppler PDF helpers under elevated Windows parent (candidate)
+
+- Windows Administrator release freeze security: existing direct XeLaTeX guard also prevents Poppler `pdfinfo` and `pdftoppm` processes from inheriting high/elevated token when reading user-controlled PDF bytes. Core preview and GUI page navigation fail closed instead of spawning elevated external PDF parsers; Linux/macOS behaviors remain unchanged.
+- Add Python release contract for both PDF helper spawn boundaries. This is not a verified same-account low-privilege child and elevated Windows GUI→PDF remains BLOCKED until proper security and physical QA. Hosted exact-head regression PENDING.
+
 ## 2026-11-06 — Verify linked UAC token rights before proposing XeLaTeX child (candidate)
 
 - Replace misleading nonzero TokenLinkedToken handle-only probe with read-only queries of linked token elevation, elevation type and mandatory integrity. Mark only non-elevated limited linked tokens as `PRESENT_LIMITED_TOKEN_QUERY_ONLY`; a present-but-not-limited token is rejected as a child candidate. No child process, restricted token, UAC/account mutation, system TeX or install.

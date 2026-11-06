@@ -8,7 +8,7 @@ use std::{
     sync::mpsc::{self, Receiver},
     time::{Duration, Instant},
 };
-use tikzarium_core::find_executable;
+use tikzarium_core::{find_executable, require_safe_external_document_child};
 
 /// Fail closed when an external PDF tool stalls. These are worker-side budgets, not GUI timeouts.
 const PDFINFO_TIMEOUT: Duration = Duration::from_secs(12);
@@ -30,6 +30,10 @@ fn run_poppler(
     name: &str,
     timeout: Duration,
 ) -> Result<ProcessOutput, String> {
+    // PDFINFO/PDFTOPPM read user-controlled PDF bytes. Prevent elevated
+    // Windows children until a separately accepted limited-token launcher exists.
+    require_safe_external_document_child()
+        .map_err(|e| format!("{name} unsafe process token: {e}"))?;
     let dir = tempfile::tempdir().map_err(|e| format!("{name} capture directory: {e}"))?;
     let stdout_path = dir.path().join("stdout.txt");
     let stderr_path = dir.path().join("stderr.txt");

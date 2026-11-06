@@ -18,6 +18,13 @@ fn check_tex_privilege(elevated: bool, integrity_rid: u32) -> io::Result<()> {
     }
 }
 
+/// Reuse the same fail-closed Windows boundary for every external
+/// document interpreter (XeLaTeX and Poppler). A PDF parser must not
+/// inherit elevated privileges merely because XeLaTeX was blocked.
+pub fn require_safe_external_document_child() -> io::Result<()> {
+    require_safe_tex_child()
+}
+
 /// Checked before each direct XeLaTeX/helper spawn; fail closed on token query errors.
 pub(crate) fn require_safe_tex_child() -> io::Result<()> {
     #[cfg(windows)]
