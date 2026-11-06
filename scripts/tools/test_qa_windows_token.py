@@ -23,6 +23,27 @@ class WindowsTokenReleaseContract(unittest.TestCase):
         self.assertIn("token_is_elevated", s)
         self.assertNotIn("use a non-admin user session", s)
 
+    def test_hosted_windows_tex_jobs_preflight_before_any_external_tex(self):
+        # A fully elevated hosted runner cannot be used to manufacture
+        # "green" PDF evidence by directly launching TeX with a full token.
+        for workflow, install_anchor in (
+            (".github/workflows/qa-miktex-windows.yml",
+             "Isolated private MiKTeX installation with pinned installer"),
+            (".github/workflows/qa-matrix.yml",
+             "Install TeX Live 2026 fixture subset"),
+        ):
+            source = (ROOT / workflow).read_text(encoding="utf-8")
+            pos = source.index("Preflight actual Windows process token"
+                               if "miktex-windows" in workflow
+                               else "Preflight Windows process token")
+            self.assertLess(pos, source.index(install_anchor))
+            for required in ("qa_windows_token.ps1",
+                             "token_is_elevated",
+                             "token_integrity_rid",
+                             "BLOCKED_UNSAFE_TOKEN_NOT_RUN",
+                             "if($blocked)"):
+                self.assertIn(required, source)
+
     def test_production_engine_has_token_guard_before_spawning(self):
         d = (ROOT / "crates/tikzarium-core/src")
         for path in ("discovery.rs", "build.rs"):
