@@ -6,12 +6,13 @@ param(
  [Parameter(Mandatory)][string]$PortableRoot,
  [Parameter(Mandatory)][string]$OutputDir,
  [Parameter(Mandatory)][string]$ExpectedSha,
- [Parameter(Mandatory)][string]$SourceRunId
+ [Parameter(Mandatory)][string]$SourceRunId,
+ [Parameter(Mandatory)][ValidateSet('hosted-ci','personal-server')][string]$VerificationHost
 )
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $report=[ordered]@{schema_version=1;status='INCOMPLETE';source_sha=$ExpectedSha
- source_ci_run_id=$SourceRunId;host_compilation='NOT_RUN'
+ source_ci_run_id=$SourceRunId;verification_host=$VerificationHost;host_compilation='NOT_RUN'
  external_miktex_pdf='NOT_RUN';interactive_gui='NOT_RUN';physical_windows10='NOT_RUN'}
 $exitCode=1
 function ShaBytes([byte[]]$bytes){
@@ -118,7 +119,11 @@ try{
  }finally{$env:TIKZARIUM_XELATEX=$saved}
  if($exit -ne 0 -or $stdout -notmatch 'tikz\.circle'){throw 'Local extracted CLI help failed'}
  $report.cli_local_help='PASS_NO_TEX_INVOCATION'
- $report.status='PASS_VERIFIED_HOSTED_EXE_ZIP_ON_PERSONAL_SERVER_NOT_GUI'
+ $report.status=$(if($VerificationHost -eq 'personal-server'){
+  'PASS_VERIFIED_HOSTED_EXE_ZIP_ON_PERSONAL_SERVER_NOT_GUI'
+ }else{
+  'PASS_HOSTED_SELFTEST_EXE_ZIP_NOT_PERSONAL_SERVER_NOT_GUI'
+ })
  $exitCode=0
 }catch{
  $report.status='FAIL_CARGO_FREE_ARTIFACT_VERIFICATION'
