@@ -74,6 +74,16 @@ jobs:
         run: cargo check --locked --workspace --all-targets
       - name: Tests
         run: cargo test --locked --workspace
+      - name: Virtual GUI JSONL API / real egui widget frames and semantic source transactions
+        run: |
+          python scripts/tests/test_qa_control_api.py --report .qa-artifacts/qa-control-${{ matrix.target_name }}.json
+      - name: Upload headless GUI API contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-qa-control-${{ matrix.target_name }}
+          path: .qa-artifacts/qa-control-${{ matrix.target_name }}.json
+          if-no-files-found: warn
       - name: I06 source-save integrity (no-op, external change and symlink)
         run: cargo test --locked -p tikzarium-core document::tests -- --nocapture
       - name: Clippy

@@ -239,7 +239,7 @@ fn show_guide_frame_with_palette(
 /// Both workspaces use EXACTLY the same gesture processing and source patching.
 /// Studio moves the existing C-owned palette into a persistent tool rail; it
 /// does not replace the native TikZ drawing handler or TeX with a Rust solver.
-fn show_guide_frame_mode(
+pub(crate) fn show_guide_frame_mode(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
@@ -685,7 +685,7 @@ pub fn observe_source_text_edit(response: &egui::Response, session: &mut Session
 
 /// Always visible above the independently scrollable inspector. The shared
 /// Session inverse patch is the only source authority; no TeX is reconstructed.
-fn show_inspector_action_bar_frame(
+pub(crate) fn show_inspector_action_bar_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,

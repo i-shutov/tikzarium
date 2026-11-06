@@ -331,7 +331,7 @@ pub fn show_group_rail(
 }
 
 // Observe native widget rectangles in event tests without changing production clicks.
-fn show_group_rail_observed(
+pub(crate) fn show_group_rail_observed(
     ui: &mut egui::Ui,
     active: &mut Option<StudioGroup>,
     narrow: bool,
@@ -394,7 +394,7 @@ pub fn show_palette(
 }
 
 // The observer exposes the very same C tool buttons used by the Studio GUI.
-fn show_palette_observed(
+pub(crate) fn show_palette_observed(
     ctx: &egui::Context,
     group: &mut Option<StudioGroup>,
     anchor: Pos2,

@@ -173,7 +173,7 @@ pub fn show_source_caret_completion(
 /// Individual library installation stays UNKNOWN until a specific file probe.
 /// A matching catalogue engine target does not establish successful compilation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum LibraryUiTarget {
+pub(crate) enum LibraryUiTarget {
     Panel,
     Entry(usize),
     Action(usize, LibraryChange),
@@ -191,7 +191,7 @@ pub fn show_library_panel(
 
 // The observer only records the actual egui hit rectangles for UNIT_EVENT
 // tests. Both production and tests execute this same click/change handler.
-fn show_library_panel_tracking(
+pub(crate) fn show_library_panel_tracking(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
