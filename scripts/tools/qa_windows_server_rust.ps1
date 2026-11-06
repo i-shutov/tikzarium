@@ -1,15 +1,10 @@
-# Trusted-main TikZarium dedicated Windows Server native Rust/portable proof.
-# NO MiKTeX invocation, no package installation, no GUI claims, no PR code.
+# Trusted-main native Windows proof. Python is NOT a prerequisite for Rust or PE QA.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDir)
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
-$report=[ordered]@{
- schema_version=1;status='INCOMPLETE';source_sha=$env:GITHUB_SHA
- environment='USER_WINDOWS_SERVER_NOT_WIN10';rust_tests='NOT_RUN'
- release_build='NOT_RUN';gui_pe='NOT_RUN';cli_pe='NOT_RUN'
- portable_zip='NOT_RUN';interactive_gui='NOT_RUN';physical_windows10='NOT_RUN'
-}
+$OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
+$report=[ordered]@{schema_version=2;status='INCOMPLETE';source_sha=$env:GITHUB_SHA;environment='USER_WINDOWS_SERVER_NOT_WIN10';rust_tests='NOT_RUN';release_build='NOT_RUN';gui_pe='NOT_RUN';cli_pe='NOT_RUN';crt_imports='NOT_RUN';portable_zip='NOT_RUN';interactive_gui='NOT_RUN';physical_windows10='NOT_RUN'}
 $exitCode=1
 try {
  $root=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -18,83 +13,53 @@ try {
   $sha=(& git.exe rev-parse HEAD | Out-String).Trim()
   if($LASTEXITCODE -ne 0 -or $sha -cne $env:GITHUB_SHA){throw 'Exact trusted main SHA lease mismatch'}
   $report.os=(Get-CimInstance Win32_OperatingSystem).Caption
-  $report.session_id=(Get-Process -Id $PID).SessionId
-  $principal=New-Object System.Security.Principal.WindowsPrincipal([System.Security.Principal.WindowsIdentity]::GetCurrent())
-  $report.administrator_role_enabled=$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-  try {
-   $report.security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
-   $report.runner_elevated=$report.security.token_is_elevated
-  } catch {
-   $report.security='UNKNOWN_TOKEN_PROBE_FAILED'
-   $report.token_probe_error=$_.Exception.Message
-  }
-  # Explicit repair installs Rust in this runner's private cache, not a
-  # machine/user PATH. Load that existing toolchain on EVERY new job.
+  $report.security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
+  $report.session_id=$report.security.session_id
+  $report.runner_elevated=$report.security.token_is_elevated
   . (Join-Path $PSScriptRoot 'tikzarium_rust_environment.ps1')
+  . (Join-Path $PSScriptRoot 'windows_native_pe.ps1')
+  . (Join-Path $PSScriptRoot '..\maintenance\native_process.ps1')
   $report.private_rust_executable=Use-TikzariumPrivateRust
   $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
-  if(-not $cargo) {
+  if(-not $cargo){
    $candidate=Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe'
-   if(Test-Path -LiteralPath $candidate -PathType Leaf){
-    $env:PATH="$(Split-Path -Parent $candidate);$env:PATH"
-    $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
-   }
+   if(Test-Path -LiteralPath $candidate -PathType Leaf){$env:PATH="$(Split-Path -Parent $candidate);$env:PATH";$cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue}
   }
-  if(-not $cargo){throw 'cargo.exe is not installed/visible to this runner user or private TikZarium cache; NO CI auto-install'}
+  if(-not $cargo){throw 'Existing cargo.exe not found; no automatic installation'}
   $report.rust_version=(& rustc.exe --version | Out-String).Trim()
-  if($LASTEXITCODE -ne 0){throw 'rustc.exe missing'}
-  $env:CARGO_BUILD_JOBS='1'
-  $env:CARGO_INCREMENTAL='0'
+  if($LASTEXITCODE -ne 0){throw 'rustc.exe failed'}
+  $env:CARGO_BUILD_JOBS='1';$env:CARGO_INCREMENTAL='0'
   & cargo.exe test --locked --workspace -- --test-threads=1
-  if($LASTEXITCODE -ne 0){throw 'Locked Windows Server Rust workspace tests FAILED'}
+  if($LASTEXITCODE -ne 0){throw 'Locked Windows Server Rust tests FAILED'}
   $report.rust_tests='PASS_WINDOWS_SERVER_NOT_WIN10'
   & cargo.exe build --locked --release -p tikzarium-app -p tikzarium-cli
   if($LASTEXITCODE -ne 0){throw 'Windows Server native release build FAILED'}
   $report.release_build='PASS_WINDOWS_SERVER_NOT_WIN10'
-  function PEHash([string]$path,[int]$expected) {
-   if(-not (Test-Path -LiteralPath $path -PathType Leaf)){throw "Missing binary $path"}
-   $bytes=[System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $path).Path)
-   if($bytes.Length -lt 128 -or $bytes[0] -ne 77 -or $bytes[1] -ne 90){throw "Invalid MZ $path"}
-   $offset=[BitConverter]::ToInt32($bytes,0x3c)
-   if($offset -lt 64 -or $offset + 96 -gt $bytes.Length){throw "Invalid PE offset $path"}
-   if($bytes[$offset] -ne 80 -or $bytes[$offset+1] -ne 69 -or $bytes[$offset+2] -ne 0 -or $bytes[$offset+3] -ne 0){throw "Invalid PE signature $path"}
-   $optional=[BitConverter]::ToUInt16($bytes,$offset+20)
-   if($optional -lt 70 -or $offset+24+$optional -gt $bytes.Length){throw "Truncated PE32+ header $path"}
-   if([BitConverter]::ToUInt16($bytes,$offset+4) -ne 0x8664 -or [BitConverter]::ToUInt16($bytes,$offset+24) -ne 0x20b){throw "Wrong target PE AMD64 $path"}
-   $actual=[BitConverter]::ToUInt16($bytes,$offset+92)
-   if($actual -ne $expected){throw "Windows PE subsystem $actual expected $expected for $path"}
-   return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
-  }
-  $app='target\release\tikzarium-app.exe'
-  $cli='target\release\tikzarium-cli.exe'
-  $report.app_sha256=PEHash $app 2
-  $report.gui_pe='PASS_WINDOWS_GUI_SUBSYSTEM_2'
-  $report.cli_sha256=PEHash $cli 3
-  $report.cli_pe='PASS_WINDOWS_CLI_SUBSYSTEM_3'
+  $app=Get-TikzariumPortablePe -Path 'target\release\tikzarium-app.exe' -ExpectedSubsystem 2
+  $cli=Get-TikzariumPortablePe -Path 'target\release\tikzarium-cli.exe' -ExpectedSubsystem 3
+  $report.app_sha256=$app.sha256;$report.cli_sha256=$cli.sha256
+  $report.gui_pe='PASS_WINDOWS_GUI_SUBSYSTEM_2';$report.cli_pe='PASS_WINDOWS_CLI_SUBSYSTEM_3'
+  $report.crt_imports='PASS_NO_DYNAMIC_VCRUNTIME'
+  @($app,$cli) | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $OutputDir 'native-pe-imports.json') -Encoding UTF8
   $dest=Join-Path $OutputDir 'native-release'
   New-Item -ItemType Directory -Force -Path $dest | Out-Null
-  Copy-Item -LiteralPath $app -Destination (Join-Path $dest 'tikzarium-app.exe')
-  Copy-Item -LiteralPath $cli -Destination (Join-Path $dest 'tikzarium-cli.exe')
-  $report.crt_imports='NOT_RUN_PYTHON_NOT_INSTALLED'
-  $python=Get-Command python.exe -ErrorAction SilentlyContinue
-  if($python) {
-   & python.exe scripts/qa_windows_crt.py $app $cli
-   if($LASTEXITCODE -ne 0){throw 'Windows native release depends on external VC runtime or has invalid PE imports'}
-   $report.crt_imports='PASS_NO_DYNAMIC_VCRUNTIME'
-   $zip=Join-Path $OutputDir 'Tikzarium-Windows-x64-portable-candidate.zip'
-   $runUrl="https://github.com/i-shutov/tikzarium/actions/runs/$env:GITHUB_RUN_ID"
-   & python.exe scripts/package_n5_preview.py --platform windows10-x64 --app $app --cli $cli --app-sha256 $report.app_sha256 --cli-sha256 $report.cli_sha256 --source-sha $sha --ci-run-url $runUrl --output $zip
-   if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $zip -PathType Leaf)){throw 'Portable Windows ZIP packaging FAILED'}
-   $report.portable_zip='PASS_PACKAGED_NOT_GUI_TESTED'
-   $report.portable_zip_sha256=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-  } else {$report.portable_zip='NOT_RUN_PYTHON_NOT_INSTALLED'}
-  $report.status='PASS_NATIVE_RUST_AND_PE_NOT_GUI'
+  Copy-Item -LiteralPath $app.path -Destination (Join-Path $dest 'tikzarium-app.exe') -Force
+  Copy-Item -LiteralPath $cli.path -Destination (Join-Path $dest 'tikzarium-cli.exe') -Force
+  $help=Invoke-TikzNative -Exe (Join-Path $dest 'tikzarium-cli.exe') -Arguments @('help','--all') -WorkingDirectory $dest -LogPrefix (Join-Path $OutputDir 'native-cli-help') -TimeoutSeconds 30
+  if($help.timed_out -or $help.exit_code -ne 0 -or $help.stdout -notmatch 'tikz.circle'){throw 'Actual native CLI help failed'}
+  $report.native_cli='PASS_ACTUAL_EXE_HELP'
+  $zip=Join-Path $OutputDir 'Tikzarium-Windows-x64-native-server.zip'
+  if(Test-Path -LiteralPath $zip){Remove-Item -LiteralPath $zip -Force}
+  Compress-Archive -LiteralPath @((Join-Path $dest 'tikzarium-app.exe'),(Join-Path $dest 'tikzarium-cli.exe')) -DestinationPath $zip -CompressionLevel Optimal
+  $report.portable_zip='PASS_NATIVE_EXE_ARCHIVE_NOT_GUI_QUALIFICATION'
+  $report.portable_zip_sha256=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+  $report.status='PASS_NATIVE_RUST_PE_IMPORTS_AND_CLI_NOT_GUI'
   $exitCode=0
- }finally{Pop-Location}
-}catch{
+ } finally {Pop-Location}
+} catch {
  $report.status='FAIL';$report.error=$_.Exception.Message
  Write-Error $report.error -ErrorAction Continue
-}finally{
- $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $OutputDir 'windows-server-rust.json') -Encoding utf8
+} finally {
+ $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDir 'windows-server-rust.json') -Encoding UTF8
 }
 exit $exitCode

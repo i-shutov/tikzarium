@@ -121,9 +121,8 @@ jobs:
         env:
           EXPECTED_RUNNER_ARCH: ${{ matrix.arch }}
         run: python -c "import os,platform,sys; e=os.environ['EXPECTED_RUNNER_ARCH']; a=os.getenv('RUNNER_ARCH'); m=platform.machine().lower(); print('runner_arch',a,'machine',m,'expected',e); sys.exit(0 if a==e and m in {'X64':('amd64','x86_64'),'ARM64':('arm64','aarch64')}[e] else 1)"
-      # Under Windows a hosted runner can already have a full administrator
-      # token; neither its group name nor GitHub runner registration proves
-      # a safe child. Abort before installing/invoking any XeLaTeX.
+      # Owner correction: current-user Administrator is supported; do not alter
+      # its privileges or suppress MiKTeX warnings. This is not a sandbox.
       - name: Preflight Windows process token before external XeLaTeX
         if: runner.os == 'Windows'
         shell: pwsh
@@ -132,14 +131,15 @@ jobs:
           $record='.qa-artifacts/windows-server-x64'
           New-Item -ItemType Directory -Force -Path $record | Out-Null
           $token = & ./scripts/tools/qa_windows_token.ps1
-          $blocked = $token.token_is_elevated -or $token.token_integrity_rid -ge 12288 -or $token.token_integrity_rid -lt 4096
+          $blocked = $token.token_integrity_rid -ge 16384 -or $token.token_integrity_rid -lt 4096
           [pscustomobject]@{
             source_sha = $env:TIKZARIUM_SOURCE_SHA
             token = $token
-            external_tex = $(if($blocked){'BLOCKED_UNSAFE_TOKEN_NOT_RUN'}else{'ELIGIBLE_TOKEN_ONLY_NOT_YET_RUN'})
+            external_tex = $(if($blocked){'BLOCKED_UNSUPPORTED_TOKEN_NOT_RUN'}else{'CURRENT_USER_ELIGIBLE_NOT_SANDBOX'})
             physical_windows10 = 'NOT_RUN'
           } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $record 'windows-token-preflight.json') -Encoding utf8
-          if($blocked) { throw 'Hosted Windows TeX BLOCKED: elevated/high/unknown token; do not install or run TeX.' }
+          if($blocked) { throw 'Hosted Windows TeX: unsupported unknown/SYSTEM token' }
+          if($token.token_is_elevated) { Write-Warning 'Current-user Administrator execution; retain native warnings and actual exit status.' }
       - name: Install TeX Live 2026 fixture subset (rolling CTAN)
         id: texlive_install
         uses: zauguin/install-texlive@f5e7d0b117035fff797d4392ea94131747e03d60

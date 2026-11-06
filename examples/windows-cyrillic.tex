@@ -1,0 +1,12 @@
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage{fontspec}
+\setmainfont{Arial}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}
+  \draw[thick,->] (0,0) -- (4,0);
+  \draw[thick] (1,0) circle[radius=0.3];
+  \node[above] at (1,0.4) {Точка};
+  \node[below] at (2,-0.4) {Тест XeLaTeX: Кириллица.};
+\end{tikzpicture}
+\end{document}
