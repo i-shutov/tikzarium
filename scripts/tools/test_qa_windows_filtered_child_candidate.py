@@ -10,6 +10,7 @@ class WindowsLinkedCandidateTests(unittest.TestCase):
         for anchor in ("CreateProcessWithTokenW","CREATE_SUSPENDED",
                        "TokenLinkedToken","whoami.exe","TerminateProcess",
                        "ChildSameUser","ChildIntegrity","ChildElevated",
+                       "ChildElevationType","ChildSameSession","ProcessIdToSessionId",
                        "SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED",
                        "ApprovedLauncher","TexPdf","NOT_RUN"):
             self.assertIn(anchor,s)
