@@ -36,12 +36,17 @@ def check(d):
     if d["SuspendedCreated"] and not d["ChildTerminationConfirmed"] and status!="BLOCKED_CHILD_CLEANUP":
         raise ValueError("unconfirmed termination cannot be glossed over")
     if status==CANDIDATE:
+        # IsTokenRestricted tests for restricting SIDs, not deny-only groups.
+        # The source passes RestrictedSidCount=0 deliberately: FALSE is expected
+        # even after CreateRestrictedToken disables Admin SID and privileges.
+        if d["CandidateIsRestricted"] is not False or d["ChildIsRestricted"] is not False:
+            raise ValueError("unexpected restricting SID list")
         if not all((d["SuspendedCreated"], d["ChildTokenRead"],
                     d["ChildTerminationConfirmed"],d["ParentTokenUnchanged"],
                     d["ParentElevated"],d["RestrictedTokenCreated"],
                     d["MediumSetSucceeded"],d["CandidateSameUser"],
-                    d["CandidateSameSession"],d["CandidateIsRestricted"],
-                    d["ChildSameUser"],d["ChildSameSession"],d["ChildIsRestricted"])):
+                    d["CandidateSameSession"],
+                    d["ChildSameUser"],d["ChildSameSession"])):
             raise ValueError("candidate lacks mandatory evidence")
         if any((d["CandidateElevated"],d["ChildElevated"],
                 d["CandidateAdminEnabled"],d["ChildAdminEnabled"])):
