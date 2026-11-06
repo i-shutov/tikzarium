@@ -17,6 +17,7 @@ public sealed class TzLinkedReport {
     public bool ParentElevated {get;set;}
     public int ParentIntegrity {get;set;}
     public int ParentElevationType {get;set;}
+    public int ParentSession {get;set;}
     public string Linked {get;set;} = "UNKNOWN";
     public bool LinkedElevated {get;set;}
     public int LinkedIntegrity {get;set;}
@@ -28,6 +29,9 @@ public sealed class TzLinkedReport {
     public bool ChildElevated {get;set;}
     public int ChildIntegrity {get;set;}
     public bool ChildSameUser {get;set;}
+    public int ChildElevationType {get;set;}
+    public int ChildSession {get;set;}
+    public bool ChildSameSession {get;set;}
     public string TexPdf {get;set;} = "NOT_RUN";
     public bool ApprovedLauncher {get;set;} = false;
     public bool AccountPolicyChanged {get;set;} = false;
@@ -46,6 +50,7 @@ public static class TzLinkedChildProbe {
     struct PROCESSINFO { public IntPtr process,thread; public int pid,tid; }
     [DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
     [DllImport("kernel32.dll",SetLastError=true)] static extern bool CloseHandle(IntPtr h);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern bool ProcessIdToSessionId(uint pid,out uint session);
     [DllImport("kernel32.dll",SetLastError=true)] static extern bool TerminateProcess(IntPtr h,uint code);
     [DllImport("kernel32.dll",SetLastError=true)] static extern uint WaitForSingleObject(IntPtr h,uint ms);
     [DllImport("advapi32.dll",SetLastError=true)]
@@ -108,6 +113,10 @@ public static class TzLinkedChildProbe {
             r.ParentElevated=Integer(parent,20)!=0;
             r.ParentIntegrity=Integrity(parent);
             r.ParentElevationType=Integer(parent,18);
+            uint parentSession;
+            if(!ProcessIdToSessionId((uint)System.Diagnostics.Process.GetCurrentProcess().Id,out parentSession))
+                throw new Win32Exception(Marshal.GetLastWin32Error(),"Parent session query failed");
+            r.ParentSession=(int)parentSession;
             if(!r.ParentElevated && r.ParentIntegrity>=0x1000 && r.ParentIntegrity<0x3000) {
                 r.Status="PARENT_ALREADY_NON_ELEVATED_NO_CHILD";return r;
             }
@@ -159,8 +168,16 @@ public static class TzLinkedChildProbe {
                         r.ChildElevated=Integer(child,20)!=0;
                         r.ChildIntegrity=Integrity(child);
                         r.ChildSameUser=Sid(parent)==Sid(child);
+                        r.ChildElevationType=Integer(child,18);
+                        uint childSession;
+                        if(!ProcessIdToSessionId((uint)pi.pid,out childSession)) {
+                            r.Status="BLOCKED_CHILD_SESSION_QUERY";return r;
+                        }
+                        r.ChildSession=(int)childSession;
+                        r.ChildSameSession=r.ParentSession==r.ChildSession;
                         r.Status=!r.ChildElevated && r.ChildIntegrity>=0x2000 &&
-                            r.ChildIntegrity<0x3000 && r.ChildSameUser
+                            r.ChildIntegrity<0x3000 && r.ChildSameUser &&
+                            r.ChildElevationType==3 && r.ChildSameSession
                             ? "SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED"
                             : "BLOCKED_SUSPENDED_CHILD_NOT_LIMITED";
                         return r;
