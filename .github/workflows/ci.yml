@@ -115,7 +115,9 @@ jobs:
         env:
           SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot '.' -PortableRoot '.qa-artifacts/windows-portable' -OutputDir '.qa-artifacts/windows-trusted-transfer' -ExpectedSha $env:SOURCE_SHA -SourceRunId "$env:GITHUB_RUN_ID"
+          python scripts/tests/test_qa_windows_server_stage_integration.py --source-sha $env:SOURCE_SHA --run-id "$env:GITHUB_RUN_ID"
+          if ($LASTEXITCODE -ne 0) { throw 'Genuine ZIP manifest and tamper regression failed' }
+          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot '.' -PortableRoot '.qa-artifacts/windows-portable' -OutputDir '.qa-artifacts/windows-trusted-transfer' -ExpectedSha $env:SOURCE_SHA -SourceRunId "$env:GITHUB_RUN_ID" -VerificationHost hosted-ci
       - name: Upload independent trusted Windows transfer report (not personal Server acceptance)
         if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@v4
