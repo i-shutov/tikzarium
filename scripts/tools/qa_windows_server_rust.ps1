@@ -29,7 +29,11 @@ try {
     $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
    }
   }
-  if(-not $cargo){throw 'cargo.exe is not installed/visible to this runner user; NO CI auto-install'}
+  if(-not $cargo){
+   $report.rust_tests='NOT_RUN_CARGO_NOT_VISIBLE'
+   $report.release_build='NOT_RUN_CARGO_NOT_VISIBLE'
+   throw 'Cargo unavailable for independent local compilation; exact-main hosted EXE/ZIP verification ran separately. No Rust installation by CI'
+  }
   $report.rust_version=(& rustc.exe --version | Out-String).Trim()
   if($LASTEXITCODE -ne 0){throw 'rustc.exe missing'}
   $env:CARGO_BUILD_JOBS='1'

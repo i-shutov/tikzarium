@@ -1,5 +1,7 @@
 # TikZarium engineering instructions
 
+**OWNER DECISION 2026-11-06: SUPPORT WINDOWS ADMINISTRATOR ACCOUNTS.** The built-in Administrator and other local Administrators-group logons must work without creating a separate non-admin account. Read-only elevation/UAC linked-token and integrity inventory cannot be treated as a privilege-drop implementation. A trusted-main portable native EXE/ZIP downloaded from the same exact successful hosted push-run may be verified on the dedicated personal Windows Server without local Cargo; this is NOT local compilation, MiKTeX PDF or GUI PASS. Do not run elevated XeLaTeX, change UAC or account setup, reinstall MiKTeX/Rust, or touch FlowBridge. See issue #108 and plans/2026-11-06_WINDOWS_ADMIN_SERVER_RELEASE_GATE.md.
+
 **LATEST OWNER DECISION — 2026-11-05: ACTIVE RELEASE WINDOWS x64 FIRST.** Target physical Windows 10 x64 + user-installed MiKTeX/XeLaTeX. Linux 1.0.0-rc.1 on main 4382ca3e remains accepted as RC but physical Linux R4/stable tag is NOT_RUN. Preserve all Linux/macOS code and hosted CI, freeze features. Earlier Linux-first platform order below is historical. Source of current gates: plans/2026-11-05_WINDOWS_X64_RELEASE.md. Never equate hosted Windows 2022 or Windows Server 2025 with physical Windows 10, and never run untrusted PR code on persistent Windows Server.
 
 ## Historical owner decision — 2026-11-04 Linux-first release; superseded by 2026-11-05 Windows x64

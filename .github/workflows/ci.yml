@@ -64,6 +64,11 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Release binary
         run: cargo build --locked --release -p tikzarium-app -p tikzarium-cli
+      - name: Windows read-only administrator token / UAC linked token inventory
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./scripts/tools/qa_windows_admin_token_probe.ps1 -OutputPath '.qa-artifacts/windows-admin-token.json'
       - name: "Windows portable CRT: negative tests and actual release PE imports"
         if: runner.os == 'Windows'
         shell: pwsh
@@ -98,6 +103,22 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Offline Windows ZIP packaging failed' }
           python scripts/qa_windows_portable.py --zip $output --app $app --cli $cli --source-sha $env:SOURCE_SHA --report "$destination/windows-zip-audit.json" --run-extracted-cli
           if ($LASTEXITCODE -ne 0) { throw 'Windows portable ZIP original binary/manifest/actual CLI gate failed' }
+      - name: Test the same independent Windows ZIP stage verifier on real hosted release binaries
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ./scripts/tools/qa_windows_server_stage.ps1 -NativeRoot '.' -PortableRoot '.qa-artifacts/windows-portable' -OutputDir '.qa-artifacts/windows-trusted-transfer' -ExpectedSha $env:SOURCE_SHA -SourceRunId "$env:GITHUB_RUN_ID"
+      - name: Upload Windows token and personal-server transfer QA evidence
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-windows-admin-token-and-transfer
+          path: |
+            .qa-artifacts/windows-admin-token.json
+            .qa-artifacts/windows-trusted-transfer/windows-server-hosted-artifact.json
+          if-no-files-found: warn
       - name: Upload Windows portable ZIP and original audit (NOT Win10 GUI proof)
         if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@v4

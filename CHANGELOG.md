@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-06 — Windows admin token inventory + Cargo-free personal server artifact stage (candidate)
+
+- Treat built-in Administrator as a supported Windows release account. Add read-only native token elevation/integrity/UAC linked-limited-token inventory without spawning any child or changing privileges. Linked token availability is NOT acceptance of a safe XeLaTeX subprocess.
+- Change dedicated personal-server runner trigger from main push to successful **exact-current-main hosted CI workflow_run** (or explicit main SHA/run-ID manual input). Revalidate SHA/branch/run through GitHub API before downloading read-only Actions artifacts; reject PR and stale source.
+- Transfer real hosted Windows EXE/ZIP, independently verify PE roles, exact SHA, full manifest/provenance and original EXE bytes and run extracted **CLI help only**. Local Cargo absence stays independently NOT_RUN; elevated MiKTeX remains fail closed. No installers, hidden TeX/VC-Runtime downloads, UAC/account/registry edits, Linux RC changes or FlowBridge operations.
+- Full exact-head hosted Windows PowerShell/portable verification plus personal-server trusted-main transfer QA PENDING. No Windows Server interactive GUI/physical Windows10/PDF claims. See issue #108 and plans/2026-11-06_WINDOWS_ADMIN_SERVER_RELEASE_GATE.md.
+
 ## 2026-11-06 — Windows portable VC runtime import hardening (candidate)
 
 - New original-binary audit found both Windows GUI and CLI imported VCRUNTIME140.dll, not bundled in the W0 portable ZIP. This is a clean Windows10 first-use risk; no actual missing-DLL failure has been observed on the target.

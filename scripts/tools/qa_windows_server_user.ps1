@@ -28,7 +28,7 @@ try {
   }
   if($report.runner_elevated){
    $report.status='ENVIRONMENT_BLOCKED_ELEVATED'
-   throw 'MiKTeX GUI/PDF QA NOT_RUN: elevated runner token; use a non-admin user session, do not override MiKTeX security'
+   throw 'MiKTeX GUI/PDF QA NOT_RUN: elevated process token. Administrator ACCOUNT is supported; a safe lower-privilege XeLaTeX child is not yet accepted. See read-only UAC token evidence, do not bypass MiKTeX security'
   }
   $engine=$env:TIKZARIUM_XELATEX
   if([string]::IsNullOrWhiteSpace($engine)){
