@@ -248,24 +248,31 @@ public static class TzRestrictedChildProbe {
                             return r;
                         } finally {CloseHandle(child);}
                     } finally {
-                        Stage="TERMINATE_AND_WAIT";
-                        r.ChildTerminateReturned=TerminateProcess(pi.process,0);
-                        r.ChildTerminationError=r.ChildTerminateReturned?0:Marshal.GetLastWin32Error();
-                        r.ChildWaitResult=WaitForSingleObject(pi.process,5000);
-                        r.ChildTerminationConfirmed=r.ChildWaitResult==0;
-                        if(!r.ChildTerminationConfirmed)r.Status="BLOCKED_CHILD_CLEANUP";
-                        CloseHandle(pi.thread);CloseHandle(pi.process);
+                        try {
+                            r.ChildTerminateReturned=TerminateProcess(pi.process,0);
+                            r.ChildTerminationError=r.ChildTerminateReturned?0:Marshal.GetLastWin32Error();
+                            r.ChildWaitResult=WaitForSingleObject(pi.process,5000);
+                            r.ChildTerminationConfirmed=r.ChildWaitResult==0;
+                            if(!r.ChildTerminationConfirmed)r.Status="BLOCKED_CHILD_CLEANUP";
+                        } catch {
+                            Stage="TERMINATE_AND_WAIT";
+                            throw;
+                        } finally {
+                            CloseHandle(pi.thread);CloseHandle(pi.process);
+                        }
                     }
                 } finally {CloseHandle(candidate);}
             } finally {Marshal.FreeHGlobal(admin);}
         } finally {
             // Verify parent token still reports the exact pre-probe security levels.
             try {
-                Stage="VERIFY_PARENT_TOKEN";
                 r.ParentTokenUnchanged=Integer(parent,20)==(r.ParentElevated?1:0)
                     && Integrity(parent)==r.ParentIntegrity
                     && Integer(parent,12)==r.ParentSession;
                 if(!r.ParentTokenUnchanged)r.Status="BLOCKED_PARENT_TOKEN_CHANGED";
+            } catch {
+                Stage="VERIFY_PARENT_TOKEN";
+                throw;
             } finally {CloseHandle(parent);}
         }
     }
