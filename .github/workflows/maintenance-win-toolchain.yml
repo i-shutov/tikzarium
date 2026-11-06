@@ -1,0 +1,65 @@
+name: Personal Windows Cargo and MiKTeX repair
+on:
+  pull_request:
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/maintenance/**', '.github/workflows/maintenance-win-toolchain.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tikzarium-trusted-winserver-main
+  cancel-in-progress: false
+jobs:
+  ps51-selftest:
+    runs-on: windows-2022
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Native stderr and exit-code regression on Windows PowerShell 5.1
+        shell: powershell
+        run: ./scripts/maintenance/test_native_process.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-native-process-test"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: tikzarium-native-ps51-${{ github.run_id }}
+          path: ${{ runner.temp }}/tikzarium-native-process-test/
+  personal-server:
+    needs: ps51-selftest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
+    timeout-minutes: 24
+    steps:
+      - name: Existing Git PATH for this job only
+        shell: powershell
+        run: |
+          $dir='C:\Program Files\Git\cmd'
+          if(-not (Test-Path -LiteralPath "$dir\git.exe")){throw 'Existing Git missing'}
+          [IO.File]::AppendAllText($env:GITHUB_PATH,"$dir`n",(New-Object Text.UTF8Encoding($false)))
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Confirm this is current reviewed main
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $actual=(git rev-parse HEAD).Trim()
+          $headers=@{Authorization="Bearer $env:GH_TOKEN";Accept='application/vnd.github+json';'User-Agent'='Tikzarium-maintenance'}
+          $branch=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers
+          if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA -or $actual -cne $branch.commit.sha){throw 'Current main SHA changed: refusing stale maintenance'}
+      - name: Explicit owner-requested isolated Rust provisioning and read-only MiKTeX diagnosis
+        shell: powershell
+        run: ./scripts/maintenance/repair_toolchain.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-toolchain-repair" -ProvisionRust
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: tikzarium-personal-toolchain-${{ github.run_id }}
+          path: ${{ runner.temp }}/tikzarium-toolchain-repair/
+          if-no-files-found: warn
