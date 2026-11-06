@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
+- Follow-up evidence-driven fix: original hosted Win32 error 5 at `MEASURE_CHILD` exposed `TOKEN_QUERY`-only handle passed to `DuplicateToken` (requires `TOKEN_DUPLICATE`). Request only `QUERY|DUPLICATE`, preserve child-inspection error/cleanup evidence and strengthen negative contracts; still no live child or TeX approval.
 - Subsequent hosted JSON on corrected restricted-SID semantics reported an opaque `BLOCKED_PROBE_EXCEPTION/MethodInvocationException`; instrumented stable stage codes and unwrapped .NET/Win32 exception type/code, with negative validation and cleanup-stage preservation. CI green is not a child-token PASS. All child/TeX release gates remain closed.
 
 - Follow-up PR #116 security review: real hosted JSON exposed `CandidateIsRestricted=false` on a deny-only LUA MEDIUM token. Corrected candidate/child gate and negative contracts to match Microsoft's documented `IsTokenRestricted` semantics (it checks restricting SID lists only); real token elevation, integrity, Admin role and SID/session remain mandatory. The original hosted test did **not** spawn a child; no TeX/desktop approval implied.

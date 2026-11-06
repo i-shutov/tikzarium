@@ -18,7 +18,9 @@ def sample():
         CandidateSameSession=True,CandidateIsRestricted=False,
         SuspendedCreated=True,ChildTokenRead=True,ChildElevated=False,
         ChildIntegrity=8192,ChildAdminEnabled=False,ChildSameUser=True,
-        ChildSameSession=True,ChildIsRestricted=False,ChildTerminationConfirmed=True)
+        ChildSameSession=True,ChildIsRestricted=False,ChildTerminationConfirmed=True,
+        ChildTerminateReturned=True,ChildWaitResult=0,ChildTerminationError=0,
+        ChildTokenOpenError=0)
 
 class SuspendedChildQA(unittest.TestCase):
     def test_candidate_does_not_approve_tex(self):
@@ -38,7 +40,9 @@ class SuspendedChildQA(unittest.TestCase):
             {"ChildElevated":True},{"ChildIntegrity":12288},
             {"ChildAdminEnabled":True},{"ChildSameUser":False},
             {"ChildSameSession":False},{"ChildIsRestricted":True},
-            {"ChildTerminationConfirmed":False},{"Status":"PASS"}):
+            {"ChildTerminationConfirmed":False},
+            {"ChildTerminateReturned":False},{"ChildWaitResult":258},
+            {"ChildTerminationError":5},{"Status":"PASS"}):
             with self.subTest(change=change):
                 x=sample();x.update(change)
                 with self.assertRaises(ValueError):check(x)
@@ -66,13 +70,33 @@ class SuspendedChildQA(unittest.TestCase):
             with self.subTest(change=change):
                 y=copy.deepcopy(x); y.update(change)
                 with self.assertRaises(ValueError):check(y)
+    def test_native_child_inspection_denied_but_cleanup_proven(self):
+        x=sample()
+        x.update(Status="BLOCKED_CHILD_INSPECTION",ChildTokenRead=False,
+                 ChildInspectionStage="MEASURE_CHILD_MEMBERSHIP",
+                 ChildInspectionErrorType="Win32Exception",ChildInspectionErrorCode=5)
+        self.assertTrue(check(x))
+        for change in ({"ChildInspectionStage":"UNKNOWN"},
+                       {"ChildInspectionErrorCode":-1},
+                       {"ChildTerminationConfirmed":False},
+                       {"ChildTokenRead":True}):
+            y=copy.deepcopy(x);y.update(change)
+            with self.subTest(change=change),self.assertRaises(ValueError):check(y)
+        z=sample();z.update(Status="BLOCKED_CHILD_TOKEN_OPEN",
+            ChildTokenRead=False,ChildTokenOpenError=5)
+        self.assertTrue(check(z))
+        z["ChildTokenOpenError"]=0
+        with self.assertRaises(ValueError):check(z)
     def test_source_is_suspended_os_exe_only(self):
         s=Path(__file__).with_name("qa_windows_medium_child_candidate.ps1").read_text("utf-8")
         for value in ("CreateRestrictedToken(", "LUA_TOKEN=4",
                       "LowerToMedium(candidate)", "CreateProcessAsUserW(",
                       "CREATE_SUSPENDED|CREATE_NO_WINDOW",
                       "TerminateProcess(pi.process,0)", "WaitForSingleObject(pi.process,5000)",
-                      "si.desktop=null", "IsTokenRestricted(child)", "ChildTerminationConfirmed"):
+                      "si.desktop=null", "IsTokenRestricted(child)", "ChildTerminationConfirmed",
+                      "OpenProcessToken(pi.process,QUERY|DUPLICATE,out child)",
+                      "Stage=\"MEASURE_CHILD_MEMBERSHIP\"",
+                      "r.ChildTerminationConfirmed=r.ChildTerminateReturned && r.ChildWaitResult==0"):
             self.assertIn(value,s)
         for forbidden in ("ResumeThread(", "xelatex.exe", "SetTokenInformation(parent,",
                           "Start-Process -Verb RunAs", "CreateProcessWithLogonW("):

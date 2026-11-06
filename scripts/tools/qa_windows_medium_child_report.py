@@ -19,7 +19,7 @@ def check(d):
     blocked={"BLOCKED_SESSION0","BLOCKED_PARENT_NOT_HIGH","BLOCKED_RESTRICTED_CREATE",
              "BLOCKED_MEDIUM_SET","BLOCKED_CANDIDATE_FACTS","BLOCKED_SYSTEM_EXE",
              "BLOCKED_CREATEPROCESSASUSER","BLOCKED_CHILD_TOKEN_OPEN",
-             "BLOCKED_CHILD_FACTS","BLOCKED_CHILD_CLEANUP",
+             "BLOCKED_CHILD_FACTS","BLOCKED_CHILD_INSPECTION","BLOCKED_CHILD_CLEANUP",
              "BLOCKED_PARENT_TOKEN_CHANGED","BLOCKED_PROBE_EXCEPTION"}
     if status not in blocked|{CANDIDATE}:
         raise ValueError("unrecognized status")
@@ -39,6 +39,7 @@ def check(d):
         return True
     for k in ("SuspendedCreated","ChildTokenRead","ChildTerminationConfirmed",
               "ParentTokenUnchanged","ParentElevated","RestrictedTokenCreated",
+              "ChildTerminateReturned",
               "MediumSetSucceeded","CandidateElevated","CandidateAdminEnabled",
               "CandidateSameUser","CandidateSameSession","CandidateIsRestricted",
               "ChildElevated","ChildAdminEnabled","ChildSameUser","ChildSameSession",
@@ -49,6 +50,22 @@ def check(d):
             raise ValueError("missing boolean: "+k)
     if d["SuspendedCreated"] and not d["ChildTerminationConfirmed"] and status!="BLOCKED_CHILD_CLEANUP":
         raise ValueError("unconfirmed termination cannot be glossed over")
+    if status=="BLOCKED_CHILD_TOKEN_OPEN":
+        if (not d["SuspendedCreated"] or d["ChildTokenRead"] or
+            type(d.get("ChildTokenOpenError")) is not int or d["ChildTokenOpenError"]<=0):
+            raise ValueError("child token open failure lacks evidence")
+    if status=="BLOCKED_CHILD_INSPECTION":
+        stages={"MEASURE_CHILD_ELEVATION","MEASURE_CHILD_INTEGRITY",
+                "MEASURE_CHILD_MEMBERSHIP","MEASURE_CHILD_IDENTITY",
+                "MEASURE_CHILD_RESTRICTION"}
+        if not d["SuspendedCreated"] or d["ChildTokenRead"] or not d["ChildTerminationConfirmed"]:
+            raise ValueError("child inspection failure lacks cleanup proof")
+        if (d.get("ChildInspectionStage") not in stages or
+            not isinstance(d.get("ChildInspectionErrorType"),str) or
+            not d["ChildInspectionErrorType"] or
+            type(d.get("ChildInspectionErrorCode")) is not int or
+            d["ChildInspectionErrorCode"]<0):
+            raise ValueError("child inspection failure lacks native diagnostics")
     if status==CANDIDATE:
         # IsTokenRestricted tests for restricting SIDs, not deny-only groups.
         # The source passes RestrictedSidCount=0 deliberately: FALSE is expected
@@ -56,7 +73,8 @@ def check(d):
         if d["CandidateIsRestricted"] is not False or d["ChildIsRestricted"] is not False:
             raise ValueError("unexpected restricting SID list")
         if not all((d["SuspendedCreated"], d["ChildTokenRead"],
-                    d["ChildTerminationConfirmed"],d["ParentTokenUnchanged"],
+                    d["ChildTerminationConfirmed"],d["ChildTerminateReturned"],
+                    d["ParentTokenUnchanged"],
                     d["ParentElevated"],d["RestrictedTokenCreated"],
                     d["MediumSetSucceeded"],d["CandidateSameUser"],
                     d["CandidateSameSession"],
@@ -67,6 +85,8 @@ def check(d):
             raise ValueError("elevated/admin candidate")
         if d.get("CandidateIntegrity")!=8192 or d.get("ChildIntegrity")!=8192:
             raise ValueError("not exactly MEDIUM integrity")
+        if d.get("ChildWaitResult")!=0 or d.get("ChildTerminationError")!=0:
+            raise ValueError("child termination outcome not proven")
         if d.get("ParentIntegrity",0)<12288 or d.get("ParentSession",0)==0:
             raise ValueError("invalid parent security/session")
     return True

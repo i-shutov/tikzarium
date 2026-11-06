@@ -31,6 +31,10 @@ public sealed class TzRestrictedChildReport {
     public bool SuspendedCreated {get;set;}
     public int CreateError {get;set;}
     public bool ChildTokenRead {get;set;}
+    public int ChildTokenOpenError {get;set;}
+    public string ChildInspectionErrorType {get;set;} = "";
+    public int ChildInspectionErrorCode {get;set;}
+    public string ChildInspectionStage {get;set;} = "";
     public bool ChildElevated {get;set;}
     public int ChildIntegrity {get;set;}
     public bool ChildAdminEnabled {get;set;}
@@ -229,17 +233,23 @@ public static class TzRestrictedChildProbe {
                     Stage="MEASURE_CHILD";
                     try {
                         IntPtr child=IntPtr.Zero;
-                        if(!OpenProcessToken(pi.process,QUERY,out child)) {
+                        if(!OpenProcessToken(pi.process,QUERY|DUPLICATE,out child)) {
+                            r.ChildTokenOpenError=Marshal.GetLastWin32Error();
                             r.Status="BLOCKED_CHILD_TOKEN_OPEN";return r;
                         }
                         try {
-                            r.ChildTokenRead=true;
+                            Stage="MEASURE_CHILD_ELEVATION";
                             r.ChildElevated=Integer(child,20)!=0;
+                            Stage="MEASURE_CHILD_INTEGRITY";
                             r.ChildIntegrity=Integrity(child);
+                            Stage="MEASURE_CHILD_MEMBERSHIP";
                             r.ChildAdminEnabled=AdminEnabled(child,admin);
+                            Stage="MEASURE_CHILD_IDENTITY";
                             r.ChildSameUser=Sid(parent)==Sid(child);
                             r.ChildSameSession=r.ParentSession==Integer(child,12);
+                            Stage="MEASURE_CHILD_RESTRICTION";
                             r.ChildIsRestricted=IsTokenRestricted(child);
+                            r.ChildTokenRead=true;
                             r.Status=(!r.ChildElevated && r.ChildIntegrity==0x2000 &&
                                 !r.ChildAdminEnabled && r.ChildSameUser &&
                                 r.ChildSameSession && !r.ChildIsRestricted)
@@ -247,12 +257,20 @@ public static class TzRestrictedChildProbe {
                                 : "BLOCKED_CHILD_FACTS";
                             return r;
                         } finally {CloseHandle(child);}
+                    } catch (Exception ex) {
+                        // Retain the genuine child-creation and cleanup evidence on inspection failure.
+                        // No fallback to elevated execution or non-suspended execution is permitted.
+                        r.Status="BLOCKED_CHILD_INSPECTION";
+                        r.ChildInspectionErrorType=ex.GetType().Name;
+                        r.ChildInspectionErrorCode=ex is Win32Exception ? ((Win32Exception)ex).NativeErrorCode : 0;
+                        r.ChildInspectionStage=Stage;
+                        return r;
                     } finally {
                         try {
                             r.ChildTerminateReturned=TerminateProcess(pi.process,0);
                             r.ChildTerminationError=r.ChildTerminateReturned?0:Marshal.GetLastWin32Error();
                             r.ChildWaitResult=WaitForSingleObject(pi.process,5000);
-                            r.ChildTerminationConfirmed=r.ChildWaitResult==0;
+                            r.ChildTerminationConfirmed=r.ChildTerminateReturned && r.ChildWaitResult==0;
                             if(!r.ChildTerminationConfirmed)r.Status="BLOCKED_CHILD_CLEANUP";
                         } catch {
                             Stage="TERMINATE_AND_WAIT";
