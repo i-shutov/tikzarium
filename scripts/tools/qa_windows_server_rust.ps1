@@ -27,8 +27,11 @@ try {
   } catch {
    $report.security='UNKNOWN_TOKEN_PROBE_FAILED'
    $report.token_probe_error=$_.Exception.Message
-   # Native Rust/PE proof is independent of any MiKTeX token condition.
   }
+  # Explicit repair installs Rust in this runner's private cache, not a
+  # machine/user PATH. Load that existing toolchain on EVERY new job.
+  . (Join-Path $PSScriptRoot 'tikzarium_rust_environment.ps1')
+  $report.private_rust_executable=Use-TikzariumPrivateRust
   $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
   if(-not $cargo) {
    $candidate=Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe'
@@ -37,7 +40,7 @@ try {
     $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
    }
   }
-  if(-not $cargo){throw 'cargo.exe is not installed/visible to this runner user; NO CI auto-install'}
+  if(-not $cargo){throw 'cargo.exe is not installed/visible to this runner user or private TikZarium cache; NO CI auto-install'}
   $report.rust_version=(& rustc.exe --version | Out-String).Trim()
   if($LASTEXITCODE -ne 0){throw 'rustc.exe missing'}
   $env:CARGO_BUILD_JOBS='1'
@@ -78,22 +81,18 @@ try {
    & python.exe scripts/qa_windows_crt.py $app $cli
    if($LASTEXITCODE -ne 0){throw 'Windows native release depends on external VC runtime or has invalid PE imports'}
    $report.crt_imports='PASS_NO_DYNAMIC_VCRUNTIME'
-
    $zip=Join-Path $OutputDir 'Tikzarium-Windows-x64-portable-candidate.zip'
    $runUrl="https://github.com/i-shutov/tikzarium/actions/runs/$env:GITHUB_RUN_ID"
    & python.exe scripts/package_n5_preview.py --platform windows10-x64 --app $app --cli $cli --app-sha256 $report.app_sha256 --cli-sha256 $report.cli_sha256 --source-sha $sha --ci-run-url $runUrl --output $zip
    if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $zip -PathType Leaf)){throw 'Portable Windows ZIP packaging FAILED'}
    $report.portable_zip='PASS_PACKAGED_NOT_GUI_TESTED'
    $report.portable_zip_sha256=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-  } else {
-   $report.portable_zip='NOT_RUN_PYTHON_NOT_INSTALLED'
-  }
+  } else {$report.portable_zip='NOT_RUN_PYTHON_NOT_INSTALLED'}
   $report.status='PASS_NATIVE_RUST_AND_PE_NOT_GUI'
   $exitCode=0
  }finally{Pop-Location}
 }catch{
- $report.status='FAIL'
- $report.error=$_.Exception.Message
+ $report.status='FAIL';$report.error=$_.Exception.Message
  Write-Error $report.error -ErrorAction Continue
 }finally{
  $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $OutputDir 'windows-server-rust.json') -Encoding utf8

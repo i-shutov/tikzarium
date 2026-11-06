@@ -9,7 +9,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: tikzarium-trusted-winserver-main
+  # A hosted-only PR selftest must never replace a pending trusted-main job.
+  # Main maintenance remains serialized with the dedicated server QA workflow.
+  group: ${{ github.event_name == 'pull_request' && format('tikzarium-maintenance-pr-{0}', github.event.pull_request.number) || 'tikzarium-trusted-winserver-main' }}
   cancel-in-progress: false
 jobs:
   ps51-selftest:
