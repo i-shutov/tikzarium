@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-06 — Windows native/ZIP stage invocation from relative output path (candidate)
+
+- Fix real hosted Windows verifier failure after successful original/tampered ZIP tests: relative `.qa-artifacts/` became invalid when the script changed into the stage directory before invoking CLI. Canonicalize output and EXE paths before `Push-Location`; reproduce CI's relative path in an independent real Windows process test. Preserve exact source/PE/ZIP/manifest/hash fail-closed checks and no elevated TeX. Exact new-head CI PENDING.
+
 ## 2026-11-06 — Guard external Poppler PDF helpers under elevated Windows parent (candidate)
 
 - Windows Administrator release freeze security: existing direct XeLaTeX guard also prevents Poppler `pdfinfo` and `pdftoppm` processes from inheriting high/elevated token when reading user-controlled PDF bytes. Core preview and GUI page navigation fail closed instead of spawning elevated external PDF parsers; Linux/macOS behaviors remain unchanged.

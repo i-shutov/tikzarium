@@ -11,6 +11,10 @@ param(
 )
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
+# Relative output paths are supported by the hosted CI command. Resolve once,
+# before Push-Location; otherwise a second relative Join-Path is reinterpreted
+# from inside the staged directory and invokes a nonexistent PowerShell module.
+$OutputDir = (Resolve-Path -LiteralPath $OutputDir).Path
 $report=[ordered]@{schema_version=1;status='INCOMPLETE';source_sha=$ExpectedSha
  source_ci_run_id=$SourceRunId;verification_host=$VerificationHost;host_compilation='NOT_RUN'
  external_miktex_pdf='NOT_RUN';interactive_gui='NOT_RUN';physical_windows10='NOT_RUN'}
@@ -110,10 +114,11 @@ try{
  # Never invoke actual TeX with inherited elevated rights.
  $saved=$env:TIKZARIUM_XELATEX
  $env:TIKZARIUM_XELATEX='Z:\tikzarium-external-tex-disabled.exe'
+ $cliExe=(Resolve-Path -LiteralPath (Join-Path $dest 'tikzarium-cli.exe')).Path
  try {
   Push-Location $dest
   try{
-   $stdout=(& (Join-Path $dest 'tikzarium-cli.exe') help tikz.circle 2>&1 | Out-String)
+   $stdout=(& $cliExe help tikz.circle 2>&1 | Out-String)
    $exit=$LASTEXITCODE
   }finally{Pop-Location}
  }finally{$env:TIKZARIUM_XELATEX=$saved}

@@ -45,6 +45,20 @@ def test_original_and_tampered_manifest(native: Path, portable: Path,
         if report.get("verification_host") != "hosted-ci" or report.get("interactive_gui") != "NOT_RUN":
             raise AssertionError("Hosted verifier must never claim personal server or GUI acceptance")
 
+        # The real GitHub Actions invocation passes a RELATIVE OutputDir.
+        # Reproduce that exact execution, not just absolute tempfile paths.
+        with tempfile.TemporaryDirectory(prefix="tikz-stage-rel-", dir=Path.cwd()) as rel_tmp:
+            rel_path = Path(rel_tmp).resolve().relative_to(Path.cwd().resolve()) / "relative-output"
+            relative_run, relative_report = run_stage(
+                script, native, portable, rel_path, sha, run_id
+            )
+            if (relative_run.returncode != 0 or
+                    relative_report.get("status") != "PASS_HOSTED_SELFTEST_EXE_ZIP_NOT_PERSONAL_SERVER_NOT_GUI"):
+                raise AssertionError(
+                    "Relative output directory must preserve original CLI launch: "
+                    f"{relative_run.stderr[-1400:]}, {relative_report}"
+                )
+
         bad = root / "tampered"
         bad.mkdir()
         bad_zip = bad / source_zip.name
