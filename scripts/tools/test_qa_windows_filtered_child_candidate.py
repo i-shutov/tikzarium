@@ -10,11 +10,15 @@ class WindowsLinkedCandidateTests(unittest.TestCase):
         for anchor in ("CreateProcessWithTokenW","CREATE_SUSPENDED",
                        "TokenLinkedToken","whoami.exe","TerminateProcess",
                        "ChildSameUser","ChildIntegrity","ChildElevated",
-                       "ChildElevationType","ChildSameSession","ProcessIdToSessionId",\n                       "ChildTerminationConfirmed","BLOCKED_CHILD_CLEANUP_UNCONFIRMED",\n                       "BLOCKED_SESSION0",
+                       "ChildElevationType","ChildSameSession","ProcessIdToSessionId",
+                       "ChildTerminationConfirmed","BLOCKED_CHILD_CLEANUP_UNCONFIRMED",
+                       "BLOCKED_SESSION0",
                        "SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED",
                        "ApprovedLauncher","TexPdf","NOT_RUN"):
             self.assertIn(anchor,s)
-        self.assertIn("if (!r.ChildTerminationConfirmed)",s)\n        self.assertIn("r.ChildWaitResult==0",s)\n        for forbidden in ("ResumeThread(","SetTokenInformation(","CreateRestrictedToken(",
+        self.assertIn("if (!r.ChildTerminationConfirmed)",s)
+        self.assertIn("r.ChildWaitResult==0",s)
+        for forbidden in ("ResumeThread(","SetTokenInformation(","CreateRestrictedToken(",
                           "xelatex.exe","Start-Process -Verb RunAs","CreateProcessWithLogonW("):
             self.assertNotIn(forbidden,s)
 

@@ -81,7 +81,8 @@ jobs:
           if ($result.Status -eq 'SUSPENDED_LIMITED_CHILD_CANDIDATE_NOT_APPROVED' -and
               ($result.ChildElevated -or -not $result.ChildSameUser -or
                $result.ChildElevationType -ne 3 -or -not $result.ChildSameSession -or
-               $result.ChildIntegrity -lt 8192 -or $result.ChildIntegrity -ge 12288 -or\n               -not $result.ChildTerminationConfirmed)) {
+               $result.ChildIntegrity -lt 8192 -or $result.ChildIntegrity -ge 12288 -or
+               -not $result.ChildTerminationConfirmed)) {
             throw 'Child token claim contradicts actual Windows token fields'
           }
       - name: Check source formatting
