@@ -28,6 +28,7 @@ class WindowsTokenReleaseContract(unittest.TestCase):
         source = (ROOT / "scripts/tools/qa_windows_restricted_token_candidate.ps1").read_text(encoding="utf-8")
         for value in ("CreateRestrictedToken(", "DISABLE_MAX_PRIVILEGE",
                       "BuiltinAdministratorsSid", "CheckTokenMembership",
+                      "DuplicateToken(",
                       "candidate_is_non_elevated", "NO_CHILD_NO_TEX"):
             self.assertIn(value, source)
         for forbidden in ("CreateProcessAsUser(", "CreateProcessWithTokenW(",

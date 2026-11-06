@@ -55,6 +55,9 @@ public static class TikzariumRestrictedTokenDryRun {
         IntPtr removedPrivileges, uint restrictingSidCount,
         IntPtr restrictingSids, out IntPtr restricted);
     [DllImport("advapi32.dll", SetLastError=true)]
+    private static extern bool DuplicateToken(
+        IntPtr existingPrimaryToken, int impersonationLevel, out IntPtr impersonationToken);
+    [DllImport("advapi32.dll", SetLastError=true)]
     private static extern bool CheckTokenMembership(
         IntPtr token, IntPtr sid, out bool isMember);
     [DllImport("advapi32.dll", SetLastError=true)]
@@ -106,11 +109,20 @@ public static class TikzariumRestrictedTokenDryRun {
         } finally { Marshal.FreeHGlobal(memory); }
     }
 
-    private static bool AdminGroupEnabled(IntPtr token, IntPtr sid) {
-        bool member = false;
-        if (!CheckTokenMembership(token, sid, out member))
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Admin token membership query");
-        return member;
+    private static bool AdminGroupEnabled(IntPtr primaryToken, IntPtr sid) {
+        // CheckTokenMembership requires an IMPERSONATION token, not the
+        // primary process/restricted token returned by Windows. Duplicate
+        // the token for this one read-only SID membership query only;
+        // never impersonate the thread or launch a child process.
+        IntPtr impersonation;
+        if (!DuplicateToken(primaryToken, 2, out impersonation))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "DuplicateToken query");
+        try {
+            bool member = false;
+            if (!CheckTokenMembership(impersonation, sid, out member))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Admin token membership query");
+            return member;
+        } finally { CloseHandle(impersonation); }
     }
 
     public static TikzariumRestrictedTokenCandidate Inspect() {
