@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-06 — Windows LUA restricted-token comparison (research draft)
+
+- Disposable hosted Windows now inspects both the prior disabled-admin restricted-token candidate and Microsoft's `DISABLE_MAX_PRIVILEGE | LUA_TOKEN` variant. Captures real elevation, integrity, enabled admin role, same user SID and session; closes token handles without launching children or TeX. No UAC/accounts/registry/MiKTeX/desktop policy changes.
+- Independent strict JSON verifier plus negative/tampered regression suite rejects forged safe-token results and any accidental child/PDF PASS. Even a non-elevated LUA token is not yet a reviewed child launcher, PDF result or security sandbox. Physical Windows Server and Win10 GUI/PDF still NOT_RUN/BLOCKED; Cargo blocker unchanged.
+- Linux RC 1.0.0-rc.1, macOS/Linux CI and FlowBridge isolation preserved.
+
+
 ## 2026-11-06 — Same-administrator Windows UAC linked child candidate (draft)
 
 - Added disposable-hosted-Windows-only native CreateProcessWithTokenW experiment: verify linked token same SID, limited/non-elevated/MEDIUM, create only Windows System32 whoami.exe SUSPENDED, inspect real child token, terminate without resuming; export JSON. Static negative contract and original Windows artifact included.

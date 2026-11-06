@@ -30,12 +30,24 @@ public sealed class TikzariumRestrictedTokenCandidate {
     public int CandidateElevationType { get; set; }
     public int CandidateIntegrityRid { get; set; }
     public bool CandidateAdminGroupEnabled { get; set; }
+    public bool CandidateSameUser { get; set; }
+    public bool CandidateSameSession { get; set; }
+    public int ParentSession { get; set; }
+    public bool LuaTokenCreated { get; set; }
+    public int LuaCreateError { get; set; }
+    public bool LuaElevated { get; set; }
+    public int LuaElevationType { get; set; }
+    public int LuaIntegrityRid { get; set; }
+    public bool LuaAdminGroupEnabled { get; set; }
+    public bool LuaSameUser { get; set; }
+    public bool LuaSameSession { get; set; }
 }
 
 public static class TikzariumRestrictedTokenDryRun {
     const uint TOKEN_DUPLICATE = 0x0002;
     const uint TOKEN_QUERY = 0x0008;
     const uint DISABLE_MAX_PRIVILEGE = 0x0001;
+    const uint LUA_TOKEN = 0x0004; // Microsoft; never use SANDBOX_INERT
 
     [StructLayout(LayoutKind.Sequential)]
     public struct SidAndAttributes {
@@ -63,6 +75,8 @@ public static class TikzariumRestrictedTokenDryRun {
     [DllImport("advapi32.dll", SetLastError=true)]
     private static extern bool GetTokenInformation(
         IntPtr token, int infoClass, IntPtr buffer, int length, out int returned);
+    [DllImport("advapi32.dll", SetLastError=true)]
+    private static extern bool EqualSid(IntPtr a, IntPtr b);
     [DllImport("advapi32.dll", SetLastError=true)]
     private static extern IntPtr GetSidSubAuthorityCount(IntPtr sid);
     [DllImport("advapi32.dll", SetLastError=true)]
@@ -109,6 +123,14 @@ public static class TikzariumRestrictedTokenDryRun {
         } finally { Marshal.FreeHGlobal(memory); }
     }
 
+    private static bool SameUser(IntPtr source, IntPtr candidate) {
+        IntPtr a = ReadBuffer(source, 1); // TokenUser
+        try {
+            IntPtr b = ReadBuffer(candidate, 1);
+            try { return EqualSid(Marshal.ReadIntPtr(a), Marshal.ReadIntPtr(b)); }
+            finally { Marshal.FreeHGlobal(b); }
+        } finally { Marshal.FreeHGlobal(a); }
+    }
     private static bool AdminGroupEnabled(IntPtr primaryToken, IntPtr sid) {
         // CheckTokenMembership requires an IMPERSONATION token, not the
         // primary process/restricted token returned by Windows. Duplicate
@@ -140,21 +162,40 @@ public static class TikzariumRestrictedTokenDryRun {
                 result.ParentElevated = ReadInt(source, 20) != 0;
                 result.ParentIntegrityRid = ReadIntegrityRid(source);
                 result.ParentAdminGroupEnabled = AdminGroupEnabled(source, adminSid);
+                result.ParentSession = ReadInt(source, 12); // TokenSessionId
                 var disabled = new SidAndAttributes { Sid = adminSid, Attributes = 0 };
                 IntPtr restricted;
                 if (!CreateRestrictedToken(source, DISABLE_MAX_PRIVILEGE, 1, ref disabled,
                         0, IntPtr.Zero, 0, IntPtr.Zero, out restricted)) {
                     result.CreateError = Marshal.GetLastWin32Error();
-                    return result;
+                } else {
+                    try {
+                        result.Available = true;
+                        result.CandidateElevated = ReadInt(restricted, 20) != 0;
+                        result.CandidateElevationType = ReadInt(restricted, 18);
+                        result.CandidateIntegrityRid = ReadIntegrityRid(restricted);
+                        result.CandidateAdminGroupEnabled = AdminGroupEnabled(restricted, adminSid);
+                        result.CandidateSameUser = SameUser(source, restricted);
+                        result.CandidateSameSession = ReadInt(restricted, 12) == result.ParentSession;
+                    } finally { CloseHandle(restricted); }
                 }
-                try {
-                    result.Available = true;
-                    result.CandidateElevated = ReadInt(restricted, 20) != 0;
-                    result.CandidateElevationType = ReadInt(restricted, 18);
-                    result.CandidateIntegrityRid = ReadIntegrityRid(restricted);
-                    result.CandidateAdminGroupEnabled = AdminGroupEnabled(restricted, adminSid);
-                    return result;
-                } finally { CloseHandle(restricted); }
+                // Independent volatile LUA variant. API success is never child approval.
+                IntPtr lua;
+                if (!CreateRestrictedToken(source, DISABLE_MAX_PRIVILEGE | LUA_TOKEN, 1,
+                        ref disabled, 0, IntPtr.Zero, 0, IntPtr.Zero, out lua)) {
+                    result.LuaCreateError = Marshal.GetLastWin32Error();
+                } else {
+                    try {
+                        result.LuaTokenCreated = true;
+                        result.LuaElevated = ReadInt(lua, 20) != 0;
+                        result.LuaElevationType = ReadInt(lua, 18);
+                        result.LuaIntegrityRid = ReadIntegrityRid(lua);
+                        result.LuaAdminGroupEnabled = AdminGroupEnabled(lua, adminSid);
+                        result.LuaSameUser = SameUser(source, lua);
+                        result.LuaSameSession = ReadInt(lua, 12) == result.ParentSession;
+                    } finally { CloseHandle(lua); }
+                }
+                return result;
             } finally { Marshal.FreeHGlobal(adminSid); }
         } finally { CloseHandle(source); }
     }
@@ -165,16 +206,34 @@ public static class TikzariumRestrictedTokenDryRun {
   $report.parent_elevated = $t.ParentElevated
   $report.parent_integrity_rid = $t.ParentIntegrityRid
   $report.parent_admin_sid_enabled = $t.ParentAdminGroupEnabled
+  $report.parent_session = $t.ParentSession
   $report.restricted_token_created = $t.Available
   $report.restricted_token_create_error = $t.CreateError
   $report.candidate_elevated = $t.CandidateElevated
   $report.candidate_elevation_type = $t.CandidateElevationType
   $report.candidate_integrity_rid = $t.CandidateIntegrityRid
   $report.candidate_admin_sid_enabled = $t.CandidateAdminGroupEnabled
+  $report.candidate_same_user = $t.CandidateSameUser
+  $report.candidate_same_session = $t.CandidateSameSession
+  $report.lua_token_created = $t.LuaTokenCreated
+  $report.lua_token_create_error = $t.LuaCreateError
+  $report.lua_token_elevated = $t.LuaElevated
+  $report.lua_token_elevation_type = $t.LuaElevationType
+  $report.lua_token_integrity_rid = $t.LuaIntegrityRid
+  $report.lua_token_admin_sid_enabled = $t.LuaAdminGroupEnabled
+  $report.lua_token_same_user = $t.LuaSameUser
+  $report.lua_token_same_session = $t.LuaSameSession
+  $report.lua_token_is_non_elevated = $t.LuaTokenCreated -and -not $t.LuaElevated -and
+      -not $t.LuaAdminGroupEnabled -and $t.LuaSameUser -and $t.LuaSameSession -and
+      $t.LuaIntegrityRid -ge 0x1000 -and $t.LuaIntegrityRid -lt 0x3000
+  $report.lua_status = if ($t.LuaTokenCreated) {
+    'LUA_TOKEN_INSPECTED_NO_CHILD_NO_TEX'
+  } else { 'LUA_TOKEN_UNAVAILABLE_NO_CHILD_NO_TEX' }
   $report.candidate_is_non_elevated = $t.Available -and -not $t.CandidateElevated -and
-      -not $t.CandidateAdminGroupEnabled -and $t.CandidateIntegrityRid -ge 0x1000 -and
+      -not $t.CandidateAdminGroupEnabled -and $t.CandidateSameUser -and $t.CandidateSameSession -and
+      $t.CandidateIntegrityRid -ge 0x1000 -and
       $t.CandidateIntegrityRid -lt 0x3000
-  $report.status = if ($t.Available) {
+  $report.status = if ($t.Available -or $t.LuaTokenCreated) {
     'CANDIDATE_TOKEN_INSPECTED_NO_CHILD_NO_TEX'
   } else {
     'RESTRICTED_TOKEN_NOT_AVAILABLE_NO_CHILD_NO_TEX'

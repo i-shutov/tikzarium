@@ -67,7 +67,12 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          python -m unittest discover -s scripts/tools -p test_qa_windows_restricted_report.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Restricted/LUA token negative contract tests failed' }
           ./scripts/tools/qa_windows_restricted_token_candidate.ps1 -OutputPath '.qa-artifacts/windows-restricted-token-candidate.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Restricted/LUA native Win32 probe failed' }
+          python scripts/tools/qa_windows_restricted_report.py '.qa-artifacts/windows-restricted-token-candidate.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Restricted/LUA report classification inconsistent' }
       - name: Same-admin UAC-linked suspended-child candidate (hosted only; NO TeX)
         if: runner.os == 'Windows'
         shell: pwsh
