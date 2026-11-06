@@ -9,6 +9,18 @@ $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 . (Join-Path $PSScriptRoot 'native_process.ps1')
 $report=[ordered]@{status='INCOMPLETE';source_sha=$env:GITHUB_SHA;scope='FIXED_REVIEWED_MAINTENANCE_FIXTURE_ONLY';production_elevated_guard='UNCHANGED';gui='NOT_RUN';shell_escape='DISABLED';package_install='DISABLED';warning_suppression=$false;physical_windows10='NOT_RUN'}
 $exit=1
+. (Join-Path $PSScriptRoot 'tex_launch_gate.ps1')
+$texGate=Get-TikzariumMaintenanceTexGate
+$report.tex_token_gate=$texGate.status
+$report.tex_token_elevated=$texGate.token_is_elevated
+$report.tex_token_integrity_rid=$texGate.token_integrity_rid
+$report.tex_token_session_id=$texGate.session_id
+if($texGate.status -cne 'ELIGIBLE_NON_ELEVATED_TOKEN'){
+  $report.status='ENVIRONMENT_BLOCKED_ELEVATED_OR_UNKNOWN'
+  $report | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $OutputDir 'miktex-fixed-fixture.json') -Encoding UTF8
+  Write-Host 'MiKTeX fixed fixture NOT_RUN: process token not verified non-elevated MEDIUM'
+  exit 3
+}
 try {
  $input=Join-Path $PSScriptRoot 'trusted-compiler-smoke.tex'
  $expected='c281d346bc7f99abc205c337efff0215958fa1eba2affa5790b295a62f24a1a8'
