@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 — Windows token Win32 ERROR_BAD_LENGTH hardening (PR #110 candidate)
+
+- Original exact-head Windows D QA and hosted MiKTeX artifacts expose code-24 ERROR_BAD_LENGTH in TikZarium CLI's token guard; direct hosted MiKTeX PDF does not establish app/CLI PDF success.
+- Fix the Rust TokenElevation GetTokenInformation buffer-length argument to use the exact required length (4 bytes), not the aligned 8-byte allocation capacity; preserve fail-closed semantics and add a live native Windows token query test. New-HEAD Windows CI, original outputs and safe child/PDF remain PENDING. No account/UAC policy change or elevated TeX bypass.
+
 ## 2026-11-06 — Windows administrator token safety, W1 candidate (NOT MERGED)
 
 - Owner requires same local Administrators-group account (including built-in Administrator) in both ordinary/asInvoker and elevated GUI runs; no separate account. Group membership, process TokenElevation, integrity RID, UAC linked-token presence and session now have independent, read-only Windows diagnostics.
