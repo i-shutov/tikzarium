@@ -50,6 +50,8 @@ public sealed class TzRestrictedChildReport {
     public bool AccountPolicyChanged {get;set;} = false;
 }
 public static class TzRestrictedChildProbe {
+    // Diagnostic stage is metadata ONLY; no account names, paths, or credentials.
+    public static string Stage {get; private set;} = "OPEN_PARENT_TOKEN";
     const uint QUERY=0x8, DUPLICATE=0x2, ASSIGN_PRIMARY=0x1, ADJUST_DEFAULT=0x80;
     const uint CREATE_SUSPENDED=0x4, CREATE_NO_WINDOW=0x08000000;
     const uint DISABLE_MAX_PRIVILEGE=1, LUA_TOKEN=4, SE_GROUP_INTEGRITY=0x20;
@@ -178,6 +180,7 @@ public static class TzRestrictedChildProbe {
                 Marshal.Copy(bytes,0,admin,bytes.Length);
                 var disabled=new SidAndAttributes {Sid=admin,Attributes=0};
                 IntPtr candidate=IntPtr.Zero;
+                Stage="CREATE_RESTRICTED_TOKEN";
                 if(!CreateRestrictedToken(parent,DISABLE_MAX_PRIVILEGE|LUA_TOKEN,1,ref disabled,
                         0,IntPtr.Zero,0,IntPtr.Zero,out candidate)) {
                     r.RestrictedCreateError=Marshal.GetLastWin32Error();
@@ -185,9 +188,11 @@ public static class TzRestrictedChildProbe {
                 }
                 r.RestrictedTokenCreated=true;
                 try {
+                    Stage="LOWER_TO_MEDIUM";
                     r.MediumSetError=LowerToMedium(candidate);
                     r.MediumSetSucceeded=r.MediumSetError==0;
                     if(!r.MediumSetSucceeded) {r.Status="BLOCKED_MEDIUM_SET";return r;}
+                    Stage="MEASURE_CANDIDATE";
                     r.CandidateElevated=Integer(candidate,20)!=0;
                     r.CandidateIntegrity=Integrity(candidate);
                     r.CandidateAdminEnabled=AdminEnabled(candidate,admin);
@@ -206,12 +211,14 @@ public static class TzRestrictedChildProbe {
                     // Real suspended process creation, NEVER thread resume. System32 OS
                     // executable is not allowed to run even one user-mode instruction.
                     // No handles inherited and no interactive WinSta0 desktop requested.
+                    Stage="FIND_SYSTEM_EXECUTABLE";
                     string cwd=Environment.GetFolderPath(Environment.SpecialFolder.System);
                     string exe=Path.Combine(cwd,"whoami.exe");
                     if(!File.Exists(exe)) {r.Status="BLOCKED_SYSTEM_EXE";return r;}
                     var si=new STARTUPINFO();si.cb=Marshal.SizeOf(typeof(STARTUPINFO));
                     si.desktop=null;
                     PROCESSINFO pi;
+                    Stage="CREATE_PROCESS_AS_USER";
                     if(!CreateProcessAsUserW(candidate,exe,new StringBuilder("\""+exe+"\""),
                         IntPtr.Zero,IntPtr.Zero,false,CREATE_SUSPENDED|CREATE_NO_WINDOW,
                         IntPtr.Zero,cwd,ref si,out pi)) {
@@ -219,6 +226,7 @@ public static class TzRestrictedChildProbe {
                         r.Status="BLOCKED_CREATEPROCESSASUSER";return r;
                     }
                     r.SuspendedCreated=true;
+                    Stage="MEASURE_CHILD";
                     try {
                         IntPtr child=IntPtr.Zero;
                         if(!OpenProcessToken(pi.process,QUERY,out child)) {
@@ -240,6 +248,7 @@ public static class TzRestrictedChildProbe {
                             return r;
                         } finally {CloseHandle(child);}
                     } finally {
+                        Stage="TERMINATE_AND_WAIT";
                         r.ChildTerminateReturned=TerminateProcess(pi.process,0);
                         r.ChildTerminationError=r.ChildTerminateReturned?0:Marshal.GetLastWin32Error();
                         r.ChildWaitResult=WaitForSingleObject(pi.process,5000);
@@ -252,6 +261,7 @@ public static class TzRestrictedChildProbe {
         } finally {
             // Verify parent token still reports the exact pre-probe security levels.
             try {
+                Stage="VERIFY_PARENT_TOKEN";
                 r.ParentTokenUnchanged=Integer(parent,20)==(r.ParentElevated?1:0)
                     && Integrity(parent)==r.ParentIntegrity
                     && Integer(parent,12)==r.ParentSession;
@@ -265,9 +275,17 @@ Add-Type -TypeDefinition $source -ErrorAction Stop
 try {
     $r = [TzRestrictedChildProbe]::Run()
 } catch {
+    # PowerShell wraps C# exceptions in MethodInvocationException.
+    # Preserve the underlying TYPE/CODE and a fixed-stage code, no secrets or paths.
+    $root = $_.Exception
+    while ($null -ne $root.InnerException) { $root = $root.InnerException }
+    $nativeCode = 0
+    if ($root -is [System.ComponentModel.Win32Exception]) { $nativeCode = $root.NativeErrorCode }
     $r = [pscustomobject]@{
         Status = 'BLOCKED_PROBE_EXCEPTION'
-        ErrorType = $_.Exception.GetType().Name
+        ErrorType = $root.GetType().Name
+        NativeErrorCode = [int]$nativeCode
+        ProbeStage = [TzRestrictedChildProbe]::Stage
         TexPdf = 'NOT_RUN'
         ApprovedLauncher = $false
         AccountPolicyChanged = $false
