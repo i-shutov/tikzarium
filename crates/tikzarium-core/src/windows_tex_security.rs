@@ -83,7 +83,13 @@ mod native {
         let capacity = (buffer.len() * word) as u32;
         // SAFETY: writable, pointer-aligned owned buffer of at least requested size.
         if unsafe {
-            GetTokenInformation(token, class, buffer.as_mut_ptr().cast(), capacity, &mut size)
+            GetTokenInformation(
+                token,
+                class,
+                buffer.as_mut_ptr().cast(),
+                capacity,
+                &mut size,
+            )
         } == 0
         {
             return Err(io::Error::last_os_error());
@@ -137,8 +143,12 @@ mod tests {
     #[test]
     fn full_elevated_high_and_unknown_tokens_fail_closed() {
         for (elevated, rid) in [
-            (true, 0x2000), (true, 0x3000), (false, 0x3000),
-            (false, 0x4000), (false, 0), (false, 0x800),
+            (true, 0x2000),
+            (true, 0x3000),
+            (false, 0x3000),
+            (false, 0x4000),
+            (false, 0),
+            (false, 0x800),
         ] {
             assert!(check_tex_privilege(elevated, rid).is_err());
         }
