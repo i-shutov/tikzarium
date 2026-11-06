@@ -409,6 +409,11 @@ impl Control {
             "note":"real production egui handlers in a virtual context; no OS window"})
     }
     fn click(&mut self, pos: Pos2, modifiers: Modifiers) -> Value {
+        // egui routes pointer events using the previous frame's layer order.
+        // A floating palette opened on release needs one pointer-hover frame
+        // before it can receive an independent synthetic press. Never invoke
+        // the semantic command directly as a fallback for a missed click.
+        self.frame(vec![Event::PointerMoved(pos)], modifiers);
         self.frame(
             vec![
                 Event::PointerMoved(pos),
@@ -432,7 +437,10 @@ impl Control {
                 },
             ],
             modifiers,
-        )
+        );
+        // Return the settled coordinates (the click itself was already
+        // delivered to the production egui Response handler).
+        self.frame(vec![], modifiers)
     }
     fn handle(&mut self, req: &Value) -> Result<Value, String> {
         let op = string(req, "op")?;
@@ -475,7 +483,16 @@ impl Control {
                     position(req, "pos", self.dpi)?
                 };
                 let modifiers = Modifiers::default();
-                self.click(pos, modifiers)
+                let output = self.click(pos, modifiers);
+                // The test API must not claim an action succeeded merely
+                // because egui returned a nonempty widget rectangle.
+                if let Some(name) = req.get("target").and_then(Value::as_str)
+                    && let Some(tool_name) = name.strip_prefix("tool.")
+                    && self.authoring.active.map(Tool::id) != Some(tool_name)
+                {
+                    return Err(format!("virtual click did not activate production tool: {name}"));
+                }
+                output
             }
             "input.pointer" => {
                 let pos = position(req, "pos", self.dpi)?;
