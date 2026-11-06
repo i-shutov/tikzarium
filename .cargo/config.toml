@@ -1,0 +1,4 @@
+# Windows x64 portable: do not require a separately installed Visual C++ runtime.
+# Keep external user MiKTeX/XeLaTeX; Linux/macOS flags unchanged.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

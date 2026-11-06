@@ -122,6 +122,7 @@ def readme(platform: str, sha: str, ci_url: str) -> bytes:
 
 - Linux x86_64: внешний XeLaTeX (TeX Live), системные графические библиотеки; бинарник не содержит TeX.
 - Windows 10 x64: установленный самим пользователем MiKTeX/XeLaTeX.
+- Windows portable: релизная проверка PE import table запрещает зависимость от внешнего VCRUNTIME/MSVCP; это не подтверждение физического запуска.
 - macOS Apple Silicon M1/M4: установленный самим пользователем внешний XeLaTeX.
 - Poppler (pdftoppm, pdffonts, pdftotext) нужен для соответствующих функций/проверок.
 - Файл .tex требует доступный DejaVu Serif. Пользовательские шрифты и TeX в архив НЕ включены.
