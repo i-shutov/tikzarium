@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-06 — Hosted restricted MEDIUM suspended-child process feasibility (research draft)
+
+- Disposable Windows CI: derive temporary same-account LUA restricted MEDIUM token; attempt suspended-only System32 whoami child via CreateProcessAsUserW, read actual child primary token, terminate+wait, no ResumeThread/TeX, no inherited handles or interactive desktop request. Record exact errors and keep desktop ACL and process isolation unapproved.
+- Independent strict JSON and negative tests reject forged elevated/admin/SID/session/integrity/termination/PDF evidence. A process creation result is only research, never a secure XeLaTeX launcher or Server/Win10 GUI/PDF PASS.
+
+
 ## 2026-11-06 — Temporary MEDIUM LUA-token setter research (candidate)
 
 - Disposable hosted Windows only: create a third ephemeral LUA restricted token, attempt MEDIUM integrity using SetTokenInformation on that handle alone and re-read elevation, SID, integrity and session; close handles, no child/TeX/parent-token or UAC change.

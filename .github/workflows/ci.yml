@@ -73,6 +73,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Restricted/LUA native Win32 probe failed' }
           python scripts/tools/qa_windows_restricted_report.py '.qa-artifacts/windows-restricted-token-candidate.json'
           if ($LASTEXITCODE -ne 0) { throw 'Restricted/LUA report classification inconsistent' }
+      - name: Same-admin MEDIUM restricted suspended-child feasibility (hosted only, NO TeX)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tools -p test_qa_windows_medium_child_report.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'MEDIUM child negative contracts failed' }
+          ./scripts/tools/qa_windows_medium_child_candidate.ps1 -OutputPath '.qa-artifacts/windows-medium-child-candidate.json'
+          if ($LASTEXITCODE -ne 0) { throw 'MEDIUM child native probe failed' }
+          python scripts/tools/qa_windows_medium_child_report.py '.qa-artifacts/windows-medium-child-candidate.json'
+          if ($LASTEXITCODE -ne 0) { throw 'MEDIUM child claims contradict actual tokens' }
       - name: Same-admin UAC-linked suspended-child candidate (hosted only; NO TeX)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -171,6 +181,7 @@ jobs:
             .qa-artifacts/windows-token.json
             .qa-artifacts/windows-restricted-token-candidate.json
             .qa-artifacts/windows-filtered-child-candidate.json
+            .qa-artifacts/windows-medium-child-candidate.json
           if-no-files-found: error
       - name: Upload macOS ARM64 binaries
         if: runner.os == 'macOS'
