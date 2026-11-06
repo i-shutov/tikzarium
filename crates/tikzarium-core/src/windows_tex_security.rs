@@ -72,7 +72,7 @@ mod native {
         let mut size: u32 = 0;
         // SAFETY: Win32 documented size query with null output.
         unsafe { GetTokenInformation(token, class, ptr::null_mut(), 0, &mut size) };
-        if size < 4 || size > 8192 {
+        if !(4..=8192).contains(&size) {
             return Err(io::Error::other(format!(
                 "Cannot size Windows token information class {class}: {}",
                 io::Error::last_os_error()
