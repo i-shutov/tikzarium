@@ -315,9 +315,22 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
+        # Full-paragraph parameter help was compacted into the ⓘ popup.
+        # Independently reviewed original PR #128 X11 screenshot puts Node x
+        # TextEdit at (1052..1133, 499..519), not the old y=560.
+        click(found, 1080, 509)  # Actual selected Node x TextEdit in Properties dock.
         key("ctrl+a")
         paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
+        # Verify focus / real native TextEdit contents BEFORE clicking pinned Apply:
+        # a misplaced click must fail with precise geometry instead of an
+        # unexplained 'source patch not persisted' regression.
+        click(found, 1080, 509)
+        key("ctrl+a")
+        key("ctrl+c")
+        actual_draft = run("xclip", "-selection", "clipboard", "-o")
+        if actual_draft != "10.50cm":
+            raise RuntimeError(
+                f"Native Inspector Node x field not focused at (1080,509): {actual_draft!r}")
         screenshot(out, "28b-inspector-draft-only")
         click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
         if source.read_bytes() != inspector_before:
