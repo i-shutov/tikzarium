@@ -33,6 +33,11 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'PE imports include forbidden dependencies'}
           python -c "from pathlib import Path; import sys; sys.path.insert(0,'scripts'); from package_n5_preview import WIN,check_binary; check_binary(Path('target/release/tikzarium-app.exe').read_bytes(),WIN,role='app')"
           if($LASTEXITCODE -ne 0){throw 'Native GUI must be Windows subsystem 2'}
+      - name: Stage hash-pinned Mesa llvmpipe OpenGL next to CI-only test EXE
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_hosted_mesa_software_gl.ps1 -AppDirectory 'target/release' -EvidenceDirectory '.qa-artifacts/hosted-native-gui'
+      # This is NOT part of a portable release package or a physical Windows test.
       - name: Win32 preflight negative contracts
         shell: powershell
         run: |
