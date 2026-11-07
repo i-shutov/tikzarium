@@ -42,9 +42,12 @@ jobs:
       - name: Real native GUI window and F1 in disposable Windows session
         continue-on-error: true
         shell: powershell
+        env:
+          EXPECTED_PR_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          $env:GITHUB_SHA=(& git.exe rev-parse HEAD | Out-String).Trim()
-          ./scripts/tools/qa_windows_hosted_native_gui.ps1 -OutputDir '.qa-artifacts/hosted-native-gui'
+          $actual=(& git.exe rev-parse HEAD | Out-String).Trim()
+          if($actual -cne $env:EXPECTED_PR_SHA){throw 'Exact reviewed PR head checkout mismatch'}
+          ./scripts/tools/qa_windows_hosted_native_gui.ps1 -OutputDir '.qa-artifacts/hosted-native-gui' -ExpectedSha $env:EXPECTED_PR_SHA
       - name: Negative PNG/source/physical-claim audit and actual original evidence
         shell: pwsh
         run: |
