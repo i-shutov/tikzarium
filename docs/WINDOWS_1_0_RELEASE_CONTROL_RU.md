@@ -12,23 +12,23 @@
 
 ## 2. Ворота W0–W4 — только проверяемые факты
 
-| Gate | Фактический статус на основном коммите 4b79d71a05dfc1a116d67c040d21b8502ad7fc3e | Доказательство / остаток |
+| Gate | Фактический статус на основном коммите b761a37f1872d13dd5d866ff2d68ac8b8aa60989 | Доказательство / остаток |
 | --- | --- | --- |
 | **W0 Windows PE/portable** | **PASS hosted** | [Main CI #42382400325](https://github.com/i-shutov/tikzarium/actions/runs/42382400325): PE GUI subsystem2, CLI subsystem3, нет VCRUNTIME/MSVCP import, native/portable SHA, manifest, extracted CLI. Это **не Windows10 физическая**. |
 | **W1 personal Windows Server Rust + MiKTeX** | **PASS** | [Original Server #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) и [artifact #13579401001](https://github.com/i-shutov/tikzarium/actions/runs/42382753629/artifacts/13579401001): HIGH Administrator, native Rust/PE/CLI, original external XeLaTeX PDF. |
-| **W2 physical Server desktop** | **PARTIAL / BLOCKED_FOREGROUND_NOT_OWNED** | RDP Session2 WTSActive=0, WinSta0/Default, временная SHA-pinned Mesa прошла; реальный GUI PID4060, HWND 1194×718, DPI120. Но foreground принадлежит другому окну; F1 и client-only PNG **NOT_RUN**, полный GUI workflow **не принят**. |
+| **W2 physical Server desktop** | **PARTIAL / BLOCKED_FOREGROUND_NOT_OWNED** | До PR #130 — RDP Session2 WTSActive=0, WinSta0/Default, Mesa и реальный GUI PID4060/HWND 1194×718/DPI120, но чужой foreground. На точном `main` `b761a37f` [run #42397730682](https://github.com/i-shutov/tikzarium/actions/runs/42397730682) — **`NO_FOREGROUND_WINDOW`** после 10 попыток. Оригинальные F1/client PNG и полный W2 **NOT_RUN**. SUCCESS Actions не является W2 PASS. |
 | **W3 physical Windows10 x64** | **NOT_RUN** | Нужны отдельные реальные OS/GPU/MiKTeX/GUI/IME/DPI/native dialogs + full source→PDF испытания на Windows10; Server2025/hosted2022 не заменяют. |
 | **W4 Installer/stable 1.0** | **BLOCKED** | Никакого релизного тега/установщика до W2+W3, исходных SHA, окончательных инструкций, теста clean install/uninstall. |
 
-Исходный W2 JSON и ZIP SHA256: `2ed2dd579fb3fbcaa0b2f4ff0fedc331cb75d7e6fde3a8274aeca88c7c8b1f01`. W2 step имеет continue-on-error; SUCCESS Actions — **не** GUI PASS.
+Исторический W2 JSON и ZIP SHA256: `2ed2dd579fb3fbcaa0b2f4ff0fedc331cb75d7e6fde3a8274aeca88c7c8b1f01`. Новый [run #42397730682](https://github.com/i-shutov/tikzarium/actions/runs/42397730682), original artifact `13585625182`, подтвердил блокер `NO_FOREGROUND_WINDOW`; исходный JSON надо читать независимо. W2 step имеет continue-on-error; SUCCESS Actions — **не** GUI PASS.
 
 ## 3. Очередность работ до выпуска — без расширения функций
 
 ### W2a. Предоставить владение foreground собственному HWND
 
-Состояние RDP, OpenGL и GUI уже подтверждены, возвращаться к «нет Cargo/MiKTeX/RDP» нельзя. Текущий код `SetForegroundWindow` не получил foreground из фонового Windows runner. Этот релизный PR предлагает ограниченную активацию **только принадлежащего TikZarium HWND**: проверить PID, WTSActive, unlocked Default; сначала обычный SetForegroundWindow; при необходимости временно связать input threads **только внутри той же session**, вызвать BringWindowToTop для своего окна, гарантированно detach в finally. После попытки повторно удостовериться, что GetForegroundWindow равен **тому же** HWND. Любой чужой PID, другой session, недоступный desktop или timeout → BLOCKED; никаких чужих PNG и SendKeys.
+Состояние RDP, OpenGL и GUI уже подтверждены, возвращаться к «нет Cargo/MiKTeX/RDP» нельзя. Текущий код `SetForegroundWindow` не получил foreground из фонового Windows runner. Принятый PR #130 добавил ограниченную активацию **только принадлежащего TikZarium HWND**: проверить PID, WTSActive, unlocked Default; сначала обычный SetForegroundWindow; при необходимости временно связать input threads **только внутри той же session**, вызвать BringWindowToTop для своего окна, гарантированно detach в finally. После попытки повторно удостовериться, что GetForegroundWindow равен **тому же** HWND. Любой чужой PID, другой session, недоступный desktop или timeout → BLOCKED; никаких чужих PNG и SendKeys.
 
-Это **КАНДИДАТ**, не готовый W2 PASS. Сначала Windows/macOS/Linux exact-head CI и Windows PowerShell5.1 tests, затем reviewed expected-head merge и **только trusted-main** персональный Windows runner. Владелец сохраняет свой RDP-сеанс активным/разблокированным и при необходимости вручную нажимает на **окно TikZarium**, если Windows foreground lock не разрешит автоматическую активацию. Не менять UAC.
+PR #130 **уже объединён**, его exact-main CI прошёл, но последующий personal run #42397730682 дал `NO_FOREGROUND_WINDOW`; W2 **не принят**. Следующая узкая QA-поправка проверяет нулевой foreground, используя только собственный GUI-поток того же сеанса/Default, временный `AttachThreadInput`, гарантированный detach и обязательное повторное сравнение HWND. Никакого вмешательства в чужое окно/рабочий стол, изменения UAC либо ложно-зелёного W2. Сначала Windows/macOS/Linux exact-head CI и PowerShell5.1 selftests, затем review/expected-head merge и **только trusted-main** персональный Windows runner. Владелец сохраняет свой RDP-сеанс активным/разблокированным и при необходимости вручную нажимает на **окно TikZarium**, если Windows foreground lock не разрешит автоматическую активацию. Не менять UAC.
 
 ### W2b. Вся вертикаль GUI, а не только окно и F1
 
