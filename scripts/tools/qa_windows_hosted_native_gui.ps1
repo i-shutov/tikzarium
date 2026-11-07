@@ -31,7 +31,9 @@ if($SelfTest){
  return
 }
 if([string]::IsNullOrWhiteSpace($OutputDir)){throw '-OutputDir required'}
-if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_OS -cne 'Windows'){throw 'GitHub-hosted Windows runner only; NEVER execute on personal Server'}
+if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_OS -cne 'Windows' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted'){
+ throw 'Strictly disposable github-hosted Windows only. Never execute on a self-hosted or personal runner.'
+}
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 $report=[ordered]@{
