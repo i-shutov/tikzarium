@@ -816,7 +816,14 @@ fn parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -
                 .rect;
         }
     });
-    ui.small(&p.help_ru);
+    // Help remains accessible on demand and via F1, without a full paragraph
+    // after EACH property row on a compact 1366×768 editor viewport.
+    ui.menu_button("ⓘ", |ui| {
+        ui.set_max_width(330.0);
+        ui.label(&help);
+    })
+    .response
+    .on_hover_text("Пояснение параметра из общего TikZ-каталога · F1");
     control_rect
 }
 
@@ -869,8 +876,8 @@ pub fn show_inspector(
     caps: Capabilities,
 ) -> Option<usize> {
     let mut jump = None;
-    ui.heading("TikZ · параметры и справка");
-    ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
+    ui.strong("Параметры TikZ");
+    ui.small("Параметры из общего каталога · F1 для подробностей.");
     ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
         ui.small(format!(
             "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · GUI-инструмент=реализован · справка=доступна",
@@ -911,7 +918,8 @@ pub fn show_inspector(
         let info = tikz_authoring::spec(tool);
         ui.separator();
         ui.strong(&info.title_ru);
-        ui.label(&info.help_ru);
+        ui.add(egui::Label::new(&info.help_ru).truncate())
+            .on_hover_text(&info.help_ru);
         let import_state = tikz_authoring::requirements_status(source, tool);
         let loaded = import_state == tikzarium_extensions::primitives::Evidence::Confirmed;
         ui.small(format!(
@@ -983,18 +991,9 @@ pub fn show_inspector(
             } else {
                 ui.small("Параметры совпадают с исходником; новой правки нет.");
             }
-            if ui
-                .add_enabled(
-                    pending,
-                    egui::Button::new("Применить параметры · изменить только эту команду"),
-                )
-                .clicked()
-            {
-                match session.apply_parameters(source) {
-                    Ok(line) => jump = Some(line),
-                    Err(error) => session.status = error,
-                }
-            }
+            // The single authoritative Apply action is pinned above inspector
+            // scrolling in both Studio and classic Split modes. Do not repeat
+            // a second action after the parameter list below the fold.
         } else if ui
             .add_enabled(
                 caps.source_authoring_supported() && loaded,
@@ -1106,6 +1105,35 @@ mod tests {
             },
         );
         jump
+    }
+
+    #[test]
+    fn compact_parameter_help_reduces_rows_without_changing_draft_or_source() {
+        let source = EVENT_SOURCE.to_owned();
+        let mut value = String::from("12.5cm");
+        let original = value.clone();
+        let parameter = tikz_authoring::spec(Tool::Circle)
+            .parameter.iter().find(|p| p.id == "radius").unwrap();
+        let ctx = egui::Context::default();
+        let mut row_height = 0.0;
+        let mut actual_field = Rect::NOTHING;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(360.0, 600.0))),
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let before = ui.cursor().top();
+                    actual_field = parameter_control(ui, parameter, &mut value);
+                    row_height = ui.cursor().top() - before;
+                });
+            },
+        );
+        assert!(actual_field.is_positive(), "editor field must remain editable");
+        assert!(row_height < 52.0, "help paragraph must not consume additional row: {row_height}");
+        assert_eq!(value, original);
+        assert_eq!(source, EVENT_SOURCE);
     }
 
     #[test]
