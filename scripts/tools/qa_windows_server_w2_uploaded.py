@@ -68,7 +68,15 @@ def validate(root: Path, expected_sha: str) -> dict:
     status = report['status']
     if status == PARTIAL:
         assert report['preflight'] == 'ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS'
-        assert report['window_screenshot'] == 'CAPTURED_OWN_GUI_NOT_MANUALLY_REVIEWED'
+        assert report['window_screenshot'] == 'CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
+        assert report['capture_method'] == 'WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ'
+        client = report['client_area']
+        window = report['window']
+        assert 640 <= client['width'] <= window['width'] <= 10000
+        assert 360 <= client['height'] <= window['height'] <= 10000
+        assert client['left'] >= window['left'] and client['top'] >= window['top']
+        assert report['client_sample_colors'] >= 8
+        assert report['client_unpainted_samples'] == 0
         assert report['window']['visible'] is True
         assert report['window']['owner_pid'] == report['pid']
         assert 'TikZarium' in report['window']['title']
@@ -79,15 +87,17 @@ def validate(root: Path, expected_sha: str) -> dict:
         first = root / 'w2-interactive/real-window-before-f1.png'
         assert first.is_file()
         assert sha256(first) == report['first_png_sha256']
-        assert png_size(first) == (report['window']['width'], report['window']['height'])
+        assert png_size(first) == (client['width'], client['height'])
         if report['f1'] == 'KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW':
             second = root / 'w2-interactive/real-window-after-f1.png'
             assert second.is_file()
             assert sha256(second) == report['second_png_sha256']
             assert png_size(second) == png_size(first)
+            assert sha256(second) != sha256(first), 'F1 did not change client image'
         assert report.get('child_terminated') is True
     elif status.startswith('BLOCKED_'):
         assert report.get('error'), 'Blocked state must include reason'
+        assert report['window_screenshot'] == 'NOT_RUN', 'Blocked W2 cannot claim client screenshot'
     else:
         raise ValueError(f'Unrecognized W2 status: {status}')
     return {'status':status,'source_sha':expected_sha,
