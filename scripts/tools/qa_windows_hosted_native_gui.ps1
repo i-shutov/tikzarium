@@ -31,7 +31,7 @@ if($SelfTest){
  return
 }
 if([string]::IsNullOrWhiteSpace($OutputDir)){throw '-OutputDir required'}
-if($ExpectedSha -cnotmatch '^[a-f0-9]{40}
+if($ExpectedSha.Length -ne 40 -or $ExpectedSha -match '[^0-9a-f]'){throw 'Expected exact 40-character lower-hex SHA'}
 if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_OS -cne 'Windows' -or $env:RUNNER_ENVIRONMENT -cne 'github-hosted'){
  throw 'Strictly disposable github-hosted Windows only. Never execute on a self-hosted or personal runner.'
 }
