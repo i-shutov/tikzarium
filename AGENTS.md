@@ -1,5 +1,8 @@
 # TikZarium engineering instructions
 
+**ACTIVE RELEASE RULE (2026-11-07):** Windows 10 x64 v1.0 first, freeze features. [W0–W4 GO/NO-GO](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md); [79 root causes/solutions](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). Main 4b79d71a: W0/W1 PASS; personal W2 RDP native HWND visible but FG/F1 original PNG still BLOCKED; physical W3 NOT_RUN and installer W4 BLOCKED. Current HIGH Administrator allowed with persistent warning, no new accounts/UAC/MiKTeX changes. Release PR only adds a bounded same-session owned-HWND foreground candidate, never weakening desktop/PID/PNG capture checks. All later dated notes are historical.
+
+
 ## LATEST OWNER CORRECTION — 2026-11-06, foreground Administrator/Cargo blockers
 
 The owner explicitly requires working under their existing Administrator account and directs us to fix the artificial blockers. **Ordinary same-current-user XeLaTeX/PDF-tool execution, including HIGH/elevated Administrator, is supported.** The earlier blanket no-elevated-TeX / mandatory filtered-child launcher policy below is superseded, not an OS or MiKTeX restriction. Never force elevation or change UAC, registry, accounts, system MiKTeX, fonts or FlowBridge. Keep actual token facts, visible privilege warnings, disabled shell escape, offline/no automatic package installation, bounded and cancellable children. This is NOT an OS sandbox: use trusted documents when running elevated. Unknown/SYSTEM execution contexts remain separately unsupported.

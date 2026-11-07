@@ -1,5 +1,8 @@
 # Development and runtime prerequisites — owner-corrected
 
+**LATEST RELEASE STATUS (2026-11-07):** Windows 1.0 first. Current main 4b79d71a has W0 hosted native/ZIP PASS, W1 personal Server current-user MiKTeX PDF PASS, W2 actual RDP visible native HWND @125% but foreground/F1/PNG BLOCKED, physical Windows10 W3 NOT_RUN, installer/stable W4 BLOCKED. Existing HIGH Administrator is supported with visible trusted-document warning; old non-admin/HIGH restrictions below are historical, not release gates. [Canonical W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) · [79 problems/solutions](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
+
+
 Updated 2026-10-31. TikZarium uses TeX; it does not include or reimplement it.
 
 ## Runtime on Windows 10 x64

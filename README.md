@@ -1,13 +1,13 @@
 # TikZarium
 
-> **ACTIVE FIRST RELEASE — Windows 10 x64 (owner decision, 2026-11-05):** Native Rust/egui with independently user-installed MiKTeX/XeLaTeX, starting with exact-SHA portable Windows ZIP + real PE GUI/CLI role, then non-admin interactive Windows Server QA and separately a physical Windows 10 six-gesture GUI→TeX→PDF smoke. The Windows hosted build does not prove a Win10 GUI. FREEZE FEATURES, no TeX/font installs, no premature installer. [Current acceptance plan](plans/2026-11-05_WINDOWS_X64_RELEASE.md).
+> **АКТУАЛЬНАЯ ПЕРВАЯ ЦЕЛЬ 2026-11-07 — Windows 10 x64, features frozen.** Main 4b79d71a: W0 native PE/ZIP и W1 personal Server Rust/MiKTeX PDF PASS; W2 physical Server имеет WTSActive и видимый HWND PID4060 @125%, но BLOCKED_FOREGROUND_NOT_OWNED (F1/client PNG/full GUI NOT_RUN); физическая Win10 W3 NOT_RUN, installer/stable W4 BLOCKED. HIGH/current Administrator разрешён владельцем с предупреждением «только trusted TeX, не sandbox». Старый blanket HIGH-ban/обязательный non-admin отменён. [Релизный контроль](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md); [79 технических проблем и решений](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
 
 > **Historical Linux release progress (retained, not today's platform priority):** R1 safe close, R2 200%-DPI bounds and R3 genuine GTK/XDG Open/Save/Export are accepted on main 4f3a2ebb using hosted X11. The versioned **1.0.0-rc.1** portable candidate uses the identical GUI-tested ELF and its own manifest/SHA256 and Russian first-use guide. **NOT stable 1.0**: physical Ubuntu24/x86_64/X11 desktop R4 remains NOT_RUN. See [issue #103](https://github.com/i-shutov/tikzarium/issues/103), [R4 runbook](docs/LINUX_1_0_PHYSICAL_QA_RU.md), and [R5 plan](plans/2026-11-05_LINUX_1_0_R5_RC.md). Old N5 Preview instructions below refer to the previous, not versioned RC.
 
 
 **Cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
 
-**Status (2026-11-05):** the six native TikZ primitives, source/canvas/inspector Studio UI, Russian help/catalogue, libraries, CRLF-preserving source actions and B43 responsive/long-line editing have passed hosted **real Linux/X11** QA on the accepted main branch. The Linux 1.0.0-rc.1 is retained as a versioned release candidate, **not a physically qualified/stable Linux desktop release**. The reproducible native package and its extracted X11 startup passed on main. The active first-release gate is now Windows 10 x64 + the user's independently installed MiKTeX; physical Windows GUI, DPI/dialogs/usability, six gestures and Unicode/embedded-font PDF remain to be observed. Linux physical R4 stays NOT_RUN. Wayland/other distributions and physical Windows 10/Mac M1/M4 remain `NOT_RUN` unless separately evidenced.
+**Status (2026-11-07):** W0/W1 PASS, W2 RDP HWND/F1 foreground blocked, W3 physical Win10 NOT_RUN, W4 release BLOCKED. Windows-first feature freeze; Linux 1.0.0-rc.1 retained without physical R4. The current release gate and root-cause ledger are linked above.
 
 ## Current user workflow
 
@@ -65,7 +65,8 @@ Do not let the app install packages silently or enable XeLaTeX `-shell-escape` b
 
 ## Engineering, docs and evidence
 
-- [Current owner decision — Linux first](plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md)
+- [**CURRENT Windows 1.0 release GO/NO-GO**](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md), [**79 incident/remediation classes**](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md)
+- [Historic Linux-first owner decision (superseded)](plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md)
 - [Product requirements](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md)
 - [N5 native portable plan](plans/2026-11-05_LINUX_N5_PORTABLE_RELEASE.md), [packaging QA/evidence](insights/2026-11-05_LINUX_N5_PORTABLE_QA.md)
 - [Developer prerequisites](docs/DEV_SETUP.md), [QA acceptance](docs/QA_ACCEPTANCE.md), [extensions](docs/EXTENSIONS.md), [contributor instructions](AGENTS.md)
