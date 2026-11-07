@@ -68,6 +68,19 @@ def validate(root: Path, expected_sha: str) -> dict:
     status = report['status']
     if status == PARTIAL:
         assert report['preflight'] == 'ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS'
+        # Software GL is an evidence-scoped experiment, not a shipped renderer.
+        gl = report.get('gl_renderer')
+        assert gl in ('SYSTEM_GL_UNMODIFIED', 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT')
+        if gl == 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT':
+            expected = 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
+            assert report['gl_archive_sha256'] == expected
+            manifest = json.loads((root / 'w2-mesa-software-gl-provenance.json').read_text(encoding='utf-8-sig'))
+            assert manifest['status'] == 'PASS_TEMPORARY_PINNED_TEST_ONLY'
+            assert manifest['source_sha'] == expected_sha
+            assert manifest['archive_sha256'] == expected
+            assert manifest['app_sha256'] == report['app_sha256']
+            assert manifest['no_system_install'] is True and manifest['no_product_distribution'] is True
+            assert manifest['dll_count'] >= 2
         assert report['window_screenshot'] == 'CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
         assert report['capture_method'] == 'WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ'
         client = report['client_area']
