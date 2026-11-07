@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-07 — Windows 1.0 canonical release docs and real RDP foreground candidate
+
+- Added a single [Windows 1.0 W0–W4 release GO/NO-GO](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md) and [79 incident classes/root-cause remediations](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). Historic contradictory HIGH/non-admin instructions explicitly superseded, no Linux/Mac releases falsely qualified.
+- Current main 4b79d71a: W0 native PE/ZIP and W1 personal Rust/XeLaTeX PDF PASS; W2 [server #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) active WTS/default desktop, pinned Mesa test-only and visible owned GUI PID4060 @125%; strict foreground gate BLOCKED, no personal F1 or client PNG. Physical Win10 W3 and installer/stable W4 NOT_RUN/BLOCKED.
+- W2 foreground candidate: bounded activation of same PID-owned native HWND, optional same-session temporary input-queue attachment, mandatory detach in finally, strict actual foreground check before client PrintWindow and F1. Not physically accepted until exact-head CI, merge and original RDP evidence. No product GUI renderer changes, no global OpenGL/TeX/UAC/FlowBridge changes.
+
+
 ## 2026-11-07 — W2 personal Windows Server real GUI probe (candidate, NOT full acceptance)
 - Added a trusted-main-only PowerShell 5.1 native egui app/window probe: verifies exact SHA, independently measured session/WinSta0/Default, active WTS connection/unlocked input desktop, owned visible GUI PID, title, geometry and DPI before capturing original window PNG and sending actual F1. Refuses foreign/locked desktop capture; terminates only its own child. No TeX/install/account/UAC changes.
 - Separate disposable-hosted original-artifact SHA/PNG/dimension validation and eight negative tests reject forged full W2/physical Win10 PASS, wrong source/PID and screenshot tampering. Seven Windows PS5.1 synthetic preflight cases added.

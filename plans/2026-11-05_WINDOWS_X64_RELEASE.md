@@ -1,5 +1,8 @@
 # Windows x64 release priority — 2026-11-05
 
+**SUPERSEDED CURRENT-STATUS HEADER — 2026-11-07:** Historical investigations below are retained as a research trail, not active GO/NO-GO. [Canonical current Windows 1.0 release control](../docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md) and [79 technical incidents/fixes](../docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). W0/W1 PASS, W2 active RDP GUI foreground BLOCKED, physical Windows10 W3 NOT_RUN, W4 installer/stable BLOCKED. Older HIGH-token ban/new-account demands were superseded by the owner on 2026-11-06.
+
+
 **CURRENT OWNER OVERRIDE 2026-11-06:** Current-user XeLaTeX/Poppler under existing Administrator, including HIGH token, is permitted with a persistent visible GUI warning. This replaces the earlier blanket HIGH-token prohibition and mandatory restricted-child launcher in historical sections below. Retain MiKTeX warning/exit information, shell escape off, offline/no auto packages, bounded/cancellable children; do not change token, UAC, registry or accounts. W1 is actual trusted-main product CLI→installed MiKTeX→Unicode/embedded-font PDF on personal Server; W2 real interactive Server GUI; W3 separate physical Win10; W4 installer/stable. Authority issue #108 comment 6695354140 and plans/2026-11-06_OWNER_ADMIN_BLOCKER_CORRECTION.md. Hosted PR CI is not W1–W3 acceptance.
 
 **2026-11-06 hosted-only research candidate:** after MEDIUM LUA-token readback, inspect an actual SUSPENDED system-owned child process under the same restricted token, never resume or run TeX, require observed child-token fields/termination; forbid security/PDF PASS. No personal Server PR execution. See insights/2026-11-06_WINDOWS_MEDIUM_RESTRICTED_CHILD_PROBE.md.
