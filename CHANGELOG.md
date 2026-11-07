@@ -1,8 +1,8 @@
 # Changelog
 
 ## 2026-11-07 — W2 personal Windows Server real GUI probe (candidate, NOT full acceptance)
-- Added a trusted-main-only PowerShell 5.1 native egui app/window probe: verifies exact SHA, independently measured session/WinSta0/Default, owned visible GUI PID, title, geometry and DPI before capturing original window PNG and sending actual F1. Refuses foreign/locked desktop capture; terminates only its own child. No TeX/install/account/UAC changes.
-- Separate disposable-hosted original-artifact SHA/PNG/dimension validation and seven negative tests reject forged full W2/physical Win10 PASS, wrong source/PID and screenshot tampering. Five Windows PS5.1 synthetic preflight cases added.
+- Added a trusted-main-only PowerShell 5.1 native egui app/window probe: verifies exact SHA, independently measured session/WinSta0/Default, active WTS connection/unlocked input desktop, owned visible GUI PID, title, geometry and DPI before capturing original window PNG and sending actual F1. Refuses foreign/locked desktop capture; terminates only its own child. No TeX/install/account/UAC changes.
+- Separate disposable-hosted original-artifact SHA/PNG/dimension validation and eight negative tests reject forged full W2/physical Win10 PASS, wrong source/PID and screenshot tampering. Seven Windows PS5.1 synthetic preflight cases added.
 - A blocked or partial W2 probe never substitutes for six gestures, native dialogs, IME, DPI200, source Save/Open or GUI-origin PDF. Existing W0/W1 product-CLI proof remains separate; W2/W3 NOT_RUN and installer/stable W4 BLOCKED until physical acceptance.
 
 ## 2026-11-07 — Windows Administrator owner correction (PR #121, pre-merge candidate)
