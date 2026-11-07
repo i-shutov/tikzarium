@@ -1,0 +1,70 @@
+name: Hosted Windows native egui HWND and F1 (not W2 or W3)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-hosted-window:
+    name: Disposable native Win32 HWND/F1 and independent PNG evidence
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Native reviewed GUI release, PE2 and CRT integrity
+        shell: powershell
+        run: |
+          & cargo.exe build --locked --release -p tikzarium-app
+          if($LASTEXITCODE -ne 0){throw 'Windows GUI release build failed'}
+          python scripts/qa_windows_crt.py target/release/tikzarium-app.exe
+          if($LASTEXITCODE -ne 0){throw 'PE imports include forbidden dependencies'}
+          python -c "from pathlib import Path; import sys; sys.path.insert(0,'scripts'); from package_n5_preview import WIN,check_binary; check_binary(Path('target/release/tikzarium-app.exe').read_bytes(),WIN,role='app')"
+          if($LASTEXITCODE -ne 0){throw 'Native GUI must be Windows subsystem 2'}
+      - name: Stage hash-pinned Mesa llvmpipe OpenGL next to CI-only test EXE
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_hosted_mesa_software_gl.ps1 -AppDirectory 'target/release' -EvidenceDirectory '.qa-artifacts/hosted-native-gui'
+      # This is NOT part of a portable release package or a physical Windows test.
+      - name: Win32 preflight negative contracts
+        shell: powershell
+        run: |
+          # A PowerShell script returning normally does not reset LASTEXITCODE.
+          # Rely on terminating assertion errors, not a stale native-process code.
+          ./scripts/tools/qa_windows_hosted_native_gui.ps1 -SelfTest
+      - name: Real native GUI window and F1 in disposable Windows session
+        continue-on-error: true
+        shell: powershell
+        env:
+          EXPECTED_PR_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          $actual=(& git.exe rev-parse HEAD | Out-String).Trim()
+          if($actual -cne $env:EXPECTED_PR_SHA){throw 'Exact reviewed PR head checkout mismatch'}
+          ./scripts/tools/qa_windows_hosted_native_gui.ps1 -OutputDir '.qa-artifacts/hosted-native-gui' -ExpectedSha $env:EXPECTED_PR_SHA
+      - name: Negative PNG/source/physical-claim audit and actual original evidence
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tools -p 'test_qa_windows_hosted_gui_audit.py' -v
+          if($LASTEXITCODE -ne 0){throw 'Hosted GUI audit unit tests failed'}
+          $sha=(git rev-parse HEAD).Trim()
+          python scripts/tools/qa_windows_hosted_gui_audit.py --root '.qa-artifacts/hosted-native-gui' --source-sha $sha
+          if($LASTEXITCODE -ne 0){throw 'Hosted original HWND/PNG evidence FAILED'}
+      - name: Upload original hosted Win32/PNG evidence (not physical)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-hosted-win32-gui-evidence
+          path: .qa-artifacts/hosted-native-gui/
+          if-no-files-found: error
