@@ -1,7 +1,7 @@
 # W2 personal Windows Server: first original interactive GUI evidence, not full W2 PASS.
 # Only exact trusted-main GUI; no TeX, installs, privilege or account changes.
 [CmdletBinding()]
-param([string]$OutputDir,[switch]$SelfTest)
+param([string]$OutputDir,[switch]$SelfTest,[string]$StagedGuiExe)
 $ErrorActionPreference='Stop'
 
 function Get-W2PreflightStatus([int]$SessionId,[string]$WindowStation,[string]$Desktop,[bool]$TokenKnown,[bool]$SessionActive,[string]$InputDesktop) {
@@ -60,6 +60,36 @@ try {
  $appSha=(Get-FileHash -LiteralPath $appExe -Algorithm SHA256).Hash.ToLowerInvariant()
  if($appSha -cne $rust.app_sha256){throw 'W2 GUI SHA differs from tested native release'}
  $report.app_sha256=$appSha
+ # Optional, hash-verified software-OpenGL overlay is scoped to this GitHub
+ # RUNNER_TEMP only. It must never replace the tested EXE or ship as a product.
+ if(-not [string]::IsNullOrWhiteSpace($StagedGuiExe)){
+  if(-not $env:RUNNER_TEMP -or -not $env:GITHUB_RUN_ID){
+   throw 'W2 staged executable requires current GitHub runner temp/run ID'
+  }
+  $expected=Join-Path (Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)) 'bin\tikzarium-app.exe'
+  if([IO.Path]::GetFullPath($StagedGuiExe) -cne [IO.Path]::GetFullPath($expected)){
+   throw 'W2 staged EXE path must stay inside current private runner overlay'
+  }
+  $provenancePath=Join-Path $OutputDir 'w2-mesa-software-gl-provenance.json'
+  if(-not (Test-Path -LiteralPath $provenancePath -PathType Leaf) -or
+     -not (Test-Path -LiteralPath $StagedGuiExe -PathType Leaf)){
+   throw 'W2 pinned Mesa provenance or private staged GUI missing'
+  }
+  $mesa=Get-Content -LiteralPath $provenancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+  if($mesa.status -cne 'PASS_TEMPORARY_PINNED_TEST_ONLY' -or
+     $mesa.source_sha -cne $actual -or $mesa.app_sha256 -cne $appSha -or
+     $mesa.archive_sha256 -cne 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388' -or
+     $mesa.dll_count -lt 2 -or
+     -not $mesa.no_system_install -or -not $mesa.no_product_distribution){
+   throw 'W2 temporary software-OpenGL original evidence is not qualified'
+  }
+  if((Get-FileHash -LiteralPath $StagedGuiExe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $appSha){
+   throw 'W2 test Mesa GUI EXE differs from tested native release'
+  }
+  $appExe=$StagedGuiExe
+  $report.gl_renderer='PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
+  $report.gl_archive_sha256=$mesa.archive_sha256
+ } else { $report.gl_renderer='SYSTEM_GL_UNMODIFIED' }
  $token=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
  $report.token=$token;$report.session_id=$token.session_id
  $os=Get-CimInstance Win32_OperatingSystem
@@ -139,7 +169,11 @@ public static class TikzariumW2Win32 {
   if($appProcess.MainWindowTitle -notlike '*TikZarium*'){continue}
   $handle=$candidate;$report.window_probe=$i;break
  }
- if($handle -eq [IntPtr]::Zero){$report.status='BLOCKED_NO_VISIBLE_OWNED_WINDOW';throw 'No genuine visible TikZarium window within 40s'}
+ if($handle -eq [IntPtr]::Zero){
+  $report.status='BLOCKED_NO_VISIBLE_OWNED_WINDOW'
+  $report.window_probe_result=if($appProcess.HasExited){'EXITED_BEFORE_OWNED_HWND'}else{'NO_VISIBLE_HWND_AFTER_POLL'}
+  throw 'No genuine visible TikZarium window or process exited before HWND'
+ }
  $rect=New-Object TikzariumW2Rect
  if(-not [TikzariumW2Win32]::GetWindowRect($handle,[ref]$rect)){throw 'GetWindowRect failed'}
  $width=$rect.Right-$rect.Left;$height=$rect.Bottom-$rect.Top

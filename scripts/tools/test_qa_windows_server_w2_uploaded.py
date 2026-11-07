@@ -37,6 +37,7 @@ class W2AuditTests(unittest.TestCase):
             window={'visible':True,'owner_pid':200,'title':'TikZarium','width':1180,'height':680,'left':90,'top':98},
             client_area={'left':100,'top':131,'width':1164,'height':646},
             capture_method='WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ',
+            gl_renderer='SYSTEM_GL_UNMODIFIED',
             client_sample_colors=16,client_unpainted_samples=0,
             window_station='WinSta0',desktop='Default',input_desktop='Default',wts_connection_state=0,session_id=2,pid=200,
             f1='BLOCKED_FOCUS_LOST_AFTER_KEY',child_terminated=True,
@@ -48,6 +49,29 @@ class W2AuditTests(unittest.TestCase):
 
     def test_valid_partial_remains_not_run(self):
         self.assertEqual(self.verify()['full_w2_qualification'],'NOT_RUN')
+    def test_reject_unknown_gl_provenance_on_personal_server(self):
+        self.report['gl_renderer']='UNKNOWN_GPU_APPROVED'
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_reject_claimed_temporary_mesa_without_original_report(self):
+        self.report['gl_renderer']='PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
+        self.report['gl_archive_sha256']='da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
+        with self.assertRaises(FileNotFoundError): self.verify()
+
+    def test_accept_exact_mesa_provenance_but_never_full_w2(self):
+        self.report['gl_renderer']='PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
+        expected='da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
+        self.report['gl_archive_sha256']=expected
+        manifest=dict(status='PASS_TEMPORARY_PINNED_TEST_ONLY',source_sha='a'*40,
+                      archive_sha256=expected,app_sha256='b'*64,
+                      no_system_install=True,no_product_distribution=True,dll_count=19)
+        self.report['app_sha256']='b'*64
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        self.assertEqual(self.verify()['full_w2_qualification'],'NOT_RUN')
+        manifest['no_product_distribution']=False
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_reject_screen_copy_pretext(self):
         self.report['capture_method']='COPYFROMSCREEN_OUTER_HWND'
         with self.assertRaises(AssertionError): self.verify()
