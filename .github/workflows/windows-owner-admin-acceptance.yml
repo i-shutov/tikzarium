@@ -33,6 +33,11 @@ jobs:
       - name: Windows real-desktop preflight negative cases (synthetic only)
         shell: powershell
         run: ./scripts/tools/qa_windows_server_interactive.ps1 -SelfTest
+      - name: W2 uploaded-evidence negative regressions on hosted Windows
+        shell: pwsh
+        run: |
+          python -m unittest discover -s scripts/tools -p 'test_qa_windows_server_w2_uploaded.py' -v
+          if($LASTEXITCODE -ne 0){throw 'W2 fake-physical-PASS negative evidence tests FAILED'}
       - name: Format and actual Windows core token regressions
         shell: pwsh
         run: |
