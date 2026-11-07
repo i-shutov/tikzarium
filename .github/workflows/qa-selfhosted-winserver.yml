@@ -136,6 +136,14 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
+      - name: Real native interactive GUI / F1 screenshot probe (W2 partial only)
+        # This must never imply W2 acceptance from session number or CI job success.
+        # Keep W1 PDF proof independent if RDP is disconnected or desktop locked.
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
       - name: Upload honest evidence including failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
