@@ -29,7 +29,13 @@ $actual=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvar
 if($actual -cne $expected){throw "Pinned Mesa3D GitHub release SHA mismatch: $actual"}
 & $seven x $archive "-o$unpacked" -y | Out-Null
 if($LASTEXITCODE -ne 0){throw 'Cannot extract verified Mesa3D archive'}
-$all=@(Get-ChildItem -LiteralPath $unpacked -File -Recurse -Filter 'opengl32.dll')
+$files=@(Get-ChildItem -LiteralPath $unpacked -File -Recurse)
+$sample=@($files | Select-Object -First 45 | ForEach-Object {$_.FullName.Substring($unpacked.Length).TrimStart([char]'\')})
+Write-Host ('MESA_EXTRACTED_TOTAL_FILES=' + $files.Count)
+Write-Host ('MESA_EXTRACTED_SAMPLE=' + ($sample -join ' ; '))
+$diagnostic=[ordered]@{archive_sha256=$actual;release='Mesa 26.2.6 MSVC';file_count=$files.Count;sample_paths=$sample;raw_software_gl='NOT_YET_VALIDATED'}
+$diagnostic | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'mesa-extraction-diagnostic.json') -Encoding UTF8
+$all=@($files | Where-Object {$_.Name -ieq 'opengl32.dll'})
 $gl=@($all | Where-Object {$_.FullName -match '(?i)[\\/](x64|x86_64)[\\/]' -and $_.FullName -notmatch '(?i)[\\/]debug[\\/]'})
 if($gl.Count -ne 1){throw "Expected exactly one Mesa MSVC x64 opengl32.dll; found $($gl.Count) of $($all.Count)"}
 $mega=Join-Path $gl[0].Directory.FullName 'libgallium_wgl.dll'
