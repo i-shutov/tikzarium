@@ -128,23 +128,52 @@ jobs:
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-runtime"
           export LIBGL_ALWAYS_SOFTWARE=1
           export EVIDENCE="$RUNNER_TEMP/n5-linux"
-          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
+          xvfb-run -a -e "$EVIDENCE/xvfb-errors.log" -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
             openbox --sm-disable > "$EVIDENCE/openbox.log" 2>&1 &
+            wm_pid=$!
+            # The window manager and the GUI were previously started at once.
+            # Do not mistake a transient unmapped X11 window for a product failure.
+            for i in $(seq 1 12); do
+              if wmctrl -m > "$EVIDENCE/wm-status.txt" 2>&1 && grep -q "^Name: Openbox" "$EVIDENCE/wm-status.txt"; then break; fi
+              sleep 1
+            done
+            grep -q "^Name: Openbox" "$EVIDENCE/wm-status.txt" || {
+              echo "N5: Openbox did not become ready before app launch" >&2
+              exit 1
+            }
             cd "$EVIDENCE/extracted/Tikzarium-preview"
             ./launch.sh > "$EVIDENCE/native-launch.log" 2>&1 &
             app_pid=$!
-            trap "kill $app_pid 2>/dev/null || true" EXIT
+            trap "kill $app_pid $wm_pid 2>/dev/null || true" EXIT
             : > "$EVIDENCE/visible-window.txt"
+            : > "$EVIDENCE/window-probe-status.txt"
             for i in $(seq 1 30); do
+              # Preserve independent X11/WM/process facts even on failure.
+              wmctrl -lG > "$EVIDENCE/wmctrl-windows.txt" 2>&1 || true
+              if command -v xwininfo >/dev/null 2>&1; then
+                xwininfo -root -tree > "$EVIDENCE/x11-window-tree.txt" 2>&1 || true
+              else
+                echo "xwininfo not installed" > "$EVIDENCE/x11-window-tree.txt"
+              fi
+              ps -o pid,ppid,stat,etime,%cpu,%mem,cmd -p "$app_pid" > "$EVIDENCE/app-process.txt" 2>&1 || true
               if ! kill -0 "$app_pid" 2>/dev/null; then
-                echo "Packaged release app exited before window appeared" >&2
+                echo "N5: packaged release app exited before window appeared at probe $i" >&2
+                cat "$EVIDENCE/app-process.txt" >&2 || true
                 exit 1
               fi
               xdotool search --onlyvisible --name "TikZarium" > "$EVIDENCE/visible-window.txt" 2>/dev/null || true
-              if test -s "$EVIDENCE/visible-window.txt"; then break; fi
+              if test -s "$EVIDENCE/visible-window.txt"; then
+                echo "VISIBLE_WINDOW_PROBE=$i" > "$EVIDENCE/window-probe-status.txt"
+                break
+              fi
               sleep 1
             done
-            test -s "$EVIDENCE/visible-window.txt"
+            if ! test -s "$EVIDENCE/visible-window.txt"; then
+              echo "N5: app still alive but no verified visible X11 window after 30 probes" >&2
+              cat "$EVIDENCE/app-process.txt" "$EVIDENCE/wm-status.txt" >&2 || true
+              tail -n 30 "$EVIDENCE/x11-window-tree.txt" >&2 || true
+              exit 1
+            fi
             window_id="$(head -n1 "$EVIDENCE/visible-window.txt")"
             xdotool getwindowgeometry --shell "$window_id" > "$EVIDENCE/window-geometry.txt"
             # Original N5 screenshot was a visible but clipped 1366x768 client
@@ -408,6 +437,12 @@ jobs:
             ${{ runner.temp }}/n5-linux/visible-window.txt
             ${{ runner.temp }}/n5-linux/native-launch.log
             ${{ runner.temp }}/n5-linux/openbox.log
+            ${{ runner.temp }}/n5-linux/xvfb-errors.log
+            ${{ runner.temp }}/n5-linux/wm-status.txt
+            ${{ runner.temp }}/n5-linux/wmctrl-windows.txt
+            ${{ runner.temp }}/n5-linux/x11-window-tree.txt
+            ${{ runner.temp }}/n5-linux/app-process.txt
+            ${{ runner.temp }}/n5-linux/window-probe-status.txt
             ${{ runner.temp }}/n5-linux/png-size.txt
             ${{ runner.temp }}/n5-linux/cli-help.txt
             ${{ runner.temp }}/n5-linux/openbox-full.log
