@@ -30,6 +30,9 @@ jobs:
       - name: Python-independent PE parser positive and negative cases
         shell: powershell
         run: ./scripts/tools/test_windows_native_pe.ps1
+      - name: Windows real-desktop preflight negative cases (synthetic only)
+        shell: powershell
+        run: ./scripts/tools/qa_windows_server_interactive.ps1 -SelfTest
       - name: Format and actual Windows core token regressions
         shell: pwsh
         run: |
@@ -86,6 +89,12 @@ jobs:
           --root .qa-server-original
           --source-sha "$EXPECTED_SOURCE_SHA"
           --fixture examples/windows-cyrillic.tex
+      - name: Re-audit original uploaded W2 real-window evidence (never claim full W2)
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python3 -m unittest discover -s scripts/tools -p 'test_qa_windows_server_w2_uploaded.py'
+          python3 scripts/tools/qa_windows_server_w2_uploaded.py --root .qa-server-original --source-sha "$EXPECTED_SOURCE_SHA"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -96,5 +105,8 @@ jobs:
             .qa-server-original/pdffonts.txt
             .qa-server-original/pdftotext.txt
             .qa-server-original/product-pdf-preview.png
+            .qa-server-original/windows-server-w2-interactive.json
+            .qa-server-original/independent-w2-window-audit.json
+            .qa-server-original/w2-interactive/
             .qa-server-original/owner-admin-proof/
           if-no-files-found: warn
