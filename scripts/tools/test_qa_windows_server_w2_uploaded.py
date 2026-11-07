@@ -27,7 +27,7 @@ class W2AuditTests(unittest.TestCase):
             preflight='ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS',
             window_screenshot='CAPTURED_OWN_GUI_NOT_MANUALLY_REVIEWED',
             window={'visible':True,'owner_pid':200,'title':'TikZarium','width':1180,'height':680},
-            window_station='WinSta0',desktop='Default',session_id=2,pid=200,
+            window_station='WinSta0',desktop='Default',input_desktop='Default',wts_connection_state=0,session_id=2,pid=200,
             f1='BLOCKED_FOCUS_LOST_AFTER_KEY',child_terminated=True,
             first_png_sha256=w2.sha256(self.root/'w2-interactive/real-window-before-f1.png'))
 
@@ -49,6 +49,13 @@ class W2AuditTests(unittest.TestCase):
     def test_reject_wrong_pid(self):
         self.report['window']['owner_pid']=199
         with self.assertRaises(AssertionError): self.verify()
+    def test_reject_disconnected_or_locked_desktop(self):
+        self.report['wts_connection_state']=4
+        with self.assertRaises(AssertionError): self.verify()
+        self.report['wts_connection_state']=0
+        self.report['input_desktop']='Winlogon'
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_reject_false_windows10(self):
         self.report['physical_windows10']='PASS'
         with self.assertRaises(AssertionError): self.verify()
