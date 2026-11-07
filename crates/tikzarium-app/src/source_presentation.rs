@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn metadata_lens_does_not_change_crlf_unicode_macro_or_tikz_source_bytes() {
-        let source = "\\newcommand{\\opaque}{Сохрани}\\r\\n\\draw (0,0)--(1,1); % tikzarium:n1:[1,\\\"line\\\",{\\\"x\\\":\\\"10cm\\\"}]\\r\\n\\node {\\opaque};\\r\\n";
+        let source = "\\newcommand{\\opaque}{Сохрани}\r\n\\draw (0,0)--(1,1); % tikzarium:n1:[1,\\\"line\\\",{\\\"x\\\":\\\"10cm\\\"}]\r\n\\node {\\opaque};\r\n";
         let fg = Color32::WHITE;
         let bg = Color32::BLACK;
         for wrap in [f32::INFINITY, 280.0] {
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn ordinary_percent_comments_and_manual_macros_keep_normal_contrast() {
-        let source = "% заметка заказчика\\r\\n\\myMacro{не менять}\\r\\n";
+        let source = "% заметка заказчика\r\n\\myMacro{не менять}\r\n";
         let fg = Color32::from_rgb(18, 28, 42);
         let job = layout_job(
             source,
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn trailing_generator_marker_is_colored_without_hiding_draw_geometry() {
-        let source = "\\draw (0,0)--(1,1); % tikzarium:n1:[2,\\\"line\\\"]\\n";
+        let source = "\\draw (0,0)--(1,1); % tikzarium:n1:[2,\\\"line\\\"]\n";
         let fg = Color32::WHITE;
         let job = layout_job(
             source, FontId::monospace(14.0), fg, Color32::BLACK, 480.0,
