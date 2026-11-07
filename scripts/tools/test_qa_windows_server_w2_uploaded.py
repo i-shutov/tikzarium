@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import struct
+import zlib
 import tempfile
 import unittest
 
@@ -16,9 +17,16 @@ class W2AuditTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / 'w2-interactive').mkdir()
-        data = bytearray(b'\x89PNG\r\n\x1a\n')
-        data += struct.pack('>I',13)+b'IHDR'+struct.pack('>IIBBBBB',1180,680,8,2,0,0,0)+b'\0'*4
-        (self.root/'w2-interactive/real-window-before-f1.png').write_bytes(data)
+        def chunk(kind, data):
+            return struct.pack('>I', len(data)) + kind + data + struct.pack(
+                '>I', zlib.crc32(kind + data) & 0xffffffff)
+        ihdr = struct.pack('>IIBBBBB', 1180, 680, 8, 2, 0, 0, 0)
+        pixels = (b'\0' + b'\0' * (1180 * 3)) * 680
+        image = (b'\x89PNG\r\n\x1a\n'
+                 + chunk(b'IHDR', ihdr)
+                 + chunk(b'IDAT', zlib.compress(pixels))
+                 + chunk(b'IEND', b''))
+        (self.root/'w2-interactive/real-window-before-f1.png').write_bytes(image)
         self.report = dict(schema_version=1,status=w2.PARTIAL,source_sha='a'*40,
             environment='PERSONAL_WINDOWS_SERVER',physical_windows10='NOT_RUN',
             full_w2_qualification='NOT_RUN',gesture_six='NOT_RUN',
@@ -46,6 +54,14 @@ class W2AuditTests(unittest.TestCase):
     def test_reject_screenshot_tamper(self):
         self.report['first_png_sha256']='0'*64
         with self.assertRaises(AssertionError): self.verify()
+    def test_reject_corrupt_original_png_crc(self):
+        png = self.root/'w2-interactive/real-window-before-f1.png'
+        data = bytearray(png.read_bytes())
+        data[29] ^= 1
+        png.write_bytes(data)
+        self.report['first_png_sha256'] = w2.sha256(png)
+        with self.assertRaises(ValueError): self.verify()
+
     def test_reject_wrong_pid(self):
         self.report['window']['owner_pid']=199
         with self.assertRaises(AssertionError): self.verify()
