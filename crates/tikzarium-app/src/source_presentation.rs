@@ -23,12 +23,7 @@ pub fn layout_job(
     editor_background: Color32,
     max_width: f32,
 ) -> egui::text::LayoutJob {
-    let mut job = egui::text::LayoutJob::simple(
-        String::new(),
-        font.clone(),
-        foreground,
-        max_width,
-    );
+    let mut job = egui::text::LayoutJob::simple(String::new(), font.clone(), foreground, max_width);
     let metadata = dim_comment(foreground, editor_background);
     let marker = "% tikzarium:n1:";
     for line in source.split_inclusive('\n') {
@@ -92,9 +87,7 @@ mod tests {
     fn trailing_generator_marker_is_colored_without_hiding_draw_geometry() {
         let source = "\\draw (0,0)--(1,1); % tikzarium:n1:[2,\\\"line\\\"]\n";
         let fg = Color32::WHITE;
-        let job = layout_job(
-            source, FontId::monospace(14.0), fg, Color32::BLACK, 480.0,
-        );
+        let job = layout_job(source, FontId::monospace(14.0), fg, Color32::BLACK, 480.0);
         assert_eq!(job.text, source);
         let highlighted: String = job
             .sections

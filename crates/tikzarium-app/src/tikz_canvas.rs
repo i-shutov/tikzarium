@@ -1113,7 +1113,10 @@ mod tests {
         let mut value = String::from("12.5cm");
         let original = value.clone();
         let parameter = tikz_authoring::spec(Tool::Circle)
-            .parameter.iter().find(|p| p.id == "radius").unwrap();
+            .parameter
+            .iter()
+            .find(|p| p.id == "radius")
+            .unwrap();
         let ctx = egui::Context::default();
         let mut row_height = 0.0;
         let mut actual_field = Rect::NOTHING;
@@ -1130,8 +1133,14 @@ mod tests {
                 });
             },
         );
-        assert!(actual_field.is_positive(), "editor field must remain editable");
-        assert!(row_height < 52.0, "help paragraph must not consume additional row: {row_height}");
+        assert!(
+            actual_field.is_positive(),
+            "editor field must remain editable"
+        );
+        assert!(
+            row_height < 52.0,
+            "help paragraph must not consume additional row: {row_height}"
+        );
         assert_eq!(value, original);
         assert_eq!(source, EVENT_SOURCE);
     }

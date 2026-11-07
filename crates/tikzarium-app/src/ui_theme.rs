@@ -163,7 +163,10 @@ mod tests {
         let defaults = UiPreferences::default();
         assert!(!defaults.compact);
         assert!(defaults.studio_mode);
-        assert!(!defaults.source_soft_wrap, "long generated metadata must not wrap by default");
+        assert!(
+            !defaults.source_soft_wrap,
+            "long generated metadata must not wrap by default"
+        );
         assert_eq!(defaults.studio_dock, StudioDock::Properties);
         assert_eq!(defaults.math_font, "latinmodern-math.otf");
         let old = r#"{"theme":"Paper"}"#;
