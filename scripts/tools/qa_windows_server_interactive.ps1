@@ -17,7 +17,7 @@ if($SelfTest){
  $cases=@(
   @{s=2;w='WinSta0';d='Default';k=$true;a=$true;i='Default';x='ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS'},
   @{s=0;w='WinSta0';d='Default';k=$true;a=$true;i='Default';x='BLOCKED_SESSION0'},
-  @{s=2;w='Service-0x0-3e7
+  @{s=2;w='NonInteractiveServiceStation';d='Default';k=$true;a=$true;i='Default';x='BLOCKED_NONINTERACTIVE_WINDOW_STATION'},
   @{s=2;w='WinSta0';d='Winlogon';k=$true;a=$true;i='Default';x='BLOCKED_NONINPUT_DESKTOP'},
   @{s=2;w='WinSta0';d='Default';k=$false;a=$true;i='Default';x='BLOCKED_UNKNOWN_TOKEN'},
   @{s=2;w='WinSta0';d='Default';k=$true;a=$false;i='Default';x='BLOCKED_DISCONNECTED_OR_UNKNOWN_SESSION_STATE'},
