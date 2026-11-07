@@ -72,6 +72,11 @@ class W2AuditTests(unittest.TestCase):
         self.report['input_desktop']='Winlogon'
         with self.assertRaises(AssertionError): self.verify()
 
+    def test_reject_blocked_report_claiming_captured_gui(self):
+        self.report['status']='BLOCKED_DISCONNECTED_OR_UNKNOWN_SESSION_STATE'
+        self.report['error']='WTS disconnected'
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_reject_forged_personal_server(self):
         self.report['environment']='PERSONAL_WINDOWS_SERVER'
         with self.assertRaises(AssertionError): self.verify()
@@ -84,6 +89,7 @@ class W2AuditTests(unittest.TestCase):
         self.report['status']='BLOCKED_FOREGROUND_NOT_OWNED'
         with self.assertRaises(AssertionError): self.verify()
         self.report['error']='different foreground application'
+        self.report['window_screenshot']='NOT_RUN'
         self.assertEqual(self.verify()['status'],'BLOCKED_FOREGROUND_NOT_OWNED')
 
 if __name__ == '__main__':
