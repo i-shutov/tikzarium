@@ -50,6 +50,11 @@ jobs:
         run: |
           python -m unittest discover -s scripts/tools -p 'test_qa_windows_server_mesa.py' -v
           if($LASTEXITCODE -ne 0){throw 'W2 private Mesa SHA/trusted-main regression tests failed'}
+      - name: Release docs and W2 owned-foreground negative contracts
+        shell: powershell
+        run: |
+          python -m unittest discover -s scripts/tools -p 'test_release_1_0_docs_and_w2_focus.py' -v
+          if($LASTEXITCODE -ne 0){throw 'Windows 1.0 docs/foreground evidence integrity tests failed'}
       - name: Windows real-desktop preflight negative cases (synthetic only)
         shell: powershell
         run: ./scripts/tools/qa_windows_server_interactive.ps1 -SelfTest
