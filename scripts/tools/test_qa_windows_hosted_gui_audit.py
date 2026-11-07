@@ -40,7 +40,7 @@ class W2AuditTests(unittest.TestCase):
             first_png_sha256=w2.sha256(self.root/'hosted-window/real-window-before-f1.png'))
 
     def verify(self):
-        (self.root/'windows-server-hosted-window.json').write_text(json.dumps(self.report))
+        (self.root/'hosted-windows-native-gui.json').write_text(json.dumps(self.report))
         return w2.validate(self.root,'a'*40)
 
     def test_valid_partial_remains_not_run(self):
