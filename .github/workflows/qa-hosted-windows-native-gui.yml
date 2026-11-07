@@ -36,8 +36,9 @@ jobs:
       - name: Win32 preflight negative contracts
         shell: powershell
         run: |
+          # A PowerShell script returning normally does not reset LASTEXITCODE.
+          # Rely on terminating assertion errors, not a stale native-process code.
           ./scripts/tools/qa_windows_hosted_native_gui.ps1 -SelfTest
-          if($LASTEXITCODE -ne 0){throw 'Hosted GUI preflight regressions failed'}
       - name: Real native GUI window and F1 in disposable Windows session
         continue-on-error: true
         shell: powershell
