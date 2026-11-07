@@ -61,7 +61,7 @@ if(Test-Path -LiteralPath $gallium -PathType Leaf){
 $env:GALLIUM_DRIVER='llvmpipe'
 $env:LIBGL_ALWAYS_SOFTWARE='1'
 $enc=New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::AppendAllLines($env:GITHUB_ENV, @('GALLIUM_DRIVER=llvmpipe','LIBGL_ALWAYS_SOFTWARE=1'), $enc)
+[System.IO.File]::AppendAllText($env:GITHUB_ENV, "GALLIUM_DRIVER=llvmpipe`nLIBGL_ALWAYS_SOFTWARE=1`n", $enc)
 $report=[ordered]@{
  schema_version=1
  evidence_kind='DISPOSABLE_GITHUB_WINDOWS_MESA_SOFTWARE_GL_ONLY'
