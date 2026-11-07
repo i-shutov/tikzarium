@@ -34,6 +34,8 @@ class W2OwnedForegroundContract(unittest.TestCase):
         self.assertIn("AttachThreadInput($currentThread,$foreignThread,$true)", s)
         self.assertIn("AttachThreadInput($currentThread,$foreignThread,$false)", s)
         self.assertIn("}finally{\n   $evidence.detach_attempted=$true", s)
+        self.assertIn("detached_successfully", s)
+        self.assertIn("WIN32_INPUT_QUEUE_DETACH_FAILED", s)
         self.assertIn("BringWindowToTop($OwnedHandle)", s)
         self.assertNotIn("BringWindowToTop($foreground)", s)
         self.assertNotIn("SendKeys]::SendWait('%'", s)
