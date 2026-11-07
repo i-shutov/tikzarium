@@ -87,6 +87,7 @@ public static class TikzariumW2Win32 {
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
  [DllImport("user32.dll",SetLastError=true)] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
  [DllImport("user32.dll",SetLastError=true)] public static extern bool GetWindowRect(IntPtr h,out TikzariumW2Rect rect);
+ [DllImport("user32.dll",SetLastError=true)] public static extern bool SetWindowPos(IntPtr h,IntPtr insertAfter,int x,int y,int cx,int cy,uint flags);
  [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
  public static string ObjectName(IntPtr h) {
   if(h == IntPtr.Zero) return "UNAVAILABLE";
@@ -149,7 +150,24 @@ public static class TikzariumW2Win32 {
  $screen=[System.Windows.Forms.Screen]::FromHandle($handle).Bounds
  $report.screen=@{left=$screen.Left;top=$screen.Top;width=$screen.Width;height=$screen.Height}
  if($rect.Left -lt $screen.Left -or $rect.Top -lt $screen.Top -or $rect.Right -gt $screen.Right -or $rect.Bottom -gt $screen.Bottom){
-  $report.status='BLOCKED_WINDOW_OFF_SCREEN';throw 'Refusing screenshot beyond owned visible window'
+  # Never capture unrelated screen pixels: move only the PID-verified app HWND
+  # into the disposable hosted desktop, then read back its real screen bounds.
+  $report.initial_window=@{left=$rect.Left;top=$rect.Top;width=$width;height=$height}
+  if($width -gt $screen.Width -or $height -gt $screen.Height){
+   $report.status='BLOCKED_WINDOW_LARGER_THAN_SCREEN';throw 'Owned HWND cannot fit within available display; no screenshot'
+  }
+  [int]$targetLeft=$screen.Left + [int][Math]::Floor(($screen.Width-$width)/2)
+  [int]$targetTop=$screen.Top + [int][Math]::Floor(($screen.Height-$height)/2)
+  if(-not [TikzariumW2Win32]::SetWindowPos($handle,[IntPtr]::Zero,$targetLeft,$targetTop,$width,$height,[uint32]0x0014)){
+   $report.status='BLOCKED_WINDOW_REPOSITION_DENIED';throw 'Failed to move owned GUI window within hosted display'
+  }
+  Start-Sleep -Milliseconds 250
+  if(-not [TikzariumW2Win32]::GetWindowRect($handle,[ref]$rect)){throw 'Readback GetWindowRect failed after owned move'}
+  $report.hosted_window_repositioned='MOVED_ONLY_OWN_GUI_HWND'
+  $report.window.left=$rect.Left;$report.window.top=$rect.Top
+ }
+ if($rect.Left -lt $screen.Left -or $rect.Top -lt $screen.Top -or $rect.Right -gt $screen.Right -or $rect.Bottom -gt $screen.Bottom){
+  $report.status='BLOCKED_WINDOW_OFF_SCREEN';throw 'Refusing screenshot beyond owned visible window after reposition'
  }
  [void][TikzariumW2Win32]::SetForegroundWindow($handle)
  Start-Sleep -Milliseconds 500
