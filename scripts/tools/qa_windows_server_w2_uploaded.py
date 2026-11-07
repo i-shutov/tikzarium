@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import struct
+import zlib
 
 PARTIAL = 'PARTIAL_W2_REAL_VISIBLE_WINDOW_EVIDENCE_NOT_FULL_ACCEPTANCE'
 
@@ -13,13 +14,48 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 def png_size(path: Path) -> tuple[int, int]:
+    """Parse real PNG chunks/CRCs, not a forged 24-byte IHDR prefix."""
     data = path.read_bytes()
-    if len(data) < 33 or data[:8] != b'\x89PNG\r\n\x1a\n' or data[12:16] != b'IHDR':
-        raise ValueError('Invalid original PNG header')
-    w, h = struct.unpack('>II', data[16:24])
-    if w < 800 or h < 450 or w > 10000 or h > 10000:
-        raise ValueError('Unexpected GUI screenshot geometry')
-    return w, h
+    if len(data) < 57 or data[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError('Invalid original PNG signature')
+    at = 8
+    ihdr = None
+    idat_size = 0
+    finished = False
+    while at < len(data):
+        if at + 12 > len(data):
+            raise ValueError('Truncated PNG chunk')
+        length = struct.unpack_from('>I', data, at)[0]
+        kind = data[at + 4:at + 8]
+        stop = at + 12 + length
+        if stop > len(data):
+            raise ValueError('PNG chunk extends past file')
+        payload = data[at + 8:at + 8 + length]
+        crc = struct.unpack_from('>I', data, at + 8 + length)[0]
+        if (zlib.crc32(kind + payload) & 0xffffffff) != crc:
+            raise ValueError('PNG CRC mismatch')
+        if at == 8:
+            if kind != b'IHDR' or length != 13:
+                raise ValueError('Invalid PNG IHDR')
+            w, h, bit_depth, color, comp, filt, interlace = struct.unpack('>IIBBBBB', payload)
+            if not (800 <= w <= 10000 and 450 <= h <= 10000):
+                raise ValueError('Unexpected GUI screenshot geometry')
+            if bit_depth != 8 or color not in (2, 6) or comp or filt or interlace:
+                raise ValueError('Unsupported native screenshot PNG format')
+            ihdr = (w, h)
+        elif kind == b'IDAT':
+            idat_size += length
+        elif kind == b'IEND':
+            if length != 0 or stop != len(data):
+                raise ValueError('Malformed PNG termination')
+            finished = True
+        at = stop
+        if finished:
+            break
+    if not (finished and ihdr and idat_size > 0):
+        raise ValueError('Incomplete screenshot PNG')
+    return ihdr
+
 
 def validate(root: Path, expected_sha: str) -> dict:
     report = json.loads((root / 'windows-server-w2-interactive.json').read_text(encoding='utf-8-sig'))
