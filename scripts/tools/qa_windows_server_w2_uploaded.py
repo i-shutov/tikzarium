@@ -37,6 +37,8 @@ def validate(root: Path, expected_sha: str) -> dict:
         assert report['window']['owner_pid'] == report['pid']
         assert 'TikZarium' in report['window']['title']
         assert report['window_station'] == 'WinSta0' and report['desktop'] == 'Default'
+        assert report['input_desktop'] == 'Default', 'Input desktop locked or inaccessible'
+        assert report['wts_connection_state'] == 0, 'WTS session disconnected'
         assert report['session_id'] > 0
         first = root / 'w2-interactive/real-window-before-f1.png'
         assert first.is_file()
