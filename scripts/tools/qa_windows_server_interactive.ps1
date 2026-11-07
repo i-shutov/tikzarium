@@ -24,6 +24,7 @@ function Request-W2OwnedForeground([IntPtr]$OwnedHandle,[int]$OwnedPid,[int]$Ses
   attempted=0
   used_temporary_input_queue_attachment=$false
   detach_attempted=$false
+  detached_successfully=$false
   initial_foreground_pid=0
   last_foreground_pid=0
   reason='NOT_YET_CHECKED'
@@ -110,7 +111,11 @@ function Request-W2OwnedForeground([IntPtr]$OwnedHandle,[int]$OwnedPid,[int]$Ses
    [void][TikzariumW2Win32]::SetForegroundWindow($OwnedHandle)
   }finally{
    $evidence.detach_attempted=$true
-   [void][TikzariumW2Win32]::AttachThreadInput($currentThread,$foreignThread,$false)
+   $evidence.detached_successfully=[TikzariumW2Win32]::AttachThreadInput($currentThread,$foreignThread,$false)
+  }
+  if(-not $evidence.detached_successfully){
+   $evidence.reason='WIN32_INPUT_QUEUE_DETACH_FAILED'
+   break
   }
   Start-Sleep -Milliseconds 250
   if([TikzariumW2Win32]::GetForegroundWindow() -eq $OwnedHandle){
