@@ -136,14 +136,46 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
-      - name: Real native interactive GUI / F1 screenshot probe (W2 partial only)
-        # This must never imply W2 acceptance from session number or CI job success.
-        # Keep W1 PDF proof independent if RDP is disconnected or desktop locked.
+      - name: Stage temporary hash-pinned software GL next to reviewed GUI copy (NO INSTALL)
+        id: w2_software_gl
+        # No untrusted PR code, no system driver or account changes; W1 independent.
         if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
         continue-on-error: true
         shell: powershell
         run: |
-          ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
+          $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
+          $bin=Join-Path $base 'bin'
+          New-Item -ItemType Directory -Path $bin -Force | Out-Null
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\native-release\tikzarium-app.exe" -Destination (Join-Path $bin 'tikzarium-app.exe') -Force
+          ./scripts/tools/qa_windows_server_mesa_stage.ps1 -AppDirectory $bin -EvidenceDirectory "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:GITHUB_SHA
+      - name: Real native interactive GUI / F1 screenshot probe (W2 partial only)
+        # Even with software GL, W2 requires a real unlocked existing RDP user
+        # desktop, PID-owned HWND, and private client-only original PNGs.
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        env:
+          GALLIUM_DRIVER: llvmpipe
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
+          $bin=Join-Path $base 'bin'
+          $staged=Join-Path $bin 'tikzarium-app.exe'
+          $evidence=Join-Path $env:RUNNER_TEMP 'tikzarium-user-miktex'
+          if((Test-Path -LiteralPath $staged -PathType Leaf) -and
+             (Test-Path -LiteralPath (Join-Path $evidence 'w2-mesa-software-gl-provenance.json') -PathType Leaf)){
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged
+          } else {
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence
+          }
+      - name: Remove every temporary Mesa DLL and copied GUI from personal runner
+        if: always()
+        shell: powershell
+        run: |
+          if($env:RUNNER_TEMP -and $env:GITHUB_RUN_ID){
+            $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $base){Remove-Item -LiteralPath $base -Recurse -Force}
+          }
       - name: Upload honest evidence including failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
