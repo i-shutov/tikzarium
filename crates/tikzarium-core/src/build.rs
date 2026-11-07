@@ -246,6 +246,13 @@ impl BuildService {
             });
         }
         log_saved?;
+        // A successful XeLaTeX process may still emit actionable MiKTeX warnings
+        // (e.g. elevated Administrator). Do not mistake stderr for a failure,
+        // but do not discard it from GUI evidence or the CLI's stderr stream.
+        if !stderr.trim().is_empty() {
+            retain_successful_stderr(&mut log, &stderr);
+            eprintln!("XeLaTeX stderr (successful process):\n{}", stderr.trim());
+        }
 
         if !pdf_path.is_file() {
             return Err(BuildError::MissingPdf(pdf_path));
@@ -347,6 +354,19 @@ fn save_log(primary: &Path, stdout: &Path, destination: Option<&Path>) -> Result
         path: destination.to_path_buf(),
         cause,
     })
+}
+
+fn retain_successful_stderr(log: &mut String, stderr: &str) {
+    let diagnostic = stderr.trim();
+    if diagnostic.is_empty() {
+        return;
+    }
+    if !log.is_empty() && !log.ends_with('\n') {
+        log.push('\n');
+    }
+    log.push_str("\n--- XeLaTeX stderr (process succeeded; warnings are not exit codes) ---\n");
+    log.push_str(diagnostic);
+    log.push('\n');
 }
 
 fn failure_details(log: &str, stderr: &str) -> String {
@@ -468,6 +488,28 @@ fn tail(text: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn successful_engine_warnings_remain_visible_without_a_false_build_failure() {
+        let mut log = String::from("Output written on figure.pdf (1 page).");
+        retain_successful_stderr(
+            &mut log,
+            "xelatex: security risk: running with elevated privileges\r\nмикротест предупреждения\r\n",
+        );
+        assert!(log.starts_with("Output written on figure.pdf (1 page).\n"));
+        assert!(log.contains("process succeeded; warnings are not exit codes"));
+        assert!(log.contains("security risk: running with elevated privileges"));
+        assert!(log.contains("микротест предупреждения"));
+        assert!(!log.contains("XeLaTeX exited with"));
+    }
+
+    #[test]
+    fn successful_engine_without_stderr_keeps_the_original_tex_log_byte_exact() {
+        let before = "Complete TeX log\nSome other diagnostics\n";
+        let mut log = before.to_owned();
+        retain_successful_stderr(&mut log, "\r\n  \t");
+        assert_eq!(log, before);
+    }
 
     #[test]
     fn source_operand_is_portable_and_protects_dash_prefixed_names() {
