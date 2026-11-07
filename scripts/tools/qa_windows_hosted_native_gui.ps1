@@ -174,23 +174,23 @@ public static class TikzariumW2Win32 {
  if([TikzariumW2Win32]::GetForegroundWindow() -ne $handle){
   $report.status='BLOCKED_FOREGROUND_NOT_OWNED';throw 'Refuse to capture unrelated user desktop'
  }
- function Save-OwnWindow([string]$Path,[int]$X,[int]$Y,[int]$W,[int]$H){
-  $bmp=New-Object System.Drawing.Bitmap($W,$H)
-  try{
-   $g=[System.Drawing.Graphics]::FromImage($bmp)
-   try{$g.CopyFromScreen($X,$Y,0,0,$bmp.Size)}finally{$g.Dispose()}
-   $bmp.Save($Path,[System.Drawing.Imaging.ImageFormat]::Png)
-  }finally{$bmp.Dispose()}
- }
+ # PrintWindow(PW_CLIENTONLY | PW_RENDERFULLCONTENT) renders the *owned HWND* directly
+ # into a private bitmap. No desktop DC/screen pixels, even at DWM invisible borders.
+ . (Join-Path $PSScriptRoot 'qa_windows_owned_client_capture.ps1')
  $first=Join-Path $work 'real-window-before-f1.png'
- Save-OwnWindow $first $rect.Left $rect.Top $width $height
- $report.window_screenshot='CAPTURED_REAL_HOSTED_HWND_NOT_MANUALLY_REVIEWED'
+ $client=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $first
+ $report.client_area=@{left=$client.left;top=$client.top;width=$client.width;height=$client.height}
+ $report.capture_method=$client.method
+ $report.client_sample_colors=$client.unique_sample_colors
+ $report.client_unpainted_samples=$client.unpainted_samples
+ $report.window_screenshot='CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
  $report.first_png_sha256=(Get-FileHash -LiteralPath $first -Algorithm SHA256).Hash.ToLowerInvariant()
  [System.Windows.Forms.SendKeys]::SendWait('{F1}')
  Start-Sleep -Milliseconds 800
  if([TikzariumW2Win32]::GetForegroundWindow() -eq $handle){
   $second=Join-Path $work 'real-window-after-f1.png'
-  Save-OwnWindow $second $rect.Left $rect.Top $width $height
+  $after=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $second
+  if($after.width -ne $client.width -or $after.height -ne $client.height){throw 'Actual native client geometry changed during F1 capture'}
   $report.second_png_sha256=(Get-FileHash -LiteralPath $second -Algorithm SHA256).Hash.ToLowerInvariant()
   $report.f1='KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW'
  }else{$report.f1='BLOCKED_FOCUS_LOST_AFTER_KEY'}
