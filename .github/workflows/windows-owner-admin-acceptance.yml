@@ -1,0 +1,100 @@
+name: Windows owner Administrator regression and original PDF acceptance
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ['Windows Server MiKTeX QA (trusted main + manual; not Win10)']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-policy-and-transport:
+    if: github.event_name != 'workflow_run'
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt
+      - name: Native transport preserves warning plus exit zero and real failures
+        shell: powershell
+        run: ./scripts/maintenance/test_native_process.ps1 -OutputDir "$env:RUNNER_TEMP\owner-admin-transport"
+      - name: Python-independent PE parser positive and negative cases
+        shell: powershell
+        run: ./scripts/tools/test_windows_native_pe.ps1
+      - name: Format and actual Windows core token regressions
+        shell: pwsh
+        run: |
+          cargo fmt --all -- --check
+          if($LASTEXITCODE -ne 0){throw 'Rust formatting failed'}
+          cargo test --locked -p tikzarium-core
+          if($LASTEXITCODE -ne 0){throw 'Actual Windows core tests failed'}
+          cargo build --locked --release -p tikzarium-cli
+          if($LASTEXITCODE -ne 0){throw 'Actual Windows native CLI build failed'}
+      - name: Original native CLI imports and executable smoke without Python
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          . ./scripts/tools/windows_native_pe.ps1
+          . ./scripts/maintenance/native_process.ps1
+          $dir=Join-Path $env:RUNNER_TEMP 'owner-admin-transport'
+          $pe=Get-TikzariumPortablePe -Path target/release/tikzarium-cli.exe -ExpectedSubsystem 3
+          $pe | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $dir 'actual-cli-pe.json') -Encoding UTF8
+          $r=Invoke-TikzNative -Exe $pe.path -Arguments @('help','--all') -WorkingDirectory (Get-Location).Path -LogPrefix (Join-Path $dir 'actual-cli-help') -TimeoutSeconds 30
+          if($r.timed_out -or $r.exit_code -ne 0 -or $r.stdout -notmatch 'tikz.circle'){throw 'Actual executable help proof failed'}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: owner-admin-native-regression-${{ github.run_id }}
+          path: ${{ runner.temp }}/owner-admin-transport/
+          if-no-files-found: warn
+  independent-original-server-pdf:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: tikzarium-user-winserver-${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: .qa-server-original
+      - name: Disposable Linux PDF inspection tools (no user-server installation)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y poppler-utils
+      - name: Actual uploaded Windows PDF SHA fonts and Cyrillic
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: >-
+          python3 scripts/tools/qa_windows_server_uploaded.py
+          --root .qa-server-original
+          --source-sha "$EXPECTED_SOURCE_SHA"
+          --fixture examples/windows-cyrillic.tex
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: owner-admin-original-pdf-audit-${{ github.event.workflow_run.id }}
+          path: |
+            .qa-server-original/independent-pdf-audit.json
+            .qa-server-original/pdfinfo.txt
+            .qa-server-original/pdffonts.txt
+            .qa-server-original/pdftotext.txt
+            .qa-server-original/product-pdf-preview.png
+            .qa-server-original/owner-admin-proof/
+          if-no-files-found: warn

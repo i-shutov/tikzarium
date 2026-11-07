@@ -634,6 +634,7 @@ struct TikzariumApp {
     document: Document,
     file_field: String,
     tex: TexEnvironment,
+    tex_privilege_notice: Option<String>,
     package_statuses: Vec<ExtensionStatus>,
     library_installation: BTreeMap<String, Evidence>,
     diagnostics: Vec<BuildDiagnostic>,
@@ -802,6 +803,13 @@ impl TikzariumApp {
             .unwrap_or_default();
         prefs.theme.apply(&cc.egui_ctx, prefs.compact);
         let tex = TexEnvironment::discover();
+        let tex_privilege_notice = match tikzarium_core::external_document_privilege_notice() {
+            Ok(Some(warning)) => Some(warning.to_owned()),
+            Ok(None) => None,
+            Err(error) => Some(format!(
+                "⚠ Не удалось проверить права Windows: {error}. Внешняя компиляция будет отклонена проверкой токена."
+            )),
+        };
         let registry = Registry::new().expect("built-in extension manifests must validate");
         let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
         let library_installation =
@@ -813,6 +821,7 @@ impl TikzariumApp {
             document: Document::scratch(QUICKSTART),
             file_field: DEFAULT_SCRATCH_FILENAME.to_owned(),
             tex,
+            tex_privilege_notice,
             package_statuses,
             library_installation,
             diagnostics: Vec::new(),
@@ -2267,6 +2276,19 @@ fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bo
         .rect
 }
 
+/// Persistent visual privilege notice on native GUI PE2, in Studio and classic modes.
+fn show_current_user_privilege_banner(ctx: &egui::Context, notice: &str) -> egui::Rect {
+    egui::TopBottomPanel::top("windows-current-user-privilege-warning")
+        .show(ctx, |ui| {
+            ui.colored_label(
+                ui.visuals().warn_fg_color,
+                egui::RichText::new(notice).strong(),
+            );
+        })
+        .response
+        .rect
+}
+
 /// The five states are independent. A boolean capability can only prove
 /// CONFIRMED or NOT CONFIRMED; never promote missing evidence to "absent".
 /// The exact C-owned HelpEntry::Parameter itself proves help availability.
@@ -2539,6 +2561,9 @@ impl eframe::App for TikzariumApp {
         let split_layout = SplitPanelLayout::for_width(ctx.available_rect().width());
         if self.prefs.studio_mode {
             show_studio_status_panel(ctx, &self.status, self.tex.xelatex.is_some());
+        }
+        if let Some(notice) = self.tex_privilege_notice.as_deref() {
+            show_current_user_privilege_banner(ctx, notice);
         }
         if self.prefs.studio_mode && self.prefs.studio_inspector_open {
             let studio = studio_ui::StudioLayout::for_width(ctx.available_rect().width());
@@ -5004,5 +5029,38 @@ mod b42_file_popup_tests {
         );
         assert_eq!(std::fs::read(&second).unwrap(), untouched.as_bytes());
         assert_eq!(Document::load(&second).unwrap().source, untouched);
+    }
+}
+
+#[cfg(test)]
+mod elevated_user_warning_ui_tests {
+    use super::*;
+
+    #[test]
+    fn warning_renders_in_actual_egui_frame_without_console() {
+        // UNIT_EVENT, not proof of a physical Windows interactive desktop.
+        let ctx = egui::Context::default();
+        let mut rect = egui::Rect::NOTHING;
+        let output = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(850.0, 560.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                rect = show_current_user_privilege_banner(
+                    ctx,
+                    "⚠ Administrator: XeLaTeX с текущими правами; только доверенный документ.",
+                );
+                egui::CentralPanel::default().show(ctx, |_ui| {});
+            },
+        );
+        assert!(rect.is_positive(), "warning must occupy GUI space");
+        assert!(
+            !output.shapes.is_empty(),
+            "warning must paint real egui shapes"
+        );
     }
 }

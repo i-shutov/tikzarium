@@ -1,217 +1,85 @@
-﻿# User-installed external MiKTeX on persistent Windows Server.
-# NO installer, package writes, registry settings or hidden engine fallback.
+﻿# Existing user MiKTeX + actual TikZarium CLI. Current Administrator is supported.
+# No UAC/account/registry/package/font changes. Warnings are retained, not errors.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDir,[switch]$CheckRust)
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
-$reportPath=Join-Path $OutputDir 'windows-server-qa.json'
-$report=[ordered]@{
- schema_version=1;status='INCOMPLETE';environment='USER_WINDOWS_SERVER'
- physical_windows10='NOT_RUN';mac_m1_m4='NOT_RUN';interactive_gui='NOT_RUN'
- cargo='NOT_RUN';font_audit='NOT_RUN';text_audit='NOT_RUN';raster='NOT_RUN';package_autoinstall='DISABLED_BY_FLAG'
-}
-$exit=1
+$OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
+$report=[ordered]@{schema_version=2;status='INCOMPLETE';environment='USER_WINDOWS_SERVER';physical_windows10='NOT_RUN';mac_m1_m4='NOT_RUN';interactive_gui='NOT_RUN';cargo='NOT_RUN';font_audit='PENDING_INDEPENDENT_UPLOADED_PDF_AUDIT';text_audit='PENDING_INDEPENDENT_UPLOADED_PDF_AUDIT';raster='NOT_RUN';package_autoinstall='DISABLED_BY_PRODUCT';shell_escape='DISABLED_BY_PRODUCT';execution_policy='CURRENT_USER_ADMIN_SUPPORTED_NOT_SANDBOX'}
+$report.expected_text=@('Тест XeLaTeX','Кириллица','Точка')
+$exitCode=1
 try {
  $root=(Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+ . (Join-Path $PSScriptRoot '..\maintenance\native_process.ps1')
  Push-Location $root
  try {
-  $report.sha=(& git rev-parse HEAD | Out-String).Trim()
-  if($LASTEXITCODE -ne 0 -or $report.sha -notmatch '^[0-9a-f]{40}$'){throw 'Git SHA not established'}
-  $os=Get-CimInstance Win32_OperatingSystem
-  $report.os=$os.Caption;$report.build=$os.BuildNumber
-  # Group membership, token elevation, integrity and session are distinct.
-  # Do not require a separate non-admin Windows account or change UAC.
-  try {
-   $security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
-  } catch {
-   $report.status='ENVIRONMENT_BLOCKED_TOKEN_QUERY'
-   throw "MiKTeX PDF NOT_RUN: cannot classify Windows process token: $($_.Exception.Message)"
-  }
-  $report.security=$security
-  $report.runner_session_id=$security.session_id
-  $report.runner_elevated=$security.token_is_elevated
-  if($security.session_id -eq 0){
-   $report.status='ENVIRONMENT_BLOCKED_SESSION0'
-   throw 'MiKTeX GUI/PDF QA NOT_RUN: Session0, not interactive desktop'
-  }
+  $sha=(& git.exe rev-parse HEAD | Out-String).Trim()
+  if($LASTEXITCODE -ne 0 -or $sha -cne $env:GITHUB_SHA){throw 'Exact trusted main SHA lease mismatch'}
+  $report.sha=$sha;$report.timestamp_utc=[DateTime]::UtcNow.ToString('o')
+  $os=Get-CimInstance Win32_OperatingSystem;$report.os=$os.Caption;$report.build=$os.BuildNumber
+  $security=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
+  $report.security=$security;$report.runner_session_id=$security.session_id;$report.runner_elevated=$security.token_is_elevated
+  if($security.session_id -le 0 -or $security.token_integrity_rid -lt 8192 -or $security.token_integrity_rid -ge 16384){throw 'Unsupported session0/unknown/SYSTEM context; interactive current-user MEDIUM or HIGH required'}
   if($security.token_is_elevated -or $security.token_integrity_rid -ge 12288){
-   $report.status='ENVIRONMENT_BLOCKED_ELEVATED_NO_APPROVED_CHILD'
-   throw 'MiKTeX PDF NOT_RUN: elevated/high process token. Same-admin filtered child launch is not approved; no new account required.'
-  }
-  if($security.token_integrity_rid -lt 4096){
-   $report.status='ENVIRONMENT_BLOCKED_TOKEN_UNKNOWN'
-   throw 'MiKTeX PDF NOT_RUN: unknown or untrusted integrity level'
+   Write-Warning 'Owner-authorized current-user Administrator compilation. Native privilege warnings are retained. This is not a sandbox; use trusted documents.'
   }
   $engine=$env:TIKZARIUM_XELATEX
   if([string]::IsNullOrWhiteSpace($engine)){
-   $cmd=Get-Command xelatex -ErrorAction SilentlyContinue
+   $cmd=Get-Command xelatex.exe -ErrorAction SilentlyContinue
    if($cmd){$engine=$cmd.Source}
-   else {
-    # Administrator-installed MiKTeX may be present under Program Files
-    # but absent from the PATH inherited by an already-running runner.
-    # Never auto-install TeX or change machine-wide PATH.
-    $candidates=@(
-      (Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe'),
-      (Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\xelatex.exe')
-    )
-    $engine=@($candidates | Where-Object {Test-Path -LiteralPath $_ -PathType Leaf} | Select-Object -First 1)
-    if($engine.Count -gt 0){$engine=$engine[0]}else{$engine=$null}
-   }
+   else {$engine=Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe'}
   }
-  if([string]::IsNullOrWhiteSpace($engine)){
-   throw 'External XeLaTeX unavailable to the runner account; check system MiKTeX Program Files installation and restart runner for PATH refresh'
+  if(-not (Test-Path -LiteralPath $engine -PathType Leaf)){throw 'Existing external XeLaTeX not found; no installation attempted'}
+  $version=Invoke-TikzNative -Exe $engine -Arguments @('--disable-installer','--version') -WorkingDirectory $root -LogPrefix (Join-Path $OutputDir 'xelatex-version') -TimeoutSeconds 30
+  if($version.timed_out -or $version.exit_code -ne 0 -or $version.stdout -notmatch 'MiKTeX-XeTeX'){throw 'Existing MiKTeX version verification failed; inspect native stdout/stderr/exit JSON'}
+  $report.engine=$engine;$report.version=$version.stdout.Trim()
+  $miktex=Join-Path (Split-Path -Parent $engine) 'miktex.exe'
+  if(-not (Test-Path -LiteralPath $miktex -PathType Leaf)){throw 'Existing MiKTeX inventory utility not found'}
+  function Inventory([string]$Label){
+   $r=Invoke-TikzNative -Exe $miktex -Arguments @('packages','list','--template','{id}|{isInstalled}') -WorkingDirectory $root -LogPrefix (Join-Path $OutputDir $Label) -TimeoutSeconds 120
+   if($r.timed_out -or $r.exit_code -ne 0){throw 'Read-only MiKTeX inventory failed'}
+   $rows=@($r.stdout -split '\r?\n' | Where-Object {$_} | Sort-Object)
+   if($rows.Count -eq 0){throw 'Empty MiKTeX inventory'}
+   foreach($row in $rows){if($row -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\|(true|false)$'){throw 'Noncanonical MiKTeX inventory'}}
+   $rows | Set-Content -LiteralPath (Join-Path $OutputDir ($Label+'.txt')) -Encoding UTF8
+   return $rows
   }
-  if(-not (Test-Path -LiteralPath $engine -PathType Leaf)){throw 'Selected XeLaTeX does not exist'}
-  $banner=(& $engine '--disable-installer' '--version' 2>&1 | Out-String)
-  if($LASTEXITCODE -ne 0 -or $banner -notmatch 'MiKTeX-XeTeX'){
-   throw 'Only verified MiKTeX XeTeX --disable-installer is permitted'
-  }
-  $report.engine=$engine
-  $report.version=(($banner -split '\r?\n') | Where-Object { $_ })[0]
-  $miktex=Get-Command miktex -ErrorAction SilentlyContinue
-  $miktexExe=if($miktex){$miktex.Source}else{$null}
-  if(-not $miktexExe){
-   # Prefer the inventory CLI alongside the already verified MiKTeX XeLaTeX.
-   $candidate=Join-Path (Split-Path -Parent $engine) 'miktex.exe'
-   if(Test-Path -LiteralPath $candidate -PathType Leaf){$miktexExe=$candidate}
-  }
-  if(-not $miktexExe){throw 'MiKTeX read-only inventory utility is missing from PATH and selected MiKTeX bin directory'}
-  function Inventory([string]$snapshot) {
-   $rows=@(& $miktexExe packages list --template '{id}|{isInstalled}' 2>$null)
-   if($LASTEXITCODE -ne 0 -or $rows.Count -eq 0){throw 'MiKTeX inventory unavailable'}
-   $items=@($rows | ForEach-Object {[string]$_} | Sort-Object)
-   foreach($line in $items){
-    if($line -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\|(true|false)$'){
-     throw 'MiKTeX inventory output is noncanonical'
-    }
-   }
-   $items | Set-Content -LiteralPath $snapshot -Encoding utf8
-   return $items
-  }
-  $before=@(Inventory (Join-Path $OutputDir 'packages-before.txt'))
-  $work=Join-Path $OutputDir 'scratch'
+  $nativeReport=Get-Content -LiteralPath (Join-Path $OutputDir 'windows-server-rust.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+  $cli=Join-Path $OutputDir 'native-release\tikzarium-cli.exe'
+  if($nativeReport.source_sha -cne $sha -or $nativeReport.release_build -cne 'PASS_WINDOWS_SERVER_NOT_WIN10' -or $nativeReport.crt_imports -cne 'PASS_NO_DYNAMIC_VCRUNTIME'){throw 'No verified exact-main native Rust/PE evidence for this product CLI'}
+  $cliSha=(Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant()
+  if($cliSha -cne $nativeReport.cli_sha256){throw 'Actual CLI differs from verified native build'}
+  $report.cli_sha256=$cliSha;$report.cargo=$nativeReport.rust_tests
+  if($CheckRust -and $report.cargo -cne 'PASS_WINDOWS_SERVER_NOT_WIN10'){throw 'Required Rust tests did not pass'}
+  $work=Join-Path $OutputDir 'owner-admin-proof'
   New-Item -ItemType Directory -Force -Path $work | Out-Null
-  $original=Join-Path $root 'examples\cyrillic.tex'
-  $source=Join-Path $work 'cyrillic.tex'
-  $sourceHash=(Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
+  $original=Join-Path $root 'examples\windows-cyrillic.tex'
+  $source=Join-Path $work 'source.tex';$pdf=Join-Path $work 'product.pdf'
   Copy-Item -LiteralPath $original -Destination $source -Force
-  $args=@('--disable-installer','-no-shell-escape','-halt-on-error',
-          '-interaction=nonstopmode','-file-line-error','-recorder',
-          "-output-directory=$work",$source)
-  Push-Location $work
+  if(Test-Path -LiteralPath $pdf){Remove-Item -LiteralPath $pdf -Force}
+  $sourceSha=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+  $before=@(Inventory 'packages-before')
+  $oldEngine=$env:TIKZARIUM_XELATEX
   try {
-   & $engine @args *> (Join-Path $OutputDir 'xelatex-output.log')
-   $texExit=$LASTEXITCODE
-  } finally {Pop-Location}
-  $report.tex_exit=$texExit
-  if($texExit -ne 0){throw "Real XeLaTeX failed with exit $texExit"}
-  $pdf=Join-Path $work 'cyrillic.pdf'
-  if(-not (Test-Path -LiteralPath $pdf -PathType Leaf)){throw 'No PDF produced'}
-  if((Get-FileHash $original -Algorithm SHA256).Hash -ne $sourceHash -or
-     (Get-FileHash $source -Algorithm SHA256).Hash -ne $sourceHash){
-   throw 'Input source changed during compiler run'
-  }
-  $report.source_sha256=$sourceHash.ToLowerInvariant()
-  $report.pdf_sha256=(Get-FileHash $pdf -Algorithm SHA256).Hash.ToLowerInvariant()
-  # A single /yes/ anywhere in pdffonts is insufficient: each PDF font
-  # needs its own embedding verdict. pdftotext is an independent Cyrillic
-  # content check; neither means glyphs were visually accepted on a GUI.
-  $fonts=Get-Command pdffonts -ErrorAction SilentlyContinue
-  $info=Get-Command pdfinfo -ErrorAction SilentlyContinue
-  if($fonts -and $info){
-   $details=(& $info.Source $pdf 2>&1 | Out-String)
-   $infoExit=$LASTEXITCODE
-   $fontsText=(& $fonts.Source $pdf 2>&1 | Out-String)
-   $fontsExit=$LASTEXITCODE
-   $details | Set-Content -LiteralPath (Join-Path $OutputDir 'pdfinfo.txt') -Encoding utf8
-   $fontsText | Set-Content -LiteralPath (Join-Path $OutputDir 'pdffonts.txt') -Encoding utf8
-   if($infoExit -ne 0 -or $fontsExit -ne 0 -or
-      $details -notmatch '(?m)^Pages:\s+1\s*$'){
-    throw 'PDF metadata or one-page contract failed'
-   }
-   $lines=@($fontsText -split '\r?\n' | Where-Object { $_.Trim() })
-   if($lines.Count -lt 3 -or $lines[0] -notmatch '\bemb\b'){
-    throw 'pdffonts output missing table header or font records'
-   }
-   $fontRows=@($lines | Select-Object -Skip 2)
-   if($fontRows.Count -eq 0){throw 'PDF has no font records'}
-   foreach($row in $fontRows){
-    $match=[regex]::Match($row,
-      '\s+(yes|no)\s+(yes|no)\s+(yes|no)\s+\d+\s+\d+\s*$',
-      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-    if(-not $match.Success){throw "Unparseable pdffonts record: $row"}
-    if($match.Groups[1].Value -ine 'yes'){
-     throw "Nonembedded PDF font: $row"
-    }
-   }
-   if(($fontRows -join ' ') -notmatch '(?i)DejaVu.?Serif'){
-    throw 'Cyrillic fixture did not embed the expected DejaVu Serif family'
-   }
-   $report.font_count=$fontRows.Count
-   $report.font_audit='PASS_ALL_FONT_ROWS_EMBEDDED'
-  }else{
-   $report.font_audit='NOT_RUN_PDFINFO_OR_PDFFONTS_MISSING'
-  }
-  $extractor=Get-Command pdftotext -ErrorAction SilentlyContinue
-  if($extractor){
-   $extracted=Join-Path $OutputDir 'pdftotext.txt'
-   & $extractor.Source '-enc' 'UTF-8' $pdf $extracted
-   if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $extracted)){
-    throw 'pdftotext extraction failed'
-   }
-   $actualText=Get-Content -LiteralPath $extracted -Raw -Encoding utf8
-   foreach($expected in @('Тест XeLaTeX','Кириллица','Точка')){
-    if(-not $actualText.Contains($expected)){
-     throw "Expected Cyrillic content absent in PDF extraction: $expected"
-    }
-   }
-   $report.text_audit='PASS_EXPECTED_CYRILLIC_EXTRACTED'
-  }else{
-   $report.text_audit='NOT_RUN_PDFTOTEXT_MISSING'
-  }
-  $rasterizer=Get-Command pdftoppm -ErrorAction SilentlyContinue
-  if($rasterizer){
-   $prefix=Join-Path $OutputDir 'cyrillic-render'
-   & $rasterizer.Source '-f' '1' '-l' '1' '-singlefile' '-png' '-r' '144' $pdf $prefix
-   if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath ($prefix+'.png'))){
-    throw 'PDF raster generation failed'
-   }
-   $report.raster='GENERATED_REQUIRES_MANUAL_GLYPH_REVIEW'
-  }else{
-   $report.raster='NOT_RUN_PDFTOPPM_MISSING'
-  }
-  $after=@(Inventory (Join-Path $OutputDir 'packages-after.txt'))
-  if($before.Count -ne $after.Count -or (Compare-Object $before $after)){
-   throw 'Package inventory changed; offline gate is FAIL'
-  }
-  $report.packages_unchanged=$true
-  $report.package_count=$after.Count
-  if($CheckRust){
-   if(-not (Get-Command cargo -ErrorAction SilentlyContinue)){
-    $report.cargo='NOT_RUN_NO_CARGO'
-   }else{
-    $env:CARGO_BUILD_JOBS='1'
-    $env:CARGO_INCREMENTAL='0'
-    & cargo test --locked -p tikzarium-core -p tikzarium-extensions -p tikzarium-app
-    if($LASTEXITCODE -ne 0){throw 'Cargo locked tests failed'}
-    $report.cargo='PASS_WINDOWS_SERVER_NOT_WIN10'
-   }
-  }
-  $complete=($report.font_audit -eq 'PASS_ALL_FONT_ROWS_EMBEDDED' -and
-             $report.text_audit -eq 'PASS_EXPECTED_CYRILLIC_EXTRACTED' -and
-             (-not $CheckRust -or $report.cargo -eq 'PASS_WINDOWS_SERVER_NOT_WIN10'))
-  $report.status=if($complete){
-   'PASS_USER_WINDOWS_SERVER_TEX_FONT_AND_EXTRACTED_TEXT'
-  }else{'PARTIAL_REQUIRED_FONT_TEXT_OR_RUST_CHECK_NOT_RUN'}
-  # A PARTIAL report must not make the self-hosted workflow green.
-  $exit=if($complete){0}else{2}
- }finally{Pop-Location}
-}catch{
- if($report.status -eq 'INCOMPLETE'){$report.status='FAIL'}
- $report.error=$_.Exception.Message
+   $env:TIKZARIUM_XELATEX=$engine
+   $build=Invoke-TikzNative -Exe $cli -Arguments @('build',$source,$pdf,'--log',(Join-Path $work 'product-xelatex.log')) -WorkingDirectory $work -LogPrefix (Join-Path $OutputDir 'product-cli-build') -TimeoutSeconds 300
+  } finally {$env:TIKZARIUM_XELATEX=$oldEngine}
+  $report.cli_exit=$build.exit_code;$report.compiler_timed_out=$build.timed_out
+  $after=@(Inventory 'packages-after')
+  if($before.Count -ne $after.Count -or (Compare-Object $before $after)){throw 'Installed package inventory changed'}
+  $report.packages_unchanged=$true;$report.package_count=$after.Count
+  if($build.timed_out -or $build.exit_code -ne 0){throw "Actual TikZarium CLI build failed: exit=$($build.exit_code); inspect original logs"}
+  if(-not (Test-Path -LiteralPath $pdf -PathType Leaf)){throw 'Compiler did not publish a PDF'}
+  if((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant() -cne $sourceSha -or (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash.ToLowerInvariant() -cne $sourceSha){throw 'Source changed during build'}
+  $report.source_sha256=$sourceSha;$report.pdf_sha256=(Get-FileHash -LiteralPath $pdf -Algorithm SHA256).Hash.ToLowerInvariant()
+  $report.source_path='owner-admin-proof/source.tex';$report.pdf_path='owner-admin-proof/product.pdf'
+  $report.status='PASS_ACTUAL_PRODUCT_CLI_PDF_PENDING_INDEPENDENT_FONT_TEXT_AUDIT'
+  $exitCode=0
+ } finally {Pop-Location}
+} catch {
+ $report.status='FAIL';$report.error=$_.Exception.Message
  Write-Error $report.error -ErrorAction Continue
-}finally{
- $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding utf8
- Write-Host "Windows Server QA report: $reportPath"
+} finally {
+ $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDir 'windows-server-qa.json') -Encoding UTF8
 }
-exit $exit
+exit $exitCode

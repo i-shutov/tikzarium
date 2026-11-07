@@ -94,9 +94,8 @@ jobs:
       - name: D06 MiKTeX package inventory stdout/stderr parser regression
         shell: pwsh
         run: ./scripts/tools/test_qa_miktex_inventory.ps1
-      # This ephemeral hosted runner is often fully elevated. A warning from
-      # MiKTeX is evidence of UNSAFE token inheritance, not PDF acceptance.
-      # Stop BEFORE installer/version probe or any direct TeX subprocess.
+      # Same-current-user Administrator is supported by the owner's correction.
+      # Keep actual token facts and warnings; never alter UAC or elevate a process.
       - name: Preflight actual Windows process token before ALL MiKTeX execution
         shell: pwsh
         run: |
@@ -104,14 +103,15 @@ jobs:
           $record='.qa-artifacts/miktex-windows-server'
           New-Item -ItemType Directory -Force -Path $record | Out-Null
           $token = & ./scripts/tools/qa_windows_token.ps1
-          $blocked = $token.token_is_elevated -or $token.token_integrity_rid -ge 12288 -or $token.token_integrity_rid -lt 4096
+          $blocked = $token.token_integrity_rid -ge 16384 -or $token.token_integrity_rid -lt 4096
           [pscustomobject]@{
             source_sha = $env:TIKZARIUM_SOURCE_SHA
             token = $token
-            external_tex = $(if($blocked){'BLOCKED_UNSAFE_TOKEN_NOT_RUN'}else{'ELIGIBLE_TOKEN_ONLY_NOT_YET_RUN'})
+            external_tex = $(if($blocked){'BLOCKED_UNSUPPORTED_TOKEN_NOT_RUN'}else{'CURRENT_USER_ELIGIBLE_NOT_SANDBOX'})
             physical_windows10 = 'NOT_RUN'
           } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $record 'windows-token-preflight.json') -Encoding utf8
-          if($blocked) { throw 'Hosted Windows MiKTeX BLOCKED: actual elevated/high/unknown process token. No direct XeLaTeX or automatic installs.' }
+          if($blocked) { throw 'Hosted Windows MiKTeX: unsupported unknown/SYSTEM process token' }
+          if($token.token_is_elevated) { Write-Warning 'Current-user Administrator execution; retain native warnings and actual exit status.' }
       - name: Isolated private MiKTeX installation with pinned installer and declared packages
         shell: pwsh
         run: ./scripts/tools/qa_setup_miktex.ps1
@@ -142,8 +142,7 @@ jobs:
         shell: pwsh
         run: |
           & $env:TIKZARIUM_XELATEX --version
-          # MiKTeX 25.12 --help may exit nonzero / omit the switch. Its official
-          # XeTeX manual documents the switch; probe the REAL binary with it.
+          # Version warnings are data; native ExitCode determines success.
           $flagProbe = (& $env:TIKZARIUM_XELATEX --disable-installer --version 2>&1 | Out-String)
           $probeExit = $LASTEXITCODE
           $flagProbe | Set-Content .qa-artifacts/miktex-windows-server/disable-installer-version.log -Encoding utf8
