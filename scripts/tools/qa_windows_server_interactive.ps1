@@ -137,6 +137,14 @@ if($SelfTest){
   $got=Get-W2PreflightStatus $t.s $t.w $t.d $t.k $t.a $t.i
   if($got -cne $t.x){throw "W2 preflight expected $($t.x) but got $got"}
  }
+ # Zero HWND must fail closed without Win32, desktop or queue attachment.
+ $bad=Request-W2OwnedForeground ([IntPtr]::Zero) 1234 2
+ if($bad.outcome -cne 'BLOCKED_FOREGROUND_NOT_OWNED' -or
+    $bad.reason -cne 'INVALID_OWNED_HANDLE_OR_SESSION' -or
+    $bad.attempted -ne 0){
+  throw 'W2 foreground negative preflight must fail closed for absent HWND'
+ }
+ Write-Host 'W2_FOREGROUND_NEGATIVE_SELFTEST=PASS_NO_FOREIGN_CAPTURE'
  Write-Host 'W2_INTERACTIVE_PREFLIGHT_SELFTEST=PASS_7_CASES_NOT_PHYSICAL_GUI'
  return
 }
