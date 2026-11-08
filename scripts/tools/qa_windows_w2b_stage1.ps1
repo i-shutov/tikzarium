@@ -311,7 +311,11 @@ if($SelfTest) {
  if(-not [TikzariumW2bPointer]::IsWtsActive(2,0) -or
     [TikzariumW2bPointer]::IsWtsActive(0,0)){throw 'Invalid WTS active policy'}
  $nl=[string][char]13+[string][char]10
- $baseline='\documentclass{article}'+$nl+'% комментарий'+$nl+'\begin{tikzpicture}'+$nl+'\end{tikzpicture}'+$nl
+ # Windows PowerShell 5.1 reads UTF-8 without BOM as ANSI. Keep the .ps1
+ # source ASCII-only, but construct real Cyrillic in-memory for byte-integrity QA.
+ $cyrComment=[regex]::Unescape('\u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0439')
+ $cyrMutated=[regex]::Unescape('\u0438\u0437\u043C\u0435\u043D\u0435\u043D\u043E')
+ $baseline='\documentclass{article}'+$nl+('% '+$cyrComment)+$nl+'\begin{tikzpicture}'+$nl+'\end{tikzpicture}'+$nl
  $line='\draw (0,0) -- (1,1); % tikzarium:n1:line'+$nl
  $saved=$baseline.Replace('\end{tikzpicture}',$line+'\end{tikzpicture}')
  $b=[Text.Encoding]::UTF8.GetBytes($baseline)
@@ -320,7 +324,7 @@ if($SelfTest) {
   throw 'W2b synthetic additive line rejected'
  }
  $cases=@(
-  @{a=$saved.Replace('% комментарий','% изменено');want='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'},
+  @{a=$saved.Replace(('% '+$cyrComment),('% '+$cyrMutated));want='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'},
   @{a=$saved.Replace($line,$line+$line);want='BLOCKED_W2B_NOT_ONE_OWNED_LINE'},
   @{a=$saved.Replace('\draw','\node');want='BLOCKED_W2B_OWNER_NOT_DRAW'},
   @{a=$saved.Replace($nl,[string][char]10);want='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'}
