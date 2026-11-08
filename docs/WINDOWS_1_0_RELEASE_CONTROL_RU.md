@@ -13,7 +13,7 @@
 > восстановлением DPI-контекста вызывающего потока; масштаб/системные настройки
 > не меняются. [Доказательства и критерии](../plans/2026-11-08_W2_PHYSICAL_PIXEL_CAPTURE.md).
 > W2b full GUI и физический Windows10 W3 остаются NOT_RUN, W4 NO-GO.
-> W1 локальная Rust/MiKTeX проверяется отдельно от раннего W2 exact-main portable.
+> **W1 exact-current-main PASS:** [original personal run #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), final artifact #13609998582 ZIP sha256 `e7a39d60a263968ea6b2640507727f52204e92bb45db1b669eab9a6b4d47e13a`, independently audited real native Rust/MiKTeX product-CLI PDF with embedded Arial and UTF-8 Cyrillic, PDF sha256 `b288cc80cb756deab46ba30c99f347c46ef52e8a46f46f8756c257b8383b72b7`. Current W2a PASS is separate; W2b full GUI→PDF still NOT_RUN.
 
 
 **Дата: 2026-11-07. Цель владельца: физическая Windows 10 x64, MiKTeX устанавливает и обслуживает пользователь. Функции заморожены.**
@@ -31,7 +31,7 @@
 | Gate | Фактический статус (см. точные SHA в свидетельствах) | Доказательство / остаток |
 | --- | --- | --- |
 | **W0 Windows PE/portable** | **PASS hosted** | [Main CI #42382400325](https://github.com/i-shutov/tikzarium/actions/runs/42382400325): PE GUI subsystem2, CLI subsystem3, нет VCRUNTIME/MSVCP import, native/portable SHA, manifest, extracted CLI. Это **не Windows10 физическая**. |
-| **W1 personal Windows Server Rust + MiKTeX** | **PASS** | [Original Server #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) и [artifact #13579401001](https://github.com/i-shutov/tikzarium/actions/runs/42382753629/artifacts/13579401001): HIGH Administrator, native Rust/PE/CLI, original external XeLaTeX PDF. |
+| **W1 personal Windows Server Rust + MiKTeX** | **PASS (current exact main)** | [Personal #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), final artifact #13609998582; native Rust/PE/CLI, actual external MiKTeX PDF, glyph/text/font audit of original bytes PASS, HIGH existing Administrator trusted-only. Not GUI-origin W2b. |
 | **W2 physical Server desktop** | **W2a PASS / W2b NOT_RUN** | [Main #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), original artifact 13609526883: responsive same-owned HWND, first-attempt foreground525ms, F1, physical 1475×850 @125% fully visible, restored PMv2, independently audited original PNG. Six gestures/Save/Open/IME/GUI→PDF and DPI200 still **NOT_RUN**; not full W2. |
 | **W3 physical Windows10 x64** | **NOT_RUN** | Нужны отдельные реальные OS/GPU/MiKTeX/GUI/IME/DPI/native dialogs + full source→PDF испытания на Windows10; Server2025/hosted2022 не заменяют. |
 | **W4 Installer/stable 1.0** | **BLOCKED** | Никакого релизного тега/установщика до W2+W3, исходных SHA, окончательных инструкций, теста clean install/uninstall. |
@@ -101,7 +101,7 @@ Get-Content -LiteralPath .\MANIFEST.sha256 | ForEach-Object {
 **GO** возможен, только если одновременно:
 
 - [ ] W0 оригинальная GUI/CLI/ZIP/manifest/PE/imports и exact SHA подтверждены.
-- [ ] W1 реальный личный Server current-user MiKTeX PDF/Unicode/fonts/negative QA подтверждён.
+- [x] W1 native trusted-main personal Server Rust/PE/CLI and external MiKTeX PDF/UTF-8 glyphs/embedded fonts independent original audit PASS (run #42460198175, artifact #13609998582).
 - [x] W2a real owned HWND/F1 and two original full physical 125%-DPI client PNG PASS on exact `ef95c1c9` (artifact 13609526883); no foreign desktop pixels.
 - [ ] W2b шесть операций + Undo/Save/Open/документы/F1/native dialogs/IME/DPI/GUI→PDF на персональном Server подтверждены.
 - [ ] W3 отдельно **физическая Windows10 x64**, положительные и негативные end-to-end испытания, original screenshots/log/source/PDF/SHA.

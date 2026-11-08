@@ -4,7 +4,7 @@
 
 - Trusted main `ef95c1c9ef1ac2b311a654c1daac53c97c8d7ef9`, PR #134 merged, postmerge Windows/macOS/Linux, D and owner PS5.1 CI PASS. 105 auditor assertions enforced with Python optimization, decoded PNG/F1 pixel checks and separate read-only upload diagnosis.
 - Real personal Server [run #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), early artifact 13609526883 original ZIP SHA256 `1a238945a8b9007d9be4b21198b1ebad9c8378a4ccda996d38e2ea3d797a6b1b`: own PID8440/HWND2294498, responsive foreground first attempt525ms, no input queue attach, F1 opens Russian Help, full right pane and bottom status in **1475×850 physical 125%/DPI120** PNGs, PMv2 DPI context restored. Independent original audit PASS and visual inspection.
-- **W2a PASS only**; exact-main personal W1 Rust/MiKTeX final pending, full W2b real GUI gestures/Save/Open/GUI→XeLaTeX NOT_RUN, physical Windows10 W3 NOT_RUN, stable W4 NO-GO. Old 125% cropped frames are rejected, not retrospectively accepted. No OS/UAC/MiKTeX/FlowBridge changes.
+- **W0/W1/W2a PASS**; exact-main personal W1 Rust/MiKTeX final independent original artifact #13609998582 PASS (PDF SHA b288cc80..., embedded Arial/ToUnicode and Cyrillic), full W2b real GUI gestures/Save/Open/GUI→XeLaTeX NOT_RUN, physical Windows10 W3 NOT_RUN, stable W4 NO-GO. Old 125% cropped frames are rejected, not retrospectively accepted. No OS/UAC/MiKTeX/FlowBridge changes.
 
 ## 2026-11-08 — W2 responsive native startup candidate (not physical acceptance)
 
