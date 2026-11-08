@@ -124,34 +124,22 @@ jobs:
           $token = & ./scripts/tools/qa_windows_token.ps1
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\tikzarium-user-miktex" | Out-Null
           $token | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\windows-admin-token.json" -Encoding utf8
-      - name: Dedicated Windows Server Rust tests, PE validation, portable build
-        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
-        shell: powershell
-        run: |
-          ./scripts/tools/qa_windows_server_rust.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
-      - name: Existing external MiKTeX offline proof (independent of Rust result)
-        # A failed Rust compile must not conceal a separate MiKTeX diagnostic;
-        # NEVER run this step unless exact trusted-main checkout succeeded.
-        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
-        shell: powershell
-        run: |
-          ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
       - name: Stage temporary hash-pinned software GL next to reviewed GUI copy (NO INSTALL)
         id: w2_software_gl
-        # No untrusted PR code, no system driver or account changes; W1 independent.
-        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        # Test the exact distributed package early; full W1 remains independent below.
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' && steps.hosted_stage.outcome == 'success' }}
         continue-on-error: true
         shell: powershell
         run: |
           $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
           $bin=Join-Path $base 'bin'
           New-Item -ItemType Directory -Path $bin -Force | Out-Null
-          Copy-Item -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\native-release\tikzarium-app.exe" -Destination (Join-Path $bin 'tikzarium-app.exe') -Force
-          ./scripts/tools/qa_windows_server_mesa_stage.ps1 -AppDirectory $bin -EvidenceDirectory "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:GITHUB_SHA
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\hosted-native-verified\tikzarium-app.exe" -Destination (Join-Path $bin 'tikzarium-app.exe') -Force
+          ./scripts/tools/qa_windows_server_mesa_stage.ps1 -AppDirectory $bin -EvidenceDirectory "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:GITHUB_SHA -BinaryOrigin verified-hosted-release
       - name: Real native interactive GUI / F1 screenshot probe (W2 partial only)
         # Even with software GL, W2 requires a real unlocked existing RDP user
         # desktop, PID-owned HWND, and private client-only original PNGs.
-        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' && steps.hosted_stage.outcome == 'success' }}
         continue-on-error: true
         shell: powershell
         env:
@@ -164,9 +152,9 @@ jobs:
           $evidence=Join-Path $env:RUNNER_TEMP 'tikzarium-user-miktex'
           if((Test-Path -LiteralPath $staged -PathType Leaf) -and
              (Test-Path -LiteralPath (Join-Path $evidence 'w2-mesa-software-gl-provenance.json') -PathType Leaf)){
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged -BinaryOrigin verified-hosted-release
           } else {
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -BinaryOrigin verified-hosted-release
           }
       - name: Remove every temporary Mesa DLL and copied GUI from personal runner
         if: always()
@@ -176,6 +164,30 @@ jobs:
             $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
             if(Test-Path -LiteralPath $base){Remove-Item -LiteralPath $base -Recurse -Force}
           }
+      - name: Upload original W2 result before independent server rebuild
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tikzarium-w2-early-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tikzarium-user-miktex/windows-server-w2-interactive.json
+            ${{ runner.temp }}/tikzarium-user-miktex/windows-server-hosted-artifact.json
+            ${{ runner.temp }}/tikzarium-user-miktex/w2-mesa-software-gl-provenance.json
+            ${{ runner.temp }}/tikzarium-user-miktex/windows-admin-token.json
+            ${{ runner.temp }}/tikzarium-user-miktex/w2-interactive/
+          if-no-files-found: warn
+      - name: Dedicated Windows Server Rust tests, PE validation, portable build
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_rust.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
+      - name: Existing external MiKTeX offline proof (independent of Rust result)
+        # A failed Rust compile must not conceal a separate MiKTeX diagnostic;
+        # NEVER run this step unless exact trusted-main checkout succeeded.
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
       - name: Upload honest evidence including failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

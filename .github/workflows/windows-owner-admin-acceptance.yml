@@ -34,7 +34,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          $files=@('scripts/tools/qa_windows_server_mesa_stage.ps1','scripts/tools/qa_windows_server_interactive.ps1')
+          $files=@('scripts/tools/qa_windows_server_mesa_stage.ps1','scripts/tools/qa_windows_server_interactive.ps1','scripts/tools/qa_windows_owned_foreground.ps1','scripts/tools/test_qa_windows_owned_foreground.ps1','scripts/tools/test_qa_windows_startup_responsive.ps1','scripts/tools/qa_windows_w2_binary.ps1')
           foreach($path in $files){
             $tokens=$null
             $errors=$null
@@ -44,7 +44,7 @@ jobs:
               throw "$path PowerShell 5.1 parse failed: $($errors[0].Message)"
             }
           }
-          Write-Host 'W2_PS51_PINNED_MESA_PARSER=PASS_2_FILES_NOT_PHYSICAL'
+          Write-Host 'W2_PS51_PINNED_MESA_PARSER=PASS_6_FILES_NOT_PHYSICAL'
       - name: Personal W2 temporary-Mesa source-provenance negative contract tests
         shell: powershell
         run: |
