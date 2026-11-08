@@ -91,10 +91,11 @@ jobs:
           if(-not (Get-Command Assert-TikzariumMesaEscrow -CommandType Function -ErrorAction SilentlyContinue)){
             throw 'Exact-main escrow verifier did not survive PowerShell 5.1 dot-source'
           }
-          $err=@()
+          $tokens=$null
+          $err=$null
           $null=[System.Management.Automation.Language.Parser]::ParseFile(
             (Resolve-Path ./scripts/tools/qa_windows_server_mesa_stage.ps1).Path,
-            [ref]$null, [ref]$err)
+            [ref]$tokens, [ref]$err)
           if($err.Count){throw ('Personal Mesa stage PowerShell parsing failed: '+($err -join '; '))}
       - name: Windows real-desktop preflight negative cases (synthetic only)
         shell: powershell
