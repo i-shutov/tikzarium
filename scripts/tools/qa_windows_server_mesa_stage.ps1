@@ -59,27 +59,46 @@ try {
  $archiveKind='MSYS2_MINGW64_MESA_26_2_6_1'
  $relativeX64='mingw64\bin'
  $archive=Join-Path $work 'mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
- if(-not $seven){throw 'PINNED_MSYS2_REQUIRES_EXISTING_7ZIP_NO_INSTALL_ALLOWED'}
+ # The owner's standard Windows Server image has native tar.exe but not
+ # necessarily optional 7-Zip. Never auto-install 7-Zip to run physical QA.
+ if(-not $seven -and -not (Get-Command tar.exe -ErrorAction SilentlyContinue)){
+  throw 'PINNED_MSYS2_NO_PREINSTALLED_ARCHIVER'
+ }
  $pinned=Get-TikzariumPinnedMsys2Archive -ArchivePath $archive
 }
 $sha=$pinned.sha256
 if($pinned.source -cne $source -or $sha -cne $expected){
  throw 'PINNED_MESA_SOURCE_OR_SHA_DRIFT_ON_SERVER'
 }
-if($seven){
- & $seven x $archive ("-o" + $unpack) -y | Out-Null
-} else {
- $tar=(Get-Command tar.exe -ErrorAction SilentlyContinue).Source
- if(-not $tar){throw 'Neither 7z nor Windows tar available; no installer allowed'}
- & $tar -xf $archive -C $unpack
-}
-if($LASTEXITCODE -ne 0){throw 'Existing archiver could not extract pinned Mesa archive'}
+# Distinguish compressed MSYS2 .tar.zst (native tar can unpack directly)
+# from pal1000 .7z and from 7-Zip's intermediate *.pkg.tar file.
+$extractMethod='NOT_RUN'
 if($archiveKind -ceq 'MSYS2_MINGW64_MESA_26_2_6_1'){
- $tars=@(Get-ChildItem -LiteralPath $unpack -File -Filter '*.pkg.tar')
- if($tars.Count -ne 1){throw 'PINNED_MSYS2_EXACT_ONE_NESTED_TAR_REQUIRED'}
- & $seven x $tars[0].FullName ("-o" + $unpack) -y | Out-Null
- if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_TAR_EXTRACTION_FAILED'}
+ if($seven){
+  & $seven x $archive ("-o" + $unpack) -y | Out-Null
+  if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_7ZIP_ZST_EXTRACTION_FAILED'}
+  $tars=@(Get-ChildItem -LiteralPath $unpack -File -Filter '*.pkg.tar')
+  if($tars.Count -ne 1){throw 'PINNED_MSYS2_EXACT_ONE_NESTED_TAR_REQUIRED'}
+  & $seven x $tars[0].FullName ("-o" + $unpack) -y | Out-Null
+  if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_TAR_EXTRACTION_FAILED'}
+  $extractMethod='EXISTING_7ZIP_ZST_AND_TAR'
+ }else{
+  . (Join-Path $PSScriptRoot 'qa_windows_msys2_tar_stage.ps1')
+  $native=Expand-TikzariumPinnedMsys2WithWindowsTar -Archive $archive -Destination $unpack
+  $extractMethod=$native.method
+ }
+}else{
+ if($seven){
+  & $seven x $archive ("-o" + $unpack) -y | Out-Null
+ }else{
+  $tar=(Get-Command tar.exe -ErrorAction SilentlyContinue).Source
+  if(-not $tar){throw 'PINNED_PAL1000_NO_EXISTING_ARCHIVER'}
+  & $tar -xf $archive -C $unpack
+ }
+ if($LASTEXITCODE -ne 0){throw 'PINNED_PAL1000_ARCHIVE_EXTRACTION_FAILED'}
+ $extractMethod='EXISTING_ARCHIVER_PAL1000_7Z'
 }
+
 $x64=Join-Path $unpack $relativeX64
 if(-not (Test-Path -LiteralPath $x64 -PathType Container)){throw 'Mesa x64 payload absent'}
 $dlls=@(Get-ChildItem -LiteralPath $x64 -File -Filter '*.dll')
@@ -104,6 +123,7 @@ $proof=[ordered]@{
  archive_sha256=$sha
  archive_kind=$archiveKind
  archive_transport=$pinned.transport
+ archive_extract_method=$extractMethod
  app_sha256=$appHash
  binary_origin=$BinaryOrigin
  dll_count=$dlls.Count

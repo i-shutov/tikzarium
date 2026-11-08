@@ -37,6 +37,20 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         self.assertIn("gl_renderer='NOT_PROVEN_NO_GUI_LAUNCH'",workflow)
         self.assertNotIn("./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -BinaryOrigin verified-hosted-release",workflow)
 
+    def test_windows_builtin_tar_support_instead_of_forced_7zip_install(self):
+        stage=(TOOLS / 'qa_windows_server_mesa_stage.ps1').read_text(encoding='utf-8')
+        self.assertIn('qa_windows_msys2_tar_stage.ps1', stage)
+        self.assertIn('Expand-TikzariumPinnedMsys2WithWindowsTar',stage)
+        self.assertIn('archive_extract_method=$extractMethod',stage)
+        self.assertIn('PINNED_MSYS2_NO_PREINSTALLED_ARCHIVER',stage)
+        self.assertNotIn("PINNED_MSYS2_REQUIRES_EXISTING_7ZIP_NO_INSTALL_ALLOWED",stage)
+        helper=(TOOLS / 'qa_windows_msys2_tar_stage.ps1').read_text(encoding='utf-8')
+        self.assertIn('Get-Command tar.exe',helper)
+        self.assertIn('PINNED_MSYS2_NATIVE_TAR_ZSTD_EXTRACTION_FAILED_EXIT_',helper)
+        self.assertIn('NO_MINGW64_BIN',helper)
+        self.assertNotIn('msiexec',helper)
+        self.assertNotIn('Set-ItemProperty',helper)
+
     def test_client_only_gui_remains_exact_sha(self):
         source = (TOOLS / "qa_windows_server_interactive.ps1").read_text(encoding="utf-8")
         for required in ("W2 exact trusted-main SHA mismatch",

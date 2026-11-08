@@ -79,6 +79,10 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_w2b_stage1.ps1 -SelfTest
+      - name: Native Windows tar MSYS2 QA extraction offline guard (no installer, no network)
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_msys2_tar_stage.ps1 -SelfTest
       - name: Pinned QA Mesa HTTPS retry and SHA mismatch negative tests (no network)
         shell: powershell
         run: |
