@@ -1,23 +1,28 @@
-# TikZarium — восстановление после прерывания, 8 ноября 2026
+# TikZarium — release resume, 2026-11-08
 
-## Где продолжать
+**Trusted main:** `ef95c1c9ef1ac2b311a654c1daac53c97c8d7ef9`. PR #132/#133/#134 merged, original hosted Windows/macOS/Linux exact-main workflows PASS. Existing personal native Rust/MiKTeX W1 was accepted on a prior trusted SHA; current-main W1 final build/PDF audit still in progress at [run #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175). Do not infer its outcome from W2a.
 
-Это **локальный кандидат изменений, не новая опубликованная версия main**. Базовый GitHub main: `26cf786d96fe34e809dd263824e9fee6309cadfb`, дерево `233fe4cad2640b2e879b9f16bf49d364c804a465`. Полная рабочая копия восстановлена с доказанным совпадением дерева. Ранее созданные PR #132 и #133 уже объединены. Не возвращаться к устаревшей точке88ef49d7.
+## W2a genuine physical acceptance: PASS
 
-PR #132 устранил синхронное торможение запуска/получение foreground; персональный оригинальный прогон9c721242 подтвердил responsive HWND/F1 без AttachThreadInput. PR #133 добавил измерение/захват в физических пикселях с восстановлением DPI-контекста. Его физическая125%-приёмка ещё не доказана доступными артефактами.
+Original personal Windows Server early artifact **13609526883** in [run #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), ZIP SHA256 `1a238945a8b9007d9be4b21198b1ebad9c8378a4ccda996d38e2ea3d797a6b1b`. Verified the original JSON and both PNGs with current independent geometry/decoded-pixel auditor and visual review: existing HIGH Administrator, RDP Session2 WTSActive0/WinSta0/Default, own GUI PID8440/HWND2294498, first-attempt stable foreground525ms, no AttachThreadInput. Complete **1475×850 physical client pixels at 125%/DPI120**, same dimensions before and after, restored per-monitor-v2 DPI context, zero unpainted pixels, right Properties/Help and bottom status fully visible, real F1 opens Russian Справка. Own client PrintWindow only, no desktop pixels. Earlier 1180×680 historical screenshot from 9c721242 was cropped and is intentionally rejected.
 
-## Что сделано в восстановленной рабочей копии
+## Release gates
 
-Исправлены105 оптимизационно-зависимых проверок независимых аудиторов; добавлено декодирование и проверка реальных PNG-пикселей, а не только CRC/SHA/самоотчёта; F1 требует изменения видимых пикселей, не одних метаданных. Добавлены22 регрессионных теста. Исправлены2 старых тестовых контракта исторических I53/I57 без включения их прежних координат наmain. Подробности и результаты: [план восстановления](../plans/2026-11-08_W2_AUDIT_OPTIMIZATION_RECOVERY.md).
+| Gate | State |
+|---|---|
+| W0 Windows x64 release candidate/PE/manifest | **PASS** (hosted exact main #42459875159) |
+| W1 native personal Server Rust/MiKTeX PDF | Previously **PASS**, exact SHA current-run final **IN_PROGRESS** |
+| W2a own HWND/F1 complete physical 125% screenshot | **PASS** (original artifact 13609526883) |
+| W2b six true GUI gestures, source/Undo, Save/Open, native dialogs, IME, GUI→XeLaTeX PDF | **NOT_RUN** |
+| W3 separate actual Windows 10 x64 native GPU/GUI/IME/DPI/full PDF | **NOT_RUN** |
+| W4 clean installation/uninstall, signed-status disclosure, stable tag | **NO-GO** |
 
-Нормальный Python-прогон:302 теста,293 успешных,9 прежних пропусков. Windows-evidence98/98 проходит отдельно под `-O` и `-OO`. Rust/Cargo.lock и пользовательские настройки не изменены. На Windows новые изменения не запускались.
+## Resolved historical defects
 
-## Фактический незакрытый блокер
+PR #132 removed synchronous TeX discovery from GUI loop, solving NO_FOREGROUND_WINDOW. PR #133 fixed virtualized 125% screenshot cropping via bounded native PMv2 and context restoration. PR #134 hardened 105 optimized-Python assertions, verified actual decoded opaque pixels and prevented metadata-only F1 false changes. The old [canceled #42453220928](https://github.com/i-shutov/tikzarium/actions/runs/42453220928) lost artifact uploads/logs; current early upload succeeds. Root cause of earlier intermittent transport issue **not established**, pending final W1 upload + read-only diagnostics.
 
-Персональный run42453220928/job128646666435: ранний GUI и очистка Mesa завершились, но обе выгрузки артефактов и последующие W1 шаги упали. Checkout post завис с06:08:26UTC; исходные логи ещё404, артефактов нет. Причина не установлена. До получения оригинальных JSON/PNG не принимать W2a по зелёному GUI-шагу.
+## Boundaries and next steps
 
-Текущие инструменты GitHub предоставили чтение/скачивание, но не запись, остановку или перезапуск Actions. Поэтому новый патч не отправлен в GitHub и зависший прогон не был остановлен. Это ограничение текущего сеанса управления, а не запрет работы владельца под Administrator.
+Do not change main during its personal exact-SHA run. Owner's HIGH Administrator is allowed for trusted TeX, not a sandbox; no UAC, registry, new accounts, automatic TeX/package/fonts or system drivers, nor FlowBridge modifications. Temporary pinned Mesa is QA-only, removed after test, never distributed.
 
-## Следующий блок
-
-Сохранить текущие оригинальные свидетельства на runner до полной повторной сборки; получить диагностику failed uploads/runner; устранить установленную причину; провести reviewed exact-head PR этого патча и Windows/PowerShell CI. Затем завершить фактический125% W2a, полный W2b, отдельную физическуюWindows10W3 и только после них W4. Stable1.0 не выпущен. FlowBridge, другие репозитории, UAC, системный MiKTeX и учётные записи не трогать.
+Next: review personal final Rust/MiKTeX/transport evidence, then run full physical Server W2b and independent native Windows10 W3. Only release stable v1.0.0 after W2b+W3 and tested clean-install/uninstall/W4. See [canonical gate](WINDOWS_1_0_RELEASE_CONTROL_RU.md).

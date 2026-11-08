@@ -1,5 +1,7 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+> **CURRENT — 2026-11-08, main `ef95c1c9ef1ac2b311a654c1daac53c97c8d7ef9`: W2a PHYSICAL PASS.** [Original Server run](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), early artifact 13609526883, full 1475×850 real 125%-DPI client PNGs, same own HWND/PID, foreground525ms, restored PMv2 context and actual Russian F1 Help, right/bottom panels visible. Independent original PNG/JSON and human visual audit passed. **W2b still NOT_RUN, physical Win10 W3 NOT_RUN, stable W4 NO-GO.** Historical excerpt below describes the already corrected 1180×680 crop.
+
 > **Актуальный физический результат 2026-11-08, main `9c721242`, PR #132:**
 > personal run #42450616810 / original early artifact13606185205 подтвердил
 > **отзывчивое собственное HWND и реальный F1**: PID1652, HWND4128904,
@@ -30,7 +32,7 @@
 | --- | --- | --- |
 | **W0 Windows PE/portable** | **PASS hosted** | [Main CI #42382400325](https://github.com/i-shutov/tikzarium/actions/runs/42382400325): PE GUI subsystem2, CLI subsystem3, нет VCRUNTIME/MSVCP import, native/portable SHA, manifest, extracted CLI. Это **не Windows10 физическая**. |
 | **W1 personal Windows Server Rust + MiKTeX** | **PASS** | [Original Server #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) и [artifact #13579401001](https://github.com/i-shutov/tikzarium/actions/runs/42382753629/artifacts/13579401001): HIGH Administrator, native Rust/PE/CLI, original external XeLaTeX PDF. |
-| **W2 physical Server desktop** | **PARTIAL: own foreground/F1 подтверждены; complete PNG ещё не принят** | На `9c721242` [run #42450616810](https://github.com/i-shutov/tikzarium/actions/runs/42450616810), artifact13606185205: first-attempt responsive HWND/F1, но DPI125% client PNG обрезаны. Scoped physical-pixel capture ещё требует original personal rerun. W2b **NOT_RUN**. |
+| **W2 physical Server desktop** | **W2a PASS / W2b NOT_RUN** | [Main #42460198175](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), original artifact 13609526883: responsive same-owned HWND, first-attempt foreground525ms, F1, physical 1475×850 @125% fully visible, restored PMv2, independently audited original PNG. Six gestures/Save/Open/IME/GUI→PDF and DPI200 still **NOT_RUN**; not full W2. |
 | **W3 physical Windows10 x64** | **NOT_RUN** | Нужны отдельные реальные OS/GPU/MiKTeX/GUI/IME/DPI/native dialogs + full source→PDF испытания на Windows10; Server2025/hosted2022 не заменяют. |
 | **W4 Installer/stable 1.0** | **BLOCKED** | Никакого релизного тега/установщика до W2+W3, исходных SHA, окончательных инструкций, теста clean install/uninstall. |
 
@@ -39,6 +41,8 @@
 ## 3. Очередность работ до выпуска — без расширения функций
 
 ### W2a. Отзывчивое собственное окно и полный физический client screenshot
+
+**PASS, original artifact 13609526883 at main `ef95c1c9`.** Full original right Help/Properties and bottom status, exact native 1475×850 client after scoped PMv2, same HWND and restored DPI context, real F1. The following derivation is historical, not another blocker.
 
 PR #132 устранил синхронное TeX-discovery на GUI-потоке и ожидание произвольных задержек/AttachThreadInput. На настоящем personal Server main `9c721242` окно сразу владеет foreground; WM_NULL ready/processed и stable HWND подтверждены, F1 изменяет оригинальные PNG. Старые `BLOCKED_FOREGROUND_NOT_OWNED`, `NO_FOREGROUND_WINDOW` и `OWNED_QUEUE_DID_NOT_GAIN_FOREGROUND` относятся к предшествующим коммитам.
 
@@ -98,7 +102,7 @@ Get-Content -LiteralPath .\MANIFEST.sha256 | ForEach-Object {
 
 - [ ] W0 оригинальная GUI/CLI/ZIP/manifest/PE/imports и exact SHA подтверждены.
 - [ ] W1 реальный личный Server current-user MiKTeX PDF/Unicode/fonts/negative QA подтверждён.
-- [ ] W2a реальная сессия/свой HWND/F1 и две проверенные client PNG подтверждены, без чужого desktop.
+- [x] W2a real owned HWND/F1 and two original full physical 125%-DPI client PNG PASS on exact `ef95c1c9` (artifact 13609526883); no foreign desktop pixels.
 - [ ] W2b шесть операций + Undo/Save/Open/документы/F1/native dialogs/IME/DPI/GUI→PDF на персональном Server подтверждены.
 - [ ] W3 отдельно **физическая Windows10 x64**, положительные и негативные end-to-end испытания, original screenshots/log/source/PDF/SHA.
 - [ ] W4 clean install/uninstall, exact provenance, KNOWN_ISSUES, release notes, законная подпись или честное указание отсутствия.
