@@ -103,7 +103,7 @@ try {
   foreach($entry in @($mesa.dll_manifest)){
     $name=[string]$entry.name
     $digest=[string]$entry.sha256
-    if($name -cnotmatch '^[A-Za-z0-9_.-]+\\.dll$' -or
+    if($name -cnotmatch '^[A-Za-z0-9_.-]+\.dll$' -or
        $observedNames -icontains $name -or
        $digest -cnotmatch '^[0-9a-f]{64}$'){
       throw 'W2 QA Mesa DLL manifest has invalid or repeated entry'
