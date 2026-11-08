@@ -46,7 +46,7 @@ if([string]::IsNullOrWhiteSpace($OutputDir)){throw '-OutputDir required'}
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 $report=[ordered]@{
- schema_version=2;status='NOT_RUN';source_sha=$env:GITHUB_SHA
+ schema_version=3;status='NOT_RUN';source_sha=$env:GITHUB_SHA
  environment='PERSONAL_WINDOWS_SERVER';physical_windows10='NOT_RUN'
  full_w2_qualification='NOT_RUN';gesture_six='NOT_RUN';source_patch='NOT_RUN'
  save_open='NOT_RUN';native_dialogs='NOT_RUN';ime='NOT_RUN';dpi_200='NOT_RUN'
@@ -185,16 +185,14 @@ public static class TikzariumW2Win32 {
   $report.window_probe_result=if($appProcess.HasExited){'EXITED_BEFORE_OWNED_HWND'}else{'NO_VISIBLE_HWND_AFTER_POLL'}
   throw 'No genuine visible TikZarium window or process exited before HWND'
  }
- $rect=New-Object TikzariumW2Rect
- if(-not [TikzariumW2Win32]::GetWindowRect($handle,[ref]$rect)){throw 'GetWindowRect failed'}
- $width=$rect.Right-$rect.Left;$height=$rect.Bottom-$rect.Top
- $report.window=@{title=$appProcess.MainWindowTitle;left=$rect.Left;top=$rect.Top;width=$width;height=$height;visible=$true;owner_pid=$appProcess.Id;dpi=[TikzariumW2Win32]::GetDpiForWindow($handle)}
- if($width -lt 800 -or $height -lt 450){$report.status='BLOCKED_WINDOW_GEOMETRY';throw 'Actual window too small'}
- $screen=[System.Windows.Forms.Screen]::FromHandle($handle).Bounds
- $report.screen=@{left=$screen.Left;top=$screen.Top;width=$screen.Width;height=$screen.Height}
- if($rect.Left -lt $screen.Left -or $rect.Top -lt $screen.Top -or $rect.Right -gt $screen.Right -or $rect.Bottom -gt $screen.Bottom){
-  $report.status='BLOCKED_WINDOW_OFF_SCREEN';throw 'Refusing screenshot beyond owned visible window'
- }
+ . (Join-Path $PSScriptRoot 'qa_windows_owned_client_capture.ps1')
+ # HWND/client/monitor dimensions must share physical pixels, not DPI-virtualized PowerShell units.
+ $geometry=Get-TikzariumOwnedPhysicalGeometry -Handle $handle -ExpectedPid $appProcess.Id
+ $report.geometry_preflight=$geometry
+ $report.coordinate_space=$geometry.coordinate_space
+ $report.window=@{title=$appProcess.MainWindowTitle;left=$geometry.window_left;top=$geometry.window_top;width=$geometry.window_width;height=$geometry.window_height;visible=$true;owner_pid=$appProcess.Id;dpi=$geometry.window_dpi}
+ $report.screen=@{left=$geometry.screen_left;top=$geometry.screen_top;width=$geometry.screen_width;height=$geometry.screen_height}
+ if($geometry.window_width -lt 800 -or $geometry.window_height -lt 450){$report.status='BLOCKED_WINDOW_GEOMETRY';throw 'Actual window too small'}
  $ownership=Request-W2OwnedForeground $handle $appProcess.Id ([int]$token.session_id)
  $report.foreground_ownership=$ownership
  if($ownership.outcome -cne 'CONFIRMED_OWNED_FOREGROUND' -or
@@ -208,6 +206,7 @@ public static class TikzariumW2Win32 {
  $first=Join-Path $work 'real-window-before-f1.png'
  $client=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $first
  $report.client_area=@{left=$client.left;top=$client.top;width=$client.width;height=$client.height}
+ $report.capture_geometry_before=$client
  $report.capture_method=$client.method
  $report.client_sample_colors=$client.unique_sample_colors
  $report.client_unpainted_samples=$client.unpainted_samples
@@ -222,6 +221,7 @@ public static class TikzariumW2Win32 {
   $after=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $second
   if($after.width -ne $client.width -or $after.height -ne $client.height){throw 'Actual native client geometry changed during F1 capture'}
   $report.second_png_sha256=(Get-FileHash -LiteralPath $second -Algorithm SHA256).Hash.ToLowerInvariant()
+  $report.capture_geometry_after=$after
   $report.f1='KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW'
  }else{$report.f1='BLOCKED_FOCUS_LOST_AFTER_KEY'}
  $report.status='PARTIAL_W2_REAL_VISIBLE_WINDOW_EVIDENCE_NOT_FULL_ACCEPTANCE'

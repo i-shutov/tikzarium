@@ -1,14 +1,17 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
-> **Уточнение 2026-11-08:** после PR #131, main `88ef49d7`, original personal
-> run #42414339864 (artifact13591881579) всё ещё `BLOCKED_FOREGROUND_NOT_OWNED`:
-> `OWNED_QUEUE_DID_NOT_GAIN_FOREGROUND`, 10 попыток, attach/detach завершён,
-> но оригинальных F1/PNG нет. Новая поправка исправляет синхронный TeX-discovery
-> в GUI-конструкторе и небезопасный тестовый handshake; физический результат
-> ещё НЕ принят. [План, источник и критерии](../plans/2026-11-08_W2_RESPONSIVE_STARTUP.md).
-> Ранний W2 на `verified-hosted-release` использует реальные оригинальные EXE
-> того же exact-main portable ZIP после SHA/PE/manifest проверки на Server;
-> это НЕ доказательство локальной сборки. W1 выполняется отдельно, W3 NOT_RUN.
+> **Актуальный физический результат 2026-11-08, main `9c721242`, PR #132:**
+> personal run #42450616810 / original early artifact13606185205 подтвердил
+> **отзывчивое собственное HWND и реальный F1**: PID1652, HWND4128904,
+> Server2025/26100, существующий HIGH Administrator, WTSActive/Default,
+> stable own foreground с первой попытки за705мс, без AttachThreadInput.
+> Но оригинальные PNG1180×680 при125% визуально обрезали правую и нижнюю части.
+> Поэтому **W2a ещё не принят целиком**: нужна полноразмерная физическая client PNG.
+> Исправление QA использует scoped PMv2 для геометрии+PrintWindow с обязательным
+> восстановлением DPI-контекста вызывающего потока; масштаб/системные настройки
+> не меняются. [Доказательства и критерии](../plans/2026-11-08_W2_PHYSICAL_PIXEL_CAPTURE.md).
+> W2b full GUI и физический Windows10 W3 остаются NOT_RUN, W4 NO-GO.
+> W1 локальная Rust/MiKTeX проверяется отдельно от раннего W2 exact-main portable.
 
 
 **Дата: 2026-11-07. Цель владельца: физическая Windows 10 x64, MiKTeX устанавливает и обслуживает пользователь. Функции заморожены.**
@@ -23,11 +26,11 @@
 
 ## 2. Ворота W0–W4 — только проверяемые факты
 
-| Gate | Фактический статус на основном коммите b761a37f1872d13dd5d866ff2d68ac8b8aa60989 | Доказательство / остаток |
+| Gate | Фактический статус (см. точные SHA в свидетельствах) | Доказательство / остаток |
 | --- | --- | --- |
 | **W0 Windows PE/portable** | **PASS hosted** | [Main CI #42382400325](https://github.com/i-shutov/tikzarium/actions/runs/42382400325): PE GUI subsystem2, CLI subsystem3, нет VCRUNTIME/MSVCP import, native/portable SHA, manifest, extracted CLI. Это **не Windows10 физическая**. |
 | **W1 personal Windows Server Rust + MiKTeX** | **PASS** | [Original Server #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) и [artifact #13579401001](https://github.com/i-shutov/tikzarium/actions/runs/42382753629/artifacts/13579401001): HIGH Administrator, native Rust/PE/CLI, original external XeLaTeX PDF. |
-| **W2 physical Server desktop** | **PARTIAL / BLOCKED_FOREGROUND_NOT_OWNED** | До PR #130 — RDP Session2 WTSActive=0, WinSta0/Default, Mesa и реальный GUI PID4060/HWND 1194×718/DPI120, но чужой foreground. На точном `main` `b761a37f` [run #42397730682](https://github.com/i-shutov/tikzarium/actions/runs/42397730682) — **`NO_FOREGROUND_WINDOW`** после 10 попыток. Оригинальные F1/client PNG и полный W2 **NOT_RUN**. SUCCESS Actions не является W2 PASS. |
+| **W2 physical Server desktop** | **PARTIAL: own foreground/F1 подтверждены; complete PNG ещё не принят** | На `9c721242` [run #42450616810](https://github.com/i-shutov/tikzarium/actions/runs/42450616810), artifact13606185205: first-attempt responsive HWND/F1, но DPI125% client PNG обрезаны. Scoped physical-pixel capture ещё требует original personal rerun. W2b **NOT_RUN**. |
 | **W3 physical Windows10 x64** | **NOT_RUN** | Нужны отдельные реальные OS/GPU/MiKTeX/GUI/IME/DPI/native dialogs + full source→PDF испытания на Windows10; Server2025/hosted2022 не заменяют. |
 | **W4 Installer/stable 1.0** | **BLOCKED** | Никакого релизного тега/установщика до W2+W3, исходных SHA, окончательных инструкций, теста clean install/uninstall. |
 
@@ -35,11 +38,13 @@
 
 ## 3. Очередность работ до выпуска — без расширения функций
 
-### W2a. Предоставить владение foreground собственному HWND
+### W2a. Отзывчивое собственное окно и полный физический client screenshot
 
-Состояние RDP, OpenGL и GUI уже подтверждены, возвращаться к «нет Cargo/MiKTeX/RDP» нельзя. Текущий код `SetForegroundWindow` не получил foreground из фонового Windows runner. Принятый PR #130 добавил ограниченную активацию **только принадлежащего TikZarium HWND**: проверить PID, WTSActive, unlocked Default; сначала обычный SetForegroundWindow; при необходимости временно связать input threads **только внутри той же session**, вызвать BringWindowToTop для своего окна, гарантированно detach в finally. После попытки повторно удостовериться, что GetForegroundWindow равен **тому же** HWND. Любой чужой PID, другой session, недоступный desktop или timeout → BLOCKED; никаких чужих PNG и SendKeys.
+PR #132 устранил синхронное TeX-discovery на GUI-потоке и ожидание произвольных задержек/AttachThreadInput. На настоящем personal Server main `9c721242` окно сразу владеет foreground; WM_NULL ready/processed и stable HWND подтверждены, F1 изменяет оригинальные PNG. Старые `BLOCKED_FOREGROUND_NOT_OWNED`, `NO_FOREGROUND_WINDOW` и `OWNED_QUEUE_DID_NOT_GAIN_FOREGROUND` относятся к предшествующим коммитам.
 
-PR #130 **уже объединён**, его exact-main CI прошёл, но последующий personal run #42397730682 дал `NO_FOREGROUND_WINDOW`; W2 **не принят**. Следующая узкая QA-поправка проверяет нулевой foreground, используя только собственный GUI-поток того же сеанса/Default, временный `AttachThreadInput`, гарантированный detach и обязательное повторное сравнение HWND. Никакого вмешательства в чужое окно/рабочий стол, изменения UAC либо ложно-зелёного W2. Сначала Windows/macOS/Linux exact-head CI и PowerShell5.1 selftests, затем review/expected-head merge и **только trusted-main** персональный Windows runner. Владелец сохраняет свой RDP-сеанс активным/разблокированным и при необходимости вручную нажимает на **окно TikZarium**, если Windows foreground lock не разрешит автоматическую активацию. Не менять UAC.
+Следующая узкая проблема — DPI-virtualized capture: PowerShell видел логические1180×680, PrintWindow отрисовывал125%-содержимое в слишком маленький bitmap. Не увеличивать картинку после снимка и не считать её полной. Измерить HWND/client/monitor в одном native PER_MONITOR_AWARE_V2 thread scope, снять оригинальный PrintWindow(PW_CLIENTONLY|PW_RENDERFULLCONTENT) тех же физических размеров, затем восстановить предыдущий контекст в finally и проверить восстановление. Обязательны повторные PID/foreground/unlocked проверки и unchanged geometry до/после отрисовки. Никаких desktop pixels, изменения DPI процесса/системы, RDP settings, UAC либо новых пользователей.
+
+Новый schema3 JSON сохраняет контекст и физическую геометрию каждого снимка. Auditor отвергает старый non-100%-DPI отчёт без такого доказательства, смешанные logical/physical bounds, утечку DPI-контекста, обрезанный client, чужой HWND и PNG с неверным CRC/SHA. Native PowerShell5.1 тест проверяет восстановление контекста при успешном вызове и ошибке, включая исходные unaware/system/PMv2 состояния. Сначала exact-head hosted Windows GUI и тесты; затем expected-head merge после окончания предыдущего Server run, exact-main CI и реальный personal125% rerun. Для W2a необходимы **полностью видимые Properties/Help и нижний status** в оригинальных PNG, а не только изменившийся хеш.
 
 ### W2b. Вся вертикаль GUI, а не только окно и F1
 

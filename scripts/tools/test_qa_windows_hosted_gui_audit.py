@@ -35,7 +35,7 @@ class W2AuditTests(unittest.TestCase):
             preflight='ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS',
             window_screenshot='CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED',
             window={'visible':True,'owner_pid':200,'title':'TikZarium','width':1180,'height':680,'left':90,'top':98},
-            client_area={'left':100,'top':131,'width':1164,'height':646},
+            client_area={'left':100,'top':130,'width':1164,'height':646},
             capture_method='WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ',
             client_sample_colors=16,client_unpainted_samples=0,
             window_station='WinSta0',desktop='Default',input_desktop='Default',wts_connection_state=0,session_id=2,pid=200,

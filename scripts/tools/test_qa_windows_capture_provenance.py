@@ -32,6 +32,19 @@ class OwnedClientCaptureContracts(unittest.TestCase):
         self.assertNotRegex(helper, r"(?i)\.(?:CopyFromScreen|BitBlt)\s*\(")
         self.assertNotRegex(helper, r"(?i)\b(?:GetDC|GetWindowDC)\s*\(")
 
+    def test_dpi_is_thread_scoped_and_both_probes_use_physical_geometry(self):
+        helper = (TOOLS / "qa_windows_owned_client_capture.ps1").read_text()
+        for native in ("InPhysicalPixelScope", "SetThreadDpiAwarenessContext", "AreDpiAwarenessContextsEqual",
+                       "GetMonitorInfo", "GetDpiForWindow", "dpi_context_restored = true", "finally {"):
+            self.assertIn(native, helper)
+        self.assertNotIn("SetProcessDpiAwareness", helper)
+        for probe in PROBES:
+            source = (TOOLS / probe).read_text()
+            self.assertIn("Get-TikzariumOwnedPhysicalGeometry -Handle $handle -ExpectedPid $appProcess.Id", source)
+            self.assertIn("capture_geometry_after=$after", source)
+            self.assertNotIn("[System.Windows.Forms.Screen]::FromHandle", source)
+            self.assertIn("schema_version=3", source)
+
     def test_personal_workflow_keeps_trusted_main_boundary(self):
         workflow = (ROOT / ".github" / "workflows" / "qa-selfhosted-winserver.yml").read_text()
         self.assertIn("github.event.workflow_run.head_branch == 'main'", workflow)
