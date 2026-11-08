@@ -75,6 +75,11 @@ function Invoke-TikzariumOwnedSaveDialog {
  $modal=[TikzariumW2bSaveDialog]::GetForegroundWindow()
  $guard=[TikzariumW2bSaveDialog]::Validate($MainHandle,$modal,$ExpectedPid,$SessionId)
  if($guard -cne 'OWNED_NATIVE_SAVE_DIALOG'){throw $guard}
+ # A PID/foreground check alone is not enough across an RDP lock or
+ # input-desktop switch. Reuse the native W2a active Default-desktop guard.
+ if((Get-W2OwnedRuntimeStatus $MainHandle $ExpectedPid $SessionId) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP'){
+   throw 'BLOCKED_SAVE_DIALOG_NOT_ACTIVE_DEFAULT_DESKTOP'
+ }
  # Explicit native OS window captured; no desktop, foreign app or screen DC.
  $png=Join-Path $OutputDir '00-real-owned-save-dialog.png'
  $capture=Save-TikzariumOwnedClient -Handle $modal -ExpectedPid $ExpectedPid -Path $png
@@ -105,8 +110,9 @@ function Invoke-TikzariumOwnedSaveDialog {
  if($null -eq $pattern -or $pattern.Current.IsReadOnly){throw 'BLOCKED_SAVE_FILENAME_READONLY'}
  $pattern.SetValue($full)
  # No operation on a new/foreign foreground window, even if UIA changed focus.
- if([TikzariumW2bSaveDialog]::Validate($MainHandle,$modal,$ExpectedPid,$SessionId) -cne 'OWNED_NATIVE_SAVE_DIALOG'){
-   throw 'BLOCKED_SAVE_FOCUS_CHANGED_BEFORE_INVOKE'
+ if([TikzariumW2bSaveDialog]::Validate($MainHandle,$modal,$ExpectedPid,$SessionId) -cne 'OWNED_NATIVE_SAVE_DIALOG' -or
+    (Get-W2OwnedRuntimeStatus $MainHandle $ExpectedPid $SessionId) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP'){
+   throw 'BLOCKED_SAVE_FOCUS_OR_DEFAULT_DESKTOP_CHANGED_BEFORE_INVOKE'
  }
  $saveId=[System.Windows.Automation.PropertyCondition]::new(
      [System.Windows.Automation.AutomationElement]::AutomationIdProperty,'1')
