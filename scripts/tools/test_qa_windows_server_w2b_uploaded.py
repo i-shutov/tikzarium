@@ -40,6 +40,7 @@ class OriginalStage1Tests(unittest.TestCase):
                     'input_method':'WIN32_REAL_MOUSE_EVENTS_OWNED_HWND_PMV2',
                     'gui_save':'PASS_REAL_GUI_SOURCE_SAVE',
                     'source_patch':'PASS_ONE_C_OWNED_LINE_PREAMBLE_PRESERVED',
+                    'exact_additive_patch':'PASS_ADDITIVE_DRAW_EXACT_SOURCE_PRESERVATION',
                     'six_gestures':'NOT_RUN_FIVE_MORE_TO_TEST',
                     'owner_count':1,
                     'geometry':{'owner_pid':8440,'width':1475,'height':850,
@@ -87,6 +88,16 @@ class OriginalStage1Tests(unittest.TestCase):
         self.assertEqual(r['w2b_full'],'NOT_RUN')
         self.assertEqual(r['win10_w3'],'NOT_RUN')
         self.assertEqual(r['actual_native_line_id'],1)
+
+    def test_missing_live_source_integrity_verdict_rejected(self):
+        self.stage.pop('exact_additive_patch')
+        self.save()
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_false_source_integrity_verdict_rejected(self):
+        self.stage['exact_additive_patch']='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'
+        self.save()
+        with self.assertRaises(EvidenceError):self.check()
 
     def test_foreign_owner_pid_rejected(self):
         self.stage['geometry']['owner_pid']=9882;self.save()
