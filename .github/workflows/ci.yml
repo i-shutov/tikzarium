@@ -197,6 +197,28 @@ jobs:
           name: tikzarium-windows-x64-portable-candidate
           path: .qa-artifacts/windows-portable/
           if-no-files-found: warn
+      # QA-only original pal1000 26.2.6 escrow from exact same successful
+      # trusted-main push CI that supplies personal W1 native EXE/portable ZIP.
+      # A network failure may omit this artifact but must never fake W0/W1.
+      - name: Optional exact-SHA pal1000 escrow for private Windows Server W2 QA
+        if: runner.os == 'Windows' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        shell: powershell
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_CI_RUN_ID: ${{ github.run_id }}
+        run: |
+          ./scripts/tools/qa_windows_mesa_escrow.ps1 -OutputDir '.qa-artifacts/w2-mesa-qa-escrow' -ExpectedSourceSha $env:SOURCE_SHA -SourceRunId $env:SOURCE_CI_RUN_ID
+      - name: Upload optional original pal1000 QA escrow separate from product binaries
+        if: always() && runner.os == 'Windows' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikzarium-w2-pal1000-qa-escrow
+          path: |
+            .qa-artifacts/w2-mesa-qa-escrow/mesa3d-26.2.6-release-mingw.7z
+            .qa-artifacts/w2-mesa-qa-escrow/qa-escrow-provenance.json
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload Windows binaries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
