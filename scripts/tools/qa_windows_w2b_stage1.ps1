@@ -15,23 +15,6 @@ function Test-W2bStage1Eligibility([int]$Width,[int]$Height,[int]$Dpi,[int]$Sess
     $Height -lt 825 -or $Height -gt 880){return 'BLOCKED_UNKNOWN_125_PERCENT_LAYOUT'}
  return 'ELIGIBLE_ONE_LINE_NOT_W2B_PASS'
 }
-if($SelfTest) {
- $tests=@(
-  @{w=1475;h=850;dpi=120;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='ELIGIBLE_ONE_LINE_NOT_W2B_PASS'},
-  @{w=992;h=680;dpi=96;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_UNKNOWN_125_PERCENT_LAYOUT'},
-  @{w=1475;h=850;dpi=120;s=0;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_NONINTERACTIVE_SESSION'},
-  @{w=1475;h=850;dpi=120;s=2;d='Winlogon';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_LOCKED_OR_WRONG_DESKTOP'},
-  @{w=1475;h=850;dpi=120;s=2;d='Default';f='BLOCKED_FOREIGN';want='BLOCKED_NOT_OWNED_FOREGROUND'},
-  @{w=1270;h=850;dpi=120;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_UNKNOWN_125_PERCENT_LAYOUT'}
- )
- foreach($t in $tests){
-  $v=Test-W2bStage1Eligibility $t.w $t.h $t.dpi $t.s $t.d $t.f
-  if($v -cne $t.want){throw "Unexpected W2b negative/positive case: $v expected $($t.want)"}
- }
- Write-Host 'W2B_STAGE1_PREFLIGHT=PASS_6_CASES_NO_INPUT_NO_DESKTOP_CAPTURE'
- return
-}
-
 function Initialize-TikzariumW2bPointer {
  if('TikzariumW2bPointer' -as [type]){return}
  Add-Type -TypeDefinition @'
@@ -242,4 +225,30 @@ function Invoke-TikzariumW2bStage1 {
    Set-Content -LiteralPath (Join-Path $OutputDir 'w2b-stage1-original.json') -Encoding UTF8
  }
  return [PSCustomObject]$report
+}
+if($SelfTest) {
+ $tests=@(
+  @{w=1475;h=850;dpi=120;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='ELIGIBLE_ONE_LINE_NOT_W2B_PASS'},
+  @{w=992;h=680;dpi=96;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_UNKNOWN_125_PERCENT_LAYOUT'},
+  @{w=1475;h=850;dpi=120;s=0;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_NONINTERACTIVE_SESSION'},
+  @{w=1475;h=850;dpi=120;s=2;d='Winlogon';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_LOCKED_OR_WRONG_DESKTOP'},
+  @{w=1475;h=850;dpi=120;s=2;d='Default';f='BLOCKED_FOREIGN';want='BLOCKED_NOT_OWNED_FOREGROUND'},
+  @{w=1270;h=850;dpi=120;s=2;d='Default';f='CONFIRMED_OWNED_FOREGROUND';want='BLOCKED_UNKNOWN_125_PERCENT_LAYOUT'}
+ )
+ foreach($t in $tests){
+  $v=Test-W2bStage1Eligibility $t.w $t.h $t.dpi $t.s $t.d $t.f
+  if($v -cne $t.want){throw "Unexpected W2b negative/positive case: $v expected $($t.want)"}
+ }
+ # Compile the real native P/Invoke under Windows PowerShell 5.1 on CI.
+ # A zero HWND must reject BEFORE moving the pointer or injecting mouse events.
+ Initialize-TikzariumW2bPointer
+ $negative=$false
+ try { [TikzariumW2bPointer]::Click([IntPtr]::Zero,0,20,20) }
+ catch [InvalidOperationException] {
+  $negative=$_.Exception.Message -eq 'BLOCKED_NO_OWNED_HWND'
+ }
+ if(-not $negative){throw 'W2b native zero-HWND input must fail closed without events'}
+ Write-Host 'W2B_NATIVE_INPUT_ZERO_HWND=PASS_NO_MOUSE_EVENTS'
+ Write-Host 'W2B_STAGE1_PREFLIGHT=PASS_6_CASES_NO_INPUT_NO_DESKTOP_CAPTURE'
+ return
 }
