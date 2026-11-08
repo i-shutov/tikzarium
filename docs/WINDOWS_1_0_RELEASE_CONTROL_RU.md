@@ -1,5 +1,9 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+
+> **LATEST ORIGINAL SERVER — 2026-11-08, main \`4ec94747\`, run [#42490214199](https://github.com/i-shutov/tikzarium/actions/runs/42490214199).** Early original artifact #13621431232 (SHA256 \`48f3b3f70ab6e7290442ae67e4059c1b8bfb162b2ebf491e7a73aca6762aeb94\`): WTS=4, Session2 disconnected, independent native JSON W2 stage is BLOCKED before GL, HWND, input, F1, Save/Open or GUI→PDF. Final artifact #13621878747 (SHA256 \`5c8e9434f8d9c2f4075000c94101419333c8647a8af031e1138e4b2109a64631\`) confirms genuine native Rust+MiKTeX PDF SHA \`abbc6a18ed3a10acddc2fc29e39abab083c1d4e3744a887406cea2dab1b242b7\`, page 1, Arial embedded and Cyrillic verified; W1 PASS. **W2b NOT_RUN; physical Windows10 W3 NOT_RUN; stable W4 NO-GO.** Read-only WTS watcher is a draft until independently approved; does not change session state.
+>
+
 > **НОВЫЙ ДОСТОВЕРНЫЙ СРЕЗ — 2026-11-08 13:53 UTC.**
 > Trusted `main` `ccb4ecb7f31981bd433f8bbe3f331ec59cc512d3`, hosted
 > [CI #42484403986](https://github.com/i-shutov/tikzarium/actions/runs/42484403986) SUCCESS,

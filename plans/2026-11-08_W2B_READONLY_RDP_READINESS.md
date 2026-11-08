@@ -1,0 +1,9 @@
+# TikZarium W2b — autonomous read-only RDP readiness without false GUI PASS
+
+Latest exact accepted main \`4ec94747f2d11840a5dbc5a274b9840ce30dfba9\`, personal Server [run #42490214199](https://github.com/i-shutov/tikzarium/actions/runs/42490214199), early original artifact #13621431232. **WTSDisconnected=4** in Session2; no W2b graphics or input can be accepted while the Runner's user desktop is inactive. The independent companion original JSON and W1 XeLaTeX final artifact #13621878747 are retained.
+
+This workflow is intended to eliminate repeated 30-minute W1 compilation *merely to discover the same disconnected RDP*. On an interval it makes a short **read-only** native WTS query from the existing self-hosted user session. Every report binds exact branch main SHA and actual native process session; stores the original WTS JSON; treats Active as only \`WTS_ACTIVE_CANDIDATE_NOT_GUI_PROOF\`. It never attempts to reconnect, unlock or switch a session, alter UAC, install drivers/TeX, open GUI, send mouse events, or touch FlowBridge. Distinct concurrency key avoids displacing full trusted-main QA.
+
+**Acceptance:** 1) exact-head hosted Windows/Linux/macOS CI + static negative workflow tests, 2) reviewed expected-head merge, 3) actual read-only personal original run artifact, 4) if WTSActive only, existing trusted-main W2b physical GUI stage1 can be triggered from a valid source-CI run; still requires owned HWND, active Default input desktop, real Save As/source/PNG and independent audit. Only real six gestures/Undo/Save/Open/IME/DPI/GUI XeLaTeX completes W2b; physical Win10 W3 remains separate. Stable W4 stays NO-GO until W2b+W3.
+
+**This monitor does not solve a disconnected user session**. Reconnection to the already existing RDP session has to happen through normal authorized RDP access; no programmatic lock bypass.
