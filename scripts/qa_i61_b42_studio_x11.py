@@ -23,7 +23,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # Original N5 I61 41937982066 PNG: geometry popup X=500..762;
 # icon centers are 532/585/639/693, not old 599/653/707/761.
 # This source-tree lease deliberately requires renewed visual QA after UI changes.
-APP_TREE = "623d32ff21a756c30e827fe43943f75cf8ecf305"
+APP_TREE = "d1b2c0b2f1674b9da1772e3764ba37b360482536"
 BUTTONS = [
     ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
@@ -315,9 +315,22 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
+        # Full-paragraph parameter help was compacted into the ⓘ popup.
+        # Independently reviewed original PR #128 X11 screenshot puts Node x
+        # TextEdit at (1052..1133, 499..519), not the old y=560.
+        click(found, 1080, 509)  # Actual selected Node x TextEdit in Properties dock.
         key("ctrl+a")
         paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
+        # Verify focus / real native TextEdit contents BEFORE clicking pinned Apply:
+        # a misplaced click must fail with precise geometry instead of an
+        # unexplained 'source patch not persisted' regression.
+        click(found, 1080, 509)
+        key("ctrl+a")
+        key("ctrl+c")
+        actual_draft = run("xclip", "-selection", "clipboard", "-o")
+        if actual_draft != "10.50cm":
+            raise RuntimeError(
+                f"Native Inspector Node x field not focused at (1080,509): {actual_draft!r}")
         screenshot(out, "28b-inspector-draft-only")
         click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
         if source.read_bytes() != inspector_before:

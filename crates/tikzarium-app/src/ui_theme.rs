@@ -107,7 +107,9 @@ impl Default for UiPreferences {
             studio_dock: StudioDock::default(),
             theme: UiTheme::default(),
             compact: false,
-            source_soft_wrap: true,
+            // Keep machine-generated TikZ ownership metadata on one visual line.
+            // Users can still enable soft wrap; the original TeX stays editable.
+            source_soft_wrap: false,
             show_font_lab: false,
             text_family: fonts.text_family,
             sans_family: fonts.sans_family,
@@ -161,6 +163,10 @@ mod tests {
         let defaults = UiPreferences::default();
         assert!(!defaults.compact);
         assert!(defaults.studio_mode);
+        assert!(
+            !defaults.source_soft_wrap,
+            "long generated metadata must not wrap by default"
+        );
         assert_eq!(defaults.studio_dock, StudioDock::Properties);
         assert_eq!(defaults.math_font, "latinmodern-math.otf");
         let old = r#"{"theme":"Paper"}"#;

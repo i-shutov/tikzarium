@@ -19,6 +19,7 @@ mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod source_fonts;
+mod source_presentation;
 mod studio_ui;
 mod tikz_authoring;
 mod tikz_canvas;
@@ -318,10 +319,11 @@ fn show_source_text_edit(
     };
     let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap_width: f32| {
         let actual_wrap_width = if soft_wrap { wrap_width } else { f32::INFINITY };
-        let job = egui::text::LayoutJob::simple(
-            text.as_str().to_owned(),
+        let job = source_presentation::layout_job(
+            text.as_str(),
             egui::TextStyle::Monospace.resolve(ui.style()),
             ui.visuals().widgets.inactive.text_color(),
+            ui.visuals().extreme_bg_color,
             actual_wrap_width,
         );
         ui.fonts_mut(|fonts| fonts.layout_job(job))
@@ -3156,11 +3158,11 @@ mod split_layout_tests {
             "wrapped TextEdit must create additional visual rows: {rows:?}"
         );
         let mut prefs = UiPreferences::default();
-        assert!(prefs.source_soft_wrap);
-        prefs.source_soft_wrap = false;
+        assert!(!prefs.source_soft_wrap);
+        prefs.source_soft_wrap = true;
         let json = serde_json::to_string(&prefs).unwrap();
         let restored: UiPreferences = serde_json::from_str(&json).unwrap();
-        assert!(!restored.source_soft_wrap, "user preference must persist");
+        assert!(restored.source_soft_wrap, "user preference must persist");
     }
 
     #[test]
