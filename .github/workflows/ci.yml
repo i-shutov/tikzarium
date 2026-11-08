@@ -69,6 +69,11 @@ jobs:
           New-Item -ItemType Directory -Force .qa-artifacts | Out-Null
           $s | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 .qa-artifacts/windows-token.json
           if ($null -eq $s.token_is_elevated -or $s.token_integrity_rid -lt 4096) { throw 'Windows token audit incomplete' }
+      - name: W2 WTS disconnected/unknown negative contracts (hosted, NO GUI/input)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_w2_session_readiness.ps1 -SelfTest
       - name: Explore restricted-token rights on disposable Windows without spawning a child
         if: runner.os == 'Windows'
         shell: pwsh
