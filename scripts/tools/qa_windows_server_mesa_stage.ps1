@@ -45,6 +45,37 @@ $archive=Join-Path $work 'mesa3d-26.2.6-release-mingw.7z'
 . (Join-Path $PSScriptRoot 'qa_windows_mesa_transport.ps1')
 $seven=(Get-Command 7z.exe -ErrorAction SilentlyContinue).Source
 if(-not $seven -and (Test-Path 'C:\Program Files\7-Zip\7z.exe')){$seven='C:\Program Files\7-Zip\7z.exe'}
+ # Prefer original pal1000 bytes delivered as a short-lived GitHub Actions
+ # artifact from the same separately verified successful exact-main CI run.
+ # A mismatch is fatal; do not fall back to public CDN after bad escrow.
+ $escrowRoot=Join-Path $env:RUNNER_TEMP 'tikzarium-hosted\qa-mesa'
+ $escrowArchive=Join-Path $escrowRoot 'mesa3d-26.2.6-release-mingw.7z'
+ $escrowReport=Join-Path $escrowRoot 'qa-mesa-escrow.json'
+ $hasEscrowArchive=Test-Path -LiteralPath $escrowArchive -PathType Leaf
+ $hasEscrowReport=Test-Path -LiteralPath $escrowReport -PathType Leaf
+ if($hasEscrowArchive -xor $hasEscrowReport){
+   throw 'PINNED_MESA_CI_ESCROW_INCOMPLETE_REJECTED'
+ }
+ if($hasEscrowArchive -and $hasEscrowReport){
+   $original=Get-Content -LiteralPath $escrowReport -Raw -Encoding UTF8 | ConvertFrom-Json
+   if($original.schema_version -ne 1 -or
+      $original.status -cne 'PASS_EXACT_MAIN_HOSTED_QA_MESA_BYTES_NOT_PRODUCT' -or
+      $original.source_sha -cne $ExpectedSha -or
+      [string]$original.source_ci_run_id -cne [string]$binary.source_ci_run_id -or
+      $original.archive_source -cne $source -or
+      $original.archive_sha256 -cne $expected -or
+      -not $original.no_system_install -or -not $original.no_product_distribution){
+     throw 'PINNED_MESA_CI_ESCROW_UNTRUSTED_PROVENANCE'
+   }
+   $escrowSha=(Get-FileHash -LiteralPath $escrowArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+   if($escrowSha -cne $expected){throw 'PINNED_MESA_CI_ESCROW_SHA_MISMATCH'}
+   Copy-Item -LiteralPath $escrowArchive -Destination $archive -Force
+   if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
+     throw 'PINNED_MESA_CI_ESCROW_COPY_SHA_CHANGED'
+   }
+   $pinned=[PSCustomObject]@{source=$source;sha256=$expected;transport='TRUSTED_MAIN_SOURCE_CI_QA_ESCROW'}
+   Write-Host 'PERSONAL_W2_MESA_ESCROW=PASS_EXACT_MAIN_SHA_NO_PUBLIC_CDN'
+ }else{
 try {
  $pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
 } catch {
@@ -59,27 +90,47 @@ try {
  $archiveKind='MSYS2_MINGW64_MESA_26_2_6_1'
  $relativeX64='mingw64\bin'
  $archive=Join-Path $work 'mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
- if(-not $seven){throw 'PINNED_MSYS2_REQUIRES_EXISTING_7ZIP_NO_INSTALL_ALLOWED'}
+ # The owner's standard Windows Server image has native tar.exe but not
+ # necessarily optional 7-Zip. Never auto-install 7-Zip to run physical QA.
+ if(-not $seven -and -not (Get-Command tar.exe -ErrorAction SilentlyContinue)){
+  throw 'PINNED_MSYS2_NO_PREINSTALLED_ARCHIVER'
+ }
  $pinned=Get-TikzariumPinnedMsys2Archive -ArchivePath $archive
 }
+ }
 $sha=$pinned.sha256
 if($pinned.source -cne $source -or $sha -cne $expected){
  throw 'PINNED_MESA_SOURCE_OR_SHA_DRIFT_ON_SERVER'
 }
-if($seven){
- & $seven x $archive ("-o" + $unpack) -y | Out-Null
-} else {
- $tar=(Get-Command tar.exe -ErrorAction SilentlyContinue).Source
- if(-not $tar){throw 'Neither 7z nor Windows tar available; no installer allowed'}
- & $tar -xf $archive -C $unpack
-}
-if($LASTEXITCODE -ne 0){throw 'Existing archiver could not extract pinned Mesa archive'}
+# Distinguish compressed MSYS2 .tar.zst (native tar can unpack directly)
+# from pal1000 .7z and from 7-Zip's intermediate *.pkg.tar file.
+$extractMethod='NOT_RUN'
 if($archiveKind -ceq 'MSYS2_MINGW64_MESA_26_2_6_1'){
- $tars=@(Get-ChildItem -LiteralPath $unpack -File -Filter '*.pkg.tar')
- if($tars.Count -ne 1){throw 'PINNED_MSYS2_EXACT_ONE_NESTED_TAR_REQUIRED'}
- & $seven x $tars[0].FullName ("-o" + $unpack) -y | Out-Null
- if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_TAR_EXTRACTION_FAILED'}
+ if($seven){
+  & $seven x $archive ("-o" + $unpack) -y | Out-Null
+  if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_7ZIP_ZST_EXTRACTION_FAILED'}
+  $tars=@(Get-ChildItem -LiteralPath $unpack -File -Filter '*.pkg.tar')
+  if($tars.Count -ne 1){throw 'PINNED_MSYS2_EXACT_ONE_NESTED_TAR_REQUIRED'}
+  & $seven x $tars[0].FullName ("-o" + $unpack) -y | Out-Null
+  if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_TAR_EXTRACTION_FAILED'}
+  $extractMethod='EXISTING_7ZIP_ZST_AND_TAR'
+ }else{
+  . (Join-Path $PSScriptRoot 'qa_windows_msys2_tar_stage.ps1')
+  $native=Expand-TikzariumPinnedMsys2WithWindowsTar -Archive $archive -Destination $unpack
+  $extractMethod=$native.method
+ }
+}else{
+ if($seven){
+  & $seven x $archive ("-o" + $unpack) -y | Out-Null
+ }else{
+  $tar=(Get-Command tar.exe -ErrorAction SilentlyContinue).Source
+  if(-not $tar){throw 'PINNED_PAL1000_NO_EXISTING_ARCHIVER'}
+  & $tar -xf $archive -C $unpack
+ }
+ if($LASTEXITCODE -ne 0){throw 'PINNED_PAL1000_ARCHIVE_EXTRACTION_FAILED'}
+ $extractMethod='EXISTING_ARCHIVER_PAL1000_7Z'
 }
+
 $x64=Join-Path $unpack $relativeX64
 if(-not (Test-Path -LiteralPath $x64 -PathType Container)){throw 'Mesa x64 payload absent'}
 $dlls=@(Get-ChildItem -LiteralPath $x64 -File -Filter '*.dll')
@@ -104,6 +155,7 @@ $proof=[ordered]@{
  archive_sha256=$sha
  archive_kind=$archiveKind
  archive_transport=$pinned.transport
+ archive_extract_method=$extractMethod
  app_sha256=$appHash
  binary_origin=$BinaryOrigin
  dll_count=$dlls.Count

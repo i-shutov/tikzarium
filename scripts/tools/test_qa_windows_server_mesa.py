@@ -37,6 +37,37 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         self.assertIn("gl_renderer='NOT_PROVEN_NO_GUI_LAUNCH'",workflow)
         self.assertNotIn("./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -BinaryOrigin verified-hosted-release",workflow)
 
+    def test_windows_builtin_tar_support_instead_of_forced_7zip_install(self):
+        stage=(TOOLS / 'qa_windows_server_mesa_stage.ps1').read_text(encoding='utf-8')
+        self.assertIn('qa_windows_msys2_tar_stage.ps1', stage)
+        self.assertIn('Expand-TikzariumPinnedMsys2WithWindowsTar',stage)
+        self.assertIn('archive_extract_method=$extractMethod',stage)
+        self.assertIn('PINNED_MSYS2_NO_PREINSTALLED_ARCHIVER',stage)
+        self.assertNotIn("PINNED_MSYS2_REQUIRES_EXISTING_7ZIP_NO_INSTALL_ALLOWED",stage)
+        helper=(TOOLS / 'qa_windows_msys2_tar_stage.ps1').read_text(encoding='utf-8')
+        self.assertIn('Get-Command tar.exe',helper)
+        self.assertIn('PINNED_MSYS2_NATIVE_TAR_ZSTD_EXTRACTION_FAILED_EXIT_',helper)
+        self.assertIn('NO_MINGW64_BIN',helper)
+        self.assertNotIn('msiexec',helper)
+        self.assertNotIn('Set-ItemProperty',helper)
+
+    def test_original_main_ci_mesa_escrow_is_optional_and_exact_sha_bounded(self):
+        ci=(ROOT / '.github' / 'workflows' / 'ci.yml').read_text(encoding='utf-8')
+        server=WORKFLOW.read_text(encoding='utf-8')
+        stage=(TOOLS / 'qa_windows_server_mesa_stage.ps1').read_text(encoding='utf-8')
+        self.assertIn("name: tikzarium-private-w2-pal1000-qa-only",ci)
+        self.assertIn("retention-days: 2",ci)
+        self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main'",ci)
+        self.assertIn("Get-TikzariumPinnedMesaArchive -ArchivePath $archive -MaxAttempts 2",ci)
+        self.assertIn(PIN,ci)
+        self.assertIn("continue-on-error: true",ci)
+        self.assertIn("Download optional exact-main QA-only Mesa escrow",server)
+        self.assertIn("run-id: ${{ github.event_name == 'workflow_run'",server)
+        self.assertIn("qa-mesa-escrow.json",stage)
+        self.assertIn("PINNED_MESA_CI_ESCROW_UNTRUSTED_PROVENANCE",stage)
+        self.assertIn("PINNED_MESA_CI_ESCROW_SHA_MISMATCH",stage)
+        self.assertIn("TRUSTED_MAIN_SOURCE_CI_QA_ESCROW",stage)
+        self.assertIn("$binary.source_ci_run_id",stage)
     def test_client_only_gui_remains_exact_sha(self):
         source = (TOOLS / "qa_windows_server_interactive.ps1").read_text(encoding="utf-8")
         for required in ("W2 exact trusted-main SHA mismatch",
