@@ -164,6 +164,12 @@ jobs:
             $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
             if(Test-Path -LiteralPath $base){Remove-Item -LiteralPath $base -Recurse -Force}
           }
+      - name: Read-only W2 transport and disk diagnostics before artifact upload
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_transport_probe.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -Stage after-w2
       - name: Upload original W2 result before independent server rebuild
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -188,6 +194,12 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_server_user.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex"
+      - name: Read-only post-W1 transport diagnostic even after failure
+        if: ${{ always() && steps.exact_main_sha.outcome == 'success' }}
+        continue-on-error: true
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_server_transport_probe.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -Stage after-w1
       - name: Upload honest evidence including failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

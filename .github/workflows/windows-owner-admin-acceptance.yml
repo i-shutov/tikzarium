@@ -45,6 +45,15 @@ jobs:
             }
           }
           Write-Host 'W2_PS51_PINNED_MESA_PARSER=PASS_6_FILES_NOT_PHYSICAL'
+      - name: Transport probe PowerShell 5.1 parser and safe synthetic selftest
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $path=(Resolve-Path -LiteralPath 'scripts/tools/qa_windows_server_transport_probe.ps1').Path
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count -ne 0){throw "W2 transport probe parse failed: $($errors[0].Message)"}
+          ./scripts/tools/qa_windows_server_transport_probe.ps1 -SelfTest
       - name: Native DPI capture scope restores caller context on success and rejection
         shell: powershell
         run: |
