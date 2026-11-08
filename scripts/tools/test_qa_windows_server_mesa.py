@@ -37,6 +37,37 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         self.assertIn("gl_renderer='NOT_PROVEN_NO_GUI_LAUNCH'",workflow)
         self.assertNotIn("./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -BinaryOrigin verified-hosted-release",workflow)
 
+    def test_same_source_ci_pal1000_escrow_is_separate_and_fail_closed(self):
+        escrow=(TOOLS / "qa_windows_mesa_escrow.ps1").read_text(encoding="utf-8")
+        stage=(TOOLS / "qa_windows_server_mesa_stage.ps1").read_text(encoding="utf-8")
+        server=WORKFLOW.read_text(encoding="utf-8")
+        ci=(ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        for item in (
+            "PASS_ORIGINAL_PINNED_MESA_QA_ARTIFACT_ONLY",
+            "MESA_ESCROW_MANIFEST_PROVENANCE_MISMATCH",
+            "MESA_ESCROW_ORIGINAL_ARCHIVE_SHA_OR_LENGTH_MISMATCH",
+            "MESA_ESCROW_ARCHIVE_OR_MANIFEST_MISSING",
+            "MESA_ESCROW_SELFTEST=PASS_4_NEGATIVES_NO_NETWORK_NO_OS_INPUT",
+            "GITHUB_EVENT_NAME -cne 'push'",
+            "GITHUB_REF -cne 'refs/heads/main'",
+            "no_system_install=$true", "no_product_distribution=$true",
+        ):
+            self.assertIn(item, escrow)
+        for item in (
+            "Assert-TikzariumMesaEscrow", "source_ci_run_id",
+            "MESA_ESCROW_PARTIAL_OR_TAMPERED_SOURCE_ARTIFACT",
+            "MESA_ESCROW_STAGED_ARCHIVE_CHANGED_AFTER_VERIFICATION",
+            "EXACT_MAIN_CI_PINNED_ESCROW_NOT_PRODUCT",
+            PIN,
+        ):
+            self.assertIn(item, stage)
+        self.assertIn("tikzarium-w2-pal1000-qa-escrow", ci)
+        self.assertIn("tikzarium-w2-pal1000-qa-escrow", server)
+        self.assertIn("github.event_name == 'push'", ci)
+        self.assertIn("github.ref == 'refs/heads/main'", ci)
+        self.assertIn("continue-on-error: true", server)
+        self.assertIn("persist-credentials: false", server)
+
     def test_client_only_gui_remains_exact_sha(self):
         source = (TOOLS / "qa_windows_server_interactive.ps1").read_text(encoding="utf-8")
         for required in ("W2 exact trusted-main SHA mismatch",
