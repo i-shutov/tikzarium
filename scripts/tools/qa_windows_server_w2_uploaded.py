@@ -20,6 +20,72 @@ def png_size(path: Path) -> tuple[int, int]:
     return frame.width, frame.height
 
 
+
+def validate_readonly_wts_block(root: Path, report: dict, expected_sha: str) -> None:
+    """Bind a pre-GL NOT_RUN to its original separate Win32 WTS probe.
+
+    A successful Actions workflow, a detached RDP session and an uploaded
+    BLOCKED JSON are never physical input qualification. Older pre-GL
+    schemas remain readable; only the new read-only WTS contract gains
+    these mandatory fields.
+    """
+    if report.get('preflight') != 'BLOCKED_READONLY_WTS_BEFORE_GL':
+        require(report.get('status') not in (
+            'BLOCKED_RDP_DISCONNECTED', 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE',
+            'BLOCKED_NONINTERACTIVE_OR_MISMATCHED_SESSION',
+            'BLOCKED_W2_RDP_READONLY_PROBE_ERROR'),
+            'A native WTS-block verdict cannot omit its read-only preflight')
+        return
+    require(report.get('schema_version') == 3,
+            'Read-only WTS gate requires schema 3 original evidence')
+    gate = json.loads((root / 'w2-session-readiness.json').read_text(encoding='utf-8-sig'))
+    require(isinstance(gate, dict) and gate.get('schema_version') == 1,
+            'Missing/invalid separate original WTS probe')
+    require(gate.get('source_sha') == expected_sha
+            and gate.get('environment') == 'PERSONAL_WINDOWS_SERVER',
+            'Read-only WTS probe must bind the exact trusted main and personal Server')
+    require(gate.get('physical_windows10') == 'NOT_RUN'
+            and gate.get('w2b_full') == 'NOT_RUN'
+            and gate.get('gui_input') == 'NOT_RUN'
+            and gate.get('own_hwnd') == 'NOT_RUN'
+            and gate.get('input_desktop') == 'NOT_INSPECTED_RUNTIME_GUARD_REQUIRED'
+            and gate.get('gui_candidate') is False
+            and gate.get('no_os_change') is True,
+            'Blocked WTS preflight cannot claim GUI/desktop input or OS changes')
+    state = gate.get('wts_connection_state')
+    session = gate.get('session_id')
+    require(type(state) is int and type(session) is int
+            and report.get('wts_connection_state') == state
+            and report.get('session_id') == session,
+            'WTS state/session differs between the two original JSON reports')
+    allowed = ('BLOCKED_RDP_DISCONNECTED',
+               'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE',
+               'BLOCKED_NONINTERACTIVE_OR_MISMATCHED_SESSION',
+               'BLOCKED_W2_RDP_READONLY_PROBE_ERROR')
+    status = gate.get('status')
+    require(status in allowed and report.get('status') == status,
+            'W2 result must reproduce the exact read-only WTS decision')
+    if status == 'BLOCKED_RDP_DISCONNECTED':
+        require(state == 4 and session > 0,
+                'Disconnected RDP verdict needs actual WTSDisconnected=4')
+    elif status == 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE':
+        require(state not in (0, 4) and session > 0,
+                'Unknown/not-active WTS cannot conceal active/disconnected state')
+    elif status == 'BLOCKED_NONINTERACTIVE_OR_MISMATCHED_SESSION':
+        require(session <= 0 or gate.get('token_session_id') != session,
+                'Noninteractive/mismatched session verdict is inconsistent')
+    require(report.get('gl_renderer') == 'NOT_STAGED_NO_GUI_LAUNCH'
+            and report.get('window_screenshot') == 'NOT_RUN'
+            and report.get('f1') == 'NOT_RUN'
+            and report.get('full_w2_qualification') == 'NOT_RUN',
+            'Read-only preflight must neither stage GL nor claim an app window')
+    for field in ('gesture_six', 'source_patch', 'save_open', 'native_dialogs',
+                  'ime', 'dpi_200', 'gui_xelatex_pdf'):
+        require(report.get(field) == 'NOT_RUN', 'Unrun GUI gate forged: ' + field)
+    require(not list((root / 'w2-interactive').rglob('*.png'))
+            and not (root / 'w2-interactive/w2b-stage1/w2b-stage1-original.json').exists(),
+            'Read-only pre-GL WTS block cannot contain GUI frames/gestures')
+
 def validate(root: Path, expected_sha: str) -> dict:
     report = json.loads((root / 'windows-server-w2-interactive.json').read_text(encoding='utf-8-sig'))
     validate_identity(report, expected_sha)
@@ -144,6 +210,7 @@ def validate(root: Path, expected_sha: str) -> dict:
             require(sha256(second) != sha256(first), 'F1 did not change client image')
         require(report.get('child_terminated') is True, "Original evidence contract failed: report.get('child_terminated') is True")
     elif status.startswith('BLOCKED_'):
+        validate_readonly_wts_block(root, report, expected_sha)
         require(report.get('error'), 'Blocked state must include reason')
         require(report['window_screenshot'] == 'NOT_RUN', 'Blocked W2 cannot claim client screenshot')
     else:

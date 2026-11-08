@@ -1,5 +1,25 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+> **НОВЫЙ ДОСТОВЕРНЫЙ СРЕЗ — 2026-11-08 13:53 UTC.**
+> Trusted `main` `ccb4ecb7f31981bd433f8bbe3f331ec59cc512d3`, hosted
+> [CI #42484403986](https://github.com/i-shutov/tikzarium/actions/runs/42484403986) SUCCESS,
+> личный [Server #42484861464](https://github.com/i-shutov/tikzarium/actions/runs/42484861464) SUCCESS.
+> Оригинальный ранний artifact **#13619042829**, ZIP SHA256
+> `aea4751731af1e8f23a9d98909d3c67505b69017fb5cebee0f7a7495241dce0e`:
+> два Win32 JSON подтверждают **WTSDisconnected=4**, Session2, без GL,
+> HWND и OS input. **W2b NOT_RUN**, это не GUI PASS.
+> Оригинальный итоговый artifact **#13620370186**, ZIP SHA256
+> `029418b45169b10c1bae5dbd016687f281ea1863b10e8383e9401157e04e7b25`:
+> нативные PE64 app/CLI subsystems 2/3, реальный внешний MiKTeX 26.5
+> XeLaTeX, PDF SHA256
+> `42c9209e6d6987212afd3ab38de542d4ca4f3269226fa3a5a85e396e4dfe6e6c`,
+> ArialMT embedded/ToUnicode, проверенная кириллица, одинаковый инвентарь
+> MiKTeX до/после — **W1 PASS на ccb4ecb7**. W2a PASS только исторически
+> на `ef95c1c9`; отдельной Win10 W3 нет; stable W4 **NO-GO**.
+> Кандидат независимого read-only WTS-аудита в отдельной ветке, ещё не
+> допущен к персональному runner. Подробный checkpoint: [RESUME.md](RESUME.md).
+>
+
 ## 2026-11-08 — new physical W2b blocker: actual WTSDisconnected; no input attempted
 
 Trusted `main` a5e2335825af4391d380792406ee0d9e529a5a17, exact-main hosted CI SUCCESS:

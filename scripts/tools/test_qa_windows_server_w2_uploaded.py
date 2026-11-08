@@ -207,5 +207,106 @@ class W2AuditTests(unittest.TestCase):
         self.report['window_screenshot']='NOT_RUN'
         self.assertEqual(self.verify()['status'],'BLOCKED_FOREGROUND_NOT_OWNED')
 
+
+    def with_readonly_wts_block(self):
+        self.report.update(
+            schema_version=3, status='BLOCKED_RDP_DISCONNECTED',
+            preflight='BLOCKED_READONLY_WTS_BEFORE_GL',
+            gl_renderer='NOT_STAGED_NO_GUI_LAUNCH',
+            window_screenshot='NOT_RUN', f1='NOT_RUN',
+            error='WTS preflight blocked: no GL staged or GUI input attempted',
+            wts_connection_state=4, session_id=2)
+        (self.root / 'w2-interactive/real-window-before-f1.png').unlink()
+        gate = dict(
+            schema_version=1, source_sha='a' * 40,
+            environment='PERSONAL_WINDOWS_SERVER',
+            physical_windows10='NOT_RUN', w2b_full='NOT_RUN',
+            gui_input='NOT_RUN', own_hwnd='NOT_RUN',
+            input_desktop='NOT_INSPECTED_RUNTIME_GUARD_REQUIRED',
+            gui_candidate=False, no_os_change=True,
+            status='BLOCKED_RDP_DISCONNECTED',
+            wts_connection_state=4, session_id=2, token_session_id=2)
+        self.write_readonly_wts(gate)
+        return gate
+
+    def write_readonly_wts(self, gate):
+        (self.root / 'w2-session-readiness.json').write_text(json.dumps(gate))
+
+    def test_readonly_wts_original_disconnection_is_only_not_run(self):
+        self.with_readonly_wts_block()
+        result = self.verify()
+        self.assertEqual(result['status'], 'BLOCKED_RDP_DISCONNECTED')
+        self.assertEqual(result['full_w2_qualification'], 'NOT_RUN')
+
+    def test_readonly_wts_requires_separate_original_report(self):
+        self.with_readonly_wts_block()
+        (self.root / 'w2-session-readiness.json').unlink()
+        with self.assertRaises(FileNotFoundError): self.verify()
+
+    def test_readonly_wts_rejects_source_sha_tamper(self):
+        gate = self.with_readonly_wts_block()
+        gate['source_sha'] = 'b' * 40
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_active_connection_forged_as_disconnected(self):
+        gate = self.with_readonly_wts_block()
+        gate['wts_connection_state'] = self.report['wts_connection_state'] = 0
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_mismatched_session_across_reports(self):
+        self.with_readonly_wts_block()
+        self.report['session_id'] = 3
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_green_gui_candidate_and_changed_os(self):
+        gate = self.with_readonly_wts_block()
+        gate['gui_candidate'] = True
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+        gate['gui_candidate'] = False
+        gate['no_os_change'] = False
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_gl_or_untested_gesture_claim(self):
+        self.with_readonly_wts_block()
+        self.report['gl_renderer'] = 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
+        with self.assertRaises(AssertionError): self.verify()
+        self.report['gl_renderer'] = 'NOT_STAGED_NO_GUI_LAUNCH'
+        self.report['gesture_six'] = 'PASS'
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_unclaimed_gui_screenshot_or_stage1(self):
+        self.with_readonly_wts_block()
+        (self.root / 'w2-interactive' / 'unexpected.png').write_bytes(b'not original image')
+        with self.assertRaises(AssertionError): self.verify()
+        (self.root / 'w2-interactive' / 'unexpected.png').unlink()
+        stage = self.root / 'w2-interactive' / 'w2b-stage1'
+        stage.mkdir()
+        (stage / 'w2b-stage1-original.json').write_text('{}')
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_dropped_gate_or_status_forgery(self):
+        gate = self.with_readonly_wts_block()
+        del self.report['preflight']
+        with self.assertRaises(AssertionError): self.verify()
+        self.report['preflight'] = 'BLOCKED_READONLY_WTS_BEFORE_GL'
+        self.report['status'] = 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE'
+        with self.assertRaises(AssertionError): self.verify()
+        self.report['status'] = 'BLOCKED_RDP_DISCONNECTED'
+        gate['status'] = 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE'
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_readonly_wts_rejects_unknown_status_hiding_wts_active(self):
+        gate = self.with_readonly_wts_block()
+        gate['status'] = self.report['status'] = 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE'
+        gate['wts_connection_state'] = self.report['wts_connection_state'] = 0
+        self.write_readonly_wts(gate)
+        with self.assertRaises(AssertionError): self.verify()
+
+
 if __name__ == '__main__':
     unittest.main()
