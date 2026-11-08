@@ -58,6 +58,8 @@ def validate(root: Path, expected_sha: str) -> dict:
                     w2b_full='NOT_RUN', win10_w3='NOT_RUN',
                     reason=stage['error'])
     require(status == STAGE1, 'W2b stage1 must be explicit PASS-stage-only or BLOCKED')
+    require(stage.get('exact_additive_patch') == 'PASS_ADDITIVE_DRAW_EXACT_SOURCE_PRESERVATION',
+            'Stage1 did not record live strict UTF-8 and byte-exact additive source check')
     require(stage.get('preflight') == 'ELIGIBLE_ONE_LINE_NOT_W2B_PASS',
             'W2b preflight was not own active RDP at reviewed 125% viewport')
     require(stage.get('input_method') == 'WIN32_REAL_MOUSE_EVENTS_OWNED_HWND_PMV2',
