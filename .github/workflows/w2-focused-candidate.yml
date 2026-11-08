@@ -1,0 +1,26 @@
+name: W2 focused disposable candidate snapshot
+on:
+  push:
+    branches: [release/w2-startup-ready-20261108]
+permissions:
+  contents: read
+jobs:
+  source-snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Archive exact tracked source without git credentials or runner files
+        run: |
+          mkdir -p "$RUNNER_TEMP/w2-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/w2-source/SOURCE_SHA.txt"
+          git archive --format=zip --output="$RUNNER_TEMP/w2-source/tikzarium-source.zip" HEAD
+          sha256sum "$RUNNER_TEMP/w2-source/tikzarium-source.zip" > "$RUNNER_TEMP/w2-source/MANIFEST.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: w2-exact-source-${{ github.sha }}
+          path: ${{ runner.temp }}/w2-source/
+          retention-days: 7
+          if-no-files-found: error
