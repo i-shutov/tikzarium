@@ -30,7 +30,13 @@ public static class TikzariumW2bSaveDialog {
      return "BLOCKED_SAVE_DIALOG_FOREIGN_PID";
    if(GetForegroundWindow()!=dialog || !IsWindowVisible(dialog))
      return "BLOCKED_SAVE_DIALOG_NOT_FOREGROUND";
-   if(GetWindow(dialog,4)!=app) return "BLOCKED_SAVE_DIALOG_UNOWNED_WINDOW";
+   // rfd 0.15.4 IDialog::show calls IFileDialog::Show(NULL) when
+   // FileDialog::set_parent is omitted (TikZarium's current save_as()).
+   // Such a same-PID native modal legitimately has GW_OWNER == 0.
+   // Never accept a nonzero foreign owner, PID, desktop, session or foreground.
+   IntPtr observedOwner=GetWindow(dialog,4);
+   if(observedOwner!=IntPtr.Zero && observedOwner!=app)
+     return "BLOCKED_SAVE_DIALOG_FOREIGN_OWNER";
    var name=new StringBuilder(128);
    if(GetClassName(dialog,name,name.Capacity)==0 || name.ToString()!="#32770")
      return "BLOCKED_SAVE_DIALOG_UNKNOWN_CLASS";
