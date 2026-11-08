@@ -214,6 +214,8 @@ jobs:
           Write-Host 'QA_MESA_ESCROW=PASS_SOURCE_SHA_DIGEST_QA_ONLY'
       - name: Upload pinned pal1000 QA-only original source archive (never product)
         if: runner.os == 'Windows' && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.w2_pal1000_escrow.outcome == 'success'
+        # This transport-only QA channel cannot fail the native product build.
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: tikzarium-private-w2-pal1000-qa-only
