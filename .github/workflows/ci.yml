@@ -52,6 +52,12 @@ jobs:
         run: |
           python -m unittest discover -s scripts/tests -p test_qa_cargo_lock.py -v
           python scripts/qa_cargo_lock.py --report .qa-artifacts/lock-${{ matrix.target_name }}.json
+      - name: Offline W2 Mesa official transport SHA and HTTP-failure negative contracts
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          . ./scripts/tools/qa_windows_mesa_transport.ps1
+          Invoke-TikzariumMesaTransportSelfTest
       - name: Windows administrator token audit (read-only; NOT GUI/PDF proof)
         if: runner.os == 'Windows'
         shell: powershell

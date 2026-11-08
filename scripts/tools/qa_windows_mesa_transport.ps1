@@ -116,10 +116,74 @@ function Invoke-TikzariumMesaTransportSelfTest {
    if(-not $backupBad -or (Test-Path -LiteralPath $backup)){
      throw 'PINNED_MSYS2_SELFTEST_WRONG_SHA_ACCEPTED'
    }
-   Write-Host 'PINNED_MESA_TRANSPORT_SELFTEST=PASS_4_NEGATIVE_CASES_NO_NETWORK'
+   # The server-side official MSYS2 fallback must fail closed independently:
+   # no network is used in this test, and a checksum mismatch is terminal.
+   $msys2=Join-Path $root 'official-msys2.pkg.tar.zst'
+   $wrongBytes={param($url,$path,$attempt) [IO.File]::WriteAllBytes($path,[byte[]](10,20,30,40))}
+   $wrongHash=$false
+   try{[void](Get-TikzariumPinnedMsys2Archive -ArchivePath $msys2 -TestDownloader $wrongBytes -RetryDelayMs 0)}
+   catch{$wrongHash=$_.Exception.Message -like '*PINNED_MSYS2_SHA256_MISMATCH*'}
+   if(-not $wrongHash -or (Test-Path -LiteralPath $msys2)){throw 'MSYS2_WRONG_BYTES_ACCEPTED'}
+   $offline={param($url,$path,$attempt) throw 'SIMULATED_OFFICIAL_MIRROR_504'}
+   $offlineRejected=$false
+   try{[void](Get-TikzariumPinnedMsys2Archive -ArchivePath $msys2 -TestDownloader $offline -RetryDelayMs 0)}
+   catch{$offlineRejected=$_.Exception.Message -like '*PINNED_MSYS2_TRANSPORT_EXHAUSTED_3_ATTEMPTS*'}
+   if(-not $offlineRejected -or (Test-Path -LiteralPath $msys2)){throw 'MSYS2_TRANSPORT_FAILURE_ACCEPTED'}
+   Write-Host 'PINNED_MESA_TRANSPORT_SELFTEST=PASS_6_NEGATIVE_CASES_NO_NETWORK'
  }finally{
    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
  }
+}
+
+# Independently pinned MSYS2 QA-only transport for a trusted-main personal
+# Server. No TLS bypass, no OS install, no changing exact hash and no retry of
+# a checksum failure. Hosted and personal use the identical upstream bytes.
+function Get-TikzariumPinnedMsys2Archive {
+ [CmdletBinding()]
+ param(
+   [Parameter(Mandatory)][string]$ArchivePath,
+   [ValidateRange(1,3)][int]$MaxAttempts=3,
+   [ValidateRange(0,10000)][int]$RetryDelayMs=1000,
+   [scriptblock]$TestDownloader
+ )
+ $source='https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
+ $parent=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($ArchivePath))
+ if(-not (Test-Path -LiteralPath $parent -PathType Container)){
+   throw 'PINNED_MSYS2_PRIVATE_PARENT_MISSING'
+ }
+ for($attempt=1;$attempt -le $MaxAttempts;$attempt++){
+   if(Test-Path -LiteralPath $ArchivePath -PathType Leaf){
+     Remove-Item -LiteralPath $ArchivePath -Force
+   }
+   try {
+     if($TestDownloader){
+       & $TestDownloader $source $ArchivePath $attempt
+     } else {
+       $ProgressPreference='SilentlyContinue'
+       Invoke-WebRequest -Uri $source -OutFile $ArchivePath -MaximumRedirection 6 -TimeoutSec 150 -UseBasicParsing | Out-Null
+     }
+     if(-not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)){
+       throw 'PINNED_MSYS2_TRANSPORT_RETURNED_NO_BYTES'
+     }
+   } catch {
+     $reason=$_.Exception.Message
+     if(Test-Path -LiteralPath $ArchivePath){Remove-Item -LiteralPath $ArchivePath -Force}
+     if($attempt -eq $MaxAttempts){
+       throw "PINNED_MSYS2_TRANSPORT_EXHAUSTED_$($attempt)_ATTEMPTS: $reason"
+     }
+     Write-Warning "Official hash-pinned MSYS2 QA transport failed ($attempt/$MaxAttempts); retrying"
+     if($RetryDelayMs){Start-Sleep -Milliseconds $RetryDelayMs}
+     continue
+   }
+   # Assert removes wrong bytes and throws. Checksum mismatch is never a
+   # fallback/retry trigger: it is a security failure.
+   $sha=Assert-TikzariumMsys2ArchiveHash -ArchivePath $ArchivePath
+   Write-Host "PINNED_MSYS2_QA_ARCHIVE=PASS_EXACT_SHA256 (attempt $attempt)"
+   return [PSCustomObject]@{
+     sha256=$sha;source=$source;transport='IWR_OFFICIAL_MSYS2_SHA256';attempts=$attempt
+   }
+ }
+ throw 'PINNED_MSYS2_TRANSPORT_EXHAUSTED_UNREACHABLE'
 }
 
 # Independently pinned official MSYS2 package as a backup, not a substitute

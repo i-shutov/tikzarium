@@ -83,12 +83,41 @@ try {
    throw 'W2 pinned Mesa provenance or private staged GUI missing'
   }
   $mesa=Get-Content -LiteralPath $provenancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+  $pal1000Ok=($mesa.archive_kind -ceq 'PAL1000_MINGW_26_2_6' -and
+      $mesa.archive_url -ceq 'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z' -and
+      $mesa.archive_sha256 -ceq 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388')
+  $msys2Ok=($mesa.archive_kind -ceq 'MSYS2_MINGW64_MESA_26_2_6_1' -and
+      $mesa.archive_url -ceq 'https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst' -and
+      $mesa.archive_sha256 -ceq '7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4')
   if($mesa.status -cne 'PASS_TEMPORARY_PINNED_TEST_ONLY' -or
      $mesa.source_sha -cne $actual -or $mesa.app_sha256 -cne $appSha -or
-     $mesa.archive_sha256 -cne 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388' -or
+     (-not ($pal1000Ok -or $msys2Ok)) -or
      $mesa.dll_count -lt 2 -or
+     $mesa.dll_manifest.Count -ne $mesa.dll_count -or
      -not $mesa.no_system_install -or -not $mesa.no_product_distribution){
    throw 'W2 temporary software-OpenGL original evidence is not qualified'
+  }
+  # The same actual DLL bytes validated at stage time must still be next to
+  # our exact GUI at launch. Metadata-only provenance never authorizes GUI.
+  $observedNames=@()
+  foreach($entry in @($mesa.dll_manifest)){
+    $name=[string]$entry.name
+    $digest=[string]$entry.sha256
+    if($name -cnotmatch '^[A-Za-z0-9_.-]+\.dll$' -or
+       $observedNames -icontains $name -or
+       $digest -cnotmatch '^[0-9a-f]{64}$'){
+      throw 'W2 QA Mesa DLL manifest has invalid or repeated entry'
+    }
+    $observedNames+= $name
+    $dllPath=Join-Path ([IO.Path]::GetDirectoryName($StagedGuiExe)) $name
+    if(-not (Test-Path -LiteralPath $dllPath -PathType Leaf) -or
+       (Get-FileHash -LiteralPath $dllPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $digest){
+      throw 'W2 QA Mesa DLL bytes changed since private trusted stage'
+    }
+  }
+  if($observedNames -inotcontains 'opengl32.dll' -or
+     $observedNames -inotcontains 'libgallium_wgl.dll'){
+    throw 'W2 QA Mesa OpenGL and Gallium native DLL pair not verified'
   }
   if((Get-FileHash -LiteralPath $StagedGuiExe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $appSha){
    throw 'W2 test Mesa GUI EXE differs from tested native release'
@@ -96,6 +125,7 @@ try {
   $appExe=$StagedGuiExe
   $report.gl_renderer='PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
   $report.gl_archive_sha256=$mesa.archive_sha256
+  $report.gl_archive_kind=$mesa.archive_kind
  } else { $report.gl_renderer='SYSTEM_GL_UNMODIFIED' }
  $token=& (Join-Path $PSScriptRoot 'qa_windows_token.ps1')
  $report.token=$token;$report.session_id=$token.session_id
