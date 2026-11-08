@@ -158,8 +158,13 @@ function Invoke-TikzariumW2bStage1 {
   $report.source_baseline_path='w2-interactive/figure.tex'
   $source=Join-Path $WorkDirectory 'figure.tex'
   if(Test-Path -LiteralPath $source -PathType Leaf){throw 'BLOCKED_W2B_SOURCE_ALREADY_EXISTS'}
-  # Original F1 from W2a remains open. Toggle with real native F1,
-  # then prove source is saved from the actual app toolbar (not synthetic file).
+  # Original F1 from W2a remains open. Revalidate session, owned PID,
+  # active Default input desktop, and foreground BEFORE OS keyboard injection.
+  # The prior W2a screenshot alone never authorizes input to a later focus.
+  if((Get-W2OwnedRuntimeStatus $Handle $ExpectedPid $SessionId) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP' -or
+     [TikzariumW2Win32]::GetForegroundWindow() -ne $Handle){
+   throw 'BLOCKED_W2B_FOCUS_LOST_BEFORE_F1'
+  }
   [System.Windows.Forms.SendKeys]::SendWait('{F1}')
   Start-Sleep -Milliseconds 350
   [TikzariumW2bPointer]::Click($Handle,$ExpectedPid,220,24)
