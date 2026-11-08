@@ -171,6 +171,8 @@ function Invoke-TikzariumW2bStage1 {
    throw 'BLOCKED_W2B_UNEXPECTED_BASELINE_SOURCE'
   }
   $report.baseline_sha256=(Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+  $report.baseline_source_copy='stage1-original-before.tex'
+  [IO.File]::WriteAllBytes((Join-Path $OutputDir $report.baseline_source_copy),$before)
   $first=Join-Path $OutputDir '00-before-palette.png'
   $captureBefore=Save-TikzariumOwnedClient -Handle $Handle -ExpectedPid $ExpectedPid -Path $first
   # Original 125%-DPI screenshot visually confirms the Geometry tool group
