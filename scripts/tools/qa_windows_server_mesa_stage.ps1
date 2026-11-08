@@ -70,6 +70,7 @@ $proof=[ordered]@{
  source_sha=$ExpectedSha
  archive_url=$source
  archive_sha256=$sha
+ archive_transport=$pinned.transport
  app_sha256=$appHash
  binary_origin=$BinaryOrigin
  dll_count=$dlls.Count

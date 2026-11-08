@@ -19,6 +19,21 @@ function Get-TikzariumPinnedArchive {
     $ExpectedSha256 -cnotmatch '^[0-9a-f]{64}$'){
   throw 'PINNED_ARCHIVE_SOURCE_OR_SHA_INVALID'
  }
+ # Real Server W2 uses the same multi-transport *original* pal1000 SHA as
+ # hosted GUI. No MSYS2 backup, unpinned mirrors, system install, or fake PASS.
+ # Explicit TestDownloader is used only for isolated offline negative tests.
+ if(-not $TestDownloader){
+   if($SourceUrl -cne 'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z' -or $ExpectedSha256 -cne 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'){
+      throw 'PINNED_ARCHIVE_ORIGIN_OR_SHA_NOT_ALLOWED_ON_SERVER'
+   }
+   . (Join-Path $PSScriptRoot 'qa_windows_mesa_transport.ps1')
+   $verified=Get-TikzariumPinnedMesaArchive -ArchivePath $ArchivePath
+   if($verified.source -cne $SourceUrl -or $verified.sha256 -cne $ExpectedSha256){
+     throw 'PINNED_ARCHIVE_VERIFIED_TRANSPORT_PROVENANCE_DRIFT'
+   }
+   Write-Host ("PERSONAL_W2_MESA_ARCHIVE_TRANSPORT="+$verified.transport)
+   return $verified
+ }
  $parent=Split-Path -Parent $ArchivePath
  if(-not (Test-Path -LiteralPath $parent -PathType Container)){
   throw 'PINNED_ARCHIVE_PARENT_MISSING'

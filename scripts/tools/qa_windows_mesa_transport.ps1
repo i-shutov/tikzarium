@@ -1,4 +1,4 @@
-# Only disposable GitHub-hosted Windows runner: acquire a *fixed* Mesa QA archive.
+# SHA-verified fixed-origin Mesa QA transport for disposable hosted Windows OR exact trusted-main personal Server W2; never shipped or installed.
 # 2 HTTP stacks + GitHub REST release-asset route; SAME release and exact SHA.
 # No alternate vendor/mirror, no TLS bypass, no system install, no release packing.
 $ErrorActionPreference='Stop'
