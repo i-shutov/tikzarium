@@ -211,7 +211,8 @@ function Invoke-TikzariumW2bStage1 {
   if(-not (Test-Path -LiteralPath $source -PathType Leaf)){throw 'BLOCKED_W2B_SOURCE_LOST'}
   $after=[IO.File]::ReadAllBytes($source)
   $afterText=[Text.Encoding]::UTF8.GetString($after)
-  $owners=[regex]::Matches($afterText,'(?m)^%\s*tikzarium:n1:')
+  # C-owned metadata is appended to the native command line, not a standalone % line.
+  $owners=[regex]::Matches($afterText,' % tikzarium:n1:')
   $report.owner_count=$owners.Count
   if($owners.Count -ne 1 -or -not $afterText.Contains('\draw')){
    throw "BLOCKED_W2B_REAL_LINE_NOT_SAVED (owners=$($owners.Count))"
