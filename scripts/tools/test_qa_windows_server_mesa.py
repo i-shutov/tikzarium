@@ -20,6 +20,23 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         for forbidden in ("Set-ItemProperty", "reg.exe", "msiexec", "Start-Process -Verb RunAs"):
             self.assertNotIn(forbidden, source)
 
+    def test_resilient_server_mesa_no_bare_system_gl_fallback(self):
+        stage=(TOOLS / "qa_windows_server_mesa_stage.ps1").read_text(encoding="utf-8")
+        helper=(TOOLS / "qa_windows_pinned_mesa_fetch.ps1").read_text(encoding="utf-8")
+        shared=(TOOLS / "qa_windows_mesa_transport.ps1").read_text(encoding="utf-8")
+        workflow=WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("Get-TikzariumPinnedArchive",stage)
+        self.assertIn("archive_transport=$pinned.transport",stage)
+        self.assertIn("Get-TikzariumPinnedMesaArchive -ArchivePath $ArchivePath",helper)
+        self.assertIn("PINNED_ARCHIVE_ORIGIN_OR_SHA_NOT_ALLOWED_ON_SERVER",helper)
+        self.assertIn(PIN,helper)
+        self.assertIn("IWR_GITHUB_RELEASE_ASSET_API",shared)
+        self.assertIn("CURL_GITHUB_RELEASE",shared)
+        self.assertIn("BLOCKED_PINNED_MESA_STAGE_UNAVAILABLE",workflow)
+        self.assertIn("w2-mesa-stage-result.json",workflow)
+        self.assertIn("gl_renderer='NOT_PROVEN_NO_GUI_LAUNCH'",workflow)
+        self.assertNotIn("./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -BinaryOrigin verified-hosted-release",workflow)
+
     def test_client_only_gui_remains_exact_sha(self):
         source = (TOOLS / "qa_windows_server_interactive.ps1").read_text(encoding="utf-8")
         for required in ("W2 exact trusted-main SHA mismatch",

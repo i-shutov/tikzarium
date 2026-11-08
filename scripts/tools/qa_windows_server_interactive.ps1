@@ -1,7 +1,7 @@
 # W2 personal Windows Server: first original interactive GUI evidence, not full W2 PASS.
 # Only exact trusted-main GUI; no TeX, installs, privilege or account changes.
 [CmdletBinding()]
-param([string]$OutputDir,[switch]$SelfTest,[string]$StagedGuiExe,
+param([string]$OutputDir,[switch]$SelfTest,[switch]$ProbeRealW2bStage1,[string]$StagedGuiExe,
  [ValidateSet('server-native','verified-hosted-release')][string]$BinaryOrigin='server-native')
 $ErrorActionPreference='Stop'
 
@@ -224,6 +224,21 @@ public static class TikzariumW2Win32 {
   $report.capture_geometry_after=$after
   $report.f1='KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW'
  }else{$report.f1='BLOCKED_FOCUS_LOST_AFTER_KEY'}
+ # W2a remains accepted independently of any W2b candidate. On a physical
+ # owned HWND, collect one *real* mouse/UI/source-save stage before closing GUI.
+ if($ProbeRealW2bStage1 -and $report.f1 -ceq 'KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW') {
+  # A W2b harness/runtime failure must never demote already captured W2a
+  # owned-HWND/F1 evidence. Keep its own exception and gate explicit.
+  $report.w2b_stage1_status='BLOCKED_STAGE1_UNHANDLED_EXCEPTION'
+  try {
+   . (Join-Path $PSScriptRoot 'qa_windows_w2b_stage1.ps1')
+   $probe=Invoke-TikzariumW2bStage1 -Handle $handle -ExpectedPid $appProcess.Id -SessionId ([int]$token.session_id) -WorkDirectory $work -OutputDir (Join-Path $work 'w2b-stage1') -ExpectedSha $actual
+   $report.w2b_stage1_status=$probe.status
+  } catch {
+   $report.w2b_stage1_error=$_.Exception.Message
+   Write-Warning ("W2b stage1 helper error, W2a evidence unchanged: " + $report.w2b_stage1_error)
+  }
+ }
  $report.status='PARTIAL_W2_REAL_VISIBLE_WINDOW_EVIDENCE_NOT_FULL_ACCEPTANCE'
  $exitCode=0
 }catch{

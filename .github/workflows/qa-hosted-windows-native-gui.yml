@@ -37,6 +37,11 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_hosted_mesa_software_gl.ps1 -AppDirectory 'target/release' -EvidenceDirectory '.qa-artifacts/hosted-native-gui'
+      - name: Capture actual staged Mesa PE imports and runtime dependencies (not GUI proof)
+        shell: pwsh
+        run: |
+          python scripts/tools/qa_windows_mesa_imports.py --dll-root target/release --output .qa-artifacts/hosted-native-gui/mesa-imports.json
+          if($LASTEXITCODE -ne 0){throw 'Original staged QA Mesa DLL import evidence missing'}
       # This is NOT part of a portable release package or a physical Windows test.
       - name: Win32 preflight negative contracts
         shell: powershell
