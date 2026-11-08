@@ -2,6 +2,8 @@
 
 ## 2026-11-08 — diagnostic: fixed-hash QA Mesa asset HTTP 504
 
+**Вторая ветвь загрузки, только кандидат:** после нескольких 504 даже через curl и официальный release-asset API добавлен резервный пакет [MSYS2 mingw-w64-x86_64-mesa 26.2.6-1](https://packages.msys2.org/packages/mingw-w64-x86_64-mesa), 12.43 МБ, точный SHA256 `7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4`. Путь и DLL-хеши будут отражены в исходном отчёте. Ни подмены пал1000 после SHA-мисматча, ни незаверенного зеркала, ни системной установки. Проверить исполнением на disposable Windows, не присваивать hosted GUI PASS до исходного артефакта. Физический Server W2b остаётся NOT_RUN.
+
 On exact-head PR #136 hosted Win32 run #42467815916 and PR #137 #42467958458, four requests to the external **pal1000 Mesa 26.2.6** QA-only archive all returned HTTP 504. Rust/Windows/macOS/Linux, PS tests and MiKTeX checks were successful; the hosted Win32 GUI evidence step was **NOT PASS**. Retry of the failed job did not fix the gateway error. A disposable-only transport candidate now tries PowerShell HTTP, Windows curl.exe and GitHub's official release asset API, bounded and requiring the **same original SHA256**. All wrong/missing bytes fail closed. This candidate must pass new exact-head hosted CI; **no personal Server W2b input has run**. No system installs or alternate unverified mirrors.
 
 ## 2026-11-08 — личный runner: исправление отмен ожидающих заданий

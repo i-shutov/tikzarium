@@ -28,21 +28,70 @@ New-Item -ItemType Directory -Path $unpacked -Force | Out-Null
 # Pure offline negative self-test must run before touching the network.
 . (Join-Path $PSScriptRoot 'qa_windows_mesa_transport.ps1')
 Invoke-TikzariumMesaTransportSelfTest
-$pinned=Get-TikzariumPinnedMesaArchive -ArchivePath $archive
-$actual=$pinned.sha256
-if($pinned.source -cne $source -or $actual -cne $expected){
- throw 'PINNED_MESA_SOURCE_OR_SHA_DRIFT'
+# First preference is the original pal1000 26.2.6 MinGW archive. If GitHub's
+# release CDN is genuinely unreachable, an independently SHA-pinned *official*
+# MSYS2 26.2.6-1 package is allowed for disposable hosted QA only.
+# Both share an OpenGL 26.2.6 software-driver codebase, NOT interchangeable
+# binary attestations: provenance and all original DLL hashes stay explicit.
+$archiveKind='PAL1000_MINGW_26_2_6'
+$releaseLabel='Mesa 26.2.6 MinGW x64 (pal1000)'
+$mesaRelativePath='x64'
+try {
+ $pinned=Get-TikzariumPinnedMesaArchive -ArchivePath $archive
+ $actual=$pinned.sha256
+ if($pinned.source -cne $source -or $actual -cne $expected){
+   throw 'PINNED_MESA_SOURCE_OR_SHA_DRIFT'
+ }
+ & $seven x $archive "-o$unpacked" -y | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'PINNED_MESA_PAL1000_EXTRACTION_FAILED'}
+} catch {
+ $primaryReason=$_.Exception.Message
+ if($primaryReason -like '*SHA256_MISMATCH*' -or
+    $primaryReason -like '*SOURCE_OR_SHA_DRIFT*'){
+   throw  # never try other suppliers after a hash/provenance mismatch
+ }
+ Write-Warning ('Primary pinned pal1000 QA asset transport/extract unavailable; '+
+                'trying independently SHA-pinned MSYS2 26.2.6-1: '+$primaryReason)
+ $source='https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
+ $archive=Join-Path $work 'mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
+ $expected='7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4'
+ $archiveKind='MSYS2_MINGW64_MESA_26_2_6_1'
+ $releaseLabel='MSYS2 mingw-w64-x86_64-mesa 26.2.6-1'
+ $mesaRelativePath='mingw64\bin'
+ $ProgressPreference='SilentlyContinue'
+ $downloaded=$false
+ for($n=1;$n -le 3;$n++){
+   if(Test-Path -LiteralPath $archive){Remove-Item -LiteralPath $archive -Force}
+   try{
+     Invoke-WebRequest -Uri $source -OutFile $archive -MaximumRedirection 7 -TimeoutSec 120 -UseBasicParsing | Out-Null
+     if(-not (Test-Path -LiteralPath $archive -PathType Leaf)){throw 'MSYS2_PACKAGE_NO_BYTES'}
+     $downloaded=$true
+     break
+   }catch{
+     if(Test-Path -LiteralPath $archive){Remove-Item -LiteralPath $archive -Force}
+     if($n -eq 3){throw "PINNED_MSYS2_DOWNLOAD_FAILED_AFTER_3: $($_.Exception.Message)"}
+     Write-Warning "MSYS2 official QA mirror attempt $n/3 failed; no hash exceptions allowed"
+     Start-Sleep -Milliseconds (900*$n)
+   }
+ }
+ if(-not $downloaded){throw 'PINNED_MSYS2_UNREACHABLE'}
+ $actual=Assert-TikzariumMsys2ArchiveHash -ArchivePath $archive
+ & $seven x $archive "-o$unpacked" -y | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_ZSTD_EXTRACTION_FAILED'}
+ $tars=@(Get-ChildItem -LiteralPath $unpacked -Filter '*.pkg.tar' -File)
+ if($tars.Count -ne 1){throw 'PINNED_MSYS2_EXACT_ONE_NESTED_TAR_REQUIRED'}
+ & $seven x $tars[0].FullName "-o$unpacked" -y | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_TAR_EXTRACTION_FAILED'}
 }
-& $seven x $archive "-o$unpacked" -y | Out-Null
-if($LASTEXITCODE -ne 0){throw 'Cannot extract verified Mesa3D archive'}
+Write-Host ("HOSTED_QA_MESA_SOURCE="+$archiveKind+" SHA256="+$actual)
 $files=@(Get-ChildItem -LiteralPath $unpacked -File -Recurse)
 $sample=@($files | Select-Object -First 45 | ForEach-Object {$_.FullName.Substring($unpacked.Length).TrimStart([char]'\')})
 Write-Host ('MESA_EXTRACTED_TOTAL_FILES=' + $files.Count)
 Write-Host ('MESA_EXTRACTED_SAMPLE=' + ($sample -join ' ; '))
-$diagnostic=[ordered]@{archive_sha256=$actual;release='Mesa 26.2.6 MinGW x64';file_count=$files.Count;sample_paths=$sample;raw_software_gl='NOT_YET_VALIDATED'}
+$diagnostic=[ordered]@{archive_sha256=$actual;release=$releaseLabel;archive_kind=$archiveKind;file_count=$files.Count;sample_paths=$sample;raw_software_gl='NOT_YET_VALIDATED'}
 $diagnostic | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'mesa-extraction-diagnostic.json') -Encoding UTF8
 # Only pinned MinGW x64. Mesa 26.2.6 MSVC release had no opengl32.dll.
-$mesaX64=Join-Path $unpacked 'x64'
+$mesaX64=Join-Path $unpacked $mesaRelativePath
 if(-not (Test-Path -LiteralPath $mesaX64 -PathType Container)){throw 'Pinned MinGW x64 Mesa directory absent'}
 $dlls=@(Get-ChildItem -LiteralPath $mesaX64 -File -Filter '*.dll')
 $gl=@($dlls | Where-Object {$_.Name -ieq 'opengl32.dll'})
@@ -73,7 +122,8 @@ $report=[ordered]@{
  evidence_kind='DISPOSABLE_GITHUB_WINDOWS_MESA_SOFTWARE_GL_ONLY'
  archive_url=$source
  archive_sha256=$actual
- provenance='pal1000/mesa-dist-win Github Release 26.2.6 MinGW x64'
+ provenance=$releaseLabel
+ archive_kind=$archiveKind
  no_product_distribution=$true
  no_system_install=$true
  software_gl='Mesa llvmpipe'

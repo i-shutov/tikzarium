@@ -107,8 +107,34 @@ function Invoke-TikzariumMesaTransportSelfTest {
    try{[void](Get-TikzariumPinnedMesaArchive -ArchivePath $archive -MaxAttempts 4 -RetryDelayMs 0 -TestDownloader $noFiles)}
    catch{$missing=($_.Exception.Message -like '*PINNED_MESA_TRANSPORT_EXHAUSTED_4_ATTEMPTS*')}
    if(-not $missing){throw 'PINNED_MESA_SELFTEST_EMPTY_DOWNLOAD_ACCEPTED'}
-   Write-Host 'PINNED_MESA_TRANSPORT_SELFTEST=PASS_3_NEGATIVE_CASES_NO_NETWORK'
+   # Alternate-origin package is NOT allowed to bypass its independent SHA.
+   $backup=Join-Path $root 'msys2-package.pkg.tar.zst'
+   [IO.File]::WriteAllBytes($backup,[byte[]](22,33,44))
+   $backupBad=$false
+   try{[void](Assert-TikzariumMsys2ArchiveHash -ArchivePath $backup)}
+   catch{$backupBad=$_.Exception.Message -like '*PINNED_MSYS2_SHA256_MISMATCH*'}
+   if(-not $backupBad -or (Test-Path -LiteralPath $backup)){
+     throw 'PINNED_MSYS2_SELFTEST_WRONG_SHA_ACCEPTED'
+   }
+   Write-Host 'PINNED_MESA_TRANSPORT_SELFTEST=PASS_4_NEGATIVE_CASES_NO_NETWORK'
  }finally{
    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
  }
+}
+
+# Independently pinned official MSYS2 package as a backup, not a substitute
+# for validating pal1000 bytes. Hash failure removes the file and aborts.
+function Assert-TikzariumMsys2ArchiveHash {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$ArchivePath)
+ $expected='7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4'
+ if(-not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)){
+   throw 'PINNED_MSYS2_FILE_NOT_FOUND'
+ }
+ $actual=(Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+ if($actual -cne $expected){
+   Remove-Item -LiteralPath $ArchivePath -Force
+   throw "PINNED_MSYS2_SHA256_MISMATCH: $actual"
+ }
+ return $actual
 }
