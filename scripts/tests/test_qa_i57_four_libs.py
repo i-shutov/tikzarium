@@ -66,14 +66,21 @@ class MatrixTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m.declaration("shapes")
 
-    def test_real_x11_and_main_push_gate_not_promoted_to_physical(self):
+    def test_historical_x11_lease_and_current_studio_gate_are_distinct(self):
         flow = (ROOT / ".github/workflows/i57-n2-four-live-x11.yml").read_text()
-        for literal in ("pull_request:", "branches: [main, b40-egui-source-undo-transaction-fence, b41-egui-pinned-parameter-apply]",
-                        "branches: [main, qa/i58-b40-source-history-x11, qa/i60-b41-inspector-real-x11, b41-egui-pinned-parameter-apply]", "push:", "workflow_dispatch:",
+        for literal in ("pull_request:", "branches: [b40-egui-source-undo-transaction-fence, b41-egui-pinned-parameter-apply]",
+                        "branches: [qa/i58-b40-source-history-x11, qa/i60-b41-inspector-real-x11, b41-egui-pinned-parameter-apply]", "push:", "workflow_dispatch:",
                         "xvfb-run", "qa_i57_four_libs_x11.py", "qa_i53_live_libraries_x11.py",
                         "git rev-parse HEAD", self.tree,
                         "github.event.pull_request.head.sha || github.sha"):
             self.assertIn(literal, flow)
+        self.assertIn("Legacy B41 coordinate profile", flow)
+        self.assertNotIn("branches: [main,", flow)
+        current = (ROOT / ".github/workflows/i61-b42-studio-x11.yml").read_text()
+        self.assertIn("branches: [qa/i61-b42-studio-source-pdf, main]", current)
+        self.assertIn("branches: [main]", current)
+        self.assertIn("scripts/qa_i61_b42_studio_x11.py", current)
+        self.assertIn("git rev-parse HEAD:crates/tikzarium-app/src", current)
         self.assertNotIn("ubuntu-latest", flow)
         self.assertNotIn("miktex --install", flow)
 

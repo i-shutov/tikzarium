@@ -33,10 +33,17 @@ class I53(unittest.TestCase):
   m.check_profile(d,"old")
   d["help_query"]=["not_an_int",22]
   with self.assertRaises(ValueError):m.check_profile(d,"old")
- def test_i53_real_gui_gate_survives_product_merge(self):
+ def test_historical_i53_retains_lease_and_current_main_uses_i61(self):
   workflow=(Path(__file__).resolve().parents[2]/".github/workflows/i53-b38-live-libraries.yml").read_text(encoding="utf-8")
   self.assertIn("      - feat/b38-n2-n3-inspector-20261101",workflow)
-  self.assertIn("      - main",workflow)
+  self.assertNotIn("      - main",workflow)
+  self.assertIn("Legacy B41 coordinate profile",workflow)
+  self.assertIn("workflow_dispatch:",workflow)
+  current=(Path(__file__).resolve().parents[2]/".github/workflows/i61-b42-studio-x11.yml").read_text(encoding="utf-8")
+  self.assertIn("branches: [qa/i61-b42-studio-source-pdf, main]",current)
+  self.assertIn("branches: [main]",current)
+  self.assertIn("scripts/qa_i61_b42_studio_x11.py",current)
+  self.assertIn("git rev-parse HEAD:crates/tikzarium-app/src",current)
   self.assertIn("test \"$(git rev-parse HEAD)\" = \"$TIKZARIUM_SOURCE_SHA\"",workflow)
   self.assertIn("d290bdad0de0058b538a26be0209a97f2626f76a",workflow)
   self.assertIn("scripts/qa_i53_live_libraries_x11.py",workflow)

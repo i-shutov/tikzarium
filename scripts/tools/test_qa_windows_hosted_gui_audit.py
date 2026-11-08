@@ -21,7 +21,8 @@ class W2AuditTests(unittest.TestCase):
             return struct.pack('>I', len(data)) + kind + data + struct.pack(
                 '>I', zlib.crc32(kind + data) & 0xffffffff)
         ihdr = struct.pack('>IIBBBBB', 1164, 646, 8, 2, 0, 0, 0)
-        pixels = (b'\0' + b'\0' * (1164 * 3)) * 646
+        rgb = bytes(channel for x in range(1164) for channel in (x % 256, (x // 8) % 256, 96))
+        pixels = (b'\0' + rgb) * 646
         image = (b'\x89PNG\r\n\x1a\n'
                  + chunk(b'IHDR', ihdr)
                  + chunk(b'IDAT', zlib.compress(pixels))
