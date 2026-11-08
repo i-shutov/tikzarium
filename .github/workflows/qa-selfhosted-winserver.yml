@@ -21,9 +21,12 @@ permissions:
   contents: read
   actions: read
 
-# Serialize access to the same persistent machine; never cancel a running proof.
+# Only actual trusted-main push and explicitly selected manual main runs share
+# the persistent-machine lease. PR CI completions trigger workflow_run too but
+# must not occupy/cancel the one pending trusted-main slot before jobs.if.
+# GitHub concurrency replaces prior pending runs even with cancel-in-progress=false.
 concurrency:
-  group: tikzarium-trusted-winserver-main
+  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')) && 'tikzarium-trusted-winserver-main' || format('tikzarium-ignored-workflow-run-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -152,9 +155,9 @@ jobs:
           $evidence=Join-Path $env:RUNNER_TEMP 'tikzarium-user-miktex'
           if((Test-Path -LiteralPath $staged -PathType Leaf) -and
              (Test-Path -LiteralPath (Join-Path $evidence 'w2-mesa-software-gl-provenance.json') -PathType Leaf)){
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged -BinaryOrigin verified-hosted-release -ProbeRealW2bStage1
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -StagedGuiExe $staged -BinaryOrigin verified-hosted-release
           } else {
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -BinaryOrigin verified-hosted-release -ProbeRealW2bStage1
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -ProbeRealW2bStage1 -BinaryOrigin verified-hosted-release
           }
       - name: Remove every temporary Mesa DLL and copied GUI from personal runner
         if: always()

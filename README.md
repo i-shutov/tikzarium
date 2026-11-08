@@ -1,15 +1,13 @@
 # TikZarium
 
-> **Recovery checkpoint — 2026-11-08:** upstream main `26cf786d`, PR #132/#133 merged. The auditor hardening in this source snapshot is a **local, not-yet-published patch**, not a new stable release. See [the exact resume state](docs/RESUME.md). Earlier status paragraphs below are historical; full W2b/Win10 W3 remain unaccepted.
-
-> **АКТУАЛЬНАЯ ПЕРВАЯ ЦЕЛЬ 2026-11-07 — Windows 10 x64, features frozen.** Main 4b79d71a: W0 native PE/ZIP и W1 personal Server Rust/MiKTeX PDF PASS; W2 physical Server имеет WTSActive и видимый HWND PID4060 @125%, но BLOCKED_FOREGROUND_NOT_OWNED (F1/client PNG/full GUI NOT_RUN); физическая Win10 W3 NOT_RUN, installer/stable W4 BLOCKED. HIGH/current Administrator разрешён владельцем с предупреждением «только trusted TeX, не sandbox». Старый blanket HIGH-ban/обязательный non-admin отменён. [Релизный контроль](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md); [79 технических проблем и решений](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
+> **CURRENT RELEASE (2026-11-08, main `ef95c1c9ef1ac2b311a654c1daac53c97c8d7ef9`):** Windows portable W0 hosted PASS, **W1 exact-current-main personal Rust/MiKTeX PDF + original font/Unicode audit PASS** (server #42460198175, final artifact #13609998582); **W2a real Server own HWND/125% physical-client PNG/F1 PASS** ([original run](https://github.com/i-shutov/tikzarium/actions/runs/42460198175), artifact 13609526883, independent decoded PNG and visual review). W2b physical six gestures/Save/Open/IME/GUI→XeLaTeX **NOT_RUN**; physical Win10 W3 **NOT_RUN**; stable W4 **NO-GO**. PR #132/#133/#134 merged. See [release control](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md), [resume](docs/RESUME.md), [79 incidents](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). Administrator HIGH is for trusted TeX only (NOT sandbox); no system configuration/FlowBridge changes.
 
 > **Historical Linux release progress (retained, not today's platform priority):** R1 safe close, R2 200%-DPI bounds and R3 genuine GTK/XDG Open/Save/Export are accepted on main 4f3a2ebb using hosted X11. The versioned **1.0.0-rc.1** portable candidate uses the identical GUI-tested ELF and its own manifest/SHA256 and Russian first-use guide. **NOT stable 1.0**: physical Ubuntu24/x86_64/X11 desktop R4 remains NOT_RUN. See [issue #103](https://github.com/i-shutov/tikzarium/issues/103), [R4 runbook](docs/LINUX_1_0_PHYSICAL_QA_RU.md), and [R5 plan](plans/2026-11-05_LINUX_1_0_R5_RC.md). Old N5 Preview instructions below refer to the previous, not versioned RC.
 
 
 **Cross-platform-by-design native TikZ/PGF visual editor** written in Rust/egui. The user's ordinary editable `.tex` is authoritative; **only an external XeLaTeX** produces the exact PDF. No account, web service, proprietary document format or bundled TeX distribution.
 
-**Status (2026-11-07):** W0/W1 PASS, W2 RDP HWND/F1 foreground blocked, W3 physical Win10 NOT_RUN, W4 release BLOCKED. Windows-first feature freeze; Linux 1.0.0-rc.1 retained without physical R4. The current release gate and root-cause ledger are linked above.
+**Status (2026-11-08):** W0 PASS, exact-current-main W1 independently audited PASS, W2a physical PASS at 125% with original full 1475×850 client pixels and F1, W2b/W3 NOT_RUN, W4 stable NO-GO.
 
 ## Current user workflow
 
