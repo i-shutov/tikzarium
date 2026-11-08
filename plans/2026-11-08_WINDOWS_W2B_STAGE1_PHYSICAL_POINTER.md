@@ -45,3 +45,46 @@ The only available full personal Server visual baseline at this point is W2a (14
 ## 2026-11-08 no-7zip blocker — original run #42476793403
 
 Trusted-main `6cb083b2` early original #13615637630 proves pal1000 transport exhausted and official MSYS2 fallback was blocked *before extraction* by `PINNED_MSYS2_REQUIRES_EXISTING_7ZIP_NO_INSTALL_ALLOWED`. Candidate repair retains exact SHA origin, uses Windows builtin `tar.exe -xf` directly on .pkg.tar.zst (if that Server build supports zstd), verifies `mingw64/bin/opengl32.dll` and `libgallium_wgl.dll` and every DLL hash before any private GUI launch. Hosted PS5.1 synthetic `.tar` tests verify native path/layout, not actual zstd support; only postmerge physical original JSON may accept W2b stage1. No system install, no package/fonts/driver/UAC/FlowBridge edits.
+
+## 2026-11-08 — new physical W2b blocker: actual WTSDisconnected; no input attempted
+
+Trusted `main` a5e2335825af4391d380792406ee0d9e529a5a17, exact-main hosted CI SUCCESS:
+[CI #42479515561](https://github.com/i-shutov/tikzarium/actions/runs/42479515561),
+[D QA #42479515684](https://github.com/i-shutov/tikzarium/actions/runs/42479515684),
+[Windows Administrator #42479515669](https://github.com/i-shutov/tikzarium/actions/runs/42479515669).
+Personal [Windows Server run #42480008310](https://github.com/i-shutov/tikzarium/actions/runs/42480008310)
+completed SUCCESS with **original early artifact #13616951919**
+(outer ZIP SHA256 `f98bf0da4906ac6d81994ab0aa88b7197bf21cfb9f1f294787ed721cc4b7bf2e`)
+and **original final artifact #13617707472**
+(outer ZIP SHA256 `0830406a4b2265caed160444d1ee90e00ab90d93f3cd19b557c395cafe5a3e6e`).
+The original GL provenance proves successful QA-only transfer from exact-main CI escrow:
+`PAL1000_MINGW_26_2_6`, archive SHA256
+`da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`,
+19 original DLL digests, no system installation or product distribution.
+**The previous 7-Zip/CDN blocker is cleared on this run; the remaining blocker is different.**
+
+Original `windows-server-w2-interactive.json`: **`BLOCKED_DISCONNECTED_OR_UNKNOWN_SESSION_STATE`**,
+at 2026-11-08 12:24 UTC, RDP Session 2, WinSta0/Default,
+**WTSConnectState=4 (WTSDisconnected), `input_desktop=UNAVAILABLE`**.
+No GUI process/HWND, source gestures, F1 PNG, native dialogs, IME or GUI-origin PDF was tested.
+Historical W2a full-window/F1 PASS at ef95c1c9 is preserved but **not transferred** to a5e23358.
+Do not change RDP/UAC/accounts/runner services or infer physical W2b PASS.
+
+Independently checked actual uploaded **W1** `owner-admin-proof/product.pdf`:
+PDF SHA256 `f3a914670c959b54b321d9cf62b5ebb213c6381e1e6619545b89a640ffb7c1c5`,
+one page, MiKTeX-dvipdfmx/XeTeX producer, embedded/subset ArialMT CID TrueType, ToUnicode yes,
+extractable `Точка` and `Тест XeLaTeX: Кириллица.`. Original native Rust 1.91.0
+GUI PE subsystem 2 / CLI 3, no dynamic VCRUNTIME, actual MiKTeX 26.5 CLI build exit 0,
+packages unchanged, disabled shell escape, existing HIGH Administrator trusted-document warning.
+This is **W1 PASS** at a5e23358, **not** W2b GUI→PDF.
+
+Follow-up candidate in independent branch `fix/w2b-rdp-session-gate-20261108`:
+read-only WTS native query before Mesa staging; exact trusted-main/self-hosted run and
+SHA guards; seven fail-closed Windows PowerShell 5.1 tests; original
+`w2-session-readiness.json` and a W2 `NOT_RUN` result when disconnected.
+Save GL transfer/network work until WTS is Active, but WTSActive is **only a candidate**:
+the existing owned HWND/input desktop/focus/PMv2 runtime gates remain mandatory.
+W1 native Rust/MiKTeX continues even when W2 is blocked.
+
+**Release verdict:** W1 PASS current server; W2a PASS historical original; W2b NOT_RUN
+(disconnected RDP), W3 physical Windows10 NOT_RUN, stable W4 NO-GO.

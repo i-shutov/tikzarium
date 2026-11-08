@@ -1,5 +1,48 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+## 2026-11-08 — new physical W2b blocker: actual WTSDisconnected; no input attempted
+
+Trusted `main` a5e2335825af4391d380792406ee0d9e529a5a17, exact-main hosted CI SUCCESS:
+[CI #42479515561](https://github.com/i-shutov/tikzarium/actions/runs/42479515561),
+[D QA #42479515684](https://github.com/i-shutov/tikzarium/actions/runs/42479515684),
+[Windows Administrator #42479515669](https://github.com/i-shutov/tikzarium/actions/runs/42479515669).
+Personal [Windows Server run #42480008310](https://github.com/i-shutov/tikzarium/actions/runs/42480008310)
+completed SUCCESS with **original early artifact #13616951919**
+(outer ZIP SHA256 `f98bf0da4906ac6d81994ab0aa88b7197bf21cfb9f1f294787ed721cc4b7bf2e`)
+and **original final artifact #13617707472**
+(outer ZIP SHA256 `0830406a4b2265caed160444d1ee90e00ab90d93f3cd19b557c395cafe5a3e6e`).
+The original GL provenance proves successful QA-only transfer from exact-main CI escrow:
+`PAL1000_MINGW_26_2_6`, archive SHA256
+`da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`,
+19 original DLL digests, no system installation or product distribution.
+**The previous 7-Zip/CDN blocker is cleared on this run; the remaining blocker is different.**
+
+Original `windows-server-w2-interactive.json`: **`BLOCKED_DISCONNECTED_OR_UNKNOWN_SESSION_STATE`**,
+at 2026-11-08 12:24 UTC, RDP Session 2, WinSta0/Default,
+**WTSConnectState=4 (WTSDisconnected), `input_desktop=UNAVAILABLE`**.
+No GUI process/HWND, source gestures, F1 PNG, native dialogs, IME or GUI-origin PDF was tested.
+Historical W2a full-window/F1 PASS at ef95c1c9 is preserved but **not transferred** to a5e23358.
+Do not change RDP/UAC/accounts/runner services or infer physical W2b PASS.
+
+Independently checked actual uploaded **W1** `owner-admin-proof/product.pdf`:
+PDF SHA256 `f3a914670c959b54b321d9cf62b5ebb213c6381e1e6619545b89a640ffb7c1c5`,
+one page, MiKTeX-dvipdfmx/XeTeX producer, embedded/subset ArialMT CID TrueType, ToUnicode yes,
+extractable `Точка` and `Тест XeLaTeX: Кириллица.`. Original native Rust 1.91.0
+GUI PE subsystem 2 / CLI 3, no dynamic VCRUNTIME, actual MiKTeX 26.5 CLI build exit 0,
+packages unchanged, disabled shell escape, existing HIGH Administrator trusted-document warning.
+This is **W1 PASS** at a5e23358, **not** W2b GUI→PDF.
+
+Follow-up candidate in independent branch `fix/w2b-rdp-session-gate-20261108`:
+read-only WTS native query before Mesa staging; exact trusted-main/self-hosted run and
+SHA guards; seven fail-closed Windows PowerShell 5.1 tests; original
+`w2-session-readiness.json` and a W2 `NOT_RUN` result when disconnected.
+Save GL transfer/network work until WTS is Active, but WTSActive is **only a candidate**:
+the existing owned HWND/input desktop/focus/PMv2 runtime gates remain mandatory.
+W1 native Rust/MiKTeX continues even when W2 is blocked.
+
+**Release verdict:** W1 PASS current server; W2a PASS historical original; W2b NOT_RUN
+(disconnected RDP), W3 physical Windows10 NOT_RUN, stable W4 NO-GO.
+
 > **LATEST ENGINEERING CHECKPOINT, 2026-11-08 (PR #138 DRAFT; not merged).** Trusted `main` at this checkpoint: `597dc894070202975fdf58c434f599deac42fe7d` after reviewed PR #136. [Personal Windows Server run #42473309431](https://github.com/i-shutov/tikzarium/actions/runs/42473309431) original early artifact **#13613977992**, original ZIP SHA256 `06cdd5733eefd519da3875939baa974223c99aa85b85bea4efb439c4a5482c85`: GUI stage **BLOCKED** `PINNED_MESA_TRANSPORT_EXHAUSTED_4_ATTEMPTS: CURL_RELEASE_EXIT_22`. No W2b source gesture, native Save As, GUI→XeLaTeX or Windows10 input was executed. Exact-original hosted binary/ZIP validation was successful. Historical W2a full 125% screenshot/F1 stays **PASS only at SHA `ef95c1c9`**, full W2b **NOT_RUN**, W3 **NOT_RUN**, stable W4 **NO-GO**. Final [personal run #42473309431](https://github.com/i-shutov/tikzarium/actions/runs/42473309431) completed SUCCESS; independently audited original final artifact **#13614209996**, ZIP SHA256 `a16ff580f364787bce70142fe3f8ed47cb9b580381e499cf88f98933288f640c`: native Rust and PE GUI/CLI imports PASS, external actual MiKTeX XeLaTeX product CLI PDF SHA256 `825a1bc5eb08bb5876f2d263a48ac84335169f3bf79ef30ac165763f64aa81c5`, one page, subset/embedded ArialMT CID TrueType, ToUnicode, real Cyrillic text and visual render, identical package inventory except elapsed timing. **W1 PASS at exact `597dc894`**, but independent original early artifact still says W2b native GUI **BLOCKED_NO_GL**. No GUI→XeLaTeX was tested. Candidate PR #138 adds official separately SHA-pinned MSYS2 QA transport without system install, but is **not accepted** on personal Server until exact-head hosted CI, review, expected-head merge after current run completion, and original physical QA. No change to runner or main during this run.
 
 
