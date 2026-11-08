@@ -137,10 +137,18 @@ jobs:
           $token = & ./scripts/tools/qa_windows_token.ps1
           New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\tikzarium-user-miktex" | Out-Null
           $token | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "$env:RUNNER_TEMP\tikzarium-user-miktex\windows-admin-token.json" -Encoding utf8
+      - name: Read-only own WTS state before staging QA GL (NOT physical GUI proof)
+        id: w2_rdp_state
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' && steps.hosted_stage.outcome == 'success' }}
+        shell: powershell
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_main_sha }}
+        run: |
+          ./scripts/tools/qa_windows_w2_session_readiness.ps1 -OutputDir "$env:RUNNER_TEMP\tikzarium-user-miktex" -ExpectedSha $env:EXPECTED_SHA
       - name: Stage temporary hash-pinned software GL next to reviewed GUI copy (NO INSTALL)
         id: w2_software_gl
         # Test the exact distributed package early; full W1 remains independent below.
-        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' && steps.hosted_stage.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' && steps.hosted_stage.outcome == 'success' && steps.w2_rdp_state.outputs.gui_candidate == 'true' }}
         continue-on-error: true
         shell: powershell
         run: |
@@ -171,7 +179,36 @@ jobs:
         env:
           GALLIUM_DRIVER: llvmpipe
           LIBGL_ALWAYS_SOFTWARE: '1'
+          W2_RDP_CANDIDATE: ${{ steps.w2_rdp_state.outputs.gui_candidate }}
         run: |
+          # Disconnected RDP: preserve precise original blocked report, no GL or GUI.
+          if($env:W2_RDP_CANDIDATE -cne 'true'){
+            $evidence=Join-Path $env:RUNNER_TEMP 'tikzarium-user-miktex'
+            $preflight=Join-Path $evidence 'w2-session-readiness.json'
+            $probe=$null
+            if(Test-Path -LiteralPath $preflight -PathType Leaf){
+              $probe=Get-Content -LiteralPath $preflight -Raw -Encoding UTF8 | ConvertFrom-Json
+            }
+            $reason=if($probe){[string]$probe.status}else{'BLOCKED_W2_NO_ORIGINAL_RDP_PROBE'}
+            $wtsState=if($probe){[int]$probe.wts_connection_state}else{-1}
+            $session=if($probe){[int]$probe.session_id}else{-1}
+            $blocked=[ordered]@{
+              schema_version=3;status=$reason;source_sha=$env:GITHUB_SHA
+              environment='PERSONAL_WINDOWS_SERVER';physical_windows10='NOT_RUN'
+              full_w2_qualification='NOT_RUN';gesture_six='NOT_RUN'
+              source_patch='NOT_RUN';save_open='NOT_RUN';native_dialogs='NOT_RUN'
+              ime='NOT_RUN';dpi_200='NOT_RUN';gui_xelatex_pdf='NOT_RUN'
+              window_screenshot='NOT_RUN';f1='NOT_RUN'
+              preflight='BLOCKED_READONLY_WTS_BEFORE_GL'
+              wts_connection_state=$wtsState;session_id=$session
+              gl_renderer='NOT_STAGED_NO_GUI_LAUNCH'
+              error='WTS preflight blocked: no GL staged or GUI input attempted'
+              started_at_utc=[DateTime]::UtcNow.ToString('o')
+              finished_at_utc=[DateTime]::UtcNow.ToString('o')
+            }
+            $blocked | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $evidence 'windows-server-w2-interactive.json') -Encoding UTF8
+            throw "W2_RDP_PHYSICAL_INPUT_NOT_RUN: $reason"
+          }
           $base=Join-Path $env:RUNNER_TEMP ('tikzarium-w2-gl-' + $env:GITHUB_RUN_ID)
           $bin=Join-Path $base 'bin'
           $staged=Join-Path $bin 'tikzarium-app.exe'
@@ -230,6 +267,7 @@ jobs:
           name: tikzarium-w2-early-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/tikzarium-user-miktex/windows-server-w2-interactive.json
+            ${{ runner.temp }}/tikzarium-user-miktex/w2-session-readiness.json
             ${{ runner.temp }}/tikzarium-user-miktex/windows-server-hosted-artifact.json
             ${{ runner.temp }}/tikzarium-user-miktex/w2-mesa-software-gl-provenance.json
             ${{ runner.temp }}/tikzarium-user-miktex/w2-mesa-stage-result.json
