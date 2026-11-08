@@ -152,9 +152,9 @@ jobs:
           $evidence=Join-Path $env:RUNNER_TEMP 'tikzarium-user-miktex'
           if((Test-Path -LiteralPath $staged -PathType Leaf) -and
              (Test-Path -LiteralPath (Join-Path $evidence 'w2-mesa-software-gl-provenance.json') -PathType Leaf)){
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged -BinaryOrigin verified-hosted-release
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -StagedGuiExe $staged -BinaryOrigin verified-hosted-release -ProbeRealW2bStage1
           } else {
-            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -BinaryOrigin verified-hosted-release
+            ./scripts/tools/qa_windows_server_interactive.ps1 -OutputDir $evidence -BinaryOrigin verified-hosted-release -ProbeRealW2bStage1
           }
       - name: Remove every temporary Mesa DLL and copied GUI from personal runner
         if: always()
