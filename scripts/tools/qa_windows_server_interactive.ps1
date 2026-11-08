@@ -227,9 +227,17 @@ public static class TikzariumW2Win32 {
  # W2a remains accepted independently of any W2b candidate. On a physical
  # owned HWND, collect one *real* mouse/UI/source-save stage before closing GUI.
  if($ProbeRealW2bStage1 -and $report.f1 -ceq 'KEY_SENT_REAL_WINDOW_SCREENSHOTS_REQUIRE_VISUAL_REVIEW') {
-  . (Join-Path $PSScriptRoot 'qa_windows_w2b_stage1.ps1')
-  $probe=Invoke-TikzariumW2bStage1 -Handle $handle -ExpectedPid $appProcess.Id -SessionId ([int]$token.session_id) -WorkDirectory $work -OutputDir (Join-Path $work 'w2b-stage1') -ExpectedSha $actual
-  $report.w2b_stage1_status=$probe.status
+  # A W2b harness/runtime failure must never demote already captured W2a
+  # owned-HWND/F1 evidence. Keep its own exception and gate explicit.
+  $report.w2b_stage1_status='BLOCKED_STAGE1_UNHANDLED_EXCEPTION'
+  try {
+   . (Join-Path $PSScriptRoot 'qa_windows_w2b_stage1.ps1')
+   $probe=Invoke-TikzariumW2bStage1 -Handle $handle -ExpectedPid $appProcess.Id -SessionId ([int]$token.session_id) -WorkDirectory $work -OutputDir (Join-Path $work 'w2b-stage1') -ExpectedSha $actual
+   $report.w2b_stage1_status=$probe.status
+  } catch {
+   $report.w2b_stage1_error=$_.Exception.Message
+   Write-Warning ("W2b stage1 helper error, W2a evidence unchanged: " + $report.w2b_stage1_error)
+  }
  }
  $report.status='PARTIAL_W2_REAL_VISIBLE_WINDOW_EVIDENCE_NOT_FULL_ACCEPTANCE'
  $exitCode=0
