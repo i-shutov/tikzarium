@@ -106,6 +106,51 @@ class W2AuditTests(unittest.TestCase):
         (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
         with self.assertRaises(AssertionError): self.verify()
 
+    def with_official_msys2_stage(self):
+        self.report['gl_renderer'] = 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'
+        self.report['gl_archive_kind'] = 'MSYS2_MINGW64_MESA_26_2_6_1'
+        self.report['gl_archive_sha256'] = '7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4'
+        self.report['app_sha256'] = 'b'*64
+        manifest=dict(
+            status='PASS_TEMPORARY_PINNED_TEST_ONLY',
+            source_sha='a'*40,
+            archive_url='https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst',
+            archive_sha256=self.report['gl_archive_sha256'],
+            archive_kind=self.report['gl_archive_kind'],
+            app_sha256='b'*64,
+            no_system_install=True, no_product_distribution=True,
+            dll_count=2,
+            dll_manifest=[
+                dict(name='opengl32.dll', sha256='c'*64),
+                dict(name='libgallium_wgl.dll', sha256='d'*64),
+            ])
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        return manifest
+
+    def test_accept_exact_msys2_qa_evidence_not_full_w2(self):
+        self.with_official_msys2_stage()
+        self.assertEqual(self.verify()['full_w2_qualification'], 'NOT_RUN')
+
+    def test_reject_new_msys2_mismatched_sha_and_origin(self):
+        manifest=self.with_official_msys2_stage()
+        manifest['archive_url']='https://unverified.example.org/mesa'
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        with self.assertRaises(AssertionError): self.verify()
+        manifest['archive_url']='https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst'
+        manifest['archive_sha256']='f'*64
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_reject_new_msys2_missing_or_duplicate_dll(self):
+        manifest=self.with_official_msys2_stage()
+        manifest['dll_manifest'][1]['name']='opengl32.dll'
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        with self.assertRaises(AssertionError): self.verify()
+        manifest['dll_manifest'][1]['name']='libgallium_wgl.dll'
+        manifest['dll_manifest'][1]['sha256']='NOT_A_SHA'
+        (self.root/'w2-mesa-software-gl-provenance.json').write_text(json.dumps(manifest))
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_reject_screen_copy_pretext(self):
         self.report['capture_method']='COPYFROMSCREEN_OUTER_HWND'
         with self.assertRaises(AssertionError): self.verify()
