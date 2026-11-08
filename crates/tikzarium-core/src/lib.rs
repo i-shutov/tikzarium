@@ -8,6 +8,7 @@ pub mod document;
 pub mod font_audit;
 pub mod fonts;
 pub mod preview;
+mod probe_process;
 mod windows_tex_security;
 
 pub use build::{

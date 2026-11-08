@@ -66,6 +66,32 @@ def validate(root: Path, expected_sha: str) -> dict:
     for field in ('gesture_six','source_patch','save_open','native_dialogs','ime','dpi_200','gui_xelatex_pdf'):
         assert report[field] == 'NOT_RUN', 'False full desktop qualification: ' + field
     status = report['status']
+    if status == PARTIAL and report.get('schema_version', 1) >= 2:
+        origin = report['binary_origin']
+        assert origin in ('server-native', 'verified-hosted-release'), 'Unknown original binary origin'
+        proof_name = ('windows-server-hosted-artifact.json' if origin == 'verified-hosted-release'
+                      else 'windows-server-rust.json')
+        proof = json.loads((root / proof_name).read_text(encoding='utf-8-sig'))
+        assert proof['source_sha'] == expected_sha and proof['app_sha256'] == report['app_sha256']
+        if origin == 'verified-hosted-release':
+            assert proof['status'] == 'PASS_VERIFIED_HOSTED_EXE_ZIP_ON_PERSONAL_SERVER_NOT_GUI'
+            assert proof['verification_host'] == 'personal-server'
+            assert proof['pe_gui_subsystem'] == 2 and proof['pe_cli_subsystem'] == 3
+            assert proof['manifest_verified_files'] == 5 and proof['cli_local_help'] == 'PASS_NO_TEX_INVOCATION'
+            assert str(proof['source_ci_run_id']).isdigit()
+            assert proof['source_ci_run_id'] == report['source_ci_run_id']
+        else:
+            assert proof['release_build'] == 'PASS_WINDOWS_SERVER_NOT_WIN10'
+            assert proof['gui_pe'] == 'PASS_WINDOWS_GUI_SUBSYSTEM_2'
+        focus = report['foreground_ownership']
+        assert focus['outcome'] == 'CONFIRMED_OWNED_FOREGROUND'
+        assert focus['method'] == 'SETFOREGROUND_WM_NULL_BARRIER_NO_QUEUE_ATTACH'
+        assert not focus['used_temporary_input_queue_attachment'] and not focus['used_owned_input_queue_attachment']
+        assert 1 <= focus['attempted'] <= 30 and focus['trace']
+        last = focus['trace'][-1]
+        assert last['ready'] is True and last['processed'] is True
+        assert last['reason'] == 'RESPONSIVE_AND_STABLE_OWNED_FOREGROUND'
+        assert int(last['foreground_hwnd']) > 0
     if status == PARTIAL:
         assert report['preflight'] == 'ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS'
         # Software GL is an evidence-scoped experiment, not a shipped renderer.

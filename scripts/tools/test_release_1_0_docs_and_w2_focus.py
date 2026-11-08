@@ -16,9 +16,8 @@ class W2OwnedForegroundContract(unittest.TestCase):
     def test_foreground_is_owned_before_every_capture(self):
         s = self.source
         for required in (
-            "Request-W2OwnedForeground", "$ownerNow -ne $OwnedPid",
-            "$observed -ne $OwnedPid",
-            "$foreignSession -ne $SessionId",
+            "Request-W2OwnedForeground", "qa_windows_owned_foreground.ps1",
+            "Get-W2OwnedRuntimeStatus",
             "CONFIRMED_OWNED_FOREGROUND",
             "GetForegroundWindow() -ne $handle",
             "Save-TikzariumOwnedClient",
@@ -28,17 +27,16 @@ class W2OwnedForegroundContract(unittest.TestCase):
         self.assertNotIn("CopyFromScreen", s)
         self.assertNotIn("GetWindowDC", s)
 
-    def test_temporary_input_queue_is_bounded_and_always_detached(self):
-        s = self.source
-        self.assertIn("$attempt -le 10", s)
-        self.assertIn("AttachThreadInput($currentThread,$foreignThread,$true)", s)
-        self.assertIn("AttachThreadInput($currentThread,$foreignThread,$false)", s)
-        self.assertIn("}finally{\n   $evidence.detach_attempted=$true", s)
-        self.assertIn("detached_successfully", s)
-        self.assertIn("WIN32_INPUT_QUEUE_DETACH_FAILED", s)
-        self.assertIn("BringWindowToTop($OwnedHandle)", s)
-        self.assertNotIn("BringWindowToTop($foreground)", s)
-        self.assertNotIn("SendKeys]::SendWait('%'", s)
+    def test_async_activation_is_bounded_without_attaching_input_queues(self):
+        s = (TOOLS / "qa_windows_owned_foreground.ps1").read_text(encoding="utf-8-sig")
+        for required in ("SendMessageTimeout", "DeadlineMs=30000", "MaxAttempts=20",
+                         "OWNED_WINDOW_IDENTITY_CHANGED", "OWNED_PROCESS_OTHER_SESSION",
+                         "INPUT_DESKTOP_LOCKED_OR_UNAVAILABLE", "SESSION_DISCONNECTED_OR_UNKNOWN",
+                         "RESPONSIVE_AND_STABLE_OWNED_FOREGROUND", "trace=@()"):
+            self.assertIn(required, s)
+        self.assertNotIn("AttachThreadInput(", s + self.source)
+        self.assertNotIn("BringWindowToTop($foreground)", s + self.source)
+        self.assertNotIn("CopyFromScreen", s + self.source)
 
     def test_zero_hwnd_negative_test_is_exercised_by_hosted_powershell(self):
         s = self.source

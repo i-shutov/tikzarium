@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-08 — W2 responsive native startup candidate (not physical acceptance)
+
+- Move read-only TeX/library discovery off the native event-loop thread, with
+  UNKNOWN/pending states and single-flight refresh. Source/F1 remain interactive.
+- Bound discovery children/output, preserve exit/stderr, and use CREATE_NO_WINDOW
+  on Windows without privilege or installer changes.
+- Replace input-queue attachment with an owned HWND WM_NULL activation barrier,
+  runtime identity/session/desktop checks and per-attempt original trace.
+- Add real hosted native slow-probe/F1/PNG evidence and earlier personal testing
+  of the verified distributed EXE; independent server build/MiKTeX W1 retained.
+- Previous PR #131 physical run remained BLOCKED; W2b/W3/W4 are not promoted.
+
+
 ## 2026-11-07 — Windows 1.0 canonical release docs and real RDP foreground candidate
 
 - Added a single [Windows 1.0 W0–W4 release GO/NO-GO](docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md) and [79 incident classes/root-cause remediations](docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). Historic contradictory HIGH/non-admin instructions explicitly superseded, no Linux/Mac releases falsely qualified.

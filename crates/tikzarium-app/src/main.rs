@@ -13,13 +13,14 @@ use tikzarium_core::{
     BuildArtifact, BuildDiagnostic, BuildError, BuildOptions, BuildRequest, BuildService, Document,
     Severity, TexEnvironment,
 };
-use tikzarium_extensions::{ExtensionStatus, Registry, primitives::Evidence};
+use tikzarium_extensions::{ExtensionStatus, primitives::Evidence};
 
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod source_fonts;
 mod studio_ui;
+mod tex_discovery;
 mod tikz_authoring;
 mod tikz_canvas;
 mod tikz_libraries;
@@ -634,6 +635,7 @@ struct TikzariumApp {
     document: Document,
     file_field: String,
     tex: TexEnvironment,
+    tex_discovery_rx: Option<Receiver<Result<tex_discovery::Snapshot, String>>>,
     tex_privilege_notice: Option<String>,
     package_statuses: Vec<ExtensionStatus>,
     library_installation: BTreeMap<String, Evidence>,
@@ -802,7 +804,10 @@ impl TikzariumApp {
             .and_then(|storage| eframe::get_value::<UiPreferences>(storage, STORAGE_KEY))
             .unwrap_or_default();
         prefs.theme.apply(&cc.egui_ctx, prefs.compact);
-        let tex = TexEnvironment::discover();
+        // Do not spawn external tools in eframe's native window constructor.
+        let initial = tex_discovery::Snapshot::unknown();
+        let tex = initial.tex;
+        let tex_discovery_rx = Some(tex_discovery::start(cc.egui_ctx.clone()));
         let tex_privilege_notice = match tikzarium_core::external_document_privilege_notice() {
             Ok(Some(warning)) => Some(warning.to_owned()),
             Ok(None) => None,
@@ -810,17 +815,13 @@ impl TikzariumApp {
                 "⚠ Не удалось проверить права Windows: {error}. Внешняя компиляция будет отклонена проверкой токена."
             )),
         };
-        let registry = Registry::new().expect("built-in extension manifests must validate");
-        let package_statuses = registry.status(&tex); // cache; never spawn kpsewhich every frame
-        let library_installation =
-            tikzarium_extensions::project_imports::probe_library_installations(
-                tikz_authoring::catalog(),
-                &tex,
-            );
+        let package_statuses = initial.packages;
+        let library_installation = initial.libraries;
         Self {
             document: Document::scratch(QUICKSTART),
             file_field: DEFAULT_SCRATCH_FILENAME.to_owned(),
             tex,
+            tex_discovery_rx,
             tex_privilege_notice,
             package_statuses,
             library_installation,
@@ -830,7 +831,7 @@ impl TikzariumApp {
             jump_to_line: None,
             last_build_failed: false,
             log: String::new(),
-            status: "Сохраните новый рисунок как .tex, затем соберите PDF".into(),
+            status: "Проверка TeX в фоне; исходник и справка доступны".into(),
             preview_status: "No exact preview yet".into(),
             preview_texture: None,
             preview_lod_texture: None,
@@ -1163,6 +1164,10 @@ impl TikzariumApp {
     }
 
     fn build(&mut self) {
+        if self.tex_discovery_rx.is_some() {
+            self.status = "Проверка TeX ещё выполняется; исходник и справка доступны".into();
+            return;
+        }
         if self.receiver.is_some() {
             return;
         }
@@ -1445,17 +1450,53 @@ impl TikzariumApp {
         }
     }
 
-    fn refresh_tex(&mut self) {
-        self.tex = TexEnvironment::discover();
-        self.package_statuses = Registry::new()
-            .expect("built-in manifests must validate")
-            .status(&self.tex);
-        self.library_installation =
-            tikzarium_extensions::project_imports::probe_library_installations(
-                tikz_authoring::catalog(),
-                &self.tex,
-            );
-        self.status = format!("XeLaTeX: {:?}", self.tex.xelatex);
+    fn refresh_tex(&mut self, ctx: &egui::Context) {
+        // One bounded discovery worker at a time; repeated clicks cannot fan out.
+        if self.tex_discovery_rx.is_some() || self.receiver.is_some() {
+            return;
+        }
+        let unknown = tex_discovery::Snapshot::unknown();
+        self.tex = unknown.tex;
+        self.package_statuses = unknown.packages;
+        self.library_installation = unknown.libraries;
+        self.tex_discovery_rx = Some(tex_discovery::start(ctx.clone()));
+        self.status = "Проверка TeX в фоне; исходник и справка доступны".into();
+    }
+
+    fn poll_tex_discovery(&mut self, ctx: &egui::Context) {
+        let result = self
+            .tex_discovery_rx
+            .as_ref()
+            .and_then(|rx| match rx.try_recv() {
+                Ok(result) => Some(result),
+                Err(TryRecvError::Empty) => None,
+                Err(TryRecvError::Disconnected) => {
+                    Some(Err("Проверка TeX завершилась без результата".into()))
+                }
+            });
+        if let Some(result) = result {
+            self.tex_discovery_rx = None;
+            match result {
+                Ok(snapshot) => {
+                    self.tex = snapshot.tex;
+                    self.package_statuses = snapshot.packages;
+                    self.library_installation = snapshot.libraries;
+                    // Do not overwrite a newer user Save/Open/edit status.
+                    if self.status.starts_with("Проверка TeX") {
+                        self.status = format!(
+                            "Проверка TeX завершена за {:.1} с; XeLaTeX: {:?}",
+                            snapshot.elapsed.as_secs_f64(),
+                            self.tex.xelatex
+                        );
+                    }
+                }
+                Err(error) => self.status = error,
+            }
+            ctx.request_repaint();
+        }
+        if self.tex_discovery_rx.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(100));
+        }
     }
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
         if self.modal_active() {
@@ -2396,6 +2437,7 @@ impl eframe::App for TikzariumApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.poll_tex_discovery(ctx);
         // A persisted or new native window can be too large at fractional DPI.
         let fitted = ctx.input(|input| {
             let viewport = input.viewport();
@@ -2533,7 +2575,7 @@ impl eframe::App for TikzariumApp {
                         .add_enabled(self.receiver.is_none(), egui::Button::new("Discover TeX"))
                         .clicked()
                     {
-                        self.refresh_tex();
+                        self.refresh_tex(ctx);
                     }
                 });
                 ui.horizontal_wrapped(|ui| {

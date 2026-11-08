@@ -84,6 +84,7 @@ public static class TikzariumW2Win32 {
  [DllImport("wtsapi32.dll")] public static extern void WTSFreeMemory(IntPtr ptr);
  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+ [DllImport("user32.dll",EntryPoint="SendMessageTimeoutW",SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr h,uint msg,UIntPtr wp,IntPtr lp,uint flags,uint timeout,out UIntPtr result);
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
  [DllImport("user32.dll",SetLastError=true)] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
  [DllImport("user32.dll",SetLastError=true)] public static extern bool GetWindowRect(IntPtr h,out TikzariumW2Rect rect);
@@ -169,9 +170,9 @@ public static class TikzariumW2Win32 {
  if($rect.Left -lt $screen.Left -or $rect.Top -lt $screen.Top -or $rect.Right -gt $screen.Right -or $rect.Bottom -gt $screen.Bottom){
   $report.status='BLOCKED_WINDOW_OFF_SCREEN';throw 'Refusing screenshot beyond owned visible window after reposition'
  }
- [void][TikzariumW2Win32]::SetForegroundWindow($handle)
- Start-Sleep -Milliseconds 500
- if([TikzariumW2Win32]::GetForegroundWindow() -ne $handle){
+ . (Join-Path $PSScriptRoot 'qa_windows_owned_foreground.ps1')
+ $report.foreground_ownership=Request-W2OwnedForeground $handle $appProcess.Id ([int]$token.session_id)
+ if($report.foreground_ownership.outcome -cne 'CONFIRMED_OWNED_FOREGROUND' -or [TikzariumW2Win32]::GetForegroundWindow() -ne $handle){
   $report.status='BLOCKED_FOREGROUND_NOT_OWNED';throw 'Refuse to capture unrelated user desktop'
  }
  # PrintWindow(PW_CLIENTONLY | PW_RENDERFULLCONTENT) renders the *owned HWND* directly
@@ -185,6 +186,9 @@ public static class TikzariumW2Win32 {
  $report.client_unpainted_samples=$client.unpainted_samples
  $report.window_screenshot='CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
  $report.first_png_sha256=(Get-FileHash -LiteralPath $first -Algorithm SHA256).Hash.ToLowerInvariant()
+ $report.before_f1_captured_at_utc=[DateTime]::UtcNow.ToString('o')
+ if((Get-W2OwnedRuntimeStatus $handle $appProcess.Id ([int]$token.session_id)) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP' -or
+    [TikzariumW2Win32]::GetForegroundWindow() -ne $handle){throw 'Owned HWND/desktop changed before F1'}
  [System.Windows.Forms.SendKeys]::SendWait('{F1}')
  Start-Sleep -Milliseconds 800
  if([TikzariumW2Win32]::GetForegroundWindow() -eq $handle){

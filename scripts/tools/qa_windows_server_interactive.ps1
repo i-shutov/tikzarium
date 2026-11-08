@@ -1,7 +1,8 @@
 # W2 personal Windows Server: first original interactive GUI evidence, not full W2 PASS.
 # Only exact trusted-main GUI; no TeX, installs, privilege or account changes.
 [CmdletBinding()]
-param([string]$OutputDir,[switch]$SelfTest,[string]$StagedGuiExe)
+param([string]$OutputDir,[switch]$SelfTest,[string]$StagedGuiExe,
+ [ValidateSet('server-native','verified-hosted-release')][string]$BinaryOrigin='server-native')
 $ErrorActionPreference='Stop'
 
 function Get-W2PreflightStatus([int]$SessionId,[string]$WindowStation,[string]$Desktop,[bool]$TokenKnown,[bool]$SessionActive,[string]$InputDesktop) {
@@ -13,190 +14,7 @@ function Get-W2PreflightStatus([int]$SessionId,[string]$WindowStation,[string]$D
  if($InputDesktop -cne 'Default'){return 'BLOCKED_LOCKED_OR_UNKNOWN_INPUT_DESKTOP'}
  return 'ELIGIBLE_FOR_WINDOW_PROBE_NOT_W2_PASS'
 }
-# The null-foreground fallback must never attach to an unverified/foreign queue.
-# Pure eligibility function is also exercised by -SelfTest before any GUI launch.
-function Get-W2OwnedQueueEligibility([int]$ExpectedPid,[int]$ObservedPid,[int]$ExpectedSession,[int]$ObservedSession,[uint32]$OwnedThread,[uint32]$CallerThread,[string]$OwnedDesktop) {
- if($ExpectedPid -le 0 -or $ObservedPid -ne $ExpectedPid){return 'BLOCKED_OWNED_GUI_IDENTITY'}
- if($ExpectedSession -le 0 -or $ObservedSession -ne $ExpectedSession){return 'BLOCKED_OWNED_GUI_OTHER_SESSION'}
- if($OwnedDesktop -cne 'Default'){return 'BLOCKED_OWNED_GUI_NONINPUT_DESKTOP'}
- if($OwnedThread -eq 0 -or $CallerThread -eq 0 -or $OwnedThread -eq $CallerThread){return 'BLOCKED_OWNED_GUI_THREAD'}
- return 'ELIGIBLE_SAME_SESSION_OWNED_DEFAULT_DESKTOP'
-}
-# W2 foreground ownership is a separate gate from WTSActive and visible HWND.
-# Windows forbids arbitrary background runner processes from stealing focus.
-# Prefer the native OS request; only if necessary attach to a SAME-SESSION
-# foreground input queue temporarily. Never read/activate a foreign HWND.
-# Detach in finally and fail closed if the owner HWND still does not own focus.
-function Request-W2OwnedForeground([IntPtr]$OwnedHandle,[int]$OwnedPid,[int]$SessionId) {
- $evidence=[ordered]@{
-  outcome='BLOCKED_FOREGROUND_NOT_OWNED'
-  attempted=0
-  used_temporary_input_queue_attachment=$false
-  used_owned_input_queue_attachment=$false
-  owned_detach_attempted=$false
-  owned_detached_successfully=$false
-  detach_attempted=$false
-  detached_successfully=$false
-  initial_foreground_pid=0
-  last_foreground_pid=0
-  reason='NOT_YET_CHECKED'
- }
- if($OwnedHandle -eq [IntPtr]::Zero -or $OwnedPid -le 0 -or $SessionId -le 0) {
-  $evidence.reason='INVALID_OWNED_HANDLE_OR_SESSION'
-  return [PSCustomObject]$evidence
- }
- [uint32]$observed=0
- [void][TikzariumW2Win32]::GetWindowThreadProcessId($OwnedHandle,[ref]$observed)
- if($observed -ne $OwnedPid -or -not [TikzariumW2Win32]::IsWindowVisible($OwnedHandle)) {
-  $evidence.reason='OWNERSHIP_OR_VISIBILITY_CHANGED'
-  return [PSCustomObject]$evidence
- }
- # Restore only our own minimized GUI. Never maximize/move other applications.
- if([TikzariumW2Win32]::IsIconic($OwnedHandle)){
-  [void][TikzariumW2Win32]::ShowWindowAsync($OwnedHandle,9)
- }
- for($attempt=1;$attempt -le 10;$attempt++){
-  $evidence.attempted=$attempt
-  [uint32]$ownerNow=0
-  [void][TikzariumW2Win32]::GetWindowThreadProcessId($OwnedHandle,[ref]$ownerNow)
-  if($ownerNow -ne $OwnedPid -or -not [TikzariumW2Win32]::IsWindowVisible($OwnedHandle)){
-   $evidence.reason='OWNED_WINDOW_DISAPPEARED'
-   break
-  }
-  $foreground=[TikzariumW2Win32]::GetForegroundWindow()
-  if($foreground -eq $OwnedHandle){
-   $evidence.outcome='CONFIRMED_OWNED_FOREGROUND'
-   $evidence.reason='ACTUAL_HWND_MATCH'
-   return [PSCustomObject]$evidence
-  }
-  if($foreground -ne [IntPtr]::Zero){
-   [uint32]$observedPid=0
-   [void][TikzariumW2Win32]::GetWindowThreadProcessId($foreground,[ref]$observedPid)
-   $evidence.last_foreground_pid=[int]$observedPid
-   if($attempt -eq 1){$evidence.initial_foreground_pid=[int]$observedPid}
-  }
-  # Ordinary SetForegroundWindow may be denied by the system foreground lock.
-  [void][TikzariumW2Win32]::SetForegroundWindow($OwnedHandle)
-  Start-Sleep -Milliseconds 220
-  if([TikzariumW2Win32]::GetForegroundWindow() -eq $OwnedHandle){
-   $evidence.outcome='CONFIRMED_OWNED_FOREGROUND'
-   $evidence.reason='WIN32_SETFOREGROUND_VERIFIED'
-   return [PSCustomObject]$evidence
-  }
-  $foreground=[TikzariumW2Win32]::GetForegroundWindow()
-  if($foreground -eq [IntPtr]::Zero){
-   # This was the actual personal Server outcome on trusted main b761a37f:
-   # WTSActive / Default / owned HWND existed, yet GetForegroundWindow was NULL.
-   # No foreign input queue can be inferred. Try only the verified TikZarium
-   # GUI thread on the same active Default desktop; preserve Windows focus policy.
-   [uint32]$freshOwner=0
-   [uint32]$ownedGuiThread=[TikzariumW2Win32]::GetWindowThreadProcessId($OwnedHandle,[ref]$freshOwner)
-   if($freshOwner -ne $OwnedPid){
-    $evidence.reason='OWNED_GUI_PID_CHANGED'
-    break
-   }
-   [uint32]$helperThread=[TikzariumW2Win32]::GetCurrentThreadId()
-   $ownedSession=-1
-   try{$ownedSession=[Diagnostics.Process]::GetProcessById($OwnedPid).SessionId}
-   catch{$evidence.reason='OWNED_GUI_SESSION_UNREADABLE';break}
-   $ownedDesktop='UNAVAILABLE'
-   if($ownedGuiThread -ne 0){
-    $ownedDesktop=[TikzariumW2Win32]::ObjectName([TikzariumW2Win32]::GetThreadDesktop($ownedGuiThread))
-   }
-   $eligible=Get-W2OwnedQueueEligibility $OwnedPid ([int]$freshOwner) $SessionId $ownedSession $ownedGuiThread $helperThread $ownedDesktop
-   if($eligible -cne 'ELIGIBLE_SAME_SESSION_OWNED_DEFAULT_DESKTOP'){
-    $evidence.reason=$eligible
-    break
-   }
-   # A user may have activated another window during the read-only checks.
-   # Do not interfere with the newly returned foreground or inspect its pixels.
-   if([TikzariumW2Win32]::GetForegroundWindow() -ne [IntPtr]::Zero){
-    $evidence.reason='FOREGROUND_RETURNED_BEFORE_OWNED_ATTACH'
-    continue
-   }
-   $attachedOwned=[TikzariumW2Win32]::AttachThreadInput($helperThread,$ownedGuiThread,$true)
-   if(-not $attachedOwned){
-    $evidence.reason='WIN32_OWNED_INPUT_ATTACH_REFUSED'
-    continue
-   }
-   $evidence.used_owned_input_queue_attachment=$true
-   try{
-    if([TikzariumW2Win32]::GetForegroundWindow() -eq [IntPtr]::Zero){
-     [void][TikzariumW2Win32]::BringWindowToTop($OwnedHandle)
-     [void][TikzariumW2Win32]::SetForegroundWindow($OwnedHandle)
-    }else{
-     $evidence.reason='FOREGROUND_RETURNED_DURING_OWNED_ATTACH'
-    }
-   }finally{
-    $evidence.owned_detach_attempted=$true
-    $evidence.owned_detached_successfully=[TikzariumW2Win32]::AttachThreadInput($helperThread,$ownedGuiThread,$false)
-   }
-   if(-not $evidence.owned_detached_successfully){
-    $evidence.reason='WIN32_OWNED_INPUT_DETACH_FAILED'
-    break
-   }
-   Start-Sleep -Milliseconds 250
-   if([TikzariumW2Win32]::GetForegroundWindow() -eq $OwnedHandle){
-    $evidence.outcome='CONFIRMED_OWNED_FOREGROUND'
-    $evidence.reason='OWNED_INPUT_QUEUE_DETACHED_AND_HWND_VERIFIED'
-    return [PSCustomObject]$evidence
-   }
-   if($evidence.reason -ne 'FOREGROUND_RETURNED_DURING_OWNED_ATTACH'){
-    $evidence.reason='OWNED_QUEUE_DID_NOT_GAIN_FOREGROUND'
-   }
-   continue
-  }
-  [uint32]$foreignPid=0
-  [uint32]$foreignThread=[TikzariumW2Win32]::GetWindowThreadProcessId($foreground,[ref]$foreignPid)
-  $evidence.last_foreground_pid=[int]$foreignPid
-  if($foreignPid -eq 0 -or $foreignThread -eq 0){
-   $evidence.reason='FOREGROUND_OWNER_UNKNOWN'
-   break
-  }
-  # Do not attach input queues across sessions or to an unreadable process.
-  try{
-   $foreignSession=[Diagnostics.Process]::GetProcessById([int]$foreignPid).SessionId
-  }catch{
-   $evidence.reason='FOREGROUND_SESSION_UNREADABLE'
-   break
-  }
-  if($foreignSession -ne $SessionId){
-   $evidence.reason='FOREGROUND_OTHER_SESSION'
-   break
-  }
-  [uint32]$currentThread=[TikzariumW2Win32]::GetCurrentThreadId()
-  if($currentThread -eq 0 -or $currentThread -eq $foreignThread){
-   $evidence.reason='NO_DISTINCT_SAME_SESSION_FOREGROUND_QUEUE'
-   continue
-  }
-  $attached=[TikzariumW2Win32]::AttachThreadInput($currentThread,$foreignThread,$true)
-  if(-not $attached){
-   $evidence.reason='WIN32_ATTACH_INPUT_REFUSED'
-   continue
-  }
-  $evidence.used_temporary_input_queue_attachment=$true
-  try{
-   # Only raise our own reviewed TikZarium HWND; never activate/capture foreign windows.
-   [void][TikzariumW2Win32]::BringWindowToTop($OwnedHandle)
-   [void][TikzariumW2Win32]::SetForegroundWindow($OwnedHandle)
-  }finally{
-   $evidence.detach_attempted=$true
-   $evidence.detached_successfully=[TikzariumW2Win32]::AttachThreadInput($currentThread,$foreignThread,$false)
-  }
-  if(-not $evidence.detached_successfully){
-   $evidence.reason='WIN32_INPUT_QUEUE_DETACH_FAILED'
-   break
-  }
-  Start-Sleep -Milliseconds 250
-  if([TikzariumW2Win32]::GetForegroundWindow() -eq $OwnedHandle){
-   $evidence.outcome='CONFIRMED_OWNED_FOREGROUND'
-   $evidence.reason='TEMP_ATTACHED_THEN_DETACHED_AND_HWND_VERIFIED'
-   return [PSCustomObject]$evidence
-  }
-  $evidence.reason='FOREGROUND_LOCK_STILL_HELD'
- }
- return [PSCustomObject]$evidence
-}
+. (Join-Path $PSScriptRoot 'qa_windows_owned_foreground.ps1')
 
 if($SelfTest){
  $cases=@(
@@ -219,19 +37,7 @@ if($SelfTest){
     $bad.attempted -ne 0){
   throw 'W2 foreground negative preflight must fail closed for absent HWND'
  }
- $ownedCases=@(
-  @{ep=42;ap=42;es=2;as=2;ot=301;ct=101;desk='Default';want='ELIGIBLE_SAME_SESSION_OWNED_DEFAULT_DESKTOP'},
-  @{ep=42;ap=77;es=2;as=2;ot=301;ct=101;desk='Default';want='BLOCKED_OWNED_GUI_IDENTITY'},
-  @{ep=42;ap=42;es=2;as=3;ot=301;ct=101;desk='Default';want='BLOCKED_OWNED_GUI_OTHER_SESSION'},
-  @{ep=42;ap=42;es=2;as=2;ot=301;ct=101;desk='Winlogon';want='BLOCKED_OWNED_GUI_NONINPUT_DESKTOP'},
-  @{ep=42;ap=42;es=2;as=2;ot=0;ct=101;desk='Default';want='BLOCKED_OWNED_GUI_THREAD'},
-  @{ep=42;ap=42;es=2;as=2;ot=101;ct=101;desk='Default';want='BLOCKED_OWNED_GUI_THREAD'}
- )
- foreach($c in $ownedCases){
-  $got=Get-W2OwnedQueueEligibility $c.ep $c.ap $c.es $c.as $c.ot $c.ct $c.desk
-  if($got -cne $c.want){throw "W2 owned queue expected $($c.want), got $got"}
- }
- Write-Host 'W2_OWNED_QUEUE_SELFTEST=PASS_6_CASES_NO_FOREIGN_ACCESS'
+ & (Join-Path $PSScriptRoot 'test_qa_windows_owned_foreground.ps1')
  Write-Host 'W2_FOREGROUND_NEGATIVE_SELFTEST=PASS_NO_FOREIGN_CAPTURE'
  Write-Host 'W2_INTERACTIVE_PREFLIGHT_SELFTEST=PASS_7_CASES_NOT_PHYSICAL_GUI'
  return
@@ -240,7 +46,7 @@ if([string]::IsNullOrWhiteSpace($OutputDir)){throw '-OutputDir required'}
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 $OutputDir=(Resolve-Path -LiteralPath $OutputDir).Path
 $report=[ordered]@{
- schema_version=1;status='NOT_RUN';source_sha=$env:GITHUB_SHA
+ schema_version=2;status='NOT_RUN';source_sha=$env:GITHUB_SHA
  environment='PERSONAL_WINDOWS_SERVER';physical_windows10='NOT_RUN'
  full_w2_qualification='NOT_RUN';gesture_six='NOT_RUN';source_patch='NOT_RUN'
  save_open='NOT_RUN';native_dialogs='NOT_RUN';ime='NOT_RUN';dpi_200='NOT_RUN'
@@ -256,16 +62,11 @@ try {
   $actual=(& git.exe rev-parse HEAD | Out-String).Trim()
   if($LASTEXITCODE -ne 0 -or $actual -cne $env:GITHUB_SHA){throw 'W2 exact trusted-main SHA mismatch'}
  }finally{Pop-Location}
- $rust=Get-Content -LiteralPath (Join-Path $OutputDir 'windows-server-rust.json') -Raw -Encoding UTF8 | ConvertFrom-Json
- $appExe=Join-Path $OutputDir 'native-release\tikzarium-app.exe'
- if($rust.source_sha -cne $actual -or $rust.release_build -cne 'PASS_WINDOWS_SERVER_NOT_WIN10' -or
-   $rust.gui_pe -cne 'PASS_WINDOWS_GUI_SUBSYSTEM_2' -or
-   -not (Test-Path -LiteralPath $appExe -PathType Leaf)){
-  throw 'W2 requires original qualified exact-main server native GUI PE2'
- }
- $appSha=(Get-FileHash -LiteralPath $appExe -Algorithm SHA256).Hash.ToLowerInvariant()
- if($appSha -cne $rust.app_sha256){throw 'W2 GUI SHA differs from tested native release'}
- $report.app_sha256=$appSha
+ . (Join-Path $PSScriptRoot 'qa_windows_w2_binary.ps1')
+ $binary=Get-W2BinaryEvidence -EvidenceDirectory $OutputDir -ExpectedSha $actual -BinaryOrigin $BinaryOrigin
+ $appExe=$binary.path;$appSha=$binary.app_sha256
+ $report.app_sha256=$appSha;$report.binary_origin=$binary.origin
+ $report.source_ci_run_id=$binary.source_ci_run_id
  # Optional, hash-verified software-OpenGL overlay is scoped to this GitHub
  # RUNNER_TEMP only. It must never replace the tested EXE or ship as a product.
  if(-not [string]::IsNullOrWhiteSpace($StagedGuiExe)){
@@ -322,7 +123,7 @@ public static class TikzariumW2Win32 {
  [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr h,int command);
- [DllImport("user32.dll",SetLastError=true)] public static extern bool AttachThreadInput(uint attachThread,uint attachToThread,bool attach);
+ [DllImport("user32.dll",EntryPoint="SendMessageTimeoutW",SetLastError=true)] public static extern IntPtr SendMessageTimeout(IntPtr h,uint msg,UIntPtr wp,IntPtr lp,uint flags,uint timeout,out UIntPtr result);
  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
  [DllImport("user32.dll",SetLastError=true)] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
  [DllImport("user32.dll",SetLastError=true)] public static extern bool GetWindowRect(IntPtr h,out TikzariumW2Rect rect);
@@ -412,6 +213,8 @@ public static class TikzariumW2Win32 {
  $report.client_unpainted_samples=$client.unpainted_samples
  $report.window_screenshot='CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
  $report.first_png_sha256=(Get-FileHash -LiteralPath $first -Algorithm SHA256).Hash.ToLowerInvariant()
+ if((Get-W2OwnedRuntimeStatus $handle $appProcess.Id ([int]$token.session_id)) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP' -or
+    [TikzariumW2Win32]::GetForegroundWindow() -ne $handle){throw 'Owned HWND/desktop changed before F1'}
  [System.Windows.Forms.SendKeys]::SendWait('{F1}')
  Start-Sleep -Milliseconds 800
  if([TikzariumW2Win32]::GetForegroundWindow() -eq $handle){

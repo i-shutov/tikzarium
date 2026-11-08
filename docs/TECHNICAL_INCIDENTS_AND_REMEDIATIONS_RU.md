@@ -1,5 +1,14 @@
 # TikZarium — технические проблемы и способы решения
 
+> **2026-11-08 — C13 уточнён:** PR #131 не снял physical W2 (run #42414339864,
+> `OWNED_QUEUE_DID_NOT_GAIN_FOREGROUND`). Найдены синхронный discovery в GUI,
+> неограниченный `Command::output` и возможные console HWND дочерних probes.
+> Кандидат устраняет эти дефекты и заменяет AttachThreadInput на bounded WM_NULL
+> handshake; его достаточность для физического W2 ещё требует оригинального
+> результата. [План и проверяемые пределы](../plans/2026-11-08_W2_RESPONSIVE_STARTUP.md).
+> Все 79 исторических записей ниже сохранены; прежние «кандидаты» не означают PASS.
+
+
 **Сводный журнал, 7 ноября 2026. Windows 1.0 release-first.** Этот документ агрегирует все установленные **классы** проблем по исходным CHANGELOG, планам, QA-исследованиям и релизным задачам. Сотни индивидуальных журналов и инцидентов по коммитам остаются в [CHANGELOG](../CHANGELOG.md), [plans](../plans/) и [insights](../insights/); ссылки на первоисточники сохранены. Исторические статусы CANDIDATE и NOT_RUN не означают актуальный дефект. Даты и состояния здесь привязаны к указанному SHA, не к любому будущему release.
 
 **Проверенная база:** main **4b79d71a05dfc1a116d67c040d21b8502ad7fc3e**, успешные [CI #42382400325](https://github.com/i-shutov/tikzarium/actions/runs/42382400325), [D QA #42382400221](https://github.com/i-shutov/tikzarium/actions/runs/42382400221), [Administrator #42382400251](https://github.com/i-shutov/tikzarium/actions/runs/42382400251). Серверный W1 PASS, W2 в [Actions #42382753629](https://github.com/i-shutov/tikzarium/actions/runs/42382753629) имеет статус BLOCKED_FOREGROUND_NOT_OWNED, не W2 PASS. Исходный [artifact #13579401001](https://github.com/i-shutov/tikzarium/actions/runs/42382753629/artifacts/13579401001) SHA256 ZIP 2ed2dd579fb3fbcaa0b2f4ff0fedc331cb75d7e6fde3a8274aeca88c7c8b1f01, WTSActive/WindowStation/Default, native GUI PID4060, окно 1194×718 @125%, клиентские PNG и F1 NOT_RUN.
