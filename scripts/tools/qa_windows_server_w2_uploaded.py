@@ -30,6 +30,11 @@ def validate_readonly_wts_block(root: Path, report: dict, expected_sha: str) -> 
     these mandatory fields.
     """
     if report.get('preflight') != 'BLOCKED_READONLY_WTS_BEFORE_GL':
+        require(report.get('status') not in (
+            'BLOCKED_RDP_DISCONNECTED', 'BLOCKED_WTS_UNKNOWN_OR_NOT_ACTIVE',
+            'BLOCKED_NONINTERACTIVE_OR_MISMATCHED_SESSION',
+            'BLOCKED_W2_RDP_READONLY_PROBE_ERROR'),
+            'A native WTS-block verdict cannot omit its read-only preflight')
         return
     require(report.get('schema_version') == 3,
             'Read-only WTS gate requires schema 3 original evidence')
