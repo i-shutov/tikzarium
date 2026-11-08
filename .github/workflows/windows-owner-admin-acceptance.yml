@@ -45,6 +45,13 @@ jobs:
             }
           }
           Write-Host 'W2_PS51_PINNED_MESA_PARSER=PASS_6_FILES_NOT_PHYSICAL'
+      - name: Native DPI capture scope restores caller context on success and rejection
+        shell: powershell
+        run: |
+          . ./scripts/tools/qa_windows_owned_client_capture.ps1
+          Test-TikzariumCaptureDpiScope
+          python -m unittest discover -s scripts/tools -p 'test_qa_windows_capture*.py' -v
+          if($LASTEXITCODE -ne 0){throw 'Physical-pixel capture contracts failed'}
       - name: Personal W2 temporary-Mesa source-provenance negative contract tests
         shell: powershell
         run: |

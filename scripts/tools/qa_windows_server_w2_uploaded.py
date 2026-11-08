@@ -8,6 +8,8 @@ from pathlib import Path
 import struct
 import zlib
 
+from qa_windows_capture_geometry import validate_capture_geometry
+
 PARTIAL = 'PARTIAL_W2_REAL_VISIBLE_WINDOW_EVIDENCE_NOT_FULL_ACCEPTANCE'
 
 def sha256(path: Path) -> str:
@@ -109,6 +111,7 @@ def validate(root: Path, expected_sha: str) -> dict:
             assert manifest['dll_count'] >= 2
         assert report['window_screenshot'] == 'CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
         assert report['capture_method'] == 'WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ'
+        validate_capture_geometry(report)
         client = report['client_area']
         window = report['window']
         assert 640 <= client['width'] <= window['width'] <= 10000
