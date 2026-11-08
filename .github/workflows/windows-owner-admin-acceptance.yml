@@ -83,6 +83,10 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_pinned_mesa_fetch.ps1 -SelfTest
+      - name: Same-main pal1000 QA escrow negative provenance tests (no network or desktop input)
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_mesa_escrow.ps1 -SelfTest
       - name: Windows real-desktop preflight negative cases (synthetic only)
         shell: powershell
         run: ./scripts/tools/qa_windows_server_interactive.ps1 -SelfTest
