@@ -1,5 +1,10 @@
 # TikZarium — release resume, 2026-11-08
 
+## 2026-11-08 — candidate per-pointer RDP and source-byte QA fences
+
+Exact trusted baseline `4ec94747f2d11840a5dbc5a274b9840ce30dfba9`; original personal [Server run #42490214199](https://github.com/i-shutov/tikzarium/actions/runs/42490214199) W1 actual native Rust/MiKTeX PDF PASS, but original early artifact #13621431232 says WTSDisconnected=4 and **W2b NOT_RUN**. Final original W1 artifact #13621878747 is not GUI-origin PDF. Candidate QA-only improvements: live WTSConnectState check at every Win32 pointer step, strict UTF-8 and byte-exact preservation of all original source after one additive C-owned draw command, plus offline native/synthetic negative tests. **Neither code changes nor green CI qualify physical W2b.** Win10 W3 NOT_RUN; stable W4 NO-GO. No main, runner, RDP, accounts, UAC, MiKTeX or FlowBridge changes in candidate.
+
+
 ## 2026-11-08 — original current-main postmerge Server proof and WTS evidence hardening
 
 Latest trusted main is `ccb4ecb7f31981bd433f8bbe3f331ec59cc512d3` (PR #141 merged).

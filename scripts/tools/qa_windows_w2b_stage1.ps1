@@ -43,6 +43,19 @@ public static class TikzariumW2bPointer {
  [DllImport("user32.dll",SetLastError=true)] static extern bool CloseDesktop(IntPtr h);
  [DllImport("user32.dll",CharSet=CharSet.Unicode,EntryPoint="GetUserObjectInformationW")]
  static extern bool GetUserObjectInformation(IntPtr h,int n,System.Text.StringBuilder b,int size,out int needed);
+ // Recheck WTS for every pointer step, not only the original stage preflight.
+ [DllImport("wtsapi32.dll",EntryPoint="WTSQuerySessionInformationW",CharSet=CharSet.Unicode,SetLastError=true)]
+ static extern bool WTSQuerySessionInformation(IntPtr server,int session,int infoClass,out IntPtr ptr,out int bytes);
+ [DllImport("wtsapi32.dll")] static extern void WTSFreeMemory(IntPtr p);
+ public static bool IsWtsActive(int session,int state) {return session>0 && state==0;}
+ static int CurrentWtsState(int session) {
+  if(session<=0) return -1;
+  IntPtr p=IntPtr.Zero;int bytes=0;
+  try {
+   if(!WTSQuerySessionInformation(IntPtr.Zero,session,8,out p,out bytes) || p==IntPtr.Zero || bytes<4) return -1;
+   return Marshal.ReadInt32(p);
+  } finally {if(p!=IntPtr.Zero) WTSFreeMemory(p);}
+ }
  const uint DOWN=2, UP=4;
  static void Guard(IntPtr hwnd,int pid) {
   if(hwnd==IntPtr.Zero || pid<=0) throw new InvalidOperationException("BLOCKED_NO_OWNED_HWND");
@@ -54,6 +67,8 @@ public static class TikzariumW2bPointer {
   using(Process caller=Process.GetCurrentProcess()) {
    if(owner.SessionId<=0 || owner.SessionId!=caller.SessionId)
     throw new InvalidOperationException("BLOCKED_OTHER_SESSION");
+   if(!IsWtsActive(owner.SessionId,CurrentWtsState(owner.SessionId)))
+    throw new InvalidOperationException("BLOCKED_W2B_WTS_NOT_ACTIVE");
   }
   IntPtr desktop=OpenInputDesktop(0,false,1);
   if(desktop==IntPtr.Zero) throw new InvalidOperationException("BLOCKED_LOCKED_DESKTOP");
@@ -118,6 +133,26 @@ public static class TikzariumW2bPointer {
  }
 }
 '@
+}
+
+# Local stage1 must preserve EVERY original UTF-8 source byte, not just preamble.
+# Python original-upload auditor remains a separate mandatory check.
+function Get-W2bExactAdditivePatchStatus([byte[]]$Before,[byte[]]$After) {
+ try {
+  $utf8=[System.Text.UTF8Encoding]::new($false,$true)
+  $baseline=$utf8.GetString($Before)
+  $saved=$utf8.GetString($After)
+ } catch {return 'BLOCKED_W2B_INVALID_UTF8_SOURCE'}
+ if($baseline.Contains(' % tikzarium:n1:')){return 'BLOCKED_W2B_BASELINE_ALREADY_OWNED'}
+ $matched=[regex]::Matches($saved,'(?m)^[^\r\n]* % tikzarium:n1:[^\r\n]*(?:\r?\n|$)')
+ if($matched.Count -ne 1){return 'BLOCKED_W2B_NOT_ONE_OWNED_LINE'}
+ if($matched[0].Value -cnotmatch '^[ \t]*\\draw(?:\s|\[|\()'){
+  return 'BLOCKED_W2B_OWNER_NOT_DRAW'
+ }
+ if($saved.Remove($matched[0].Index,$matched[0].Length) -cne $baseline){
+  return 'BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'
+ }
+ return 'PASS_ADDITIVE_DRAW_EXACT_SOURCE_PRESERVATION'
 }
 
 function Invoke-TikzariumW2bStage1 {
@@ -206,6 +241,10 @@ function Invoke-TikzariumW2bStage1 {
   if(-not (Test-Path -LiteralPath $source -PathType Leaf)){throw 'BLOCKED_W2B_SOURCE_LOST'}
   $after=[IO.File]::ReadAllBytes($source)
   $afterText=[Text.Encoding]::UTF8.GetString($after)
+  $report.exact_additive_patch=Get-W2bExactAdditivePatchStatus $before $after
+  if($report.exact_additive_patch -cne 'PASS_ADDITIVE_DRAW_EXACT_SOURCE_PRESERVATION'){
+   throw $report.exact_additive_patch
+  }
   # C-owned metadata is appended to the native command line, not a standalone % line.
   $owners=[regex]::Matches($afterText,' % tikzarium:n1:')
   $report.owner_count=$owners.Count
@@ -265,6 +304,36 @@ if($SelfTest) {
   $negative=($reason.Message -ceq 'BLOCKED_NO_OWNED_HWND')
  }
  if(-not $negative){throw 'W2b native zero-HWND input must fail closed without events'}
+ # Synthetic Windows PowerShell tests: never physical GUI/input evidence.
+ foreach($state in @(4,-1,1,5)){
+  if([TikzariumW2bPointer]::IsWtsActive(2,$state)){throw "Disconnected WTS state accepted: $state"}
+ }
+ if(-not [TikzariumW2bPointer]::IsWtsActive(2,0) -or
+    [TikzariumW2bPointer]::IsWtsActive(0,0)){throw 'Invalid WTS active policy'}
+ $nl=[string][char]13+[string][char]10
+ $baseline='\documentclass{article}'+$nl+'% комментарий'+$nl+'\begin{tikzpicture}'+$nl+'\end{tikzpicture}'+$nl
+ $line='\draw (0,0) -- (1,1); % tikzarium:n1:line'+$nl
+ $saved=$baseline.Replace('\end{tikzpicture}',$line+'\end{tikzpicture}')
+ $b=[Text.Encoding]::UTF8.GetBytes($baseline)
+ $ok=[Text.Encoding]::UTF8.GetBytes($saved)
+ if((Get-W2bExactAdditivePatchStatus $b $ok) -cne 'PASS_ADDITIVE_DRAW_EXACT_SOURCE_PRESERVATION'){
+  throw 'W2b synthetic additive line rejected'
+ }
+ $cases=@(
+  @{a=$saved.Replace('% комментарий','% изменено');want='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'},
+  @{a=$saved.Replace($line,$line+$line);want='BLOCKED_W2B_NOT_ONE_OWNED_LINE'},
+  @{a=$saved.Replace('\draw','\node');want='BLOCKED_W2B_OWNER_NOT_DRAW'},
+  @{a=$saved.Replace($nl,[string][char]10);want='BLOCKED_W2B_UNRELATED_SOURCE_BYTES_CHANGED'}
+ )
+ foreach($test in $cases){
+  $verdict=Get-W2bExactAdditivePatchStatus $b ([Text.Encoding]::UTF8.GetBytes($test.a))
+  if($verdict -cne $test.want){throw "W2b source expected $($test.want), got $verdict"}
+ }
+ if((Get-W2bExactAdditivePatchStatus $b ([byte[]]@(255,254,1))) -cne 'BLOCKED_W2B_INVALID_UTF8_SOURCE'){
+  throw 'W2b malformed source accepted'
+ }
+ Write-Host 'W2B_PER_EVENT_WTS=PASS_6_SYNTHETIC_POLICY_CASES_NOT_GUI'
+ Write-Host 'W2B_EXACT_SOURCE=PASS_6_SYNTHETIC_BYTE_CASES_NOT_GUI'
  Write-Host 'W2B_NATIVE_INPUT_ZERO_HWND=PASS_NO_MOUSE_EVENTS'
  Write-Host 'W2B_STAGE1_PREFLIGHT=PASS_6_CASES_NO_INPUT_NO_DESKTOP_CAPTURE'
  return
