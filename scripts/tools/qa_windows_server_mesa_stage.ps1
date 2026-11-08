@@ -45,6 +45,37 @@ $archive=Join-Path $work 'mesa3d-26.2.6-release-mingw.7z'
 . (Join-Path $PSScriptRoot 'qa_windows_mesa_transport.ps1')
 $seven=(Get-Command 7z.exe -ErrorAction SilentlyContinue).Source
 if(-not $seven -and (Test-Path 'C:\Program Files\7-Zip\7z.exe')){$seven='C:\Program Files\7-Zip\7z.exe'}
+ # Prefer original pal1000 bytes delivered as a short-lived GitHub Actions
+ # artifact from the same separately verified successful exact-main CI run.
+ # A mismatch is fatal; do not fall back to public CDN after bad escrow.
+ $escrowRoot=Join-Path $env:RUNNER_TEMP 'tikzarium-hosted\qa-mesa'
+ $escrowArchive=Join-Path $escrowRoot 'mesa3d-26.2.6-release-mingw.7z'
+ $escrowReport=Join-Path $escrowRoot 'qa-mesa-escrow.json'
+ $hasEscrowArchive=Test-Path -LiteralPath $escrowArchive -PathType Leaf
+ $hasEscrowReport=Test-Path -LiteralPath $escrowReport -PathType Leaf
+ if($hasEscrowArchive -xor $hasEscrowReport){
+   throw 'PINNED_MESA_CI_ESCROW_INCOMPLETE_REJECTED'
+ }
+ if($hasEscrowArchive -and $hasEscrowReport){
+   $original=Get-Content -LiteralPath $escrowReport -Raw -Encoding UTF8 | ConvertFrom-Json
+   if($original.schema_version -ne 1 -or
+      $original.status -cne 'PASS_EXACT_MAIN_HOSTED_QA_MESA_BYTES_NOT_PRODUCT' -or
+      $original.source_sha -cne $ExpectedSha -or
+      [string]$original.source_ci_run_id -cne [string]$binary.source_ci_run_id -or
+      $original.archive_source -cne $source -or
+      $original.archive_sha256 -cne $expected -or
+      -not $original.no_system_install -or -not $original.no_product_distribution){
+     throw 'PINNED_MESA_CI_ESCROW_UNTRUSTED_PROVENANCE'
+   }
+   $escrowSha=(Get-FileHash -LiteralPath $escrowArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+   if($escrowSha -cne $expected){throw 'PINNED_MESA_CI_ESCROW_SHA_MISMATCH'}
+   Copy-Item -LiteralPath $escrowArchive -Destination $archive -Force
+   if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected){
+     throw 'PINNED_MESA_CI_ESCROW_COPY_SHA_CHANGED'
+   }
+   $pinned=[PSCustomObject]@{source=$source;sha256=$expected;transport='TRUSTED_MAIN_SOURCE_CI_QA_ESCROW'}
+   Write-Host 'PERSONAL_W2_MESA_ESCROW=PASS_EXACT_MAIN_SHA_NO_PUBLIC_CDN'
+ }else{
 try {
  $pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
 } catch {
@@ -66,6 +97,7 @@ try {
  }
  $pinned=Get-TikzariumPinnedMsys2Archive -ArchivePath $archive
 }
+ }
 $sha=$pinned.sha256
 if($pinned.source -cne $source -or $sha -cne $expected){
  throw 'PINNED_MESA_SOURCE_OR_SHA_DRIFT_ON_SERVER'
