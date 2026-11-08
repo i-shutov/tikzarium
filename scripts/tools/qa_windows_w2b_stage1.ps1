@@ -246,8 +246,13 @@ if($SelfTest) {
  Initialize-TikzariumW2bPointer
  $negative=$false
  try { [TikzariumW2bPointer]::Click([IntPtr]::Zero,0,20,20) }
- catch [InvalidOperationException] {
-  $negative=$_.Exception.Message -eq 'BLOCKED_NO_OWNED_HWND'
+ catch {
+  # PowerShell 5.1 wraps a CLR method's InvalidOperationException in
+  # MethodInvocationException. Check the innermost native reason, never
+  # mistake a wrapper for an input-safety PASS.
+  $reason=$_.Exception
+  while($reason.InnerException){$reason=$reason.InnerException}
+  $negative=($reason.Message -ceq 'BLOCKED_NO_OWNED_HWND')
  }
  if(-not $negative){throw 'W2b native zero-HWND input must fail closed without events'}
  Write-Host 'W2B_NATIVE_INPUT_ZERO_HWND=PASS_NO_MOUSE_EVENTS'
