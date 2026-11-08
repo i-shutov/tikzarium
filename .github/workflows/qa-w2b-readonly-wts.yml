@@ -1,0 +1,104 @@
+name: TikZarium W2b RDP readiness (read-only, never GUI proof)
+
+# Uses only accepted main, not PR code. This is NOT a desktop test.
+# A disconnected RDP user session should not trigger another 30-minute W1.
+on:
+  schedule:
+    - cron: '3,33 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+# Read-only, inexpensive probe runs do not join or replace the pending
+# trusted-main full Windows QA lease. A dedicated self-hosted runner still
+# executes at most one job at once; scheduled pending probes can coalesce.
+concurrency:
+  group: tikzarium-readonly-w2b-wts
+  cancel-in-progress: false
+
+jobs:
+  personal-w2b-wts-readonly:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Windows, X64, tikzarium-winserver]
+    timeout-minutes: 7
+    steps:
+      - name: Preflight existing Git for Windows (read-only; no install)
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $git=Get-Command git.exe -ErrorAction SilentlyContinue
+          if(-not $git){
+            $candidate=Join-Path $env:ProgramFiles 'Git\cmd\git.exe'
+            if(Test-Path -LiteralPath $candidate -PathType Leaf){
+              $dir=Split-Path -Parent $candidate
+              $env:PATH=$dir+';'+$env:PATH
+              [IO.File]::AppendAllText($env:GITHUB_PATH,$dir+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
+              $git=Get-Command git.exe -ErrorAction SilentlyContinue
+            }
+          }
+          if(-not $git){throw 'READONLY_WTS_EXISTING_GIT_NOT_FOUND'}
+          & git.exe --version
+          if($LASTEXITCODE -ne 0){throw 'READONLY_WTS_EXISTING_GIT_FAILED'}
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify exact current main (no arbitrary PR code)
+        shell: powershell
+        env:
+          EXPECTED_MAIN_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if($env:GITHUB_REF -cne 'refs/heads/main' -or
+             $env:GITHUB_REPOSITORY -cne 'i-shutov/tikzarium' -or
+             $env:EXPECTED_MAIN_SHA -cnotmatch '^[0-9a-f]{40}$'){
+            throw 'READONLY_WTS_TRUSTED_MAIN_REF_REQUIRED'
+          }
+          $local=(& git.exe rev-parse HEAD | Out-String).Trim()
+          if($LASTEXITCODE -ne 0 -or $local -cne $env:EXPECTED_MAIN_SHA){
+            throw 'READONLY_WTS_LOCAL_MAIN_SHA_DRIFT'
+          }
+          $headers=@{'Authorization'='Bearer '+$env:GH_TOKEN;'User-Agent'='Tikzarium-W2b-Readonly-WTS';'Accept'='application/vnd.github+json'}
+          $main=Invoke-RestMethod -Uri 'https://api.github.com/repos/i-shutov/tikzarium/branches/main' -Headers $headers -TimeoutSec 25
+          if($main.commit.sha -cne $local){throw 'READONLY_WTS_MAIN_ADVANCED_REFUSE_OLD_SHA'}
+      - name: Read original WTS state of existing user session (NO GUI/input)
+        id: session_readiness
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $output=Join-Path $env:RUNNER_TEMP ('tikzarium-w2b-readiness-'+$env:GITHUB_RUN_ID)
+          ./scripts/tools/qa_windows_w2_session_readiness.ps1 -OutputDir $output -ExpectedSha $env:GITHUB_SHA
+          $probe=Join-Path $output 'w2-session-readiness.json'
+          if(-not (Test-Path -LiteralPath $probe -PathType Leaf)){throw 'READONLY_WTS_ORIGINAL_REPORT_MISSING'}
+          $evidence=Get-Content -LiteralPath $probe -Raw -Encoding UTF8 | ConvertFrom-Json
+          if($evidence.source_sha -cne $env:GITHUB_SHA -or
+             $evidence.environment -cne 'PERSONAL_WINDOWS_SERVER' -or
+             $evidence.w2b_full -cne 'NOT_RUN' -or
+             $evidence.gui_input -cne 'NOT_RUN' -or
+             -not $evidence.no_os_change){
+            throw 'READONLY_WTS_ORIGINAL_REPORT_CONTRACT_FAILED'
+          }
+          Write-Host ('TIKZARIUM_W2B_READINESS_ONLY='+$evidence.status)
+          Write-Host ('WTS_CONNECT_STATE='+$evidence.wts_connection_state+'; session='+$evidence.session_id)
+          if($evidence.gui_candidate){
+            Write-Host 'WTS_ACTIVE_IS_CANDIDATE_ONLY: real own-HWND/Default desktop/foreground/DPI/Save As still required'
+          }
+      - name: Upload original read-only WTS JSON (NOT W2b PASS)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tikzarium-w2b-readonly-wts-${{ github.run_id }}
+          retention-days: 2
+          path: ${{ runner.temp }}/tikzarium-w2b-readiness-${{ github.run_id }}/w2-session-readiness.json
+          if-no-files-found: warn
+      - name: Remove temporary read-only status file (no system changes)
+        if: always()
+        shell: powershell
+        run: |
+          if($env:RUNNER_TEMP -and $env:GITHUB_RUN_ID){
+            $dir=Join-Path $env:RUNNER_TEMP ('tikzarium-w2b-readiness-'+$env:GITHUB_RUN_ID)
+            if(Test-Path -LiteralPath $dir -PathType Container){Remove-Item -LiteralPath $dir -Recurse -Force}
+          }
