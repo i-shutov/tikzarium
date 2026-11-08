@@ -62,15 +62,55 @@ def validate(root: Path, expected_sha: str) -> dict:
         gl = report.get('gl_renderer')
         require(gl in ('SYSTEM_GL_UNMODIFIED', 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT'), "Original evidence contract failed: gl in ('SYSTEM_GL_UNMODIFIED', 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT')")
         if gl == 'PINNED_MESA_LLVMPIPE_TEMP_ONLY_NOT_PRODUCT':
-            expected = 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
-            require(report['gl_archive_sha256'] == expected, "Original evidence contract failed: report['gl_archive_sha256'] == expected")
+            # Legacy accepted pal1000 physical evidence did not include
+            # archive_kind / per-DLL manifest. Preserve exact old SHA
+            # recognition, but new two-source evidence must be fully bound
+            # to the actual original provenance and DLL attestations.
+            allowed = {
+                'PAL1000_MINGW_26_2_6': (
+                    'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z',
+                    'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'),
+                'MSYS2_MINGW64_MESA_26_2_6_1': (
+                    'https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-mesa-26.2.6-1-any.pkg.tar.zst',
+                    '7b14de4d3f234efd0022d14dd7fb313ed751c829bb1f46026e0b2dce2d2d05a4'),
+            }
             manifest = json.loads((root / 'w2-mesa-software-gl-provenance.json').read_text(encoding='utf-8-sig'))
-            require(manifest['status'] == 'PASS_TEMPORARY_PINNED_TEST_ONLY', "Original evidence contract failed: manifest['status'] == 'PASS_TEMPORARY_PINNED_TEST_ONLY'")
-            require(manifest['source_sha'] == expected_sha, "Original evidence contract failed: manifest['source_sha'] == expected_sha")
-            require(manifest['archive_sha256'] == expected, "Original evidence contract failed: manifest['archive_sha256'] == expected")
-            require(manifest['app_sha256'] == report['app_sha256'], "Original evidence contract failed: manifest['app_sha256'] == report['app_sha256']")
-            require(manifest['no_system_install'] is True and manifest['no_product_distribution'] is True, "Original evidence contract failed: manifest['no_system_install'] is True and manifest['no_product_distribution'] is True")
-            require(manifest['dll_count'] >= 2, "Original evidence contract failed: manifest['dll_count'] >= 2")
+            kind = manifest.get('archive_kind')
+            if kind is None:
+                # Historic original physical W2a predates archive_kind.
+                # It can only be the original pal1000 SHA, NEVER MSYS2.
+                expected = allowed['PAL1000_MINGW_26_2_6'][1]
+                require(report.get('gl_archive_kind') in (None, 'PAL1000_MINGW_26_2_6'),
+                        'Legacy Mesa cannot claim unknown archive kind')
+            else:
+                require(kind in allowed, 'Unknown W2 Mesa archive kind')
+                source, expected = allowed[kind]
+                require(manifest.get('archive_url') == source,
+                        'New Mesa provenance URL and known SHA must be bound')
+                require(report.get('gl_archive_kind') == kind,
+                        'W2 Mesa archive kind differs between GUI and staging')
+                entries = manifest.get('dll_manifest')
+                require(isinstance(entries, list) and len(entries) == manifest.get('dll_count'),
+                        'New Mesa manifest missing exact DLL inventory')
+                hashes = {}
+                for entry in entries:
+                    name, digest = entry.get('name'), entry.get('sha256')
+                    require(isinstance(name, str) and name.lower().endswith('.dll') and
+                            name.isascii() and all(c.isalnum() or c in '._-' for c in name) and
+                            name.lower() not in hashes and isinstance(digest, str) and
+                            len(digest) == 64 and all(c in '0123456789abcdef' for c in digest),
+                            'New Mesa DLL inventory has duplicate/malformed names or hashes')
+                    hashes[name.lower()] = digest
+                require('opengl32.dll' in hashes and 'libgallium_wgl.dll' in hashes,
+                        'New Mesa provenance lacks actual OpenGL+Gallium pair')
+            require(report['gl_archive_sha256'] == expected, 'Wrong W2 Mesa archive SHA')
+            require(manifest['status'] == 'PASS_TEMPORARY_PINNED_TEST_ONLY', 'Mesa original status invalid')
+            require(manifest['source_sha'] == expected_sha, 'Mesa wrong app source SHA')
+            require(manifest['archive_sha256'] == expected, 'Mesa original archive SHA mismatch')
+            require(manifest['app_sha256'] == report['app_sha256'], 'Mesa wrong native EXE SHA')
+            require(manifest['no_system_install'] is True and manifest['no_product_distribution'] is True,
+                    'Mesa QA-only boundaries not preserved')
+            require(manifest['dll_count'] >= 2, 'Mesa original DLL inventory absent')
         require(report['window_screenshot'] == 'CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED', "Original evidence contract failed: report['window_screenshot'] == 'CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'")
         require(report['capture_method'] == 'WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ', "Original evidence contract failed: report['capture_method'] == 'WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ'")
         validate_capture_geometry(report)
