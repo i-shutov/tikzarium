@@ -61,6 +61,12 @@ jobs:
           $sha=(git rev-parse HEAD).Trim()
           python scripts/tools/qa_windows_hosted_gui_audit.py --root '.qa-artifacts/hosted-native-gui' --source-sha $sha
           if($LASTEXITCODE -ne 0){throw 'Hosted original HWND/PNG evidence FAILED'}
+      - name: Native GUI remains responsive during slow read-only TeX discovery
+        shell: powershell
+        env:
+          EXPECTED_PR_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          ./scripts/tools/test_qa_windows_startup_responsive.ps1 -OutputDir '.qa-artifacts/hosted-native-gui/slow-startup' -ExpectedSha $env:EXPECTED_PR_SHA
       - name: Upload original hosted Win32/PNG evidence (not physical)
         if: always()
         uses: actions/upload-artifact@v4

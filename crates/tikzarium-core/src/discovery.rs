@@ -1,5 +1,5 @@
 //! Discover local TeX tools. Discovery does not execute TeX documents.
-use crate::windows_tex_security::require_safe_tex_child;
+use crate::{probe_process::run_probe, windows_tex_security::require_safe_tex_child};
 use std::{
     env,
     ffi::OsStr,
@@ -87,11 +87,7 @@ pub fn inspect_xelatex(path: &Path) -> std::io::Result<TexEngineIdentity> {
     // fallback to a different user-installed TeX distribution.
     let mut busy_retries = 0;
     let output = loop {
-        match Command::new(path)
-            .arg("--version")
-            .stdin(std::process::Stdio::null())
-            .output()
-        {
+        match run_probe(Command::new(path).arg("--version"), Duration::from_secs(5)) {
             Err(error) if cfg!(unix) && error.raw_os_error() == Some(26) && busy_retries < 6 => {
                 busy_retries += 1;
                 thread::sleep(Duration::from_millis(25));
@@ -201,14 +197,14 @@ impl TexEnvironment {
         let Some(tool) = tool else {
             return PackageProbe::Unavailable;
         };
-        // A package probe must not inherit an elevated admin token either.
+        // Recheck the supported current-user token; no elevation or policy changes.
         if require_safe_tex_child().is_err() {
             return PackageProbe::Unavailable;
         }
-        let output = Command::new(tool)
-            .arg(OsStr::new(name))
-            .stdin(std::process::Stdio::null())
-            .output();
+        let output = run_probe(
+            Command::new(tool).arg(OsStr::new(name)),
+            Duration::from_secs(3),
+        );
         let Ok(output) = output else {
             return PackageProbe::Unavailable;
         };

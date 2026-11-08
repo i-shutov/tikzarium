@@ -47,6 +47,39 @@ class W2AuditTests(unittest.TestCase):
         (self.root/'windows-server-w2-interactive.json').write_text(json.dumps(self.report))
         return w2.validate(self.root,'a'*40)
 
+    def with_hosted_v2(self):
+        self.report.update(schema_version=2, binary_origin='verified-hosted-release',
+            app_sha256='c'*64, source_ci_run_id='1234', foreground_ownership={
+                'outcome': 'CONFIRMED_OWNED_FOREGROUND',
+                'method': 'SETFOREGROUND_WM_NULL_BARRIER_NO_QUEUE_ATTACH',
+                'used_temporary_input_queue_attachment': False,
+                'used_owned_input_queue_attachment': False, 'attempted': 1,
+                'trace': [{'ready': True, 'processed': True, 'foreground_hwnd': '4321',
+                           'reason': 'RESPONSIVE_AND_STABLE_OWNED_FOREGROUND'}]})
+        proof=dict(source_sha='a'*40, app_sha256='c'*64,
+                   status='PASS_VERIFIED_HOSTED_EXE_ZIP_ON_PERSONAL_SERVER_NOT_GUI',
+                   verification_host='personal-server', pe_gui_subsystem=2, pe_cli_subsystem=3,
+                   manifest_verified_files=5, cli_local_help='PASS_NO_TEX_INVOCATION', source_ci_run_id='1234')
+        (self.root/'windows-server-hosted-artifact.json').write_text(json.dumps(proof))
+
+    def test_v2_distributed_exe_personal_execution_is_not_server_build_or_full_w2(self):
+        self.with_hosted_v2()
+        self.assertEqual(self.verify()['full_w2_qualification'], 'NOT_RUN')
+
+    def test_v2_reject_original_exe_sha_mismatch(self):
+        self.with_hosted_v2(); self.report['app_sha256']='d'*64
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_v2_reject_missing_responsive_foreground_handshake(self):
+        self.with_hosted_v2(); self.report['foreground_ownership']['trace'][0]['processed']=False
+        with self.assertRaises(AssertionError): self.verify()
+
+    def test_v2_reject_hosted_only_verifier_mislabeled_personal(self):
+        self.with_hosted_v2()
+        path=self.root/'windows-server-hosted-artifact.json';proof=json.loads(path.read_text())
+        proof['verification_host']='hosted-ci';path.write_text(json.dumps(proof))
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_valid_partial_remains_not_run(self):
         self.assertEqual(self.verify()['full_w2_qualification'],'NOT_RUN')
     def test_reject_unknown_gl_provenance_on_personal_server(self):

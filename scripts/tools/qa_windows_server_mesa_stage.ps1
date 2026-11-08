@@ -4,7 +4,8 @@
 param(
  [Parameter(Mandatory)][string]$AppDirectory,
  [Parameter(Mandatory)][string]$EvidenceDirectory,
- [Parameter(Mandatory)][string]$ExpectedSha
+ [Parameter(Mandatory)][string]$ExpectedSha,
+ [ValidateSet('server-native','verified-hosted-release')][string]$BinaryOrigin='server-native'
 )
 $ErrorActionPreference='Stop'
 if($env:GITHUB_ACTIONS -cne 'true' -or $env:RUNNER_OS -cne 'Windows' -or
@@ -23,14 +24,12 @@ if([IO.Path]::GetFullPath($AppDirectory) -cne [IO.Path]::GetFullPath($expectedBi
 }
 if(-not (Test-Path -LiteralPath $EvidenceDirectory -PathType Container)){throw 'Original W1 report directory missing'}
 $EvidenceDirectory=(Resolve-Path -LiteralPath $EvidenceDirectory).Path
-$report=Get-Content -LiteralPath (Join-Path $EvidenceDirectory 'windows-server-rust.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-if($report.source_sha -cne $ExpectedSha -or $report.release_build -cne 'PASS_WINDOWS_SERVER_NOT_WIN10'){
- throw 'Original reviewed W1 native release not accepted'
-}
+. (Join-Path $PSScriptRoot 'qa_windows_w2_binary.ps1')
+$binary=Get-W2BinaryEvidence -EvidenceDirectory $EvidenceDirectory -ExpectedSha $ExpectedSha -BinaryOrigin $BinaryOrigin
 $app=Join-Path $AppDirectory 'tikzarium-app.exe'
 if(-not (Test-Path -LiteralPath $app -PathType Leaf)){throw 'Staged EXE copy missing'}
 $appHash=(Get-FileHash -LiteralPath $app -Algorithm SHA256).Hash.ToLowerInvariant()
-if($appHash -cne $report.app_sha256){throw 'Staged EXE differs from original W1 native EXE'}
+if($appHash -cne $binary.app_sha256){throw 'Staged EXE differs from original W1 native EXE'}
 $source='https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z'
 $expected='da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
 $work=Join-Path $expectedRoot 'payload'
@@ -72,6 +71,7 @@ $proof=[ordered]@{
  archive_url=$source
  archive_sha256=$sha
  app_sha256=$appHash
+ binary_origin=$BinaryOrigin
  dll_count=$dlls.Count
  dll_manifest=$manifest
  no_system_install=$true

@@ -13,7 +13,7 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         for required in (PIN, "release-mingw.7z",
                          "$env:RUNNER_ENVIRONMENT -cne 'self-hosted'",
                          "$env:GITHUB_REPOSITORY -cne 'i-shutov/tikzarium'",
-                         "git rev-parse HEAD", "windows-server-rust.json",
+                         "git rev-parse HEAD", "Get-W2BinaryEvidence",
                          "RUNNER_TEMP", "w2-mesa-software-gl-provenance.json",
                          "no_system_install=$true", "no_product_distribution=$true"):
             self.assertIn(required, source)
@@ -23,7 +23,7 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
     def test_client_only_gui_remains_exact_sha(self):
         source = (TOOLS / "qa_windows_server_interactive.ps1").read_text(encoding="utf-8")
         for required in ("W2 exact trusted-main SHA mismatch",
-                         "if($appSha -cne $rust.app_sha256)", "StagedGuiExe",
+                         "Get-W2BinaryEvidence", "StagedGuiExe",
                          "Get-FileHash -LiteralPath $StagedGuiExe",
                          "PASS_TEMPORARY_PINNED_TEST_ONLY", PIN,
                          "Save-TikzariumOwnedClient"):
