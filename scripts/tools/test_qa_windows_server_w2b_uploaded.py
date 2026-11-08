@@ -46,12 +46,23 @@ class OriginalStage1Tests(unittest.TestCase):
                                 'window_dpi':120,'coordinate_space':'PHYSICAL_PIXELS_PER_MONITOR_V2',
                                 'dpi_context_restored':True},
                     'baseline_source_copy':'stage1-original-before.tex',
-                    'saved_source_copy':'stage1-original-gui-saved.tex'}
+                    'saved_source_copy':'stage1-original-gui-saved.tex',
+                    'native_save_dialog':{
+                      'status':'PASS_OWNED_NATIVE_SAVE_DIALOG',
+                      'class':'#32770','process_id':8440,
+                      'dpi_context_restored':True,
+                      'chosen_source_path':str(self.folder.parent/'figure.tex'),
+                      'original_dialog_png':'00-real-owned-save-dialog.png'}}
         self.before=self.folder/self.stage['baseline_source_copy']
         self.after=self.folder/self.stage['saved_source_copy']
         self.before.write_bytes(BASE)
         self.after.write_bytes(AFTER)
+        (self.folder.parent/'figure.tex').write_bytes(AFTER)
+        self.dialog=self.folder/'00-real-owned-save-dialog.png'
+        self.dialog.write_bytes(b'OWNED_SAVE_DIALOG_RAW_PNG_BYTES')
+        self.stage['native_save_dialog']['original_dialog_png_sha256']=w2b.sha256(self.dialog)
         self.stage['baseline_sha256']=w2b.sha256(self.before)
+        self.stage['native_save_dialog']['saved_source_sha256']=w2b.sha256(self.before)
         self.stage['source_sha256']=w2b.sha256(self.after)
         self.pngs=[self.folder/n for n in
                    ('00-before-palette.png','01-real-geometry-palette.png','02-real-line-saved.png')]
@@ -65,7 +76,8 @@ class OriginalStage1Tests(unittest.TestCase):
             json.dumps(self.stage),encoding='utf-8')
 
     def check(self):
-        frames=[PngEvidence(1475,850,chr(97+n)*64,40) for n in range(3)]
+        frames=[PngEvidence(960,600,'d'*64,40)]
+        frames.extend(PngEvidence(1475,850,chr(97+n)*64,40) for n in range(3))
         with patch.object(w2b,'inspect_png',side_effect=frames):
             return w2b.validate(self.root,SHA)
 
@@ -116,18 +128,44 @@ class OriginalStage1Tests(unittest.TestCase):
         with self.assertRaises(EvidenceError):self.check()
 
     def test_png_metadata_only_change_rejected(self):
-        frames=[PngEvidence(1475,850,'a'*64,40),
+        frames=[PngEvidence(960,600,'d'*64,40),
+                PngEvidence(1475,850,'a'*64,40),
                 PngEvidence(1475,850,'a'*64,40),
                 PngEvidence(1475,850,'b'*64,40)]
         with patch.object(w2b,'inspect_png',side_effect=frames):
             with self.assertRaises(EvidenceError):w2b.validate(self.root,SHA)
 
     def test_png_geometry_changed_rejected(self):
-        frames=[PngEvidence(1475,850,'a'*64,40),
+        frames=[PngEvidence(960,600,'d'*64,40),
+                PngEvidence(1475,850,'a'*64,40),
                 PngEvidence(1475,850,'b'*64,40),
                 PngEvidence(900,600,'c'*64,40)]
         with patch.object(w2b,'inspect_png',side_effect=frames):
             with self.assertRaises(EvidenceError):w2b.validate(self.root,SHA)
+
+    def test_native_save_dialog_missing_rejected(self):
+        self.dialog.unlink()
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_native_save_dialog_foreign_pid_rejected(self):
+        self.stage['native_save_dialog']['process_id']=9988;self.save()
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_native_save_dialog_wrong_path_rejected(self):
+        self.stage['native_save_dialog']['chosen_source_path']='C:/wrong/foreign.tex';self.save()
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_native_save_dialog_png_tampering_rejected(self):
+        self.dialog.write_bytes(b'MODIFIED_PNG')
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_native_save_dialog_wrong_source_sha_rejected(self):
+        self.stage['native_save_dialog']['saved_source_sha256']='0'*64;self.save()
+        with self.assertRaises(EvidenceError):self.check()
+
+    def test_native_save_dialog_missing_actual_gui_file_rejected(self):
+        (self.folder.parent/'figure.tex').unlink()
+        with self.assertRaises(EvidenceError):self.check()
 
     def test_blocked_not_promoted(self):
         self.stage.update(status='BLOCKED_STAGE1',error='BLOCKED_OWNER_FOCUS',

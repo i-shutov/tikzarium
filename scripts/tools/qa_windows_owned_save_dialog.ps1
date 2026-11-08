@@ -127,7 +127,7 @@ function Invoke-TikzariumOwnedSaveDialog {
    dialog_hwnd=$modal.ToInt64().ToString()
    process_id=$ExpectedPid
    chosen_source_path=$full
-   original_dialog_png=$png
+   original_dialog_png='00-real-owned-save-dialog.png'
    original_dialog_png_sha256=(Get-FileHash -LiteralPath $png -Algorithm SHA256).Hash.ToLowerInvariant()
    dpi_context_restored=$capture.dpi_context_restored
    saved_source_sha256=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant()

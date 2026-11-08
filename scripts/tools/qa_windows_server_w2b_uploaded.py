@@ -76,6 +76,24 @@ def validate(root: Path, expected_sha: str) -> dict:
             'W2b input lacks restored, physical 125% geometry')
     require(1450 <= g.get('width',0) <= 1510 and 825 <= g.get('height',0) <= 880,
             'W2b input used wrong/reflowed client viewport')
+    # Real Windows Save As must be an app-owned modal and supply original pixels.
+    native = stage.get('native_save_dialog') or {}
+    require(native.get('status') == 'PASS_OWNED_NATIVE_SAVE_DIALOG' and
+            native.get('class') == '#32770' and
+            native.get('process_id') == w2a.get('pid') and
+            native.get('dpi_context_restored') is True,
+            'Same-PID native Save As proof is required')
+    require(str(native.get('chosen_source_path', '')).replace('\\', '/').endswith('/w2-interactive/figure.tex'),
+            'GUI Save As path was not the isolated physical stage target')
+    dialog_png = folder / '00-real-owned-save-dialog.png'
+    require(native.get('original_dialog_png') == dialog_png.name and dialog_png.is_file(),
+            'Original native Save As client screenshot missing')
+    require(sha256(dialog_png) == native.get('original_dialog_png_sha256'),
+            'Tampered native Save As PNG')
+    dialog_pixels = inspect_png(dialog_png)
+    require(400 <= dialog_pixels.width <= 2500 and
+            250 <= dialog_pixels.height <= 1600 and dialog_pixels.sampled_colors >= 8,
+            'Blank/implausible native Save As client frame')
     before = folder / 'stage1-original-before.tex'
     after = folder / 'stage1-original-gui-saved.tex'
     require(stage.get('baseline_source_copy') == before.name and
@@ -85,6 +103,11 @@ def validate(root: Path, expected_sha: str) -> dict:
     require(sha256(before) == stage.get('baseline_sha256') and
             sha256(after) == stage.get('source_sha256'),
             'Original source file hash mismatch')
+    require(native.get('saved_source_sha256') == stage.get('baseline_sha256'),
+            'Native Windows Save As did not create exact baseline source bytes')
+    final_original = root / 'w2-interactive' / 'figure.tex'
+    require(final_original.is_file() and sha256(final_original) == stage.get('source_sha256'),
+            'Actual full GUI-saved figure.tex file missing or changed from evidence')
     before_bytes, after_bytes = before.read_bytes(), after.read_bytes()
     require(before_bytes != after_bytes, 'GUI gesture did not change source bytes')
     try:
@@ -110,6 +133,8 @@ def validate(root: Path, expected_sha: str) -> dict:
     return dict(status=STAGE1, source_sha=expected_sha,
                 baseline_source_sha256=sha256(before),
                 gui_source_sha256=sha256(after),
+                native_save_dialog_sha256=sha256(dialog_png),
+                native_save_dialog_pixel_sha256=dialog_pixels.pixel_sha256,
                 images_sha256={p.name:sha256(p) for p in pngs},
                 images_pixel_sha256={p.name:frame.pixel_sha256 for p,frame in zip(pngs,frames)},
                 actual_native_line_id=parsed[0]['id'],
