@@ -43,10 +43,30 @@ New-Item -ItemType Directory -Path $unpack -Force | Out-Null
 $archive=Join-Path $work 'mesa3d-26.2.6-release-mingw.7z'
 . (Join-Path $PSScriptRoot 'qa_windows_pinned_mesa_fetch.ps1')
 . (Join-Path $PSScriptRoot 'qa_windows_mesa_transport.ps1')
+. (Join-Path $PSScriptRoot 'qa_windows_mesa_escrow.ps1')
+# Original escrow is downloaded only from the already-validated same-source
+# successful main CI run. A partial/tampered escrow is terminal, not fallback.
+$escrowRoot=Join-Path $env:RUNNER_TEMP 'tikzarium-hosted\qa-mesa-pal1000'
+$escrowArchive=Join-Path $escrowRoot 'mesa3d-26.2.6-release-mingw.7z'
+$escrowManifest=Join-Path $escrowRoot 'qa-escrow-provenance.json'
+$hasEscrowArchive=Test-Path -LiteralPath $escrowArchive -PathType Leaf
+$hasEscrowManifest=Test-Path -LiteralPath $escrowManifest -PathType Leaf
+if($hasEscrowArchive -xor $hasEscrowManifest){
+ throw 'MESA_ESCROW_PARTIAL_OR_TAMPERED_SOURCE_ARTIFACT'
+}
 $seven=(Get-Command 7z.exe -ErrorAction SilentlyContinue).Source
 if(-not $seven -and (Test-Path 'C:\Program Files\7-Zip\7z.exe')){$seven='C:\Program Files\7-Zip\7z.exe'}
 try {
- $pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
+ if($hasEscrowArchive -and $hasEscrowManifest){
+   $pinned=Assert-TikzariumMesaEscrow -Archive $escrowArchive -Manifest $escrowManifest -ExpectedSourceSha $ExpectedSha -SourceRunId ([string]$binary.source_ci_run_id)
+   Copy-Item -LiteralPath $escrowArchive -Destination $archive -Force
+   if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pinned.sha256){
+     throw 'MESA_ESCROW_STAGED_ARCHIVE_CHANGED_AFTER_VERIFICATION'
+   }
+   Write-Host 'PERSONAL_W2_MESA=EXACT_MAIN_CI_PINNED_ESCROW_NOT_PRODUCT'
+ }else{
+   $pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
+ }
 } catch {
  $primaryReason=$_.Exception.Message
  if($primaryReason -notlike 'PINNED_MESA_TRANSPORT_EXHAUSTED_*'){
