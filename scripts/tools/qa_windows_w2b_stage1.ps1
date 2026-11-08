@@ -169,6 +169,11 @@ function Invoke-TikzariumW2bStage1 {
   Start-Sleep -Milliseconds 350
   [TikzariumW2bPointer]::Click($Handle,$ExpectedPid,220,24)
   Start-Sleep -Milliseconds 450
+  # Windows Save on an unsaved document opens the actual rfd native Save As.
+  # Do not assume clicking Save creates a source file without dialog approval.
+  . (Join-Path $PSScriptRoot 'qa_windows_owned_save_dialog.ps1')
+  $nativeSave=Invoke-TikzariumOwnedSaveDialog -MainHandle $Handle -ExpectedPid $ExpectedPid -SessionId $SessionId -ExactNewTexPath $source -OutputDir $OutputDir
+  $report.native_save_dialog=$nativeSave
   if(-not (Test-Path -LiteralPath $source -PathType Leaf)){throw 'BLOCKED_W2B_GUI_BASELINE_SAVE_MISSING'}
   $before=[IO.File]::ReadAllBytes($source)
   $beforeText=[Text.Encoding]::UTF8.GetString($before)
