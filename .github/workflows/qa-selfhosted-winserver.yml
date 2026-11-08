@@ -112,6 +112,18 @@ jobs:
           run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/tikzarium-hosted/portable
+      # Optional separate QA-only artifact from SAME successful reviewed
+      # main push CI as verified product EXE. No PR code/payload accepted.
+      - name: Download optional original pal1000 W2 QA escrow from same trusted main CI
+        id: mesa_escrow_download
+        if: ${{ !cancelled() && steps.exact_main_sha.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: tikzarium-w2-pal1000-qa-escrow
+          run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/tikzarium-hosted/qa-mesa-pal1000
       - name: Verify and smoke original native hosted EXE and ZIP on personal Server (no Cargo/TeX)
         id: hosted_stage
         shell: powershell
