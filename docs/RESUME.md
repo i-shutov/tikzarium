@@ -1,5 +1,44 @@
 # TikZarium — release resume, 2026-11-08
 
+## 2026-11-08 — original current-main postmerge Server proof and WTS evidence hardening
+
+Latest trusted main is `ccb4ecb7f31981bd433f8bbe3f331ec59cc512d3` (PR #141 merged).
+[Exact-main hosted CI #42484403986](https://github.com/i-shutov/tikzarium/actions/runs/42484403986)
+and [personal Windows Server #42484861464](https://github.com/i-shutov/tikzarium/actions/runs/42484861464)
+completed SUCCESS. **Actions success is not physical W2b success.**
+
+Independently downloaded and inspected **original early artifact #13619042829**
+(outer ZIP SHA256 `aea4751731af1e8f23a9d98909d3c67505b69017fb5cebee0f7a7495241dce0e`).
+Its separate `w2-session-readiness.json` and `windows-server-w2-interactive.json`
+agree: at 2026-11-08 13:26 UTC RDP Session 2, **WTS state 4**,
+`BLOCKED_RDP_DISCONNECTED`, before GL/GUI launch. No own HWND, pointer event,
+GUI screenshot, Save/Open/dialog, IME, DPI200 or GUI→XeLaTeX ran. The original
+early verified-hosted binary/ZIP report is **not** GUI input evidence.
+
+Independently inspected **original final artifact #13620370186**
+(outer ZIP SHA256 `029418b45169b10c1bae5dbd016687f281ea1863b10e8383e9401157e04e7b25`).
+Actual native Server Rust release GUI and CLI are AMD64 PE32+ subsystem
+**2/3**, hashes `d84e60be2e97f52fcfb5ba9598de851677ecc283c4d8abb8970b230c800d1ee4`
+and `8d117c661599b7162ed075803be121a0992bb16e3b26db5443f2220e529aef13`.
+The real native product CLI called existing MiKTeX 26.5 XeLaTeX, exited 0;
+the actual uploaded one-page PDF has SHA256
+`42c9209e6d6987212afd3ab38de542d4ca4f3269226fa3a5a85e396e4dfe6e6c`,
+embedded/subset ArialMT CID TrueType, ToUnicode, correct extractable
+`Точка` and `Тест XeLaTeX: Кириллица.`; original source bytes match
+`examples/windows-cyrillic.tex`. Installed package lists before/after are
+byte-identical. This accepts **W1 on current main**, not GUI→PDF.
+
+This isolated **engineering candidate**, until exact-head CI/review/merge, extends
+the independent original-W2 auditor: a new WTS-block verdict must match the
+separately uploaded read-only native WTS JSON (source/session/state/blocked
+reason), and cannot conceal injected GUI claims or physical PNG/gesture traces.
+It does not manipulate RDP and does not promote W2b. Real W2b remains blocked
+until an already-authorized existing desktop is genuinely **Active/unlocked**
+and the full owned-HWND/runtime/GUI checks pass. W2a only historical
+`ef95c1c9` physical PASS; W2b **NOT_RUN**, physical Win10 W3 **NOT_RUN**,
+stable W4 **NO-GO**. No runner/UAC/accounts/install changes.
+
+
 ## 2026-11-08 — new physical W2b blocker: actual WTSDisconnected; no input attempted
 
 Trusted `main` a5e2335825af4391d380792406ee0d9e529a5a17, exact-main hosted CI SUCCESS:
