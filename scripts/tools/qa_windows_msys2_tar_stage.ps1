@@ -66,15 +66,21 @@ if($SelfTest){
    [void](Expand-TikzariumPinnedMsys2WithWindowsTar -Archive (Join-Path $root 'absent.pkg.tar.zst') -Destination $dest)
   }catch{$bad=$_.Exception.Message -like '*PINNED_MSYS2_NATIVE_TAR_ARCHIVE_MISSING*'}
   if(-not $bad){throw 'PINNED_MSYS2_NATIVE_TAR_ABSENT_ARCHIVE_WAS_ACCEPTED'}
-  $other=Join-Path $root 'empty'
-  New-Item -ItemType Directory -Path $other -Force | Out-Null
-  $bad=$false
+  # Synthetic negative: a parseable archive with only one of the two
+  # required DLLs must fail before ANY real GUI process can be launched.
+  $badSource=Join-Path $root 'missing-opengl'
+  New-Item -ItemType Directory -Path (Join-Path $badSource 'mingw64\bin') -Force | Out-Null
+  [IO.File]::WriteAllBytes((Join-Path $badSource 'mingw64\bin\libgallium_wgl.dll'),[byte[]](8,9))
+  $badTar=Join-Path $root 'missing-opengl.tar'
+  & $tar -cf $badTar -C $badSource mingw64
+  if($LASTEXITCODE -ne 0){throw 'PINNED_MSYS2_BAD_LAYOUT_FIXTURE_CREATE_FAILED'}
+  $badOutput=Join-Path $root 'missing-opengl-output'
+  New-Item -ItemType Directory -Path $badOutput -Force | Out-Null
+  $missingRejected=$false
   try{
-   [void](Expand-TikzariumPinnedMsys2WithWindowsTar -Archive $tarFixture -Destination $other)
-  }catch{$bad=$_.Exception.Message -like '*PINNED_MSYS2_NATIVE_TAR_NO_MINGW64_BIN*'}
-  # A valid fixture creates that directory. A corrupt source must be rejected
-  # by the original archive hash, not by a pretend test whose bytes remain OK.
-  if($bad){throw 'PINNED_MSYS2_NATIVE_TAR_SELFTEST_UNEXPECTED_REJECTION'}
-  Write-Host 'PINNED_MSYS2_NATIVE_TAR_SELFTEST=PASS_NATIVE_TAR_AND_MISSING_INPUT_NO_INSTALL'
+   [void](Expand-TikzariumPinnedMsys2WithWindowsTar -Archive $badTar -Destination $badOutput)
+  }catch{$missingRejected=$_.Exception.Message -like '*PINNED_MSYS2_NATIVE_TAR_REQUIRED_DLL_MISSING_opengl32.dll*'}
+  if(-not $missingRejected){throw 'PINNED_MSYS2_NATIVE_TAR_ACCEPTED_MISSING_OPENGL_DLL'}
+  Write-Host 'PINNED_MSYS2_NATIVE_TAR_SELFTEST=PASS_NATIVE_TAR_LAYOUT_ABSENT_ARCHIVE_MISSING_DLL_NO_INSTALL'
  }finally{Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue}
 }
