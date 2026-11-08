@@ -24,9 +24,9 @@ New-Item -ItemType Directory -Path $work -Force | Out-Null
 $archive=Join-Path $work 'mesa3d-26.2.6-release-mingw.7z'
 $unpacked=Join-Path $work 'unpacked'
 New-Item -ItemType Directory -Path $unpacked -Force | Out-Null
-Invoke-WebRequest -Uri $source -OutFile $archive -MaximumRedirection 6 -UseBasicParsing
-$actual=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-if($actual -cne $expected){throw "Pinned Mesa3D GitHub release SHA mismatch: $actual"}
+. (Join-Path $PSScriptRoot 'qa_windows_pinned_mesa_fetch.ps1')
+$pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
+$actual=$pinned.sha256
 & $seven x $archive "-o$unpacked" -y | Out-Null
 if($LASTEXITCODE -ne 0){throw 'Cannot extract verified Mesa3D archive'}
 $files=@(Get-ChildItem -LiteralPath $unpacked -File -Recurse)

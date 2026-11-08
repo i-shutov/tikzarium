@@ -36,9 +36,9 @@ $work=Join-Path $expectedRoot 'payload'
 $unpack=Join-Path $work 'unpack'
 New-Item -ItemType Directory -Path $unpack -Force | Out-Null
 $archive=Join-Path $work 'mesa3d-26.2.6-release-mingw.7z'
-Invoke-WebRequest -Uri $source -OutFile $archive -MaximumRedirection 6 -TimeoutSec 150 -UseBasicParsing
-$sha=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-if($sha -cne $expected){throw 'Public Mesa archive SHA256 mismatch'}
+. (Join-Path $PSScriptRoot 'qa_windows_pinned_mesa_fetch.ps1')
+$pinned=Get-TikzariumPinnedArchive -SourceUrl $source -ArchivePath $archive -ExpectedSha256 $expected
+$sha=$pinned.sha256
 $seven=(Get-Command 7z.exe -ErrorAction SilentlyContinue).Source
 if(-not $seven -and (Test-Path 'C:\Program Files\7-Zip\7z.exe')){$seven='C:\Program Files\7-Zip\7z.exe'}
 if($seven){ & $seven x $archive ("-o" + $unpack) -y | Out-Null }

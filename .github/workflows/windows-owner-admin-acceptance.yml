@@ -75,6 +75,10 @@ jobs:
         shell: powershell
         run: |
           ./scripts/tools/qa_windows_w2b_stage1.ps1 -SelfTest
+      - name: Pinned QA Mesa HTTPS retry and SHA mismatch negative tests (no network)
+        shell: powershell
+        run: |
+          ./scripts/tools/qa_windows_pinned_mesa_fetch.ps1 -SelfTest
       - name: Windows real-desktop preflight negative cases (synthetic only)
         shell: powershell
         run: ./scripts/tools/qa_windows_server_interactive.ps1 -SelfTest
