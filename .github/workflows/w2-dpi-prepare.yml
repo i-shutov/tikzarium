@@ -35,6 +35,14 @@ jobs:
               assert path.startswith(('scripts/tools/', 'docs/', 'plans/')), path
           subprocess.run(['git','apply','--check',str(patch)], check=True)
           subprocess.run(['git','apply','--index',str(patch)], check=True)
+          # Preserve the exact historical status name required by the existing
+          # release-document contract; it is explicitly historical, not current.
+          doc = pathlib.Path('docs/WINDOWS_1_0_RELEASE_CONTROL_RU.md')
+          text = doc.read_text(encoding='utf-8')
+          text = text.replace('Старые `NO_FOREGROUND_WINDOW`', 'Старые `BLOCKED_FOREGROUND_NOT_OWNED`, `NO_FOREGROUND_WINDOW`')
+          text = text.replace('Фактический статус на основном коммите b761a37f1872d13dd5d866ff2d68ac8b8aa60989', 'Фактический статус (см. точные SHA в свидетельствах)')
+          doc.write_text(text, encoding='utf-8')
+          subprocess.run(['git','add',str(doc)], check=True)
           PY
       - name: Independent DPI, HWND, source and release negative regressions
         shell: bash
