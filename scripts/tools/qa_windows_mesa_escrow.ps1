@@ -136,6 +136,8 @@ if($SelfTest){
  }
  return
 }
+# Dot-source without arguments exposes only the typed, fail-closed validator.
+if($PSBoundParameters.Count -eq 0){return}
 if([string]::IsNullOrWhiteSpace($OutputDir) -or
    [string]::IsNullOrWhiteSpace($ExpectedSourceSha) -or
    [string]::IsNullOrWhiteSpace($SourceRunId)){
