@@ -87,7 +87,10 @@ def validate(root: Path, expected_sha: str) -> dict:
             'Original source file hash mismatch')
     before_bytes, after_bytes = before.read_bytes(), after.read_bytes()
     require(before_bytes != after_bytes, 'GUI gesture did not change source bytes')
-    parsed = owners(after_bytes)
+    try:
+        parsed = owners(after_bytes)
+    except (ValueError, UnicodeError) as exc:
+        raise EvidenceError('Malformed/duplicate native C-owned TikZ metadata') from exc
     require(len(parsed) == 1 and parsed[0]['tool'] == 'line' and
             stage.get('owner_count') == 1,
             'Source was not one valid C-catalogue native TikZ line')
