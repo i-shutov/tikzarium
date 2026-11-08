@@ -63,7 +63,7 @@ class OwnerW2SoftwareGLContracts(unittest.TestCase):
         self.assertIn("continue-on-error: true",ci)
         self.assertIn("Download optional exact-main QA-only Mesa escrow",server)
         self.assertIn("run-id: ${{ github.event_name == 'workflow_run'",server)
-        self.assertIn("qa-mesa-escrow.json",server)
+        self.assertIn("qa-mesa-escrow.json",stage)
         self.assertIn("PINNED_MESA_CI_ESCROW_UNTRUSTED_PROVENANCE",stage)
         self.assertIn("PINNED_MESA_CI_ESCROW_SHA_MISMATCH",stage)
         self.assertIn("TRUSTED_MAIN_SOURCE_CI_QA_ESCROW",stage)
