@@ -1,5 +1,15 @@
 # TikZarium — release resume, 2026-11-08
 
+
+## 2026-11-08 — latest exact-main physical evidence and read-only scheduled RDP readiness
+
+Current accepted main is \`4ec94747f2d11840a5dbc5a274b9840ce30dfba9\` (PR #142 merged).
+All three exact-main hosted push checks SUCCESS: Rust native [#42489761081](https://github.com/i-shutov/tikzarium/actions/runs/42489761081), D QA [#42489761101](https://github.com/i-shutov/tikzarium/actions/runs/42489761101), Windows admin [#42489761099](https://github.com/i-shutov/tikzarium/actions/runs/42489761099).
+Personal original [run #42490214199](https://github.com/i-shutov/tikzarium/actions/runs/42490214199) SUCCESS **for W1, not GUI**. Original WTS early artifact **#13621431232**, ZIP SHA256 \`48f3b3f70ab6e7290442ae67e4059c1b8bfb162b2ebf491e7a73aca6762aeb94\`, and final artifact **#13621878747**, ZIP SHA256 \`5c8e9434f8d9c2f4075000c94101419333c8647a8af031e1138e4b2109a64631\` independently agree: session 2 **WTSDisconnected=4**, \`BLOCKED_RDP_DISCONNECTED\`, no GL, HWND, input or GUI photo. Full W2b **NOT_RUN**; historical W2a accepted only at SHA \`ef95c1c9\`, physical Win10 W3 NOT_RUN, stable 1.0 W4 NO-GO. Current original PDF SHA256 \`abbc6a18ed3a10acddc2fc29e39abab083c1d4e3744a887406cea2dab1b242b7\`: real native MiKTeX/dvipdfmx, one page, Arial embedded/subset with ToUnicode, Cyrillic text, visually rendered — W1 PASS.
+
+New **read-only readiness monitor CANDIDATE**, independent of W1: a scheduled trusted-main self-hosted workflow every 30 minutes runs only the reviewed Win32/WTS native probe and uploads an original JSON. It does NOT stage OpenGL, move user mouse, unlock RDP, create a window, start XeLaTeX or claim GUI PASS. Its distinct concurrency key cannot cancel pending full-main W1/QA. An \`WTS_ACTIVE_CANDIDATE_NOT_GUI_PROOF\` is only permission to *consider* running already reviewed W2b GUI; further real same-owned HWND/Default/input focus/DPI/F1/Save-As and physical Windows10 remain mandatory. Existing RDP session must become Active normally; no process/user/RDP policy alteration is authorized. Until first exact-head hosted CI and reviewed merge this watcher is NOT running on the personal Server.
+
+
 ## 2026-11-08 — original current-main postmerge Server proof and WTS evidence hardening
 
 Latest trusted main is `ccb4ecb7f31981bd433f8bbe3f331ec59cc512d3` (PR #141 merged).
