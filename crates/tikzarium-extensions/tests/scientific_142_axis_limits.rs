@@ -130,3 +130,46 @@ fn axis_help_does_not_invent_default_values() {
         assert!(help.manual_section.contains("UNKNOWN"));
     }
 }
+
+#[test]
+fn sv001_two_axis_bounds_source_patch_stack_reverts_exact_sha() {
+    let original = hash(SV001.as_bytes());
+    let mut source = SV001.to_owned();
+    let mut revision = 31;
+    let mut undo = Vec::new();
+    for (key, previous, replacement) in [
+        ("ymax", "1.4", "1.2"),
+        ("ymin", "0", "-0.5"),
+    ] {
+        // A real user re-selects the current command after a source change.
+        let view = SourceView {
+            text: &source,
+            revision,
+        };
+        let found = scan_scientific_source(view).unwrap();
+        let axis = found
+            .iter()
+            .find(|instance| instance.kind == ScientificKind::Axis)
+            .unwrap();
+        let patch = plan_literal_key_edit(LiteralEditRequest {
+            view,
+            instance: axis,
+            key,
+            expected_old: previous,
+            replacement,
+        })
+        .unwrap();
+        undo.push(patch.apply(&mut source, &mut revision).unwrap());
+    }
+    assert!(source.contains("ymax=1.2"));
+    assert!(source.contains("ymin=-0.5"));
+    for mut inverse in undo.into_iter().rev() {
+        // Existing authoring Undo rebinds a verified inverse to the next
+        // monotone revision, then lets SourcePatch verify the old bytes.
+        inverse.source_revision = revision;
+        inverse.apply(&mut source, &mut revision).unwrap();
+    }
+    assert_eq!(revision, 35);
+    assert_eq!(hash(source.as_bytes()), original);
+    assert_eq!(source.as_bytes(), SV001.as_bytes());
+}

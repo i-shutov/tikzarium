@@ -19,3 +19,7 @@ Date: 2026-11-09. Based on SC2 PR #148 (stacked on SC1 PR #146), not Windows 1.0
 - [ ] Expand PGFPlots domain/axis labels, ticks, size, markers and style only with explicit source grammar and negative tests; never invent default values.
 
 SC1 and SC2 parent branches must be independently accepted before merging stack. Never deploy this unreviewed candidate to the owner's personal Windows Server.
+
+## Additional source-level acceptance
+
+The SC3 native Inspector model selects the actual original `SV-001` axis, refuses an axis-only property on an `addplot`, applies `ymax=1.4 → 1.2` through the shared authoring source transaction and undoes it to the original bytes. A second test applies `ymax` then `ymin` after an explicit rescan, and undoes the two inverse patches in LIFO order with monotonically increasing revisions and the original SHA restored. These are automated native-state tests, not physical pointer, PDF or L3 evidence.

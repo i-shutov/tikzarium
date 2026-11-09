@@ -335,4 +335,42 @@ mod tests {
         let _ = ctx.end_pass();
         assert_eq!(source.as_bytes(), SAROV.as_bytes());
     }
+
+    #[test]
+    fn real_sv001_ymax_inspector_model_applies_exact_undo_and_rejects_series_bound() {
+        let mut source = SAROV.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        let axis_index = inspector
+            .candidates
+            .iter()
+            .position(|candidate| candidate.instance.kind == ScientificKind::Axis)
+            .unwrap();
+        let plot_index = inspector
+            .candidates
+            .iter()
+            .position(|candidate| candidate.instance.kind == ScientificKind::AddPlot)
+            .unwrap();
+        inspector.property = LiteralProperty::YMax;
+        inspector.selected = Some(plot_index);
+        inspector.refresh_literal(&authoring, &source);
+        assert_eq!(inspector.original_value, None);
+        inspector.selected = Some(axis_index);
+        inspector.refresh_literal(&authoring, &source);
+        assert_eq!(inspector.original_value.as_deref(), Some("1.4"));
+        inspector.proposed_value = "1.2".to_owned();
+        let line = inspector
+            .apply_selected(&mut authoring, &mut source)
+            .unwrap();
+        assert!(line > 10);
+        assert!(source.contains("ymax=1.2"));
+        assert!(source.contains(r"\pgfplotsset{compat=1.17}"));
+        assert!(authoring.undo_available());
+        authoring.undo(&mut source).unwrap();
+        assert_eq!(source.as_bytes(), SAROV.as_bytes());
+        assert!(!authoring.undo_available());
+    }
+
 }
