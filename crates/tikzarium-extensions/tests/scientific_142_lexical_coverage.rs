@@ -22,7 +22,11 @@ fn original_142_sources_are_scanned_without_mutation_or_fabricated_l2() {
             }
             let path = folder.path().join("figure.tex");
             if path.is_file() {
-                corpus.push((label, folder.file_name().to_string_lossy().to_string(), path));
+                corpus.push((
+                    label,
+                    folder.file_name().to_string_lossy().to_string(),
+                    path,
+                ));
                 *families.entry(label).or_insert(0usize) += 1;
             }
         }
@@ -38,7 +42,10 @@ fn original_142_sources_are_scanned_without_mutation_or_fabricated_l2() {
     for (family, id, path) in &corpus {
         let before = fs::read(path).unwrap();
         let source = String::from_utf8(before.clone()).expect("owner corpus is UTF-8");
-        match scan_scientific_source(SourceView { text: &source, revision: 0 }) {
+        match scan_scientific_source(SourceView {
+            text: &source,
+            revision: 0,
+        }) {
             Ok(items) => {
                 recognized += 1;
                 passed.push(format!("{family}/{id}"));
@@ -56,13 +63,23 @@ fn original_142_sources_are_scanned_without_mutation_or_fabricated_l2() {
             Err(reason) => {
                 opaque += 1;
                 // Refusal is an honest coverage gap, never a synthesized PASS.
-                println!("SC3_OPAQUE,{family},{id},{}", reason.to_string().replace(',', ";"));
+                println!(
+                    "SC3_OPAQUE,{family},{id},{}",
+                    reason.to_string().replace(',', ";")
+                );
             }
         }
-        assert_eq!(fs::read(path).unwrap(), before, "{family}/{id} was modified");
+        assert_eq!(
+            fs::read(path).unwrap(),
+            before,
+            "{family}/{id} was modified"
+        );
     }
     for id in ["SR/SV-001", "SR/SV-003", "SR/SV-009"] {
-        assert!(passed.iter().any(|found| found == id), "reviewed sample {id} refused");
+        assert!(
+            passed.iter().any(|found| found == id),
+            "reviewed sample {id} refused"
+        );
     }
     assert_eq!(recognized + opaque, 142);
     println!(

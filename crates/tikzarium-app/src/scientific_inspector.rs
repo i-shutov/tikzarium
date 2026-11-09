@@ -372,5 +372,4 @@ mod tests {
         assert_eq!(source.as_bytes(), SAROV.as_bytes());
         assert!(!authoring.undo_available());
     }
-
 }

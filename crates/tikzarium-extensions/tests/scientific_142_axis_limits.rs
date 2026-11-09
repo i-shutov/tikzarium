@@ -137,10 +137,7 @@ fn sv001_two_axis_bounds_source_patch_stack_reverts_exact_sha() {
     let mut source = SV001.to_owned();
     let mut revision = 31;
     let mut undo = Vec::new();
-    for (key, previous, replacement) in [
-        ("ymax", "1.4", "1.2"),
-        ("ymin", "0", "-0.5"),
-    ] {
+    for (key, previous, replacement) in [("ymax", "1.4", "1.2"), ("ymin", "0", "-0.5")] {
         // A real user re-selects the current command after a source change.
         let view = SourceView {
             text: &source,
