@@ -35,7 +35,9 @@ pub enum FigureSessionError {
     StaleBuild,
     #[error("session revision/epoch counter exhausted")]
     CounterExhausted,
-    #[error("unverified build provenance: source bytes or recorder inputs do not match the active document")]
+    #[error(
+        "unverified build provenance: source bytes or recorder inputs do not match the active document"
+    )]
     UnverifiedBuildInputs,
     #[error(transparent)]
     Io(#[from] io::Error),
