@@ -26,7 +26,7 @@ fn snapshot(root: &Path, source: &Path, data: &Path) -> ProjectDependencySnapsho
 
 #[test]
 fn one_source_utf8_selection_undo_revisions_and_disk_bytes() {
-    let (_, source, _) = source_and_data();
+    let (_root, source, _data) = source_and_data();
     let original_bytes = fs::read(&source).unwrap();
     let document = Document::load(&source).unwrap();
     let mut session = OneFigureSession::new(document);
