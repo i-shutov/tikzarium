@@ -3,8 +3,7 @@
 use crate::tikz_authoring;
 use eframe::egui;
 use tikzarium_extensions::scientific_scan::{
-    RecognizedInstance, ScientificKind, SourceView, literal_key_value,
-    scientific_property_help,
+    RecognizedInstance, ScientificKind, SourceView, literal_key_value, scientific_property_help,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -149,7 +148,10 @@ impl ScientificInspector {
     /// The same source-owned property guide appears in Studio's F1 dock
     /// and in the field's inline help; no fabricated TikZ defaults.
     pub fn show_selected_help(&self, ui: &mut egui::Ui) -> bool {
-        if self.selected.and_then(|index| self.candidates.get(index)).is_none()
+        if self
+            .selected
+            .and_then(|index| self.candidates.get(index))
+            .is_none()
             || self.original_value.is_none()
         {
             return false;
