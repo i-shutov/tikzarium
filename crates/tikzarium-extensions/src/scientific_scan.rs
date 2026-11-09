@@ -574,12 +574,12 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
     }
 }
 
-/// Plan a *minimal* revision-checked SourcePatch for a verified literal key.
-/// Nested PGFPlots style groups are supported; all other keys/macro expressions
-/// remain OPAQUE, and no bytes are changed until SourcePatch::apply succeeds.
-pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePatch, EditRefusal> {
-    let view = request.view;
-    let instance = request.instance;
+/// A stable source+revision are mandatory even for read-only Inspector values.
+fn literal_key_range(
+    view: SourceView<'_>,
+    instance: &RecognizedInstance,
+    key: &str,
+) -> Result<Range<usize>, EditRefusal> {
     if view.revision != instance.revision || fingerprint(view.text) != instance.source_sha256 {
         return Err(EditRefusal::SourceConflict);
     }
@@ -591,7 +591,7 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
     {
         return Err(EditRefusal::Opaque);
     }
-    if request.key != "samples" && request.key != "domain" {
+    if key != "samples" && key != "domain" {
         return Err(EditRefusal::UnsupportedKey);
     }
     let options = instance.option_range.clone().ok_or(EditRefusal::Opaque)?;
@@ -602,7 +602,7 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
         return Err(EditRefusal::SourceConflict);
     }
     let mut hits = Vec::new();
-    locate_key(view.text, options, request.key, 0, &mut hits)?;
+    locate_key(view.text, options, key, 0, &mut hits)?;
     if hits.len() != 1 {
         return Err(if hits.is_empty() {
             EditRefusal::Opaque
@@ -610,8 +610,33 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
             EditRefusal::AmbiguousKey
         });
     }
-    let value = hits.pop().ok_or(EditRefusal::Opaque)?;
-    let previous = view.text.get(value.clone()).ok_or(EditRefusal::Opaque)?;
+    hits.pop().ok_or(EditRefusal::Opaque)
+}
+
+/// Current user-supplied literal. This never invents a PGFPlots default.
+pub fn literal_key_value(
+    view: SourceView<'_>,
+    instance: &RecognizedInstance,
+    key: &str,
+) -> Result<String, EditRefusal> {
+    let range = literal_key_range(view, instance, key)?;
+    let value = view.text.get(range).ok_or(EditRefusal::Opaque)?;
+    if !literal_is_safe(key, value) {
+        return Err(EditRefusal::Opaque);
+    }
+    Ok(value.to_owned())
+}
+
+/// Plan a *minimal* revision-checked SourcePatch for a verified literal key.
+/// Nested PGFPlots style groups are supported; all other keys/macro expressions
+/// remain OPAQUE, and no bytes are changed until SourcePatch::apply succeeds.
+pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePatch, EditRefusal> {
+    let range = literal_key_range(request.view, request.instance, request.key)?;
+    let previous = request
+        .view
+        .text
+        .get(range.clone())
+        .ok_or(EditRefusal::Opaque)?;
     if previous != request.expected_old {
         return Err(EditRefusal::SourceConflict);
     }
@@ -622,9 +647,9 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
         return Err(EditRefusal::InvalidLiteral);
     }
     Ok(SourcePatch {
-        range: value,
+        range,
         expected_old: previous.to_owned(),
         replacement: request.replacement.to_owned(),
-        source_revision: instance.source_target().revision,
+        source_revision: request.instance.source_target().revision,
     })
 }
