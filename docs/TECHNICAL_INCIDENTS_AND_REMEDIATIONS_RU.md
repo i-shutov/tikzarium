@@ -130,7 +130,18 @@
 
 ## G. Windows 10 workstation bootstrap — отдельные инциденты установки (2026-11-09)
 
-Новые **WS01–WS06** дополняют, но не перенумеровывают ранее задокументированные 79 классов; это ошибки установочных скриптов, а не доказательство дефекта ОС/TikZarium.
+## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
+
+**Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
+
+**Исправлено в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** перед установкой каждого из пяти пакетов (`pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math`) вызывается `miktex --disable-installer packages info --template '{isInstalled}' <package>`. Устанавливаются только отсутствующие; после операции выполняется повторная верификация. `update-package-database` выполняется только если выявлены отсутствующие пакеты. Статус, отличный от `true` или `false`, запрещает продолжение. Добавлена отдельная hosted PowerShell 5.1 регрессия на состояния `true`, `false` и ошибочные значения без установки стороннего ПО.
+
+**Обход для уже запущенной RDP-сессии QA:** явно проверить каждый из пяти пакетов через `packages info`, установить только отсутствующие, затем выполнить локальный исправленный `TikZarium-Win10-Setup-fixed.ps1 -Phase User -SkipTexProvision`. Данный флаг пропускает лишь повторное provision пакетов; Cargo, XeLaTeX PDF, встроенные шрифты и кириллица по-прежнему должны проверяться. Не скачивать ZIP заново под `tikzarium-qa`, не менять пользователя/права/UAC, не переустанавливать MiKTeX.
+
+**Статус:** Windows 10 `Machine PASS`; `User IN_PROGRESS` с подтверждённым MiKTeX CLI, но без итоговых `environment.json`/PDF; физический W3 `NOT_ACCEPTED`; W4 `NO-GO`.
+
+
+Новые **WS01–WS07** дополняют, но не перенумеровывают ранее задокументированные 79 классов; это ошибки установочных скриптов, а не доказательство дефекта ОС/TikZarium.
 
 | ID | Симптом и причина | Исправление | Фактический статус |
 | --- | --- | --- | --- |
@@ -140,6 +151,7 @@
 | WS04 | `PREFLIGHT.ps1` обращался к `$PSScriptRoot` в выражении значения параметра до инициализации переменной. | Разрешать относительные пути после разбора параметров; отдельный hosted PS5.1 parse-only workflow. | ИСПРАВЛЕНО в коде; hosted [#42630107591](https://github.com/i-shutov/tikzarium/actions/runs/42630107591) PASS; локальная v5 preflight-фаза отдельно НЕ ПОДТВЕРЖДЕНА. |
 | WS05 | В закреплённом SHA256 `rustup-init.exe` x64 1.29.3 была опечатка; **скачанные байты совпадали с официальным эталоном**. | Правильный хеш `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db`; сохранять строгую проверку загрузки. | Исправление в [PR #150](https://github.com/i-shutov/tikzarium/pull/150); в пользовательском логе на исправленной копии `SHA256 VERIFIED`. |
 | WS06 | Rustup installer был переименован в `tikzarium-bootstrap-rustup-1.29.3.exe`; Rustup распознал имя как неизвестный proxy и выдал `unknown proxy name`. | Сохранить бинарник с basename `rustup-init.exe` в выделенной подпапке, с прежней проверкой SHA256; добавить отрицательную регрессионную проверку имени в hosted CI. | Исправление в PR #150, пользователь сообщил «так пошло» после локальной коррекции; Rust toolchain/MiKTeX/Poppler/PDF/GUI пока NOT_ACCEPTED. |
+| WS07 | `xelatex --version` отработал, но пакетный `install pgf ...` завершился кодом 1: `pgf: package is already installed`. | Проверять `packages info --template '{isInstalled}'` и устанавливать только отсутствующие; повторная проверка; hosted тест состояний. | Исправление в PR #150; физический User/PDF/W3 пока не принят. |
 
 **Границы:** подтверждён `Machine PASS`, не `User PASS`. В активном профиле `tikzarium-qa` лежит исправленная частная копия скрипта; первоначальный `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` автоматически не меняется после GitHub-коммитов. Не давать инструкции повторно скачивать ZIP под QA-пользователем, не менять пароли/политику RDP/UAC, не регистрировать runner без необходимости. Отдельный [runbook](../scripts/workstation/windows10/README_RU.md).
 

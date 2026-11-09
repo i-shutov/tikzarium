@@ -1,5 +1,15 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
+
+**Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
+
+**Исправлено в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** перед установкой каждого из пяти пакетов (`pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math`) вызывается `miktex --disable-installer packages info --template '{isInstalled}' <package>`. Устанавливаются только отсутствующие; после операции выполняется повторная верификация. `update-package-database` выполняется только если выявлены отсутствующие пакеты. Статус, отличный от `true` или `false`, запрещает продолжение. Добавлена отдельная hosted PowerShell 5.1 регрессия на состояния `true`, `false` и ошибочные значения без установки стороннего ПО.
+
+**Обход для уже запущенной RDP-сессии QA:** явно проверить каждый из пяти пакетов через `packages info`, установить только отсутствующие, затем выполнить локальный исправленный `TikZarium-Win10-Setup-fixed.ps1 -Phase User -SkipTexProvision`. Данный флаг пропускает лишь повторное provision пакетов; Cargo, XeLaTeX PDF, встроенные шрифты и кириллица по-прежнему должны проверяться. Не скачивать ZIP заново под `tikzarium-qa`, не менять пользователя/права/UAC, не переустанавливать MiKTeX.
+
+**Статус:** Windows 10 `Machine PASS`; `User IN_PROGRESS` с подтверждённым MiKTeX CLI, но без итоговых `environment.json`/PDF; физический W3 `NOT_ACCEPTED`; W4 `NO-GO`.
+
 ## 2026-11-09 — W3: физическая Windows 10 Pro x64, первый успешный системный этап
 
 На **отдельной** Win10 Pro 22H2 build 19045 (3.96 GiB RAM), QA-учётная запись `tikzarium-qa` (не администратор, активное подключение RDP) зарегистрированы **Machine PASS** и начатая, но **ещё не принятая User-фаза**. Реальные сведения из терминала владельца: Git 2.56.0 verified SHA256; Visual Studio 2022 Build Tools; MSVC/Windows SDK x64 detected; VC++ Runtime present. Это **не** подтверждение UI либо PDF и не переносит W2b с Server на Win10.

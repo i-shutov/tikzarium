@@ -118,6 +118,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariu
 
 Новая CI-проверка запускается **только на GitHub-hosted Windows** и выполняет `Parser.ParseFile` для трёх `.ps1`, не исполняя содержимое, не меняя Windows и не обращаясь к личному runner. Это лишь синтаксическая проверка, не W3.
 
+## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
+
+**Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
+
+**Исправлено в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** перед установкой каждого из пяти пакетов (`pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math`) вызывается `miktex --disable-installer packages info --template '{isInstalled}' <package>`. Устанавливаются только отсутствующие; после операции выполняется повторная верификация. `update-package-database` выполняется только если выявлены отсутствующие пакеты. Статус, отличный от `true` или `false`, запрещает продолжение. Добавлена отдельная hosted PowerShell 5.1 регрессия на состояния `true`, `false` и ошибочные значения без установки стороннего ПО.
+
+**Обход для уже запущенной RDP-сессии QA:** явно проверить каждый из пяти пакетов через `packages info`, установить только отсутствующие, затем выполнить локальный исправленный `TikZarium-Win10-Setup-fixed.ps1 -Phase User -SkipTexProvision`. Данный флаг пропускает лишь повторное provision пакетов; Cargo, XeLaTeX PDF, встроенные шрифты и кириллица по-прежнему должны проверяться. Не скачивать ZIP заново под `tikzarium-qa`, не менять пользователя/права/UAC, не переустанавливать MiKTeX.
+
+**Статус:** Windows 10 `Machine PASS`; `User IN_PROGRESS` с подтверждённым MiKTeX CLI, но без итоговых `environment.json`/PDF; физический W3 `NOT_ACCEPTED`; W4 `NO-GO`.
+
 ## Коррекция bootstrap Rustup и состояние User (2026-11-09)
 
 Запуск `Machine` на Windows 10 Pro 22H2 x64, build 19045, 3.96 GiB RAM прошёл успешно. Под QA-пользователем первоначальный запуск `User` выявил две ошибки в установщике:

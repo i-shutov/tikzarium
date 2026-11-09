@@ -1,5 +1,15 @@
 # TikZarium — release resume, 2026-11-09
 
+## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
+
+**Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
+
+**Исправлено в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** перед установкой каждого из пяти пакетов (`pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math`) вызывается `miktex --disable-installer packages info --template '{isInstalled}' <package>`. Устанавливаются только отсутствующие; после операции выполняется повторная верификация. `update-package-database` выполняется только если выявлены отсутствующие пакеты. Статус, отличный от `true` или `false`, запрещает продолжение. Добавлена отдельная hosted PowerShell 5.1 регрессия на состояния `true`, `false` и ошибочные значения без установки стороннего ПО.
+
+**Обход для уже запущенной RDP-сессии QA:** явно проверить каждый из пяти пакетов через `packages info`, установить только отсутствующие, затем выполнить локальный исправленный `TikZarium-Win10-Setup-fixed.ps1 -Phase User -SkipTexProvision`. Данный флаг пропускает лишь повторное provision пакетов; Cargo, XeLaTeX PDF, встроенные шрифты и кириллица по-прежнему должны проверяться. Не скачивать ZIP заново под `tikzarium-qa`, не менять пользователя/права/UAC, не переустанавливать MiKTeX.
+
+**Статус:** Windows 10 `Machine PASS`; `User IN_PROGRESS` с подтверждённым MiKTeX CLI, но без итоговых `environment.json`/PDF; физический W3 `NOT_ACCEPTED`; W4 `NO-GO`.
+
 ## 2026-11-09 — новая Windows 10 Pro W3: Machine PASS, User выполняется (не W3 PASS)
 
 **Источник статуса — журналы владельца из RDP; локальный релизный GUI ещё не испытан.** На отдельной Windows 10 Pro 22H2 x64 (build 19045, RAM 3.96 GiB) создан обычный пользователь `tikzarium-qa`, доступ по RDP подтверждён. `-Phase Machine` завершилась сообщением `Machine phase complete`: Git for Windows 2.56.0 с проверенным SHA256, VS 2022 Build Tools, MSVC C++ x64, Windows SDK x64 и существующий VC++ runtime. `winget` и Windows 11 не нужны, Windows Server/FlowBridge не изменялись.
