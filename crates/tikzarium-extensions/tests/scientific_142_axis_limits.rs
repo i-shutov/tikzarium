@@ -226,4 +226,3 @@ fn sc3_export_original_sarov_patch_for_external_tex() {
         destination.display()
     );
 }
-
