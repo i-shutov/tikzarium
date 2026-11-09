@@ -1,10 +1,19 @@
 # TikZarium — release resume, 2026-11-09
 
+## 2026-11-09 — WS09: штатный Windows 10 tar.exe не поддерживает LZMA из Mesa .7z
+
+Фактический RDP лог: Mesa 26.2.6 скачана правильно, SHA256 проверен (`da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`), но распаковка встроенным `tar.exe` завершилась `LZMA codec is unsupported` (exit 1). Архив не поврежден. Ошибка вызвана неверным предположением о возможностях штатного архиватора Win10.
+
+Исправлено в кандидатном [PR #150](https://github.com/i-shutov/tikzarium/pull/150): W3 launcher использует портативный `7zr.exe` из официального выпуска `ip7z/7zip` 26.05 с закрепленным SHA256 `9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7`. Дополнительная CRC-проверка 7z предшествует распаковке. Уже проверенная загрузка Mesa (~56 МБ) переиспользуется, временные неполные результаты `tar.exe` очищаются только внутри `Documents/TikZarium-QA/W3-Mesa-26.2.6/unpacked` и не касаются исходного EXE, System32 или реестра. Изолированное программное OpenGL по-прежнему кандидат до физического GUI испытания.
+
+В hosted Windows добавлена проверка реальной распаковки pinned Mesa через pinned 7zr с подтверждением `x64/opengl32.dll` и `libgallium_wgl.dll`. **Пока CI или локальный GUI не подтвердят результат, W3 BLOCKED/NOT_ACCEPTED, а не PASS**. Локальный обход: отдельно скачать 7zr.exe, проверить SHA256, `7zr t` и `7zr x` для уже скачанного Mesa и повторить `-Action PrepareAndRun`.
+
+
 ## 2026-11-09 — W3 GUI OpenGL 2.0 blocker under RDP (new WS08)
 
 **Actual owner trace after fully successful User/CLI PDF:** launching `target\debug\tikzarium-app.exe` under non-admin `tikzarium-qa` exited `Error: OpenGL(PainterError("egui_glow requires opengl 2.0+. "))`. Root of practical limitation: `eframe 0.33.3` is built with the `glow` renderer and the active RDP OpenGL context cannot meet minimum 2.0; the physical W3 interface was **NOT RUN**.
 
-**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses Windows built-in `tar.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
+**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses SHA256-pinned standalone `7zr.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
 
 Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://docs.mesa3d.org/drivers/llvmpipe.html) and [Windows tar 7z support](https://learn.microsoft.com/en-us/windows/tar/). The upstream package has a fixed SHA256 already validated in TikZarium QA transport. **No runtime W3 evidence from this launcher yet**.
 ## 2026-11-09 — Win10 physical workstation: **Machine PASS / User PASS / CLI PDF PASS**, GUI W3 NOT_RUN

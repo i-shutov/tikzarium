@@ -130,11 +130,20 @@
 
 ## G. Windows 10 workstation bootstrap — отдельные инциденты установки (2026-11-09)
 
+## 2026-11-09 — WS09: штатный Windows 10 tar.exe не поддерживает LZMA из Mesa .7z
+
+Фактический RDP лог: Mesa 26.2.6 скачана правильно, SHA256 проверен (`da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`), но распаковка встроенным `tar.exe` завершилась `LZMA codec is unsupported` (exit 1). Архив не поврежден. Ошибка вызвана неверным предположением о возможностях штатного архиватора Win10.
+
+Исправлено в кандидатном [PR #150](https://github.com/i-shutov/tikzarium/pull/150): W3 launcher использует портативный `7zr.exe` из официального выпуска `ip7z/7zip` 26.05 с закрепленным SHA256 `9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7`. Дополнительная CRC-проверка 7z предшествует распаковке. Уже проверенная загрузка Mesa (~56 МБ) переиспользуется, временные неполные результаты `tar.exe` очищаются только внутри `Documents/TikZarium-QA/W3-Mesa-26.2.6/unpacked` и не касаются исходного EXE, System32 или реестра. Изолированное программное OpenGL по-прежнему кандидат до физического GUI испытания.
+
+В hosted Windows добавлена проверка реальной распаковки pinned Mesa через pinned 7zr с подтверждением `x64/opengl32.dll` и `libgallium_wgl.dll`. **Пока CI или локальный GUI не подтвердят результат, W3 BLOCKED/NOT_ACCEPTED, а не PASS**. Локальный обход: отдельно скачать 7zr.exe, проверить SHA256, `7zr t` и `7zr x` для уже скачанного Mesa и повторить `-Action PrepareAndRun`.
+
+
 ## 2026-11-09 — W3 GUI OpenGL 2.0 blocker under RDP (new WS08)
 
 **Actual owner trace after fully successful User/CLI PDF:** launching `target\debug\tikzarium-app.exe` under non-admin `tikzarium-qa` exited `Error: OpenGL(PainterError("egui_glow requires opengl 2.0+. "))`. Root of practical limitation: `eframe 0.33.3` is built with the `glow` renderer and the active RDP OpenGL context cannot meet minimum 2.0; the physical W3 interface was **NOT RUN**.
 
-**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses Windows built-in `tar.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
+**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses SHA256-pinned standalone `7zr.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
 
 Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://docs.mesa3d.org/drivers/llvmpipe.html) and [Windows tar 7z support](https://learn.microsoft.com/en-us/windows/tar/). The upstream package has a fixed SHA256 already validated in TikZarium QA transport. **No runtime W3 evidence from this launcher yet**.
 
@@ -165,6 +174,7 @@ Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://doc
 | WS06 | Rustup installer был переименован в `tikzarium-bootstrap-rustup-1.29.3.exe`; Rustup распознал имя как неизвестный proxy и выдал `unknown proxy name`. | Сохранить бинарник с basename `rustup-init.exe` в выделенной подпапке, с прежней проверкой SHA256; добавить отрицательную регрессионную проверку имени в hosted CI. | Исправление в PR #150, пользователь сообщил «так пошло» после локальной коррекции; Rust toolchain/MiKTeX/Poppler/PDF/GUI пока NOT_ACCEPTED. |
 | WS07 | `xelatex --version` отработал, но пакетный `install pgf ...` завершился кодом 1: `pgf: package is already installed`. | Проверять `packages info --template '{isInstalled}'` и устанавливать только отсутствующие; повторная проверка; hosted тест состояний. | Исправление в PR #150; физический User/PDF/W3 пока не принят. |
 | WS08 | Под RDP нативный `tikzarium-app.exe` не открыл окно: `egui_glow requires opengl 2.0+`; доступный OpenGL-контекст слишком старый для glow. | Изолированный x64 Mesa llvmpipe рядом с копией EXE, проверенная SHA256 загрузка, без замены system DLL и драйверов. | QA launcher в PR #150, **кандидат**: реальный GUI W3 ещё НЕ ПРОВЕРЕН. |
+| WS09 | В Win10 встроенный `tar.exe` не распаковал проверенный .7z архив Mesa: `LZMA codec is unsupported`. | Standalone официальный `7zr.exe` 26.05 с закрепленным SHA256 + CRC тестом; без системы/драйверов; сохранение Mesa архива. | Исправление в PR #150, физический W3 GUI ещё NOT_ACCEPTED. |
 
 **Границы:** подтверждён `Machine PASS`, не `User PASS`. В активном профиле `tikzarium-qa` лежит исправленная частная копия скрипта; первоначальный `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` автоматически не меняется после GitHub-коммитов. Не давать инструкции повторно скачивать ZIP под QA-пользователем, не менять пароли/политику RDP/UAC, не регистрировать runner без необходимости. Отдельный [runbook](../scripts/workstation/windows10/README_RU.md).
 
