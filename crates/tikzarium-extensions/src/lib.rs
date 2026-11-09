@@ -11,6 +11,7 @@ pub mod primitives;
 pub mod project_disconnect;
 pub mod project_imports;
 pub mod source_assist;
+pub mod scientific_scan;
 
 use serde::Deserialize;
 use std::{
