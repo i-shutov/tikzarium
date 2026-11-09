@@ -2,7 +2,11 @@
 //! The authoritative source remains Document; no alternate TeX model is created.
 use crate::{Document, ProjectDependencySnapshot};
 use sha2::{Digest, Sha256};
-use std::{fs, io, ops::Range, path::{Path, PathBuf}};
+use std::{
+    fs, io,
+    ops::Range,
+    path::{Path, PathBuf},
+};
 
 const MAX_UNDO_SNAPSHOTS: usize = 64;
 
@@ -88,12 +92,17 @@ impl OneFigureSession {
     }
 
     /// An adapter cannot select half a UTF-8 character or an outside range.
-    pub fn select_source_range(&mut self, span: Option<Range<usize>>) -> Result<(), FigureSessionError> {
+    pub fn select_source_range(
+        &mut self,
+        span: Option<Range<usize>>,
+    ) -> Result<(), FigureSessionError> {
         if let Some(ref range) = span {
             let source = &self.document.source;
-            if range.start >= range.end || range.end > source.len()
+            if range.start >= range.end
+                || range.end > source.len()
                 || !source.is_char_boundary(range.start)
-                || !source.is_char_boundary(range.end) {
+                || !source.is_char_boundary(range.end)
+            {
                 return Err(FigureSessionError::InvalidSelection);
             }
         }
@@ -103,12 +112,19 @@ impl OneFigureSession {
 
     /// The sole tracked path to author-source mutation. On success all old
     /// selection ranges are invalidated and the revision only increases.
-    pub fn replace_source(&mut self, expected_revision: u64, replacement: String) -> Result<bool, FigureSessionError> {
+    pub fn replace_source(
+        &mut self,
+        expected_revision: u64,
+        replacement: String,
+    ) -> Result<bool, FigureSessionError> {
         self.require_revision(expected_revision)?;
         if self.document.source == replacement {
             return Ok(false);
         }
-        let next = self.revision.checked_add(1).ok_or(FigureSessionError::CounterExhausted)?;
+        let next = self
+            .revision
+            .checked_add(1)
+            .ok_or(FigureSessionError::CounterExhausted)?;
         if self.undo_source.len() == MAX_UNDO_SNAPSHOTS {
             self.undo_source.remove(0);
         }
@@ -128,7 +144,10 @@ impl OneFigureSession {
         let Some(previous) = self.undo_source.last() else {
             return Ok(false);
         };
-        let next = self.revision.checked_add(1).ok_or(FigureSessionError::CounterExhausted)?;
+        let next = self
+            .revision
+            .checked_add(1)
+            .ok_or(FigureSessionError::CounterExhausted)?;
         let previous = previous.clone();
         self.undo_source.pop();
         self.document.source = previous;
@@ -150,9 +169,15 @@ impl OneFigureSession {
     /// Starts a source-revision-bound build. A later/stale completion cannot
     /// become the current PDF, even if the external XeLaTeX returned success.
     pub fn begin_build(&mut self) -> Result<FigureBuildEpoch, FigureSessionError> {
-        let next = self.next_build_id.checked_add(1).ok_or(FigureSessionError::CounterExhausted)?;
+        let next = self
+            .next_build_id
+            .checked_add(1)
+            .ok_or(FigureSessionError::CounterExhausted)?;
         self.next_build_id = next;
-        let ticket = FigureBuildEpoch { id: next, revision: self.revision };
+        let ticket = FigureBuildEpoch {
+            id: next,
+            revision: self.revision,
+        };
         self.latest_build = Some(ticket);
         self.build_failed = false;
         Ok(ticket)
@@ -188,7 +213,10 @@ impl OneFigureSession {
     }
 
     /// Retain the previous PDF but label it failed/stale, never current.
-    pub fn finish_build_failure(&mut self, ticket: FigureBuildEpoch) -> Result<(), FigureSessionError> {
+    pub fn finish_build_failure(
+        &mut self,
+        ticket: FigureBuildEpoch,
+    ) -> Result<(), FigureSessionError> {
         self.require_current_build(ticket)?;
         self.latest_build = None;
         self.build_failed = true;
