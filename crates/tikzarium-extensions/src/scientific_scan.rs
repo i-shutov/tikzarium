@@ -355,7 +355,10 @@ pub fn scan_scientific_source(
             i = skip_newcommand_body(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
-        if matches!(word, "tikzset" | "pgfplotsset" | "pgfkeys" | "pgfmathsetmacro") {
+        if matches!(
+            word,
+            "tikzset" | "pgfplotsset" | "pgfkeys" | "pgfmathsetmacro"
+        ) {
             i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
