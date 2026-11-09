@@ -1,0 +1,70 @@
+name: Scientific-142 SC2 source lexical/Inspector QA (no physical GUI)
+
+# Disposable GitHub-hosted VMs only. Never owner personal runner or physical L3 claims.
+on:
+  push:
+    branches:
+      - 'feat/scientific-142-*'
+    paths:
+      - 'crates/tikzarium-core/**'
+      - 'crates/tikzarium-extensions/**'
+      - 'crates/tikzarium-app/**'
+      - 'Cargo.lock'
+      - '.github/workflows/scientific-142-sc2.yml'
+  pull_request:
+    branches:
+      - 'feature/scientific-142-sc1-dependency-ledger-20261109'
+    paths:
+      - 'crates/tikzarium-core/**'
+      - 'crates/tikzarium-extensions/**'
+      - 'crates/tikzarium-app/**'
+      - 'Cargo.lock'
+      - '.github/workflows/scientific-142-sc2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-scanner-inspector:
+    name: Source/Undo/Inspector source-only / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: 1.91.0
+          components: rustfmt, clippy
+      - name: Verify exact source SHA
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          echo "SC2_EXACT_HEAD=$EXPECTED_SOURCE_SHA"
+      - name: Check source formatting
+        run: cargo fmt --all -- --check
+      - name: Real Sarov scanner/SourcePatch tests
+        run: cargo test --locked -p tikzarium-extensions --test scientific_142_scan
+      - name: Source-authoritative real Sarov authoring Undo
+        run: cargo test --locked -p tikzarium-app scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack
+      - name: Native egui Inspector widget and source transaction tests
+        run: cargo test --locked -p tikzarium-app scientific_inspector::tests
+      - name: Strict Rust lints
+        run: cargo clippy --locked -p tikzarium-extensions -p tikzarium-app --all-targets -- -D warnings
+      - name: Evidence scope
+        shell: bash
+        run: |
+          echo "SC2_HOSTED_SOURCE_ONLY=PASS"
+          echo "SC2_L2_ALL_142=NOT_RUN"
+          echo "SC2_L3_REAL_GUI_POINTER_PDF_UNDO=NOT_RUN"
+          echo "WIN10_W3_AND_STABLE_W4=NO_GO"
