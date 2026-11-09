@@ -40,7 +40,7 @@ fn one_source_utf8_selection_undo_revisions_and_disk_bytes() {
     ));
     session.select_source_range(Some(start..start + 2)).unwrap();
     assert_eq!(session.selected_source_range(), Some(start..start + 2));
-    assert_eq!(session.replace_source(0, text.clone()).unwrap(), false);
+    assert!(!session.replace_source(0, text.clone()).unwrap());
     assert_eq!(session.revision(), 0);
     let modified = format!("{text}% added\n");
     assert!(session.replace_source(0, modified).unwrap());
@@ -55,7 +55,7 @@ fn one_source_utf8_selection_undo_revisions_and_disk_bytes() {
     assert_eq!(session.revision(), 2);
     assert_eq!(session.document().source, text);
     assert_eq!(fs::read(&source).unwrap(), original_bytes);
-    assert_eq!(session.undo(2).unwrap(), false);
+    assert!(!session.undo(2).unwrap());
 }
 
 #[test]
