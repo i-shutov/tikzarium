@@ -11,6 +11,10 @@ enum LiteralProperty {
     #[default]
     Samples,
     Domain,
+    XMin,
+    XMax,
+    YMin,
+    YMax,
 }
 
 impl LiteralProperty {
@@ -18,6 +22,10 @@ impl LiteralProperty {
         match self {
             Self::Samples => "samples",
             Self::Domain => "domain",
+            Self::XMin => "xmin",
+            Self::XMax => "xmax",
+            Self::YMin => "ymin",
+            Self::YMax => "ymax",
         }
     }
 }
@@ -203,18 +211,18 @@ impl ScientificInspector {
                         }
                     });
                 let old_property = self.property;
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     ui.label("Параметр:");
-                    ui.selectable_value(
-                        &mut self.property,
-                        LiteralProperty::Samples,
-                        "samples",
-                    );
-                    ui.selectable_value(
-                        &mut self.property,
-                        LiteralProperty::Domain,
-                        "domain",
-                    );
+                    for (property, label) in [
+                        (LiteralProperty::Samples, "samples"),
+                        (LiteralProperty::Domain, "domain"),
+                        (LiteralProperty::XMin, "xmin"),
+                        (LiteralProperty::XMax, "xmax"),
+                        (LiteralProperty::YMin, "ymin"),
+                        (LiteralProperty::YMax, "ymax"),
+                    ] {
+                        ui.selectable_value(&mut self.property, property, label);
+                    }
                 });
                 if before != self.selected || old_property != self.property {
                     self.refresh_literal(session, source);
@@ -248,7 +256,7 @@ impl ScientificInspector {
             if !self.feedback.is_empty() {
                 ui.small(&self.feedback);
             }
-            ui.small("Поддержаны только однозначные числовые samples/domain. Остальное — OPAQUE; точный результат даёт внешний XeLaTeX.");
+            ui.small("Только однозначные числовые samples/domain и xmin/xmax/ymin/ymax в axis. Другие конструкции — OPAQUE; точный результат даёт внешний XeLaTeX.");
         });
         changed_line
     }
