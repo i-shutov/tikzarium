@@ -333,4 +333,3 @@ fn macro_definitions_styles_and_overlapping_edits_cannot_claim_a_draw() {
     assert_eq!(changed, original);
     assert_eq!(revision, 7);
 }
-
