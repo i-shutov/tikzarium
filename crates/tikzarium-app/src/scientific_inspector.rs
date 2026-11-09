@@ -15,6 +15,15 @@ enum LiteralProperty {
     XMax,
     YMin,
     YMax,
+    XTickDistance,
+    YTickDistance,
+    XTick,
+    YTick,
+    Width,
+    Height,
+    Mark,
+    XLabel,
+    YLabel,
 }
 
 impl LiteralProperty {
@@ -26,8 +35,43 @@ impl LiteralProperty {
             Self::XMax => "xmax",
             Self::YMin => "ymin",
             Self::YMax => "ymax",
+            Self::XTickDistance => "xtick distance",
+            Self::YTickDistance => "ytick distance",
+            Self::XTick => "xtick",
+            Self::YTick => "ytick",
+            Self::Width => "width",
+            Self::Height => "height",
+            Self::Mark => "mark",
+            Self::XLabel => "xlabel",
+            Self::YLabel => "ylabel",
         }
     }
+
+    fn available_for(self, kind: ScientificKind) -> bool {
+        match kind {
+            ScientificKind::Axis => true,
+            ScientificKind::AddPlot => matches!(self, Self::Samples | Self::Domain | Self::Mark),
+            _ => false,
+        }
+    }
+
+    const ALL: [Self; 15] = [
+        Self::Samples,
+        Self::Domain,
+        Self::XMin,
+        Self::XMax,
+        Self::YMin,
+        Self::YMax,
+        Self::XTickDistance,
+        Self::YTickDistance,
+        Self::XTick,
+        Self::YTick,
+        Self::Width,
+        Self::Height,
+        Self::Mark,
+        Self::XLabel,
+        Self::YLabel,
+    ];
 }
 
 struct Candidate {
@@ -211,18 +255,30 @@ impl ScientificInspector {
                         }
                     });
                 let old_property = self.property;
-                ui.horizontal_wrapped(|ui| {
+                let kind = self
+                    .selected
+                    .and_then(|index| self.candidates.get(index))
+                    .map(|item| item.instance.kind);
+                if let Some(kind) = kind
+                    && !self.property.available_for(kind)
+                {
+                    self.property = LiteralProperty::Samples;
+                }
+                ui.horizontal(|ui| {
                     ui.label("Параметр:");
-                    for (property, label) in [
-                        (LiteralProperty::Samples, "samples"),
-                        (LiteralProperty::Domain, "domain"),
-                        (LiteralProperty::XMin, "xmin"),
-                        (LiteralProperty::XMax, "xmax"),
-                        (LiteralProperty::YMin, "ymin"),
-                        (LiteralProperty::YMax, "ymax"),
-                    ] {
-                        ui.selectable_value(&mut self.property, property, label);
-                    }
+                    egui::ComboBox::from_id_salt("scientific-142-property")
+                        .selected_text(self.property.key())
+                        .show_ui(ui, |ui| {
+                            for property in LiteralProperty::ALL {
+                                if kind.is_some_and(|kind| property.available_for(kind)) {
+                                    ui.selectable_value(
+                                        &mut self.property,
+                                        property,
+                                        property.key(),
+                                    );
+                                }
+                            }
+                        });
                 });
                 if before != self.selected || old_property != self.property {
                     self.refresh_literal(session, source);
@@ -256,7 +312,7 @@ impl ScientificInspector {
             if !self.feedback.is_empty() {
                 ui.small(&self.feedback);
             }
-            ui.small("Только однозначные числовые samples/domain и xmin/xmax/ymin/ymax в axis. Другие конструкции — OPAQUE; точный результат даёт внешний XeLaTeX.");
+            ui.small("Лишь явно заданные и проверенные параметры axis/addplot. Макросы и неподдержанные формулы — OPAQUE; PDF строит внешний XeLaTeX.");
         });
         changed_line
     }
@@ -371,5 +427,66 @@ mod tests {
         authoring.undo(&mut source).unwrap();
         assert_eq!(source.as_bytes(), SAROV.as_bytes());
         assert!(!authoring.undo_available());
+    }
+    #[test]
+    fn sarov_tick_size_marker_inspector_uses_one_existing_undo_per_edit() {
+        let mut source = SAROV.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+
+        for (property, old, new) in [
+            (LiteralProperty::XTickDistance, "1", "2"),
+            (
+                LiteralProperty::Height,
+                r"0.62\textwidth",
+                r"0.75\textwidth",
+            ),
+            (LiteralProperty::Mark, "none", "*"),
+        ] {
+            inspector.scan(&mut authoring, &source);
+            inspector.selected = inspector
+                .candidates
+                .iter()
+                .position(|item| item.instance.kind == ScientificKind::Axis);
+            inspector.property = property;
+            inspector.refresh_literal(&authoring, &source);
+            assert_eq!(inspector.original_value.as_deref(), Some(old));
+            inspector.proposed_value = new.to_owned();
+            let line = inspector
+                .apply_selected(&mut authoring, &mut source)
+                .unwrap();
+            assert!(line > 10);
+            assert!(authoring.undo_available());
+            assert!(source.contains(&format!("{}={new}", property.key())));
+            authoring.undo(&mut source).unwrap();
+            assert_eq!(source.as_bytes(), SAROV.as_bytes());
+            assert!(!authoring.undo_available());
+        }
+    }
+
+    #[test]
+    fn mathematical_sarov_xlabel_is_opaque_in_f1_and_never_modified() {
+        let mut source = SAROV.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        inspector.selected = inspector
+            .candidates
+            .iter()
+            .position(|item| item.instance.kind == ScientificKind::Axis);
+        inspector.property = LiteralProperty::XLabel;
+        inspector.refresh_literal(&authoring, &source);
+        assert!(inspector.original_value.is_none());
+        assert!(!authoring.undo_available());
+        let ctx = egui::Context::default();
+        ctx.begin_pass(egui::RawInput::default());
+        egui::CentralPanel::default().show(&ctx, |ui| {
+            assert!(!inspector.show_selected_help(ui));
+            assert!(inspector.show(ui, &mut authoring, &mut source).is_none());
+        });
+        let _ = ctx.end_pass();
+        assert_eq!(source.as_bytes(), SAROV.as_bytes());
     }
 }
