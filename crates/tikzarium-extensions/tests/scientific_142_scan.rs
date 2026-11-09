@@ -287,3 +287,50 @@ fn malformed_nested_options_catcode_and_large_source_are_explicitly_refused() {
         ScanRefusal::SourceTooLarge
     );
 }
+
+#[test]
+fn macro_definitions_styles_and_overlapping_edits_cannot_claim_a_draw() {
+    let source = r"\begin{tikzpicture}
+\newcommand{\helper}{\draw (0,0)--(99,99);}
+\newcommand\other[1]{\draw (0,0)--(88,88);}
+\tikzset{mydraw/.style={execute at begin node={\draw (0,0)--(77,77);}}}
+\draw[blue] (0,0)--(1,1);
+\end{tikzpicture}";
+    let recognized = scan_scientific_source(SourceView {
+        text: source,
+        revision: 4,
+    })
+    .unwrap();
+    assert_eq!(
+        recognized
+            .iter()
+            .filter(|item| item.kind == ScientificKind::Draw)
+            .count(),
+        1
+    );
+
+    let view = SourceView {
+        text: SV001,
+        revision: 7,
+    };
+    let items = scan_scientific_source(view).unwrap();
+    let axis = items
+        .iter()
+        .find(|item| item.kind == ScientificKind::Axis)
+        .unwrap();
+    let patch = plan_literal_key_edit(LiteralEditRequest {
+        view,
+        instance: axis,
+        key: "samples",
+        expected_old: "150",
+        replacement: "180",
+    })
+    .unwrap();
+    let mut changed = SV001.replace("samples=150", "samples=151");
+    let original = changed.clone();
+    let mut revision = 7;
+    assert!(patch.apply(&mut changed, &mut revision).is_err());
+    assert_eq!(changed, original);
+    assert_eq!(revision, 7);
+}
+
