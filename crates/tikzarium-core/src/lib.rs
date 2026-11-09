@@ -15,7 +15,9 @@ pub use build::{
     BuildArtifact, BuildError, BuildOptions, BuildRequest, BuildService, parse_fls,
     parse_fls_with_cwd,
 };
-pub use dependencies::{MAX_TRACKED_FILE_BYTES, ProjectDependencySnapshot};
+pub use dependencies::{
+    MAX_TRACKED_FILE_BYTES, ProjectDependencySnapshot, ProjectInputOrigin, ProjectInputRecord,
+};
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
 pub use discovery::{
     PackageProbe, TexDistribution, TexEngineIdentity, TexEnvironment, find_executable,
