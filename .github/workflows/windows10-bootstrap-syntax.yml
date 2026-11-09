@@ -44,4 +44,8 @@ jobs:
           $setup = Get-Content -LiteralPath (Join-Path $directory 'TikZarium-Win10-Setup.ps1') -Raw
           if ($setup -match '\$build:') { throw 'Invalid $build: interpolation regression' }
           if ($setup -match 'winget not found') { throw 'winget dependency regression' }
+          if ($setup -match 'tikzarium-bootstrap-rustup-1\.29\.3\.exe') { throw 'Rustup installer renamed to invalid proxy name' }
+          if ($setup -notmatch 'tikzarium-rustup-1\.29\.3\\rustup-init\.exe') { throw 'Rustup installer must retain rustup-init.exe basename' }
+          if ($setup -notmatch '38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db') { throw 'Rustup 1.29.3 x64 pinned SHA256 regression' }
+
           Write-Host 'HOSTED SYNTAX PASS (no scripts executed; physical Windows10 NOT_RUN)'

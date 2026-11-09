@@ -112,3 +112,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariu
 Исходные файлы хранятся в `scripts/workstation/windows10/`: `TikZarium-Win10-Setup.ps1` (v4, фактический Machine PASS), `TikZarium-Win10-PREFLIGHT.ps1` (v5, исправление `$PSScriptRoot`), `TikZarium-Win10-Runner-OPTIONAL.ps1` (не запускать без решения владельца). Не использовать более ранние ZIP v1–v3. Рабочий `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` уже соответствует v4.
 
 Новая CI-проверка запускается **только на GitHub-hosted Windows** и выполняет `Parser.ParseFile` для трёх `.ps1`, не исполняя содержимое, не меняя Windows и не обращаясь к личному runner. Это лишь синтаксическая проверка, не W3.
+
+## Коррекция bootstrap Rustup и состояние User (2026-11-09)
+
+Запуск `Machine` на Windows 10 Pro 22H2 x64, build 19045, 3.96 GiB RAM прошёл успешно. Под QA-пользователем первоначальный запуск `User` выявил две ошибки в установщике:
+
+1. В эталонном SHA256 `rustup-init.exe` была опечатка: правильная контрольная сумма для x64 Rustup 1.29.3 — `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db` (см. официальный [winget-pkgs манифест](https://github.com/microsoft/winget-pkgs/blob/master/manifests/r/Rustlang/Rustup/1.29.3/Rustlang.Rustup.installer.yaml)). Фактическая загрузка соответствовала именно этой сумме. Проверка SHA256 **оставлена включённой**.
+2. Файл `rustup-init.exe` был ошибочно записан как `tikzarium-bootstrap-rustup-1.29.3.exe`. `rustup-init` определяет режим по базовому имени `exe` и отказался запускаться с `unknown proxy name`. Новый путь в скрипте — `tikzarium-rustup-1.29.3\rustup-init.exe` (изолированная временная папка, исходное имя бинарника).
+
+На машине уже лежит исходная копия v4 в `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1`. Под `tikzarium-qa` не требуется скачивать и распаковывать архив; для продолжения можно скопировать этот файл в личный `Documents`, исправить указанные два значения, проверить парсером PowerShell 5.1 и повторить фазу `User`. Корректный канонический исходник после этого PR находится в репозитории, но не автоматически обновляет локальный `C:\ProgramData`.
+
+На момент фиксации **Rustup установка, MiKTeX, Poppler, сборка, PDF и физический W3 GUI ещё не подтверждены**; `PATCH AND SYNTAX PASS` пользователя и Rustup `SHA256 VERIFIED` не являются полной User PASS.

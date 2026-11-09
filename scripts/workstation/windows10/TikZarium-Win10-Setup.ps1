@@ -137,8 +137,8 @@ function Ensure-Rustup {
     $rustup = Join-Path $cargoDir 'rustup.exe'
     if (Test-Path -LiteralPath $rustup) { Say "Rustup already installed: $rustup"; return $rustup }
     $url = 'https://static.rust-lang.org/rustup/archive/1.29.3/x86_64-pc-windows-msvc/rustup-init.exe'
-    $sha = '38027d51d69a5d05493627a0634dba52d6cd793c8f072d2373d3f4163eec7db'
-    $exe = Require-PinnedDownload -Url $url -Destination (Join-Path $env:TEMP 'tikzarium-bootstrap-rustup-1.29.3.exe') -Sha256 $sha
+    $sha = '38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db'
+    $exe = Require-PinnedDownload -Url $url -Destination (Join-Path $env:TEMP 'tikzarium-rustup-1.29.3\rustup-init.exe') -Sha256 $sha
     # Install rustup only; the next stage explicitly installs pinned Rust 1.91.0.
     & $exe -y --default-host 'x86_64-pc-windows-msvc' --default-toolchain 'none' --profile 'minimal' --no-modify-path
     Assert-NativeExit 'rustup-init'
