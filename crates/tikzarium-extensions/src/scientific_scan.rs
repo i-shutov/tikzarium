@@ -634,7 +634,9 @@ fn finite_decimal_literal(value: &str) -> bool {
     // only a bound for this GUI adapter, never a PGFPlots default.
     !value.is_empty()
         && value.len() <= 32
-        && value.bytes().all(|ch| ch.is_ascii_digit() || matches!(ch, b'.' | b'-' | b'+'))
+        && value
+            .bytes()
+            .all(|ch| ch.is_ascii_digit() || matches!(ch, b'.' | b'-' | b'+'))
         && value.parse::<f64>().is_ok_and(f64::is_finite)
 }
 
@@ -670,8 +672,10 @@ fn literal_key_range(
         return Err(EditRefusal::Opaque);
     }
     let axis_bound = matches!(key, "xmin" | "xmax" | "ymin" | "ymax");
-    if !matches!(key, "samples" | "domain" | "xmin" | "xmax" | "ymin" | "ymax")
-        || (axis_bound && instance.kind != ScientificKind::Axis)
+    if !matches!(
+        key,
+        "samples" | "domain" | "xmin" | "xmax" | "ymin" | "ymax"
+    ) || (axis_bound && instance.kind != ScientificKind::Axis)
     {
         return Err(EditRefusal::UnsupportedKey);
     }

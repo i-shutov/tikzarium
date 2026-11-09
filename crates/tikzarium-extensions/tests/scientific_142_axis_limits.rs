@@ -2,9 +2,8 @@
 //! No actual desktop clicks, PDF claims or implicit TeX default assumptions.
 use sha2::{Digest, Sha256};
 use tikzarium_extensions::scientific_scan::{
-    EditRefusal, LiteralEditRequest, ScientificKind, SourceView,
-    literal_key_value, plan_literal_key_edit, scan_scientific_source,
-    scientific_property_help,
+    EditRefusal, LiteralEditRequest, ScientificKind, SourceView, literal_key_value,
+    plan_literal_key_edit, scan_scientific_source, scientific_property_help,
 };
 
 const SV001: &str =
@@ -17,9 +16,15 @@ fn hash(bytes: &[u8]) -> String {
 }
 
 fn patch_axis_literal_exact(original: &str, key: &str, expected: &str, replacement: &str) {
-    let view = SourceView { text: original, revision: 21 };
+    let view = SourceView {
+        text: original,
+        revision: 21,
+    };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
     assert_eq!(literal_key_value(view, axis, key).unwrap(), expected);
     let patch = plan_literal_key_edit(LiteralEditRequest {
         view,
@@ -59,24 +64,58 @@ fn sv003_xmin_xmax_decimal_axis_limits_roundtrip() {
 #[test]
 fn macros_duplicate_limits_and_nonfinite_values_are_rejected() {
     let source = "\\begin{tikzpicture}\n\\begin{axis}[ymax=\\myBound,ymin=-1,ymax=4]\n\\addplot[ymax=5] {x};\n\\end{axis}\n\\end{tikzpicture}";
-    let view = SourceView { text: source, revision: 12 };
+    let view = SourceView {
+        text: source,
+        revision: 12,
+    };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
-    let series = items.iter().find(|x| x.kind == ScientificKind::AddPlot).unwrap();
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
+    let series = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::AddPlot)
+        .unwrap();
     let duplicate = plan_literal_key_edit(LiteralEditRequest {
-        view, instance: axis, key: "ymax", expected_old: r"\myBound", replacement: "3",
+        view,
+        instance: axis,
+        key: "ymax",
+        expected_old: r"\myBound",
+        replacement: "3",
     });
     assert_eq!(duplicate.unwrap_err(), EditRefusal::AmbiguousKey);
     let foreign_series = plan_literal_key_edit(LiteralEditRequest {
-        view, instance: series, key: "ymax", expected_old: "5", replacement: "3",
+        view,
+        instance: series,
+        key: "ymax",
+        expected_old: "5",
+        replacement: "3",
     });
     assert_eq!(foreign_series.unwrap_err(), EditRefusal::UnsupportedKey);
-    let invalid = ["NaN", "inf", r"\value", "1e9", "1;\\write18", "1,3", "   ", "1.2.3"];
+    let invalid = [
+        "NaN",
+        "inf",
+        r"\value",
+        "1e9",
+        "1;\\write18",
+        "1,3",
+        "   ",
+        "1.2.3",
+    ];
     for forbidden in invalid {
         let result = plan_literal_key_edit(LiteralEditRequest {
-            view, instance: axis, key: "ymin", expected_old: "-1", replacement: forbidden,
+            view,
+            instance: axis,
+            key: "ymin",
+            expected_old: "-1",
+            replacement: forbidden,
         });
-        assert_eq!(result.unwrap_err(), EditRefusal::InvalidLiteral, "{forbidden:?}");
+        assert_eq!(
+            result.unwrap_err(),
+            EditRefusal::InvalidLiteral,
+            "{forbidden:?}"
+        );
     }
     assert_eq!(literal_key_value(view, axis, "ymin").unwrap(), "-1");
 }
