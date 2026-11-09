@@ -130,6 +130,9 @@
 
 ## G. Windows 10 workstation bootstrap — отдельные инциденты установки (2026-11-09)
 
+**09.11.2026, итог первичного развёртывания Windows 10:** инциденты WS01–WS07 преодолены для первоначального пользовательского запуска: получены успешные Rust/cargo app build и `tikzarium-cli build` с MiKTeX PDF (16 448 байт, 93 зависимости, 11.5004974 с), завершились проверки Arial/ToUnicode и извлечения кириллицы в установочном скрипте. Это приёмка **работоспособности установки и CLI**, а не фактическая приёмка GUI W3. MiKTeX warning об обновлениях при exit 0 не считать фатальным. Оригинальные `environment.json`, PDF и снимки требуются для независимого ревью. См. [W3 physical QA](WINDOWS_10_W3_PHYSICAL_QA_20261109_RU.md).
+
+
 ## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
 
 **Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.

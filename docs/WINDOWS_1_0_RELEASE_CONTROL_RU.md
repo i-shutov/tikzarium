@@ -1,5 +1,14 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+## 2026-11-09 — Win10 physical workstation: **Machine PASS / User PASS / CLI PDF PASS**, GUI W3 NOT_RUN
+
+Новое **подтверждение по выводу пользователя из RDP**: `tikzarium-qa` на Windows 10 Pro 22H2 x64 build 19045, 3.96 GiB RAM. В ходе `-Phase User` успешно выполнена нативная сборка `tikzarium-core`, `tikzarium-extensions`, `tikzarium-app` (`cargo build --locked -j 1`, `Finished dev profile ... 2m14s`) и настоящий `tikzarium-cli.exe build` для `examples/windows-cyrillic.tex`. Внешний MiKTeX XeLaTeX создал `windows-cyrillic.pdf` **16 448 bytes**, 93 dependencies, 11.5004974s; скрипт прошёл `pdffonts`/`pdftotext` проверки и завершился строками `Physical PDF generated and audited` и `Environment report`. Оригиналы: локальный `Documents\TikZarium-QA\evidence\20261109-090708\{windows-cyrillic.pdf,environment.json}`. Исходный Git SHA/двоичные файлы/оригинальный PDF независимо ещё не скачаны — независимая QA в ожидании.
+
+MiKTeX напечатал `major issue: So far, you have not checked for MiKTeX updates` в stderr; компиляция имела успешный результат, не классифицировать предупреждение как ошибку XeLaTeX. Не менять пакеты и конфигурацию TeX скрыто. Bootstrap-инциденты WS01–WS07 документированы; WS07 (повторная установка уже установленного `pgf`) снят при локальной явной проверке пакетов и `-SkipTexProvision`, и канонически исправлен в [PR #150](https://github.com/i-shutov/tikzarium/pull/150).
+
+**W3 GUI остаётся NOT_RUN / NOT_ACCEPTED**: владелец ещё не представил оригинальные экранные снимки и подтверждения шести реальных pointer gestures, F1, Undo, Save/Open, native dialogs, IME/DPI, GUI→XeLaTeX. Следующий точный сценарий: [Windows10 W3 physical QA](WINDOWS_10_W3_PHYSICAL_QA_20261109_RU.md). Серверный W2b независимо NOT_RUN, стабильный W4 NO-GO.
+
+
 ## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
 
 **Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
