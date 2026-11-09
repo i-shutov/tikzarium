@@ -370,50 +370,50 @@ pub fn scan_scientific_source(
         if (word == "begin" || word == "end")
             && let Some((env, end)) = environment_at(text, next)
         {
-                match (word, env) {
-                    ("begin", "tikzpicture") => {
-                        picture_depth += 1;
-                        i = end;
-                        continue;
-                    }
-                    ("end", "tikzpicture") => {
-                        picture_depth = picture_depth.saturating_sub(1);
-                        axis_stack.clear();
-                        i = end;
-                        continue;
-                    }
-                    ("end", "axis") if picture_depth > 0 => {
-                        axis_stack.pop();
-                        i = end;
-                        continue;
-                    }
-                    ("begin", "axis") if picture_depth > 0 => {
-                        let (options, finish) = trailing_options(text, end)?;
-                        let index = add(
-                            &mut out,
-                            RecognizedInstance {
-                                kind: ScientificKind::Axis,
-                                range: start..finish,
-                                option_range: options,
-                                parent_axis: axis_stack.last().copied(),
-                                confidence: RecognitionConfidence::Lexical,
-                                revision: view.revision,
-                                source_sha256: sha,
-                            },
-                        )?;
-                        axis_stack.push(index);
-                        i = finish;
-                        continue;
-                    }
-                    ("begin", "verbatim" | "lstlisting" | "minted") => {
-                        let closing = format!("\\end{{{env}}}");
-                        let rest = text.get(end..).ok_or(ScanRefusal::UnbalancedSource)?;
-                        let delta = rest.find(&closing).ok_or(ScanRefusal::UnbalancedSource)?;
-                        i = end + delta + closing.len();
-                        continue;
-                    }
-                    _ => {}
+            match (word, env) {
+                ("begin", "tikzpicture") => {
+                    picture_depth += 1;
+                    i = end;
+                    continue;
                 }
+                ("end", "tikzpicture") => {
+                    picture_depth = picture_depth.saturating_sub(1);
+                    axis_stack.clear();
+                    i = end;
+                    continue;
+                }
+                ("end", "axis") if picture_depth > 0 => {
+                    axis_stack.pop();
+                    i = end;
+                    continue;
+                }
+                ("begin", "axis") if picture_depth > 0 => {
+                    let (options, finish) = trailing_options(text, end)?;
+                    let index = add(
+                        &mut out,
+                        RecognizedInstance {
+                            kind: ScientificKind::Axis,
+                            range: start..finish,
+                            option_range: options,
+                            parent_axis: axis_stack.last().copied(),
+                            confidence: RecognitionConfidence::Lexical,
+                            revision: view.revision,
+                            source_sha256: sha,
+                        },
+                    )?;
+                    axis_stack.push(index);
+                    i = finish;
+                    continue;
+                }
+                ("begin", "verbatim" | "lstlisting" | "minted") => {
+                    let closing = format!("\\end{{{env}}}");
+                    let rest = text.get(end..).ok_or(ScanRefusal::UnbalancedSource)?;
+                    let delta = rest.find(&closing).ok_or(ScanRefusal::UnbalancedSource)?;
+                    i = end + delta + closing.len();
+                    continue;
+                }
+                _ => {}
+            }
         }
         if picture_depth == 0 {
             continue;
