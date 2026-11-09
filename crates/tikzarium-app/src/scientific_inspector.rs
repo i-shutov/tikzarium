@@ -1,6 +1,7 @@
 //! Scientific-142 Inspector: one source figure, no hidden TeX rewrite.
 //! A source scan happens only on explicit user request, never each egui frame.
 use crate::tikz_authoring;
+use eframe::egui;
 use tikzarium_extensions::scientific_scan::{
     RecognizedInstance, ScientificKind, SourceView, literal_key_value,
 };
