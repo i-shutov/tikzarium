@@ -24,6 +24,16 @@ CI exposed two genuine failures in the first review: one manually truncated AK-F
 
 Core-only tests (no claimed rendered PDF) cover Cyrillic/UTF-8 selection, CRLF byte-preserving Undo, same-size `.dat` mutation, deleted dependencies, last-good provenance, tampered PDF, stale build epochs and Save As.
 
+## Continuation checkpoint — verified CI defects and fail-closed behavior
+
+The prior exact PR head `98b18d77` passed L0-related XeLaTeX, hosted GUI, D06 MiKTeX and N5 Linux jobs but failed the new Rust integration test identically on Windows/macOS/Linux. The cause was a **test fixture lifetime bug**: `let (_, source, _) = source_and_data()` discarded `TempDir` immediately, deleting the file before `fs::read()`. Fixed to retain `_root` as a named binding; no production code was altered by that fix.
+
+The next QA review found a more important fail-open candidate: a valid on-disk `.fls` snapshot of the **old** TeX source could be paired with an unsaved, different in-memory editor buffer and a new PDF. That must never be accepted. The session now requires an already-saved `Document`, a complete recorder, a fresh local dependency graph and a captured **author-file SHA equal to the exact current buffer bytes and canonical path** before accepting a build. Bad/inaccessible PDF bytes or mismatched build inputs mark the build `FailedBuild` while retaining the previous PDF as **last-good**, never as current. A stale build epoch still cannot complete.
+
+Additional negative core tests cover invalid/mismatched author provenance, modified `.dat` before completion, unsaved source and a fake PDF after a valid last-good artifact. These are **source/PDF-state contract tests**, not actual PDF or physical UI proof. Existing `Document` / `BuildService` remain the production source and engine authority until the GUI wiring is integrated.
+
+New `.github/workflows/scientific-142-corpus.yml` independently checks all 142 immutable author files, local assets and reference PDFs against the owner R4 SHA manifest, plus a disposable-source tampering negative test, on hosted Windows 2022/Linux/macOS. It does **not** run XeLaTeX, install any software, or claim L2/L3. Exact job conclusions must be read from their respective SHA, never inferred from workflow trigger.
+
 ## Real-corpus acceptance
 
 New Rust integration test uses actual five AK sources (not fabricated drawings) and their manifest-declared local inputs:
