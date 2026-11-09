@@ -2,6 +2,14 @@
 
 > 9 ноября 2026. Основание: пользовательский журнал успешного `-Phase User` на Windows 10 Pro 22H2 (build 19045), под локальным неадминистративным `tikzarium-qa`, RDP. **Сборка Rust + CLI → XeLaTeX PDF подтверждена; W3 GUI ещё не принят.** Этот документ — инструкция дальнейшего ручного испытания, а не отчёт об уже выполненном GUI.
 
+## 2026-11-09 — W3 GUI OpenGL 2.0 blocker under RDP (new WS08)
+
+**Actual owner trace after fully successful User/CLI PDF:** launching `target\debug\tikzarium-app.exe` under non-admin `tikzarium-qa` exited `Error: OpenGL(PainterError("egui_glow requires opengl 2.0+. "))`. Root of practical limitation: `eframe 0.33.3` is built with the `glow` renderer and the active RDP OpenGL context cannot meet minimum 2.0; the physical W3 interface was **NOT RUN**.
+
+**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses Windows built-in `tar.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
+
+Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://docs.mesa3d.org/drivers/llvmpipe.html) and [Windows tar 7z support](https://learn.microsoft.com/en-us/windows/tar/). The upstream package has a fixed SHA256 already validated in TikZarium QA transport. **No runtime W3 evidence from this launcher yet**.
+
 ## 1. Зафиксированный исходный результат
 
 - `Machine PASS`: Git 2.56.0, MSVC 2022 Build Tools, Windows SDK x64, VC++ x64 runtime.
