@@ -35,6 +35,8 @@ pub enum FigureSessionError {
     StaleBuild,
     #[error("session revision/epoch counter exhausted")]
     CounterExhausted,
+    #[error("unverified build provenance: source bytes or recorder inputs do not match the active document")]
+    UnverifiedBuildInputs,
     #[error(transparent)]
     Io(#[from] io::Error),
 }
@@ -192,14 +194,37 @@ impl OneFigureSession {
         dependencies: ProjectDependencySnapshot,
     ) -> Result<(), FigureSessionError> {
         self.require_current_build(ticket)?;
-        let path = pdf_path.as_ref();
-        let bytes = fs::read(path)?;
-        if bytes.len() < 5 || &bytes[..5] != b"%PDF-" {
-            return Err(FigureSessionError::Io(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "external build output is not a PDF",
-            )));
+        // The existing document must have been saved before an external
+        // XeLaTeX build. Never accept an old .fls snapshot merely because its
+        // on-disk bytes have not changed while the in-memory editor has.
+        let verified_source = self.document.path.as_deref().is_some_and(|path| {
+            !self.document.dirty()
+                && dependencies.recorder_complete()
+                && dependencies.is_project_fresh()
+                && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
+        });
+        if !verified_source {
+            self.latest_build = None;
+            self.build_failed = true;
+            return Err(FigureSessionError::UnverifiedBuildInputs);
         }
+        let path = pdf_path.as_ref();
+        let bytes = match fs::read(path) {
+            Ok(bytes) if bytes.starts_with(b"%PDF-") => bytes,
+            Ok(_) => {
+                self.latest_build = None;
+                self.build_failed = true;
+                return Err(FigureSessionError::Io(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "external build output is not a PDF",
+                )));
+            }
+            Err(error) => {
+                self.latest_build = None;
+                self.build_failed = true;
+                return Err(FigureSessionError::Io(error));
+            }
+        };
         self.last_good_pdf = Some(LastGoodPdf {
             path: path.to_path_buf(),
             path_sha256: hash(&bytes),
