@@ -2,7 +2,7 @@
 use sha2::{Digest, Sha256};
 use tikzarium_extensions::scientific_scan::{
     EditRefusal, LiteralEditRequest, RecognitionConfidence, ScanRefusal, ScientificKind,
-    SourceView, plan_literal_key_edit, scan_scientific_source,
+    SourceView, plan_literal_key_edit, scan_scientific_source, scientific_property_help,
 };
 
 const SV001: &str =
@@ -376,4 +376,17 @@ fn preamble_catcode_changes_refuse_even_if_later_tikz_looks_literal() {
         revision: 0,
     });
     assert_eq!(got.unwrap_err(), ScanRefusal::UnsupportedTeXControl);
+}
+
+#[test]
+fn scientific_parameter_help_is_versioned_source_limited_and_never_invents_defaults() {
+    let samples = scientific_property_help("samples").unwrap();
+    assert_eq!(samples.package, "pgfplots");
+    assert_eq!(samples.verified_tex_default, "UNKNOWN");
+    assert!(samples.editor_limit.contains("4096"));
+    assert!(samples.manual_section.contains("UNKNOWN"));
+    let domain = scientific_property_help("domain").unwrap();
+    assert!(domain.example.contains(":"));
+    assert_eq!(domain.verified_tex_default, "UNKNOWN");
+    assert!(scientific_property_help("unsupported PGFPlots key").is_none());
 }
