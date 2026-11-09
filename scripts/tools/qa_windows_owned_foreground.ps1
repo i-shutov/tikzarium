@@ -1,4 +1,6 @@
 # Async Win32 activation handshake. No input queue attachment or foreign-window activation.
+# One bounded BringWindowToTop fallback is allowed only on the verified owned HWND,
+# never on another process or desktop, and never substitutes for foreground proof.
 # https://devblogs.microsoft.com/oldnewthing/20161118-00/?p=94745
 # Dot-source after TikzariumW2Win32 is defined, or supply a fake adapter in SelfTest.
 function Get-W2OwnedRuntimeStatus([IntPtr]$Handle,[int]$ExpectedPid,[int]$ExpectedSession) {
@@ -43,6 +45,7 @@ function Request-W2OwnedForeground {
    Validate={param($h,$p,$s) Get-W2OwnedRuntimeStatus $h $p $s}
    Foreground={ [TikzariumW2Win32]::GetForegroundWindow() }
    Activate={param($h) [TikzariumW2Win32]::SetForegroundWindow($h)}
+   RaiseOwned={param($h) [TikzariumW2Win32]::BringWindowToTop($h)}
    Barrier={param($h,$timeout)
     [UIntPtr]$result=[UIntPtr]::Zero
     # WM_NULL=0. ABORTIFHUNG|ERRORONEXIT=0x22. No NOTIMEOUTIFNOTHUNG.
@@ -53,11 +56,12 @@ function Request-W2OwnedForeground {
    Delay={param($ms) Start-Sleep -Milliseconds $ms}
   }
  }
+ $promotionTried=$false
  $clock=[Diagnostics.Stopwatch]::StartNew()
  try{
   for($attempt=1;$attempt -le $MaxAttempts -and $clock.ElapsedMilliseconds -lt $DeadlineMs;$attempt++){
    $evidence.attempted=$attempt
-   $row=[ordered]@{attempt=$attempt;elapsed_ms=$clock.ElapsedMilliseconds;activation_return=$null;ready=$false;processed=$false;foreground_hwnd='0';reason='NOT_RUN'}
+   $row=[ordered]@{attempt=$attempt;elapsed_ms=$clock.ElapsedMilliseconds;activation_return=$null;owned_raise_return=$null;activation_route='SETFOREGROUND_ONLY';ready=$false;processed=$false;foreground_hwnd='0';reason='NOT_RUN'}
    $evidence.trace+=([PSCustomObject]$row)
    $row=$evidence.trace[-1]
    $valid=& $Native.Validate $OwnedHandle $OwnedPid $SessionId
@@ -74,6 +78,16 @@ function Request-W2OwnedForeground {
    # The PID/session/input desktop may change while waiting for the event loop.
    $valid=& $Native.Validate $OwnedHandle $OwnedPid $SessionId
    if($valid -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP'){$evidence.reason=$valid;$row.reason=$valid;break}
+   # Only after the first unsuccessful foreground handshake: try Win32's normal
+   # activation of this same verified top-level window once. No user input,
+   # queue attachment, registry changes, foreign activation, or desktop capture.
+   if(-not $promotionTried -and $attempt -ge 2 -and
+      $Native.ContainsKey('RaiseOwned') -and
+      (& $Native.Foreground) -ne $OwnedHandle){
+    $promotionTried=$true
+    $row.activation_route='OWNED_BRING_TO_TOP_THEN_SETFOREGROUND'
+    $row.owned_raise_return=[bool](& $Native.RaiseOwned $OwnedHandle)
+   }
    if((& $Native.Foreground) -ne $OwnedHandle){$row.activation_return=[bool](& $Native.Activate $OwnedHandle)}
    $budget=[Math]::Min(750,[Math]::Max(1,$DeadlineMs-$clock.ElapsedMilliseconds))
    $barrier=& $Native.Barrier $OwnedHandle $budget
