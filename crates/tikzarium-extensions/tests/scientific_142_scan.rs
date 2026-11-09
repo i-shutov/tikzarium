@@ -350,14 +350,19 @@ fn preamble_macro_and_verbatim_pictures_are_never_active_editable_figures() {
     })
     .unwrap();
     assert_eq!(
-        instances.iter().filter(|x| x.kind == ScientificKind::Draw).count(),
+        instances
+            .iter()
+            .filter(|x| x.kind == ScientificKind::Draw)
+            .count(),
         1
     );
     assert_eq!(instances.len(), 1);
-    assert!(source
-        .get(instances[0].range.clone())
-        .unwrap()
-        .contains("(0,0)--(1,1)"));
+    assert!(
+        source
+            .get(instances[0].range.clone())
+            .unwrap()
+            .contains("(0,0)--(1,1)")
+    );
 }
 
 #[test]
