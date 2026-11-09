@@ -326,6 +326,47 @@ pub fn scan_scientific_source(
         let start = i;
         let (word, next) = command_at(text, i);
         i = next;
+        // Scope and catcode safety apply to the preamble too. Otherwise a
+        // macro definition containing a literal tikzpicture could fabricate
+        // an editable picture even though it was never executed.
+        if word == "catcode" || word == "csname" {
+            return Err(ScanRefusal::UnsupportedTeXControl);
+        }
+        if word == "verb" || word == "lstinline" {
+            let delimiter = *b.get(i).ok_or(ScanRefusal::UnbalancedSource)?;
+            i += 1;
+            while i < b.len() && b[i] != delimiter {
+                i += 1;
+            }
+            if i >= b.len() {
+                return Err(ScanRefusal::UnbalancedSource);
+            }
+            i += 1;
+            continue;
+        }
+        if matches!(word, "def" | "gdef" | "edef" | "xdef") {
+            i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
+        if matches!(
+            word,
+            "newcommand" | "renewcommand" | "providecommand" | "DeclareRobustCommand"
+        ) {
+            i = skip_newcommand_body(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
+        if matches!(word, "tikzset" | "pgfplotsset" | "pgfkeys" | "pgfmathsetmacro") {
+            i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
+        if word == "pgfmathdeclarefunction" {
+            i = skip_macro_body(text, next, 3).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
+        if word == "foreach" && picture_depth == 0 {
+            i = skip_macro_body(text, next, 2).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
         if (word == "begin" || word == "end")
             && let Some((env, end)) = environment_at(text, next)
         {
@@ -364,7 +405,7 @@ pub fn scan_scientific_source(
                         i = finish;
                         continue;
                     }
-                    ("begin", "verbatim" | "lstlisting" | "minted") if picture_depth > 0 => {
+                    ("begin", "verbatim" | "lstlisting" | "minted") => {
                         let closing = format!("\\end{{{env}}}");
                         let rest = text.get(end..).ok_or(ScanRefusal::UnbalancedSource)?;
                         let delta = rest.find(&closing).ok_or(ScanRefusal::UnbalancedSource)?;
@@ -375,37 +416,6 @@ pub fn scan_scientific_source(
                 }
         }
         if picture_depth == 0 {
-            continue;
-        }
-        if word == "catcode" || word == "csname" {
-            return Err(ScanRefusal::UnsupportedTeXControl);
-        }
-        if word == "verb" || word == "lstinline" {
-            let delimiter = *b.get(i).ok_or(ScanRefusal::UnbalancedSource)?;
-            i += 1;
-            while i < b.len() && b[i] != delimiter {
-                i += 1;
-            }
-            if i >= b.len() {
-                return Err(ScanRefusal::UnbalancedSource);
-            }
-            i += 1;
-            continue;
-        }
-        if word == "def" || word == "gdef" || word == "edef" || word == "xdef" {
-            i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
-            continue;
-        }
-        if word == "newcommand"
-            || word == "renewcommand"
-            || word == "providecommand"
-            || word == "DeclareRobustCommand"
-        {
-            i = skip_newcommand_body(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
-            continue;
-        }
-        if word == "tikzset" || word == "pgfplotsset" || word == "pgfkeys" {
-            i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
         if word == "foreach" {
