@@ -882,8 +882,22 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
         return Err(EditRefusal::InvalidLiteral);
     }
 
-    // Shortest valid UTF-8 difference, not even a whole property value.
-    // This is essential for unit-preserving dimensions and Unicode labels.
+    // Existing SC2/SC3 property ranges are stable, already independently
+    // accepted contracts. Only newly added keys use a shorter UTF-8 patch.
+    if matches!(
+        request.key,
+        "samples" | "domain" | "xmin" | "xmax" | "ymin" | "ymax"
+    ) {
+        return Ok(SourcePatch {
+            range,
+            expected_old: previous.to_owned(),
+            replacement: request.replacement.to_owned(),
+            source_revision: request.instance.source_target().revision,
+        });
+    }
+
+    // Shortest valid UTF-8 difference for new keys. Preserve dimension units
+    // and outer braces without writing unrelated TeX bytes.
     let mut prefix = 0;
     for (old, new) in previous.chars().zip(request.replacement.chars()) {
         if old != new {
