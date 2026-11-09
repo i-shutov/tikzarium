@@ -5,6 +5,10 @@ use std::{collections::BTreeMap, ops::Range, sync::LazyLock};
 use tikzarium_extensions::primitives::{Catalog, Evidence, SourcePatch, ToolSpec};
 use tikzarium_extensions::project_disconnect::{self, DisconnectDecision, DisconnectPlan};
 use tikzarium_extensions::project_imports::{self, ImportDecision, ImportKind, ImportPlan};
+use tikzarium_extensions::scientific_scan::{
+    LiteralEditRequest, RecognizedInstance, SourceView, plan_literal_key_edit,
+    scan_scientific_source,
+};
 use tikzarium_extensions::source_assist;
 
 static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
@@ -632,6 +636,65 @@ impl Session {
         self.guide_pointer_armed = false;
         self.drag_start = None;
         self.status = format!("C/N3: имя {name} дополнено; Undo доступен, пакеты не установлены");
+        Ok(line)
+    }
+
+    /// Explicit user-triggered scan only. Never run this on each egui frame.
+    /// It shares the exact current visual-source revision with ordinary Undo.
+    pub fn scientific_candidates(
+        &mut self,
+        source: &str,
+    ) -> Result<Vec<RecognizedInstance>, String> {
+        self.sync(source)?;
+        scan_scientific_source(SourceView {
+            text: source,
+            revision: self.revision,
+        })
+        .map_err(|error| error.to_string())
+    }
+
+    /// Same transactional Undo and source authority as the six native tools;
+    /// unsupported TeX/macro input is refused by the specialized C adapter.
+    pub fn apply_scientific_literal(
+        &mut self,
+        source: &mut String,
+        selected: &RecognizedInstance,
+        key: &str,
+        expected_old: &str,
+        replacement: &str,
+    ) -> Result<usize, String> {
+        if self.sync(source)? {
+            return Err("После ручной правки перечитайте текущие TikZ-команды".into());
+        }
+        let plan = plan_literal_key_edit(LiteralEditRequest {
+            view: SourceView {
+                text: source,
+                revision: self.revision,
+            },
+            instance: selected,
+            key,
+            expected_old,
+            replacement,
+        })
+        .map_err(|error| error.to_string())?;
+        let line = source
+            .get(..plan.range.start)
+            .map(|before| before.bytes().filter(|byte| *byte == b'\n').count() + 1)
+            .unwrap_or(1);
+        let inverse = plan
+            .apply(source, &mut self.revision)
+            .map_err(|error| error.to_string())?;
+        self.observed_source.clone_from(source);
+        self.undo.push(inverse);
+        self.selected = None;
+        self.cancelled_pointer_capture |=
+            self.guide_pointer_armed || self.drag_start.is_some() || self.alt_selection_capture;
+        self.guide_pointer_armed = false;
+        self.drag_start = None;
+        self.alt_selection_capture = false;
+        self.status = format!(
+            "SC2: точечная правка {key}, сохранившая чужой TeX; Undo доступен"
+        );
         Ok(line)
     }
 
