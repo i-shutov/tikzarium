@@ -1931,6 +1931,11 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    // The reviewed SC2 literal guide is shared with Inspector.
+                    // This F1 view never mutates source or synthesizes defaults.
+                    if self.scientific.show_selected_help(ui) {
+                        ui.separator();
+                    }
                     // Avoid a second generic "choose a tool" help card after a
                     // successful caret lookup; the user's source is the context.
                     let mut source_parameter_help_shown = false;
