@@ -186,6 +186,59 @@ function Ensure-Poppler {
     $env:Path = "$bin;$env:Path"
     Say "Poppler QA PDF utilities ready: $bin"
 }
+function ConvertTo-MiKTeXInstalledState {
+    param([Parameter(Mandatory)][string]$RawStatus,
+          [Parameter(Mandatory)][string]$PackageId)
+    $state = $RawStatus.Trim().ToLowerInvariant()
+    if ($state -ceq 'true') { return $true }
+    if ($state -ceq 'false') { return $false }
+    throw "Unexpected MiKTeX isInstalled status for $($PackageId): '$RawStatus' (expected true or false)"
+}
+function Test-MiKTeXPackageInstalled {
+    param([Parameter(Mandatory)][string]$ManagerPath,
+          [Parameter(Mandatory)][string]$PackageId)
+    $rawStatus = & $ManagerPath --disable-installer packages info --template '{isInstalled}' $PackageId
+    Assert-NativeExit "MiKTeX package info $PackageId"
+    return (ConvertTo-MiKTeXInstalledState -RawStatus ($rawStatus | Out-String) -PackageId $PackageId)
+}
+function Ensure-RequiredMiKTeXPackages {
+    param([Parameter(Mandatory)][string]$ManagerPath)
+    $required = @('pgf', 'standalone', 'fontspec', 'xcolor', 'unicode-math')
+    $missing = @()
+    foreach ($id in $required) {
+        if (Test-MiKTeXPackageInstalled -ManagerPath $ManagerPath -PackageId $id) {
+            Say "MiKTeX ALREADY INSTALLED: $id"
+        } else {
+            $missing += $id
+        }
+    }
+    if ($missing.Count -eq 0) {
+        Say 'All 5 required MiKTeX packages already installed; no downloads/install needed.'
+        return
+    }
+    Say ("Explicit MiKTeX provisioning ONLY missing packages: " + ($missing -join ', '))
+    & $ManagerPath --enable-installer packages update-package-database
+    Assert-NativeExit 'MiKTeX update package DB'
+    foreach ($id in $missing) {
+        if (Test-MiKTeXPackageInstalled -ManagerPath $ManagerPath -PackageId $id) {
+            Say "MiKTeX dependency already installed: $id"
+            continue
+        }
+        Say "MiKTeX INSTALL: $id"
+        & $ManagerPath --enable-installer packages install $id
+        Assert-NativeExit "MiKTeX install $id"
+        if (-not (Test-MiKTeXPackageInstalled -ManagerPath $ManagerPath -PackageId $id)) {
+            throw "MiKTeX still reports package not installed after provisioning: $id"
+        }
+    }
+    foreach ($id in $required) {
+        if (-not (Test-MiKTeXPackageInstalled -ManagerPath $ManagerPath -PackageId $id)) {
+            throw "MiKTeX required package absent after provisioning: $id"
+        }
+    }
+    Say 'MiKTeX explicit provisioning PASS: all five packages installed.'
+}
+
 function Start-SetupTranscript([string]$Path) {
     $parent = Split-Path -Parent $Path
     New-Item -ItemType Directory -Path $parent -Force | Out-Null
@@ -392,11 +445,9 @@ function Setup-User {
     & $xelatex --version | Out-Host
     Assert-NativeExit 'xelatex --version'
     if (-not $SkipTexProvision) {
-        Say 'EXPLICIT one-time MiKTeX provisioning: pgf, standalone, fontspec, xcolor, unicode-math'
-        & $miktex --enable-installer packages update-package-database
-        Assert-NativeExit 'MiKTeX update package DB'
-        & $miktex --enable-installer packages install pgf standalone fontspec xcolor unicode-math
-        Assert-NativeExit 'MiKTeX explicit package install'
+        Ensure-RequiredMiKTeXPackages -ManagerPath $miktex
+    } else {
+        Say 'Skipping explicit MiKTeX package provisioning (-SkipTexProvision). PDF test still required.'
     }
     $sourceRoot = Join-Path $env:USERPROFILE 'source'
     $repo = Join-Path $sourceRoot 'tikzarium'
