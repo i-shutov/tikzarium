@@ -202,7 +202,6 @@ fn missing_or_invalid_pdf_preserves_last_good_as_failed_not_current() {
     assert_eq!(session.last_good_pdf_path(), Some(good_pdf.as_path()));
 }
 
-
 #[test]
 fn native_build_artifact_bytes_are_preserved_without_export_or_second_renderer() {
     let (root, source, data) = source_and_data();
