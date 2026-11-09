@@ -1321,4 +1321,49 @@ mod tests {
         draft.values.insert("radius".into(), "-1cm".into());
         assert!(command(Tool::Circle, &draft).is_err());
     }
+    #[test]
+    fn scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack() {
+        const ORIGINAL: &str =
+            include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex");
+        let mut source = ORIGINAL.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let candidates = session.scientific_candidates(&source).unwrap();
+        let axis = candidates
+            .iter()
+            .find(|item| {
+                item.kind == tikzarium_extensions::scientific_scan::ScientificKind::Axis
+            })
+            .unwrap();
+        let original_value =
+            tikzarium_extensions::scientific_scan::literal_key_value(
+                SourceView {
+                    text: &source,
+                    revision: session.source_revision(),
+                },
+                axis,
+                "samples",
+            )
+            .unwrap();
+        assert_eq!(original_value, "150");
+        let line = session
+            .apply_scientific_literal(&mut source, axis, "samples", &original_value, "180")
+            .unwrap();
+        assert!(line > 10);
+        assert!(session.undo_available());
+        assert!(source.contains("samples=180"));
+        assert!(source.contains(r"\pgfplotsset{compat=1.17}"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source.as_bytes(), ORIGINAL.as_bytes());
+        assert!(!session.undo_available());
+        // A manual TextEdit change must invalidate even a previously valid
+        // axis fingerprint; no stale Inspector action may overwrite it.
+        source.push_str("% ручной комментарий\r\n");
+        let expected = source.clone();
+        assert!(session
+            .apply_scientific_literal(&mut source, axis, "samples", "150", "180")
+            .is_err());
+        assert_eq!(source, expected);
+    }
+
 }
