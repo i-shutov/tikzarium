@@ -4,6 +4,7 @@ use crate::tikz_authoring;
 use eframe::egui;
 use tikzarium_extensions::scientific_scan::{
     RecognizedInstance, ScientificKind, SourceView, literal_key_value,
+    scientific_property_help,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -145,6 +146,31 @@ impl ScientificInspector {
         Ok(line)
     }
 
+    /// The same source-owned property guide appears in Studio's F1 dock
+    /// and in the field's inline help; no fabricated TikZ defaults.
+    pub fn show_selected_help(&self, ui: &mut egui::Ui) -> bool {
+        if self.selected.and_then(|index| self.candidates.get(index)).is_none()
+            || self.original_value.is_none()
+        {
+            return false;
+        }
+        let Some(help) = scientific_property_help(self.property.key()) else {
+            return false;
+        };
+        ui.strong(format!("PGFPlots: {}", help.key));
+        ui.label(format!("Тип: {}", help.value_type));
+        ui.label(help.effect);
+        ui.small(format!("Поддержка TikZarium: {}", help.editor_limit));
+        ui.small(format!("Пример: {}", help.example));
+        ui.small(format!("Пакет: {}", help.package));
+        ui.small(format!(
+            "Значение по умолчанию TeX: {}",
+            help.verified_tex_default
+        ));
+        ui.small(format!("Руководство: {}", help.manual_section));
+        true
+    }
+
     pub fn show(
         &mut self,
         ui: &mut egui::Ui,
@@ -193,6 +219,9 @@ impl ScientificInspector {
                 }
                 if let Some(original) = &self.original_value {
                     ui.small(format!("Из исходника: {original}"));
+                    ui.collapsing("ⓘ Справка по параметру · F1", |ui| {
+                        self.show_selected_help(ui);
+                    });
                     ui.add(
                         egui::TextEdit::singleline(&mut self.proposed_value)
                             .desired_width(160.0),
