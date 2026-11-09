@@ -1,0 +1,47 @@
+name: Windows 10 workstation bootstrap syntax (hosted only)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/workstation/windows10/**'
+      - '.github/workflows/windows10-bootstrap-syntax.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/workstation/windows10/**'
+      - '.github/workflows/windows10-bootstrap-syntax.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ps51-parse:
+    name: Parse PowerShell 5.1 scripts without executing
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Read-only Windows PowerShell 5.1 parser
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $directory = 'scripts/workstation/windows10'
+          $files = @(Get-ChildItem -LiteralPath $directory -File -Filter '*.ps1')
+          if ($files.Count -ne 3) { throw ('Expected 3 PS scripts, found ' + $files.Count) }
+          foreach ($f in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$parseErrors)
+            if (@($parseErrors).Count -gt 0) {
+              foreach ($issue in $parseErrors) { Write-Error ($f.Name + ': ' + $issue.Message) }
+              throw ('PowerShell parser failed for ' + $f.Name)
+            }
+            Write-Host ('PARSE PASS: ' + $f.Name)
+          }
+          $setup = Get-Content -LiteralPath (Join-Path $directory 'TikZarium-Win10-Setup.ps1') -Raw
+          if ($setup -match '\$build:') { throw 'Invalid $build: interpolation regression' }
+          if ($setup -match 'winget not found') { throw 'winget dependency regression' }
+          Write-Host 'HOSTED SYNTAX PASS (no scripts executed; physical Windows10 NOT_RUN)'
