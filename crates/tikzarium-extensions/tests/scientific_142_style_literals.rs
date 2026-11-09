@@ -15,41 +15,6 @@ fn digest(source: &str) -> String {
     format!("{:x}", Sha256::digest(source.as_bytes()))
 }
 
-fn one_patch(
-    source: &str,
-    kind: ScientificKind,
-    key: &str,
-    old: &str,
-    new: &str,
-) -> (String, tikzarium_extensions::primitives::SourcePatch) {
-    let view = SourceView {
-        text: source,
-        revision: 7,
-    };
-    let instances = scan_scientific_source(view).unwrap();
-    let owned = instances
-        .iter()
-        .find(|item| item.kind == kind)
-        .expect("owner actual instance");
-    assert_eq!(literal_key_value(view, owned, key).unwrap(), old);
-    let patch = plan_literal_key_edit(LiteralEditRequest {
-        view,
-        instance: owned,
-        key,
-        expected_old: old,
-        replacement: new,
-    })
-    .unwrap();
-    assert!(source.get(patch.range.clone()).is_some());
-    let mut modified = source.to_owned();
-    let mut revision = 7;
-    let inverse = patch.apply(&mut modified, &mut revision).unwrap();
-    assert_eq!(revision, 8);
-    assert_ne!(modified, source);
-    assert!(modified.contains(&format!("{key}={new}")));
-    (modified, inverse)
-}
-
 #[test]
 fn sv001_axis_tick_spacing_roundtrips_exact_original_sha() {
     for (key, old, new) in [
@@ -233,8 +198,7 @@ fn deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources() {
     let source = r"\begin{tikzpicture}
 \begin{axis}[mark=none,mark=*]
 \end{axis}
-\end{tikzpicture>";
-    let source = source.replace(r"\end{tikzpicture>", r"\end{tikzpicture}");
+\end{tikzpicture}";
     let view = SourceView {
         text: &source,
         revision: 21,
