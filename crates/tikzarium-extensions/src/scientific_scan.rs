@@ -7,6 +7,51 @@ use sha2::{Digest, Sha256};
 use std::ops::Range;
 use thiserror::Error;
 
+/// This is a private additive descriptor overlay; existing catalog-v1 tools
+/// and their documented defaults are not modified.
+pub const SCIENTIFIC_PROPERTY_SCHEMA: &str = "scientific.source-v1";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScientificPropertyHelp {
+    pub key: &'static str,
+    pub value_type: &'static str,
+    pub effect: &'static str,
+    pub editor_limit: &'static str,
+    pub example: &'static str,
+    pub package: &'static str,
+    pub verified_tex_default: &'static str,
+    pub manual_section: &'static str,
+}
+
+/// Exact semantics are limited to user-supplied literal keys, not theoretical
+/// PGFPlots defaults. In particular the adapter's bound is not a TeX default.
+#[must_use]
+pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
+    match key {
+        "samples" => Some(ScientificPropertyHelp {
+            key: "samples",
+            value_type: "Целое число",
+            effect: "Число точек дискретизации вычисляемого графика PGFPlots.",
+            editor_limit: "Адаптер принимает только целое значение от 2 до 4096; это не ограничение самого TeX.",
+            example: "samples=150",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "UNKNOWN — конкретная редакция руководства не проверена",
+        }),
+        "domain" => Some(ScientificPropertyHelp {
+            key: "domain",
+            value_type: "Пара числовых границ x_min:x_max",
+            effect: "Диапазон аргумента для выборки функций PGFPlots.",
+            editor_limit: "Адаптер принимает две конечные числовые границы, без макросов и вычислений Rust.",
+            example: "domain=-3:3",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "UNKNOWN — конкретная редакция руководства не проверена",
+        }),
+        _ => None,
+    }
+}
+
 pub const MAX_SCIENTIFIC_SOURCE_BYTES: usize = 2 * 1024 * 1024;
 pub const MAX_SCIENTIFIC_INSTANCES: usize = 2048;
 const MAX_GROUP_DEPTH: usize = 64;
