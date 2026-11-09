@@ -4,7 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 use tikzarium_core::{
-    Document, FigurePreviewState, FigureSessionError, OneFigureSession, ProjectDependencySnapshot,
+    BuildArtifact, Document, FigurePreviewState, FigureSessionError, OneFigureSession,
+    ProjectDependencySnapshot,
 };
 
 fn source_and_data() -> (tempfile::TempDir, PathBuf, PathBuf) {
@@ -205,3 +206,31 @@ fn missing_or_invalid_pdf_preserves_last_good_as_failed_not_current() {
     assert_eq!(session.last_good_pdf_path(), Some(good_pdf.as_path()));
 }
 
+
+#[test]
+fn native_build_artifact_bytes_are_preserved_without_export_or_second_renderer() {
+    let (root, source, data) = source_and_data();
+    let mut session = OneFigureSession::new(Document::load(&source).unwrap());
+    let pdf_bytes = b"%PDF-1.5\nreal-service-shape-test-only\n";
+    // BuildService is independently exercised with XeLaTeX in CI. Here we
+    // test its actual Rust response shape, not claim a rendered scientific PDF.
+    let artifact = BuildArtifact {
+        pdf: pdf_bytes.to_vec(),
+        log: String::new(),
+        dependencies: Vec::new(),
+        project_dependencies: snapshot(root.path(), &source, &data),
+        diagnostics: Vec::new(),
+        preview: Ok(None),
+        elapsed: std::time::Duration::ZERO,
+    };
+    let ticket = session.begin_build().unwrap();
+    session.finish_build_artifact(ticket, &artifact).unwrap();
+    assert_eq!(session.preview_state(), FigurePreviewState::CurrentPdf);
+    assert_eq!(session.last_good_pdf_bytes(), Some(pdf_bytes.as_slice()));
+    assert_eq!(session.last_good_pdf_path(), None);
+    assert!(!root.path().join("figure.pdf").exists());
+
+    fs::write(&data, b"9 8\r\n7 6\r\n").unwrap();
+    assert_eq!(session.preview_state(), FigurePreviewState::StalePdf);
+    assert_eq!(session.last_good_pdf_bytes(), Some(pdf_bytes.as_slice()));
+}
