@@ -371,8 +371,7 @@ pub fn scan_scientific_source(
             continue;
         }
         if word == "foreach" {
-            let finish = skip_macro_body(text, next, 2)
-                .ok_or(ScanRefusal::UnbalancedSource)?;
+            let finish = skip_macro_body(text, next, 2).ok_or(ScanRefusal::UnbalancedSource)?;
             add(
                 &mut out,
                 RecognizedInstance {
@@ -405,8 +404,7 @@ pub fn scan_scientific_source(
             after += 1;
         }
         let (options, _) = trailing_options(text, after)?;
-        let finish = command_semicolon(text, after)
-            .ok_or(ScanRefusal::UnbalancedSource)?;
+        let finish = command_semicolon(text, after).ok_or(ScanRefusal::UnbalancedSource)?;
         add(
             &mut out,
             RecognizedInstance {
@@ -506,9 +504,7 @@ fn locate_key(
             hits.push(value);
             continue;
         }
-        if actual_key.ends_with("style")
-            && text.as_bytes().get(value.start) == Some(&b'{')
-        {
+        if actual_key.ends_with("style") && text.as_bytes().get(value.start) == Some(&b'{') {
             let nested = group_at(text, value.start).ok_or(EditRefusal::Opaque)?;
             if nested.next == value.end {
                 locate_key(text, nested.inside, wanted, depth + 1, hits)?;
@@ -543,16 +539,17 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
 /// Plan a *minimal* revision-checked SourcePatch for a verified literal key.
 /// Nested PGFPlots style groups are supported; all other keys/macro expressions
 /// remain OPAQUE, and no bytes are changed until SourcePatch::apply succeeds.
-pub fn plan_literal_key_edit(
-    request: LiteralEditRequest<'_>,
-) -> Result<SourcePatch, EditRefusal> {
+pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePatch, EditRefusal> {
     let view = request.view;
     let instance = request.instance;
     if view.revision != instance.revision || fingerprint(view.text) != instance.source_sha256 {
         return Err(EditRefusal::SourceConflict);
     }
     if instance.confidence != RecognitionConfidence::Lexical
-        || !matches!(instance.kind, ScientificKind::Axis | ScientificKind::AddPlot)
+        || !matches!(
+            instance.kind,
+            ScientificKind::Axis | ScientificKind::AddPlot
+        )
     {
         return Err(EditRefusal::Opaque);
     }
