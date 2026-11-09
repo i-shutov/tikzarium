@@ -1,6 +1,6 @@
 //! One active TikZ figure: revisioned source, selection, Undo, and PDF freshness.
 //! The authoritative source remains Document; no alternate TeX model is created.
-use crate::{Document, ProjectDependencySnapshot};
+use crate::{BuildArtifact, Document, ProjectDependencySnapshot};
 use sha2::{Digest, Sha256};
 use std::{
     fs, io,
@@ -43,7 +43,8 @@ pub enum FigureSessionError {
 
 #[derive(Debug)]
 struct LastGoodPdf {
-    path: PathBuf,
+    path: Option<PathBuf>,
+    bytes: Vec<u8>,
     path_sha256: [u8; 32],
     source_path: Option<PathBuf>,
     source_sha256: [u8; 32],
@@ -226,11 +227,54 @@ impl OneFigureSession {
             }
         };
         self.last_good_pdf = Some(LastGoodPdf {
-            path: path.to_path_buf(),
+            path: Some(path.to_path_buf()),
             path_sha256: hash(&bytes),
+            bytes,
             source_path: self.document.path.clone(),
             source_sha256: hash(self.document.source.as_bytes()),
             dependencies,
+        });
+        self.latest_build = None;
+        self.build_failed = false;
+        Ok(())
+    }
+
+    /// Accept the in-memory PDF returned by the actual BuildService API,
+    /// avoiding a temporary export solely to obtain a path. This is the
+    /// intended SC1->GUI integration path, not a separate TeX engine.
+    pub fn finish_build_artifact(
+        &mut self,
+        ticket: FigureBuildEpoch,
+        artifact: &BuildArtifact,
+    ) -> Result<(), FigureSessionError> {
+        self.require_current_build(ticket)?;
+        let dependencies = &artifact.project_dependencies;
+        let verified_source = self.document.path.as_deref().is_some_and(|path| {
+            !self.document.dirty()
+                && dependencies.recorder_complete()
+                && dependencies.is_project_fresh()
+                && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
+        });
+        if !verified_source {
+            self.latest_build = None;
+            self.build_failed = true;
+            return Err(FigureSessionError::UnverifiedBuildInputs);
+        }
+        if !artifact.pdf.starts_with(b"%PDF-") {
+            self.latest_build = None;
+            self.build_failed = true;
+            return Err(FigureSessionError::Io(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "external build artifact is not a PDF",
+            )));
+        }
+        self.last_good_pdf = Some(LastGoodPdf {
+            path: None,
+            path_sha256: hash(&artifact.pdf),
+            bytes: artifact.pdf.clone(),
+            source_path: self.document.path.clone(),
+            source_sha256: hash(self.document.source.as_bytes()),
+            dependencies: dependencies.clone(),
         });
         self.latest_build = None;
         self.build_failed = false;
@@ -250,7 +294,13 @@ impl OneFigureSession {
 
     #[must_use]
     pub fn last_good_pdf_path(&self) -> Option<&Path> {
-        self.last_good_pdf.as_ref().map(|pdf| pdf.path.as_path())
+        self.last_good_pdf.as_ref().and_then(|pdf| pdf.path.as_deref())
+    }
+
+    /// Read-only PDF bytes, including native in-memory BuildArtifact output.
+    #[must_use]
+    pub fn last_good_pdf_bytes(&self) -> Option<&[u8]> {
+        self.last_good_pdf.as_ref().map(|pdf| pdf.bytes.as_slice())
     }
 
     /// Check local source, recorder dependencies and PDF bytes on demand, not
@@ -269,7 +319,9 @@ impl OneFigureSession {
         if pdf.source_path != self.document.path
             || pdf.source_sha256 != hash(self.document.source.as_bytes())
             || !pdf.dependencies.is_project_fresh()
-            || fs::read(&pdf.path).ok().map(|bytes| hash(&bytes)) != Some(pdf.path_sha256)
+            || pdf.path.as_ref().is_some_and(|path| {
+                fs::read(path).ok().map(|bytes| hash(&bytes)) != Some(pdf.path_sha256)
+            })
         {
             return FigurePreviewState::StalePdf;
         }
