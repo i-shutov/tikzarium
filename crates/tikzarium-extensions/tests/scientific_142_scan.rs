@@ -33,7 +33,12 @@ fn sv001_nested_pgfplots_samples_150_to_180_and_exact_inverse() {
         .find(|instance| instance.kind == ScientificKind::AddPlot)
         .expect("original Sarov addplot must be lexically recognized");
     assert!(addplot.parent_axis.is_some());
-    assert!(SV001.get(axis.range.clone()).unwrap().contains(r"\begin{axis}"));
+    assert!(
+        SV001
+            .get(axis.range.clone())
+            .unwrap()
+            .contains(r"\begin{axis}")
+    );
     let patch = plan_literal_key_edit(LiteralEditRequest {
         view,
         instance: axis,
@@ -124,8 +129,7 @@ fn sv009_literal_domain_changes_only_the_series_option_value() {
 
 #[test]
 fn source_conflict_and_opaque_values_reject_without_modification() {
-    let text = "\\begin{tikzpicture}\r\n\\begin{axis}[samples=150]\r\n"
-        .to_owned()
+    let text = "\\begin{tikzpicture}\r\n\\begin{axis}[samples=150]\r\n".to_owned()
         + "\\addplot[domain=\\myRange,samples=120] {x};\r\n"
         + "\\end{axis}\r\n\\end{tikzpicture}\r\n";
     let view = SourceView {
@@ -221,10 +225,7 @@ fn comments_macro_bodies_unicode_crlf_and_node_groups_are_not_fake_draws() {
 #[test]
 fn duplicate_options_and_unsafe_ranges_fail_closed() {
     let text = "\\begin{tikzpicture}\n\\begin{axis}[samples=100,samples=150]\n\\end{axis}\n\\end{tikzpicture}";
-    let view = SourceView {
-        text,
-        revision: 0,
-    };
+    let view = SourceView { text, revision: 0 };
     let items = scan_scientific_source(view).unwrap();
     let axis = &items[0];
     let error = plan_literal_key_edit(LiteralEditRequest {
