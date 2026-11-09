@@ -116,6 +116,7 @@ impl OneFigureSession {
         self.document.source = replacement;
         self.revision = next;
         self.selected = None;
+        self.latest_build = None;
         // Existing PDF and any queued build remain provenance-bound to the old
         // source and can never masquerade as current after an edit.
         self.build_failed = false;
@@ -133,6 +134,7 @@ impl OneFigureSession {
         self.document.source = previous;
         self.revision = next;
         self.selected = None;
+        self.latest_build = None;
         self.build_failed = false;
         Ok(true)
     }
