@@ -17,11 +17,18 @@ foreach ($required in @(
   'libgallium_wgl.dll',
   'opengl32.dll',
   'system_drivers_modified = $false',
-  'SHA256'
+  'SHA256',
+  '7zr.exe 26.05',
+  '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7',
+  '7zr.exe archive CRC test failed',
+  '7zr.exe extraction failed'
 )) {
     if (-not $content.Contains($required)) { throw "Mesa launcher contract missing: $required" }
 }
 if ($content -match '(?im)^\s*(?:Set-ItemProperty|New-ItemProperty|reg\.exe|reg add|Add-LocalGroupMember|Install-WindowsFeature)\b') {
     throw 'Mesa W3 QA must not modify OS policy, registry or user groups'
+}
+if ($content -match '&\s*\$tar\s+-xf') {
+    throw 'Unsupported Windows 10 tar/LZMA extraction regression'
 }
 Write-Host 'W3 MESA ISOLATED LAUNCHER STATIC CONTRACT PASS'

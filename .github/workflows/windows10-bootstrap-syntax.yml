@@ -60,3 +60,35 @@ jobs:
         run: |
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_mesa_w3_launcher.ps1'
           if ($LASTEXITCODE -ne 0) { throw 'Mesa launcher static contracts failed' }
+
+  mesa-archive-extraction:
+    name: Verify pinned Mesa archive and x64 DLL layout (hosted-only)
+    if: github.event_name == 'pull_request'
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - name: Verify both publisher SHA256 digests and 7z extraction
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $dir = Join-Path $env:RUNNER_TEMP 'mesa-pinned-extraction'
+          New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          $exe = Join-Path $dir '7zr.exe'
+          $archive = Join-Path $dir 'mesa.7z'
+          $output = Join-Path $dir 'unpacked'
+          Invoke-WebRequest -Uri 'https://github.com/ip7z/7zip/releases/download/26.05/7zr.exe' -OutFile $exe -UseBasicParsing -TimeoutSec 120
+          if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ine '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7') { throw 'Publisher 7zr SHA256 mismatch' }
+          Invoke-WebRequest -Uri 'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z' -OutFile $archive -UseBasicParsing -TimeoutSec 240
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388') { throw 'Pinned Mesa SHA256 mismatch' }
+          & $exe t $archive
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Mesa archive CRC failed' }
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          & $exe x -y "-o$output" $archive
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Mesa archive extraction failed' }
+          $gl = @(Get-ChildItem -LiteralPath $output -File -Recurse -Filter opengl32.dll | Where-Object { $_.Directory.Name -ieq 'x64' })
+          if ($gl.Count -ne 1) { throw "Expected one x64/opengl32.dll, found $($gl.Count)" }
+          if (-not (Test-Path -LiteralPath (Join-Path $gl[0].Directory.FullName 'libgallium_wgl.dll'))) { throw 'Pinned Mesa x64/libgallium_wgl.dll missing' }
+          Write-Host 'MESA_PINNED_7ZR_EXTRACTION_AND_X64_DLL_LAYOUT_PASS'
+          Write-Host 'This is hosted archive QA, not real Windows 10 W3 GUI acceptance.'

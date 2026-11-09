@@ -52,19 +52,44 @@ function Prepare-MesaRuntime {
         }
     }
     Assert-MesaArchive
-    $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
-    if (-not (Test-Path -LiteralPath $tar -PathType Leaf)) {
-        throw "Windows built-in bsdtar.exe missing: $tar. Do not install a system driver."
-    }
+    # Windows 10 inbox tar.exe is NOT guaranteed to support 7z LZMA streams.
+    # Use SHA256-pinned publisher standalone 7zr.exe; no system installation.
+    $sevenZipUrl = 'https://github.com/ip7z/7zip/releases/download/26.05/7zr.exe'
+    $sevenZipExpected = '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7'
+    $sevenZip = Join-Path $root '7zr.exe'
     if (-not (Test-Path -LiteralPath $unpack -PathType Container)) {
         New-Item -ItemType Directory -Path $unpack -Force | Out-Null
     }
-    $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'x64' })
+    $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
     if ($mesaCandidates.Count -ne 1) {
-        Say "Extracting SHA256-verified .7z with Windows built-in tar (supports 7z)."
-        & $tar -xf $archive -C $unpack
-        if ($LASTEXITCODE -ne 0) { throw "Windows tar.exe extraction failed: exit $LASTEXITCODE" }
-        $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'x64' })
+        if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
+            Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            try {
+                Invoke-WebRequest -Uri $sevenZipUrl -OutFile $sevenZip -MaximumRedirection 8 -TimeoutSec 120 -UseBasicParsing
+            } catch {
+                Remove-Item -LiteralPath $sevenZip -Force -ErrorAction SilentlyContinue
+                throw
+            }
+        }
+        $actual7z = (Get-FileHash -LiteralPath $sevenZip -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actual7z -cne $sevenZipExpected) {
+            throw "7ZR_SHA256_MISMATCH: expected=$sevenZipExpected actual=$actual7z. Refusing execution."
+        }
+        Say "7ZR_SHA256_VERIFIED: $actual7z"
+        & $sevenZip t $archive
+        if ($LASTEXITCODE -ne 0) { throw "7zr.exe archive CRC test failed: exit $LASTEXITCODE" }
+        # The unpack directory belongs to this QA launcher; remove partial tar output only.
+        if (Test-Path -LiteralPath $unpack -PathType Container) {
+            Remove-Item -LiteralPath $unpack -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $unpack -Force | Out-Null
+        Say 'Extracting SHA256-verified Mesa .7z with official standalone 7zr.exe.'
+        & $sevenZip x -y "-o$unpack" $archive
+        if ($LASTEXITCODE -ne 0) { throw "7zr.exe extraction failed: exit $LASTEXITCODE" }
+        $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
+            Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
     }
     if ($mesaCandidates.Count -ne 1) {
         throw "Expected exactly one x64/opengl32.dll in pinned Mesa distribution, found $($mesaCandidates.Count)."
@@ -103,6 +128,7 @@ function Prepare-MesaRuntime {
         user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
         mesa_version = '26.2.6'
         mesa_release_url = $sourceUrl
+        unpacker = '7zr.exe 26.05 (SHA256-pinned publisher standalone)'
         mesa_archive_sha256 = $shaExpected
         mesa_bin = $mesaBin
         mesa_dll_count = $libraries.Count
