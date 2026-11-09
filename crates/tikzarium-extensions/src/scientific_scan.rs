@@ -254,6 +254,36 @@ fn skip_macro_body(text: &str, from: usize, bodies: usize) -> Option<usize> {
     Some(i)
 }
 
+/// A \newcommand may use either \foo or {\foo}, with optional [arity]
+/// and [default] groups before its real definition body. Skip exactly that
+/// body, never the next unrelated user command.
+fn skip_newcommand_body(text: &str, from: usize) -> Option<usize> {
+    let b = text.as_bytes();
+    let mut i = whitespace_and_comments(text, from);
+    if b.get(i) == Some(&b'*') {
+        i += 1;
+        i = whitespace_and_comments(text, i);
+    }
+    if b.get(i) == Some(&b'{') {
+        i = group_at(text, i)?.next;
+    } else if b.get(i) == Some(&b'\\') {
+        i = command_at(text, i).1;
+    } else {
+        return None;
+    }
+    for _ in 0..2 {
+        i = whitespace_and_comments(text, i);
+        if b.get(i) == Some(&b'[') {
+            i = group_at(text, i)?.next;
+        }
+    }
+    i = whitespace_and_comments(text, i);
+    if b.get(i) != Some(&b'{') {
+        return None;
+    }
+    Some(group_at(text, i)?.next)
+}
+
 fn add(
     out: &mut Vec<RecognizedInstance>,
     instance: RecognizedInstance,
@@ -366,8 +396,16 @@ pub fn scan_scientific_source(
             i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
-        if word == "newcommand" || word == "renewcommand" || word == "providecommand" {
-            i = skip_macro_body(text, next, 2).ok_or(ScanRefusal::UnbalancedSource)?;
+        if word == "newcommand"
+            || word == "renewcommand"
+            || word == "providecommand"
+            || word == "DeclareRobustCommand"
+        {
+            i = skip_newcommand_body(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
+            continue;
+        }
+        if word == "tikzset" || word == "pgfplotsset" || word == "pgfkeys" {
+            i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
         if word == "foreach" {
