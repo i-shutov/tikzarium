@@ -57,6 +57,8 @@ jobs:
         run: cargo test --locked -p tikzarium-extensions --test scientific_142_scan
       - name: SC3 real Sarov axis bounds and exact SHA Undo
         run: cargo test --locked -p tikzarium-extensions --test scientific_142_axis_limits
+      - name: SC3 real Sarov ticks dimensions markers labels and exact Undo
+        run: cargo test --locked -p tikzarium-extensions --test scientific_142_style_literals
       - name: SC3 142-figure lexical audit (NOT L2 or L3)
         run: cargo test --locked -p tikzarium-extensions --test scientific_142_lexical_coverage -- --nocapture
       - name: Source-authoritative real Sarov authoring Undo

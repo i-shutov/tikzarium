@@ -56,6 +56,76 @@ jobs:
             "$RUNNER_TEMP/tikzarium-sc3-pdf/figure.pdf" \
             "$RUNNER_TEMP/tikzarium-sc3-pdf/edited-preview"
           test -s "$RUNNER_TEMP/tikzarium-sc3-pdf/edited-preview.png"
+      - name: Export source-only tick, dimension and marker changes via Rust SourcePatch
+        run: |
+          cargo test --locked -p tikzarium-extensions \
+            --test scientific_142_style_literals \
+            sc3_export_style_patch_to_ephemeral_sarov_copy -- --exact --ignored --nocapture
+      - name: Compile the second edited Sarov copy with real XeLaTeX
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tikzarium-sc3-style-pdf"
+          cd "$RUNNER_TEMP/tikzarium-sc3-style-edited"
+          xelatex -no-shell-escape -interaction=nonstopmode -halt-on-error \
+            -file-line-error -recorder \
+            "-output-directory=$RUNNER_TEMP/tikzarium-sc3-style-pdf" figure.tex \
+            | tee "$RUNNER_TEMP/tikzarium-sc3-style-pdf/console.txt"
+          pdfinfo "$RUNNER_TEMP/tikzarium-sc3-style-pdf/figure.pdf" | grep -E '^Pages: *1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib, hashlib
+          base=pathlib.Path('roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex')
+          edited=pathlib.Path(os.environ['RUNNER_TEMP'])/'tikzarium-sc3-sv001-edited/figure.tex'
+          a=base.read_bytes()
+          b=edited.read_bytes()
+          assert a.count(b'ymax=1.4')==1
+          assert b==a.replace(b'ymax=1.4',b'ymax=1.2',1), 'non-selected author bytes changed'
+          print('SC3_PATCH_DIFF_EXACTLY_ONE_LITERAL=PASS',hashlib.sha256(a).hexdigest(),hashlib.sha256(b).hexdigest())
+          PY
+          python3 roadmap/Tikzarium_Scientific_142_R4/qa/validate_corpus.py --json
+          echo 'SC3_GUI_POINTER_PDF_UNDO=NOT_RUN'
+          echo 'WIN10_W3_STABLE_W4=NO_GO'
+      - name: Upload original edited TeX, XeLaTeX log, PDF and PNG even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sc3-edited-sarov-external-xelatex-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tikzarium-sc3-sv001-edited/figure.tex
+            ${{ runner.temp }}/tikzarium-sc3-pdf/
+            ${{ runner.temp }}/tikzarium-sc3-style-edited/figure.tex
+            ${{ runner.temp }}/tikzarium-sc3-style-pdf/
+          if-no-files-found: warn
+
+          pdftoppm -f 1 -singlefile -png -scale-to 1200 \
+            "$RUNNER_TEMP/tikzarium-sc3-style-pdf/figure.pdf" \
+            "$RUNNER_TEMP/tikzarium-sc3-style-pdf/edited-preview"
+          test -s "$RUNNER_TEMP/tikzarium-sc3-style-pdf/edited-preview.png"
+          sha256sum figure.tex "$RUNNER_TEMP/tikzarium-sc3-style-pdf/figure.pdf" \
+            | tee "$RUNNER_TEMP/tikzarium-sc3-style-pdf/output.sha256"
+      - name: Verify second source changed only three exact reviewed fields
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib
+          original=pathlib.Path('roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex').read_bytes()
+          path=pathlib.Path(os.environ['RUNNER_TEMP'])/'tikzarium-sc3-style-edited/figure.tex'
+          edited=path.read_bytes()
+          substitutions=[
+             (b'xtick distance=1',b'xtick distance=2'),
+             (b'height=0.62\\textwidth',b'height=0.75\\textwidth'),
+             (b'mark=none,samples=150',b'mark=*,samples=150'),
+          ]
+          for old,new in substitutions:
+              assert original.count(old)==1,old
+              original=original.replace(old,new,1)
+          assert edited==original, 'unowned source bytes were changed'
+          print('SC3_STYLE_3_SOURCE_PATCHES_BYTE_EXACT=PASS')
+          PY
       - name: Independently verify changed ONE literal and untouched original corpus
         shell: bash
         run: |

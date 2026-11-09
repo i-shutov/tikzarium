@@ -214,3 +214,67 @@ fn deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources() {
     });
     assert_eq!(duplicate.unwrap_err(), EditRefusal::AmbiguousKey);
 }
+
+#[test]
+#[ignore = "External XeLaTeX evidence runs only on disposable hosted Linux"]
+fn sc3_export_style_patch_to_ephemeral_sarov_copy() {
+    use std::{fs, io::Write, path::PathBuf};
+    let temp = PathBuf::from(std::env::var_os("RUNNER_TEMP").expect("ephemeral hosted runner"));
+    assert!(temp.is_absolute());
+    let root = temp.canonicalize().unwrap();
+    let output = root.join("tikzarium-sc3-style-edited");
+    fs::create_dir_all(&output).unwrap();
+    assert!(output.canonicalize().unwrap().starts_with(&root));
+    let mut text = SV001.to_owned();
+    let mut revision = 40;
+    let mut inverse_patches = Vec::new();
+    for (key, expected_old, replacement) in [
+        ("xtick distance", "1", "2"),
+        ("height", r"0.62\textwidth", r"0.75\textwidth"),
+        ("mark", "none", "*"),
+    ] {
+        let view = SourceView {
+            text: &text,
+            revision,
+        };
+        let instances = scan_scientific_source(view).unwrap();
+        let axis = instances
+            .iter()
+            .find(|item| item.kind == ScientificKind::Axis)
+            .unwrap();
+        let patch = plan_literal_key_edit(LiteralEditRequest {
+            view,
+            instance: axis,
+            key,
+            expected_old,
+            replacement,
+        })
+        .unwrap();
+        inverse_patches.push(patch.apply(&mut text, &mut revision).unwrap());
+    }
+    assert!(text.contains("xtick distance=2"));
+    assert!(text.contains(r"height=0.75\textwidth"));
+    assert!(text.contains("mark=*,samples=150"));
+    let edited_sha = digest(&text);
+    let original_sha = digest(SV001);
+    assert_ne!(edited_sha, original_sha);
+    let file = output.join("figure.tex");
+    let mut handle = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&file)
+        .unwrap();
+    handle.write_all(text.as_bytes()).unwrap();
+    handle.sync_all().unwrap();
+    assert_eq!(fs::read(&file).unwrap(), text.as_bytes());
+    for mut inverse in inverse_patches.into_iter().rev() {
+        inverse.source_revision = revision;
+        inverse.apply(&mut text, &mut revision).unwrap();
+    }
+    assert_eq!(text.as_bytes(), SV001.as_bytes());
+    assert_eq!(digest(&text), original_sha);
+    println!(
+        "SC3_STYLE_EXTERNAL_SOURCE=PASS,original_sha={original_sha},modified_sha={edited_sha},file={}",
+        file.display()
+    );
+}
