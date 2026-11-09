@@ -692,9 +692,7 @@ impl Session {
         self.guide_pointer_armed = false;
         self.drag_start = None;
         self.alt_selection_capture = false;
-        self.status = format!(
-            "SC2: точечная правка {key}, сохранившая чужой TeX; Undo доступен"
-        );
+        self.status = format!("SC2: точечная правка {key}, сохранившая чужой TeX; Undo доступен");
         Ok(line)
     }
 
@@ -1323,28 +1321,26 @@ mod tests {
     }
     #[test]
     fn scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack() {
-        const ORIGINAL: &str =
-            include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex");
+        const ORIGINAL: &str = include_str!(
+            "../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex"
+        );
         let mut source = ORIGINAL.to_owned();
         let mut session = Session::default();
         session.reset(&source);
         let candidates = session.scientific_candidates(&source).unwrap();
         let axis = candidates
             .iter()
-            .find(|item| {
-                item.kind == tikzarium_extensions::scientific_scan::ScientificKind::Axis
-            })
+            .find(|item| item.kind == tikzarium_extensions::scientific_scan::ScientificKind::Axis)
             .unwrap();
-        let original_value =
-            tikzarium_extensions::scientific_scan::literal_key_value(
-                SourceView {
-                    text: &source,
-                    revision: session.source_revision(),
-                },
-                axis,
-                "samples",
-            )
-            .unwrap();
+        let original_value = tikzarium_extensions::scientific_scan::literal_key_value(
+            SourceView {
+                text: &source,
+                revision: session.source_revision(),
+            },
+            axis,
+            "samples",
+        )
+        .unwrap();
         assert_eq!(original_value, "150");
         let line = session
             .apply_scientific_literal(&mut source, axis, "samples", &original_value, "180")
@@ -1360,10 +1356,11 @@ mod tests {
         // axis fingerprint; no stale Inspector action may overwrite it.
         source.push_str("% ручной комментарий\r\n");
         let expected = source.clone();
-        assert!(session
-            .apply_scientific_literal(&mut source, axis, "samples", "150", "180")
-            .is_err());
+        assert!(
+            session
+                .apply_scientific_literal(&mut source, axis, "samples", "150", "180")
+                .is_err()
+        );
         assert_eq!(source, expected);
     }
-
 }
