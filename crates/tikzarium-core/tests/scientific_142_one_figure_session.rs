@@ -13,7 +13,7 @@ fn source_and_data() -> (tempfile::TempDir, PathBuf, PathBuf) {
     let data = dir.path().join("измерения.dat");
     fs::write(
         &source,
-        b"% original CRLF\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n",
+        "% рисунок CRLF\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n".as_bytes(),
     )
     .unwrap();
     fs::write(&data, b"1 2\r\n3 4\r\n").unwrap();
@@ -90,8 +90,9 @@ fn delayed_build_outcome_and_tampered_pdf_never_masquerade_as_current() {
     let (root, source, data) = source_and_data();
     let mut session = OneFigureSession::new(Document::load(&source).unwrap());
     let old = session.begin_build().unwrap();
+    let previous_source = session.document().source.clone();
     session
-        .replace_source(0, format!("{}% edit\n", session.document().source))
+        .replace_source(0, format!("{previous_source}% edit\n"))
         .unwrap();
     let pdf = root.path().join("preview.pdf");
     fs::write(&pdf, b"%PDF-1.5\nold-build\n").unwrap();
