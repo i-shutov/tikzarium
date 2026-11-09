@@ -437,7 +437,11 @@ mod tests {
 
         for (property, old, new) in [
             (LiteralProperty::XTickDistance, "1", "2"),
-            (LiteralProperty::Height, r"0.62\textwidth", r"0.75\textwidth"),
+            (
+                LiteralProperty::Height,
+                r"0.62\textwidth",
+                r"0.75\textwidth",
+            ),
             (LiteralProperty::Mark, "none", "*"),
         ] {
             inspector.scan(&mut authoring, &source);
@@ -449,7 +453,9 @@ mod tests {
             inspector.refresh_literal(&authoring, &source);
             assert_eq!(inspector.original_value.as_deref(), Some(old));
             inspector.proposed_value = new.to_owned();
-            let line = inspector.apply_selected(&mut authoring, &mut source).unwrap();
+            let line = inspector
+                .apply_selected(&mut authoring, &mut source)
+                .unwrap();
             assert!(line > 10);
             assert!(authoring.undo_available());
             assert!(source.contains(&format!("{}={new}", property.key())));
