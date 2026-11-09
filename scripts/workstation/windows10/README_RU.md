@@ -1,16 +1,18 @@
-# TikZarium: Windows 10 Pro 22H2 x64 — установка v5 БЕЗ winget
+# TikZarium: Windows 10 Pro 22H2 x64 — проверенный Machine / канонический bootstrap без winget
 
-> **Исправление v5 (9 ноября 2026).** В v4 preflight аварийно завершался при вычислении `$PSScriptRoot` в параметрах. В v5 пути к соседним скриптам вычисляются после связывания параметров. Состав установки `Machine` и `User` не менялся относительно v4. Прежде чем запускать `Machine`, проверьте `PREFLIGHT PASS`.
+> **Текущий чекпойнт: 2026-11-09.** `Machine PASS` на Windows 10 Pro x64 build 19045 (3.96 GiB RAM), физическая `User` фаза выполняется после локального исправления Rustup; полного `User PASS` и `W3 PASS` пока **нет**. В GitHub PR #150 зафиксированы исправления SHA256 и имени `rustup-init.exe`; создание пользователя/переключение под QA не требуют скачивания или распаковки ZIP в его профиле.
 
 Дата: 9 ноября 2026. Цель: чистая испытательная Windows 10 Pro 22H2 (19045), 4 ГиБ RAM; отдельная QA-сессия по RDP. Windows Server, FlowBridge, действующие GitHub runners и политики Windows не трогаем.
 
 ## 0. Что уже выполнено и что делать НЕ надо
 
-По журналам v3/v4 пользователь `DESKTOP-TD0FUEJ\tikzarium-qa` **уже создан**, ему задан пароль и предоставлено членство в локальной группе `Remote Desktop Users`. Не удаляйте пользователя и не меняйте пароль. В предыдущей попытке v3 установка остановилась на отсутствии `winget`. Последующий запуск **v4 `-Phase Machine` завершён успешно**: Windows 10 Pro build 19045, 3.96 GiB RAM, Git 2.56.0 (SHA256 VERIFIED), VS 2022 Build Tools, MSVC и Windows SDK x64, существующий VC++ Runtime. По состоянию на этот чекпойнт **v5 `PREFLIGHT`, `-Phase User` и W3 GUI ещё не подтверждены фактическим исполнением**.
+По журналам v3/v4 пользователь `DESKTOP-TD0FUEJ\tikzarium-qa` **уже создан**, ему задан пароль и предоставлено членство в локальной группе `Remote Desktop Users`. Не удаляйте пользователя и не меняйте пароль. В предыдущей попытке v3 установка остановилась на отсутствии `winget`. Последующий запуск **v4 `-Phase Machine` завершён успешно**: Windows 10 Pro build 19045, 3.96 GiB RAM, Git 2.56.0 (SHA256 VERIFIED), VS 2022 Build Tools, MSVC и Windows SDK x64, существующий VC++ Runtime. `-Phase User` **началась** в существующей RDP-сессии `tikzarium-qa`; ранее блокировавшие Rustup SHA и имя бинарника скорректированы в пользовательской копии; владелец сообщил, что выполнение пошло. Результат полного `User`/PDF/GUI пока не предоставлен. `PREFLIGHT v5` отдельно локально не подтверждён.
 
-`winget` для v4 **не требуется**. Не устанавливайте Microsoft Store, Chocolatey, Python, Node.js, VS Code и другие необязательные компоненты ради первого теста.
+`winget` для канонического скрипта **не требуется**. Не устанавливайте Microsoft Store, Chocolatey, Python, Node.js, VS Code и другие необязательные компоненты ради первого теста.
 
-## 1. Получить и развернуть исправленный архив
+## 1. Для свежей машины (на текущей уже НЕ выполнять)
+
+**Для текущей машины `DESKTOP-TD0FUEJ` этот раздел пропустить:** системный этап прошёл, пользователь `tikzarium-qa` создан, под ним архив не скачивать. Команды ниже — только для чистого развёртывания в будущем. Канонический источник — `scripts/workstation/windows10/` в [PR #150](https://github.com/i-shutov/tikzarium/pull/150), после принятия PR — в `main`.
 
 Скачайте `TikZarium-Win10-Bootstrap-v5.zip` в `C:\Users\Admin\Downloads` на новой Windows 10.
 
@@ -55,12 +57,15 @@ V4 проверит существующего `tikzarium-qa` без смены 
 
 Если установщик запросил перезагрузку, перезагрузитесь и снова запустите `-Phase Machine`, убедившись, что он завершается успешно. Не переподключайте runner.
 
-## 4. Пользовательская установка — tikzarium-qa
+## 4. Пользовательская установка — tikzarium-qa (на текущей машине уже запущена)
 
 Выйдите из RDP-сессии Admin и войдите под локальным пользователем `.\tikzarium-qa` (именно с установленным ранее паролем). Откройте обычный Windows PowerShell **без** «Запуск от имени администратора»:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1' -Phase User
+# ВАЖНО: на уже подготовленной машине этот файл ещё v4 с неверным Rustup-хешем/именем.
+# Если исправленная копия существует, используйте её вместо исходного файла:
+# powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Documents\TikZarium-Win10-Setup-fixed.ps1" -Phase User
 ```
 
 Устанавливает под данным пользователем:
@@ -105,11 +110,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariu
 
 Для Git, Rustup, MiKTeX и Poppler файл скачивается по HTTPS и перед запуском/распаковкой сравнивается с зафиксированным SHA256; VS Build Tools и VC Runtime скачиваются по официальным URL Microsoft и проверяются через Authenticode. Пакеты MiKTeX ставятся отдельным, видимым действием, а во время рабочего PDF-теста должны оставаться запрещёнными скрытые загрузки и shell-escape. `winget`, Store, Chocolatey и сторонние менеджеры пакетов не нужны.
 
-Подтверждено по пользовательскому журналу: основная фаза `Machine` из комплекта v4/v5 прошла успешно на Windows 10 Pro build 19045. `PREFLIGHT` из v5 и фаза `User` ещё не подтверждены исполнением; до этих испытаний нельзя объявлять W3 PASS.
+Подтверждено по пользовательскому журналу: `Machine` прошла успешно на Windows 10 Pro build 19045. Локальная копия `-Phase User` прошла `PATCH AND SYNTAX PASS`, скачанный Rustup получил `SHA256 VERIFIED`, после исправления имени бинарника владелец сообщил «так пошло». Это **не** итоговый `User PASS`; без финального лога нельзя утверждать установку Rust/MiKTeX/Poppler, PDF или W3.
 
 ## 8. Канонический набор в GitHub
 
-Исходные файлы хранятся в `scripts/workstation/windows10/`: `TikZarium-Win10-Setup.ps1` (v4, фактический Machine PASS), `TikZarium-Win10-PREFLIGHT.ps1` (v5, исправление `$PSScriptRoot`), `TikZarium-Win10-Runner-OPTIONAL.ps1` (не запускать без решения владельца). Не использовать более ранние ZIP v1–v3. Рабочий `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` уже соответствует v4.
+Исходные файлы хранятся в `scripts/workstation/windows10/`: `TikZarium-Win10-Setup.ps1` (Machine-часть v4 фактически PASS; User-часть содержит исправленные SHA256 Rustup и имя `rustup-init.exe`), `TikZarium-Win10-PREFLIGHT.ps1` (исправление `$PSScriptRoot`), `TikZarium-Win10-Runner-OPTIONAL.ps1` (не запускать без решения владельца). Не использовать более ранние ZIP v1–v3. Рабочий `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` уже соответствует v4.
 
 Новая CI-проверка запускается **только на GitHub-hosted Windows** и выполняет `Parser.ParseFile` для трёх `.ps1`, не исполняя содержимое, не меняя Windows и не обращаясь к личному runner. Это лишь синтаксическая проверка, не W3.
 
@@ -122,4 +127,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariu
 
 На машине уже лежит исходная копия v4 в `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1`. Под `tikzarium-qa` не требуется скачивать и распаковывать архив; для продолжения можно скопировать этот файл в личный `Documents`, исправить указанные два значения, проверить парсером PowerShell 5.1 и повторить фазу `User`. Корректный канонический исходник после этого PR находится в репозитории, но не автоматически обновляет локальный `C:\ProgramData`.
 
-На момент фиксации **Rustup установка, MiKTeX, Poppler, сборка, PDF и физический W3 GUI ещё не подтверждены**; `PATCH AND SYNTAX PASS` пользователя и Rustup `SHA256 VERIFIED` не являются полной User PASS.
+На момент последнего сообщения пользователя «так пошло» после исправления Rustup, **Rust toolchain, MiKTeX, Poppler, сборка, PDF и физический W3 GUI ещё не подтверждены оригинальными итоговыми логами**. `PATCH AND SYNTAX PASS` и `SHA256 VERIFIED` — только промежуточные проверки. Для признания `User PASS` нужны полный вывод `-Phase User`, `environment.json` и PDF/font/Unicode audit. Для `W3` сверх того нужны физические действия с GUI.

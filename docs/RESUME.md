@@ -1,4 +1,12 @@
-# TikZarium — release resume, 2026-11-08
+# TikZarium — release resume, 2026-11-09
+
+## 2026-11-09 — новая Windows 10 Pro W3: Machine PASS, User выполняется (не W3 PASS)
+
+**Источник статуса — журналы владельца из RDP; локальный релизный GUI ещё не испытан.** На отдельной Windows 10 Pro 22H2 x64 (build 19045, RAM 3.96 GiB) создан обычный пользователь `tikzarium-qa`, доступ по RDP подтверждён. `-Phase Machine` завершилась сообщением `Machine phase complete`: Git for Windows 2.56.0 с проверенным SHA256, VS 2022 Build Tools, MSVC C++ x64, Windows SDK x64 и существующий VC++ runtime. `winget` и Windows 11 не нужны, Windows Server/FlowBridge не изменялись.
+
+Первые `-Phase User` выявили **две ошибки установщика**: опечатку в ожидаемом SHA256 Rustup 1.29.3 (фактический скачанный Rustup имел корректный SHA256 `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db`) и сохранение бинарника как `tikzarium-bootstrap-rustup-1.29.3.exe` вместо `rustup-init.exe`, из-за чего Rustup отвечал `unknown proxy name`. Исправления зафиксированы в [draft PR #150](https://github.com/i-shutov/tikzarium/pull/150) (commit `2a7d605e75c88d762c445a3bd440e217cbbc7e17`); проверка SHA256 сохранена. Пользователь подтвердил «так пошло» после локальной корректировки и перезапуска под `tikzarium-qa` — это **признак снятия предыдущего блокера**, а не доказательство завершённого Rust/TeX/GUI этапа.
+
+Подробный [runbook](../scripts/workstation/windows10/README_RU.md), [инциденты](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md) и [gate W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md). Следующие необходимые оригинальные свидетельства: полный terminal log `-Phase User` и `environment.json`/PDF/font audit (без секретов), native GUI из активной RDP-сессии, реальные жесты/F1/Undo/Save/Open/IME/DPI/GUI→PDF с исходными screenshots/sha. **W3 пока IN_PROGRESS / NOT_ACCEPTED; W2b NOT_RUN; W4 NO-GO.** Hosted PS5.1 parse-only CI [#42630107591](https://github.com/i-shutov/tikzarium/actions/runs/42630107591) PASS, но не подтверждает установки на Win10.
 
 ## 2026-11-08 — candidate per-pointer RDP and source-byte QA fences
 

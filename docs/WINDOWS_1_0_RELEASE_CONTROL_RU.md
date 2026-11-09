@@ -1,5 +1,12 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+## 2026-11-09 — W3: физическая Windows 10 Pro x64, первый успешный системный этап
+
+На **отдельной** Win10 Pro 22H2 build 19045 (3.96 GiB RAM), QA-учётная запись `tikzarium-qa` (не администратор, активное подключение RDP) зарегистрированы **Machine PASS** и начатая, но **ещё не принятая User-фаза**. Реальные сведения из терминала владельца: Git 2.56.0 verified SHA256; Visual Studio 2022 Build Tools; MSVC/Windows SDK x64 detected; VC++ Runtime present. Это **не** подтверждение UI либо PDF и не переносит W2b с Server на Win10.
+
+Bootstrap v1–v3 показал дефекты: запрет Win10, интерполяция `$build:`, обязательный `winget`; preflight v4 — ранняя оценка `$PSScriptRoot`; v4 User — неправильный эталонный SHA256 Rustup 1.29.3 и неверное имя `rustup-init.exe` (`unknown proxy name`). Канонические исправленные скрипты и hosted PS5.1 parse-only workflow — [PR #150](https://github.com/i-shutov/tikzarium/pull/150); исходный [runbook](../scripts/workstation/windows10/README_RU.md), дополнительный [журнал ошибок](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md). После локального исправления пути Rustup пользователь сообщил, что дальнейшая установка пошла, **не прислав итоговые логи**.
+
+**Gate W3 = IN_PROGRESS / NOT_ACCEPTED.** До W3 PASS нужны оригинальные `-Phase User` итог и `environment.json`/PDF/font+Unicode, а затем native interactive GUI: шесть жестов, исходный .tex, F1, Undo/Save/Open, IME, 100/125/200% DPI, GUI→XeLaTeX→PDF. W2b и W4 остаются самостоятельными воротами (W2b NOT_RUN, W4 NO-GO). Ни новой учётной записи на Server, ни нового runner, ни изменений RDP/UAC/FlowBridge не выполнялось.
 
 > **LATEST ORIGINAL SERVER — 2026-11-08, main \`4ec94747\`, run [#42490214199](https://github.com/i-shutov/tikzarium/actions/runs/42490214199).** Early original artifact #13621431232 (SHA256 \`48f3b3f70ab6e7290442ae67e4059c1b8bfb162b2ebf491e7a73aca6762aeb94\`): WTS=4, Session2 disconnected, independent native JSON W2 stage is BLOCKED before GL, HWND, input, F1, Save/Open or GUI→PDF. Final artifact #13621878747 (SHA256 \`5c8e9434f8d9c2f4075000c94101419333c8647a8af031e1138e4b2109a64631\`) confirms genuine native Rust+MiKTeX PDF SHA \`abbc6a18ed3a10acddc2fc29e39abab083c1d4e3744a887406cea2dab1b242b7\`, page 1, Arial embedded and Cyrillic verified; W1 PASS. **W2b NOT_RUN; physical Windows10 W3 NOT_RUN; stable W4 NO-GO.** Read-only WTS watcher is a draft until independently approved; does not change session state.
 >
