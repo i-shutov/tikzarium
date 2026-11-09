@@ -333,3 +333,42 @@ fn macro_definitions_styles_and_overlapping_edits_cannot_claim_a_draw() {
     assert_eq!(changed, original);
     assert_eq!(revision, 7);
 }
+
+#[test]
+fn preamble_macro_and_verbatim_pictures_are_never_active_editable_figures() {
+    let source = r"\newcommand{\fake}{\begin{tikzpicture}\draw (0,0)--(20,20);\end{tikzpicture}}
+\pgfmathdeclarefunction{dummy}{3}{\begin{tikzpicture}\draw (0,0)--(99,99);\end{tikzpicture}}
+\begin{verbatim}
+\begin{tikzpicture}\draw (0,0)--(88,88);\end{tikzpicture}
+\end{verbatim}
+\begin{tikzpicture}
+\draw (0,0)--(1,1);
+\end{tikzpicture}";
+    let instances = scan_scientific_source(SourceView {
+        text: source,
+        revision: 0,
+    })
+    .unwrap();
+    assert_eq!(
+        instances.iter().filter(|x| x.kind == ScientificKind::Draw).count(),
+        1
+    );
+    assert_eq!(instances.len(), 1);
+    assert!(source
+        .get(instances[0].range.clone())
+        .unwrap()
+        .contains("(0,0)--(1,1)"));
+}
+
+#[test]
+fn preamble_catcode_changes_refuse_even_if_later_tikz_looks_literal() {
+    let source = r"\catcode\foo=12
+\begin{tikzpicture}
+\draw (0,0)--(1,1);
+\end{tikzpicture}";
+    let got = scan_scientific_source(SourceView {
+        text: source,
+        revision: 0,
+    });
+    assert_eq!(got.unwrap_err(), ScanRefusal::UnsupportedTeXControl);
+}
