@@ -170,3 +170,60 @@ fn sv001_two_axis_bounds_source_patch_stack_reverts_exact_sha() {
     assert_eq!(hash(source.as_bytes()), original);
     assert_eq!(source.as_bytes(), SV001.as_bytes());
 }
+
+/// Explicitly invoked only on a disposable hosted Linux runner with RUNNER_TEMP.
+/// The actual adapter computes a revision-checked one-value SourcePatch; a
+/// temporary copy of the owner's original Sarov source is exported for XeLaTeX.
+#[test]
+#[ignore = "Requires explicit hosted SC3 XeLaTeX proof; never writes the owner corpus"]
+fn sc3_export_original_sarov_patch_for_external_tex() {
+    use std::{fs, io::Write, path::PathBuf};
+    let runner_temp = PathBuf::from(std::env::var_os("RUNNER_TEMP").expect("hosted RUNNER_TEMP"));
+    assert!(runner_temp.is_absolute());
+    let root = runner_temp.canonicalize().unwrap();
+    let output_dir = root.join("tikzarium-sc3-sv001-edited");
+    fs::create_dir_all(&output_dir).unwrap();
+    assert!(output_dir.canonicalize().unwrap().starts_with(&root));
+    let destination = output_dir.join("figure.tex");
+    let view = SourceView {
+        text: SV001,
+        revision: 42,
+    };
+    let instances = scan_scientific_source(view).unwrap();
+    let axis = instances
+        .iter()
+        .find(|item| item.kind == ScientificKind::Axis)
+        .unwrap();
+    let patch = plan_literal_key_edit(LiteralEditRequest {
+        view,
+        instance: axis,
+        key: "ymax",
+        expected_old: "1.4",
+        replacement: "1.2",
+    })
+    .unwrap();
+    let mut source = SV001.to_owned();
+    let mut revision = 42;
+    let inverse = patch.apply(&mut source, &mut revision).unwrap();
+    assert_eq!(revision, 43);
+    assert_eq!(source.matches("ymax=1.2").count(), 1);
+    assert_eq!(source.len(), SV001.len());
+    let original_sha = hash(SV001.as_bytes());
+    let edited_sha = hash(source.as_bytes());
+    assert_ne!(edited_sha, original_sha);
+    let mut handle = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&destination)
+        .unwrap();
+    handle.write_all(source.as_bytes()).unwrap();
+    handle.sync_all().unwrap();
+    assert_eq!(fs::read(&destination).unwrap(), source.as_bytes());
+    inverse.apply(&mut source, &mut revision).unwrap();
+    assert_eq!(source.as_bytes(), SV001.as_bytes());
+    println!(
+        "SC3_REAL_SOURCE_EDIT=PASS; original_sha={original_sha}; modified_sha={edited_sha}; exported={}",
+        destination.display()
+    );
+}
+
