@@ -1,15 +1,21 @@
 //! SC1-01 contract tests: state and source bytes, not a physical GUI/PDF proof.
-use std::{fs, path::{Path, PathBuf}};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use tikzarium_core::{
-    Document, FigurePreviewState, FigureSessionError, OneFigureSession,
-    ProjectDependencySnapshot,
+    Document, FigurePreviewState, FigureSessionError, OneFigureSession, ProjectDependencySnapshot,
 };
 
 fn source_and_data() -> (tempfile::TempDir, PathBuf, PathBuf) {
     let dir = tempfile::tempdir().unwrap();
     let source = dir.path().join("рисунок.tex");
     let data = dir.path().join("измерения.dat");
-    fs::write(&source, b"% original CRLF\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n").unwrap();
+    fs::write(
+        &source,
+        b"% original CRLF\r\n\\begin{tikzpicture}\r\n\\end{tikzpicture}\r\n",
+    )
+    .unwrap();
     fs::write(&data, b"1 2\r\n3 4\r\n").unwrap();
     (dir, source, data)
 }
@@ -61,7 +67,9 @@ fn recorded_data_change_and_failure_never_claim_fresh_pdf() {
     fs::write(&pdf, b"%PDF-1.5\nqa-placeholder\n").unwrap();
     let ticket = session.begin_build().unwrap();
     assert_eq!(session.preview_state(), FigurePreviewState::Building);
-    session.finish_build_success(ticket, &pdf, snapshot(root.path(), &source, &data)).unwrap();
+    session
+        .finish_build_success(ticket, &pdf, snapshot(root.path(), &source, &data))
+        .unwrap();
     assert_eq!(session.preview_state(), FigurePreviewState::CurrentPdf);
     let original_dat = fs::read(&data).unwrap();
     let mut edited_data = original_dat.clone();
@@ -82,7 +90,9 @@ fn delayed_build_outcome_and_tampered_pdf_never_masquerade_as_current() {
     let (root, source, data) = source_and_data();
     let mut session = OneFigureSession::new(Document::load(&source).unwrap());
     let old = session.begin_build().unwrap();
-    session.replace_source(0, format!("{}% edit\n", session.document().source)).unwrap();
+    session
+        .replace_source(0, format!("{}% edit\n", session.document().source))
+        .unwrap();
     let pdf = root.path().join("preview.pdf");
     fs::write(&pdf, b"%PDF-1.5\nold-build\n").unwrap();
     assert!(matches!(
@@ -95,7 +105,9 @@ fn delayed_build_outcome_and_tampered_pdf_never_masquerade_as_current() {
         Err(FigureSessionError::StaleBuild)
     ));
     session.save().unwrap();
-    session.finish_build_success(current, &pdf, snapshot(root.path(), &source, &data)).unwrap();
+    session
+        .finish_build_success(current, &pdf, snapshot(root.path(), &source, &data))
+        .unwrap();
     assert_eq!(session.preview_state(), FigurePreviewState::CurrentPdf);
     fs::write(&pdf, b"%PDF-1.5\nTAMPERED!\n").unwrap();
     assert_eq!(session.preview_state(), FigurePreviewState::StalePdf);
@@ -109,7 +121,9 @@ fn save_as_keeps_original_source_and_marks_old_pdf_stale() {
     let pdf = root.path().join("original.pdf");
     fs::write(&pdf, b"%PDF-1.5\nfirst-build\n").unwrap();
     let ticket = session.begin_build().unwrap();
-    session.finish_build_success(ticket, &pdf, snapshot(root.path(), &source, &data)).unwrap();
+    session
+        .finish_build_success(ticket, &pdf, snapshot(root.path(), &source, &data))
+        .unwrap();
     assert_eq!(session.preview_state(), FigurePreviewState::CurrentPdf);
     let new_path = root.path().join("отдельная-копия.tex");
     session.save_as(&new_path).unwrap();
