@@ -24,7 +24,7 @@ fn scientific_ak_five_real_figures_have_traceable_dependency_sha256() {
         ),
         (
             "F14_3",
-            "ec3b7bafb9f36c690c2e86bcd22c665f5d990ee310987f24b6f2880c",
+            "ec3b7bafb9f36c690c2e86bcd22c665f5c669e1f5d990ee310987f24b6f2880c",
             &[
                 "../data/F14_3_left.dat",
                 "../data/F14_3_middle.dat",
