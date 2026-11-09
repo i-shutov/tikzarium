@@ -57,6 +57,8 @@ jobs:
         run: cargo test --locked -p tikzarium-extensions --test scientific_142_scan
       - name: SC3 real Sarov axis bounds and exact SHA Undo
         run: cargo test --locked -p tikzarium-extensions --test scientific_142_axis_limits
+      - name: SC3 142-figure lexical audit (NOT L2 or L3)
+        run: cargo test --locked -p tikzarium-extensions --test scientific_142_lexical_coverage -- --nocapture
       - name: Source-authoritative real Sarov authoring Undo
         run: cargo test --locked -p tikzarium-app scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack
       - name: Native egui Inspector widget and source transaction tests
