@@ -157,13 +157,47 @@ function Run-IsolatedGui {
     New-Item -ItemType Directory -Path $workspace -Force | Out-Null
     $oldGallium = [Environment]::GetEnvironmentVariable('GALLIUM_DRIVER', 'Process')
     $oldSoftware = [Environment]::GetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', 'Process')
+    $oldTex = [Environment]::GetEnvironmentVariable('TIKZARIUM_XELATEX', 'Process')
     $oldPath = $env:Path
     try {
         $env:GALLIUM_DRIVER = 'llvmpipe'
         $env:LIBGL_ALWAYS_SOFTWARE = '1'
-        $env:Path = "$runDir;$oldPath"
+        $childPath = @($runDir)
+        # TexEnvironment::discover reads the explicit engine or PATH. Activate
+        # a pre-existing private MiKTeX for this process without global changes.
+        if (-not [string]::IsNullOrWhiteSpace($oldTex)) {
+            if (-not (Test-Path -LiteralPath $oldTex -PathType Leaf)) {
+                Write-Warning "Explicit TIKZARIUM_XELATEX is not a file: $oldTex"
+            } else {
+                $childPath += (Split-Path -Parent $oldTex)
+                Say "Using explicit XeLaTeX: $oldTex"
+            }
+        } else {
+            $candidates = @(
+                (Join-Path $env:LOCALAPPDATA 'Programs\MiKTeX\miktex\bin\x64\xelatex.exe'),
+                (Join-Path $env:APPDATA 'MiKTeX\miktex\bin\x64\xelatex.exe'),
+                (Join-Path $env:ProgramFiles 'MiKTeX\miktex\bin\x64\xelatex.exe')
+            )
+            $engine = @($candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1)
+            if ($engine.Count -eq 1) {
+                $env:TIKZARIUM_XELATEX = $engine[0]
+                $childPath += (Split-Path -Parent $engine[0])
+                Say "Scoped TIKZARIUM_XELATEX: $($engine[0])"
+            } else {
+                Write-Warning 'No known MiKTeX xelatex.exe found. Build may report XeLaTeX missing.'
+            }
+        }
+        $popplerBin = Join-Path $env:LOCALAPPDATA 'Programs\TikZariumPoppler\poppler-25.07.0\Library\bin'
+        if (Test-Path -LiteralPath (Join-Path $popplerBin 'pdftoppm.exe') -PathType Leaf) {
+            $childPath += $popplerBin
+            Say "Scoped Poppler PDF renderer: $popplerBin"
+        } else {
+            Write-Warning 'Poppler pdftoppm.exe missing in QA directory; PDF may build without preview.'
+        }
+        $childPath += $oldPath
+        $env:Path = $childPath -join ';'
         Say 'Launching isolated GUI with GALLIUM_DRIVER=llvmpipe; no system OpenGL modification.'
-        Say 'If a window opens: W3 physical six gestures/F1/Undo/Save/Open/IME/GUI->PDF still need manual evidence.'
+        Say 'If Build appears inert, inspect Save As dialog, TeX-discovery status and View > Diagnostics.'
         Push-Location -LiteralPath $workspace
         try {
             & $candidate
@@ -174,6 +208,7 @@ function Run-IsolatedGui {
         }
     } finally {
         $env:Path = $oldPath
+        [Environment]::SetEnvironmentVariable('TIKZARIUM_XELATEX', $oldTex, 'Process')
         [Environment]::SetEnvironmentVariable('GALLIUM_DRIVER', $oldGallium, 'Process')
         [Environment]::SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', $oldSoftware, 'Process')
     }
