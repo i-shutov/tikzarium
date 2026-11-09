@@ -16,7 +16,7 @@ foreach ($required in @(
   "LIBGL_ALWAYS_SOFTWARE = '1'",
   'libgallium_wgl.dll',
   'opengl32.dll',
-  "system_drivers_modified = $false",
+  'system_drivers_modified = $false',
   'SHA256'
 )) {
     if (-not $content.Contains($required)) { throw "Mesa launcher contract missing: $required" }
