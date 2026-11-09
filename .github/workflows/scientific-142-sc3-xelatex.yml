@@ -1,0 +1,84 @@
+name: Scientific-142 SC3 edited Sarov XeLaTeX (hosted Linux only)
+
+# Only compile a disposable COPY of SV-001 after source-edit via the real Rust
+# adapter. Never run on self-hosted Windows and never claim physical GUI L3.
+on:
+  push:
+    branches:
+      - 'feat/scientific-142-sc3-*'
+    paths:
+      - 'crates/tikzarium-extensions/**'
+      - 'Cargo.lock'
+      - '.github/workflows/scientific-142-sc3-xelatex.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sarov-edited-figure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: 1.91.0
+      - name: Source integrity before any edits
+        run: python3 roadmap/Tikzarium_Scientific_142_R4/qa/validate_corpus.py --json
+      - name: Install external TeX and PDF inspection tools only on ephemeral runner
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            texlive-xetex texlive-pictures texlive-latex-extra texlive-lang-cyrillic \
+            poppler-utils fonts-sil-charis
+      - name: Export one actual PGFPlots SourcePatch of exact original SV-001 to a temporary copy
+        run: |
+          cargo test --locked -p tikzarium-extensions \
+            --test scientific_142_axis_limits \
+            sc3_export_original_sarov_patch_for_external_tex -- --exact --ignored --nocapture
+      - name: Compile edited copy with real external XeLaTeX; no shell execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tikzarium-sc3-pdf"
+          cd "$RUNNER_TEMP/tikzarium-sc3-sv001-edited"
+          xelatex -no-shell-escape -interaction=nonstopmode -halt-on-error \
+            -file-line-error -recorder \
+            "-output-directory=$RUNNER_TEMP/tikzarium-sc3-pdf" figure.tex \
+            | tee "$RUNNER_TEMP/tikzarium-sc3-pdf/console.txt"
+          pdfinfo "$RUNNER_TEMP/tikzarium-sc3-pdf/figure.pdf" | grep -E '^Pages: *1$'
+          sha256sum figure.tex "$RUNNER_TEMP/tikzarium-sc3-pdf/figure.pdf" \
+            | tee "$RUNNER_TEMP/tikzarium-sc3-pdf/output.sha256"
+          pdftoppm -f 1 -singlefile -png -scale-to 1200 \
+            "$RUNNER_TEMP/tikzarium-sc3-pdf/figure.pdf" \
+            "$RUNNER_TEMP/tikzarium-sc3-pdf/edited-preview"
+          test -s "$RUNNER_TEMP/tikzarium-sc3-pdf/edited-preview.png"
+      - name: Independently verify changed ONE literal and untouched original corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib, hashlib
+          base=pathlib.Path('roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex')
+          edited=pathlib.Path(os.environ['RUNNER_TEMP'])/'tikzarium-sc3-sv001-edited/figure.tex'
+          a=base.read_bytes()
+          b=edited.read_bytes()
+          assert a.count(b'ymax=1.4')==1
+          assert b==a.replace(b'ymax=1.4',b'ymax=1.2',1), 'non-selected author bytes changed'
+          print('SC3_PATCH_DIFF_EXACTLY_ONE_LITERAL=PASS',hashlib.sha256(a).hexdigest(),hashlib.sha256(b).hexdigest())
+          PY
+          python3 roadmap/Tikzarium_Scientific_142_R4/qa/validate_corpus.py --json
+          echo 'SC3_GUI_POINTER_PDF_UNDO=NOT_RUN'
+          echo 'WIN10_W3_STABLE_W4=NO_GO'
+      - name: Upload original edited TeX, XeLaTeX log, PDF and PNG even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sc3-edited-sarov-external-xelatex-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tikzarium-sc3-sv001-edited/figure.tex
+            ${{ runner.temp }}/tikzarium-sc3-pdf/
+          if-no-files-found: warn

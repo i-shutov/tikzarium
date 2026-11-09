@@ -48,6 +48,25 @@ pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
             verified_tex_default: "UNKNOWN",
             manual_section: "UNKNOWN — конкретная редакция руководства не проверена",
         }),
+        "xmin" | "xmax" | "ymin" | "ymax" => {
+            let (name, effect, example) = match key {
+                "xmin" => ("xmin", "Левая граница оси x.", "xmin=0"),
+                "xmax" => ("xmax", "Правая граница оси x.", "xmax=1080"),
+                "ymin" => ("ymin", "Нижняя граница оси y.", "ymin=0"),
+                "ymax" => ("ymax", "Верхняя граница оси y.", "ymax=1.4"),
+                _ => unreachable!("axis-bound whitelist"),
+            };
+            Some(ScientificPropertyHelp {
+                key: name,
+                value_type: "Конечное десятичное число",
+                effect,
+                editor_limit: "Только явные десятичные литералы в axis; макросы, inf и выражения сохраняются без изменений.",
+                example,
+                package: "pgfplots",
+                verified_tex_default: "UNKNOWN",
+                manual_section: "UNKNOWN — редакция руководства PGFPlots не проверена",
+            })
+        }
         _ => None,
     }
 }
@@ -610,24 +629,27 @@ fn locate_key(
     Ok(())
 }
 
+fn finite_decimal_literal(value: &str) -> bool {
+    // Numeric TeX expressions are deliberately OPAQUE. The 32-byte limit is
+    // only a bound for this GUI adapter, never a PGFPlots default.
+    !value.is_empty()
+        && value.len() <= 32
+        && value
+            .bytes()
+            .all(|ch| ch.is_ascii_digit() || matches!(ch, b'.' | b'-' | b'+'))
+        && value.parse::<f64>().is_ok_and(f64::is_finite)
+}
+
 fn literal_is_safe(key: &str, value: &str) -> bool {
     match key {
         "samples" => {
             value.bytes().all(|ch| ch.is_ascii_digit())
                 && value.parse::<u32>().is_ok_and(|n| (2..=4096).contains(&n))
         }
-        "domain" => {
-            let Some((a, b)) = value.split_once(':') else {
-                return false;
-            };
-            let decimal = |s: &str| {
-                !s.is_empty()
-                    && s.bytes()
-                        .all(|ch| ch.is_ascii_digit() || ch == b'.' || ch == b'-' || ch == b'+')
-                    && s.parse::<f64>().is_ok_and(f64::is_finite)
-            };
-            decimal(a) && decimal(b)
-        }
+        "domain" => value
+            .split_once(':')
+            .is_some_and(|(a, b)| finite_decimal_literal(a) && finite_decimal_literal(b)),
+        "xmin" | "xmax" | "ymin" | "ymax" => finite_decimal_literal(value),
         _ => false,
     }
 }
@@ -649,7 +671,12 @@ fn literal_key_range(
     {
         return Err(EditRefusal::Opaque);
     }
-    if key != "samples" && key != "domain" {
+    let axis_bound = matches!(key, "xmin" | "xmax" | "ymin" | "ymax");
+    if !matches!(
+        key,
+        "samples" | "domain" | "xmin" | "xmax" | "ymin" | "ymax"
+    ) || (axis_bound && instance.kind != ScientificKind::Axis)
+    {
         return Err(EditRefusal::UnsupportedKey);
     }
     let options = instance.option_range.clone().ok_or(EditRefusal::Opaque)?;
