@@ -69,9 +69,15 @@ pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
         }
         "xtick distance" | "ytick distance" => {
             let (description, example) = if key == "xtick distance" {
-                ("Шаг автоматически расставляемых делений оси x.", "xtick distance=1")
+                (
+                    "Шаг автоматически расставляемых делений оси x.",
+                    "xtick distance=1",
+                )
             } else {
-                ("Шаг автоматически расставляемых делений оси y.", "ytick distance=0.5")
+                (
+                    "Шаг автоматически расставляемых делений оси y.",
+                    "ytick distance=0.5",
+                )
             };
             Some(ScientificPropertyHelp {
                 key: if key == "xtick distance" {
@@ -751,8 +757,7 @@ fn plain_braced_label(value: &str) -> bool {
     !inner.is_empty()
         && inner.chars().count() <= 96
         && inner.chars().all(|ch| {
-            ch.is_alphanumeric()
-                || matches!(ch, ' ' | '-' | '.' | ',' | ':' | '(' | ')' | '\'')
+            ch.is_alphanumeric() || matches!(ch, ' ' | '-' | '.' | ',' | ':' | '(' | ')' | '\'')
         })
 }
 
@@ -780,9 +785,10 @@ fn allowed_property(kind: ScientificKind, key: &str) -> bool {
         "samples" | "domain" | "mark" => {
             matches!(kind, ScientificKind::Axis | ScientificKind::AddPlot)
         }
-        "xmin" | "xmax" | "ymin" | "ymax" | "xtick" | "ytick"
-        | "xtick distance" | "ytick distance" | "width" | "height"
-        | "xlabel" | "ylabel" => kind == ScientificKind::Axis,
+        "xmin" | "xmax" | "ymin" | "ymax" | "xtick" | "ytick" | "xtick distance"
+        | "ytick distance" | "width" | "height" | "xlabel" | "ylabel" => {
+            kind == ScientificKind::Axis
+        }
         _ => false,
     }
 }
@@ -908,7 +914,10 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
     let mut old_end = previous.len();
     let mut new_end = request.replacement.len();
     while old_end > prefix && new_end > prefix {
-        let old = previous[..old_end].chars().next_back().expect("suffix char");
+        let old = previous[..old_end]
+            .chars()
+            .next_back()
+            .expect("suffix char");
         let new = request.replacement[..new_end]
             .chars()
             .next_back()

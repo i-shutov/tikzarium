@@ -17,16 +17,16 @@ fn digest(source: &str) -> String {
 
 #[test]
 fn sv001_axis_tick_spacing_roundtrips_exact_original_sha() {
-    for (key, old, new) in [
-        ("xtick distance", "1", "2"),
-        ("ytick distance", "0.5", "1"),
-    ] {
+    for (key, old, new) in [("xtick distance", "1", "2"), ("ytick distance", "0.5", "1")] {
         let view = SourceView {
             text: SV001,
             revision: 8,
         };
         let items = scan_scientific_source(view).unwrap();
-        let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+        let axis = items
+            .iter()
+            .find(|x| x.kind == ScientificKind::Axis)
+            .unwrap();
         let patch = plan_literal_key_edit(LiteralEditRequest {
             view,
             instance: axis,
@@ -59,7 +59,10 @@ fn sv001_dimensions_preserve_textwidth_unit_without_regenerating_tex() {
             revision: 4,
         };
         let items = scan_scientific_source(view).unwrap();
-        let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+        let axis = items
+            .iter()
+            .find(|x| x.kind == ScientificKind::Axis)
+            .unwrap();
         let patch = plan_literal_key_edit(LiteralEditRequest {
             view,
             instance: axis,
@@ -87,7 +90,10 @@ fn sv001_nested_style_mark_is_editable_with_unmodified_formula() {
         revision: 0,
     };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
     let patch = plan_literal_key_edit(LiteralEditRequest {
         view,
         instance: axis,
@@ -112,10 +118,19 @@ fn sarov_math_labels_remain_opaque_and_no_defaults_are_invented() {
         revision: 0,
     };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
     for key in ["xlabel", "ylabel"] {
-        assert!(matches!(literal_key_value(view, axis, key), Err(EditRefusal::Opaque)));
-        assert_eq!(scientific_property_help(key).unwrap().verified_tex_default, "UNKNOWN");
+        assert!(matches!(
+            literal_key_value(view, axis, key),
+            Err(EditRefusal::Opaque)
+        ));
+        assert_eq!(
+            scientific_property_help(key).unwrap().verified_tex_default,
+            "UNKNOWN"
+        );
     }
     let source = SV003;
     let view = SourceView {
@@ -123,8 +138,14 @@ fn sarov_math_labels_remain_opaque_and_no_defaults_are_invented() {
         revision: 0,
     };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
-    assert!(matches!(literal_key_value(view, axis, "xtick"), Err(EditRefusal::Opaque)));
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
+    assert!(matches!(
+        literal_key_value(view, axis, "xtick"),
+        Err(EditRefusal::Opaque)
+    ));
 }
 
 #[test]
@@ -173,7 +194,10 @@ fn deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources() {
         revision: 21,
     };
     let instances = scan_scientific_source(view).unwrap();
-    let axis = instances.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+    let axis = instances
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
     let forbidden: [(&str, &str, &str); 9] = [
         ("width", r"1\textwidth", "5cm"),
         ("height", r"0.62\textwidth", "0"),
@@ -204,7 +228,10 @@ fn deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources() {
         revision: 21,
     };
     let items = scan_scientific_source(view).unwrap();
-    let axis = items.iter().find(|x| x.kind == ScientificKind::Axis).unwrap();
+    let axis = items
+        .iter()
+        .find(|x| x.kind == ScientificKind::Axis)
+        .unwrap();
     let duplicate = plan_literal_key_edit(LiteralEditRequest {
         view,
         instance: axis,
