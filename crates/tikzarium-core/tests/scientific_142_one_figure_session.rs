@@ -132,3 +132,76 @@ fn save_as_keeps_original_source_and_marks_old_pdf_stale() {
     assert_eq!(fs::read(source).unwrap(), original);
     assert_eq!(fs::read(new_path).unwrap(), original);
 }
+
+#[test]
+fn unsaved_source_cannot_claim_a_current_pdf_from_an_old_fls() {
+    let (root, source, data) = source_and_data();
+    let unchanged_disk = fs::read(&source).unwrap();
+    let mut doc = Document::load(&source).unwrap();
+    doc.source.push_str("% unsaved edit\\n");
+    let mut session = OneFigureSession::new(doc);
+    let pdf = root.path().join("wrong.pdf");
+    fs::write(&pdf, b"%PDF-1.5\\nnot-an-external-proof\\n").unwrap();
+    let epoch = session.begin_build().unwrap();
+    let old_inputs = snapshot(root.path(), &source, &data);
+    assert!(matches!(
+        session.finish_build_success(epoch, &pdf, old_inputs),
+        Err(FigureSessionError::UnverifiedBuildInputs)
+    ));
+    assert_eq!(session.preview_state(), FigurePreviewState::FailedBuild);
+    assert_eq!(session.last_good_pdf_path(), None);
+    assert_eq!(fs::read(&source).unwrap(), unchanged_disk);
+}
+
+#[test]
+fn unrelated_source_or_changed_recorder_input_never_qualifies_a_pdf() {
+    let (root, source, data) = source_and_data();
+    let other = root.path().join("другой.tex");
+    fs::copy(&source, &other).unwrap();
+    let mut session = OneFigureSession::new(Document::load(&source).unwrap());
+    let pdf = root.path().join("foreign.pdf");
+    fs::write(&pdf, b"%PDF-1.5\\nfixture\\n").unwrap();
+    let epoch = session.begin_build().unwrap();
+    let foreign_inputs = snapshot(root.path(), &other, &data);
+    assert!(matches!(
+        session.finish_build_success(epoch, &pdf, foreign_inputs),
+        Err(FigureSessionError::UnverifiedBuildInputs)
+    ));
+
+    let epoch = session.begin_build().unwrap();
+    let captured = snapshot(root.path(), &source, &data);
+    fs::write(&data, b"4 3\\r\\n2 1\\r\\n").unwrap();
+    assert!(matches!(
+        session.finish_build_success(epoch, &pdf, captured),
+        Err(FigureSessionError::UnverifiedBuildInputs)
+    ));
+    assert_eq!(session.preview_state(), FigurePreviewState::FailedBuild);
+}
+
+#[test]
+fn missing_or_invalid_pdf_preserves_last_good_as_failed_not_current() {
+    let (root, source, data) = source_and_data();
+    let mut session = OneFigureSession::new(Document::load(&source).unwrap());
+    let good_pdf = root.path().join("last-good.pdf");
+    fs::write(&good_pdf, b"%PDF-1.5\\nlast-good\\n").unwrap();
+    let epoch = session.begin_build().unwrap();
+    session
+        .finish_build_success(epoch, &good_pdf, snapshot(root.path(), &source, &data))
+        .unwrap();
+    assert_eq!(session.preview_state(), FigurePreviewState::CurrentPdf);
+
+    let invalid_pdf = root.path().join("bad.pdf");
+    fs::write(&invalid_pdf, b"not a PDF").unwrap();
+    let epoch = session.begin_build().unwrap();
+    assert!(matches!(
+        session.finish_build_success(
+            epoch,
+            &invalid_pdf,
+            snapshot(root.path(), &source, &data)
+        ),
+        Err(FigureSessionError::Io(_))
+    ));
+    assert_eq!(session.preview_state(), FigurePreviewState::FailedBuild);
+    assert_eq!(session.last_good_pdf_path(), Some(good_pdf.as_path()));
+}
+
