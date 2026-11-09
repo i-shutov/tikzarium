@@ -47,27 +47,19 @@ impl ScientificInspector {
                 let recognized = instances
                     .iter()
                     .filter(|item| {
-                        matches!(
-                            item.kind,
-                            ScientificKind::Axis | ScientificKind::AddPlot
-                        )
+                        matches!(item.kind, ScientificKind::Axis | ScientificKind::AddPlot)
                     })
                     .count();
                 self.candidates = instances
                     .into_iter()
                     .filter(|item| {
-                        matches!(
-                            item.kind,
-                            ScientificKind::Axis | ScientificKind::AddPlot
-                        )
+                        matches!(item.kind, ScientificKind::Axis | ScientificKind::AddPlot)
                     })
                     .take(64)
                     .map(|instance| {
-                        let line = source
-                            .get(..instance.range.start)
-                            .map_or(1, |prefix| {
-                                prefix.bytes().filter(|byte| *byte == b'\n').count() + 1
-                            });
+                        let line = source.get(..instance.range.start).map_or(1, |prefix| {
+                            prefix.bytes().filter(|byte| *byte == b'\n').count() + 1
+                        });
                         let kind = match instance.kind {
                             ScientificKind::Axis => "axis",
                             ScientificKind::AddPlot => "addplot",
@@ -89,8 +81,7 @@ impl ScientificInspector {
                 );
             }
             Err(error) => {
-                self.feedback =
-                    format!("OPAQUE: {error}. Исходный TeX не изменён.");
+                self.feedback = format!("OPAQUE: {error}. Исходный TeX не изменён.");
             }
         }
     }
@@ -112,12 +103,12 @@ impl ScientificInspector {
             Ok(value) => {
                 self.proposed_value.clone_from(&value);
                 self.original_value = Some(value);
-                self.feedback = "Литерал принадлежит конкретной команде; можно править точечно".into();
+                self.feedback =
+                    "Литерал принадлежит конкретной команде; можно править точечно".into();
             }
             Err(error) => {
-                self.feedback = format!(
-                    "OPAQUE/NOT_EDITABLE: {error}. Используйте текстовый редактор."
-                );
+                self.feedback =
+                    format!("OPAQUE/NOT_EDITABLE: {error}. Используйте текстовый редактор.");
             }
         }
     }
@@ -147,7 +138,9 @@ impl ScientificInspector {
         self.selected = None;
         self.original_value = None;
         self.proposed_value.clear();
-        self.feedback = "Изменено одно значение исходника. Undo — общий; пересканируйте для следующей правки.".into();
+        self.feedback =
+            "Изменено одно значение исходника. Undo — общий; пересканируйте для следующей правки."
+                .into();
         Ok(line)
     }
 
@@ -252,7 +245,9 @@ mod tests {
         inspector.refresh_literal(&authoring, &source);
         assert_eq!(inspector.original_value.as_deref(), Some("150"));
         inspector.proposed_value = "180".to_owned();
-        let line = inspector.apply_selected(&mut authoring, &mut source).unwrap();
+        let line = inspector
+            .apply_selected(&mut authoring, &mut source)
+            .unwrap();
         assert!(line > 10);
         assert!(source.contains("samples=180"));
         assert!(authoring.undo_available());
