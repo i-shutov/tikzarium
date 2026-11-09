@@ -326,8 +326,9 @@ pub fn scan_scientific_source(
         let start = i;
         let (word, next) = command_at(text, i);
         i = next;
-        if word == "begin" || word == "end" {
-            if let Some((env, end)) = environment_at(text, next) {
+        if (word == "begin" || word == "end")
+            && let Some((env, end)) = environment_at(text, next)
+        {
                 match (word, env) {
                     ("begin", "tikzpicture") => {
                         picture_depth += 1;
@@ -372,7 +373,6 @@ pub fn scan_scientific_source(
                     }
                     _ => {}
                 }
-            }
         }
         if picture_depth == 0 {
             continue;
