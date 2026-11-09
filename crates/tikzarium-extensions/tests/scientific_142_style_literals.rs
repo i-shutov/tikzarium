@@ -224,7 +224,7 @@ fn deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources() {
 \end{axis}
 \end{tikzpicture}";
     let view = SourceView {
-        text: &source,
+        text: source,
         revision: 21,
     };
     let items = scan_scientific_source(view).unwrap();
