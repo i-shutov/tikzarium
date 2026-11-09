@@ -199,6 +199,25 @@ impl ProjectDependencySnapshot {
             .collect()
     }
 
+    /// Confirm that an externally built figure actually used this exact open
+    /// author source, not merely an unrelated or older .fls snapshot. A clean
+    /// source on disk must match the caller's current UTF-8 bytes and the
+    /// captured SHA-256. Recorder completion is checked by the caller.
+    #[must_use]
+    pub fn matches_author_source_bytes(&self, source: &Path, bytes: &[u8]) -> bool {
+        let Ok(resolved) = source.canonicalize() else {
+            return false;
+        };
+        let digest: [u8; 32] = Sha256::digest(bytes).into();
+        self.source_is_project_local
+            && self.project_inputs.iter().any(|input| {
+                input.origin == ProjectInputOrigin::AuthorSource
+                    && input.path == resolved
+                    && input.digest == Some(digest)
+                    && input.bytes_current()
+            })
+    }
+
     /// Paths whose bytes changed, disappeared, became unreadable, or could
     /// not be fingerprinted at capture time (e.g. over the size cap).
     /// Content hashing detects same-length edits with unchanged timestamps.
