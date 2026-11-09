@@ -7,6 +7,7 @@ pub mod discovery;
 pub mod document;
 pub mod font_audit;
 pub mod fonts;
+pub mod one_figure_session;
 pub mod preview;
 mod probe_process;
 mod windows_tex_security;
@@ -31,3 +32,6 @@ pub use fonts::{
 pub use preview::{Preview, PreviewError, render_first_page};
 pub use windows_tex_security::external_document_privilege_notice;
 pub use windows_tex_security::require_safe_external_document_child;
+pub use one_figure_session::{
+    FigureBuildEpoch, FigurePreviewState, FigureSessionError, OneFigureSession,
+};
