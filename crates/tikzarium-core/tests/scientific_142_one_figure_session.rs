@@ -195,11 +195,7 @@ fn missing_or_invalid_pdf_preserves_last_good_as_failed_not_current() {
     fs::write(&invalid_pdf, b"not a PDF").unwrap();
     let epoch = session.begin_build().unwrap();
     assert!(matches!(
-        session.finish_build_success(
-            epoch,
-            &invalid_pdf,
-            snapshot(root.path(), &source, &data)
-        ),
+        session.finish_build_success(epoch, &invalid_pdf, snapshot(root.path(), &source, &data)),
         Err(FigureSessionError::Io(_))
     ));
     assert_eq!(session.preview_state(), FigurePreviewState::FailedBuild);
