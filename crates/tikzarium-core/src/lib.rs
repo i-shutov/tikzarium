@@ -29,9 +29,9 @@ pub use font_audit::{FontIssue, FontIssueKind, FontLogAudit, audit_font_log};
 pub use fonts::{
     FigureFonts, FontInputError, missing_glyph_messages, tex_escape_plain_text, validate_font_name,
 };
-pub use preview::{Preview, PreviewError, render_first_page};
-pub use windows_tex_security::external_document_privilege_notice;
-pub use windows_tex_security::require_safe_external_document_child;
 pub use one_figure_session::{
     FigureBuildEpoch, FigurePreviewState, FigureSessionError, OneFigureSession,
 };
+pub use preview::{Preview, PreviewError, render_first_page};
+pub use windows_tex_security::external_document_privilege_notice;
+pub use windows_tex_security::require_safe_external_document_child;
