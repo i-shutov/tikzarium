@@ -138,10 +138,10 @@ fn unsaved_source_cannot_claim_a_current_pdf_from_an_old_fls() {
     let (root, source, data) = source_and_data();
     let unchanged_disk = fs::read(&source).unwrap();
     let mut doc = Document::load(&source).unwrap();
-    doc.source.push_str("% unsaved edit\\n");
+    doc.source.push_str("% unsaved edit\n");
     let mut session = OneFigureSession::new(doc);
     let pdf = root.path().join("wrong.pdf");
-    fs::write(&pdf, b"%PDF-1.5\\nnot-an-external-proof\\n").unwrap();
+    fs::write(&pdf, b"%PDF-1.5\nnot-an-external-proof\n").unwrap();
     let epoch = session.begin_build().unwrap();
     let old_inputs = snapshot(root.path(), &source, &data);
     assert!(matches!(
@@ -160,7 +160,7 @@ fn unrelated_source_or_changed_recorder_input_never_qualifies_a_pdf() {
     fs::copy(&source, &other).unwrap();
     let mut session = OneFigureSession::new(Document::load(&source).unwrap());
     let pdf = root.path().join("foreign.pdf");
-    fs::write(&pdf, b"%PDF-1.5\\nfixture\\n").unwrap();
+    fs::write(&pdf, b"%PDF-1.5\nfixture\n").unwrap();
     let epoch = session.begin_build().unwrap();
     let foreign_inputs = snapshot(root.path(), &other, &data);
     assert!(matches!(
@@ -170,7 +170,7 @@ fn unrelated_source_or_changed_recorder_input_never_qualifies_a_pdf() {
 
     let epoch = session.begin_build().unwrap();
     let captured = snapshot(root.path(), &source, &data);
-    fs::write(&data, b"4 3\\r\\n2 1\\r\\n").unwrap();
+    fs::write(&data, b"4 3\r\n2 1\r\n").unwrap();
     assert!(matches!(
         session.finish_build_success(epoch, &pdf, captured),
         Err(FigureSessionError::UnverifiedBuildInputs)
@@ -183,7 +183,7 @@ fn missing_or_invalid_pdf_preserves_last_good_as_failed_not_current() {
     let (root, source, data) = source_and_data();
     let mut session = OneFigureSession::new(Document::load(&source).unwrap());
     let good_pdf = root.path().join("last-good.pdf");
-    fs::write(&good_pdf, b"%PDF-1.5\\nlast-good\\n").unwrap();
+    fs::write(&good_pdf, b"%PDF-1.5\nlast-good\n").unwrap();
     let epoch = session.begin_build().unwrap();
     session
         .finish_build_success(epoch, &good_pdf, snapshot(root.path(), &source, &data))
