@@ -296,7 +296,9 @@ impl OneFigureSession {
 
     #[must_use]
     pub fn last_good_pdf_path(&self) -> Option<&Path> {
-        self.last_good_pdf.as_ref().and_then(|pdf| pdf.path.as_deref())
+        self.last_good_pdf
+            .as_ref()
+            .and_then(|pdf| pdf.path.as_deref())
     }
 
     /// Read-only PDF bytes, including native in-memory BuildArtifact output.
