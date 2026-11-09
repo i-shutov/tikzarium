@@ -1,0 +1,46 @@
+% SCIENCE Visual Guide 2.0.1 + AI_SKILLS_R5; Akulin--Karlov batch v2.
+% Graph traces are visibly heavier than axes. All labels use anchored positions.
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec,unicode-math}
+\setmainfont{Noto Sans}
+\setsansfont{Noto Sans}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.pathreplacing,intersections}
+\definecolor{ScienceInk}{HTML}{000000}
+\definecolor{ScienceCurve}{HTML}{000000}
+\definecolor{ScienceAux}{HTML}{000000}
+\definecolor{ScienceMuted}{HTML}{000000}
+\tikzset{
+  axis/.style={draw=ScienceInk,line width=0.75pt,-{Latex[length=2.2mm,width=1.35mm]}},
+  axisplain/.style={draw=ScienceInk,line width=0.70pt},
+  curve/.style={draw=ScienceCurve,line width=2.15pt,line cap=round,line join=round},
+  curveb/.style={draw=ScienceAux,line width=1.95pt,dash pattern=on 6pt off 2.4pt,line cap=round,line join=round},
+  curvedash/.style={draw=ScienceAux,line width=1.9pt,dash pattern=on 4pt off 3pt},
+  optbeam/.style={draw=ScienceCurve,line width=1.75pt,-{Latex[length=2.2mm,width=1.3mm]}},
+  optback/.style={draw=ScienceAux,line width=1.65pt,-{Latex[length=2mm,width=1.2mm]}},
+  opt/.style={draw=ScienceInk,line width=1.0pt},
+  opticplate/.style={draw=ScienceInk,line width=1.02pt,pattern=north east lines,pattern color=ScienceMuted},
+  tick/.style={draw=ScienceInk,line width=0.7pt},
+  textlabel/.style={text=ScienceInk,font=\fontsize{15}{18}\selectfont},
+  smalllabel/.style={text=ScienceInk,font=\fontsize{13.5}{16.2}\selectfont},
+}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm,>=Latex,line cap=round,line join=round,font=\fontsize{15}{18}\selectfont]
+
+
+% 0π (zero-area) pulse: A*sigma_center = 2*B*sigma_lobe.
+\path[use as bounding box] (0,0) rectangle (11.8,6.45);
+\def\Cs{0.50}\def\Ls{0.80}\def\Ld{1.30}
+\pgfmathsetmacro{\La}{\Cs/(2*\Ls)}
+\pgfmathdeclarefunction{zp}{1}{\pgfmathparse{exp(-((#1)/\Cs)^2)-\La*(exp(-((#1-\Ld)/\Ls)^2)+exp(-((#1+\Ld)/\Ls)^2))}}
+\draw[axis] (.55,2.1)--(11.38,2.1);
+\draw[axis] (.55,2.1)--(.55,6.08);
+\node[textlabel,anchor=west] at (.73,6.03) {$\mathscr E(t)$};
+\node[textlabel,anchor=west] at (11.38,1.94) {$t$};
+\begin{scope}[shift={(5.94,2.1)},x=1.28cm,y=3.86cm]
+\draw[curve,line width=2.35pt,samples=500,domain=-3.75:3.75,smooth] plot (\x,{zp(\x)});
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

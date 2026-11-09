@@ -1,0 +1,203 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec,unicode-math}
+\setmainfont{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.markings,decorations.pathmorphing,decorations.pathreplacing}
+\tikzset{lev/.style={line width=1.18pt,line cap=butt},
+ fine/.style={line width=.55pt},light/.style={line width=.4pt},
+ curve/.style={line width=1.18pt,line cap=round,line join=round},
+ ax/.style={line width=.62pt,-{Latex[length=2.15mm,width=1.2mm]}},
+ ray/.style={line width=.64pt,-{Latex[length=1.9mm,width=1.0mm]}},
+ dim/.style={line width=.52pt,{Latex[length=1.65mm,width=.85mm]}-{Latex[length=1.65mm,width=.85mm]}},
+ flow/.style={line width=.60pt,postaction={decorate},decoration={markings,mark=at position .62 with {\arrow{Latex[length=1.9mm,width=1.0mm]}}}},
+ lab/.style={font=\fontsize{13}{16}\selectfont,inner sep=1.5pt},
+ small/.style={font=\fontsize{11.2}{13.5}\selectfont,inner sep=1.2pt},
+ panel/.style={font=\fontsize{13}{16}\selectfont\itshape,inner sep=1.5pt}}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm,line join=round]
+% E(n,m)=n*hbar*omega1+m*hbar*omega2. Frequencies illustrative.
+\draw[ax] (1.300000,0.150000)--(-0.815000,6.706500);
+\draw[ax] (1.300000,0.150000)--(14.200000,5.788590);
+\node[lab] at (-0.915000,6.906500) {$n$};
+\node[lab] at (14.350000,5.728590) {$m$};
+\draw[fine] (-0.650000,0.150000)--(15.880000,0.150000);
+\draw[ax] (15.380000,0.030000)--(15.380000,7.500000);
+\node[lab,anchor=west] at (15.510000,7.480000) {$E_{nm}$};
+\draw[fine] (1.040000,0.150000)--(1.560000,0.150000);
+\node[small] at (1.300000,-0.170000) {$\textit{0,0}$};
+\draw[light] (14.960000,0.150000)--(15.800000,0.150000);
+\draw[fine] (0.740000,1.080000)--(1.260000,1.080000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (1.000000,1.155000) {$\textit{1,0}$};
+\draw[light] (14.960000,1.080000)--(15.800000,1.080000);
+\draw[fine] (0.440000,2.010000)--(0.960000,2.010000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (0.700000,2.085000) {$\textit{2,0}$};
+\draw[light] (14.960000,2.010000)--(15.800000,2.010000);
+\draw[fine] (0.140000,2.940000)--(0.660000,2.940000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (0.400000,3.015000) {$\textit{3,0}$};
+\draw[light] (14.960000,2.940000)--(15.800000,2.940000);
+\draw[fine] (-0.160000,3.870000)--(0.360000,3.870000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (0.100000,3.945000) {$\textit{4,0}$};
+\draw[light] (14.960000,3.870000)--(15.800000,3.870000);
+\draw[fine] (-0.460000,4.800000)--(0.060000,4.800000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (-0.200000,4.875000) {$\textit{5,0}$};
+\draw[light] (14.960000,4.800000)--(15.800000,4.800000);
+\draw[fine] (-0.760000,5.730000)--(-0.240000,5.730000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (-0.500000,5.805000) {$\textit{6,0}$};
+\draw[light] (14.960000,5.730000)--(15.800000,5.730000);
+\draw[fine] (2.040000,0.587100)--(2.560000,0.587100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (2.300000,0.662100) {$\textit{0,1}$};
+\draw[light] (14.960000,0.587100)--(15.800000,0.587100);
+\draw[fine] (1.740000,1.517100)--(2.260000,1.517100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (2.000000,1.592100) {$\textit{1,1}$};
+\draw[light] (14.960000,1.517100)--(15.800000,1.517100);
+\draw[fine] (1.440000,2.447100)--(1.960000,2.447100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (1.700000,2.522100) {$\textit{2,1}$};
+\draw[light] (14.960000,2.447100)--(15.800000,2.447100);
+\draw[fine] (1.140000,3.377100)--(1.660000,3.377100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (1.400000,3.452100) {$\textit{3,1}$};
+\draw[light] (14.960000,3.377100)--(15.800000,3.377100);
+\draw[fine] (0.840000,4.307100)--(1.360000,4.307100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (1.100000,4.382100) {$\textit{4,1}$};
+\draw[light] (14.960000,4.307100)--(15.800000,4.307100);
+\draw[fine] (0.540000,5.237100)--(1.060000,5.237100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (0.800000,5.312100) {$\textit{5,1}$};
+\draw[light] (14.960000,5.237100)--(15.800000,5.237100);
+\draw[fine] (3.040000,1.024200)--(3.560000,1.024200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (3.300000,1.099200) {$\textit{0,2}$};
+\draw[light] (14.960000,1.024200)--(15.800000,1.024200);
+\draw[fine] (2.740000,1.954200)--(3.260000,1.954200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (3.000000,2.029200) {$\textit{1,2}$};
+\draw[light] (14.960000,1.954200)--(15.800000,1.954200);
+\draw[fine] (2.440000,2.884200)--(2.960000,2.884200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (2.700000,2.959200) {$\textit{2,2}$};
+\draw[light] (14.960000,2.884200)--(15.800000,2.884200);
+\draw[fine] (2.140000,3.814200)--(2.660000,3.814200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (2.400000,3.889200) {$\textit{3,2}$};
+\draw[light] (14.960000,3.814200)--(15.800000,3.814200);
+\draw[fine] (1.840000,4.744200)--(2.360000,4.744200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (2.100000,4.819200) {$\textit{4,2}$};
+\draw[light] (14.960000,4.744200)--(15.800000,4.744200);
+\draw[fine] (1.540000,5.674200)--(2.060000,5.674200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (1.800000,5.749200) {$\textit{5,2}$};
+\draw[light] (14.960000,5.674200)--(15.800000,5.674200);
+\draw[fine] (4.040000,1.461300)--(4.560000,1.461300);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (4.300000,1.536300) {$\textit{0,3}$};
+\draw[light] (14.960000,1.461300)--(15.800000,1.461300);
+\draw[fine] (3.740000,2.391300)--(4.260000,2.391300);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (4.000000,2.466300) {$\textit{1,3}$};
+\draw[light] (14.960000,2.391300)--(15.800000,2.391300);
+\draw[fine] (3.440000,3.321300)--(3.960000,3.321300);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (3.700000,3.396300) {$\textit{2,3}$};
+\draw[light] (14.960000,3.321300)--(15.800000,3.321300);
+\draw[fine] (3.140000,4.251300)--(3.660000,4.251300);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (3.400000,4.326300) {$\textit{3,3}$};
+\draw[light] (14.960000,4.251300)--(15.800000,4.251300);
+\draw[fine] (2.840000,5.181300)--(3.360000,5.181300);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (3.100000,5.256300) {$\textit{4,3}$};
+\draw[light] (14.960000,5.181300)--(15.800000,5.181300);
+\draw[fine] (5.040000,1.898400)--(5.560000,1.898400);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (5.300000,1.973400) {$\textit{0,4}$};
+\draw[light] (14.960000,1.898400)--(15.800000,1.898400);
+\draw[fine] (4.740000,2.828400)--(5.260000,2.828400);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (5.000000,2.903400) {$\textit{1,4}$};
+\draw[light] (14.960000,2.828400)--(15.800000,2.828400);
+\draw[fine] (4.440000,3.758400)--(4.960000,3.758400);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (4.700000,3.833400) {$\textit{2,4}$};
+\draw[light] (14.960000,3.758400)--(15.800000,3.758400);
+\draw[fine] (4.140000,4.688400)--(4.660000,4.688400);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (4.400000,4.763400) {$\textit{3,4}$};
+\draw[light] (14.960000,4.688400)--(15.800000,4.688400);
+\draw[fine] (3.840000,5.618400)--(4.360000,5.618400);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (4.100000,5.693400) {$\textit{4,4}$};
+\draw[light] (14.960000,5.618400)--(15.800000,5.618400);
+\draw[fine] (6.040000,2.335500)--(6.560000,2.335500);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (6.300000,2.410500) {$\textit{0,5}$};
+\draw[light] (14.960000,2.335500)--(15.800000,2.335500);
+\draw[fine] (5.740000,3.265500)--(6.260000,3.265500);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (6.000000,3.340500) {$\textit{1,5}$};
+\draw[light] (14.960000,3.265500)--(15.800000,3.265500);
+\draw[fine] (5.440000,4.195500)--(5.960000,4.195500);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (5.700000,4.270500) {$\textit{2,5}$};
+\draw[light] (14.960000,4.195500)--(15.800000,4.195500);
+\draw[fine] (5.140000,5.125500)--(5.660000,5.125500);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (5.400000,5.200500) {$\textit{3,5}$};
+\draw[light] (14.960000,5.125500)--(15.800000,5.125500);
+\draw[fine] (4.840000,6.055500)--(5.360000,6.055500);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (5.100000,6.130500) {$\textit{4,5}$};
+\draw[light] (14.960000,6.055500)--(15.800000,6.055500);
+\draw[fine] (7.040000,2.772600)--(7.560000,2.772600);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (7.300000,2.847600) {$\textit{0,6}$};
+\draw[light] (14.960000,2.772600)--(15.800000,2.772600);
+\draw[fine] (6.740000,3.702600)--(7.260000,3.702600);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (7.000000,3.777600) {$\textit{1,6}$};
+\draw[light] (14.960000,3.702600)--(15.800000,3.702600);
+\draw[fine] (6.440000,4.632600)--(6.960000,4.632600);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (6.700000,4.707600) {$\textit{2,6}$};
+\draw[light] (14.960000,4.632600)--(15.800000,4.632600);
+\draw[fine] (6.140000,5.562600)--(6.660000,5.562600);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (6.400000,5.637600) {$\textit{3,6}$};
+\draw[light] (14.960000,5.562600)--(15.800000,5.562600);
+\draw[fine] (8.040000,3.209700)--(8.560000,3.209700);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (8.300000,3.284700) {$\textit{0,7}$};
+\draw[light] (14.960000,3.209700)--(15.800000,3.209700);
+\draw[fine] (7.740000,4.139700)--(8.260000,4.139700);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (8.000000,4.214700) {$\textit{1,7}$};
+\draw[light] (14.960000,4.139700)--(15.800000,4.139700);
+\draw[fine] (7.440000,5.069700)--(7.960000,5.069700);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (7.700000,5.144700) {$\textit{2,7}$};
+\draw[light] (14.960000,5.069700)--(15.800000,5.069700);
+\draw[fine] (7.140000,5.999700)--(7.660000,5.999700);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (7.400000,6.074700) {$\textit{3,7}$};
+\draw[light] (14.960000,5.999700)--(15.800000,5.999700);
+\draw[fine] (9.040000,3.646800)--(9.560000,3.646800);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (9.300000,3.721800) {$\textit{0,8}$};
+\draw[light] (14.960000,3.646800)--(15.800000,3.646800);
+\draw[fine] (8.740000,4.576800)--(9.260000,4.576800);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (9.000000,4.651800) {$\textit{1,8}$};
+\draw[light] (14.960000,4.576800)--(15.800000,4.576800);
+\draw[fine] (8.440000,5.506800)--(8.960000,5.506800);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (8.700000,5.581800) {$\textit{2,8}$};
+\draw[light] (14.960000,5.506800)--(15.800000,5.506800);
+\draw[fine] (10.040000,4.083900)--(10.560000,4.083900);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (10.300000,4.158900) {$\textit{0,9}$};
+\draw[light] (14.960000,4.083900)--(15.800000,4.083900);
+\draw[fine] (9.740000,5.013900)--(10.260000,5.013900);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (10.000000,5.088900) {$\textit{1,9}$};
+\draw[light] (14.960000,5.013900)--(15.800000,5.013900);
+\draw[fine] (9.440000,5.943900)--(9.960000,5.943900);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (9.700000,6.018900) {$\textit{2,9}$};
+\draw[light] (14.960000,5.943900)--(15.800000,5.943900);
+\draw[fine] (11.040000,4.521000)--(11.560000,4.521000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (11.300000,4.596000) {$\textit{0,10}$};
+\draw[light] (14.960000,4.521000)--(15.800000,4.521000);
+\draw[fine] (10.740000,5.451000)--(11.260000,5.451000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (11.000000,5.526000) {$\textit{1,10}$};
+\draw[light] (14.960000,5.451000)--(15.800000,5.451000);
+\draw[fine] (10.440000,6.381000)--(10.960000,6.381000);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (10.700000,6.456000) {$\textit{2,10}$};
+\draw[light] (14.960000,6.381000)--(15.800000,6.381000);
+\draw[fine] (12.040000,4.958100)--(12.560000,4.958100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (12.300000,5.033100) {$\textit{0,11}$};
+\draw[light] (14.960000,4.958100)--(15.800000,4.958100);
+\draw[fine] (11.740000,5.888100)--(12.260000,5.888100);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (12.000000,5.963100) {$\textit{1,11}$};
+\draw[light] (14.960000,5.888100)--(15.800000,5.888100);
+\draw[fine] (13.040000,5.395200)--(13.560000,5.395200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (13.300000,5.470200) {$\textit{0,12}$};
+\draw[light] (14.960000,5.395200)--(15.800000,5.395200);
+\draw[fine] (12.740000,6.325200)--(13.260000,6.325200);
+\node[small,fill=white,fill opacity=.94,text opacity=1,anchor=south] at (13.000000,6.400200) {$\textit{1,12}$};
+\draw[light] (14.960000,6.325200)--(15.800000,6.325200);
+\draw[dim] (-0.940000,0.150000)--(-0.940000,1.080000);
+\node[small,rotate=90] at (-1.120000,0.615000) {$\hbar\omega_1$};
+\draw[light] (-0.950000,0.150000)--(1.300000,0.150000);
+\draw[light] (-0.950000,1.080000)--(1.000000,1.080000);
+\draw[light] (7.500000,0.150000)--(8.250000,0.150000);
+\draw[light] (7.500000,0.587100)--(8.250000,0.587100);
+\draw[dim] (7.700000,0.150000)--(7.700000,0.587100);
+\node[small,rotate=90] at (7.990000,0.618550) {$\hbar\omega_2$};
+
+\end{tikzpicture}
+\end{document}

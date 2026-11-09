@@ -1,0 +1,50 @@
+% FIG 6.5: two lasers, turning mirror 3, combining plate 4, gas cell 5.
+% Incident and reflected segments meet ON each actual surface.
+% Probe from below reflects at PB and overlaps the transmitted upper beam.
+% Unused additional Fresnel branches are omitted, as in the author schematic.
+\documentclass[border=4pt]{standalone}
+\input{optics-common.tex}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm,line cap=round,line join=round]
+\PlateParameters{45}{.30}{1.50}
+\coordinate (Entrance) at (4.30,5.30);
+\Plate{P}{Entrance}{.82}
+\coordinate (UpperSource) at (.45,5.30);
+\Laser{U}{UpperSource}{2.35}{1}
+\draw[ray] (UOutput)--(PA);
+\draw[beam] (PA)--(PB);
+\fill (PA) circle[radius=.035cm];
+\fill (PB) circle[radius=.035cm];
+\draw[beam,-{Latex[length=2.3mm,width=1.35mm]}] (PA)--++(0,1.32);
+\node[oid] at ($(PB)+(.57,-.51)$) {4};
+% Turning mirror lies on the vertical ray ending at PB, NOT at plate centre.
+\coordinate (LowerSource) at (.45,1.55);
+\Laser{D}{LowerSource}{2.35}{2}
+\coordinate (M) at (PB |- DOutput);
+\TurnMirror{M}{3}
+\draw[ray] (DOutput)--(M);
+\draw[ray] (M)--(PB);
+% 2->3->4->5 joins 1->4->5 at the actual plate output point PB.
+\fill (M) circle[radius=.038cm];
+\coordinate (CellIn) at (6.0,0 |- PB);
+\GasCell{C}{CellIn}{2.35}{5}
+\draw[ray] (PB)--(CIn);
+\draw[ray] (CIn)--(COut);
+\draw[beam,-{Latex[length=2.3mm,width=1.35mm]}] (COut)--++(.68,0);
+\node[opanel] at (4.50,.02) {а};
+% Broader panel b. Axes and labels kept out of curve's ink region.
+\begin{scope}[shift={(9.65,1.55)}]
+  \draw[axis] (0,0)--(7.60,0);
+  \draw[axis] (3.53,0)--(3.53,4.47);
+  \node[olabel,anchor=west] at (3.72,4.36) {$\alpha(\omega')$};
+  \node[olabel,anchor=north east] at (7.57,-.15) {$\omega'$};
+  \draw[curve,samples=600,domain=-3.25:3.45,smooth]
+    plot ({3.53+1.08*\x},{2.85*exp(-(.39*\x)^2)-.97*exp(-((\x-1.10)/.20)^2)});
+  \draw[tick] (3.53,-.10)--(3.53,.12);
+  \draw[tick] ({3.53+1.08*1.10},-.10)--({3.53+1.08*1.10},.12);
+  \node[olabel,anchor=north] at (3.53,-.18) {$\omega_0$};
+  \node[olabel,anchor=north] at ({3.53+1.08*1.10},-.18) {$\omega$};
+  \node[opanel] at (3.80,-1.53) {б};
+\end{scope}
+\end{tikzpicture}
+\end{document}

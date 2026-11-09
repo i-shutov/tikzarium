@@ -1,0 +1,13 @@
+{
+  "schema": "tikzarium.external-compile.v1",
+  "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+  "source_git_sha": "26cf786d96fe34e809dd263824e9fee6309cadfb",
+  "count": 142,
+  "pass": 142,
+  "fail": 0,
+  "warnings": 120,
+  "limit_per_figure_seconds": 100,
+  "parallel_jobs": 4,
+  "gui_evidence": "NOT_RUN",
+  "visual_content_evidence": "NOT_RUN"
+}

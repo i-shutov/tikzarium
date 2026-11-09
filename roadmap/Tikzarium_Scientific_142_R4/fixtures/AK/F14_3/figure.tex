@@ -1,0 +1,35 @@
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec,unicode-math}
+\setmainfont{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.markings}
+\definecolor{Ink}{HTML}{000000}
+\tikzset{ax/.style={draw=Ink,line width=.65pt,-{Latex[length=2.2mm,width=1.25mm]}},
+lev/.style={draw=Ink,line width=1.25pt,line cap=butt},
+fine/.style={draw=Ink,line width=.60pt},
+band/.style={draw=Ink,line width=.62pt},
+sol/.style={draw=Ink,line width=1.35pt,line cap=round,line join=round},
+ray/.style={draw=Ink,line width=.72pt,-{Latex[length=2.0mm,width=1.15mm]}},
+dim/.style={draw=Ink,line width=.60pt,{Latex[length=1.7mm,width=.95mm]}-{Latex[length=1.7mm,width=.95mm]}},
+lab/.style={text=Ink,font=\fontsize{13}{16}\selectfont,inner sep=1.1pt},
+small/.style={text=Ink,font=\fontsize{11}{13}\selectfont,inner sep=1.0pt}}
+\pagestyle{empty}
+\def\datadir{data}
+\IfFileExists{data/F20_1_heat.dat}{}{\def\datadir{../data}}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+% Illustrative two-centre Coulomb model; not an atomic calculation.
+\draw[sol] plot file {\datadir/F14_3_left.dat};
+\draw[sol] plot file {\datadir/F14_3_middle.dat};
+\draw[sol] plot file {\datadir/F14_3_right.dat};
+\draw[fine] (2.8,.1)--(2.8,4.9) (6.8,.1)--(6.8,4.9);
+\draw[fine] (1.85,2.6)--(2.8,2.6) (6.8,2.6)--(7.75,2.6);
+\draw[fine,dashed] (2.8,2.6)--(6.8,2.6);
+\draw[dim,line width=.75pt] (4.80,2.63)--(4.80,3.56);
+\node[lab,rotate=90,fill=white,inner sep=1.2pt] at (4.53,3.10) {$\Delta E$};
+\draw[dim] (2.84,-.18)--(6.76,-.18);
+\node[lab,fill=white] at (4.8,-.18) {$b$};
+\draw[fine] (2.8,.10)--(2.8,-.38) (6.8,.10)--(6.8,-.38);
+\end{tikzpicture}
+\end{document}

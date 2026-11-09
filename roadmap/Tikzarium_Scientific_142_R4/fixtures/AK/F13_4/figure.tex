@@ -1,0 +1,183 @@
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{Noto Serif}
+\newfontfamily\FigureItalic{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.pathmorphing,decorations.markings,decorations.pathreplacing,positioning,backgrounds}
+\definecolor{Ink}{HTML}{000000}
+\definecolor{Curve}{HTML}{000000}
+\definecolor{Bzero}{HTML}{000000}
+\definecolor{Bone}{HTML}{000000}
+\definecolor{Btwo}{HTML}{000000}
+\definecolor{Bthree}{HTML}{000000}
+\definecolor{Bfour}{HTML}{000000}
+\tikzset{
+ ax/.style={draw=Ink,line width=.72pt,-{Latex[length=2.4mm,width=1.5mm]}},
+ lev/.style={draw=Ink,line width=1.4pt,line cap=butt},
+ thinlev/.style={draw=Ink,line width=.65pt,line cap=butt},
+ helper/.style={draw=Ink,line width=.65pt},
+ bare/.style={draw=Ink,line width=.95pt,dash pattern=on 4pt off 2.8pt},
+ curve/.style={draw=Ink,line width=1.85pt,line cap=round,line join=round},
+ ray/.style={draw=Ink,line width=1.0pt,-{Latex[length=2.3mm,width=1.4mm]}},
+ measure/.style={draw=Ink,line width=.75pt,{Latex[length=1.9mm,width=1.2mm]}-{Latex[length=1.9mm,width=1.2mm]}},
+ link/.style={draw=Ink,line width=1.0pt},
+ wave/.style={draw=Ink,line width=.85pt,decorate,decoration={snake,amplitude=.33mm,segment length=2.5mm,pre length=.8mm,post length=.8mm}},
+ photon/.style={draw=Ink,line width=1.0pt,-{Latex[length=2.0mm,width=1.3mm]},decorate,decoration={snake,amplitude=.4mm,segment length=2.7mm,pre length=0mm,post length=1.9mm}},
+ lab/.style={text=Ink,font=\fontsize{13.5}{16}\selectfont,inner sep=2pt},
+ small/.style={text=Ink,font=\fontsize{11.5}{14}\selectfont,inner sep=2pt},
+ tag/.style={text=Ink,font=\fontsize{14}{17}\selectfont\FigureItalic\itshape,inner sep=2pt}}
+\pagestyle{empty}
+
+\begin{document}
+% Figure 13.4; source-grounded revision.
+\begin{tikzpicture}[x=1cm,y=1cm]
+\coordinate (s000) at (6.60000,0.00000);
+\coordinate (s000L) at (6.24000,0.00000);
+\coordinate (s000R) at (6.96000,0.00000);
+\draw[lev] (s000L) -- (s000R);
+\node[lab,anchor=west] at (7.06000,0.00000) {$\mathit{0,0,0}$};
+\coordinate (s010) at (7.64000,0.57000);
+\coordinate (s010L) at (7.28000,0.57000);
+\coordinate (s010R) at (8.00000,0.57000);
+\draw[lev] (s010L) -- (s010R);
+\node[lab,anchor=west] at (8.10000,0.57000) {$\mathit{0,1,0}$};
+\coordinate (s020) at (8.68000,1.14000);
+\coordinate (s020L) at (8.32000,1.14000);
+\coordinate (s020R) at (9.04000,1.14000);
+\draw[lev] (s020L) -- (s020R);
+\node[lab,anchor=west] at (9.14000,1.14000) {$\mathit{0,2,0}$};
+\coordinate (s030) at (9.72000,1.71000);
+\coordinate (s030L) at (9.36000,1.71000);
+\coordinate (s030R) at (10.08000,1.71000);
+\draw[lev] (s030L) -- (s030R);
+\node[lab,anchor=west] at (10.18000,1.71000) {$\mathit{0,3,0}$};
+\coordinate (s040) at (10.76000,2.28000);
+\coordinate (s040L) at (10.40000,2.28000);
+\coordinate (s040R) at (11.12000,2.28000);
+\draw[lev] (s040L) -- (s040R);
+\node[lab,anchor=west] at (11.22000,2.28000) {$\mathit{0,4,0}$};
+\coordinate (s050) at (11.80000,2.85000);
+\coordinate (s050L) at (11.44000,2.85000);
+\coordinate (s050R) at (12.16000,2.85000);
+\draw[lev] (s050L) -- (s050R);
+\node[lab,anchor=west] at (12.26000,2.85000) {$\mathit{0,5,0}$};
+\coordinate (s060) at (12.84000,3.42000);
+\coordinate (s060L) at (12.48000,3.42000);
+\coordinate (s060R) at (13.20000,3.42000);
+\draw[lev] (s060L) -- (s060R);
+\node[lab,anchor=west] at (13.30000,3.42000) {$\mathit{0,6,0}$};
+\coordinate (s100) at (4.55000,1.14000);
+\coordinate (s100L) at (4.19000,1.14000);
+\coordinate (s100R) at (4.91000,1.14000);
+\draw[lev] (s100L) -- (s100R);
+\node[lab,anchor=west] at (5.01000,1.14000) {$\mathit{1,0,0}$};
+\coordinate (s110) at (5.59000,1.71000);
+\coordinate (s110L) at (5.23000,1.71000);
+\coordinate (s110R) at (5.95000,1.71000);
+\draw[lev] (s110L) -- (s110R);
+\node[lab,anchor=west] at (6.05000,1.71000) {$\mathit{1,1,0}$};
+\coordinate (s120) at (6.63000,2.28000);
+\coordinate (s120L) at (6.27000,2.28000);
+\coordinate (s120R) at (6.99000,2.28000);
+\draw[lev] (s120L) -- (s120R);
+\node[lab,anchor=west] at (7.09000,2.28000) {$\mathit{1,2,0}$};
+\coordinate (s130) at (7.67000,2.85000);
+\coordinate (s130L) at (7.31000,2.85000);
+\coordinate (s130R) at (8.03000,2.85000);
+\draw[lev] (s130L) -- (s130R);
+\node[lab,anchor=west] at (8.13000,2.85000) {$\mathit{1,3,0}$};
+\coordinate (s140) at (8.71000,3.42000);
+\coordinate (s140L) at (8.35000,3.42000);
+\coordinate (s140R) at (9.07000,3.42000);
+\draw[lev] (s140L) -- (s140R);
+\node[lab,anchor=west] at (9.17000,3.42000) {$\mathit{1,4,0}$};
+\coordinate (s200) at (2.50000,2.28000);
+\coordinate (s200L) at (2.14000,2.28000);
+\coordinate (s200R) at (2.86000,2.28000);
+\draw[lev] (s200L) -- (s200R);
+\node[lab,anchor=west] at (2.96000,2.28000) {$\mathit{2,0,0}$};
+\coordinate (s210) at (3.54000,2.85000);
+\coordinate (s210L) at (3.18000,2.85000);
+\coordinate (s210R) at (3.90000,2.85000);
+\draw[lev] (s210L) -- (s210R);
+\node[lab,anchor=west] at (4.00000,2.85000) {$\mathit{2,1,0}$};
+\coordinate (s220) at (4.58000,3.42000);
+\coordinate (s220L) at (4.22000,3.42000);
+\coordinate (s220R) at (4.94000,3.42000);
+\draw[lev] (s220L) -- (s220R);
+\node[lab,anchor=west] at (5.04000,3.42000) {$\mathit{2,2,0}$};
+\coordinate (s300) at (0.45000,3.42000);
+\coordinate (s300L) at (0.09000,3.42000);
+\coordinate (s300R) at (0.81000,3.42000);
+\draw[lev] (s300L) -- (s300R);
+\node[lab,anchor=west] at (0.91000,3.42000) {$\mathit{3,0,0}$};
+\coordinate (s001) at (6.60000,4.56000);
+\coordinate (s001L) at (6.24000,4.56000);
+\coordinate (s001R) at (6.96000,4.56000);
+\draw[lev] (s001L) -- (s001R);
+\node[lab,anchor=west] at (7.06000,4.56000) {$\mathit{0,0,1}$};
+\coordinate (s011) at (7.64000,5.13000);
+\coordinate (s011L) at (7.28000,5.13000);
+\coordinate (s011R) at (8.00000,5.13000);
+\draw[lev] (s011L) -- (s011R);
+\node[lab,anchor=west] at (8.10000,5.13000) {$\mathit{0,1,1}$};
+\coordinate (s021) at (8.68000,5.70000);
+\coordinate (s021L) at (8.32000,5.70000);
+\coordinate (s021R) at (9.04000,5.70000);
+\draw[lev] (s021L) -- (s021R);
+\node[lab,anchor=west] at (9.14000,5.70000) {$\mathit{0,2,1}$};
+\coordinate (s101) at (4.55000,5.70000);
+\coordinate (s101L) at (4.19000,5.70000);
+\coordinate (s101R) at (4.91000,5.70000);
+\draw[lev] (s101L) -- (s101R);
+\node[lab,anchor=west] at (5.01000,5.70000) {$\mathit{1,0,1}$};
+\coordinate (s111) at (5.59000,6.27000);
+\coordinate (s111L) at (5.23000,6.27000);
+\coordinate (s111R) at (5.95000,6.27000);
+\draw[lev] (s111L) -- (s111R);
+\node[lab,anchor=west] at (6.05000,6.27000) {$\mathit{1,1,1}$};
+\coordinate (s201) at (2.50000,6.84000);
+\coordinate (s201L) at (2.14000,6.84000);
+\coordinate (s201R) at (2.86000,6.84000);
+\draw[lev] (s201L) -- (s201R);
+\node[lab,anchor=west] at (2.96000,6.84000) {$\mathit{2,0,1}$};
+\coordinate (s002) at (6.60000,8.55000);
+\coordinate (s002L) at (6.24000,8.55000);
+\coordinate (s002R) at (6.96000,8.55000);
+\draw[lev] (s002L) -- (s002R);
+\node[lab,anchor=west] at (7.06000,8.55000) {$\mathit{0,0,2}$};
+\coordinate (s012) at (7.64000,9.12000);
+\coordinate (s012L) at (7.28000,9.12000);
+\coordinate (s012R) at (8.00000,9.12000);
+\draw[lev] (s012L) -- (s012R);
+\node[lab,anchor=west] at (8.10000,9.12000) {$\mathit{0,1,2}$};
+\coordinate (s022) at (8.68000,9.69000);
+\coordinate (s022L) at (8.32000,9.69000);
+\coordinate (s022R) at (9.04000,9.69000);
+\draw[lev] (s022L) -- (s022R);
+\node[lab,anchor=west] at (9.14000,9.69000) {$\mathit{0,2,2}$};
+\coordinate (s102) at (4.55000,9.69000);
+\coordinate (s102L) at (4.19000,9.69000);
+\coordinate (s102R) at (4.91000,9.69000);
+\draw[lev] (s102L) -- (s102R);
+\node[lab,anchor=west] at (5.01000,9.69000) {$\mathit{1,0,2}$};
+\coordinate (s112) at (5.59000,10.26000);
+\coordinate (s112L) at (5.23000,10.26000);
+\coordinate (s112R) at (5.95000,10.26000);
+\draw[lev] (s112L) -- (s112R);
+\node[lab,anchor=west] at (6.05000,10.26000) {$\mathit{1,1,2}$};
+\coordinate (s202) at (2.50000,10.83000);
+\coordinate (s202L) at (2.14000,10.83000);
+\coordinate (s202R) at (2.86000,10.83000);
+\draw[lev] (s202L) -- (s202R);
+\node[lab,anchor=west] at (2.96000,10.83000) {$\mathit{2,0,2}$};
+\draw[ray,shorten <=3pt,shorten >=4pt] (s200) -- (s102);
+\draw[ray,shorten <=3pt,shorten >=4pt] (s102) -- (s111);
+\draw[ray,shorten <=3pt,shorten >=4pt] (s111) -- (s120);
+\draw[ray,shorten <=3pt,shorten >=4pt] (s200) -- (s101);
+\draw[ray,shorten <=3pt,shorten >=4pt] (s101) -- (s112);
+\draw[ray,shorten <=3pt,shorten >=4pt] (s112) -- (s120);\end{tikzpicture}
+
+\end{document}

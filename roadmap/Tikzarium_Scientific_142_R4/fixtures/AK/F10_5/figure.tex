@@ -1,0 +1,61 @@
+% AKULIN--KARLOV Fig.10.5. CP09: physical scan-traced labelled two-chain graph.
+% Source raster F10_5.jpg, 533 x 616; coordinates are 2D editorial trace.
+% Exactly 14 marked occurrences, 8 straight edges, 4 wavy edges.
+% Crossings (when present) are NEVER vertices without a black source dot.
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec,unicode-math}
+\setmainfont{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
+\tikzset{
+ solidfactor/.style={black,line width=.83pt,line cap=round},
+ wavefactor/.style={black,line width=.83pt,decorate,
+   decoration={snake,amplitude=.25mm,segment length=2.7mm,
+   pre length=.7mm,post length=.6mm}},
+ sourcepoint/.style={black},
+ lab/.style={font=\fontsize{12.5}{15}\selectfont,inner sep=1.2pt}}
+\begin{document}
+\begin{tikzpicture}[x=.020cm,y=-.020cm]
+\path[use as bounding box] (12,-22) rectangle (531,574);
+% Eight straight factors, preserving all literal endpoints in the scan.
+\coordinate (s0) at (46,356);
+\coordinate (s1) at (226,343);
+\coordinate (s2) at (215,140);
+\coordinate (s3) at (128,28);
+\coordinate (s4) at (235,120);
+\coordinate (s5) at (284,15);
+\coordinate (s6) at (260,139);
+\coordinate (s7) at (271,341);
+\coordinate (s8) at (494,325);
+\draw[solidfactor] (s0)--(s1);
+\draw[solidfactor] (s1)--(s2);
+\draw[solidfactor] (s2)--(s3);
+\draw[solidfactor] (s3)--(s4);
+\draw[solidfactor] (s4)--(s5);
+\draw[solidfactor] (s5)--(s6);
+\draw[solidfactor] (s6)--(s7);
+\draw[solidfactor] (s7)--(s8);
+% Four wavy factors: two long, slightly oblique; two closely parallel near k'''.
+\coordinate (w0) at (47,393);
+\coordinate (w1) at (252,379);
+\coordinate (w2) at (472,365);
+\coordinate (w3) at (507,529);
+\coordinate (w4) at (513,361);
+\draw[wavefactor] (w0)--(w1);
+\draw[wavefactor] (w1)--(w2);
+\draw[wavefactor] (w2)--(w3);
+\draw[wavefactor] (w3)--(w4);
+\foreach \p in {s0,s1,s2,s3,s4,s5,s6,s7,s8,w0,w1,w2,w3,w4}{
+  \fill[sourcepoint] (\p) circle (2.1pt);
+}
+% Names occur only where printed; unlabelled occurrences are not invented states.
+\node[lab,anchor=south east] at (117,22) {$k''$};
+\node[lab,anchor=south west] at (295,8) {$k'$};
+\node[lab,anchor=east] at (205,154) {$n'$};
+\node[lab,anchor=east] at (36,356) {$0$};
+\node[lab,anchor=south] at (252,376) {$k$};
+\node[lab,anchor=west] at (519,361) {$n$};
+\node[lab,anchor=west] at (515,539) {$k'''$};
+\end{tikzpicture}
+\end{document}

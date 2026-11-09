@@ -1,0 +1,66 @@
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\setdefaultlanguage{russian}
+\setotherlanguages{english}
+\newfontfamily\cyrillicfont[Script=Cyrillic]{Charis SIL}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{positioning}
+\usepackage{tikz-dimline}
+\usetikzlibrary{intersections}
+\usetikzlibrary{patterns}
+\usetikzlibrary{patterns.meta}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes.arrows}
+\usetikzlibrary{calc}
+\usetikzlibrary{quotes,angles}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{babel}
+\usepgfplotslibrary{fillbetween}
+\tikzset{add reference/.style={insert path={coordinate [pos=0,xshift=-0.5\pgflinewidth,yshift=-0.5\pgflinewidth] (#1 south west)
+    coordinate [pos=1,xshift=0.5\pgflinewidth,yshift=0.5\pgflinewidth]   (#1 north east)
+    coordinate [pos=.5] (#1 center)
+    (#1 south west |- #1 north east)     coordinate (#1 north west)
+    (#1 center     |- #1 north east)     coordinate (#1 north)
+    (#1 center     |- #1 south west)     coordinate (#1 south)
+    (#1 south west -| #1 north east)     coordinate (#1 south east)
+    (#1 center     -| #1 south west)     coordinate (#1 west)
+    (#1 center     -| #1 north east)     coordinate (#1 east)
+}}}
+\pgfplotsset{compat=1.17}
+\pgfdeclarelayer{ft}
+\pgfdeclarelayer{bg}
+\pgfsetlayers{bg,main,ft}
+\pgfmathdeclarefunction{gauss}{3}{\pgfmathparse{1/(#3*sqrt(2*pi))*exp(-((#1-#2)^2)/(2*#3^2))}}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[
+   ytick=\empty,
+   xtick=\empty,
+   xmin=-90,
+   xmax=830,
+   ymin=-1.3,
+   axis x line=none, axis y line=none ]
+    \addplot[red,name path=A,thick,domain=-90:7*90,samples=200] {sin(x)};
+    \addplot[blue,name path=B,thick,domain=90:9*90,samples=200] {-sin(x)};
+    \addplot[green,name path=S,thick,domain=90:7*90,samples=200,fill opacity=0,draw opacity=0.0] {min(sin(x), -sin(x))};
+    \path [name path=G] (\pgfkeysvalueof{/pgfplots/xmin},-1) -- (\pgfkeysvalueof{/pgfplots/xmax},-1);
+    \path [name path=AR] (\pgfkeysvalueof{/pgfplots/xmin},0) -- (\pgfkeysvalueof{/pgfplots/xmax},0);
+    \addplot[pattern=north east lines,pattern color=gray] fill between [of = S and G, soft clip={domain=90:7*90}];
+    \path [name intersections={of=AR and B}];
+    \coordinate (OP1) at (intersection-3);
+    \coordinate (OP2) at (intersection-4);
+    \draw[<->] (OP1) -- (OP2) node[above right] {$\Delta w_n$};
+\foreach \xval\lab in {90/$w_n-1$,270/{$w_n$},450/$w_n+1$,630/{}} {
+   \edef\temp{\noexpand\draw[dashed] (axis cs:\xval,1) -- (axis cs:\xval,-1) node [above=-20pt] {\lab};}
+    \temp
+};
+\end{axis}
+\end{tikzpicture}
+\end{document}

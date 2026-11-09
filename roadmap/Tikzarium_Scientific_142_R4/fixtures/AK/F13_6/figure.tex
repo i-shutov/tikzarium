@@ -1,0 +1,205 @@
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{Noto Serif}
+\newfontfamily\FigureItalic{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.pathmorphing,decorations.markings,decorations.pathreplacing,positioning,backgrounds}
+\definecolor{Ink}{HTML}{000000}
+\definecolor{Curve}{HTML}{000000}
+\definecolor{Bzero}{HTML}{000000}
+\definecolor{Bone}{HTML}{000000}
+\definecolor{Btwo}{HTML}{000000}
+\definecolor{Bthree}{HTML}{000000}
+\definecolor{Bfour}{HTML}{000000}
+\tikzset{
+ ax/.style={draw=Ink,line width=.72pt,-{Latex[length=2.4mm,width=1.5mm]}},
+ lev/.style={draw=Ink,line width=1.4pt,line cap=butt},
+ thinlev/.style={draw=Ink,line width=.65pt,line cap=butt},
+ helper/.style={draw=Ink,line width=.65pt},
+ bare/.style={draw=Ink,line width=.95pt,dash pattern=on 4pt off 2.8pt},
+ curve/.style={draw=Ink,line width=1.85pt,line cap=round,line join=round},
+ ray/.style={draw=Ink,line width=1.0pt,-{Latex[length=2.3mm,width=1.4mm]}},
+ measure/.style={draw=Ink,line width=.75pt,{Latex[length=1.9mm,width=1.2mm]}-{Latex[length=1.9mm,width=1.2mm]}},
+ link/.style={draw=Ink,line width=1.0pt},
+ wave/.style={draw=Ink,line width=.85pt,decorate,decoration={snake,amplitude=.33mm,segment length=2.5mm,pre length=.8mm,post length=.8mm}},
+ photon/.style={draw=Ink,line width=1.0pt,-{Latex[length=2.0mm,width=1.3mm]},decorate,decoration={snake,amplitude=.4mm,segment length=2.7mm,pre length=0mm,post length=1.9mm}},
+ lab/.style={text=Ink,font=\fontsize{13.5}{16}\selectfont,inner sep=2pt},
+ small/.style={text=Ink,font=\fontsize{11.5}{14}\selectfont,inner sep=2pt},
+ tag/.style={text=Ink,font=\fontsize{14}{17}\selectfont\FigureItalic\itshape,inner sep=2pt}}
+\pagestyle{empty}
+
+\begin{document}
+% Figure 13.6; source-grounded revision.
+\begin{tikzpicture}[x=1cm,y=1cm]
+\coordinate (a0) at (1.40000,6.00000);
+\coordinate (a0L) at (0.35000,6.00000);
+\coordinate (a0R) at (2.45000,6.00000);
+\draw[lev] (a0L) -- (a0R);
+\node[lab,anchor=east] at (0.25000,6.00000) {$|0\rangle$};
+\coordinate (a1) at (1.40000,6.75000);
+\coordinate (a1L) at (0.35000,6.75000);
+\coordinate (a1R) at (2.45000,6.75000);
+\draw[lev] (a1L) -- (a1R);
+\node[lab,anchor=east] at (0.25000,6.75000) {$|1\rangle$};
+\coordinate (a2) at (1.40000,9.00000);
+\coordinate (a2L) at (0.35000,9.00000);
+\coordinate (a2R) at (2.45000,9.00000);
+\draw[lev] (a2L) -- (a2R);
+\node[lab,anchor=east] at (0.25000,9.00000) {$|2\rangle$};
+\coordinate (av) at (1.20000,9.37500);
+\coordinate (ain) at (0.80000,6.00000);
+\coordinate (aout) at (2.00000,6.75000);
+\draw[ray] (1.00,6.12) -- (1.00,8.88);
+\draw[ray] (1.75,6.12) -- (1.75,8.88);
+\node[tag] at (1.40000,5.35000) {а};
+\coordinate (b0_0) at (4.60000,6.00000);
+\coordinate (b0_0L) at (4.13000,6.00000);
+\coordinate (b0_0R) at (5.07000,6.00000);
+\draw[lev] (b0_0L) -- (b0_0R);
+\node[small] at (4.60000,5.34000) {$\mathit{0,0,N}$};
+\coordinate (b1_0) at (7.10000,6.48000);
+\coordinate (b1_0L) at (6.63000,6.48000);
+\coordinate (b1_0R) at (7.57000,6.48000);
+\draw[lev] (b1_0L) -- (b1_0R);
+\node[small] at (7.10000,5.82000) {$\mathit{1,0,N-1}$};
+\coordinate (b1_1) at (7.10000,7.92000);
+\coordinate (b1_1L) at (6.63000,7.92000);
+\coordinate (b1_1R) at (7.57000,7.92000);
+\draw[lev] (b1_1L) -- (b1_1R);
+\node[small] at (7.10000,8.20000) {$\mathit{0,1,N-1}$};
+\coordinate (b2_0) at (9.60000,6.96000);
+\coordinate (b2_0L) at (9.13000,6.96000);
+\coordinate (b2_0R) at (10.07000,6.96000);
+\draw[lev] (b2_0L) -- (b2_0R);
+\node[small] at (9.60000,6.30000) {$\mathit{2,0,N-2}$};
+\coordinate (b2_1) at (9.60000,8.40000);
+\coordinate (b2_1L) at (9.13000,8.40000);
+\coordinate (b2_1R) at (10.07000,8.40000);
+\draw[lev] (b2_1L) -- (b2_1R);
+\node[small] at (9.60000,8.68000) {$\mathit{1,1,N-2}$};
+\coordinate (b2_2) at (9.60000,9.84000);
+\coordinate (b2_2L) at (9.13000,9.84000);
+\coordinate (b2_2R) at (10.07000,9.84000);
+\draw[lev] (b2_2L) -- (b2_2R);
+\node[small] at (9.60000,10.12000) {$\mathit{0,2,N-2}$};
+\coordinate (b3_0) at (12.10000,7.44000);
+\coordinate (b3_0L) at (11.63000,7.44000);
+\coordinate (b3_0R) at (12.57000,7.44000);
+\draw[lev] (b3_0L) -- (b3_0R);
+\node[small] at (12.10000,6.78000) {$\mathit{3,0,N-3}$};
+\coordinate (b3_1) at (12.10000,8.88000);
+\coordinate (b3_1L) at (11.63000,8.88000);
+\coordinate (b3_1R) at (12.57000,8.88000);
+\draw[lev] (b3_1L) -- (b3_1R);
+\node[small] at (12.10000,9.16000) {$\mathit{2,1,N-3}$};
+\coordinate (b3_2) at (12.10000,10.32000);
+\coordinate (b3_2L) at (11.63000,10.32000);
+\coordinate (b3_2R) at (12.57000,10.32000);
+\draw[lev] (b3_2L) -- (b3_2R);
+\node[small] at (12.10000,10.60000) {$\mathit{1,2,N-3}$};
+\coordinate (b3_3) at (12.10000,11.76000);
+\coordinate (b3_3L) at (11.63000,11.76000);
+\coordinate (b3_3R) at (12.57000,11.76000);
+\draw[lev] (b3_3L) -- (b3_3R);
+\node[small] at (12.10000,12.04000) {$\mathit{0,3,N-3}$};
+\draw[ray] (b0_0R) .. controls (5.50680,6.47440) and (6.19320,6.68560) .. (b1_0L);
+\draw[ray] (b1_0L) .. controls (6.19320,6.00560) and (5.50680,5.79440) .. (b0_0R);
+\draw[ray] (b1_0R) .. controls (8.00680,6.95440) and (8.69320,7.16560) .. (b2_0L);
+\draw[ray] (b2_0L) .. controls (8.69320,6.48560) and (8.00680,6.27440) .. (b1_0R);
+\draw[ray] (b2_0R) .. controls (10.50680,7.43440) and (11.19320,7.64560) .. (b3_0L);
+\draw[ray] (b3_0L) .. controls (11.19320,6.96560) and (10.50680,6.75440) .. (b2_0R);
+\node[tag] at (8.40000,5.15000) {б};
+\coordinate (c0) at (2.30000,4.59000);
+\coordinate (c0L) at (1.90000,4.59000);
+\coordinate (c0R) at (2.70000,4.59000);
+\draw[lev] (c0L) -- (c0R);
+\node[small] at (2.30000,4.02000) {$\mathit{n,0}$};
+\coordinate (c1) at (3.95000,4.42000);
+\coordinate (c1L) at (3.55000,4.42000);
+\coordinate (c1R) at (4.35000,4.42000);
+\draw[lev] (c1L) -- (c1R);
+\node[small] at (3.95000,3.85000) {$\mathit{n-1,1}$};
+\coordinate (c2) at (5.60000,4.25000);
+\coordinate (c2L) at (5.20000,4.25000);
+\coordinate (c2R) at (6.00000,4.25000);
+\draw[lev] (c2L) -- (c2R);
+\node[small] at (5.60000,3.68000) {$\mathit{n-2,2}$};
+\coordinate (c4) at (8.90000,3.91000);
+\coordinate (c4L) at (8.50000,3.91000);
+\coordinate (c4R) at (9.30000,3.91000);
+\draw[lev] (c4L) -- (c4R);
+\node[small] at (8.90000,3.34000) {$\mathit{2,n-2}$};
+\coordinate (c5) at (10.55000,3.74000);
+\coordinate (c5L) at (10.15000,3.74000);
+\coordinate (c5R) at (10.95000,3.74000);
+\draw[lev] (c5L) -- (c5R);
+\node[small] at (10.55000,3.17000) {$\mathit{1,n-1}$};
+\coordinate (c6) at (12.20000,3.57000);
+\coordinate (c6L) at (11.80000,3.57000);
+\coordinate (c6R) at (12.60000,3.57000);
+\draw[lev] (c6L) -- (c6R);
+\node[small] at (12.20000,3.00000) {$\mathit{0,n}$};
+\draw[ray] (c0R) .. controls (2.93800,4.84240) and (3.31200,4.76760) .. (c1L);
+\draw[ray] (c1L) .. controls (3.31200,4.16760) and (2.93800,4.24240) .. (c0R);
+\draw[ray] (c1R) .. controls (4.58800,4.67240) and (4.96200,4.59760) .. (c2L);
+\draw[ray] (c2L) .. controls (4.96200,3.99760) and (4.58800,4.07240) .. (c1R);
+\draw[ray] (c4R) .. controls (9.53800,4.16240) and (9.91200,4.08760) .. (c5L);
+\draw[ray] (c5L) .. controls (9.91200,3.48760) and (9.53800,3.56240) .. (c4R);
+\draw[ray] (c5R) .. controls (11.18800,3.99240) and (11.56200,3.91760) .. (c6L);
+\draw[ray] (c6L) .. controls (11.56200,3.31760) and (11.18800,3.39240) .. (c5R);
+\node[lab] at (7.25000,3.60000) {$\cdots$};
+\coordinate (d00) at (7.50000,0.00000);
+\coordinate (d00L) at (7.15000,0.00000);
+\coordinate (d00R) at (7.85000,0.00000);
+\draw[lev] (d00L) -- (d00R);
+\node[small] at (7.50000,-0.29000) {$\mathit{0,0}$};
+\coordinate (d10) at (6.62000,0.76500);
+\coordinate (d10L) at (6.27000,0.76500);
+\coordinate (d10R) at (6.97000,0.76500);
+\draw[lev] (d10L) -- (d10R);
+\node[small] at (6.62000,0.47500) {$\mathit{1,0}$};
+\coordinate (d01) at (8.38000,0.59500);
+\coordinate (d01L) at (8.03000,0.59500);
+\coordinate (d01R) at (8.73000,0.59500);
+\draw[lev] (d01L) -- (d01R);
+\node[small] at (8.38000,0.30500) {$\mathit{0,1}$};
+\coordinate (d20) at (5.74000,1.53000);
+\coordinate (d20L) at (5.39000,1.53000);
+\coordinate (d20R) at (6.09000,1.53000);
+\draw[lev] (d20L) -- (d20R);
+\node[small] at (5.74000,1.24000) {$\mathit{2,0}$};
+\coordinate (d11) at (7.50000,1.36000);
+\coordinate (d11L) at (7.15000,1.36000);
+\coordinate (d11R) at (7.85000,1.36000);
+\draw[lev] (d11L) -- (d11R);
+\node[small] at (7.50000,1.07000) {$\mathit{1,1}$};
+\coordinate (d02) at (9.26000,1.19000);
+\coordinate (d02L) at (8.91000,1.19000);
+\coordinate (d02R) at (9.61000,1.19000);
+\draw[lev] (d02L) -- (d02R);
+\node[small] at (9.26000,0.90000) {$\mathit{0,2}$};
+\coordinate (d30) at (4.86000,2.29500);
+\coordinate (d30L) at (4.51000,2.29500);
+\coordinate (d30R) at (5.21000,2.29500);
+\draw[lev] (d30L) -- (d30R);
+\node[small] at (4.86000,2.00500) {$\mathit{3,0}$};
+\coordinate (d21) at (6.62000,2.12500);
+\coordinate (d21L) at (6.27000,2.12500);
+\coordinate (d21R) at (6.97000,2.12500);
+\draw[lev] (d21L) -- (d21R);
+\node[small] at (6.62000,1.83500) {$\mathit{2,1}$};
+\coordinate (d12) at (8.38000,1.95500);
+\coordinate (d12L) at (8.03000,1.95500);
+\coordinate (d12R) at (8.73000,1.95500);
+\draw[lev] (d12L) -- (d12R);
+\node[small] at (8.38000,1.66500) {$\mathit{1,2}$};
+\coordinate (d03) at (10.14000,1.78500);
+\coordinate (d03L) at (9.79000,1.78500);
+\coordinate (d03R) at (10.49000,1.78500);
+\draw[lev] (d03L) -- (d03R);
+\node[small] at (10.14000,1.49500) {$\mathit{0,3}$};
+\node[tag] at (7.40000,-0.85000) {в};\end{tikzpicture}
+
+\end{document}

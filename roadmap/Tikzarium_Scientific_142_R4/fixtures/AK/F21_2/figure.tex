@@ -1,0 +1,58 @@
+\documentclass[border=5pt]{standalone}
+\usepackage{fontspec,unicode-math}
+\setmainfont{Noto Serif}
+\setmathfont{STIXTwoMath-Regular.otf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.markings}
+\definecolor{Ink}{HTML}{000000}
+\tikzset{ax/.style={draw=Ink,line width=.65pt,-{Latex[length=2.2mm,width=1.25mm]}},
+lev/.style={draw=Ink,line width=1.25pt,line cap=butt},
+fine/.style={draw=Ink,line width=.60pt},
+band/.style={draw=Ink,line width=.62pt},
+sol/.style={draw=Ink,line width=1.35pt,line cap=round,line join=round},
+ray/.style={draw=Ink,line width=.72pt,-{Latex[length=2.0mm,width=1.15mm]}},
+dim/.style={draw=Ink,line width=.60pt,{Latex[length=1.7mm,width=.95mm]}-{Latex[length=1.7mm,width=.95mm]}},
+lab/.style={text=Ink,font=\fontsize{13}{16}\selectfont,inner sep=1.1pt},
+small/.style={text=Ink,font=\fontsize{11}{13}\selectfont,inner sep=1.0pt}}
+\pagestyle{empty}
+\def\datadir{data}
+\IfFileExists{data/F20_1_heat.dat}{}{\def\datadir{../data}}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[ax] (0.20000000000000018,4.72)--(6.9,4.72);
+\draw[ax] (4.4,4.35)--(4.4,7.3);
+\node[lab,anchor=west] at (4.53000,7.14000) {$\chi''(\omega)$};
+\node[lab,anchor=west] at (6.98000,4.66000) {$\omega$};
+\draw[sol] plot file {\datadir/F21_2_0_abs.dat};
+\draw[ray] (2.8,4.05)--(2.8,4.64);
+\node[lab,anchor=north] at (2.80000,3.99000) {$\omega_{\mathrm{л}}$};
+\draw[ax] (0.20000000000000018,1.82)--(6.9,1.82);
+\draw[ax] (4.4,0.3)--(4.4,3.36);
+\node[lab,anchor=west] at (4.53000,3.20000) {$\chi'(\omega)$};
+\node[lab,anchor=west] at (6.98000,1.76000) {$\omega$};
+\draw[sol] plot file {\datadir/F21_2_0_disp.dat};
+\draw[ray] (2.8,0.2)--(2.8,1.74);
+\node[lab,anchor=north] at (2.80000,0.14000) {$\omega_{\mathrm{л}}$};
+\node[lab] at (3.70000,-0.47000) {$\text{а}$};
+\draw[ax] (7.750000000000001,4.72)--(14.450000000000001,4.72);
+\draw[ax] (11.950000000000001,4.35)--(11.950000000000001,7.3);
+\node[lab,anchor=west] at (12.08000,7.14000) {$\chi''(\omega)$};
+\node[lab,anchor=west] at (14.53000,4.66000) {$\omega$};
+\draw[fine,dash pattern=on 2.4pt off 1.7pt,line width=.78pt] plot file {\datadir/F21_2_ref_abs.dat};
+\draw[sol] plot file {\datadir/F21_2_1_abs.dat};
+\draw[ray] (10.350000000000001,4.05)--(10.350000000000001,4.64);
+\node[lab,anchor=north] at (10.35000,3.99000) {$\omega_{\mathrm{л}}$};
+\draw[ax] (7.750000000000001,1.82)--(14.450000000000001,1.82);
+\draw[ax] (11.950000000000001,0.3)--(11.950000000000001,3.36);
+\node[lab,anchor=west] at (12.08000,3.20000) {$\chi'(\omega)$};
+\node[lab,anchor=west] at (14.53000,1.76000) {$\omega$};
+\draw[fine,dash pattern=on 2.4pt off 1.7pt,line width=.78pt] plot file {\datadir/F21_2_ref_disp.dat};
+\draw[sol] plot file {\datadir/F21_2_1_disp.dat};
+\draw[ray] (10.350000000000001,0.2)--(10.350000000000001,1.74);
+\node[lab,anchor=north] at (10.35000,0.14000) {$\omega_{\mathrm{л}}$};
+\node[lab] at (11.25000,-0.47000) {$\text{б}$};
+% Explicit legend for the paired dashed weak-excitation reference, not another measured line.
+\draw[fine,dash pattern=on 2.4pt off 1.7pt,line width=.80pt] (9.90,-1.05)--(10.60,-1.05);
+\node[small,anchor=west] at (10.72,-1.05) {\textit{слабое возбуждение}};
+\end{tikzpicture}
+\end{document}

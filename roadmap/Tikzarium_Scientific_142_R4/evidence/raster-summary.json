@@ -1,0 +1,11 @@
+{
+  "schema": "tikzarium.raster-audit.v1",
+  "renderer": "PyMuPDF 1.26.7",
+  "dpi": 72,
+  "color": "RGB",
+  "algorithm": "exact raster SHA-256 and nonblank threshold",
+  "count": 142,
+  "pass": 142,
+  "failures": [],
+  "glyph_science_gui_status": "NOT_PROVED_BY_RASTER_EQUIVALENCE"
+}

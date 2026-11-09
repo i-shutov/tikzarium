@@ -1,0 +1,1351 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\setdefaultlanguage{russian}
+\setotherlanguages{english}
+\newfontfamily\cyrillicfont[Script=Cyrillic]{Charis SIL}
+
+\usepackage{tikz}
+%% https://tex.stackexchange.com/questions/160327/tikz-function-and-nodes-position
+\usepackage{pgfplots}                    
+\usetikzlibrary{positioning}
+\usepackage{tikz-dimline}
+\usetikzlibrary{intersections}
+\usetikzlibrary{patterns}
+\usetikzlibrary{patterns.meta}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes.arrows}
+\usetikzlibrary{calc}
+\usetikzlibrary{quotes,angles}
+\usetikzlibrary{shapes.geometric}
+% https://tex.stackexchange.com/questions/522815/polyglossia-setotherlanguage-conflicts-with-tikz-library-quotes
+\usetikzlibrary{babel}
+% to fill an area under function
+\usepgfplotslibrary{fillbetween}
+%\usetikzlibrary{pgfplots.fillbetween}
+% \pgfplotsset{compat=1.12} % TikZ coordinates <-> axes coordinates
+
+% https://tex.stackexchange.com/questions/47704/how-to-establish-node-anchor-like-points-on-a-tikz-rectangle-path-is-there-a
+\tikzset{add reference/.style={insert path={%
+    coordinate [pos=0,xshift=-0.5\pgflinewidth,yshift=-0.5\pgflinewidth] (#1 south west) 
+    coordinate [pos=1,xshift=0.5\pgflinewidth,yshift=0.5\pgflinewidth]   (#1 north east)
+    coordinate [pos=.5] (#1 center)                        
+    (#1 south west |- #1 north east)     coordinate (#1 north west)
+    (#1 center     |- #1 north east)     coordinate (#1 north)
+    (#1 center     |- #1 south west)     coordinate (#1 south)
+    (#1 south west -| #1 north east)     coordinate (#1 south east)
+    (#1 center     -| #1 south west)     coordinate (#1 west)
+    (#1 center     -| #1 north east)     coordinate (#1 east)   
+}}}  
+
+\title{Иллюстрации к лекциям в Сарове}
+\author{Ilya Shutov}
+\date{November 2022}
+
+\pgfplotsset{compat=1.17}
+\pgfdeclarelayer{ft}
+\pgfdeclarelayer{bg}
+\pgfsetlayers{bg,main,ft}
+
+\begin{document}
+
+% \newcommand\gauss[2]{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))} % Gauss function, parameters mu and sigma
+
+% https://tikz.net/gaussians/
+% define gaussian pdf and cdf
+\pgfmathdeclarefunction{gauss}{3}{%
+  % x, \mu, \sigma
+  \pgfmathparse{1/(#3*sqrt(2*pi))*exp(-((#1-#2)^2)/(2*#3^2))}%
+}
+
+\maketitle
+
+
+\section{Глава 1}
+
+\subsection{Солитон самоиндуцированной прозрачности}
+
+\begin{figure}[h]
+  \begin{subfigure}[t]{0.5\textwidth}
+  \vskip 0pt
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-3:3,smooth},
+  clip=false,
+  width=1\textwidth,
+  height=0.62\textwidth,
+  ymin=0,
+  ymax=1.4,
+  enlargelimits=10,
+  xtick distance=1,
+  ytick distance=0.5,
+  % yticklabel style={right, yshift=0.25em},
+  yticklabel style={left, yshift=0.5em},
+  xlabel=$\beta^{1/2}\tau_0$,
+  ylabel=$v$,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=middle, % the * suppresses the arrow tips]
+  x axis line style=-, % supress arrow
+  y axis line style=-, % supress arrow
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north,yshift=-0.4cm},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick] {.05 + 2.4*gauss(x,0,1)};
+\end{axis}
+\end{tikzpicture}
+    
+    \caption{Flower one.}
+    \label{fig:f1}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.5\textwidth}
+  \vskip 0pt
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,smooth},
+  clip=false,
+  width=1\textwidth,
+  height=1\textwidth,
+  xmin=-3,
+  xmax=3,
+  ymin=-3,
+  ymax=2.9,
+  enlargelimits=10,
+  xtick distance=1,
+  ytick distance=1,
+  % yticklabel style={right, yshift=0.25em},
+  xticklabel style={above,yshift=0.5em,xshift=-0.6em},
+  yticklabel style={left,yshift=-0.5em},
+  xlabel=$\beta^{1/2}\tau_0$,
+  ylabel=$v$,
+  axis x line=middle, % no box around the plot, only x and y axis
+  axis y line=middle, % the * suppresses the arrow tips]
+  x axis line style=-, % supress arrow
+  y axis line style=-, % supress arrow
+  every axis x label/.style={at={(current axis.right of origin)},anchor=south,yshift=1em},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick,domain=-3:-1.167] {0.5/(x+1)};
+    \addplot[red,name path=S,thick,domain=1.167:3] {0.5/(x-1)};
+    \addplot[red,name path=S,thick,domain=-.75:.75] {1+abs(2*x^3/(x^2-1))};
+    \addplot[blue,name path=S,thick,domain=-.72:.72] {1+4*x^2};
+    
+
+    \draw[dashed] (axis cs:-1,-3) -- (axis cs:-1,3);
+    \draw[dashed] (axis cs:1,-3) -- (axis cs:1,3);
+\end{axis}
+\end{tikzpicture}
+    
+    \caption{Flower two.}
+    \label{fig:f2}
+  \end{subfigure}
+  \caption{My flowers.}
+\end{figure}
+
+
+
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras luctus eros et dui pellentesque placerat id non eros. Ut dapibus ante ornare libero finibus faucibus. Suspendisse magna metus, elementum ac tellus a, blandit dignissim ipsum. Vivamus nec lacus eu ex sodales ultricies non at nulla. Vivamus bibendum nunc a risus fringilla, vitae tempus odio vehicula. Duis ligula leo, dictum eu scelerisque sit amet, rutrum vitae nulla. Nullam non nunc mauris. Aliquam dictum quis neque sit amet viverra. Donec efficitur malesuada leo et porttitor.
+
+Aliquam aliquam, mi sed pharetra luctus, arcu ex rutrum est, eu venenatis turpis turpis at nisl. Donec pulvinar nibh purus, vitae bibendum massa viverra quis. Integer ornare rutrum rutrum. Pellentesque vehicula dui eu viverra sagittis. Sed suscipit sapien quis erat elementum finibus. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Curabitur at erat et justo semper convallis id vel velit. Cras sed ante ut purus elementum dapibus in sit amet mi. Nunc pellentesque posuere sapien non blandit. Cras vel ligula sem. Suspendisse dui magna, sollicitudin sed rutrum a, volutpat in odio. Morbi ac mauris eget sem fringilla porta. Vestibulum commodo viverra lobortis. Fusce sed molestie orci. Curabitur tempor tortor in venenatis suscipit. 
+
+% \end{document}
+
+\subsection{Рисунок 3.3 – Населенность в зависимости от времени}
+
+% \begin{tikzpicture}[domain=0:3*180]
+% % ось
+% \draw [-] (1,0) -- (360,0) node[below] {};
+% % \draw (0,-1) rectangle (0.15,1) [add reference=R1];
+% % draw left rotated gauss
+% \draw[red,smooth,thick] plot[domain=0:3*360,samples=50] (\x, {sin(\x)});
+% \end{tikzpicture}
+
+\begin{tikzpicture}
+[
+  declare function={
+    ff(\x) = -(\x-2)^2 + 2;
+  }
+]
+  \def\xo{1.8};
+  \def\yn{1.1};
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=0:3*360,smooth},
+  clip=false,
+  xmin=0,
+  xmax=1080,
+  % ymin=0,
+  % ymax=0.5,
+  % enlargelimits=10,
+  ytick=\empty,
+  xtick=\empty,
+  %xlabel=$t$,
+  % ylabel=$I_\textit{Вых}$,
+  % https://tex.stackexchange.com/questions/592056/pgfplots-extra-x-tick-tick-length-affecting-axis-label-position
+  extra y ticks={0.5, 1.5, 2.5, 3.5},
+  extra y tick labels={$|d_{12}|$, $\Delta E_p$, $|a_2|^2$, $|a_1|^2$},
+  extra y tick style={major tick length=0},
+  % https://tex.stackexchange.com/questions/574555/tikz-refer-to-intersection-with-x-axis
+  x axis line style={name path=xaxis},
+  axis x line*=none, % no box around the plot, only x and y axis
+  axis y line*=left, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west}
+  % every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \foreach \yl in {0,...,3} {\addplot[gray] {\yl} node[right] {$t$};}
+    \addplot[red,name path=curve,thick] {sin(x)};
+    \addplot[red,name path=curve,thick] {abs(sin(x))+1};
+    \addplot[red,name path=curve,thick] {-0.5*cos(x)+2.5};
+    \addplot[red,name path=curve,thick] {0.5*cos(x)+3.5};
+
+\end{axis}
+\end{tikzpicture}
+
+
+
+\subsection{Рисунок 5.1 – Населенности уровней}
+\begin{tikzpicture}[scale=1.5]
+  \draw[-] (-1,0) -- ++(2,0) 
+        node[right]{$\,E_1$};
+  \draw[dashed] (-1,.7) -- ++(2,0)
+        node[right]{$\,0$};
+  \draw[-] (-1,1.4) -- ++(2,0)
+        node[right]{$\,E_2$};
+  \draw[->] (0,0) -- ++(0,1.8) node[right] {$E$};
+\end{tikzpicture}
+
+
+\subsection{Рисунок 5.2 – Иллюстрация вектора Блоха}
+
+\begin{tikzpicture}
+% \draw (2,0) coordinate (A) -- (0,0) coordinate (B)
+%          -- (1,1) coordinate (C)
+%   pic ["$\alpha$", draw, ->, angle eccentricity=1.3] {angle};
+
+\draw[dashed] (0,0) circle (2);
+\draw[-] (-2.1,0) -- (2.1,0) node[below right] {$\sigma_2$};
+% \draw (2,0) coordinate (A) -- (0,0) coordinate (B)
+%          -- (1,1) coordinate (C)
+%   pic ["$\alpha$", draw, ->, angle eccentricity=1.3] {angle};
+
+
+\draw[-] (0,-2.1) -- (0,0) coordinate (O);
+\draw[->] (O) -- (0,2.5) coordinate (S3) node[left] {$\sigma_3$};
+\draw[-] (0,0) -- (30:2.2) coordinate (F1) node[right] {};
+\pic [draw, red, <->,
+      angle radius = 1cm,
+      angle eccentricity=1.2, "$\theta$"] {angle = F1--O--S3};
+
+\draw[-] (O) -- (250:2.2) coordinate (S1) node[left] {$\sigma_1$};
+\draw[dashed] (O) -- (-45:2.2) coordinate (F2);
+\pic [draw, red, <->,
+      angle radius = 1cm,
+      angle eccentricity=1.2, "$\varphi$"] {angle = S1--O--F2};
+
+  
+\end{tikzpicture}
+
+%\end{document}
+
+
+\subsection{Рисунок 3.2 – Дифракционные потери в резонаторе}
+
+\begin{tikzpicture}
+  \newcommand\rmirr{4.35}
+  \newcommand\ww{0.15}
+% ось
+% \draw [-] (-1,0) -- (5,0) node[below] {};
+
+% \draw (0,-1) rectangle (0.15,1) [add reference=R1];
+\draw 
+    (-\ww,-1) -- ++(\ww,0) node[pos=0.5] (z0) {} -- 
+    ++(0,2) -- ++(-\ww,0) --cycle node[pos=0.05] (R1) {};
+\node[below left] at (z0) {$R_1=1$};
+
+\draw
+    (\rmirr,-1) -- ++(\ww,0) node[pos=0.5] (zl) {} -- 
+    ++(0,2) -- ++(-\ww,0) --cycle node[pos=0.05] (R2) {};
+\node[below right,yshift=-12pt] at (zl) {$R_2=0{,}99$};
+
+% draw left rotated gauss
+\draw[red,smooth,thick] plot[domain=0.05:1,samples=50] (\x, {-sqrt(-ln(\x))/2.5});
+\draw[red,smooth,thick] plot[domain=0.05:1,samples=50] (\x, {sqrt(-ln(\x))/2.5});
+
+% draw right rotated gauss
+\draw[red,smooth,thick,name path=A] plot[domain=3.3:4.28,samples=50] (\x, {-sqrt(-ln(-\x+4.3))});
+\path [name path=floor line] (3,-1) -- (4.29,-1);
+\tikzfillbetween[of=floor line and A,on layer=ft,split,
+    every segment no 0/.style={pattern color=green, opacity=0},
+    every segment no 1/.style={pattern color=blue, opacity=1}
+    ]{pattern=north east lines};
+
+\draw[red,smooth,thick,name path=B] plot[domain=3.3:4.28,samples=50] (\x, {sqrt(-ln(-\x+4.3))});
+\path [name path=ceil line] (3,1) -- (4.29,1);
+\tikzfillbetween[of=ceil line and B,on layer=ft,split,
+    every segment no 0/.style={pattern color=green, opacity=0},
+    every segment no 1/.style={pattern color=blue, opacity=1}
+    ]{pattern=north east lines};
+
+\draw[dashed] (0,1) -- (4.5,2);
+\draw[dashed] (0,-1) -- (4.5,-2);
+
+\node (dif) at (6,0) {\parbox[t]{3cm}{\centering Дифракционные\\ потери}};
+
+\draw[->] (dif) to [bend right=45] (4.5,1.4);
+\draw[->] (dif) to [bend right=-45] (4.5,-1.4);
+    
+\end{tikzpicture}
+
+% \begin{tikzpicture}
+% [
+%   declare function={invgauss(\x) = -sqrt(-ln(-\x));}
+% ]   
+% \begin{axis}[every axis plot post/.append style={
+%   mark=none,samples=150,domain=-1:0,smooth},
+%   clip=false,
+%   %ymin=0,
+%   %ymax=0.5,
+%   enlargelimits=10,
+%   %ytick=\empty,
+%   %xtick=\empty,
+%   xlabel=$t$,
+%   ylabel=$a$,
+%   axis x line=bottom, % no box around the plot, only x and y axis
+%   axis y line=middle, % the * suppresses the arrow tips]
+%   every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+%   every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+%   ]
+%     % plots
+%     \addplot[red,name path=S1,thick] {invgauss(x)};
+%     \addplot[red,name path=S2,thick] {-invgauss(x)};
+
+%     \path [name path=G] (\pgfkeysvalueof{/pgfplots/xmin},0) -- (\pgfkeysvalueof{/pgfplots/xmax},0);
+
+%     % Fill area between paths
+%     % https://tex.stackexchange.com/questions/228630/filling-an-area-with-a-pattern-between-two-curves-without-an-equation
+%     % \addplot[pattern=north east lines,pattern color=gray] fill between [of = S and G, soft clip={domain=-3:-1}];
+% \end{axis}
+% \end{tikzpicture}
+
+\subsection{Рисунок 3.1 – Межмодовый обмен}
+
+\begin{tikzpicture}
+\begin{axis}[
+   ytick=\empty,
+   xtick=\empty,
+   xmin=-90,
+   xmax=830,
+   ymin=-1.3,
+   % extra x ticks={90,270,450},
+   % extra x tick labels={$w_n-1$,$w_n$,$w_n+1$},
+   axis x line=none, % no box around the plot, only x and y axis
+   axis y line=none % the * suppresses the arrow tips]
+]
+    % plots
+    \addplot[red,name path=A,thick,domain=-90:7*90,samples=200] {sin(x)};
+    \addplot[blue,name path=B,thick,domain=90:9*90,samples=200] {-sin(x)};
+    \addplot[green,name path=S,thick,domain=90:7*90,samples=200,fill opacity=0,draw opacity=0.0] {min(sin(x), -sin(x))};
+    \path [name path=G] (\pgfkeysvalueof{/pgfplots/xmin},-1) -- (\pgfkeysvalueof{/pgfplots/xmax},-1);
+    \path [name path=AR] (\pgfkeysvalueof{/pgfplots/xmin},0) -- (\pgfkeysvalueof{/pgfplots/xmax},0);
+
+    % Fill area between paths
+    % https://tex.stackexchange.com/questions/228630/filling-an-area-with-a-pattern-between-two-curves-without-an-equation
+    \addplot[pattern=north east lines,pattern color=gray] fill between [of = S and G, soft clip={domain=90:7*90}];
+
+    % https://www.latex4technics.com/?note=997UG3
+    \path [name intersections={of=AR and B}];
+    % \coordinate [label= ${(Q_1,H_1)}$ ] (op1) at (intersection-1);
+    \coordinate (OP1) at (intersection-3);
+    \coordinate (OP2) at (intersection-4);
+
+    \draw[<->] (OP1) -- (OP2) node[above right] {$\Delta w_n$};
+
+% https://tex.stackexchange.com/questions/170664/foreach-not-behaving-in-axis-environment
+% https://latexdraw.com/how-to-use-the-foreach-loop-in-latex/
+\foreach \xval\lab in {90/$w_n-1$,270/{$w_n$},450/$w_n+1$,630/{}} {
+   \edef\temp{\noexpand\draw[dashed] (axis cs:\xval,1) -- (axis cs:\xval,-1) node [above=-20pt] {\lab};}
+    \temp
+};
+% \foreach \xval in {90,270,450,630} {
+%    \edef\temp{\noexpand\draw[dashed] (axis cs:\xval,1) -- (axis cs:\xval,-1) node [below] {};}
+%     \temp
+% } 
+
+\end{axis}
+\end{tikzpicture}
+
+\subsection{Рисунок 9.3 – Схема стационарной генерации}
+
+\begin{tikzpicture}
+  \newcommand\rmirr{4.35}
+  \newcommand\ww{0.15}
+% ось
+\draw [->] (-1,0) -- (6,0) node[below] {$Z$};
+
+% \draw (0,-1) rectangle (0.15,1) [add reference=R1];
+\draw[pattern=north west lines, pattern color=blue] 
+    (-\ww,-1.5) -- ++(\ww,0) node[pos=0.5] (z0) {} -- 
+    ++(0,3) -- ++(-\ww,0) --cycle node[pos=0.05] (R1) {};
+\node[below] at (z0) {$z=0$};
+\node[left] at (R1) {$R_1$};
+
+\draw[pattern=north west lines, pattern color=blue]
+    (\rmirr,-1.5) -- ++(\ww,0) node[pos=0.5] (zl) {} -- 
+    ++(0,3) -- ++(-\ww,0) --cycle node[pos=0.05] (R2) {};
+\node[below] at (zl) {$z=L$};
+\node[left] at (R2) {$R_2$};
+
+\draw[->] (0,1) -- ++({\rmirr+1},0) node[right] {$I_\textit{Вых}$};
+\draw[-] (0,-1) -- ++({\rmirr},0);
+\draw[->] (0.6,1.5) -- ++(1,0) node[midway,above] {$I_1$};
+\draw[->] (2.6,1.5) -- ++(1,0) node[midway,above] {$K_1$};
+
+\draw[<-] (0.6,-1.5) -- ++(1,0) node[midway,below] {$I_2$};
+\draw[->] (2.6,-1.5) -- ++(1,0) node[midway,below] {$K_2$};
+\end{tikzpicture}
+
+\subsection{Рисунок 9.2 – Насыщение усиления}
+
+\begin{tikzpicture}
+[
+  declare function={
+    ff(\x) = -.11 + 1.5/(1+exp(-(2*(\x+0.5)^2-3));
+  }
+]
+  \def\xo{0.6};
+  \def\yn{1.1};
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,smooth},
+  clip=false,
+  ymin=0,
+  % ymax=0.5,
+  enlargelimits=10,
+  ytick=\empty,
+  xtick=\empty,
+  xlabel=$Z$,
+  ylabel=$I_\textit{Вых}$,
+  extra x ticks={0, \xo+.2},
+  extra x tick labels={$0$,$L_\textit{погл}$},
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick,domain=0:1.5] {ff(x)};
+    \addplot[] coordinates {(\xo+.1,{ff(\xo)}) (0,{ff(\xo)})}
+      node[left] {$I_0$};
+    \addplot[] coordinates {(1.2,\yn) (0,\yn)}
+      node[left] {$I_\textit{н}$};      
+    
+    \addplot[dashed] coordinates {({\xo},\yn) ({\xo},0)};
+    \addplot[dashed] coordinates {({\xo+.2},\yn) ({\xo+.2},0)};
+
+    \node at (1.0,1.32) {$I_{max}$};
+\end{axis}
+\end{tikzpicture}
+
+
+\subsection{Рисунок 9.4 - Зависимость интенсивности на выходе от параметра резонатора}
+
+\begin{tikzpicture}
+[
+  declare function={
+    ff(\x) = -(\x-2)^2 + 2;
+  }
+]
+  \def\xo{1.8};
+  \def\yn{1.1};
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,smooth},
+  clip=false,
+  xmin=0,
+  xmax=2.2,
+  %ymin=0,
+  % ymax=0.5,
+  enlargelimits=10,
+  ytick=\empty,
+  xtick=\empty,
+  xlabel=$R$,
+  ylabel=$I_\textit{Вых}$,
+  %extra x ticks={0, \xo+.2},
+  %extra x tick labels={$0$,$L_\textit{погл}$},
+  % https://tex.stackexchange.com/questions/574555/tikz-refer-to-intersection-with-x-axis
+  x axis line style={name path=xaxis},
+  axis x line=middle, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=curve,thick,domain=0.2:{\xo}] {ff(x)};
+
+    \addplot[dashed] coordinates {({\xo-.1},2.2) ({\xo-.1},0)}
+        node[below] {$L_\textit{погл}$};
+
+    \path [name intersections={of=curve and xaxis, by=c}] 
+        node[below right] at (c) {$R_0$};
+    
+\end{axis}
+\end{tikzpicture}
+
+
+\subsection{Рисунок 10.1 – Зависимость выходной интенсивности от коэффициента отражения}
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,smooth},
+  clip=false,
+  ymin=0,
+  % ymax=0.5,
+  enlargelimits=10,
+  ytick=\empty,
+  xtick=\empty,
+  xlabel=$R$,
+  ylabel=$I_\textit{Вых}$,
+  extra x ticks={0, 3.92, 5.8},
+  extra x tick labels={$0$,$R_{opt}$,$1$},
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick,domain=0:5.8] {1/88 *(961 - 116*x - sqrt(747873 - 260264 * x + 24896 * x^2))};
+    \addplot[blue,name path=line1,dashed,domain=2.5:6.5] {(30.64-4.44*x)/5.24};
+    \addplot[blue,name path=line2, dashed,domain=0:6.5] {(1.19*x+7.83)/4.94};
+    % https://www.latex4technics.com/?note=997UG3
+    \path [name intersections={of=line1 and line2}];
+    % \coordinate [label= ${(Q_1,H_1)}$ ] (op1) at (intersection-1);
+    \coordinate (op1) at (intersection-1);
+    
+    \addplot[dashed,thick] coordinates {(3.92, 3.5) (3.92, 0)};
+
+    \fill [red] (op1) circle (2pt);
+
+\end{axis}
+\end{tikzpicture}
+
+\subsection{Рисунок 12.2 – Фазовый портрет}
+
+\begin{tikzpicture}
+
+  % Draw the x and y axis, label the axes and the origin
+  \draw[gray, ->] (-2,0) node[anchor=north east] {} -- (7,0) 
+     node(xline){}
+     node[below]{$R_D$};
+  \draw[gray, ->] (-2,0) -- ++ (0,7) 
+     node(yline){}
+     node[left]{$n$};
+
+% загогулька  
+\draw [rounded corners=8pt] 
+   (6,0) -- ++(0,6) -- ++(-6,0) -- ++(0,-5) -- ++(5,0)
+   -- ++(0,4) -- ++(-4,0) -- ++(0,-3) -- ++(3,0) -- ++(0,2) 
+   -- ++(-2,0) -- ++(0,-1) -- ++(1,0)  node[pos=0.4] (z0) {}
+   -- ++(0,.3);
+
+ \draw[fill] (z0) circle [radius=3pt];  
+ % 13.3.1 Intersections of Perpendicular Lines
+ \draw[dashed] (z0 |- 0,6.5) node (a) {} -- (z0 |- xline) node[below] {$R_1$};
+ \draw[dashed] (z0) -- (z0 -| yline) node(b)[left] {$n_0$};
+ % \draw[dashed] (z0) -- +(down:4) node {$4$};
+ % \draw[dashed] (z0) -- +(0, -\pgfextracty{<dimension>}{<point>}) node {$4$};
+ 
+ % https://tex.stackexchange.com/questions/18389/tikz-node-at-same-x-coordinate-as-another-node-but-specified-y-coordinate
+ \draw[<-] ($(a)+(-1,0)$) -- ($(a)+(1,0)$);
+ \draw[->] ($(b)+(1,3)$) -- ($(b)+(1,0.3)$);
+
+  % Plot the curve
+  \draw[blue, thick] [domain=-1:6, samples=50] plot (\x, {4/(\x+2)});
+
+\end{tikzpicture}
+
+
+\subsection{Рисунок 14.2 - Зависимости амплитуды и коэффициента отражения от времени}
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-3:3,smooth},
+  clip=false,
+  ymin=0,
+  ymax=0.5,
+  enlargelimits=10,
+  ytick=\empty,
+  xtick=\empty,
+  xlabel=$t$,
+  ylabel=$a$,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=middle, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick] {gauss(x,0,1)};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-3:3,smooth},
+  clip=false,
+  ymin=-.2,
+  ymax=0.25,
+  enlargelimits=false,
+  ytick=\empty,
+  xtick=\empty,
+  xlabel=$t$,
+  ylabel=$R$,
+  axis x line=middle, % no box around the plot, only x and y axis
+  axis y line=middle, % the * suppresses the arrow tips]
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1)},anchor=east,align=left}
+  ]
+    % plots
+    \addplot[red,name path=S,thick] {gauss(x,0,1)-0.2};
+    \addplot[black,densely dashed,thick] {.2};
+    \addplot[black,densely dashed,thick] {-.2};
+
+    \node[below left] at (0,-.2) {$-1$};
+\end{axis}
+\end{tikzpicture}
+
+
+
+\subsection{Рисунок 14.1 – Зависимость скорости распространения импульса от длительности импульса}
+
+\begin{tikzpicture}
+  \def\xm{1.5}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=0:3,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={\xm},
+  extra x tick labels={$1$},
+  % https://tex.stackexchange.com/questions/273611/line-up-extra-y-tick-labels-with-extra-y-ticks
+  extra y ticks={0.35},
+  extra y tick labels={$1$},
+  xlabel=$\sqrt{\beta}\tau_0$,
+  ylabel=$\nu$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},anchor=north east,align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=0.4\textwidth,
+  height=0.4\textwidth,
+  enlargelimits=false,
+  ymin=-.03,
+  ymax=.5
+  %enlarge y limits={abs value=.2,upper},
+  ] % extend the axes a bit to the right and top
+    % plots
+    \addplot[red,name path=S,thick] {gauss(x,.5,1)};
+    \addplot[black,densely dashed,thick]
+      coordinates {(\xm, \pgfkeysvalueof{/pgfplots/ymin}) (\xm,{gauss(\xm,.5,1)})};
+\end{axis}
+\end{tikzpicture}
+
+\subsection{Рисунок 14.3 – Зависимость $\varphi(z)$ от координаты при $R_0 = -1$}
+\begin{tikzpicture}[scale=2]
+  % Draw the x and y axis, label the axes and the origin
+  \draw[gray, ->] (-1,0) -- (2.2,0) node[below]{$z$};
+  \draw[gray, ->] (0,-1) -- (0,1) node[left]{$\varphi(z)$};
+   
+  % Plot the curve
+  \draw[blue, thick] (-0.5,-1) -- (0,0) -- (1,.3) -- (1.3,1);
+  \draw[dashed] (1,-1) -- ++(0,1) node[anchor=north west] {$L$} -- ++(0,1);
+\end{tikzpicture}
+
+\subsection{Рисунок 14.4 – Зависимость $\varphi(z)$ от координаты при $R_0 = +1$}
+\begin{tikzpicture}[scale=2]
+  % Draw the x and y axis, label the axes and the origin
+  \draw[gray, ->] (-1,0) -- (2.2,0) node[below]{$z$};
+  \draw[gray, ->] (0,-1) -- (0,1) node[left]{$\varphi(z)$};
+   
+  % Plot the curve
+  \draw[blue, thick] (-0.5,-1) -- (0,0) -- (1,-.8) -- (1.8,.8);
+  \draw[dashed] (1,-1) -- ++(0,1) node[anchor=north west] {$L$} -- ++(0,1);
+\end{tikzpicture}
+
+
+\subsection{Рисунок 2.1 – Иллюстрация угловой расходимости}
+
+\begin{tikzpicture}[scale=0.6]
+
+\foreach \x in {-15,-10,-5,0,5,...,15} {
+    % lines from center to point
+    \draw[black] (0,0) -- (5,{5*tan(\x)});
+}
+% https://tex.stackexchange.com/questions/66216/draw-arc-in-tikz-when-center-of-circle-is-specified 
+\draw[<->]([shift={(-15:4)}]0,0) arc (-15:15:4)
+    node[midway,left,draw,fill=white,outer sep=5pt] {$\lambda/d$}; 
+% верт пластинки
+\draw (-0.3,-1.5) rectangle (0,1.5);
+\draw (5,-1.5) rectangle (5.3,1.5);
+% лучи
+\draw[<-] (-0.5,-1) -- ++(-2.5,0);
+\draw[<-] (-0.5,1) -- ++(-2.5,0);
+
+\end{tikzpicture}
+
+% https://tex.stackexchange.com/questions/141624/bouquet-of-n-circles-with-tikz
+%https://tex.stackexchange.com/questions/169132/tikz-and-polar-plot
+\begin{tikzpicture}[scale=0.6]
+
+\foreach \x in {-15,15} {
+    % lines from center to point
+    \draw[black] (0,0) -- (5,{5*tan(\x)});
+}
+  % верт пластинки
+  \draw (-0.3,-1.5) rectangle (0,1.5);
+  % ромашка
+  \draw[domain=-90:90,scale=1.5,samples=100] plot ({\x}:{2*(sin(10*\x)*exp(-abs(\x)/90))^2});
+  % растр угла
+  \draw[<->]([shift={(-15:4)}]0,0) arc (-15:15:4)
+    node[midway,right,draw,fill=white,outer sep=5pt] {$\lambda/d$}; 
+\end{tikzpicture}
+
+% https://tex.stackexchange.com/questions/141624/bouquet-of-n-circles-with-tikz
+%https://tex.stackexchange.com/questions/169132/tikz-and-polar-plot
+% \begin{tikzpicture}
+% \begin{axis}[domain=-pi/10:pi/10,samples=200]
+%     % plots
+%     \addplot[red,name path=S,thick] 
+%    {(sin(.1*x)/sin(x))};
+% \end{axis}
+% \end{tikzpicture}
+
+\subsection{Рисунок 1.1 – Зеркала с резонатором}
+
+\begin{tikzpicture}
+% ось
+\draw [->] (-1,0) -- (6,0) node[below] {$Z$};
+
+% \draw (0,-1) rectangle (0.15,1) [add reference=R1];
+\draw (0,-1) -- ++(0.15,0) node[pos=0.5] (z0) {} -- 
+    ++(0,2) -- ++(-0.15,0) --cycle node[pos=0.15] (R1) {};
+\node[below] at (z0) {$z=0$};
+\node[left] at (R1) {$R_1$};
+
+\draw (4.35,-1) -- ++(0.15,0) node[pos=0.5] (zl) {} -- 
+    ++(0,2) -- ++(-0.15,0) --cycle node[pos=0.15] (R2) {};
+\node[below] at (zl) {$z=L$};
+\node[left] at (R2) {$R_2$};
+
+% matter
+\draw (1,-0.27) rectangle (3.5,0.27); 
+\end{tikzpicture}
+
+\subsection{Рисунок 5.3 – Резонансный переход между первым и вторым уровнем}
+
+\begin{tikzpicture}[scale=1.5, inner sep=2pt]
+  \draw[-] (0,0) -- ++(2.5,0) 
+        node[pos=0.5] (a) {}
+        node[right]{$\left\vert 1 \right\rangle$};
+  \draw[-] (0,1) -- ++(2.5,0)
+        node[pos=0.5] (b) {}
+        node[right]{$\left\vert 2 \right\rangle$};
+  \draw[<->] (b) -- (a) node[midway,left] {$\omega_0\approx\omega_{21}$};
+\end{tikzpicture}
+
+\subsection{Рисунок 6.1 – Временная динамика интенсивности поля в резонаторе и
+населенности возбужденного уровня}
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-8:8,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis lines=middle,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={0},
+  extra x tick labels={$t_0$},
+  xlabel=$t$,
+  ylabel=$n_2$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=0.6\textwidth,
+  height=0.4\textwidth,
+  enlargelimits=true] % extend the axes a bit to the right and top
+    % plots
+    \addplot[red,name path=S,thick] {1 - 2.5*gauss(x,0,1)};
+\end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-8:8,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis lines=middle,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={0},
+  extra x tick labels={$t_0$},
+  xlabel=$t$,
+  ylabel=$|A|^2$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=0.6\textwidth,
+  height=0.4\textwidth,
+  enlargelimits=true] % extend the axes a bit to the right and top
+    % plots
+    \addplot[blue,name path=B,thick] {5*gauss(x,0,2.5)};
+\end{axis}
+\end{tikzpicture}
+
+\subsection{Рисунок 7.2 – Процессы неуправляемых столкновений и релаксации}
+
+\begin{tikzpicture}[scale=1, inner sep=2pt]
+  \def\one{0};
+  \def\two{0.5};
+  \def\three{1};
+  \def\four{1.5};
+  
+  \draw[-] (0,\two) -- ++(2,0) node[pos=0.5] (a) {};
+  \draw[-] (0,\one) -- ++(2,0);
+  \filldraw[fill=white] (a) circle [radius=3pt];
+
+  \node at (2.5, {(\one+\two)/2}) {$+$};
+  
+  \draw[-] (3,\two) -- ++(2,0);
+  \draw[-] (3,\one) -- ++(2,0) node[pos=0.5] (b) {};
+  \filldraw[fill=white] (b) circle [radius=3pt];
+
+  \node at (5.5, {(\one+\two)/2}) {$\Rightarrow$};
+  
+  \draw[-] (6,\two) -- ++(2,0);
+  \draw[-] (6,\one) -- ++(2,0) node[pos=0.5] (c) {};
+  \filldraw[fill=white] (c) circle [radius=3pt];
+
+  \node at (8.5, {(\one+\two)/2}) {$+$};
+
+  \draw[-] (9,\two) -- ++(2,0);
+  \draw[-] (9,\one) -- ++(2,0) node[pos=0.5] (d) {};
+  \filldraw[fill=white] (d) circle [radius=3pt];
+
+\end{tikzpicture}
+
+\break
+
+\begin{tikzpicture}[scale=1, inner sep=2pt]
+  \def\one{0};
+  \def\two{0.5};
+  \def\three{1};
+  \def\four{1.5};
+  
+  \draw[-] (0,\two) -- ++(2,0) node[pos=0.5] (a) {};
+  \draw[-] (0,\one) -- ++(2,0);
+  \filldraw[fill=white] (a) circle [radius=3pt];
+
+  \node at (2.5, {(\one+\two)/2}) {$+$};
+  
+  \draw[-] (3,\two) -- ++(2,0);
+  \draw[-] (3,\one) -- ++(2,0) node[pos=0.5] (b) {};
+  \filldraw[fill=white] (b) circle [radius=3pt];
+
+  \node at (5.5, {(\one+\two)/2}) {$\Rightarrow$};
+  
+  \draw[-] (6,\two) -- ++(2,0) node[pos=0.5] (c) {};
+  \draw[-] (6,\one) -- ++(2,0);
+  \filldraw[fill=white] (c) circle [radius=3pt];
+
+  \node at (8.5, {(\one+\two)/2}) {$+$};
+
+  \draw[-] (9,\two) -- ++(2,0);
+  \draw[-] (9,\one) -- ++(2,0) node[pos=0.5] (d) {};
+  \filldraw[fill=white] (d) circle [radius=3pt];
+
+\end{tikzpicture}
+
+\subsection{Рисунок 7.3 – Накачка возбужденных уровней}
+\begin{tikzpicture}[scale=2, inner sep=2pt]
+  \draw[-] (-2,0) -- ++(2.5,0) 
+        node[pos=0.05] (a) {}
+        node[pos=0.53] (c) {}
+        node[right]{$\left\vert 0 \right\rangle$};
+  \draw[-] (0,.7) -- ++(2.5,0)
+        node[pos=0.15] (d) {}
+        node[pos=0.35] (e) {}
+        node[pos=0.5] (g) {}
+        node[pos=0.75] (j) {}
+        node[right]{$\left\vert 1 \right\rangle$};
+  \draw[-] (0,1.4) -- ++(2.5,0)
+        node[pos=0.05] (b) {}
+        node[pos=0.35] (f) {}
+        node[pos=0.5] (h) {}
+        node[pos=0.75] (k) {}
+        node[right]{$\left\vert 2 \right\rangle$};
+  \draw[->] (a) -- (b) node[pos=0.5,left,inner sep=10pt] {$S_2$};
+  \draw[->] (c) -- (d) node[pos=0.5,left,inner sep=10pt] {$S_1$};
+  \draw[->] (e) -- (f) node[pos=0.5,left,inner sep=2pt] {$T_{12}$};
+  \draw[<-] (g) -- (h) node[pos=0.5,right,inner sep=2pt] {$T_{21}$};
+  \draw[<-,dashed] (j) -- (k) node[pos=0.5,right,inner sep=2pt] {$T_1^{(2)}$};
+
+  \foreach \ll in {0,...,3}
+      \draw[-] (1.2, {.15*\ll}) -- +(1,0);
+\end{tikzpicture}
+
+\subsection{Рисунок 8.1 – Неоднородное уширение}
+\begin{tikzpicture}
+[
+  declare function={
+    smallgauss(\x) = .22*gauss(\x,\S,\Ss);
+  }
+]  
+  \def\S{-2.5};
+  \def\Bs{2};
+  \def\Ss{.25};
+  \def\ql{-\Bs};
+  \def\qr{\Bs};
+  \def\pl{\S-\Ss};
+  \def\pr{\S+\Ss};
+
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=50,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis lines=middle,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=none, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={0, \S},
+  extra x tick labels={$\omega_A$, $\omega_0$},
+  xlabel=$\omega$,
+  ylabel=$n_2(\omega)$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=0.8\textwidth,
+  height=0.4\textwidth,
+  enlargelimits=false] % extend the axes a bit to the right and top
+    % plots
+    \addplot[blue,domain=-8:8,name path=B,thick] {4*gauss(x,0,\Bs)};
+    \addplot[red,domain=-4:-1,name path=S,thick] {smallgauss(x)};
+    % fill
+    % https://tikz.net/gaussians/
+    \path[name path=xaxis]
+      (0,0) -- (\pgfkeysvalueof{/pgfplots/xmax},0); %\pgfkeysvalueof{/pgfplots/xmin}
+    \addplot[white!50!green] fill between[of=xaxis and S];
+    % marks
+    \addplot[->,black,thick]
+      coordinates {(\pl-2, {smallgauss(\pr)}) (\pl, {smallgauss(\pl)})}
+      node[above,pos=0.3] {$\Gamma$};
+    \addplot[<-,black,thick]  
+      coordinates {(\pr, {smallgauss(\pr)}) (\pr+2, {smallgauss(\pr)})};
+
+    \addplot[->,black,thick]
+      coordinates {(\ql-3, {4*gauss(\ql,0,\Bs)}) (\ql, {4*gauss(\ql,0,\Bs)})};
+    \addplot[<-,black,thick]  
+      coordinates {(\qr, {4*gauss(\qr,0,\Bs)}) (\qr+3, {4*gauss(\qr,0,\Bs)})}
+      node[above,pos=0.8] {$\Delta \omega_0$};      
+
+\end{axis}
+\end{tikzpicture}
+
+
+\subsection{Рисунок 8.3 – Неоднородное уширение при резонансе}
+\begin{tikzpicture}
+  \def\Bs{2};
+  \def\Ss{.5};
+  \def\ql{-1.5*\Bs};
+  \def\qr{+1.5*\Bs};
+  \def\pl{-\Ss};
+  \def\pr{+\Ss};
+
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=50,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis lines=middle,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=none, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={0},
+  extra x tick labels={$\omega_0$ = $\omega_A$ },
+  xlabel=$\omega$,
+  ylabel=$n_2(\omega)$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},anchor=left,align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=0.8\textwidth,
+  height=0.4\textwidth,
+  enlargelimits=false] % extend the axes a bit to the right and top
+    % plots
+    \addplot[blue,domain=-8:8,name path=B,thick] {4*gauss(x,0,\Bs)};
+    \addplot[red,domain=-4:4,name path=S,thick] {gauss(x,0,\Ss)};
+    % fill
+    % https://tikz.net/gaussians/
+    \path[name path=xaxis]
+      (0,0) -- (\pgfkeysvalueof{/pgfplots/xmax},0); %\pgfkeysvalueof{/pgfplots/xmin}
+    \addplot[white!50!green] fill between[of=xaxis and S];
+    % marks
+    \addplot[->,black,thick]
+      coordinates {(\pl-4, {gauss(\pl,0,\Ss)}) (\pl, {gauss(\pl,0,\Ss)})};
+    \addplot[<-,black,thick]  
+      coordinates {(\pr, {gauss(\pr,0,\Ss)}) (\pr+4, {gauss(\pr,0,\Ss)})}
+      node[above,pos=0.8] {$\Gamma$};
+
+    \addplot[->,black,thick]
+      coordinates {(\ql-3, {4*gauss(\ql,0,\Bs)}) (\ql, {4*gauss(\ql,0,\Bs)})};
+    \addplot[<-,black,thick]  
+      coordinates {(\qr, {4*gauss(\qr,0,\Bs)}) (\qr+3, {4*gauss(\qr,0,\Bs)})}
+      node[above,pos=0.8] {$\Delta \omega_0$};      
+
+\end{axis}
+\end{tikzpicture}
+
+\subsection{Рисунок 8.4 - График зависимости населенности уровня 2 от частоты}
+\begin{tikzpicture} % https://tex.stackexchange.com/questions/15435/how-do-i-use-pgfmathdeclarefunction-to-create-define-a-new-pgf-function
+[
+  declare function={
+    gaussh(\x) = gauss(\x, 0, 5) - 0.2*gauss(\x, 0, 1);
+  }
+]   
+  \def\ql{-1};
+  \def\qr{1};
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=150,domain=-20:20,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis lines=middle,
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=left, % the * suppresses the arrow tips
+  % ticks=none,
+  ytick=\empty,
+  xtick=\empty,
+  extra x ticks={0},
+  extra x tick labels={$\omega_0$},
+  xlabel=$\omega$,
+  ylabel=$n_2(\omega)$,
+  every axis x label/.style={at={(current axis.right of origin)},anchor=north west},
+  every axis y label/.style={at={(ticklabel* cs:1.05)},align=left},
+  clip=false,
+  % scale only axis=true,
+  % set `width' and `height' to the desired values
+  width=\textwidth,
+  height=0.3\textwidth,
+  enlargelimits=true] % extend the axes a bit to the right and top
+    % plots
+    \addplot[blue,name path=B,thick] {gaussh(x)};
+    % marks
+    \addplot[->,black,thick]
+      coordinates {(\ql-5, {gaussh(\ql)}) (\ql, {gaussh(\ql)})};
+    \addplot[<-,black,thick]  
+      coordinates {(\qr, {gaussh(\qr)}) (\qr+5, {gaussh(\qr)})};
+
+\end{axis}
+\end{tikzpicture}
+
+
+\subsection{Рисунок 8.2 – Графическое сравнение величин $\Gamma$ и $\Delta W_0$}
+\begin{tikzpicture}
+
+  \def\B{-2};
+  \def\S{2};
+  \def\Bs{2.0};
+  \def\Ss{2.0};
+  \def\ql{\S-\Ss};
+  \def\qr{\S+\Ss};
+  
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=50,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+  axis x line=bottom, % no box around the plot, only x and y axis
+  axis y line=none, % the * suppresses the arrow tips
+  ticks=none,
+  enlargelimits=true] % extend the axes a bit to the right and top
+    % plots
+    \addplot[blue,domain=-8:4,name path=B,thick] {gauss(x,\B,\Bs)};
+    \addplot[red,domain=-4:8,name path=S,thick] {gauss(x,\S,\Ss)};
+
+    % marks
+    \addplot[->,black,thick]
+      coordinates {(\ql-5, {gauss(\ql,\S,\Ss)}) (\ql, {gauss(\ql,\S,\Ss)})};
+    \addplot[<-,black,thick]  
+      coordinates {(\qr, {gauss(\qr,\S,\Ss)}) (\qr+5, {gauss(\qr,\S,\Ss)})}
+      node[above,pos=0.8] {$\Gamma$};
+     \addplot[-,black,thick]
+      coordinates {(\S, {0.8*gauss(\S,\S,\Ss)}) (\S, {1.2*gauss(\S,\S,\Ss)})};
+     \addplot[-,black,thick]
+      coordinates {(\B, {0.8*gauss(\B,\B,\Bs)}) (\B, {1.2*gauss(\B,\B,\Bs)})};
+
+     \node at (0, {1.1*gauss(\B,\B,\Bs)}) {$\Delta W_0$};
+      
+    % \addplot[black,dashed,thick]
+    %   coordinates {(\ql,{gauss(\ql,\S,\Ss)}) (\qr, {gauss(\qr,\S,\Ss)})}
+    %   node[below=-2pt,pos=0] {$x_\text{obs}$};
+\end{axis}
+\end{tikzpicture}
+
+
+\subsection{Рисунок 9.1 – Зависимость интенсивности от координаты}
+
+\begin{tikzpicture}[scale=3]
+  % Draw the x and y axis, label the axes and the origin
+  \draw[gray, ->] (0,0) node[anchor=north east] {$Z=0$} -- (3,0) node[below]{$Z$};
+  \draw[gray, ->] (0,0) -- (0,2) node[left]{$I(Z)$};
+  \draw[fill,gray] (0,0) circle [radius=1pt];
+  % Plot the curve
+  \draw[blue, thick] [domain=0:2.5, samples=50] plot (\x, {0.15*(exp(\x)-1)});
+  \coordinate (A) at (2,0.96);
+  \draw[-] (0,.96) -- +(2.5,0) node[pos=0, left] {$I_1$};
+  \draw[dashed] (2,1.8) -- (2,0) node[below] {$Z=L_1$}; 
+
+  \node at (1,.5) {$\sim Z^2$};
+  \node at (2.2,1.5) {$\sim Z$};
+
+\end{tikzpicture}
+
+
+\subsection{Рисунок 7.4 – Спонтанный переход с уровня |2⟩ на уровень |1⟩}
+\begin{tikzpicture}[scale=1.5, inner sep=0pt]
+  \draw[-] (0,0) -- ++(2.5,0) 
+        node[pos=0.75] (a) {}
+        node[right]{$\left\vert 1 \right\rangle$} {};
+  \draw[-] (0,1) -- ++(2.5,0)
+        node[pos=0.25] (m) {}
+        node[pos=0.75] (b) {}
+        node[right]{$\left\vert 2 \right\rangle$} {};
+  \draw[->] (b) -- (a) node[midway,right] {\,$\Gamma_{21}$};
+  \draw[->,dashed] (m) -- ++(0,-1.5);
+\end{tikzpicture}
+
+
+\subsection{Рисунок 8.5 – Релаксация второго уровня}
+\begin{tikzpicture}[scale=1.5, inner sep=0pt]
+  \draw[-] (0,0) -- ++(2.5,0) 
+        node[pos=0.05] (a) {}
+        node[right]{$\left\vert 0 \right\rangle$};
+  \draw[-] (0,.7) -- ++(2.5,0)
+        node[right]{$\left\vert 1 \right\rangle$};
+  \draw[-] (0,1.4) -- ++(2.5,0)
+        node[pos=0.05] (b) {}
+        node[right]{$\left\vert 2 \right\rangle$};
+  \draw[->] (b) -- (a) node[pos=0.3,left,inner sep=10pt] {$\Gamma_{20}$};
+\end{tikzpicture}
+
+
+\subsection{Рисунок 9.2 – Насыщение усиления}
+
+\begin{tikzpicture}[scale=1.5]
+  % Draw the x and y axis, label the axes and the origin
+  \draw[gray, ->] (-2,0) -- (2,0) node[right]{$x$} node[pos=0.53, below]{$O$};
+  \draw[gray, ->] (0,-1) -- (0,1) node[above]{$y$};
+  \draw[fill,gray] (0,0) circle [radius=1pt];
+   
+  % Plot the curve
+  \draw[blue, thick] [domain=-2:2, samples=150] plot (\x, {cos(pi*\x r)}) 
+  node[right]{$y = \cos(x)$};
+  \draw[red, thick] [domain=0:2, samples=150] plot (\x, {(1-exp(-\x))}); 
+  
+  % Note: the r in the argument of the cosine signifies that we enter \x in radians
+\end{tikzpicture}
+
+
+
+
+
+\subsection{Рисунок 1.13}
+\begin{tikzpicture}[scale=0.8]
+% \draw [yslant=.2] (-7,-1) rectangle (7,1);
+\def\myrect{(-7,-2) coordinate (A) -- (7,0) coordinate (B) -- ++(0,2) coordinate (C) -- ++(-14,-2) -- cycle};
+
+% пластинка
+\begin{scope}
+  \clip (0,-2) rectangle (7,2);
+  \fill [pattern={north east lines}] \myrect; 
+\end{scope}
+\draw \myrect;
+
+% стрелки
+\def\myarrow(#1){
+\node [draw, single arrow,
+              minimum height=80, minimum width=40,
+              single arrow head extend=4,
+              anchor=west, rotate=130] at (#1) {};
+};
+
+\myarrow (7,-4);
+\myarrow (0,-7);
+%\draw [pattern={north east lines}] (0,0) rectangle (5,5);
+%\draw (3.5,3.5) circle (5) node {A};
+
+% оси и выноски
+\draw [->] (-1,2) arc[start angle=-180, end angle=45, x radius = 1, y radius=.3];
+\draw (0,-3) -- (0,3);
+\dimline [extension start length=-0.07,extension end length=-0.07] 
+  {([shift={(0.15,-1)}]A)}{([shift={(0.15,-1)}]B)}{$l$};
+\dimline [extension start length=-0.5,extension end length=-0.5] 
+  {([shift={(1,0.)}]B)}{([shift={(1,0)}]C)}{$d$};
+
+\end{tikzpicture}
+
+\subsection{Рисунок 1.2}
+
+\begin{tikzpicture}
+  \node[cylinder,draw=black,thick,aspect=0.7,minimum height=4cm,minimum width=3cm,
+  shape border rotate=0,cylinder uses custom fill, cylinder body fill=red!30,cylinder end fill=red!10] (A) {A};
+
+\draw[dashed]
+    let \p1 = ($ (A.after bottom) - (A.before bottom) $),
+        \n1 = {0.5*veclen(\x1,\y1)-\pgflinewidth},
+        \p2 = ($ (A.bottom) - (A.after bottom)!.5!(A.before bottom) $),
+        \n2 = {veclen(\x2,\y2)-\pgflinewidth}
+  in
+    ([xshift=-\pgflinewidth] A.before bottom) arc [start angle=270, delta angle=180,
+    x radius=\n2, y radius=\n1];
+\end{tikzpicture}
+
+
+\subsection{Рисунок 1.1}
+
+\begin{tikzpicture}[scale=0.5]
+% Axes:
+\draw [name path=axis, -Stealth] (-7,0) coordinate (S) node [above] {$S$}
+  -- (0,0) node [below right] {$l$} -- (5,0) node [below right]  {$x$};
+\fill [black] (0,0) circle (2pt);
+
+% Cone:
+\draw (0,0) ellipse [x radius=1, y radius=2];
+% https://texample.net/tikz/examples/angles-quotes/
+\draw (0,-2) coordinate (A1) -- (S) -- (0,2) coordinate (A2) 
+  pic ["$\phi$", draw=orange, <->, angle eccentricity=1.2, angle radius=50, above] 
+  {angle=A1--S--A2};
+\end{tikzpicture}
+
+
+\subsection{Рисунок 1.13}
+\begin{tikzpicture}[scale=0.8]
+% \draw [yslant=.2] (-7,-1) rectangle (7,1);
+\def\myrect{(-7,-2) coordinate (A) -- (7,0) coordinate (B) -- ++(0,2) coordinate (C) -- ++(-14,-2) -- cycle};
+
+% пластинка
+\begin{scope}
+  \clip (0,-2) rectangle (7,2);
+  \fill [pattern={north east lines}] \myrect; 
+\end{scope}
+\draw \myrect;
+
+% стрелки
+\def\myarrow(#1){
+\node [draw, single arrow,
+              minimum height=80, minimum width=40,
+              single arrow head extend=4,
+              anchor=west, rotate=130] at (#1) {};
+};
+
+\myarrow (7,-4);
+\myarrow (0,-7);
+%\draw [pattern={north east lines}] (0,0) rectangle (5,5);
+%\draw (3.5,3.5) circle (5) node {A};
+
+% оси и выноски
+\draw [->] (-1,2) arc[start angle=-180, end angle=45, x radius = 1, y radius=.3];
+\draw (0,-3) -- (0,3);
+\dimline [extension start length=-0.07,extension end length=-0.07] 
+  {([shift={(0.15,-1)}]A)}{([shift={(0.15,-1)}]B)}{$l$};
+\dimline [extension start length=-0.5,extension end length=-0.5] 
+  {([shift={(1,0.)}]B)}{([shift={(1,0)}]C)}{$d$};
+
+\end{tikzpicture}
+
+
+
+\subsection{Рисунок 1.8}
+
+\begin{tikzpicture}[scale=.8, every node/.style={opacity=1, black}]
+% Axes:
+% Are simply drawn using line with the `->` option to make them arrows:
+% The main labels of the axes can be places using `node`s:
+\draw [name path=axis, -Stealth] (0,0) node [above left] {$N$} -- (7,0) node [below right]  {$x$};
+\fill [black] (0,0) circle (3pt);
+
+\draw (0,3) arc[start angle=90, end angle=270, x radius = 1, y radius=3];
+\draw [dashed] (0,3) arc[start angle=90, end angle=-90, x radius = 1, y radius=3];
+\draw [name path=rarc, blue, thick] (0,3) arc[start angle=90, end angle=-90, radius = 3];
+\fill [red, opacity=0.5, name intersections={of=axis and rarc}]
+  (intersection-1) circle (3pt) node [above right] {$l$};
+\end{tikzpicture}
+
+\subsection{Рисунок 1.28}
+% https://texample.net/tikz/examples/animated-distributions/
+
+\begin{tikzpicture}[scale=2]
+% Axes:
+% Are simply drawn using line with the `->` option to make them arrows:
+% The main labels of the axes can be places using `node`s:
+% \draw [->] (-2,0) -- (2,0) node [below right]  {$t$};
+\draw [-Stealth] (-2,0) -- (2,0) node [below right]  {$t$};
+\draw [->] (0,0) -- (0,1.5) node [below right] {$I(t)/I_0$};
+
+% Axes labels:
+% X
+\draw (0,0) node[below] {$t_{0.5}$};
+% sqrt(-log(0.5)/.8) = 0.9308244
+% sqrt(-log(0.5)) = 0.8325546
+% Y
+\draw (0,1) node[above left] {$1$};
+\draw (0,0.5) node[above left] {$0.5$};
+
+% Draw the normal distribution curve
+\draw[blue!50!black,smooth,thick] plot[id=f1,domain=-1.6:1.6,samples=50]
+function {exp(-x*x)};
+
+% Draw additionall lines
+\draw [dashed] (-0.83,0) -- +(0,0.5);
+\draw [dashed] (0.83,0) -- +(0,0.5);
+\draw (-0.83,0.5) -- (0.83,0.5);
+
+\end{tikzpicture}
+
+\subsection{Хитрая заливка}
+\begin{tikzpicture}[every node/.style={opacity=1, black}]
+
+% \draw [yslant=.2] (-7,-1) rectangle (7,1);
+\draw [name path=rect] (-7,-2) -- (7,0) -- ++(0,2) -- ++(-14,-2) -- cycle; 
+
+\begin{scope}
+  \clip (0,0) rectangle (5,5);
+  \fill [pattern={north east lines}] (3.5,3.5) circle (2);
+\end{scope}
+
+%\draw [pattern={north east lines}] (0,0) rectangle (5,5);
+%\draw (3.5,3.5) circle (5) node {A};
+\end{tikzpicture}
+
+
+
+\begin{tikzpicture}
+\begin{axis}[every axis plot post/.append style={
+  mark=none,samples=50,smooth}, % All plots: from -2:2, 50 samples, smooth, no marks
+axis x line=none, % no box around the plot, only x and y axis
+axis y line=none, % the * suppresses the arrow tips
+enlargelimits=upper] % extend the axes a bit to the right and top
+\addplot[domain=-1:1] {0.65*\gauss{0}{0.5}};
+\addplot[domain=-2:3] {\gauss{1}{0.75}};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
