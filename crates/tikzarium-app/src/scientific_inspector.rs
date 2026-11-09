@@ -15,6 +15,15 @@ enum LiteralProperty {
     XMax,
     YMin,
     YMax,
+    XTickDistance,
+    YTickDistance,
+    XTick,
+    YTick,
+    Width,
+    Height,
+    Mark,
+    XLabel,
+    YLabel,
 }
 
 impl LiteralProperty {
@@ -26,8 +35,43 @@ impl LiteralProperty {
             Self::XMax => "xmax",
             Self::YMin => "ymin",
             Self::YMax => "ymax",
+            Self::XTickDistance => "xtick distance",
+            Self::YTickDistance => "ytick distance",
+            Self::XTick => "xtick",
+            Self::YTick => "ytick",
+            Self::Width => "width",
+            Self::Height => "height",
+            Self::Mark => "mark",
+            Self::XLabel => "xlabel",
+            Self::YLabel => "ylabel",
         }
     }
+
+    fn available_for(self, kind: ScientificKind) -> bool {
+        match kind {
+            ScientificKind::Axis => true,
+            ScientificKind::AddPlot => matches!(self, Self::Samples | Self::Domain | Self::Mark),
+            _ => false,
+        }
+    }
+
+    const ALL: [Self; 15] = [
+        Self::Samples,
+        Self::Domain,
+        Self::XMin,
+        Self::XMax,
+        Self::YMin,
+        Self::YMax,
+        Self::XTickDistance,
+        Self::YTickDistance,
+        Self::XTick,
+        Self::YTick,
+        Self::Width,
+        Self::Height,
+        Self::Mark,
+        Self::XLabel,
+        Self::YLabel,
+    ];
 }
 
 struct Candidate {
@@ -211,18 +255,30 @@ impl ScientificInspector {
                         }
                     });
                 let old_property = self.property;
-                ui.horizontal_wrapped(|ui| {
+                let kind = self
+                    .selected
+                    .and_then(|index| self.candidates.get(index))
+                    .map(|item| item.instance.kind);
+                if let Some(kind) = kind
+                    && !self.property.available_for(kind)
+                {
+                    self.property = LiteralProperty::Samples;
+                }
+                ui.horizontal(|ui| {
                     ui.label("Параметр:");
-                    for (property, label) in [
-                        (LiteralProperty::Samples, "samples"),
-                        (LiteralProperty::Domain, "domain"),
-                        (LiteralProperty::XMin, "xmin"),
-                        (LiteralProperty::XMax, "xmax"),
-                        (LiteralProperty::YMin, "ymin"),
-                        (LiteralProperty::YMax, "ymax"),
-                    ] {
-                        ui.selectable_value(&mut self.property, property, label);
-                    }
+                    egui::ComboBox::from_id_salt("scientific-142-property")
+                        .selected_text(self.property.key())
+                        .show_ui(ui, |ui| {
+                            for property in LiteralProperty::ALL {
+                                if kind.is_some_and(|kind| property.available_for(kind)) {
+                                    ui.selectable_value(
+                                        &mut self.property,
+                                        property,
+                                        property.key(),
+                                    );
+                                }
+                            }
+                        });
                 });
                 if before != self.selected || old_property != self.property {
                     self.refresh_literal(session, source);
@@ -256,7 +312,7 @@ impl ScientificInspector {
             if !self.feedback.is_empty() {
                 ui.small(&self.feedback);
             }
-            ui.small("Только однозначные числовые samples/domain и xmin/xmax/ymin/ymax в axis. Другие конструкции — OPAQUE; точный результат даёт внешний XeLaTeX.");
+            ui.small("Лишь явно заданные и проверенные параметры axis/addplot. Макросы и неподдержанные формулы — OPAQUE; PDF строит внешний XeLaTeX.");
         });
         changed_line
     }
