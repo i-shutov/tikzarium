@@ -18,7 +18,7 @@ Date: 2026-11-09. Stack: SC2 branch atop SC1 PR #146, **not** merged into frozen
 - `SV-009`: `addplot` literal `domain=0:1.5` to `0:1.4`, Undo exact bytes.
 - Negative tests: CRLF/Unicode, generated comments, nested node group, macro definitions, fake draw in foreach, duplicated options, stale revision and SHA, opaque `\\myRange`, invalid numeric literals, malformed groups, catcode and bounded oversized files.
 
-This is **SC2-01 + early SC2-02/04** only. It does not deliver SC2-03 GUI Inspector/F1, complete 142-source L2, all PGFPlots options, or real L3 GUI acceptance. Development base is the unmerged SC1 branch and must be revalidated when SC1 base advances.
+This is **SC2-01 + SC2-02 plus initial SC2-03/04 code**. The new classic/Studio **Inspector candidate** is actually wired to the existing production egui app: explicit “Распознать axis / addplot”, selected source-instance list, source-backed `samples` and `domain` values, verified `SourcePatch` and the existing one-step source Undo. It reuses the current authoring source revision and cancels stale manual edits. Native egui state/real Sarov unit tests are included. **F1 catalogue descriptions, physical GUI input and L3, full 142-source L2, and all other PGFPlots options are NOT completed or accepted.** Development base is the unmerged SC1 branch and must be revalidated when SC1 base advances.
 
 ## Required checks
 
@@ -28,4 +28,8 @@ This is **SC2-01 + early SC2-02/04** only. It does not deliver SC2-03 GUI Inspec
 4. Verify actual GUI integration and external XeLaTeX on edited original Sarov figures in a separate SC3/SC7 acceptance step. Never claim that unit tests simulate physical GUI.
 5. Do not run PR code on the owner personal Windows Server; only reviewed trusted current main with original native evidence. Windows W2b, physical Win10 W3 and stable 1.0 W4 remain NO-GO.
 
-Next: connect one reviewed literal property to existing Inspector and F1 using shared catalogue and SourcePatch, while keeping normal `.tex` editor as source authority. No separate TeX parser, renderer, Gnuplot, bundled TeX or multi-figure GUI.
+Next: review actual Inspector integration and provenance end-to-end, add catalogue-backed Russian F1 guidance for `samples/domain` without invented defaults, then prove original external XeLaTeX build and Undo on edited Sarov copies. Keep source authority and no second renderer, Gnuplot, TeX bundle or multi-figure GUI.
+
+## 2026-11-09 GUI/CI integration checkpoint
+
+A trial hosted CI proved Rust formatting and locked Cargo dependencies; `egui` must be imported from the actual `eframe::egui` dependency rather than a nonexistent direct crate. The compile blocker was fixed in SC2. Next CI exposed Clippy `collapsible_if`, also corrected. A subsequent independent code review found a more important false-positive case: `\\begin{tikzpicture}` inside an unexecuted preamble `\\newcommand` or verbatim environment must not create a false editable figure. The scanner now skips global macro bodies / verbatim and rejects catcode changes, with exact-source negative tests. Rustfmt refinements were applied to these edits. CI status remains bound to **exact head SHA**; only a genuine green run can promote implementation acceptance. Stable Windows 1.0 W2b/W3/W4 remain NO-GO.
