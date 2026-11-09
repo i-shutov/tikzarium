@@ -1,165 +1,118 @@
-# TikZarium: Windows 10 Pro 22H2 x64 — Machine/User/CLI PDF PASS, W3 GUI OpenGL blocked
+# TikZarium — ЕДИНАЯ инструкция подготовки Windows 10, QA и подключения Dot
 
-## 2026-11-09 — WS09: штатный Windows 10 tar.exe не поддерживает LZMA из Mesa .7z
+> **Актуально 09.11.2026.** Канонические скрипты лежат **рядом с этой инструкцией**. Устаревшие архивы Win11, v1–v5, локальные одноразовые правки и предыдущие хронологические инструкции не использовать. Журнал их причин и исправлений — в [технических инцидентах](../../../docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md), WS01–WS09.
 
-Фактический RDP лог: Mesa 26.2.6 скачана правильно, SHA256 проверен (`da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`), но распаковка встроенным `tar.exe` завершилась `LZMA codec is unsupported` (exit 1). Архив не поврежден. Ошибка вызвана неверным предположением о возможностях штатного архиватора Win10.
+## 0. Текущий результат — уже подготовленная VM
 
-Исправлено в кандидатном [PR #150](https://github.com/i-shutov/tikzarium/pull/150): W3 launcher использует портативный `7zr.exe` из официального выпуска `ip7z/7zip` 26.05 с закрепленным SHA256 `9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7`. Дополнительная CRC-проверка 7z предшествует распаковке. Уже проверенная загрузка Mesa (~56 МБ) переиспользуется, временные неполные результаты `tar.exe` очищаются только внутри `Documents/TikZarium-QA/W3-Mesa-26.2.6/unpacked` и не касаются исходного EXE, System32 или реестра. Изолированное программное OpenGL по-прежнему кандидат до физического GUI испытания.
+| Этап | Статус по реальным RDP-логам и скриншоту владельца |
+| --- | --- |
+| Windows 10 Pro 22H2 x64 build 19045; 3.96 GiB RAM | PASS |
+| Непривилегированный локальный `tikzarium-qa` и RDP | PASS |
+| `Machine`: Git 2.56.0, VS2022 Build Tools, MSVC, Windows SDK x64 | PASS |
+| `User`: Rust 1.91.0, MiKTeX, Poppler, сборка `tikzarium-app.exe`/CLI | PASS |
+| CLI → XeLaTeX → PDF с кириллицей и проверкой шрифтов | PASS по выводу установщика; независимая проверка оригинального PDF ожидает файл |
+| Изолированная Mesa 26.2.6/llvmpipe и графическое окно под RDP | **GUI START PASS** по настоящему скриншоту |
+| Кнопка сборки `▶` в GUI | **BLOCKED / требует диагностики**, пользователь нажал, видимого результата нет |
+| Полная W3 (6 жестов, F1, Save/Open, GUI→PDF, DPI/IME) | **NOT_ACCEPTED** |
+| W2b на Server, W4 stable release | Отдельные незавершённые ворота; W4 NO-GO |
 
-В hosted Windows добавлена проверка реальной распаковки pinned Mesa через pinned 7zr с подтверждением `x64/opengl32.dll` и `libgallium_wgl.dll`. **Пока CI или локальный GUI не подтвердят результат, W3 BLOCKED/NOT_ACCEPTED, а не PASS**. Локальный обход: отдельно скачать 7zr.exe, проверить SHA256, `7zr t` и `7zr x` для уже скачанного Mesa и повторить `-Action PrepareAndRun`.
+**На уже работающей VM:** не повторять `Machine`, не создавать пользователя заново, не менять пароль, не переустанавливать Rust/MiKTeX, не скачивать прошлые ZIP. Перейти сразу к разделам 4–7.
 
+## 1. Единственный поддерживаемый комплект
 
-## 2026-11-09 — W3 GUI OpenGL 2.0 blocker under RDP (new WS08)
+| Файл | Назначение и когда применять |
+| --- | --- |
+| [`TikZarium-Win10-PREFLIGHT.ps1`](TikZarium-Win10-PREFLIGHT.ps1) | Проверка синтаксиса PowerShell 5.1 и ОС перед чистой установкой; не устанавливает ПО. |
+| [`TikZarium-Win10-Setup.ps1`](TikZarium-Win10-Setup.ps1) | `-Phase Machine` под админом; `-Phase User` под `tikzarium-qa`; `-Phase Check` для проверки. |
+| [`Invoke-TikZarium-W3-Mesa.ps1`](Invoke-TikZarium-W3-Mesa.ps1) | Только QA: изолированный software OpenGL через проверенные 7zr/Mesa DLL без подмены System32 и оригинального EXE. |
+| [`TikZarium-Win10-Runner-OPTIONAL.ps1`](TikZarium-Win10-Runner-OPTIONAL.ps1) | Не запускать по умолчанию: отдельная явная регистрация runner только по самостоятельному решению владельца. |
+| [`tests/`](tests/) | Hosted PowerShell и негативные проверки; **не заменяют** физический W3. |
 
-**Actual owner trace after fully successful User/CLI PDF:** launching `target\debug\tikzarium-app.exe` under non-admin `tikzarium-qa` exited `Error: OpenGL(PainterError("egui_glow requires opengl 2.0+. "))`. Root of practical limitation: `eframe 0.33.3` is built with the `glow` renderer and the active RDP OpenGL context cannot meet minimum 2.0; the physical W3 interface was **NOT RUN**.
+Проект: [TikZarium](https://github.com/i-shutov/tikzarium). До ревью/слияния PR #150 этот комплект находится в [черновом PR #150](https://github.com/i-shutov/tikzarium/pull/150), ветка `chore/windows10-workstation-bootstrap-20261109`. После принятия PR использовать эти же относительные пути из `main`. Не запускать произвольный код других веток на существующем серверном runner.
 
-**Canonical QA workaround (candidate, not yet physically verified):** [isolated software OpenGL launcher](Invoke-TikZarium-W3-Mesa.ps1). It downloads SHA256-pinned Mesa3D 26.2.6 x64 MinGW artifact (GitHub upstream pal1000), verifies digest, uses SHA256-pinned standalone `7zr.exe` for `.7z`, and stages a **copy** of native `tikzarium-app.exe` plus x64 Mesa DLLs only under `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime`. The launcher scopes `GALLIUM_DRIVER=llvmpipe`, `LIBGL_ALWAYS_SOFTWARE=1` and `PATH` to the child, does not replace system or `target\debug` OpenGL DLLs, drivers, registry or UAC. Two initial valid outcomes: software GL GUI really opens (then proceed with six gestures/F1/Save/Open/GUI→PDF); or launcher shows actual new error (record and diagnose, **do not** infer GUI PASS).
+## 2. Чистая Windows 10: подготовка под Administrator — только если ещё не сделано
 
-Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://docs.mesa3d.org/drivers/llvmpipe.html) and [Windows tar 7z support](https://learn.microsoft.com/en-us/windows/tar/). The upstream package has a fixed SHA256 already validated in TikZarium QA transport. **No runtime W3 evidence from this launcher yet**.
-## 2026-11-09 — Win10 physical workstation: **Machine PASS / User PASS / CLI PDF PASS**, GUI W3 NOT_RUN
+Требуется Windows 10 Pro 22H2 x64 build 19045 или совместимая Windows 11, Windows PowerShell 5.1, подключение к интернету, права локального администратора. Windows Server исключён целевым скриптом. **Windows 11 не обязательна, 4 ГиБ RAM достаточно для данной проверки (Cargo `-j 1`).**
 
-Новое **подтверждение по выводу пользователя из RDP**: `tikzarium-qa` на Windows 10 Pro 22H2 x64 build 19045, 3.96 GiB RAM. В ходе `-Phase User` успешно выполнена нативная сборка `tikzarium-core`, `tikzarium-extensions`, `tikzarium-app` (`cargo build --locked -j 1`, `Finished dev profile ... 2m14s`) и настоящий `tikzarium-cli.exe build` для `examples/windows-cyrillic.tex`. Внешний MiKTeX XeLaTeX создал `windows-cyrillic.pdf` **16 448 bytes**, 93 dependencies, 11.5004974s; скрипт прошёл `pdffonts`/`pdftotext` проверки и завершился строками `Physical PDF generated and audited` и `Environment report`. Оригиналы: локальный `Documents\TikZarium-QA\evidence\20261109-090708\{windows-cyrillic.pdf,environment.json}`. Исходный Git SHA/двоичные файлы/оригинальный PDF независимо ещё не скачаны — независимая QA в ожидании.
-
-MiKTeX напечатал `major issue: So far, you have not checked for MiKTeX updates` в stderr; компиляция имела успешный результат, не классифицировать предупреждение как ошибку XeLaTeX. Не менять пакеты и конфигурацию TeX скрыто. Bootstrap-инциденты WS01–WS07 документированы; WS07 (повторная установка уже установленного `pgf`) снят при локальной явной проверке пакетов и `-SkipTexProvision`, и канонически исправлен в [PR #150](https://github.com/i-shutov/tikzarium/pull/150).
-
-**W3 GUI остаётся NOT_RUN / NOT_ACCEPTED**: владелец ещё не представил оригинальные экранные снимки и подтверждения шести реальных pointer gestures, F1, Undo, Save/Open, native dialogs, IME/DPI, GUI→XeLaTeX. Следующий точный сценарий: [Windows10 W3 physical QA](WINDOWS_10_W3_PHYSICAL_QA_20261109_RU.md). Серверный W2b независимо NOT_RUN, стабильный W4 NO-GO.
-
-
-> **Актуальный итог 2026-11-09:** Machine PASS, User PASS, `tikzarium-app.exe` собран, CLI→XeLaTeX→PDF PASS. Физический UI/W3 **NOT_RUN**. Все предыдущие разделы «User ещё выполняется» ниже — исторические checkpoints. Следующий шаг: [W3 physical QA](../../../docs/WINDOWS_10_W3_PHYSICAL_QA_20261109_RU.md).
-
-Дата: 9 ноября 2026. Цель: чистая испытательная Windows 10 Pro 22H2 (19045), 4 ГиБ RAM; отдельная QA-сессия по RDP. Windows Server, FlowBridge, действующие GitHub runners и политики Windows не трогаем.
-
-## 0. Что уже выполнено и что делать НЕ надо
-
-По журналам v3/v4 пользователь `DESKTOP-TD0FUEJ\tikzarium-qa` **уже создан**, ему задан пароль и предоставлено членство в локальной группе `Remote Desktop Users`. Не удаляйте пользователя и не меняйте пароль. В предыдущей попытке v3 установка остановилась на отсутствии `winget`. Последующий запуск **v4 `-Phase Machine` завершён успешно**: Windows 10 Pro build 19045, 3.96 GiB RAM, Git 2.56.0 (SHA256 VERIFIED), VS 2022 Build Tools, MSVC и Windows SDK x64, существующий VC++ Runtime. `-Phase User` **началась** в существующей RDP-сессии `tikzarium-qa`; ранее блокировавшие Rustup SHA и имя бинарника скорректированы в пользовательской копии; владелец сообщил, что выполнение пошло. Результат полного `User`/PDF/GUI пока не предоставлен. `PREFLIGHT v5` отдельно локально не подтверждён.
-
-`winget` для канонического скрипта **не требуется**. Не устанавливайте Microsoft Store, Chocolatey, Python, Node.js, VS Code и другие необязательные компоненты ради первого теста.
-
-## 1. Для свежей машины (на текущей уже НЕ выполнять)
-
-**Для текущей машины `DESKTOP-TD0FUEJ` этот раздел пропустить:** системный этап прошёл, пользователь `tikzarium-qa` создан, под ним архив не скачивать. Команды ниже — только для чистого развёртывания в будущем. Канонический источник — `scripts/workstation/windows10/` в [PR #150](https://github.com/i-shutov/tikzarium/pull/150), после принятия PR — в `main`.
-
-Скачайте `TikZarium-Win10-Bootstrap-v5.zip` в `C:\Users\Admin\Downloads` на новой Windows 10.
-
-В текущем повышенном Windows PowerShell 5.1:
+Скачать **проверенные исходники конкретного PR** в одну папку (содержимое перед исполнением доступно для чтения в GitHub):
 
 ```powershell
-$zip = Join-Path $env:USERPROFILE 'Downloads\TikZarium-Win10-Bootstrap-v5.zip'
-$folder = Join-Path $env:USERPROFILE 'Downloads\TikZarium-Win10-Bootstrap-v5'
-Expand-Archive -LiteralPath $zip -DestinationPath $folder -Force
-$setup = Join-Path $folder 'TikZarium-Win10-Setup.ps1'
-$preflight = Join-Path $folder 'TikZarium-Win10-PREFLIGHT.ps1'
-Test-Path -LiteralPath $setup
-```
-
-Последняя команда должна вывести `True`.
-
-## 2. ОБЯЗАТЕЛЬНО: парсер PowerShell до установки
-
-```powershell
+$directory = Join-Path $env:USERPROFILE 'Downloads\TikZarium-Win10-Bootstrap'
+New-Item -ItemType Directory -Force -Path $directory | Out-Null
+$base = 'https://raw.githubusercontent.com/i-shutov/tikzarium/chore/windows10-workstation-bootstrap-20261109/scripts/workstation/windows10'
+foreach ($name in @('TikZarium-Win10-PREFLIGHT.ps1','TikZarium-Win10-Setup.ps1')) {
+  Invoke-WebRequest -Uri "$base/$name" -OutFile (Join-Path $directory $name) -UseBasicParsing
+}
+$preflight = Join-Path $directory 'TikZarium-Win10-PREFLIGHT.ps1'
+$setup = Join-Path $directory 'TikZarium-Win10-Setup.ps1'
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preflight
-```
-
-Ожидается `SYNTAX PASS` для всех `.ps1`, `OS PASS ... build 19045` и `PREFLIGHT PASS`. Сообщение `winget not found: OK` является штатным.
-
-Preflight **ничего не устанавливает**. Это проверка синтаксиса настоящим PowerShell 5.1 на вашей машине. Если есть `PARSE ERROR`, прекращайте установку и пришлите лог.
-
-## 3. Машинная установка — Administrator
-
-```powershell
+if ($LASTEXITCODE -ne 0) { throw 'PREFLIGHT FAIL' }
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $setup -Phase Machine
+if ($LASTEXITCODE -ne 0) { throw 'MACHINE FAIL' }
 ```
 
-V4 проверит существующего `tikzarium-qa` без смены пароля; при отсутствии программ установит:
+Ожидается `Machine phase complete`; Git/VS/SDK устанавливаются из подписанных или SHA256-проверенных официальных источников, без `winget`. Скрипт сам копирует себя в `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` с ограниченными ACL, создаёт `tikzarium-qa` с введённым владельцем паролем (если его нет), включает в Remote Desktop Users без изменения политики RDP. Никогда не включать системное отключение UAC или глобальный обход безопасности.
 
-- Git for Windows 2.56.0 — официальный выпуск, фиксированный SHA256.
-- Visual Studio 2022 Build Tools: `Desktop development with C++` (MSVC x64) и Windows SDK — официальный подписанный Microsoft установщик.
-- Microsoft VC++ x64 Redistributable, только если ещё нет.
+## 3. Чистая Windows: пользовательский этап под `tikzarium-qa`
 
-Повторный запуск безопасен для существующего QA-пользователя и не обнуляет профиль. Git не переустанавливается, если уже есть; VS/MSVC проверяются и дополняются при необходимости. Не включены установка/регистрация GitHub Actions runner, драйверов, OpenGL/Mesa, RDP-автоматизации и изменение UAC.
-
-Скрипт сохраняет себя для второго этапа в `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` и пишет лог `C:\ProgramData\TikZariumSetup\machine-YYYYMMDD-HHMMSS.log`.
-
-Если установщик запросил перезагрузку, перезагрузитесь и снова запустите `-Phase Machine`, убедившись, что он завершается успешно. Не переподключайте runner.
-
-## 4. Пользовательская установка — tikzarium-qa (на текущей машине уже запущена)
-
-Выйдите из RDP-сессии Admin и войдите под локальным пользователем `.\tikzarium-qa` (именно с установленным ранее паролем). Откройте обычный Windows PowerShell **без** «Запуск от имени администратора»:
+Подключиться по RDP как `.\tikzarium-qa`, открыть **обычный** PowerShell без повышения прав. **Ничего дополнительно не распаковывать в профиле QA** — скрипт уже находится в `C:\ProgramData`:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1' -Phase User
-# ВАЖНО: на уже подготовленной машине этот файл ещё v4 с неверным Rustup-хешем/именем.
-# Если исправленная копия существует, используйте её вместо исходного файла:
-# powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Documents\TikZarium-Win10-Setup-fixed.ps1" -Phase User
+if ($LASTEXITCODE -ne 0) { throw 'USER FAIL: review transcript and error' }
 ```
 
-Устанавливает под данным пользователем:
+Выполняются: SHA256-проверенный `rustup-init.exe` 1.29.3 (имя бинарника **не менять**), Rust **1.91.0-x86_64-pc-windows-msvc**, пользовательский MiKTeX 25.12, обязательные пакеты `pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math` **только если отсутствуют**; Poppler 25.07.0-0; `git clone/fetch` чистого `main`; `cargo check --locked --workspace --all-targets -j 1`, CLI `doctor`, сборка app и CLI→XeLaTeX→PDF с аудитом Arial/ToUnicode/кириллицы. Скрытая докачка TeX-пакетов во время PDF-сборки не допускается.
 
-- официальный `rustup` 1.29.3 (фиксированный SHA256) и закреплённый **Rust 1.91.0 x86_64-pc-windows-msvc**;
-- приватный MiKTeX 25.12 (фиксированный SHA256) и необходимые TeX-пакеты — **явно при настройке**, не во время test build;
-- Poppler 25.07.0-0 (фиксированный SHA256), `pdffonts`, `pdftotext`;
-- репозиторий `i-shutov/tikzarium` из `main` с записью исходного SHA;
-- `cargo check --locked`, `tikzarium-cli doctor`, сборку настоящего `tikzarium-app.exe` с одной параллельной задачей (4 GiB RAM);
-- настоящий PDF из `examples/windows-cyrillic.tex`, анализ Arial/ToUnicode и кириллицы.
+Проверенные контрольные суммы, уже встроенные в скрипты: Rustup 1.29.3 x64 `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db`; Mesa 26.2.6 mingw x64 archive `da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`; официальный standalone 7zr 26.05 `9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7`. Не отключать SHA256 validation при ошибке загрузки.
 
-Исходники: `%USERPROFILE%\source\tikzarium`. Отчёт и PDF: `%USERPROFILE%\Documents\TikZarium-QA\evidence\<дата-время>`. Существующие несохранённые изменения в репозитории скрипт не стирает и не перезаписывает.
-
-## 5. Быстрая проверка после установки
+## 4. Проверка готового окружения (на текущей VM начинать здесь)
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1' -Phase Check
+$repo = Join-Path $env:USERPROFILE 'source\tikzarium'
+$evidence = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\evidence\20261109-090708'
+& 'C:\Program Files\Git\cmd\git.exe' -C $repo rev-parse HEAD
+Get-FileHash (Join-Path $repo 'target\debug\tikzarium-app.exe') -Algorithm SHA256
+Get-FileHash (Join-Path $evidence 'windows-cyrillic.pdf') -Algorithm SHA256
+Get-Content (Join-Path $evidence 'environment.json') -Raw
 ```
 
-В текущей открытой RDP-сессии запускаем настоящий GUI:
+**Реальное свидетельство этой VM:** `cargo build` завершился с `Finished dev profile` за 2m14s; `tikzarium-cli.exe build ... windows-cyrillic.tex` выдал PDF 16 448 байт, 93 dependencies, 11.5004974 s. Установщик напечатал `Physical PDF generated and audited`. MiKTeX warning `So far, you have not checked for MiKTeX updates` был в **успешном** stderr — не ошибка сборки, не повод менять TeX в ходе QA.
+
+## 5. Запуск GUI под RDP: исключительно изолированная Mesa
+
+Штатный `tikzarium-app.exe` в данном RDP окружении выдаёт `egui_glow requires opengl 2.0+`. Это окружение `eframe/glow`, а не повод переустанавливать Windows/драйверы. **Подготовить только отдельную QA-копию**, не переписывая `System32\opengl32.dll` и оригинальный бинарник:
 
 ```powershell
-& "$env:USERPROFILE\source\tikzarium\target\debug\tikzarium-app.exe"
+$url = 'https://raw.githubusercontent.com/i-shutov/tikzarium/chore/windows10-workstation-bootstrap-20261109/scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1'
+$script = Join-Path $env:USERPROFILE 'Documents\Invoke-TikZarium-W3-Mesa.ps1'
+Invoke-WebRequest -Uri $url -OutFile $script -UseBasicParsing
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Action PrepareAndRun
+if ($LASTEXITCODE -ne 0) { throw 'MESA QA launcher failed' }
 ```
 
-Проверяем: настоящее окно / масштаб 100, 125 и 200% (без изменения системного DPI скриптом), шесть мышиных примитивов (line, arrow, rectangle, circle, node, cubic Bézier), F1/помощь, Undo, Save/Open, кириллицу/IME, GUI → XeLaTeX → PDF.
+Скрипт берёт SHA256-проверенную Mesa 26.2.6 (~56 MB), распаковывает через SHA256-проверенный **портативный `7zr.exe`**, создаёт в `Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime` копию EXE и x64 DLL, запускает с `GALLIUM_DRIVER=llvmpipe` и `LIBGL_ALWAYS_SOFTWARE=1`. После первого успеха можно повторять `-Action RunPrepared`. На текущей VM реально получено окно с русской панелью, сеткой холста, редактором .tex, вкладками и инспектором: **GUI START PASS**. Это QA workaround, не установка/обязательная зависимость конечного пользователя.
 
-Запуск `cargo` и генерация PDF в `User` **не являются физической GUI-приёмкой W3**. Для W3 нужны реальные действия в сеансе RDP и сохранение оригинальных артефактов.
+## 6. W3 GUI: кнопка ▶, Save/Open, PDF, F1 и мышь
 
-## 6. Если появится ошибка
+**Текущий блокер — `▶` нажимается, но пользователь не видит эффекта.** В исходниках `crates/tikzarium-app/src/main.rs` команда Build вызывает `self.build()`: сначала завершает `tex_discovery_rx`, проверяет `xelatex`, затем **обязательно вызывает `self.save()`**. Для нового `figure.tex · новый документ` без пути `save()` открывает **родной Save As dialog** через `rfd`. Поэтому вероятны ожидание Save As, потеря фокуса/окно за RDP, TeX discovery/status или ошибка сохранения; **это гипотезы, не установленные причины**. Не чинить вслепую без воспроизведения.
 
-- Скрипт останавливается на первом нарушении, сообщает команду и код возврата, сохраняет логи.
-- `FAILED: ... SHA256` — загрузка отличается от официального закреплённого выпуска. Не отключайте проверку. Пришлите лог.
-- Ошибка `Visual Studio installer` — проверьте интернет/место на диске, перешлите строку и `C:\ProgramData\TikZariumSetup\machine-*.log`.
-- Отсутствует `xelatex` — пришлите точную строку; не запускайте TeX как SYSTEM, не меняйте UAC.
-- `cargo` не хватает памяти на 4 ГиБ — сначала проверьте лог, сборка уже работает с `-j 1`; увеличение RAM не является обязательным первым действием.
-- `winget not found` не должен встречаться в v5. Если встречается, вы запустили старый скрипт из старого ZIP — проверьте путь в команде.
+**Первый минимальный ручной/агентный тест:** (1) `Ctrl+S`; (2) проследить окно «Сохранить как» (включая за основным окном), выбрать **новый** путь `Documents\TikZarium-QA\W3-physical\figure.tex`; (3) убедиться, что `Изменено` исчезло и файл существует; (4) снова `▶` или `Ctrl+Enter`; (5) открыть `Вид → Диагностика` (или значок терминала) и вкладку `PDF`; (6) сохранить статус, stderr, снимки **собственного окна**; (7) не менять исходный `.tex`, если он нужен как оригинальное свидетельство. Если никакого эффекта, фиксировать точный код состояния после клика.
 
-Нельзя передавать пароли, токены, RDP credentials или содержимое профилей целиком. Достаточно лога без секретов и `environment.json` из каталога evidence.
+После этого — шесть реальных инструментов (линия, стрелка, прямоугольник, окружность, текстовый/математический узел, Bézier), Undo, Save/Open, native dialogs, русская IME/Unicode, PDF именно **из GUI**, DPI 100/125/200% насколько доступно. Каждый пункт отдельно PASS/FAIL/NOT_RUN, оригинальный source и PDF плюс SHA256. Полный план: [W3 физический QA](../../../docs/WINDOWS_10_W3_PHYSICAL_QA_20261109_RU.md).
 
-## 7. Проверка источников и безопасности
+## 7. Dot: подключение и автономная локальная задача
 
-Для Git, Rustup, MiKTeX и Poppler файл скачивается по HTTPS и перед запуском/распаковкой сравнивается с зафиксированным SHA256; VS Build Tools и VC Runtime скачиваются по официальным URL Microsoft и проверяются через Authenticode. Пакеты MiKTeX ставятся отдельным, видимым действием, а во время рабочего PDF-теста должны оставаться запрещёнными скрытые загрузки и shell-escape. `winget`, Store, Chocolatey и сторонние менеджеры пакетов не нужны.
+1. **На самой VM** под `tikzarium-qa` установить и открыть приложение ChatGPT для Windows (подходит Windows 10 build 19045), войти в аккаунт владельца.
+2. Открыть профиль Dot → **Computers → Your computer → Allow access** и подтвердить разрешение ещё раз. Оставить машину онлайн и ChatGPT открытым. Это требует **личного действия владельца**, не выполняется скриптом.
+3. Дать Dot [задание с границами и критериями](../../../docs/DOT_WINDOWS10_W3_GUI_HANDOFF_RU.md). Попросить запустить **локальную Work-задачу** именно на этой VM. Если инструменты локального GUI недоступны, Dot обязан явно сообщить об этом, а не считать тест выполненным; ему разрешено провести локальный кодовый/логовый анализ и предложить одобренный способ автоматизации.
+4. Не передавать Dot пароль, RDP-реквизиты, токены. Не менять RDP/UAC/системный OpenGL/драйверы; не запускать системные команды под админом, не создавать новый runner, не трогать Windows Server, FlowBridge и `main` без reviewed PR.
 
-Подтверждено по пользовательскому журналу: `Machine` прошла успешно на Windows 10 Pro build 19045. Локальная копия `-Phase User` прошла `PATCH AND SYNTAX PASS`, скачанный Rustup получил `SHA256 VERIFIED`, после исправления имени бинарника владелец сообщил «так пошло». Это **не** итоговый `User PASS`; без финального лога нельзя утверждать установку Rust/MiKTeX/Poppler, PDF или W3.
+## 8. Что отдавать на приёмку
 
-## 8. Канонический набор в GitHub
+Оригинальные результаты хранить **локально** в `%USERPROFILE%\Documents\TikZarium-QA\`. В отчёте: Windows build, user/session, исходный SHA, SHA256 app/CLI/Mesa архивов, логи/версия XeLaTeX, исходный .tex/PDF, скриншоты окна до/после F1, после рисования, после PDF. Не переносить скриншоты RDP и секреты в публичный репозиторий без отдельной проверки. Состояние `W3 GUI START PASS` не означает успешный W3; `W4` остаётся NO-GO.
 
-Исходные файлы хранятся в `scripts/workstation/windows10/`: `TikZarium-Win10-Setup.ps1` (Machine-часть v4 фактически PASS; User-часть содержит исправленные SHA256 Rustup и имя `rustup-init.exe`), `TikZarium-Win10-PREFLIGHT.ps1` (исправление `$PSScriptRoot`), `TikZarium-Win10-Runner-OPTIONAL.ps1` (не запускать без решения владельца). Не использовать более ранние ZIP v1–v3. Рабочий `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` уже соответствует v4.
+## 9. История устранённых блокеров (не повторять обходы)
 
-Новая CI-проверка запускается **только на GitHub-hosted Windows** и выполняет `Parser.ParseFile` для трёх `.ps1`, не исполняя содержимое, не меняя Windows и не обращаясь к личному runner. Это лишь синтаксическая проверка, не W3.
-
-## WS07 — MiKTeX пакеты уже установлены, 2026-11-09
-
-**Фактический пользовательский лог:** `xelatex --version` успешно отработал, MiKTeX Package Manager 4.10; затем `-Phase User` завершилась на `pgf: package is already installed` / `MiKTeX explicit package install failed with exit code 1`. Это ошибка повторного пакетного provisioning в первоначальном установщике, а не неисправность XeLaTeX.
-
-**Исправлено в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** перед установкой каждого из пяти пакетов (`pgf`, `standalone`, `fontspec`, `xcolor`, `unicode-math`) вызывается `miktex --disable-installer packages info --template '{isInstalled}' <package>`. Устанавливаются только отсутствующие; после операции выполняется повторная верификация. `update-package-database` выполняется только если выявлены отсутствующие пакеты. Статус, отличный от `true` или `false`, запрещает продолжение. Добавлена отдельная hosted PowerShell 5.1 регрессия на состояния `true`, `false` и ошибочные значения без установки стороннего ПО.
-
-**Обход для уже запущенной RDP-сессии QA:** явно проверить каждый из пяти пакетов через `packages info`, установить только отсутствующие, затем выполнить локальный исправленный `TikZarium-Win10-Setup-fixed.ps1 -Phase User -SkipTexProvision`. Данный флаг пропускает лишь повторное provision пакетов; Cargo, XeLaTeX PDF, встроенные шрифты и кириллица по-прежнему должны проверяться. Не скачивать ZIP заново под `tikzarium-qa`, не менять пользователя/права/UAC, не переустанавливать MiKTeX.
-
-**Статус:** Windows 10 `Machine PASS`; `User IN_PROGRESS` с подтверждённым MiKTeX CLI, но без итоговых `environment.json`/PDF; физический W3 `NOT_ACCEPTED`; W4 `NO-GO`.
-
-## Коррекция bootstrap Rustup и состояние User (2026-11-09)
-
-Запуск `Machine` на Windows 10 Pro 22H2 x64, build 19045, 3.96 GiB RAM прошёл успешно. Под QA-пользователем первоначальный запуск `User` выявил две ошибки в установщике:
-
-1. В эталонном SHA256 `rustup-init.exe` была опечатка: правильная контрольная сумма для x64 Rustup 1.29.3 — `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db` (см. официальный [winget-pkgs манифест](https://github.com/microsoft/winget-pkgs/blob/master/manifests/r/Rustlang/Rustup/1.29.3/Rustlang.Rustup.installer.yaml)). Фактическая загрузка соответствовала именно этой сумме. Проверка SHA256 **оставлена включённой**.
-2. Файл `rustup-init.exe` был ошибочно записан как `tikzarium-bootstrap-rustup-1.29.3.exe`. `rustup-init` определяет режим по базовому имени `exe` и отказался запускаться с `unknown proxy name`. Новый путь в скрипте — `tikzarium-rustup-1.29.3\rustup-init.exe` (изолированная временная папка, исходное имя бинарника).
-
-На машине уже лежит исходная копия v4 в `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1`. Под `tikzarium-qa` не требуется скачивать и распаковывать архив; для продолжения можно скопировать этот файл в личный `Documents`, исправить указанные два значения, проверить парсером PowerShell 5.1 и повторить фазу `User`. Корректный канонический исходник после этого PR находится в репозитории, но не автоматически обновляет локальный `C:\ProgramData`.
-
-На момент последнего сообщения пользователя «так пошло» после исправления Rustup, **Rust toolchain, MiKTeX, Poppler, сборка, PDF и физический W3 GUI ещё не подтверждены оригинальными итоговыми логами**. `PATCH AND SYNTAX PASS` и `SHA256 VERIFIED` — только промежуточные проверки. Для признания `User PASS` нужны полный вывод `-Phase User`, `environment.json` и PDF/font/Unicode audit. Для `W3` сверх того нужны физические действия с GUI.
+В полном [журнале WS01–WS09](../../../docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md): Win11-only gate при реальной Win10; синтаксис `${build}:`; отсутствие winget; `$PSScriptRoot` в параметрах; правильный Rustup SHA и имя `rustup-init.exe`; MiKTeX `pgf already installed` (исправлено пропуском установленных пакетов); OpenGL 2.0 в RDP; неподдерживаемый LZMA в tar.exe (решено verified `7zr.exe`). **Не использовать старые ZIP/скрипты и не переустанавливать Windows/TeX по этим ошибкам.**
