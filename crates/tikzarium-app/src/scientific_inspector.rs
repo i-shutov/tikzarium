@@ -287,6 +287,31 @@ mod tests {
     }
 
     #[test]
+    fn studio_f1_help_uses_shared_property_spec_without_writing_tex() {
+        let source = SAROV.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        let selected = inspector
+            .candidates
+            .iter()
+            .position(|item| item.instance.kind == ScientificKind::Axis)
+            .unwrap();
+        inspector.selected = Some(selected);
+        inspector.refresh_literal(&authoring, &source);
+        let before = source.clone();
+        let ctx = egui::Context::default();
+        ctx.begin_pass(egui::RawInput::default());
+        egui::CentralPanel::default().show(&ctx, |ui| {
+            assert!(inspector.show_selected_help(ui));
+        });
+        let _ = ctx.end_pass();
+        assert_eq!(before.as_bytes(), source.as_bytes());
+        assert_eq!(inspector.original_value.as_deref(), Some("150"));
+    }
+
+    #[test]
     fn rendering_idle_inspector_does_not_mutate_source() {
         let mut source = SAROV.to_owned();
         let mut authoring = tikz_authoring::Session::default();
