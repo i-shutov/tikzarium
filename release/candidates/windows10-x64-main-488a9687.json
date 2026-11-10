@@ -50,5 +50,30 @@
     "No standalone Mesa3D runtime, TeX, copyrighted fonts or developer signing material included in portable ZIP.",
     "If main changes, rebuild and reverify the exact release SHA before promoting any candidate.",
     "Owner reported blockers lifted on 2026-11-10; physical original W2b/W3 evidence not yet linked to current main on GitHub."
-  ]
+  ],
+  "reported_w3_native_checkpoint": {
+    "status": "PHYSICAL_GUI_SUBSET_PASS_BY_CODEX_REPORT_W3_NOT_ACCEPTED",
+    "local_source_sha": "57cb62e4b70f896eb48978da4252ec1fede6c26a",
+    "remote_main_sha": "488a9687c404f9714eecbcb8ccb4edbf97a54d89",
+    "locally_reported_pass": [
+      "default_desktop",
+      "owned_printwindow",
+      "f1",
+      "build_cancel_escape",
+      "gui_save_build_pdf",
+      "six_gestures",
+      "undo_byte_exact",
+      "save_open",
+      "explicit_arial_cyrillic_font"
+    ],
+    "untested": [
+      "win10_ime",
+      "dpi_125",
+      "dpi_200",
+      "independent_original_evidence",
+      "exact_release_sha"
+    ],
+    "local_path": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\w3-native-20261110-061007\\RESULTS.md",
+    "note": "Owner-provided Codex report; original files not accessible to connected GitHub review yet"
+  }
 }

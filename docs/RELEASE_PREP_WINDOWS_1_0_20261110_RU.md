@@ -10,6 +10,15 @@
 - **Независимая проверка вложенного кандидата завершена:** ZIP CRC/распаковка — PASS; все пять файлов совпадают с `MANIFEST.sha256`; `PROVENANCE.json` содержит точный исходный SHA и `physical_windows10=NOT_RUN`. Приложение SHA256 `f8f534d36d5fd26fcef5f8c47094871bc81882c3cfbb25411ad46975da3915a5`; CLI SHA256 `aae564e8198c5adeabda4b32aadf1a3f435b9e01ff5cacd8892f5acf5b36b50c`. Формальная карточка: [release candidate manifest](../release/candidates/windows10-x64-main-488a9687.json).
 - **Граница:** standalone hosted ZIP не содержит уже настроенного MiKTeX/XeLaTeX, не является MSI/EXE-инсталлятором, не имеет подтверждённой подписи. Isolated Mesa llvmpipe использовалась **только для QA под RDP**, не входит в пользовательский пакет.
 
+## 2026-11-10 — первый реальный W3 GUI subset PASS (по отчёту Codex, до независимой приёмки)
+
+На Win10 Pro 22H2 `VM-910136` под Admin после перехода на активный `WinSta0\Default` из **одного интерактивного контекста** реально запущен TikZarium и выполнены `PrintWindow` owned-client capture и ввод. Codex сообщает PASS для F1, scratch Build и Escape без сохранения, Save & Build, GUI PDF export, шести TikZ-примитивов, Undo и Save/Open. После второго Undo TEX побайтно соответствовал сохранённому состоянию шести фигур. **Это результат физического локального теста, но оригинальные PNG/TEX/PDF/log/SHA ещё не были независимо изучены здесь.**
+
+С ограничением шрифта выявлена причина: [quickstart.tex](../examples/quickstart.tex) использует `every node/.style={font=\sffamily}` без `\setsansfont`. Latin Modern Sans в текущем TeX-окружении не содержит требуемой кириллицы; XeLaTeX сообщил `Missing character` для «Точка». После явного `\setsansfont{Arial}` GUI собрал PDF, `pdftotext` восстановил «Точка», `pdffonts` подтвердил Arial и ToUnicode. Не изменять чужие исходники и не отключать проверки glyph; оформить ограничение в [issue #159](https://github.com/i-shutov/tikzarium/issues/159). Вставка кириллицы через clipboard **не равна проверке IME**.
+
+**Оставшиеся NOT_RUN:** Windows IME, DPI 125/200%, независимый оригинальный аудит с ручным визуальным подтверждением, испытание на финальном source/EXE SHA. Оригиналы: `C:\Users\Admin\Documents\TikZarium-QA\evidence\w3-native-20261110-061007\RESULTS.md` и соседние PNG/TEX/PDF/log/SHA. Сейчас исходная сборка имеет SHA `57cb62e4`, newer main `488a9687`: линейная история `57cb62e4` → `449857c5` → `488a9687`, подтверждено GitHub compare (`ahead_by=2, behind_by=0`), не конфликт веток. Сама GUI-функция Save&Build уже есть в 57cb; два более поздних коммита добавляют W3-аудитор и Windows bootstrap.
+
+**Блокер рабочего стола [#154](https://github.com/i-shutov/tikzarium/issues/154) закрыт** только в части исполнения: `CodexSandboxDesktop` больше не блокирует этот тест. Формальный W3 остаётся **NOT_ACCEPTED** до independent QA; W2b и W4 самостоятельные NO-GO. Детали: [W3 native checkpoint](W3_WIN10_20261110_NATIVE_GUI_CHECKPOINT_RU.md).
 ## 2. Приёмочные ворота (status по GitHub, не только словам)
 
 | Gate | Известно сейчас | Условие закрытия |
