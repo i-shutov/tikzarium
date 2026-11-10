@@ -1,6 +1,6 @@
 # TikZarium — ЕДИНАЯ инструкция подготовки Windows 10, QA и подключения Dot
 
-> **Актуально 09.11.2026.** Канонические скрипты лежат **рядом с этой инструкцией**. Устаревшие архивы Win11, v1–v5, локальные одноразовые правки и предыдущие хронологические инструкции не использовать. Журнал их причин и исправлений — в [технических инцидентах](../../../docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md), WS01–WS09.
+> **Актуально 09.11.2026.** Канонические скрипты лежат **рядом с этой инструкцией**. Устаревшие архивы Win11, v1–v5, локальные одноразовые правки и предыдущие хронологические инструкции не использовать. Журнал их причин и исправлений — в [технических инцидентах](../../../docs/TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md), WS01–WS10.
 
 ## 0. Текущий результат — уже подготовленная VM
 
@@ -84,11 +84,22 @@ Once the build finishes, use `Invoke-TikZarium-W3-Mesa.ps1 -Action PrepareAndRun
 
 ### Готовая команда для уже существующего Admin на Windows 10 — 10.11.2026
 
+### 2026-11-10 — WS10: повреждённый preflight в предыдущем SHA
+
+**Подтверждённая ошибка:** скрипт `TikZarium-Win10-PREFLIGHT.ps1` из прежнего SHA `824335f5c575cb5aed79ae669aac744b4efb2bc8` имел разорванное регулярное выражение проверки `CurrentBuildNumber` и ошибочно продублированный хвост `catch`/`exit`, поэтому PowerShell 5.1 выдавал `UnexpectedToken` ещё до запуска. Ничего в системе от этого запуска не изменилось. **Нельзя больше использовать этот SHA.**
+
+**Исправление:** восстановить preflight из уже проверенной v5 (`d995488...`), добавить только read-only fallback для WMI через реестр и проверить весь файл. Исправление в коммите `e5eb979ed8c12ffd3cd40ab5a95634cf661327a8`, расширенная hosted PS5.1 проверка (положительная имитация Win10 с `Get-CimInstance Access denied` плюс отказ Windows Server) в `c37aeb9f8962bde482e470d4378bb13f75a5429b`. До завершения соответствующей CI запрещено объявлять скрипт верифицированным.
+
+**На существующем профиле Admin ничего переустанавливать ради WS10 не нужно:** повторно скачать **только исправленный `PREFLIGHT.ps1`** по закреплённому SHA в `Documents\TikZarium-QA\setup`, выполнить независимый `Parser.ParseFile` и только затем `PREFLIGHT`/`-Phase CurrentUser`. Основной `Setup.ps1` и optional runner из прежней загрузки сохраняются. `Machine` не запускать, существующий QA-профиль не трогать.
+
+**Граница User:** системные Git/MSVC/Windows SDK уже установлены предыдущим `Machine`. Но пользовательские Rust/MiKTeX/Poppler из `tikzarium-qa` не обязаны быть доступны `Admin`; `CurrentUser` выполнит их проверку и при необходимости подготовит в профиле Admin. GUI и PDF под Admin пока не имеют физического PASS.
+
+
 **Только обычный неповышенный PowerShell** в профиле `Admin`, не в `Run as administrator`. `Machine` не повторять. Это тот же установленный и испытанный под QA-пользователем `User` pipeline, адаптированный к существующему среднепривилегированному токену Admin; реальный итог `CurrentUser` под Admin пока не подтверждён.
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-$version = '824335f5c575cb5aed79ae669aac744b4efb2bc8' # verified GitHub commit, not moving branch
+$version = 'c37aeb9f8962bde482e470d4378bb13f75a5429b' # verified GitHub commit, not moving branch
 $base = "https://raw.githubusercontent.com/i-shutov/tikzarium/$version/scripts/workstation/windows10"
 $folder = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\setup'
 New-Item -ItemType Directory -Force -Path $folder | Out-Null
@@ -97,6 +108,14 @@ foreach ($file in @('TikZarium-Win10-Setup.ps1', 'TikZarium-Win10-PREFLIGHT.ps1'
 }
 $preflight = Join-Path $folder 'TikZarium-Win10-PREFLIGHT.ps1'
 $setup = Join-Path $folder 'TikZarium-Win10-Setup.ps1'
+# First check that the preflight file itself parses (previous WS10 failure).
+$tokens = $null; $parseErrors = $null
+[void][System.Management.Automation.Language.Parser]::ParseFile(
+    $preflight, [ref]$tokens, [ref]$parseErrors
+)
+if (@($parseErrors).Count -gt 0) {
+    throw ('PREFLIGHT SCRIPT SYNTAX FAIL: ' + ($parseErrors | Out-String))
+}
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preflight
 if ($LASTEXITCODE -ne 0) { throw 'Preflight failed; no install attempted' }
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $setup -Phase CurrentUser

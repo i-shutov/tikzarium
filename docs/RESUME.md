@@ -1,5 +1,16 @@
 # TikZarium — release resume, 2026-11-09
 
+### 2026-11-10 — WS10: повреждённый preflight в предыдущем SHA
+
+**Подтверждённая ошибка:** скрипт `TikZarium-Win10-PREFLIGHT.ps1` из прежнего SHA `824335f5c575cb5aed79ae669aac744b4efb2bc8` имел разорванное регулярное выражение проверки `CurrentBuildNumber` и ошибочно продублированный хвост `catch`/`exit`, поэтому PowerShell 5.1 выдавал `UnexpectedToken` ещё до запуска. Ничего в системе от этого запуска не изменилось. **Нельзя больше использовать этот SHA.**
+
+**Исправление:** восстановить preflight из уже проверенной v5 (`d995488...`), добавить только read-only fallback для WMI через реестр и проверить весь файл. Исправление в коммите `e5eb979ed8c12ffd3cd40ab5a95634cf661327a8`, расширенная hosted PS5.1 проверка (положительная имитация Win10 с `Get-CimInstance Access denied` плюс отказ Windows Server) в `c37aeb9f8962bde482e470d4378bb13f75a5429b`. До завершения соответствующей CI запрещено объявлять скрипт верифицированным.
+
+**На существующем профиле Admin ничего переустанавливать ради WS10 не нужно:** повторно скачать **только исправленный `PREFLIGHT.ps1`** по закреплённому SHA в `Documents\TikZarium-QA\setup`, выполнить независимый `Parser.ParseFile` и только затем `PREFLIGHT`/`-Phase CurrentUser`. Основной `Setup.ps1` и optional runner из прежней загрузки сохраняются. `Machine` не запускать, существующий QA-профиль не трогать.
+
+**Граница User:** системные Git/MSVC/Windows SDK уже установлены предыдущим `Machine`. Но пользовательские Rust/MiKTeX/Poppler из `tikzarium-qa` не обязаны быть доступны `Admin`; `CurrentUser` выполнит их проверку и при необходимости подготовит в профиле Admin. GUI и PDF под Admin пока не имеют физического PASS.
+
+
 ## 2026-11-10 — existing Admin profile on Windows 10: CurrentUser bootstrap candidate
 
 Владелец подтвердил, что ChatGPT установлен в профиле `VM-910136\admin` на Windows 10 Pro 22H2 x64 build `19045.4412`. Локальные команды `hostname` и `whoami` выполнились, но `Get-CimInstance Win32_OperatingSystem` в изолированном Codex процессе вернул `Access denied` (medium integrity, Administrator SID `deny-only`). Computer Use смог перечислить окна (пока только ChatGPT), а `tikzarium-app.exe` в текущем профиле не найден. Это **не** отказ системы и не основание менять WMI/UAC.

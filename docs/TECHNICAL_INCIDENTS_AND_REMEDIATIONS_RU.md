@@ -130,6 +130,17 @@
 
 ## G. Windows 10 workstation bootstrap — отдельные инциденты установки (2026-11-09)
 
+### 2026-11-10 — WS10: повреждённый preflight в предыдущем SHA
+
+**Подтверждённая ошибка:** скрипт `TikZarium-Win10-PREFLIGHT.ps1` из прежнего SHA `824335f5c575cb5aed79ae669aac744b4efb2bc8` имел разорванное регулярное выражение проверки `CurrentBuildNumber` и ошибочно продублированный хвост `catch`/`exit`, поэтому PowerShell 5.1 выдавал `UnexpectedToken` ещё до запуска. Ничего в системе от этого запуска не изменилось. **Нельзя больше использовать этот SHA.**
+
+**Исправление:** восстановить preflight из уже проверенной v5 (`d995488...`), добавить только read-only fallback для WMI через реестр и проверить весь файл. Исправление в коммите `e5eb979ed8c12ffd3cd40ab5a95634cf661327a8`, расширенная hosted PS5.1 проверка (положительная имитация Win10 с `Get-CimInstance Access denied` плюс отказ Windows Server) в `c37aeb9f8962bde482e470d4378bb13f75a5429b`. До завершения соответствующей CI запрещено объявлять скрипт верифицированным.
+
+**На существующем профиле Admin ничего переустанавливать ради WS10 не нужно:** повторно скачать **только исправленный `PREFLIGHT.ps1`** по закреплённому SHA в `Documents\TikZarium-QA\setup`, выполнить независимый `Parser.ParseFile` и только затем `PREFLIGHT`/`-Phase CurrentUser`. Основной `Setup.ps1` и optional runner из прежней загрузки сохраняются. `Machine` не запускать, существующий QA-профиль не трогать.
+
+**Граница User:** системные Git/MSVC/Windows SDK уже установлены предыдущим `Machine`. Но пользовательские Rust/MiKTeX/Poppler из `tikzarium-qa` не обязаны быть доступны `Admin`; `CurrentUser` выполнит их проверку и при необходимости подготовит в профиле Admin. GUI и PDF под Admin пока не имеют физического PASS.
+
+
 ### WS08–WS09: графическое окно запустилось на реальной Windows 10
 
 После исправления рендерера с изолированной Mesa llvmpipe (WS08) и замены неспособного распаковать LZMA `tar.exe` на проверенный 7zr (WS09) владелец прислал скриншот действительно открытого окна TikZarium в непривилегированном RDP-сеансе Windows 10 Pro. Установлен **GUI START PASS**: русские панели, редактируемый текст источника, холст и инспектор. Это подтверждает снятие стартового OpenGL-блокера в QA-режиме, но не физическую приёмку W3 целиком. F1/мышиные жесты/Save/Open/IME/DPI и GUI→PDF остаются `NOT_RUN`. Скриншот в переписке, не в публичном репозитории.
@@ -180,6 +191,7 @@ Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://doc
 | WS07 | `xelatex --version` отработал, но пакетный `install pgf ...` завершился кодом 1: `pgf: package is already installed`. | Проверять `packages info --template '{isInstalled}'` и устанавливать только отсутствующие; повторная проверка; hosted тест состояний. | Исправление в PR #150; физический User/PDF/W3 пока не принят. |
 | WS08 | Под RDP нативный `tikzarium-app.exe` не открыл окно: `egui_glow requires opengl 2.0+`; доступный OpenGL-контекст слишком старый для glow. | Изолированный x64 Mesa llvmpipe рядом с копией EXE, проверенная SHA256 загрузка, без замены system DLL и драйверов. | QA launcher в PR #150, **кандидат**: реальный GUI W3 ещё НЕ ПРОВЕРЕН. |
 | WS09 | В Win10 встроенный `tar.exe` не распаковал проверенный .7z архив Mesa: `LZMA codec is unsupported`. | Standalone официальный `7zr.exe` 26.05 с закрепленным SHA256 + CRC тестом; без системы/драйверов; сохранение Mesa архива. | Исправление в PR #150, физический W3 GUI ещё NOT_ACCEPTED. |
+| WS10 | Сломанный PowerShell 5.1 preflight из SHA `824335...`: регулярное выражение `CurrentBuildNumber` разорвано, `catch/exit` продублирован внутри условия; ParserError ещё до исполнения. | Вернуть исходник v5, аккуратно добавить read-only registry fallback, проверять preflight независимым `Parser.ParseFile` и hosted WMI-denied positive/Server-negative тестами. | Ветка PR #150, CI нового коммита ещё в проверке; не запускать старый SHA. |
 
 **Границы:** подтверждён `Machine PASS`, не `User PASS`. В активном профиле `tikzarium-qa` лежит исправленная частная копия скрипта; первоначальный `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` автоматически не меняется после GitHub-коммитов. Не давать инструкции повторно скачивать ZIP под QA-пользователем, не менять пароли/политику RDP/UAC, не регистрировать runner без необходимости. Отдельный [runbook](../scripts/workstation/windows10/README_RU.md).
 
