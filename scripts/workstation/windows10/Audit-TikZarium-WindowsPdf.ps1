@@ -143,7 +143,7 @@ try {
                     $report.text_mode_pass = $mode
                 }
             } catch {
-                $entry.decode_error = $_.Exception.Message
+                $entry['decode_error'] = $_.Exception.Message
             }
         }
         $report.checks[$mode] = $entry
@@ -152,7 +152,7 @@ try {
         $report.status = 'PASS_PDF_FONT_AND_CYRILLIC'
     }
 } catch {
-    $report.error = $_.Exception.Message
+    $report['error'] = $_.Exception.Message
 } finally {
     $report | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $reportPath -Encoding UTF8
     Write-Host "PDF QA report: $reportPath"
