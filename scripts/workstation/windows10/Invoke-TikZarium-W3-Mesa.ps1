@@ -68,36 +68,34 @@ function Prepare-MesaRuntime {
     # extracted directory. On every Prepare, re-extract only our dedicated QA
     # unpack folder from the official pinned archive and 7zr. Never reuse DLLs
     # merely because opengl32.dll and libgallium_wgl.dll happen to exist.
-    $mesaCandidates = @()
-    if ($mesaCandidates.Count -ne 1) {
-        if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
-            Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            try {
-                Invoke-WebRequest -Uri $sevenZipUrl -OutFile $sevenZip -MaximumRedirection 8 -TimeoutSec 120 -UseBasicParsing
-            } catch {
-                Remove-Item -LiteralPath $sevenZip -Force -ErrorAction SilentlyContinue
-                throw
-            }
+    if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
+        Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        try {
+            Invoke-WebRequest -Uri $sevenZipUrl -OutFile $sevenZip -MaximumRedirection 8 -TimeoutSec 120 -UseBasicParsing
+        } catch {
+            Remove-Item -LiteralPath $sevenZip -Force -ErrorAction SilentlyContinue
+            throw
         }
-        $actual7z = (Get-FileHash -LiteralPath $sevenZip -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($actual7z -cne $sevenZipExpected) {
-            throw "7ZR_SHA256_MISMATCH: expected=$sevenZipExpected actual=$actual7z. Refusing execution."
-        }
-        Say "7ZR_SHA256_VERIFIED: $actual7z"
-        & $sevenZip t $archive
-        if ($LASTEXITCODE -ne 0) { throw "7zr.exe archive CRC test failed: exit $LASTEXITCODE" }
-        # The unpack directory belongs to this QA launcher; remove partial tar output only.
-        if (Test-Path -LiteralPath $unpack -PathType Container) {
-            Remove-Item -LiteralPath $unpack -Recurse -Force
-        }
-        New-Item -ItemType Directory -Path $unpack -Force | Out-Null
-        Say 'Extracting SHA256-verified Mesa .7z with official standalone 7zr.exe.'
-        & $sevenZip x -y "-o$unpack" $archive
-        if ($LASTEXITCODE -ne 0) { throw "7zr.exe extraction failed: exit $LASTEXITCODE" }
-        $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
-            Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
     }
+    $actual7z = (Get-FileHash -LiteralPath $sevenZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual7z -cne $sevenZipExpected) {
+        throw "7ZR_SHA256_MISMATCH: expected=$sevenZipExpected actual=$actual7z. Refusing execution."
+    }
+    Say "7ZR_SHA256_VERIFIED: $actual7z"
+    & $sevenZip t $archive
+    if ($LASTEXITCODE -ne 0) { throw "7zr.exe archive CRC test failed: exit $LASTEXITCODE" }
+    # The unpack directory belongs to this QA launcher; remove partial tar output only.
+    if (Test-Path -LiteralPath $unpack -PathType Container) {
+        Remove-Item -LiteralPath $unpack -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $unpack -Force | Out-Null
+    Say 'Extracting SHA256-verified Mesa .7z with official standalone 7zr.exe.'
+    & $sevenZip x -y "-o$unpack" $archive
+    if ($LASTEXITCODE -ne 0) { throw "7zr.exe extraction failed: exit $LASTEXITCODE" }
+    $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
+
     if ($mesaCandidates.Count -ne 1) {
         throw "Expected exactly one x64/opengl32.dll in pinned Mesa distribution, found $($mesaCandidates.Count)."
     }
