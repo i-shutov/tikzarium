@@ -23,7 +23,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # Original N5 I61 41937982066 PNG: geometry popup X=500..762;
 # icon centers are 532/585/639/693, not old 599/653/707/761.
 # This source-tree lease deliberately requires renewed visual QA after UI changes.
-APP_TREE = "085e9d28cbc2edcc209110f330f0365fd6147111"
+APP_TREE = "7630f6b5bf0bcd447ec947e07cdbe62620abfe40"
 BUTTONS = [
     ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
@@ -135,6 +135,19 @@ def dock_signature(out: Path, label: str) -> str:
                "330x42+1025+94", "+repage", "-format", "%#", "info:")
 
 
+def modal_region_change(before: Path, after: Path) -> float:
+    """Mean pixel difference over the actual central modal area, not cursor blink.
+
+    The screenshot evidence still requires independent human inspection.
+    We explicitly reject a top-only Build error banner as modal proof.
+    """
+    return float(run(
+        "convert", str(before), str(after), "-compose", "difference",
+        "-composite", "-crop", "520x280+420+230", "+repage",
+        "-colorspace", "Gray", "-format", "%[fx:mean]", "info:",
+    ))
+
+
 def main() -> int:
     arg = argparse.ArgumentParser(description=__doc__)
     arg.add_argument("--app", required=True, type=Path)
@@ -165,6 +178,7 @@ def main() -> int:
         "native_text_undo": "NOT_RUN", "library_inspector": "NOT_RUN",
         "f1_two_state": "NOT_RUN", "source_parameter_f1": "NOT_RUN", "gui_two_file_crlf": "NOT_RUN",
         "dirty_open_cancel": "NOT_RUN", "inspector_apply": "NOT_RUN",
+        "scratch_build_modal_cancel": "NOT_RUN",
         "steps": [],
     }
     process = None
@@ -213,6 +227,46 @@ def main() -> int:
         key("ctrl+a")
         paste(fixture, out / "clipboard-source.txt")
         screenshot(out, "04-source-pasted")
+
+        # W3 regression: click the real Build triangle on an UNSAVED
+        # source before the ordinary Save path. The in-app modal must
+        # visibly cover the central UI; a top-only missing-TeX warning
+        # cannot pass this pixel-region check. Retrying permits bounded
+        # asynchronous external TeX discovery, not fake GUI success.
+        screenshot(out, "04a-before-scratch-build")
+        before_modal = out / "04a-before-scratch-build.png"
+        modal_seen = False
+        for attempt in range(1, 6):
+            click(found, 219, 39)
+            time.sleep(0.65)
+            screenshot(out, f"04b-scratch-build-attempt-{attempt}")
+            modal_image = out / f"04b-scratch-build-attempt-{attempt}.png"
+            if modal_region_change(before_modal, modal_image) > 0.015:
+                modal_seen = True
+                break
+            time.sleep(2.4)
+        if not modal_seen:
+            raise RuntimeError(
+                "W3 scratch Build did not show a central in-app Save+Build modal; "
+                "TeX discovery/missing-XeLaTeX banner is not modal evidence"
+            )
+        key("Escape")
+        time.sleep(0.45)
+        screenshot(out, "04c-scratch-build-cancelled")
+        after_cancel = out / "04c-scratch-build-cancelled.png"
+        if modal_region_change(modal_image, after_cancel) <= 0.015:
+            raise RuntimeError("Escape did not visibly close the Save+Build modal")
+        if source.exists():
+            raise RuntimeError("Cancelled scratch Build wrote a TeX file")
+        report["scratch_build_modal_cancel"] = (
+            "PASS_REAL_X11_MODAL_VISIBLE_ESCAPE_NO_FILE_MANUAL_IMAGE_REVIEW_REQUIRED"
+        )
+        report["steps"].append({
+            "case": "unsaved_build_in_app_modal_then_escape_no_source_file",
+            "app_tree_sha": APP_TREE,
+            "modal_visual_change": modal_region_change(before_modal, modal_image),
+        })
+
         click(found, 177, 39)
         wait(source.is_file, "Studio toolbar Save did not create default figure.tex in isolated cwd")
         if source.read_bytes() != fixture:

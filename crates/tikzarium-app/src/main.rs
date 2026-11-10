@@ -15,6 +15,7 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{ExtensionStatus, primitives::Evidence};
 
+mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
@@ -670,6 +671,9 @@ struct TikzariumApp {
     help_query: String,
     source_caret: Option<(usize, u64)>,
     show_log: bool,
+    pending_build: bool,
+    pending_build_save_path: String,
+    pending_build_validation_error: Option<String>,
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
     pending_open_validation_error: Option<String>,
@@ -856,6 +860,9 @@ impl TikzariumApp {
             help_query: String::new(),
             source_caret: None,
             show_log: true,
+            pending_build: false,
+            pending_build_save_path: String::new(),
+            pending_build_validation_error: None,
             pending_open: None,
             pending_open_save_path: String::new(),
             pending_open_validation_error: None,
@@ -883,7 +890,7 @@ impl TikzariumApp {
     }
 
     fn modal_active(&self) -> bool {
-        self.pending_open.is_some() || self.pending_close
+        self.pending_open.is_some() || self.pending_close || self.pending_build
     }
 
     fn intercept_close(&mut self, ctx: &egui::Context) {
@@ -939,6 +946,49 @@ impl TikzariumApp {
                 self.status = error.clone();
                 self.pending_close_validation_error = Some(error);
                 ctx.request_repaint();
+            }
+            None => {}
+        }
+    }
+
+    fn pending_build_ui(&mut self, ctx: &egui::Context) {
+        if !self.pending_build || self.pending_close || self.pending_open.is_some() {
+            return;
+        }
+        let previous_destination = self.pending_build_save_path.clone();
+        let decision = build_save_dialog::show(
+            ctx,
+            &self.document,
+            &mut self.pending_build_save_path,
+            self.pending_build_validation_error.as_deref(),
+        );
+        if self.pending_build_save_path != previous_destination {
+            self.pending_build_validation_error = None;
+        }
+        match decision {
+            Some(build_save_dialog::BuildSaveAction::Save(path)) => {
+                if self.save_to_path(path) {
+                    self.pending_build = false;
+                    self.pending_build_save_path.clear();
+                    self.pending_build_validation_error = None;
+                    // Build uses the newly confirmed document.path, not the
+                    // unrelated Open-path field or another native file dialog.
+                    self.build();
+                } else {
+                    self.pending_build_validation_error = Some(self.status.clone());
+                    ctx.request_repaint();
+                }
+            }
+            Some(build_save_dialog::BuildSaveAction::Reject(error)) => {
+                self.status = error.clone();
+                self.pending_build_validation_error = Some(error);
+                ctx.request_repaint();
+            }
+            Some(build_save_dialog::BuildSaveAction::Cancel) => {
+                self.pending_build = false;
+                self.pending_build_save_path.clear();
+                self.pending_build_validation_error = None;
+                self.status = "Сборка отменена: исходник не изменён".into();
             }
             None => {}
         }
@@ -1165,21 +1215,36 @@ impl TikzariumApp {
 
     fn build(&mut self) {
         if self.tex_discovery_rx.is_some() {
-            self.status = "Проверка TeX ещё выполняется; исходник и справка доступны".into();
+            self.status =
+                "Сборка не начата: проверка TeX ещё выполняется; исходник и справка доступны"
+                    .into();
             return;
         }
         if self.receiver.is_some() {
+            self.status =
+                "Сборка уже выполняется: дождитесь завершения XeLaTeX или отмените её".into();
             return;
         }
         let Some(xelatex) = self.tex.xelatex.clone() else {
             self.status =
-                "XeLaTeX missing: install TeX Live/MiKTeX or set TIKZARIUM_XELATEX".into();
+                "Сборка не начата: XeLaTeX не обнаружен в окружении GUI. Проверьте MiKTeX или TIKZARIUM_XELATEX".into();
             return;
         };
+        if self.document.path.is_none() {
+            // A native Save As picker can be hidden behind an RDP window.
+            // Make the necessary user decision explicit, visible and testable.
+            self.pending_build = true;
+            self.pending_build_save_path.clear();
+            self.pending_build_validation_error = None;
+            self.status = "Укажите путь нового .tex в окне «Сохранение перед сборкой»".into();
+            return;
+        }
         if !self.save() {
+            self.status = format!("Сборка не начата: {}", self.status);
             return;
         }
         let Some(source) = self.document.path.clone() else {
+            self.status = "Сборка не начата: путь TeX-исходника отсутствует".into();
             return;
         };
         let request = BuildRequest {
@@ -1809,6 +1874,12 @@ impl TikzariumApp {
                     ui.colored_label(ui.visuals().warn_fg_color, "PDF устарел");
                 }
             });
+            if let Some(feedback) = visible_build_feedback(&self.status) {
+                ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    egui::RichText::new(feedback).strong(),
+                );
+            }
         });
     }
 
@@ -2301,6 +2372,17 @@ impl TikzariumApp {
 /// remaining viewport. The bottom bar is full width, and on-demand diagnostics
 /// stack ABOVE it; editable source and provisional guide cannot render beneath
 /// an after-the-fact CentralPanel overlay.
+// Feedback belongs near the Build icon: the bottom status bar may be hidden
+// behind a Windows RDP taskbar at compact resolutions.
+fn visible_build_feedback(status: &str) -> Option<&str> {
+    if status.starts_with("Сборка не начата:") || status.starts_with("Сборка уже выполняется:")
+    {
+        Some(status)
+    } else {
+        None
+    }
+}
+
 fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bool) -> egui::Rect {
     egui::TopBottomPanel::bottom("b42-status")
         .show(ctx, |ui| {
@@ -2840,6 +2922,7 @@ impl eframe::App for TikzariumApp {
                 None => {}
             }
         }
+        self.pending_build_ui(ctx);
     }
 }
 
@@ -4143,6 +4226,20 @@ mod split_layout_tests {
             "the suggested scratch name must never overwrite a prior document"
         );
         assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
+    }
+
+    #[test]
+    fn w3_build_blocker_is_visible_by_toolbar_instead_of_bottom_only() {
+        assert_eq!(
+            visible_build_feedback("Сборка не начата: XeLaTeX не обнаружен"),
+            Some("Сборка не начата: XeLaTeX не обнаружен")
+        );
+        assert_eq!(
+            visible_build_feedback("Сборка уже выполняется: дождитесь окончания"),
+            Some("Сборка уже выполняется: дождитесь окончания")
+        );
+        assert_eq!(visible_build_feedback("Compiling with XeLaTeX …"), None);
+        assert_eq!(visible_build_feedback("Saved figure.tex"), None);
     }
 
     #[test]
