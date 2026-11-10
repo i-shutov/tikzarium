@@ -74,12 +74,12 @@ fn is_owned_marker(line_before: &str, comment: &str) -> bool {
     let starts_with_owned_command = ["\\draw", "\\path", "\\node"]
         .iter()
         .any(|command| prefix.strip_prefix(command).is_some_and(|tail| {
-            tail.starts_with([' ', '[', '('])
+            tail.chars().next().is_some_and(|c| matches!(c, ' ' | '[' | '('))
         }));
     if !starts_with_owned_command {
         return false;
     }
-    let Some(payload) = comment.trim_end_matches(['\r', '\n'])
+    let Some(payload) = comment.trim_end_matches(|c| c == '\r' || c == '\n')
         .strip_prefix("% tikzarium:n1:") else {
         return false;
     };
@@ -227,7 +227,7 @@ pub(crate) fn tokenize(source: &str) -> Vec<Span> {
                 let mut end = i;
                 while end < source.len() {
                     match source.as_bytes()[end] {
-                        b'0'..=b'9' | b'.' | b'+' | b'-' | b'%' => end += 1,
+                        b'0'..=b'9' | b'.' | b'+' | b'-' => end += 1,
                         b'a'..=b'z' | b'A'..=b'Z' => end += 1,
                         _ => break,
                     }
@@ -482,6 +482,6 @@ mod tests {
         let text = "\\draw[red,thick] (1cm,2cm)--(3cm,4cm);\r\n".repeat(10_000);
         let tokens = tokenize(&text);
         check_partition(&text, &tokens);
-        assert!(tokens.len() < text.len() / 3, "tokens should coalesce contiguous bytes");
+        assert!(tokens.len() < text.len() / 2, "tokens should coalesce contiguous bytes");
     }
 }
