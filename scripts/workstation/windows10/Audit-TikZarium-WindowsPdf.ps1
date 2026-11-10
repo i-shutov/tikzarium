@@ -34,6 +34,13 @@ function Get-QACodepointPreview {
     return ($out -join ' ')
 }
 function Run-QASelfTest {
+    # The expected characters are constructed from codepoints, not from
+    # the same source literals being tested. Catches UTF8-without-BOM on PS5.1.
+    $pointExpected = [string]([char[]]@(0x0422,0x043E,0x0447,0x043A,0x0430))
+    $cyrillicExpected = [string]([char[]]@(0x041A,0x0438,0x0440,0x0438,0x043B,0x043B,0x0438,0x0446,0x0430))
+    if ('Точка' -cne $pointExpected -or 'Кириллица' -cne $cyrillicExpected) {
+        throw 'Audit script Cyrillic literals were decoded incorrectly (missing UTF8 BOM?)'
+    }
     $a = Test-QARequiredText -Value ('Точка' + [char]10 + 'Тест XeLaTeX: Кириллица.')
     if (-not $a.matches) { throw 'SelfTest: exact Cyrillic words rejected' }
     $bomText = [string][char]0xFEFF + 'Точка  Кириллица'

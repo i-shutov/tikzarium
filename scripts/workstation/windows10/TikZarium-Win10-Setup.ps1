@@ -1,4 +1,4 @@
-# TikZarium Windows 10 Pro 22H2 x64 workstation setup (also Windows 11 Pro), 2026-11-09.
+﻿# TikZarium Windows 10 Pro 22H2 x64 workstation setup (also Windows 11 Pro), 2026-11-09.
 # Win10 19045 is the primary physical release QA target; do not require Windows 11.
 # V4 direct official installers with pinned SHA256; winget is NOT required.
 # Machine is admin-only; User is non-admin tikzarium-qa; CurrentUser runs per-user setup in any existing non-elevated interactive profile (including Admin with a filtered medium token).

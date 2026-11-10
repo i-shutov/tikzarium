@@ -41,6 +41,16 @@ jobs:
             }
             Write-Host ('PARSE PASS: ' + $f.Name)
           }
+          # Windows PowerShell 5.1 interprets BOM-less .ps1 as ANSI on many
+          # Windows locales. Scripts with literal Cyrillic must be UTF8 BOM.
+          foreach ($filename in @('TikZarium-Win10-Setup.ps1','Audit-TikZarium-WindowsPdf.ps1')) {
+            $file = Join-Path $directory $filename
+            $bytes = [IO.File]::ReadAllBytes($file)
+            if ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) {
+                throw "PS5.1 Unicode literal regression: UTF8 BOM missing in $filename"
+            }
+            Write-Host "PS5.1 UTF8 BOM PASS: $filename"
+          }
           $setup = Get-Content -LiteralPath (Join-Path $directory 'TikZarium-Win10-Setup.ps1') -Raw
           if ($setup -match '\$build:') { throw 'Invalid $build: interpolation regression' }
           if ($setup -match 'winget not found') { throw 'winget dependency regression' }
