@@ -1,4 +1,4 @@
-# Audit an already-built TikZarium Windows PDF without Cargo, TeX or installation.
+﻿# Audit an already-built TikZarium Windows PDF without Cargo, TeX or installation.
 [CmdletBinding()]
 param([string]$PdfPath, [string]$OutputDirectory, [switch]$SelfTest)
 Set-StrictMode -Version Latest
