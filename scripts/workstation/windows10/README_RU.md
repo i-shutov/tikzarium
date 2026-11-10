@@ -1,5 +1,18 @@
 # TikZarium — ЕДИНАЯ инструкция подготовки Windows 10, QA и подключения Dot
 
+## 2026-11-10 — Admin: CLI PDF / кириллица / Arial **PASS**, следующий этап — GUI W3
+
+**Фактический результат владельца на Windows 10 Pro в профиле `Admin`:** после сборки `tikzarium-app` (`Finished dev profile` за 1m59s) `tikzarium-cli.exe` успешно сгенерировал `windows-cyrillic.pdf` (**16 449 байт**, 93 зависимости, 10.8436788 с). Независимый от установки **повторный аудит уже созданного PDF** завершился `PDF_CYRILLIC_POSTFLIGHT_PASS via standard` без Cargo, MiKTeX и пересборки.
+
+Проверки `pdftotext` во всех трёх режимах дали **UTF8=True; Точка=True; Кириллица=True**: `standard=PASS`, `raw=PASS`, `layout=PASS`. Итоговый PASS аудитора дополнительно требует встроенного Arial/ToUnicode. PDF SHA256: `5F6E894F58F546AED7A5CC7E53A615471EFC09B763663C1294BFEF2A463F9807`.
+
+Оригинальный PDF: `C:\Users\Admin\Documents\TikZarium-QA\evidence\20261110-041404\windows-cyrillic.pdf`. Диагностический отчёт: `C:\Users\Admin\Documents\TikZarium-QA\evidence\20261110-041404\pdf-recheck-20261110-045600-4b1d438c\pdf-recheck.json`. Это **подтверждение по терминальному логу владельца**; байты PDF/JSON не загружены в GitHub и независимо здесь не перепроверены.
+
+**Вердикт:** `Admin User environment + native Rust build = PASS`, `Admin CLI→XeLaTeX→PDF + postflight Cyrillic/Arial = PASS`. Первый вызов `Setup.ps1 -Phase CurrentUser` всё же завершился с ошибкой из-за ложного отказа старого кириллического сравнения в PS5.1. Подтверждённый дефект исходного кода — **UTF-8 без BOM при наличии кириллических литералов** — исправлен в PR #150, дополнен BOM/Unicode регрессионным тестом. Это не означает повторного запуска всего `CurrentUser`; **пользовательские приложения и PDF уже готовы**.
+
+**Следующий gate:** `Admin GUI START = NOT_RUN`, `Admin W3 F1/6 gestures/Save/Open/IME/DPI/GUI→PDF = NOT_ACCEPTED`, `W4 stable = NO-GO`. Продолжать в **том же разблокированном сеансе `Admin`**, где локальный ChatGPT Computer Use уже умеет перечислять окна. Запустить изолированный [Mesa W3 launcher](Invoke-TikZarium-W3-Mesa.ps1) в medium-token Admin, затем поручить локальному агенту реальное взаимодействие. Старые PASS GUI в профиле `tikzarium-qa` остаются самостоятельными, не переносятся на Admin автоматически.
+
+
 ## 2026-11-10 — WS11: Admin Cargo/XeLaTeX PASS, аудитор кириллицы не принял PDF
 
 ### Проверка уже созданного PDF под Admin — без повторной установки и компиляции

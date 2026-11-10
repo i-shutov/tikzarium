@@ -130,6 +130,19 @@
 
 ## G. Windows 10 workstation bootstrap — отдельные инциденты установки (2026-11-09)
 
+## 2026-11-10 — Admin: CLI PDF / кириллица / Arial **PASS**, следующий этап — GUI W3
+
+**Фактический результат владельца на Windows 10 Pro в профиле `Admin`:** после сборки `tikzarium-app` (`Finished dev profile` за 1m59s) `tikzarium-cli.exe` успешно сгенерировал `windows-cyrillic.pdf` (**16 449 байт**, 93 зависимости, 10.8436788 с). Независимый от установки **повторный аудит уже созданного PDF** завершился `PDF_CYRILLIC_POSTFLIGHT_PASS via standard` без Cargo, MiKTeX и пересборки.
+
+Проверки `pdftotext` во всех трёх режимах дали **UTF8=True; Точка=True; Кириллица=True**: `standard=PASS`, `raw=PASS`, `layout=PASS`. Итоговый PASS аудитора дополнительно требует встроенного Arial/ToUnicode. PDF SHA256: `5F6E894F58F546AED7A5CC7E53A615471EFC09B763663C1294BFEF2A463F9807`.
+
+Оригинальный PDF: `C:\Users\Admin\Documents\TikZarium-QA\evidence\20261110-041404\windows-cyrillic.pdf`. Диагностический отчёт: `C:\Users\Admin\Documents\TikZarium-QA\evidence\20261110-041404\pdf-recheck-20261110-045600-4b1d438c\pdf-recheck.json`. Это **подтверждение по терминальному логу владельца**; байты PDF/JSON не загружены в GitHub и независимо здесь не перепроверены.
+
+**Вердикт:** `Admin User environment + native Rust build = PASS`, `Admin CLI→XeLaTeX→PDF + postflight Cyrillic/Arial = PASS`. Первый вызов `Setup.ps1 -Phase CurrentUser` всё же завершился с ошибкой из-за ложного отказа старого кириллического сравнения в PS5.1. Подтверждённый дефект исходного кода — **UTF-8 без BOM при наличии кириллических литералов** — исправлен в PR #150, дополнен BOM/Unicode регрессионным тестом. Это не означает повторного запуска всего `CurrentUser`; **пользовательские приложения и PDF уже готовы**.
+
+**Следующий gate:** `Admin GUI START = NOT_RUN`, `Admin W3 F1/6 gestures/Save/Open/IME/DPI/GUI→PDF = NOT_ACCEPTED`, `W4 stable = NO-GO`. Продолжать в **том же разблокированном сеансе `Admin`**, где локальный ChatGPT Computer Use уже умеет перечислять окна. Запустить изолированный [Mesa W3 launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1) в medium-token Admin, затем поручить локальному агенту реальное взаимодействие. Старые PASS GUI в профиле `tikzarium-qa` остаются самостоятельными, не переносятся на Admin автоматически.
+
+
 ## 2026-11-10 — WS11: Admin Cargo/XeLaTeX PASS, аудитор кириллицы не принял PDF
 
 Оригинальный вывод владельца из `C:\Users\Admin` на той же Win10 Pro 22H2: `tikzarium-app` нативно собран за 1m59s, CLI создал `windows-cyrillic.pdf` размером **16 449 байт**, 93 зависимости, время **10.8436788 с**; MiKTeX warning «So far, you have not checked for MiKTeX updates» не был фатальным. Только после успешной сборки `-Phase CurrentUser` остановилась в сравнении результата `pdftotext` со строками `Точка` и `Кириллица`. Оригинальные файл и `pdf-extracted.txt` остались в `Documents\TikZarium-QA\evidence\20261110-041404`.
@@ -203,7 +216,7 @@ Independent source: official [Mesa llvmpipe Windows DLL-local usage](https://doc
 | WS08 | Под RDP нативный `tikzarium-app.exe` не открыл окно: `egui_glow requires opengl 2.0+`; доступный OpenGL-контекст слишком старый для glow. | Изолированный x64 Mesa llvmpipe рядом с копией EXE, проверенная SHA256 загрузка, без замены system DLL и драйверов. | QA launcher в PR #150, **кандидат**: реальный GUI W3 ещё НЕ ПРОВЕРЕН. |
 | WS09 | В Win10 встроенный `tar.exe` не распаковал проверенный .7z архив Mesa: `LZMA codec is unsupported`. | Standalone официальный `7zr.exe` 26.05 с закрепленным SHA256 + CRC тестом; без системы/драйверов; сохранение Mesa архива. | Исправление в PR #150, физический W3 GUI ещё NOT_ACCEPTED. |
 | WS10 | Сломанный PowerShell 5.1 preflight из SHA `824335...`: регулярное выражение `CurrentBuildNumber` разорвано, `catch/exit` продублирован внутри условия; ParserError ещё до исполнения. | Вернуть исходник v5, аккуратно добавить read-only registry fallback, проверять preflight независимым `Parser.ParseFile` и hosted WMI-denied positive/Server-negative тестами. | Ветка PR #150, CI нового коммита ещё в проверке; не запускать старый SHA. |
-| WS11 | Admin native Rust/CLI PDF build PASS, но русский `pdftotext` check FAIL; источник Setup был UTF8 **без BOM**, что Windows PowerShell 5.1 может декодировать как ANSI. | Setup PS1 теперь UTF8 BOM; самостоятельный postflight (`standard/raw/layout`, strict UTF8, Cyrillic, Arial, JSON) без установки/сборки; negative/Unicode unit tests. | Кодировка и аудитор: hosted PS5.1 [#42792382319](https://github.com/i-shutov/tikzarium/actions/runs/42792382319) SUCCESS; исходный Admin PDF ещё не принят. |
+| WS11 | Admin: 16 449-byte PDF и 93 зависимости построены, первоначальная PS5.1 проверка кириллицы ложно остановилась на UTF-8 без BOM. | BOM в установщике и независимый постфактум-аудитор PDF (`standard/raw/layout`, строгий UTF-8, Arial/ToUnicode). | **PDF PASS:** все 3 извлечения нашли «Точка» и «Кириллица», SHA256 `5F6E894F58F546AED7A5CC7E53A615471EFC09B763663C1294BFEF2A463F9807`; W3 GUI под Admin ещё NOT_RUN. |
 
 **Границы:** подтверждён `Machine PASS`, не `User PASS`. В активном профиле `tikzarium-qa` лежит исправленная частная копия скрипта; первоначальный `C:\ProgramData\TikZariumSetup\TikZarium-Win10-Setup.ps1` автоматически не меняется после GitHub-коммитов. Не давать инструкции повторно скачивать ZIP под QA-пользователем, не менять пароли/политику RDP/UAC, не регистрировать runner без необходимости. Отдельный [runbook](../scripts/workstation/windows10/README_RU.md).
 

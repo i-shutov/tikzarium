@@ -1,5 +1,12 @@
 # Задание Dot — автономное W3 GUI QA на Windows 10 Pro для TikZarium
 
+## 2026-11-10 — переход на текущий профиль Admin: готово к запуску W3
+
+`Admin` на той же Win10 Pro успешно собрал `tikzarium-app.exe` и `tikzarium-cli.exe`; CLI создал PDF 16 449 байт. **Postflight `PDF_CYRILLIC_POSTFLIGHT_PASS`**: `standard`, `raw`, `layout` восстановили обе кириллические строки; Arial/ToUnicode подтверждён итоговым PASS. SHA256 PDF `5F6E894F58F546AED7A5CC7E53A615471EFC09B763663C1294BFEF2A463F9807`. `environment.json` от упавшего исходного Setup может отсутствовать, но `pdf-recheck.json` и оригинальный PDF сохранены.
+
+**Не выполнять заново `Machine`, `CurrentUser`, Cargo или установку TeX.** В активной medium-token Admin-сессии с доступным Computer Use запустить изолированную Mesa через [QA launcher](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1), отдельно подтвердить GUI START и затем проверить проблемную `▶` (сначала Save As на новый файл и диагностика), F1, шесть жестов, Undo/Redo, Save/Open, IME/DPI и GUI→XeLaTeX. `Admin W3` пока NOT_RUN. При отсутствии настоящего GUI управления не заявлять PASS.
+
+
 > Версия 2026-11-09. Передавать Dot после подключения локального компьютера через ChatGPT desktop app под `tikzarium-qa`. Это **задача**, а не утверждение, что Dot уже подключён или умеет управлять мышью в конкретной RDP-сессии.
 
 ## Цель
