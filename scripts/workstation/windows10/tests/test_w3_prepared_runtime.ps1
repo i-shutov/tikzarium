@@ -23,7 +23,7 @@ function Check-Failure([string]$Expected) {
         $observed = $_.Exception.Message
     }
     if (-not $observed.Contains($Expected)) {
-        throw "W3 negative $Expected: unexpected result $observed"
+        throw "W3 negative ${Expected}: unexpected result $observed"
     }
 }
 
