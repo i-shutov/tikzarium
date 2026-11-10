@@ -50,16 +50,7 @@ try {
     if ($null -eq $os) {
         $cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
         $buildValue = if ($cv.CurrentBuildNumber) { [string]$cv.CurrentBuildNumber } else { [string]$cv.CurrentBuild }
-        if ($buildValue -notmatch '^\d+
-    if (-not (Get-Command 'winget.exe' -ErrorAction SilentlyContinue)) {
-        Write-Host 'winget not found: OK (direct vendor installers)' -ForegroundColor Green
-    }
-    Write-Host 'PREFLIGHT PASS (syntax and OS only; no installers executed)' -ForegroundColor Green
-    exit 0
-} catch {
-    Write-Host ('PREFLIGHT FAIL: {0}' -f $_.Exception.Message) -ForegroundColor Red
-    exit 1
-}) { throw 'Windows registry CurrentBuildNumber invalid' }
+        if ($buildValue -notmatch '^\d+$') { throw 'Windows registry CurrentBuildNumber invalid' }
         $os = [pscustomobject]@{
             Caption = [string]$cv.ProductName
             BuildNumber = $buildValue
