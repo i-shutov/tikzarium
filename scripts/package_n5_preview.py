@@ -102,6 +102,72 @@ def fixture() -> bytes:
 
 
 def readme(platform: str, sha: str, ci_url: str) -> bytes:
+    if platform == WIN:
+        # Windows 1.0 release pipeline: distinct end-user guidance, not the
+        # shared historical Linux N5 / macOS preview README. This is still
+        # an unsigned CI candidate, not the W4-accepted stable publication.
+        return f"""# TikZarium — Windows 10 x64 · portable QA candidate (НЕ stable 1.0)
+
+Источник (полный Git SHA): {sha}
+Оригинальный CI-комплект: {ci_url}
+Статус: неподписанный ZIP-кандидат. Физическая приёмка именно этого архива
+на Windows 10 и W4 clean deploy/rollback НЕ выполнены (NOT_RUN).
+Финальный GitHub release v1.0.0 не создаётся только по успешному hosted CI.
+
+## Среда и ограничения
+
+- Целевая проверенная конфигурация интерфейса: Windows 10 Pro x64 22H2
+  (build 19045+) при масштабе 100% / 96 DPI; проверенные оригиналы
+  W3-96 относились к предыдущему конкретному SHA, не к этому ZIP.
+- Масштабы 125% (120 DPI) и 200% (192 DPI) перенесены после 1.0;
+  их работоспособность здесь НЕ подтверждена. Composition/preedit
+  IME (восточноазиатские языки) не квалифицирован.
+- Для GUI требуется совместимый OpenGL 2.0+. Mesa llvmpipe
+  использовался ТОЛЬКО в изолированном QA-обходе RDP и не вложен
+  в этот ZIP. Если штатный OpenGL отсутствует, фиксируйте BLOCKED.
+- Для PDF необходим самостоятельно установленный MiKTeX/XeLaTeX.
+  TeX-пакеты, системные шрифты, Poppler и драйверы не поставляются
+  и не устанавливаются скрыто. Используйте доверенные TeX-документы:
+  XeLaTeX не является песочницей; shell escape не включать.
+- Для соответствующего PDF preview/аудита могут потребоваться
+  pdftoppm, pdfinfo, pdffonts и pdftotext из отдельно установленного Poppler.
+  Русские буквы требуют шрифта с кириллическими глифами; для примера
+  на проверенной Windows применялся явный fontspec Arial.
+- ZIP portable — НЕ MSI/Setup.exe и НЕ подписанный установщик.
+  Подпись исполняемых файлов не заявлена до проверки
+  Get-AuthenticodeSignature.
+
+## Проверка кандидата на своей Windows 10
+
+1. До запуска проверьте целостность всего ZIP и пять вложенных файлов
+   по MANIFEST.sha256, сопоставьте PROVENANCE.json с SHA выше.
+2. Распакуйте архив в отдельный обычный пользовательский каталог;
+   не заменяйте установленный MiKTeX и не изменяйте UAC, RDP,
+   реестр, драйверы, службы или системный PATH.
+3. В PowerShell из каталога Tikzarium-preview выполните:
+      .\\tikzarium-cli.exe doctor
+   Затем запустите .\\tikzarium-app.exe из реальной активной
+   пользовательской сессии WinSta0/Default.
+4. Проверьте F1, холст рядом с редактируемым .tex, линию,
+   стрелку, прямоугольник, окружность, текстовый узел, кривую
+   Безье, Undo, Save/Open и сохранность исходного .tex.
+5. Для нового документа испытайте Build / Escape Cancel,
+   затем Save & Build, GUI → XeLaTeX → PDF с кириллицей и формулами.
+   Сверьте XeLaTeX log, отсутствие Missing character, pdfinfo,
+   pdffonts (embedded/ToUnicode), pdftotext и сам PDF.
+6. Для W4 отдельно проверьте чистую распаковку, GUI, повторный
+   запуск, отказные пути и rollback (удалять лишь QA-каталог).
+   Сохраните исходные PNG/.tex/PDF/log, манифест и хеши в
+   закрытой папке; НЕ загружайте личный рабочий стол публично.
+
+Дополнительные текущие ограничения:
+https://github.com/i-shutov/tikzarium/blob/main/docs/KNOWN_ISSUES_WINDOWS_1_0_RU.md
+W4 и критерии выпуска: https://github.com/i-shutov/tikzarium/issues/162
+
+PROVENANCE.json честно описывает происхождение и непроведённые
+платформенные испытания. CLI doctor/проверка PE/хешей не заменяют
+физическую GUI→PDF-приёмку.
+""".encode("utf-8")
     command = "./tikzarium-cli.exe doctor" if platform == WIN else "./tikzarium-cli doctor"
     launch = ("./tikzarium-app.exe" if platform == WIN
               else "./launch.sh" if platform == LINUX
