@@ -40,10 +40,36 @@ try {
         $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
         Write-Host ('SYNTAX PASS: {0} (SHA256 {1})' -f (Split-Path -Leaf $path), $hash) -ForegroundColor Green
     }
-    $os = Get-CimInstance -ClassName Win32_OperatingSystem
+    # Sandbox may deny WMI even to medium-token Admin; use registry read-only.
+    $os = $null
+    try {
+        $os = Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop
+    } catch {
+        Write-Host ('WMI/CIM denied; checking Windows edition/build via registry: ' + $_.Exception.Message) -ForegroundColor Yellow
+    }
+    if ($null -eq $os) {
+        $cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
+        $buildValue = if ($cv.CurrentBuildNumber) { [string]$cv.CurrentBuildNumber } else { [string]$cv.CurrentBuild }
+        if ($buildValue -notmatch '^\d+
+    if (-not (Get-Command 'winget.exe' -ErrorAction SilentlyContinue)) {
+        Write-Host 'winget not found: OK (direct vendor installers)' -ForegroundColor Green
+    }
+    Write-Host 'PREFLIGHT PASS (syntax and OS only; no installers executed)' -ForegroundColor Green
+    exit 0
+} catch {
+    Write-Host ('PREFLIGHT FAIL: {0}' -f $_.Exception.Message) -ForegroundColor Red
+    exit 1
+}) { throw 'Windows registry CurrentBuildNumber invalid' }
+        $os = [pscustomobject]@{
+            Caption = [string]$cv.ProductName
+            BuildNumber = $buildValue
+            ProductType = if ([string]$cv.ProductName -match 'Windows Server') { 3 } else { 1 }
+            OSArchitecture = if ([Environment]::Is64BitOperatingSystem) { '64-bit' } else { '32-bit' }
+        }
+    }
     $build = [int]$os.BuildNumber
     $supported = (([int]$os.ProductType -eq 1) -and
-                  ($os.OSArchitecture -like '*64*') -and ($build -ge 19045))
+                  ([Environment]::Is64BitOperatingSystem) -and ($build -ge 19045))
     if (-not $supported) {
         throw ('Requires Windows 10 x64 build 19045+ or Windows 11 x64. Detected {0}, build {1}' -f $os.Caption, $build)
     }
