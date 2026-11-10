@@ -1215,17 +1215,19 @@ impl TikzariumApp {
 
     fn build(&mut self) {
         if self.tex_discovery_rx.is_some() {
-            self.status = "Проверка TeX ещё выполняется; исходник и справка доступны".into();
+            self.status =
+                "Сборка не начата: проверка TeX ещё выполняется; исходник и справка доступны"
+                    .into();
             return;
         }
         if self.receiver.is_some() {
             self.status =
-                "XeLaTeX уже выполняет сборку; дождитесь завершения или отмените её".into();
+                "Сборка уже выполняется: дождитесь завершения XeLaTeX или отмените её".into();
             return;
         }
         let Some(xelatex) = self.tex.xelatex.clone() else {
             self.status =
-                "XeLaTeX missing: install TeX Live/MiKTeX or set TIKZARIUM_XELATEX".into();
+                "Сборка не начата: XeLaTeX не обнаружен в окружении GUI. Проверьте MiKTeX или TIKZARIUM_XELATEX".into();
             return;
         };
         if self.document.path.is_none() {
@@ -1238,9 +1240,11 @@ impl TikzariumApp {
             return;
         }
         if !self.save() {
+            self.status = format!("Сборка не начата: {}", self.status);
             return;
         }
         let Some(source) = self.document.path.clone() else {
+            self.status = "Сборка не начата: путь TeX-исходника отсутствует".into();
             return;
         };
         let request = BuildRequest {
@@ -1870,6 +1874,12 @@ impl TikzariumApp {
                     ui.colored_label(ui.visuals().warn_fg_color, "PDF устарел");
                 }
             });
+            if let Some(feedback) = visible_build_feedback(&self.status) {
+                ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    egui::RichText::new(feedback).strong(),
+                );
+            }
         });
     }
 
@@ -2362,6 +2372,16 @@ impl TikzariumApp {
 /// remaining viewport. The bottom bar is full width, and on-demand diagnostics
 /// stack ABOVE it; editable source and provisional guide cannot render beneath
 /// an after-the-fact CentralPanel overlay.
+// Feedback belongs near the Build icon: the bottom status bar may be hidden
+// behind a Windows RDP taskbar at compact resolutions.
+fn visible_build_feedback(status: &str) -> Option<&str> {
+    if status.starts_with("Сборка не начата:") || status.starts_with("Сборка уже выполняется:") {
+        Some(status)
+    } else {
+        None
+    }
+}
+
 fn show_studio_status_panel(ctx: &egui::Context, status: &str, xelatex_ready: bool) -> egui::Rect {
     egui::TopBottomPanel::bottom("b42-status")
         .show(ctx, |ui| {
@@ -4205,6 +4225,20 @@ mod split_layout_tests {
             "the suggested scratch name must never overwrite a prior document"
         );
         assert_eq!(std::fs::read(&path).unwrap(), original.as_bytes());
+    }
+
+    #[test]
+    fn w3_build_blocker_is_visible_by_toolbar_instead_of_bottom_only() {
+        assert_eq!(
+            visible_build_feedback("Сборка не начата: XeLaTeX не обнаружен"),
+            Some("Сборка не начата: XeLaTeX не обнаружен")
+        );
+        assert_eq!(
+            visible_build_feedback("Сборка уже выполняется: дождитесь окончания"),
+            Some("Сборка уже выполняется: дождитесь окончания")
+        );
+        assert_eq!(visible_build_feedback("Compiling with XeLaTeX …"), None);
+        assert_eq!(visible_build_feedback("Saved figure.tex"), None);
     }
 
     #[test]
