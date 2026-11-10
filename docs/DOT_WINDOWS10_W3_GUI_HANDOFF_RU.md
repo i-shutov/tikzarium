@@ -1,5 +1,23 @@
 # Задание Dot — автономное W3 GUI QA на Windows 10 Pro для TikZarium
 
+## 10.11.2026 — актуальная физическая W3: проверка SHA исходников, EXE и Mesa перед GUI
+
+**Интегрированные исходники:** `main` `488a9687c404f9714eecbcb8ccb4edbf97a54d89` (PR #150, #152 и #153 включены). Если Win10 Admin локально содержит более старую копию `target\\debug\\tikzarium-app.exe`, её запуск не проверяет новую версию кнопки `▶ Build`. Проверенный изолированный launcher [Invoke-TikZarium-W3-Mesa.ps1](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1) теперь использует соседний [W3-Source-Guard.ps1](../scripts/workstation/windows10/W3-Source-Guard.ps1): до изменения QA runtime проверяет доверенную локальную main, чистое дерево, включённый PR #152 и свежесть EXE; при запуске сверяет SHA256 подготовленного EXE и всех Mesa DLL. Вновь скачивать Rust/MiKTeX/Poppler, запускать `Machine` или `CurrentUser` **не требуется**.
+
+Команды для локального Computer Use / Dot в активном обычном medium-token `Admin` (исполняются самим локальным агентом только при доступном ему GUI/PowerShell, а не данным GitHub-чатом):
+
+```powershell
+$repo = Join-Path $env:USERPROFILE 'source\\tikzarium'
+$expected = '488a9687c404f9714eecbcb8ccb4edbf97a54d89'
+& 'C:\\Program Files\\Git\\cmd\\git.exe' -C $repo rev-parse HEAD
+$launcher = Join-Path $repo 'scripts\\workstation\\windows10\\Invoke-TikZarium-W3-Mesa.ps1'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Action SelfTest
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Action PrepareAndRun -ExpectedSourceSha $expected
+```
+
+Если HEAD иной — **не делать reset/force checkout**; сначала проверить версию и согласовать ожидаемый принятый SHA. Если EXE устарел, восстановление только из доверенной локальной `main`: `cargo build --locked -j 1 -p tikzarium-app`, без системной установки. Лог `W3_RUNTIME_SOURCE_AND_DLL_SHA256_VERIFIED` подтверждает **лишь целостность QA runtime, не физический W3**. Затем на реальном GUI: `▶` на новом исходнике → модальное «Сохранение перед сборкой» → `Escape` и отсутствие файла → Save & Build в новый .tex → шесть жестов, F1, Undo/Save/Open, GUI→XeLaTeX PDF, кириллица/IME/DPI. Оригиналы проверять независимо по [W3 source/PDF/PNG contract](../plans/2026-11-10_W3_ORIGINAL_EVIDENCE_GATE.md). Полный W3, W2b и stable W4 всё ещё **NO-GO** до физической приёмки.
+
+
 ## Актуализация W3 после принятого исправления Build (10.11.2026)
 
 **Текущий проверенный код:** `main` 57cb62e4b70f896eb48978da4252ec1fede6c26a, [PR #152](https://github.com/i-shutov/tikzarium/pull/152) принят, post-merge CI Windows/macOS/Linux и реальные hosted X11 GUI-тесты I61/N5 — PASS. На *новом, ещё не сохранённом* документе `▶ Build` теперь предлагает **встроенный в TikZarium** диалог «Сохранение перед сборкой»: можно отменить `Escape` без записи либо указать новый абсолютный путь `.tex`, нажать «Сохранить и собрать PDF» и проверить настоящий GUI→XeLaTeX PDF. Отсутствующий XeLaTeX или незавершённая проверка TeX теперь объясняются рядом с верхней панелью. Историческая рекомендация «сначала Ctrl+S и системный Save As» ниже относится к старой версии приложения и **не является проверкой исправленного Build**.
