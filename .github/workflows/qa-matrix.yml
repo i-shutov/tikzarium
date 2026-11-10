@@ -51,6 +51,7 @@ jobs:
             scripts/ai_tikz_intake.py
             scripts/tests/test_ai_tikz_intake.py
             roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv
+            roadmap/AI_TIKZ_SKILLS_2026-11-10_13_SKILLS_SHA256.csv
           if-no-files-found: error
           retention-days: 14
       - name: N5 offline portable packaging tests (NOT a physical GUI)
