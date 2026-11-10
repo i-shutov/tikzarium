@@ -20,6 +20,7 @@ mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod source_fonts;
+mod source_highlight;
 mod studio_ui;
 mod tex_discovery;
 mod tikz_authoring;
@@ -39,7 +40,7 @@ use pdf_navigation::{
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
-use ui_theme::{STORAGE_KEY, UiPreferences};
+use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 // The Linux Save action cannot use a native dialog: this is an actual, editable
@@ -305,6 +306,8 @@ fn show_source_text_edit(
     source: &mut String,
     reset_undo_history: &mut bool,
     soft_wrap: bool,
+    theme: UiTheme,
+    font_size: f32,
 ) -> egui::text_edit::TextEditOutput {
     let fenced = *reset_undo_history;
     // INFINITY disables wrapping. The alternative only changes visual galley
@@ -320,16 +323,20 @@ fn show_source_text_edit(
     };
     let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap_width: f32| {
         let actual_wrap_width = if soft_wrap { wrap_width } else { f32::INFINITY };
-        let job = egui::text::LayoutJob::simple(
-            text.as_str().to_owned(),
-            egui::TextStyle::Monospace.resolve(ui.style()),
-            ui.visuals().widgets.inactive.text_color(),
+        let job = source_highlight::layout_job(
+            text.as_str(),
+            egui::FontId::monospace(font_size.clamp(12.0, 24.0)),
+            source_highlight::palette(
+                theme,
+                ui.visuals().widgets.inactive.text_color(),
+            ),
             actual_wrap_width,
         );
         ui.fonts_mut(|fonts| fonts.layout_job(job))
     };
     let mut output = egui::TextEdit::multiline(source)
         .code_editor()
+        .font(egui::FontId::monospace(font_size.clamp(12.0, 24.0)))
         .desired_width(edit_width)
         .desired_rows(36)
         .layouter(&mut layouter)
@@ -1580,6 +1587,30 @@ impl TikzariumApp {
                         .on_hover_text(
                             "Переносить длинные строки только на экране. Не меняет TeX, CRLF и PDF. Выключите для горизонтальной прокрутки.",
                         );
+                    ui.separator();
+                    if ui
+                        .add_enabled(
+                            self.prefs.source_font_size < 24.0,
+                            egui::Button::new("A+"),
+                        )
+                        .on_hover_text("Увеличить шрифт кода (не влияет на TeX и PDF)")
+                        .clicked()
+                    {
+                        self.prefs.source_font_size =
+                            (self.prefs.source_font_size + 1.0).min(24.0);
+                    }
+                    ui.label(format!("{:.0} pt", self.prefs.source_font_size));
+                    if ui
+                        .add_enabled(
+                            self.prefs.source_font_size > 12.0,
+                            egui::Button::new("A−"),
+                        )
+                        .on_hover_text("Уменьшить шрифт кода")
+                        .clicked()
+                    {
+                        self.prefs.source_font_size =
+                            (self.prefs.source_font_size - 1.0).max(12.0);
+                    }
                 },
             );
         });
@@ -1605,6 +1636,8 @@ impl TikzariumApp {
                     &mut self.document.source,
                     &mut self.reset_source_editor_undo_history,
                     self.prefs.source_soft_wrap,
+                    self.prefs.theme,
+                    self.prefs.source_font_size,
                 );
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
@@ -1656,7 +1689,7 @@ impl TikzariumApp {
                             Some(egui::Align::Center),
                         );
                     } else {
-                        self.status = format!("Line {line} is outside this document");
+                        self.status = format!("Строки {line} нет в этом документе");
                     }
                 }
             });
