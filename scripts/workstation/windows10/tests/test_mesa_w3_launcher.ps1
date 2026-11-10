@@ -50,7 +50,8 @@ foreach ($required in @(
     'runtime_dll_sha256',
     '-ExpectedSourceSha $ExpectedSourceSha',
     'W3_ACCEPTED_SOURCE_PROVENANCE',
-    'Test-W3ProvenancePure'
+    'Test-W3ProvenancePure',
+    'W3_EXPECTED_SOURCE_SHA_REQUIRED'
 )) {
     if (-not $content.Contains($required)) { throw "Mesa W3 provenance contract missing: $required" }
 }
