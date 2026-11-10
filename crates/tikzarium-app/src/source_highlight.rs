@@ -230,7 +230,7 @@ pub(crate) fn tokenize(source: &str) -> Vec<Span> {
                 i += 1;
             }
             b'$' => {
-                let end = if source[i..].starts_with("$") {
+                let end = if source[i..].starts_with("$$") {
                     i + 2
                 } else {
                     i + 1
