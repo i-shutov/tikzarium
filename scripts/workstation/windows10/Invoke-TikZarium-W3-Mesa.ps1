@@ -64,11 +64,11 @@ function Prepare-MesaRuntime {
     $sevenZipUrl = 'https://github.com/ip7z/7zip/releases/download/26.05/7zr.exe'
     $sevenZipExpected = '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7'
     $sevenZip = Join-Path $root '7zr.exe'
-    if (-not (Test-Path -LiteralPath $unpack -PathType Container)) {
-        New-Item -ItemType Directory -Path $unpack -Force | Out-Null
-    }
-    $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
-        Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
+    # The SHA-pinned archive does NOT authenticate a possibly stale/tampered
+    # extracted directory. On every Prepare, re-extract only our dedicated QA
+    # unpack folder from the official pinned archive and 7zr. Never reuse DLLs
+    # merely because opengl32.dll and libgallium_wgl.dll happen to exist.
+    $mesaCandidates = @()
     if ($mesaCandidates.Count -ne 1) {
         if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
             Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
