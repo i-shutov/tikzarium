@@ -155,6 +155,30 @@ class AT0IntakeTests(unittest.TestCase):
             with self.assertRaisesRegex(at0.IntakeError, "SKILL_SET_MISMATCH"):
                 at0.inspect_skills(Path(temporary))
 
+    def test_pinned_skill_manifest_and_actual_tamper(self):
+        pin_path = at0.REPO_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10_13_SKILLS_SHA256.csv"
+        pins = at0.read_skill_pins(pin_path.read_bytes())
+        self.assertEqual(frozenset(pins), at0.EXPECTED_SKILLS)
+        with self.assertRaisesRegex(at0.IntakeError, "SKILL_PIN_ROW_INVALID"):
+            at0.read_skill_pins(pin_path.read_bytes().replace(
+                next(iter(pins.values())).encode(), b"tampered", 1
+            ))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            synthetic_pins = {}
+            for name in sorted(at0.EXPECTED_SKILLS):
+                folder = root / "skills" / name
+                folder.mkdir(parents=True)
+                contents = f"---\nname: {name}\ndescription: synthetic QA test\n---\n".encode()
+                (folder / "SKILL.md").write_bytes(contents)
+                synthetic_pins[name] = at0.sha256(contents)
+            result = at0.inspect_skills(root, synthetic_pins)
+            self.assertEqual(result["skill_files_verified"], 13)
+            changed = root / "skills" / sorted(at0.EXPECTED_SKILLS)[0] / "SKILL.md"
+            changed.write_bytes(changed.read_bytes() + b"# tampered\n")
+            with self.assertRaisesRegex(at0.IntakeError, "SKILL_SHA_CHANGED"):
+                at0.inspect_skills(root, synthetic_pins)
+
     def test_committed_ledger_baseline_and_engine_pins(self):
         # This is a source-independent ledger test, NOT a private corpus test.
         # Full catalogue validation requires owner-provided bytes in the CLI.
