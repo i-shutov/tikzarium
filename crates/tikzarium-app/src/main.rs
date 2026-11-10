@@ -2375,7 +2375,8 @@ impl TikzariumApp {
 // Feedback belongs near the Build icon: the bottom status bar may be hidden
 // behind a Windows RDP taskbar at compact resolutions.
 fn visible_build_feedback(status: &str) -> Option<&str> {
-    if status.starts_with("Сборка не начата:") || status.starts_with("Сборка уже выполняется:") {
+    if status.starts_with("Сборка не начата:") || status.starts_with("Сборка уже выполняется:")
+    {
         Some(status)
     } else {
         None
