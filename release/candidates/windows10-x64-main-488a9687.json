@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "document_purpose": "QA_PORTABLE_CANDIDATE_NOT_STABLE_RELEASE",
+  "release_target": "TikZarium Windows 1.0",
+  "source_sha": "488a9687c404f9714eecbcb8ccb4edbf97a54d89",
+  "platform": "windows10-x64",
+  "artifact_source": {
+    "github_actions_run": "https://github.com/i-shutov/tikzarium/actions/runs/42801981799",
+    "artifact_id": 13755873935,
+    "artifact_name": "tikzarium-windows-x64-portable-candidate",
+    "outer_artifact_sha256": "68a2085ea045c1c72cf426e267c20c973edd377d8e1ca9fdf2be7b42f5b715b4",
+    "inner_zip_name": "Tikzarium-Windows-x64-portable-candidate.zip",
+    "inner_zip_sha256": "17f30f6b6d9d7a2c6bae24dc81ab17b010564ae2882ad37014265903e6c4b595",
+    "inner_zip_size_bytes": 3779362
+  },
+  "independent_verification": {
+    "method": "read original GitHub-hosted artifact, check ZIP CRC, compare every MANIFEST.sha256 member to actual SHA256",
+    "status": "PASS",
+    "manifest_sha256": "3cebcad9dc386c15724506060cd3117123052b6ab21007895a5e9f3973536b77",
+    "verified_entries": 5,
+    "member_sha256": {
+      "PROVENANCE.json": "002337f2a64b2b98fcf78b13f2f58b7f86b381357a50ec844c735074f842d435",
+      "README_RU.md": "6a3b37406790d3a555b5ce8c65f7756ec00b1cac5f821f33ac762e1524da0c8f",
+      "qa/figure-crlf.tex": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d",
+      "tikzarium-app.exe": "f8f534d36d5fd26fcef5f8c47094871bc81882c3cfbb25411ad46975da3915a5",
+      "tikzarium-cli.exe": "aae564e8198c5adeabda4b32aadf1a3f435b9e01ff5cacd8892f5acf5b36b50c"
+    },
+    "cli_extracted_hosted": "PASS_HELP_NO_XELATEX_HOSTED_WINDOWS",
+    "pe_app_subsystem": 2,
+    "pe_cli_subsystem": 3
+  },
+  "ci": {
+    "native_portable_windows_macos_linux": "https://github.com/i-shutov/tikzarium/actions/runs/42801981799",
+    "qa_matrix": "https://github.com/i-shutov/tikzarium/actions/runs/42801982082",
+    "admin_regression": "https://github.com/i-shutov/tikzarium/actions/runs/42801981806",
+    "workstation_syntax": "https://github.com/i-shutov/tikzarium/actions/runs/42801981821"
+  },
+  "release_gates": {
+    "W0_hosted_portable": "PASS_SOURCE_BOUND",
+    "W1_personal_server_native_pdf": "HISTORIC_PASS_NEEDS_EXACT_RELEASE_HEAD_CHECK",
+    "W2a_personal_server_owned_hwnd_f1": "HISTORIC_PASS",
+    "W2b_personal_server_full_physical_gui": "NOT_ACCEPTED_IN_REPO",
+    "W3_physical_windows10_full_gui": "NOT_ACCEPTED_IN_REPO",
+    "W4_clean_install_uninstall": "NOT_RUN",
+    "signed_installer": "NOT_VERIFIED",
+    "stable_tag": "NOT_CREATED",
+    "W3_96dpi_original_gui_evidence": "INDEPENDENTLY_ACCEPTED_ORIGINAL_45_CHECKS_AND_VISUAL_REVIEW",
+    "W3_120dpi_required_for_1_0": "DEFERRED_BY_OWNER",
+    "W3_192dpi_required_for_1_0": "DEFERRED_BY_OWNER",
+    "W2b_extra_120_192dpi_required_for_1_0": "DEFERRED_BY_OWNER"
+  },
+  "notes": [
+    "This manifest does not itself authorize a stable or pre-release GitHub release.",
+    "No standalone Mesa3D runtime, TeX, copyrighted fonts or developer signing material included in portable ZIP.",
+    "If main changes, rebuild and reverify the exact release SHA before promoting any candidate.",
+    "Owner reported blockers lifted on 2026-11-10; physical original W2b/W3 evidence not yet linked to current main on GitHub."
+  ],
+  "reported_w3_native_checkpoint": {
+    "status": "PHYSICAL_GUI_SUBSET_PASS_BY_CODEX_REPORT_W3_NOT_ACCEPTED",
+    "local_source_sha": "57cb62e4b70f896eb48978da4252ec1fede6c26a",
+    "remote_main_sha": "488a9687c404f9714eecbcb8ccb4edbf97a54d89",
+    "locally_reported_pass": [
+      "default_desktop",
+      "owned_printwindow",
+      "f1",
+      "build_cancel_escape",
+      "gui_save_build_pdf",
+      "six_gestures",
+      "undo_byte_exact",
+      "save_open",
+      "explicit_arial_cyrillic_font"
+    ],
+    "untested": [
+      "win10_ime",
+      "dpi_125",
+      "dpi_200",
+      "independent_original_evidence",
+      "exact_release_sha"
+    ],
+    "local_path": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\w3-native-20261110-061007\\RESULTS.md",
+    "note": "Owner-provided Codex report; original files not accessible to connected GitHub review yet"
+  },
+  "reported_w3_independent_review": {
+    "status": "W3_NOT_ACCEPTED",
+    "archive_path": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\w3-independent-review-20261110.zip",
+    "archive_sha256": "7516DB3C57C140D314A44725C0BF2F9E89DF4CD27AA44AF210E11895AF3E7716",
+    "locally_verified_file_copies": 63,
+    "locally_verified_zip_crc": "PASS_BY_LOCAL_CODEX_REPORT",
+    "archive_bytes_available_for_independent_review": false,
+    "validation_result": "FAIL_ORIGINAL_W3_EVIDENCE",
+    "first_error": "Missing original evidence: w3-original.json",
+    "other_missing": [
+      "source_and_reopen_screenshots",
+      "structured_event_trace",
+      "exact_final_release_exe_attestation",
+      "true_dpi_125",
+      "true_dpi_200",
+      "IME_composition_preedit_if_required"
+    ],
+    "native_russian_keyboard_input": "PASS_BY_CODEX_REPORT_VIA_REAL_KEYS_NO_PASTE",
+    "true_ime_composition": "NOT_RUN_SEPARATE_COMPATIBILITY",
+    "dpi_100": "PASS_BY_CODEX_REPORT",
+    "dpi_125": "NOT_RUN",
+    "dpi_200": "NOT_RUN",
+    "offline_main488_build": "PASS_BY_CODEX_REPORT_NEW_EXE_NOT_GUI_TESTED",
+    "new_debug_exe_sha256_truncated": "D1585C62…977D0A776",
+    "prior_gui_exe_sha256_truncated": "2AD442EE…5BC67522",
+    "verified_exact_full_gui_exe_sha": false,
+    "manual_visual_note": "Six figures appear progressively; Arial PDF test label overlaps existing node due to selected insertion coordinates; do not overwrite original evidence",
+    "acceptance": "NO_GO_UNTIL_ORIGINAL_BYTES_AND_REMAINING_PHYSICAL_GATES"
+  },
+  "release_1_0_display_scope": {
+    "owner_decision_date": "2026-11-10",
+    "release_platform": "Windows 10 x64",
+    "physically_qualified_dpi": [
+      96
+    ],
+    "dpi_96_independent_original_review": "ACCEPTED_FOR_100_PERCENT_GUI_SUBSET",
+    "deferred_nonblocking_dpi": [
+      120,
+      192
+    ],
+    "deferred_follow_up": "https://github.com/i-shutov/tikzarium/issues/161",
+    "statement": "High-DPI 125% and 200% are not tested/qualified for Windows 1.0; they are deferred, not PASS or FAIL.",
+    "other_gates_unchanged": [
+      "W2b_full_GUI",
+      "IME_composition_scope_or_test",
+      "W4_clean_deploy_and_rollback",
+      "exact_release_sha_postmerge_CI"
+    ],
+    "signed_installer": "NOT_VERIFIED",
+    "stable_release": "NOT_CREATED",
+    "independent_review": "docs/W3_WIN10_20261110_INDEPENDENT_ORIGINAL_REVIEW_RU.md"
+  }
+}
