@@ -3,7 +3,7 @@
 # Never use this script to escape CodexSandboxDesktop or modify UAC, RDP, services, or system DPI.
 [CmdletBinding()]
 param(
-    [ValidateSet('SelfTest','Probe','Capture')][string]$Action='Probe',
+    [ValidateSet('SelfTest','Probe','Capture','LaunchAndProbe','LaunchAndCapture')][string]$Action='Probe',
     [string]$EvidenceDirectory,
     [int]$ExpectedPid=0,
     [string]$ExpectedExePath,
@@ -174,6 +174,66 @@ try {
         $report.current_desktop, $report.input_desktop, [int]$report.wts_connection_state, $session)) {
         throw 'BLOCKED_NOT_INTERACTIVE_DEFAULT_DESKTOP'
     }
+    # Only an explicit user-launched script in Admin\Default may start this copy.
+    # A GUI spawned from CodexSandboxDesktop cannot be made visible on Default
+    # by probing or switching desktops. This is not a sandbox escape.
+    if ($Action -in @('LaunchAndProbe','LaunchAndCapture')) {
+        $existing = @([TikzariumW3DesktopProbe]::FindWindows($ExpectedPid))
+        if ($existing.Count -eq 0) {
+            $runtime = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\W3-Mesa-26.2.6\runtime'
+            $exe = Join-Path $runtime 'tikzarium-app.exe'
+            foreach ($required in @($exe,
+                    (Join-Path $runtime 'opengl32.dll'),
+                    (Join-Path $runtime 'libgallium_wgl.dll'))) {
+                if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+                    throw "BLOCKED_PREPARED_MESA_RUNTIME_MISSING: $required"
+                }
+            }
+            $work = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\W3-physical'
+            if (-not (Test-Path -LiteralPath $work -PathType Container)) {
+                throw "BLOCKED_W3_WORKSPACE_MISSING: $work"
+            }
+            $oldGl = [Environment]::GetEnvironmentVariable('GALLIUM_DRIVER','Process')
+            $oldSoft = [Environment]::GetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE','Process')
+            $oldPath = $env:Path
+            $oldTex = [Environment]::GetEnvironmentVariable('TIKZARIUM_XELATEX','Process')
+            try {
+                $env:GALLIUM_DRIVER = 'llvmpipe'
+                $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                $env:Path = "$runtime;$oldPath"
+                if ([string]::IsNullOrWhiteSpace($oldTex)) {
+                    $xelatex = Join-Path $env:LOCALAPPDATA 'Programs\MiKTeX\miktex\bin\x64\xelatex.exe'
+                    if (Test-Path -LiteralPath $xelatex -PathType Leaf) {
+                        $env:TIKZARIUM_XELATEX = $xelatex
+                        $env:Path = "$(Split-Path -Parent $xelatex);$env:Path"
+                    }
+                }
+                $poppler = Join-Path $env:LOCALAPPDATA 'Programs\TikZariumPoppler\poppler-25.07.0\Library\bin'
+                if (Test-Path -LiteralPath (Join-Path $poppler 'pdftoppm.exe') -PathType Leaf) {
+                    $env:Path = "$poppler;$env:Path"
+                }
+                $launched = Start-Process -FilePath $exe -WorkingDirectory $work -PassThru
+                $report['launched_from_default'] = [ordered]@{
+                    pid = $launched.Id
+                    path = $exe
+                    sha256 = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
+                }
+                Write-Host "Launched prepared Mesa TikZarium in active Default desktop: PID $($launched.Id)"
+            } finally {
+                $env:Path = $oldPath
+                [Environment]::SetEnvironmentVariable('GALLIUM_DRIVER',$oldGl,'Process')
+                [Environment]::SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE',$oldSoft,'Process')
+                [Environment]::SetEnvironmentVariable('TIKZARIUM_XELATEX',$oldTex,'Process')
+            }
+            $deadline = (Get-Date).AddSeconds(15)
+            do {
+                Start-Sleep -Milliseconds 400
+                $existing = @([TikzariumW3DesktopProbe]::FindWindows($launched.Id))
+            } while ($existing.Count -eq 0 -and (Get-Date) -lt $deadline -and -not $launched.HasExited)
+            if ($existing.Count -eq 0) { throw 'BLOCKED_LAUNCHED_GUI_NO_VISIBLE_DEFAULT_HWND' }
+            $ExpectedPid = $launched.Id
+        }
+    }
     $windows = @([TikzariumW3DesktopProbe]::FindWindows($ExpectedPid))
     $report.windows = @($windows | ForEach-Object {
         [ordered]@{ hwnd=$_.hwnd; pid=$_.pid; title=$_.title; width=$_.width; height=$_.height; thread_desktop=$_.thread_desktop }
@@ -197,7 +257,7 @@ try {
     $geom = Get-TikzariumOwnedPhysicalGeometry -Handle $handle -ExpectedPid $target.pid
     $report.selected['physical_client_geometry'] = $geom
     $report.status = 'PHYSICAL_DEFAULT_DESKTOP_GEOMETRY_PASS_NOT_W3'
-    if ($Action -eq 'Capture') {
+    if ($Action -in @('Capture','LaunchAndCapture')) {
         # Focus is supplied by an actual user. Never activate another desktop,
         # synthesize input, patch sandbox, or steal foreground programmatically.
         $stopAt = (Get-Date).AddSeconds($ForegroundWaitSeconds)
