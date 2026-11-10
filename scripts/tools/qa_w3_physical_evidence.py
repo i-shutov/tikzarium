@@ -19,7 +19,7 @@ from qa_windows_capture_evidence import EvidenceError, inspect_png, require
 
 # Reuse the source-owned TikZ command recognizer that is also used for N1/I61.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from qa_n1_desktop import original_preserved, owners  # noqa: E402
+from qa_n1_desktop import MARKER, original_preserved, owners  # noqa: E402
 
 KIND = "TIKZARIUM_W3_WINDOWS10_ORIGINAL_V1"
 TOOLS = ("line", "arrow", "rectangle", "circle", "node", "cubic")
@@ -171,24 +171,34 @@ def validate(root: Path, expected_sha: str) -> dict:
 
     base = check_paths[files["initial_source"]].read_bytes()
     final = check_paths[files["saved_source"]].read_bytes()
+    require(not owners(base), "Initial W3 source must not claim pre-existing GUI gestures")
     require(original_preserved(base, final), "User macros/comments/CRLF changed")
     six = owners(final)
     require(tuple(item["tool"] for item in six) == TOOLS,
             "W3 final source lacks six ordered native owned TikZ commands")
+    previous_command_lines: list[bytes] = []
     for count, tool in enumerate(TOOLS, 1):
         current = check_paths[snapshots[tool]].read_bytes()
         require(original_preserved(base, current), f"{tool}: unrelated source changed")
         found = owners(current)
         require(tuple(x["tool"] for x in found) == TOOLS[:count],
                 f"{tool}: expected exactly {count} progressively saved GUI commands")
+        current_lines = [line for line in current.splitlines(keepends=True)
+                         if MARKER.encode() in line]
+        require(current_lines[:count - 1] == previous_command_lines,
+                f"{tool}: prior native TikZ command bytes changed")
+        previous_command_lines = current_lines
     require(check_paths[snapshots[TOOLS[-1]]].read_bytes() == final,
             "Final GUI-saved source differs from sixth captured step")
     seventh_source = check_paths[files["seventh_source"]].read_bytes()
     require(original_preserved(base, seventh_source),
             "Seventh gesture mutated unrelated source bytes")
     seven = owners(seventh_source)
+    seven_lines = [line for line in seventh_source.splitlines(keepends=True)
+                   if MARKER.encode() in line]
     require(len(seven) == 7 and tuple(x["tool"] for x in seven[:6]) == TOOLS
-            and seven[:6] == six and seven[6]["id"] not in {x["id"] for x in six},
+            and seven[:6] == six and seven[6]["id"] not in {x["id"] for x in six}
+            and seven_lines[:6] == previous_command_lines,
             "No independent seventh temporary gesture before Undo")
     require(check_paths[files["undo_source"]].read_bytes() == final
             and check_paths[files["reopened_source"]].read_bytes() == final,
