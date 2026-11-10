@@ -326,10 +326,7 @@ fn show_source_text_edit(
         let job = source_highlight::layout_job(
             text.as_str(),
             egui::FontId::monospace(font_size.clamp(12.0, 24.0)),
-            source_highlight::palette(
-                theme,
-                ui.visuals().widgets.inactive.text_color(),
-            ),
+            source_highlight::palette(theme, ui.visuals().widgets.inactive.text_color()),
             actual_wrap_width,
         );
         ui.fonts_mut(|fonts| fonts.layout_job(job))
