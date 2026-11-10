@@ -90,6 +90,8 @@ pub struct UiPreferences {
     pub compact: bool,
     /// Presentation-only soft wrap; the source and PDF never change.
     pub source_soft_wrap: bool,
+    /// Editable-source font only (not document fontspec or PDF).
+    pub source_font_size: f32,
     pub show_font_lab: bool,
     pub text_family: String,
     pub sans_family: String,
@@ -108,6 +110,7 @@ impl Default for UiPreferences {
             theme: UiTheme::default(),
             compact: false,
             source_soft_wrap: true,
+            source_font_size: 14.0,
             show_font_lab: false,
             text_family: fonts.text_family,
             sans_family: fonts.sans_family,
@@ -166,8 +169,24 @@ mod tests {
         let old = r#"{"theme":"Paper"}"#;
         let restored: UiPreferences = serde_json::from_str(old).unwrap();
         assert_eq!(restored.theme, UiTheme::Paper);
+        assert_eq!(restored.source_font_size, 14.0);
         assert!(!restored.compact);
         assert!(restored.studio_mode);
+    }
+
+    #[test]
+    fn source_font_size_is_additive_and_never_changes_figure_fonts() {
+        let mut prefs = UiPreferences::default();
+        let old_source = prefs.figure_fonts().proof_source().unwrap();
+        prefs.source_font_size = 23.0;
+        let encoded = serde_json::to_string(&prefs).unwrap();
+        let decoded: UiPreferences = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(decoded.source_font_size, 23.0);
+        assert_eq!(decoded.figure_fonts().proof_source().unwrap(), old_source);
+        let legacy: UiPreferences =
+            serde_json::from_str(r#"{"theme":"Dark","source_soft_wrap":false}"#).unwrap();
+        assert_eq!(legacy.source_font_size, 14.0);
+        assert!(!legacy.source_soft_wrap);
     }
 
     #[test]
