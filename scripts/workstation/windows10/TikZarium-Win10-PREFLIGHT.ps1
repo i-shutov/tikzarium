@@ -40,21 +40,28 @@ try {
         $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
         Write-Host ('SYNTAX PASS: {0} (SHA256 {1})' -f (Split-Path -Leaf $path), $hash) -ForegroundColor Green
     }
-    # Sandbox may deny WMI even to medium-token Admin; use registry read-only.
+    # Genuine Windows PowerShell 5.1; WMI can be blocked inside a restricted
+    # local Codex sandbox. Registry fallback only reads existing values.
     $os = $null
     try {
         $os = Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop
     } catch {
-        Write-Host ('WMI/CIM denied; checking Windows edition/build via registry: ' + $_.Exception.Message) -ForegroundColor Yellow
+        Write-Warning ('WMI/CIM unavailable; using read-only Windows registry: ' + $_.Exception.Message)
     }
     if ($null -eq $os) {
         $cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
         $buildValue = if ($cv.CurrentBuildNumber) { [string]$cv.CurrentBuildNumber } else { [string]$cv.CurrentBuild }
-        if ($buildValue -notmatch '^\d+$') { throw 'Windows registry CurrentBuildNumber invalid' }
+        if ([string]::IsNullOrWhiteSpace($buildValue) -or $buildValue -notmatch '^[0-9]+$') {
+            throw 'CurrentVersion registry missing valid Windows build'
+        }
+        $product = [string]$cv.ProductName
+        if ([string]::IsNullOrWhiteSpace($product)) {
+            throw 'CurrentVersion registry missing ProductName'
+        }
         $os = [pscustomobject]@{
-            Caption = [string]$cv.ProductName
+            Caption = $product
             BuildNumber = $buildValue
-            ProductType = if ([string]$cv.ProductName -match 'Windows Server') { 3 } else { 1 }
+            ProductType = if ($product -match 'Windows Server') { 3 } else { 1 }
             OSArchitecture = if ([Environment]::Is64BitOperatingSystem) { '64-bit' } else { '32-bit' }
         }
     }
