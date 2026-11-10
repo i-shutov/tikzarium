@@ -1,3 +1,9 @@
+## Owner gate amendment — 10.11.2026 / UIX-first Windows 1.0
+
+**Новый release scope 1.0:** все UX-F01…UX-F14 по проверенному [UIX-аудиту `0f2a1f1`](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md), требования/порядок/тесты из [нормативного owner плана](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md). До stable принять UX1 редактор (syntax highlight, Find/Replace, gutter, Go to line, font) → UX2 workspace/tools/inspector/help → UX3 Save & Build/current-stale PDF/diagnostics → UX4 DPI/accessibility и usability, затем W2b/W3/IME/W4. **Старый релизный вариант 96 DPI-only superseded** новым приказом владельца «всё UIX — в 1.0»; 125/200 DPI из [#161](https://github.com/i-shutov/tikzarium/issues/161) возвращаются в физический gate. Это не PASS ни одного DPI, GUI или пакета.
+
+Scope exception **только для UX**; предметные расширения 35 TeX/88 examples вне 1.0. Исходники TeX, SHA/CRLF, protections current trusted Administrator, external independent MiKTeX, shell escape OFF, rollback, physical QA и запрет stable до полного доказательства остаются. Все предыдущие dated 96-only/status paragraphs ниже архивные.
+
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
 ## АКТУАЛЬНОЕ РЕШЕНИЕ ВЛАДЕЛЬЦА — 10.11.2026: Windows 1.0 только DPI 96
