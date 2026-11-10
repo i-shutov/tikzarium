@@ -34,6 +34,19 @@ if ($content -match '(?im)^\s*(?:Set-ItemProperty|New-ItemProperty|reg\.exe|reg 
 if ($content -match '&\s*\$tar\s+-xf') {
     throw 'Unsupported Windows 10 tar/LZMA extraction regression'
 }
+# Cached unpacked Mesa DLLs cannot be authenticated by the archive SHA.
+# Every Prepare must CRC-test and re-extract the dedicated QA-only folder.
+foreach ($required in @(
+    'Never reuse DLLs',
+    'Remove-Item -LiteralPath $unpack -Recurse -Force',
+    '& $sevenZip t $archive',
+    '& $sevenZip x -y'
+)) {
+    if (-not $content.Contains($required)) {
+        throw "W3 cached Mesa source re-extraction contract missing: $required"
+    }
+}
+
 
 $guardPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'W3-Source-Guard.ps1'
 if (-not (Test-Path -LiteralPath $guardPath -PathType Leaf)) { throw 'Missing W3 source guard file' }
