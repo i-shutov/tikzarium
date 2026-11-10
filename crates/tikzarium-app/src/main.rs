@@ -1219,7 +1219,8 @@ impl TikzariumApp {
             return;
         }
         if self.receiver.is_some() {
-            self.status = "XeLaTeX уже выполняет сборку; дождитесь завершения или отмените её".into();
+            self.status =
+                "XeLaTeX уже выполняет сборку; дождитесь завершения или отмените её".into();
             return;
         }
         let Some(xelatex) = self.tex.xelatex.clone() else {
