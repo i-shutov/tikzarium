@@ -123,7 +123,8 @@ def validate(root: Path, expected_sha: str) -> dict:
             "W3 must be captured in an active interactive desktop")
     require(type(host.get("pid")) is int and host["pid"] > 0
             and type(host.get("hwnd")) is int and host["hwnd"] > 0
-            and HEX64.fullmatch(host.get("app_sha256", "")) is not None,
+            and isinstance(host.get("app_sha256"), str)
+            and HEX64.fullmatch(host["app_sha256"]) is not None,
             "W3 has no native app identity")
 
     files = _as_dict(m.get("files"), "files")
