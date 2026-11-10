@@ -3191,7 +3191,8 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, true, UiTheme::Midnight, 14.0);
+                        let output =
+                            show_source_text_edit(ui, source, reset, true, UiTheme::Midnight, 14.0);
                         actual_editor = output.response.rect;
                         dismiss_studio_palette_on_source_click(&output.response, group);
                     });
@@ -3428,7 +3429,14 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, false, UiTheme::Midnight, 14.0);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         tikz_canvas::observe_source_text_edit(&output.response, session, source);
                         if focus {
                             output.response.request_focus();
@@ -4564,7 +4572,14 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, false, UiTheme::Midnight, 14.0);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         if focus_editor {
                             output.response.request_focus();
                         }
@@ -4759,7 +4774,14 @@ mod split_layout_tests {
                         if modal {
                             ui.disable();
                         }
-                        let output = show_source_text_edit(ui, source, reset, false, UiTheme::Midnight, 14.0);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         if focus_editor {
                             output.response.request_focus();
                         }
