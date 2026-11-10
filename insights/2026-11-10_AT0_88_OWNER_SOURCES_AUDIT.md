@@ -10,7 +10,7 @@ Owner-provided Google Drive folder: [AI_TIKZ_SKILLS_2026-11-10](https://drive.go
 - Every one of **88 declared `examples/<stem>.tex`** downloaded through the authorized Drive connector and independently read as raw UTF-8.
 - **88/88** expected filenames exactly matched downloaded files; **0 missing, 0 extra**; no name collision.
 - All original source byte hashes recomputed privately: **88/88 SHA256 available**. Total source length **38,581 bytes**, consisting of **78 CRLF** and **10 LF** files, **0 mixed** line endings. Source bytes are not rewritten or copied into the public repository.
-- 13 source `SKILL.md` documents read from Drive and checked for their matching `name:` frontmatter and `description:`; **13/13** present. Extra `tikz-tool-interoperability` folder has no independently verified SKILL.md and **does not count as a fourteenth skill**. This metadata check is not a full link/license validation.
+- 13 source `SKILL.md` documents read as raw bytes from Drive, checked for matching `name:` frontmatter and SHA256-hashed: **13/13** present. Immutable digest ledger: [13_SKILLS_SHA256.csv](../roadmap/AI_TIKZ_SKILLS_2026-11-10_13_SKILLS_SHA256.csv). Extra `tikz-tool-interoperability` folder has no independently verified SKILL.md and does not count as a 14th skill. Full Markdown link/license closure is still NOT_RUN.
 - Owner's 88-case CSV compared against the raw catalogue field-for-field: case ID, group, stem, path, packages, libraries, declared engine: **0 mismatches**. Total: 16 groups, 35 specialized packages (+tikz +booktabs), 23 library names, 85 XeLaTeX + three LuaLaTeX cases (65/68/86).
 
 ## Not inferred from this inventory
@@ -25,7 +25,7 @@ Owner-provided Google Drive folder: [AI_TIKZ_SKILLS_2026-11-10](https://drive.go
 
 - [x] Raw catalogue SHA and schema/ID/engine/package/library agreement.
 - [x] Raw example bytes 88/88 with hashes, UTF-8 and original LF/CRLF modes.
-- [x] Presence/name/frontmatter of 13 skills (not complete linked content audit).
+- [x] Raw SHA256 and frontmatter checks of all 13 skills; reference links and licensing not fully audited.
 - [ ] Dependency graph of actual TeX inputs (`.fls`), package versions, licenses, reproducible CWD/engine/ship-scope and negative missing-input behavior.
 - [ ] Readback and hash independent atlas build report, embedded assets and entire skill reference graph.
 - [ ] Execute `scripts/ai_tikz_intake.py` against the *full* private tree (not merely the catalogue/88 examples) and archive one source-bound JSON, still marked not physically accepted.
