@@ -1,11 +1,11 @@
 # TikZarium Windows 10 Pro 22H2 x64 workstation setup (also Windows 11 Pro), 2026-11-09.
 # Win10 19045 is the primary physical release QA target; do not require Windows 11.
 # V4 direct official installers with pinned SHA256; winget is NOT required.
-# Run -Phase Machine elevated, then -Phase User as tikzarium-qa.
+# Machine is admin-only; User is non-admin tikzarium-qa; CurrentUser runs per-user setup in any existing non-elevated interactive profile (including Admin with a filtered medium token).
 # Does NOT modify UAC, RDP/firewall policies, Windows Server, existing runners, drivers, or services.
 [CmdletBinding()]
 param(
-    [ValidateSet('Machine', 'User', 'Check')]
+    [ValidateSet('Machine', 'User', 'CurrentUser', 'Check')]
     [string]$Phase = 'Machine',
     [ValidatePattern('^[A-Za-z][A-Za-z0-9_-]{2,19}$')]
     [string]$QaUser = 'tikzarium-qa',
@@ -250,20 +250,44 @@ function Start-SetupTranscript([string]$Path) {
     }
 }
 function Get-OsInfo {
-    $os = Get-CimInstance -ClassName Win32_OperatingSystem
+    # Local Codex sandbox can deny WMI. Read-only registry fallback is supported;
+    # never change ACLs, services or WMI permissions to make QA work.
+    $os = $null
+    try {
+        $os = Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop
+    } catch {
+        Say ('WMI/CIM unavailable; read-only Windows CurrentVersion registry fallback: ' + $_.Exception.Message)
+    }
+    if ($null -eq $os) {
+        $cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
+        $buildStr = if ($cv.CurrentBuildNumber) { [string]$cv.CurrentBuildNumber } else { [string]$cv.CurrentBuild }
+        if (-not $buildStr -or $buildStr -notmatch '^\d+$') {
+            throw 'Windows build could not be established through CIM or registry'
+        }
+        $caption = [string]$cv.ProductName
+        if ([string]::IsNullOrWhiteSpace($caption)) { throw 'Windows edition unavailable through registry' }
+        $os = [pscustomobject]@{
+            Caption = $caption
+            BuildNumber = $buildStr
+            ProductType = if ($caption -match 'Windows Server') { 3 } else { 1 }
+            OSArchitecture = if ([Environment]::Is64BitOperatingSystem) { '64-bit' } else { '32-bit' }
+            TotalVisibleMemorySize = $null
+        }
+    }
     $build = [int]$os.BuildNumber
     $isWorkstation = ([int]$os.ProductType -eq 1)
     $isWin10 = ($build -ge 19045 -and $build -lt 22000)
     $isWin11 = ($build -ge 22000)
-    $is64 = ($os.OSArchitecture -like '*64*')
+    $is64 = ([Environment]::Is64BitOperatingSystem)
     if (-not $isWorkstation -or -not $is64 -or -not ($isWin10 -or $isWin11)) {
         throw "Requires a 64-bit Windows workstation: Windows 10 22H2 build 19045+ or Windows 11. Found $($os.Caption), build $($os.BuildNumber), ProductType=$($os.ProductType), $($os.OSArchitecture). Windows Server is excluded."
     }
     if ($isWin10) {
-        Say "Windows 10 x64 build ${build}: SUPPORTED, primary target for TikZarium physical release QA."
+        Say "Windows 10 x64 build $($build): SUPPORTED, primary target for TikZarium physical release QA."
     } else {
-        Say "Windows 11 x64 build ${build}: SUPPORTED, extra compatibility target."
+        Say "Windows 11 x64 build $($build): SUPPORTED, extra compatibility target."
     }
+    $script:OsInfo = $os
     return $os
 }
 function Get-MsvcInfo {
@@ -347,8 +371,8 @@ function Get-CurrentInfo {
     $os = Get-OsInfo
     $ident = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($ident)
-    $ram = [math]::Round(($os.TotalVisibleMemorySize / 1048576), 2)
-    Say "OS: $($os.Caption); build: $($os.BuildNumber); RAM: $ram GiB"
+    $ram = if ($null -ne $os.TotalVisibleMemorySize -and $os.TotalVisibleMemorySize -gt 0) { ([math]::Round(($os.TotalVisibleMemorySize / 1048576), 2)).ToString() + ' GiB' } else { 'UNKNOWN_NO_WMI' }
+    Say "OS: $($os.Caption); build: $($os.BuildNumber); RAM: $ram"
     Say "User: $($ident.Name); elevated: $($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))"
     return $principal
 }
@@ -398,17 +422,21 @@ function Setup-Machine {
     Ensure-MsvcSdk
     Ensure-VCRedist
     if ($script:RestartRecommended) { Write-Warning 'One or more installers requested a REBOOT (3010). Restart Windows before phase User.' }
-    Say 'Machine phase complete. Keep admin account; connect by RDP as .\tikzarium-qa and run User phase.'
+    Say 'Machine phase complete. QA user: -Phase User. Existing medium-token Admin profile: -Phase CurrentUser (without elevated PowerShell).'
     Say "User phase command: powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$target`" -Phase User"
 }
 function Setup-User {
+    param([switch]$UseCurrentProfile)
     $principal = Get-CurrentInfo
     $currentName = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-    if (-not $currentName.EndsWith("\$QaUser", [StringComparison]::OrdinalIgnoreCase)) {
+    if (-not $UseCurrentProfile -and -not $currentName.EndsWith("\$QaUser", [StringComparison]::OrdinalIgnoreCase)) {
         throw "Phase User must run while logged on as .\$QaUser, current: $currentName"
     }
     if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        throw 'Phase User must run non-elevated as the QA user.'
+        throw 'User and CurrentUser setup must be launched with a non-elevated (medium integrity) token; an Administrator account is allowed without elevation.'
+    }
+    if ($UseCurrentProfile) {
+        Say "CurrentUser selected: existing $currentName profile. No new account, UAC change or Machine phase."
     }
     $qaRoot = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA'
     $evidence = Join-Path $qaRoot ('evidence\{0}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -487,8 +515,8 @@ function Setup-User {
         timestamp = (Get-Date -Format 'o')
         machine = $env:COMPUTERNAME
         user = $currentName
-        windows = (Get-CimInstance Win32_OperatingSystem).Caption
-        build = (Get-CimInstance Win32_OperatingSystem).BuildNumber
+        windows = $script:OsInfo.Caption
+        build = $script:OsInfo.BuildNumber
         source_sha = $sha
         rust_toolchain = '1.91.0-x86_64-pc-windows-msvc'
         xelatex_path = $xelatex
@@ -556,6 +584,7 @@ try {
     switch ($Phase) {
         'Machine' { Setup-Machine }
         'User'    { Setup-User }
+        'CurrentUser' { Setup-User -UseCurrentProfile }
         'Check' {
             Get-CurrentInfo | Out-Null
             Refresh-Path

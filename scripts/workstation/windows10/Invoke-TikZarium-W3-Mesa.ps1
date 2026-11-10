@@ -214,14 +214,16 @@ function Run-IsolatedGui {
     }
 }
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit Windows PowerShell for x64 TikZarium/Mesa.' }
-$os = Get-CimInstance Win32_OperatingSystem
-if ([int]$os.ProductType -ne 1 -or [int]$os.BuildNumber -lt 19045) {
-    throw 'Requires Windows 10 Pro x64 build 19045+ workstation; do not run on the personal Server.'
+# Read-only edition/build check works in Codex restricted token (WMI may be denied).
+$cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
+$build = if ($cv.CurrentBuildNumber) { [int]$cv.CurrentBuildNumber } else { [int]$cv.CurrentBuild }
+if ([string]$cv.ProductName -match 'Windows Server' -or $build -lt 19045) {
+    throw 'Requires Windows 10/11 x64 workstation build 19045+; do not run on personal Server.'
 }
 $current = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal($current)
 if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw 'W3 isolated software GL QA must run as non-admin tikzarium-qa.'
+    throw 'Run W3 isolated software GL QA without elevation (medium token); Administrator account itself is allowed.'
 }
 switch ($Action) {
     'PrepareAndRun' { Prepare-MesaRuntime; Run-IsolatedGui }

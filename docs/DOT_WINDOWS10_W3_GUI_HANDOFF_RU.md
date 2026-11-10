@@ -45,3 +45,8 @@
 ## Дополнительная GUI-диагностика: обнаружение внешнего TeX
 
 `crates/tikzarium-core/src/discovery.rs` ищет `TIKZARIUM_XELATEX`, иначе `xelatex` из `PATH`, а растровый предпросмотр — `pdftoppm` из `PATH`. Это потенциальный источник расхождения между успешным CLI и GUI, запущенным в другой RDP-сессии. В SHA-проверенном изолированном Mesa launcher дополнительно включается процессный путь к **уже установленным** пользовательским MiKTeX и Poppler. Никаких системных установок, реестра и постоянного PATH. Даже успешный hosted CI не означает физический W3 GUI→PDF PASS.
+
+
+## Admin вместо QA-пользователя — 2026-11-10
+
+На Windows 10 Pro build 19045.4412 под `VM-910136\admin` подтверждены PowerShell x64, medium integrity и Administrator SID `deny-only`; локальный Computer Use уже перечисляет окна. Для этого профиля введён `-Phase CurrentUser` в общем установщике. Скрипт не требует локального `tikzarium-qa` и не меняет Admin/UAC/RDP. Пользовательский набор программ (Rustup/MiKTeX/Poppler) и GUI остаётся неиспытанным под Admin до реального запуска. При `Get-CimInstance Access denied` используем только read-only registry fallback, не ослабляем WMI. Далее Computer Use тестирует GUI из того же профиля.

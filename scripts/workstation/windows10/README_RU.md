@@ -66,6 +66,22 @@ if ($LASTEXITCODE -ne 0) { throw 'USER FAIL: review transcript and error' }
 
 Проверенные контрольные суммы, уже встроенные в скрипты: Rustup 1.29.3 x64 `38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db`; Mesa 26.2.6 mingw x64 archive `da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388`; официальный standalone 7zr 26.05 `9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7`. Не отключать SHA256 validation при ошибке загрузки.
 
+
+## Existing Admin on Windows 10: supported `-Phase CurrentUser`
+
+Machine phase had already passed on the QA workstation. When ChatGPT/Codex is installed and running in the existing `Admin` profile, use the **new separate phase** (normal, non-elevated PowerShell):
+
+```powershell
+$setup = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\setup\TikZarium-Win10-Setup.ps1'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $setup -Phase CurrentUser
+```
+
+This reuses the previous `User` pipeline (Rustup 1.29.3, pinned Rust 1.91.0, per-user MiKTeX and Poppler, clean source clone/build, CLI→PDF and font+Unicode audit) but **does not require the `tikzarium-qa` account** and does not touch Machine or existing accounts. It refuses an *elevated* token, including when signed in as Admin. The observed Codex token is medium integrity, Administrator SID deny-only, so it is eligible. Existing `-Phase User` remains restricted to `tikzarium-qa` for backward compatibility.
+
+Some Codex sandbox contexts report WMI `Get-CimInstance: Access denied` even though `cmd /c ver` and read-only CurrentVersion registry work. `Get-OsInfo` and the Mesa launcher now use a fail-closed **read-only registry fallback** for edition/build; they do not modify WMI permissions. The physical `CurrentUser` install and GUI have **not yet been run** on this Admin profile. The previous `tikzarium-qa` User/PDF PASS is not automatically transferred.
+
+Once the build finishes, use `Invoke-TikZarium-W3-Mesa.ps1 -Action PrepareAndRun` from the same Admin profile in a normal PowerShell. The launcher accepts the medium-token Admin profile and preserves its elevated-token refusal, pinned SHA256 and private software GL.
+
 ## 4. Проверка готового окружения (на текущей VM начинать здесь)
 
 ```powershell
