@@ -161,6 +161,12 @@ class W3EvidenceContractTests(unittest.TestCase):
         with self.assertRaises(EvidenceError):
             validate(self.root, SOURCE_SHA)
 
+    def test_localized_windows_caption_accepted_as_structure_only(self):
+        self.m["host"]["os_caption"] = "Майкрософт Windows 10 Pro"
+        save(self.root, self.m)
+        report = validate(self.root, SOURCE_SHA)
+        self.assertEqual(report["release_gate"], "W3_NOT_ACCEPTED")
+
     def test_hosted_or_disconnected_session_never_W3(self):
         self.m["host"]["os_caption"] = "Windows Server 2025"
         save(self.root, self.m)
