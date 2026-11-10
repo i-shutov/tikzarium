@@ -24,3 +24,6 @@ function Get-ItemProperty {
 }
 $directory = Split-Path -Parent $PSScriptRoot
 & (Join-Path $directory 'TikZarium-Win10-PREFLIGHT.ps1') -SetupPath (Join-Path $directory 'TikZarium-Win10-Setup.ps1') -RunnerPath (Join-Path $directory 'TikZarium-Win10-Runner-OPTIONAL.ps1')
+# Script 'exit N' sets LASTEXITCODE in the caller scope; forward it to the
+# outer powershell.exe process so the hosted negative test can assert exit 1.
+exit ([int]$LASTEXITCODE)
