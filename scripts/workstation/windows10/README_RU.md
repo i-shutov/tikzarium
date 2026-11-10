@@ -2,7 +2,7 @@
 
 ## 10.11.2026 — актуальная физическая W3: проверка SHA исходников, EXE и Mesa перед GUI
 
-**Интегрированные исходники:** `main` `488a9687c404f9714eecbcb8ccb4edbf97a54d89` (PR #150, #152 и #153 включены). Если Win10 Admin локально содержит более старую копию `target\\debug\\tikzarium-app.exe`, её запуск не проверяет новую версию кнопки `▶ Build`. Проверенный изолированный launcher [Invoke-TikZarium-W3-Mesa.ps1](../scripts/workstation/windows10/Invoke-TikZarium-W3-Mesa.ps1) теперь использует соседний [W3-Source-Guard.ps1](../scripts/workstation/windows10/W3-Source-Guard.ps1): до изменения QA runtime проверяет доверенную локальную main, чистое дерево, включённый PR #152 и свежесть EXE; при запуске сверяет SHA256 подготовленного EXE и всех Mesa DLL. Вновь скачивать Rust/MiKTeX/Poppler, запускать `Machine` или `CurrentUser` **не требуется**.
+**Интегрированные исходники:** `main` `488a9687c404f9714eecbcb8ccb4edbf97a54d89` (PR #150, #152 и #153 включены). Если Win10 Admin локально содержит более старую копию `target\\debug\\tikzarium-app.exe`, её запуск не проверяет новую версию кнопки `▶ Build`. Проверенный изолированный launcher [Invoke-TikZarium-W3-Mesa.ps1](Invoke-TikZarium-W3-Mesa.ps1) теперь использует соседний [W3-Source-Guard.ps1](W3-Source-Guard.ps1): до изменения QA runtime проверяет доверенную локальную main, чистое дерево, включённый PR #152 и свежесть EXE; при запуске сверяет SHA256 подготовленного EXE и всех Mesa DLL. Вновь скачивать Rust/MiKTeX/Poppler, запускать `Machine` или `CurrentUser` **не требуется**.
 
 Команды для локального Computer Use / Dot в активном обычном medium-token `Admin` (исполняются самим локальным агентом только при доступном ему GUI/PowerShell, а не данным GitHub-чатом):
 
@@ -15,7 +15,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Action SelfTe
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Action PrepareAndRun -ExpectedSourceSha $expected
 ```
 
-Если HEAD иной — **не делать reset/force checkout**; сначала проверить версию и согласовать ожидаемый принятый SHA. Если EXE устарел, восстановление только из доверенной локальной `main`: `cargo build --locked -j 1 -p tikzarium-app`, без системной установки. Лог `W3_RUNTIME_SOURCE_AND_DLL_SHA256_VERIFIED` подтверждает **лишь целостность QA runtime, не физический W3**. Затем на реальном GUI: `▶` на новом исходнике → модальное «Сохранение перед сборкой» → `Escape` и отсутствие файла → Save & Build в новый .tex → шесть жестов, F1, Undo/Save/Open, GUI→XeLaTeX PDF, кириллица/IME/DPI. Оригиналы проверять независимо по [W3 source/PDF/PNG contract](../plans/2026-11-10_W3_ORIGINAL_EVIDENCE_GATE.md). Полный W3, W2b и stable W4 всё ещё **NO-GO** до физической приёмки.
+Если HEAD иной — **не делать reset/force checkout**; сначала проверить версию и согласовать ожидаемый принятый SHA. Если EXE устарел, восстановление только из доверенной локальной `main`: `cargo build --locked -j 1 -p tikzarium-app`, без системной установки. Лог `W3_RUNTIME_SOURCE_AND_DLL_SHA256_VERIFIED` подтверждает **лишь целостность QA runtime, не физический W3**. Затем на реальном GUI: `▶` на новом исходнике → модальное «Сохранение перед сборкой» → `Escape` и отсутствие файла → Save & Build в новый .tex → шесть жестов, F1, Undo/Save/Open, GUI→XeLaTeX PDF, кириллица/IME/DPI. Оригиналы проверять независимо по [W3 source/PDF/PNG contract](../../../plans/2026-11-10_W3_ORIGINAL_EVIDENCE_GATE.md). Полный W3, W2b и stable W4 всё ещё **NO-GO** до физической приёмки.
 
 
 ## Актуализация W3 после принятого исправления Build (10.11.2026)
