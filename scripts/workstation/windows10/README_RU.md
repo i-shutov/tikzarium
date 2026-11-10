@@ -82,6 +82,40 @@ Some Codex sandbox contexts report WMI `Get-CimInstance: Access denied` even tho
 
 Once the build finishes, use `Invoke-TikZarium-W3-Mesa.ps1 -Action PrepareAndRun` from the same Admin profile in a normal PowerShell. The launcher accepts the medium-token Admin profile and preserves its elevated-token refusal, pinned SHA256 and private software GL.
 
+### Готовая команда для уже существующего Admin на Windows 10 — 10.11.2026
+
+**Только обычный неповышенный PowerShell** в профиле `Admin`, не в `Run as administrator`. `Machine` не повторять. Это тот же установленный и испытанный под QA-пользователем `User` pipeline, адаптированный к существующему среднепривилегированному токену Admin; реальный итог `CurrentUser` под Admin пока не подтверждён.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$version = '824335f5c575cb5aed79ae669aac744b4efb2bc8' # verified GitHub commit, not moving branch
+$base = "https://raw.githubusercontent.com/i-shutov/tikzarium/$version/scripts/workstation/windows10"
+$folder = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\setup'
+New-Item -ItemType Directory -Force -Path $folder | Out-Null
+foreach ($file in @('TikZarium-Win10-Setup.ps1', 'TikZarium-Win10-PREFLIGHT.ps1', 'TikZarium-Win10-Runner-OPTIONAL.ps1')) {
+    Invoke-WebRequest -Uri "$base/$file" -OutFile (Join-Path $folder $file) -UseBasicParsing
+}
+$preflight = Join-Path $folder 'TikZarium-Win10-PREFLIGHT.ps1'
+$setup = Join-Path $folder 'TikZarium-Win10-Setup.ps1'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preflight
+if ($LASTEXITCODE -ne 0) { throw 'Preflight failed; no install attempted' }
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $setup -Phase CurrentUser
+if ($LASTEXITCODE -ne 0) { throw 'CurrentUser setup failed; inspect the generated evidence transcript' }
+```
+
+Файл `Runner-OPTIONAL.ps1` только скачивается ради проверки синтаксиса `PREFLIGHT`; он **не исполняется и не регистрирует runner**. В самом setup у источников Git, Rustup, MiKTeX и Poppler уже закреплены официальные SHA256/подписи. При сетевых ошибках проверку не отключать. `CurrentUser` ничего не копирует в ProgramData и не меняет существующие пользовательские учётные записи.
+
+После `Physical PDF generated and audited` и `Environment report` — из того же профиля `Admin`:
+
+```powershell
+$mesa = Join-Path $folder 'Invoke-TikZarium-W3-Mesa.ps1'
+Invoke-WebRequest -Uri "$base/Invoke-TikZarium-W3-Mesa.ps1" -OutFile $mesa -UseBasicParsing
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $mesa -Action PrepareAndRun
+if ($LASTEXITCODE -ne 0) { throw 'Mesa GUI launch failed; inspect exact error' }
+```
+
+**Граница доказательств:** ранее GUI/CLI работали под `tikzarium-qa`; под `Admin` пока новый тест. Если агент Codex сообщает `Get-CimInstance: Access denied`, текущий скрипт использует read-only реестр `Windows NT\CurrentVersion`, не меняя права WMI. Локальное приложение ChatGPT/Codex Computer Use запускается отдельно в той же интерактивной сессии, после подтверждения разрешений владельцем.
+
 ## 4. Проверка готового окружения (на текущей VM начинать здесь)
 
 ```powershell
