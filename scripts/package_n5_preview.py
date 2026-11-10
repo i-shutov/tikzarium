@@ -145,8 +145,8 @@ def readme(platform: str, sha: str, ci_url: str) -> bytes:
    не заменяйте установленный MiKTeX и не изменяйте UAC, RDP,
    реестр, драйверы, службы или системный PATH.
 3. В PowerShell из каталога Tikzarium-preview выполните:
-      .\tikzarium-cli.exe doctor
-   Затем запустите .\tikzarium-app.exe из реальной активной
+      .\\tikzarium-cli.exe doctor
+   Затем запустите .\\tikzarium-app.exe из реальной активной
    пользовательской сессии WinSta0/Default.
 4. Проверьте F1, холст рядом с редактируемым .tex, линию,
    стрелку, прямоугольник, окружность, текстовый узел, кривую
