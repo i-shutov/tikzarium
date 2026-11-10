@@ -201,7 +201,7 @@ class W3EvidenceContractTests(unittest.TestCase):
 
     def test_prior_native_geometry_mutation_with_same_owner_marker_rejected(self):
         path = self.root / self.m["source_snapshots"]["rectangle"]
-        path.write_bytes(path.read_bytes().replace(b"\\\\draw (0,0)", b"\\\\draw (9,9)", 1))
+        path.write_bytes(path.read_bytes().replace(b"\\draw (0,0)", b"\\draw (9,9)", 1))
         self.m["sha256"][self.m["source_snapshots"]["rectangle"]] = digest(path)
         save(self.root, self.m)
         with self.assertRaisesRegex(EvidenceError, "prior native TikZ command"):
