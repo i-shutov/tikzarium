@@ -81,6 +81,10 @@ jobs:
             throw ('Windows Server was not rejected: ' + ($rejected | Out-String))
           }
           Write-Host 'PREFLIGHT PS5.1 WMI_DENIED_WIN10_PASS SERVER_REJECTION_PASS; no installers executed'
+          # The expected Server rejection leaves LASTEXITCODE=1. GitHub's
+          # PowerShell shell forwards stale LASTEXITCODE after this step.
+          # Both expected outcomes above were checked explicitly.
+          exit 0
 
   mesa-archive-extraction:
     name: Verify pinned Mesa archive and x64 DLL layout (hosted-only)
