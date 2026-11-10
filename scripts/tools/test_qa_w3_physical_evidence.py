@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from functools import lru_cache
 import json
 from pathlib import Path
 import struct
@@ -30,6 +31,7 @@ def digest(file: Path) -> str:
     return hashlib.sha256(file.read_bytes()).hexdigest()
 
 
+@lru_cache(maxsize=32)
 def png(seed: int) -> bytes:
     width, height = 900, 480
     def chunk(name: bytes, data: bytes) -> bytes:
