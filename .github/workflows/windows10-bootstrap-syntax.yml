@@ -30,7 +30,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $directory = 'scripts/workstation/windows10'
           $files = @(Get-ChildItem -LiteralPath $directory -File -Filter '*.ps1' -Recurse)
-          if ($files.Count -ne 7) { throw ('Expected 7 PS scripts, found ' + $files.Count) }
+          if ($files.Count -lt 8) { throw ('Expected at least 8 PS scripts, found ' + $files.Count) }
           foreach ($f in $files) {
             $tokens = $null
             $parseErrors = $null
@@ -66,6 +66,21 @@ jobs:
         run: |
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_current_user_profile.ps1'
           if ($LASTEXITCODE -ne 0) { throw 'CurrentUser static contracts failed' }
+
+      - name: Physical Win10 preflight contract with mocked WMI denied (PS5.1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $test = './scripts/workstation/windows10/tests/test_preflight_wmi_denied.ps1'
+          $pass = @(powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test -SimulatedOS Win10 2>&1)
+          if ($LASTEXITCODE -ne 0 -or (($pass | Out-String) -notmatch 'PREFLIGHT PASS')) {
+            throw ('Win10 WMI denied fallback failed: ' + ($pass | Out-String))
+          }
+          $rejected = @(powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test -SimulatedOS Server 2>&1)
+          if ($LASTEXITCODE -eq 0 -or (($rejected | Out-String) -notmatch 'PREFLIGHT FAIL')) {
+            throw ('Windows Server was not rejected: ' + ($rejected | Out-String))
+          }
+          Write-Host 'PREFLIGHT PS5.1 WMI_DENIED_WIN10_PASS SERVER_REJECTION_PASS; no installers executed'
 
   mesa-archive-extraction:
     name: Verify pinned Mesa archive and x64 DLL layout (hosted-only)
