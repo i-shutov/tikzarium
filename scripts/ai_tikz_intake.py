@@ -220,7 +220,31 @@ def inspect_sources(
     }
 
 
-def inspect_skills(root: Path) -> dict[str, Any]:
+def read_skill_pins(raw: bytes) -> dict[str, str]:
+    """Check the explicit owner-source SHA256 snapshot, never guessed defaults."""
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise IntakeError("SKILL_PIN_LEDGER_NOT_UTF8") from exc
+    reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
+    if tuple(reader.fieldnames or ()) != ("skill", "sha256"):
+        raise IntakeError("SKILL_PIN_HEADER_INVALID")
+    pins: dict[str, str] = {}
+    try:
+        for row in reader:
+            if (None in row or not row["skill"] or
+                    row["skill"] in pins or not isinstance(row["sha256"], str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
+                raise IntakeError("SKILL_PIN_ROW_INVALID")
+            pins[row["skill"]] = row["sha256"]
+    except csv.Error as exc:
+        raise IntakeError(f"SKILL_PIN_CSV_INVALID: {exc}") from exc
+    if frozenset(pins) != EXPECTED_SKILLS:
+        raise IntakeError("SKILL_PIN_SET_INVALID")
+    return pins
+
+
+def inspect_skills(root: Path, pins: dict[str, str] | None = None) -> dict[str, Any]:
     skill_root = root.resolve(strict=True) / "skills"
     if not skill_root.is_dir():
         raise IntakeError("SKILLS_FOLDER_MISSING")
@@ -230,6 +254,12 @@ def inspect_skills(root: Path) -> dict[str, Any]:
             f"SKILL_SET_MISMATCH: missing={sorted(EXPECTED_SKILLS-found)} "
             f"extra={sorted(found-EXPECTED_SKILLS)}"
         )
+    if pins is None:
+        pins = read_skill_pins((
+            REPO_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10_13_SKILLS_SHA256.csv"
+        ).read_bytes())
+    if frozenset(pins) != EXPECTED_SKILLS:
+        raise IntakeError("SKILL_PIN_SET_INVALID")
     proofs: list[dict[str, str]] = []
     for name in sorted(found):
         path = skill_root / name / "SKILL.md"
@@ -242,7 +272,10 @@ def inspect_skills(root: Path) -> dict[str, Any]:
             raise IntakeError(f"SKILL_NOT_UTF8: {name}") from exc
         if not text.startswith("---\n") or f"name: {name}" not in text:
             raise IntakeError(f"SKILL_FRONTMATTER_INVALID: {name}")
-        proofs.append({"skill": name, "sha256": sha256(raw)})
+        digest = sha256(raw)
+        if digest != pins[name]:
+            raise IntakeError(f"SKILL_SHA_CHANGED: {name}")
+        proofs.append({"skill": name, "sha256": digest})
     return {"skill_files_verified": len(proofs), "skills": proofs}
 
 
