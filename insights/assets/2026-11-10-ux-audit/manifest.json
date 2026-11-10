@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-11-10",
+  "kind": "historical_originals_plus_new_owned_window_UX_observation",
+  "source_sha": "57cb62e4b70f896eb48978da4252ec1fede6c26a",
+  "exe_sha256": "2ad442eeec9fe2757331cfd1d0fd75cac0d5a28db6b754caf19346425bc67522",
+  "reviewed_main": "bd0b698503648f43a1db9d1810466ec5d1c18ecd",
+  "application_source_diff": "git diff 57cb62e4 bd0b698 -- crates Cargo.toml Cargo.lock: empty",
+  "live_capture": "PASS: external native worker on WinSta0/Default, owned PID/foreground/client capture",
+  "files": [
+    {
+      "file": "startup.png",
+      "sha256": "acace743a24c22ab81558eff4793fcbb78af46dcd6eb8c52a668c55665f5e1bb",
+      "origin": "work/w3-review-archive/originals/startup.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "f1.png",
+      "sha256": "dcf347acb640ac0ebddadb8f3c41442953e5659ee2162681a4d7132bc992a6a9",
+      "origin": "work/w3-review-archive/originals/f1.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "cubic.png",
+      "sha256": "a41a89749980b25a16799c1ced2f31b4db9fe20e13749f3fb1a8fe9a3b4fe890",
+      "origin": "work/w3-review-archive/originals/cubic.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "pdf-preview.png",
+      "sha256": "3debf0e2286cc411eb18d2eaf65142dc76ade0d973d75c2652be7098056c2609",
+      "origin": "work/w3-review-archive/originals/pdf-preview.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "rectangle.png",
+      "sha256": "f34519b8cd6e3edd099ee2c16bd241a6fd1224da2690873bffb185c34ae19bf3",
+      "origin": "work/w3-review-archive/originals/rectangle.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "tools.png",
+      "sha256": "b855ca1e2c78da80d831aef7fa122cb84e99834aa74ffd547309ea908fab57b4",
+      "origin": "work/w3-review-archive/originals/tools.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "build-dialog.png",
+      "sha256": "6cba8ccceaf832a8ee188e74b0201a5b3fee342cfedb6fbc908ed98d55cf3d26",
+      "origin": "work/w3-review-archive/originals/build-dialog.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "diagnostics.png",
+      "sha256": "c55b48fb1e2af96d0eb1a1c0167b46af488485e0390a5db216da29aade75e4c1",
+      "origin": "work/w3-review-archive/originals/diagnostics.png",
+      "archive_manifest_verified": true
+    },
+    {
+      "file": "cubic.tex",
+      "sha256": "ee74b524071aeb32492ac15f4e1518189a00f5a898930bad81d9ac9c39e1dd84",
+      "origin": "work/w3-review-archive/originals/cubic.tex",
+      "archive_manifest_verified": true
+    }
+  ],
+  "live_run": {
+    "worker_pid": 6920,
+    "app_pid": 10572,
+    "hwnd": "459002",
+    "window_station": "WinSta0",
+    "thread_desktop": "Default",
+    "input_desktop": "Default",
+    "session": 2,
+    "wts_state": 0,
+    "client_width": 1184,
+    "client_height": 721,
+    "dpi": 96,
+    "exe_sha256": "2ad442eeec9fe2757331cfd1d0fd75cac0d5a28db6b754caf19346425bc67522",
+    "placement": "new audit-owned window moved/resized to 1200x760 at (20,20); capture guards unchanged",
+    "observed": "startup, F1 transition, Libraries tab, Ctrl+Enter Save & Build dialog, Escape cancellation",
+    "not_run": "new six gestures, save/reopen, actual build/PDF, IME, other DPI, usability timing",
+    "files": [
+      {
+        "file": "live-startup.png",
+        "sha256": "b209065029e83dcf9fa21aa9ccfcfec043345b71aba48c98943f59af194c83a9",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-startup.png"
+      },
+      {
+        "file": "live-f1.png",
+        "sha256": "b209065029e83dcf9fa21aa9ccfcfec043345b71aba48c98943f59af194c83a9",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-f1.png"
+      },
+      {
+        "file": "live-f1-second.png",
+        "sha256": "c84febe3e09db59ce5150d78918f0a6b99d0952206640fe9a0d90a80a5a836ad",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-f1-second.png"
+      },
+      {
+        "file": "live-libraries.png",
+        "sha256": "864a7ee37869039fe5a574a2537451ee498dfac8f18283f60fd9c95139f7b28f",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-libraries.png"
+      },
+      {
+        "file": "live-build-dialog.png",
+        "sha256": "9a5969f40bd3a38409eaecdb1071fa0ca4c6819f8d9ce671b924a3867106aec9",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-build-dialog.png"
+      },
+      {
+        "file": "live-build-cancelled.png",
+        "sha256": "90dc8432a1bd42d4296ebb89aa5e89e7fd14839d26ed9f2b0f04d8ba97536897",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/live-build-cancelled.png"
+      },
+      {
+        "file": "worker-transcript.txt",
+        "sha256": "2dd613a90536f5cd736a6e2429da3ff528c2386329dc30ddecc2b9651b33c179",
+        "origin": "TikZarium-QA/evidence/ux-audit-20261110-132609/worker-transcript.txt"
+      }
+    ]
+  }
+}
