@@ -75,5 +75,34 @@
     ],
     "local_path": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\w3-native-20261110-061007\\RESULTS.md",
     "note": "Owner-provided Codex report; original files not accessible to connected GitHub review yet"
+  },
+  "reported_w3_independent_review": {
+    "status": "W3_NOT_ACCEPTED",
+    "archive_path": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\w3-independent-review-20261110.zip",
+    "archive_sha256": "7516DB3C57C140D314A44725C0BF2F9E89DF4CD27AA44AF210E11895AF3E7716",
+    "locally_verified_file_copies": 63,
+    "locally_verified_zip_crc": "PASS_BY_LOCAL_CODEX_REPORT",
+    "archive_bytes_available_for_independent_review": false,
+    "validation_result": "FAIL_ORIGINAL_W3_EVIDENCE",
+    "first_error": "Missing original evidence: w3-original.json",
+    "other_missing": [
+      "source_and_reopen_screenshots",
+      "structured_event_trace",
+      "exact_final_release_exe_attestation",
+      "true_dpi_125",
+      "true_dpi_200",
+      "IME_composition_preedit_if_required"
+    ],
+    "native_russian_keyboard_input": "PASS_BY_CODEX_REPORT_VIA_REAL_KEYS_NO_PASTE",
+    "true_ime_composition": "NOT_RUN_SEPARATE_COMPATIBILITY",
+    "dpi_100": "PASS_BY_CODEX_REPORT",
+    "dpi_125": "NOT_RUN",
+    "dpi_200": "NOT_RUN",
+    "offline_main488_build": "PASS_BY_CODEX_REPORT_NEW_EXE_NOT_GUI_TESTED",
+    "new_debug_exe_sha256_truncated": "D1585C62…977D0A776",
+    "prior_gui_exe_sha256_truncated": "2AD442EE…5BC67522",
+    "verified_exact_full_gui_exe_sha": false,
+    "manual_visual_note": "Six figures appear progressively; Arial PDF test label overlaps existing node due to selected insertion coordinates; do not overwrite original evidence",
+    "acceptance": "NO_GO_UNTIL_ORIGINAL_BYTES_AND_REMAINING_PHYSICAL_GATES"
   }
 }
