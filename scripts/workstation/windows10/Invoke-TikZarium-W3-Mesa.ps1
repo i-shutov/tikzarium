@@ -4,8 +4,9 @@
 # and the SHA256-pinned upstream Mesa3D archive. Does NOT claim W3 GUI PASS.
 [CmdletBinding()]
 param(
-    [ValidateSet('PrepareAndRun', 'PrepareOnly', 'RunPrepared')]
-    [string]$Action = 'PrepareAndRun'
+    [ValidateSet('PrepareAndRun', 'PrepareOnly', 'RunPrepared', 'SelfTest')]
+    [string]$Action = 'PrepareAndRun',
+    [string]$ExpectedSourceSha = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -21,6 +22,12 @@ $workspace = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\W3-physical'
 $evidence = Join-Path $root 'w3-mesa-preflight.json'
 $sourceUrl = 'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z'
 $shaExpected = 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388'
+# Source guard must be downloaded from the SAME trusted checkout as launcher.
+$guardPath = Join-Path $PSScriptRoot 'W3-Source-Guard.ps1'
+if (-not (Test-Path -LiteralPath $guardPath -PathType Leaf)) {
+    throw "W3_SOURCE_GUARD_MISSING: stage W3-Source-Guard.ps1 beside launcher from accepted main"
+}
+. $guardPath
 
 function Say([string]$Message) {
     Write-Host ('[{0}] {1}' -f (Get-Date -Format 'HH:mm:ss'), $Message) -ForegroundColor Cyan
@@ -36,9 +43,9 @@ function Assert-MesaArchive {
     Say "MESA_SHA256_VERIFIED: $actual"
 }
 function Prepare-MesaRuntime {
-    if (-not (Test-Path -LiteralPath $sourceApp -PathType Leaf)) {
-        throw "TikZarium app missing. Build first: $sourceApp"
-    }
+    # Fail BEFORE touching QA files or downloads when source/EXE is stale.
+    $proof = Get-W3SourceProof -Repo $repo -AppPath $sourceApp -ExpectedSourceSha $ExpectedSourceSha
+    Say "W3_ACCEPTED_SOURCE_PROVENANCE: $($proof.source_sha)"
     New-Item -ItemType Directory -Path (Split-Path -Parent $archive) -Force | Out-Null
     New-Item -ItemType Directory -Path $workspace -Force | Out-Null
     if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
@@ -57,40 +64,38 @@ function Prepare-MesaRuntime {
     $sevenZipUrl = 'https://github.com/ip7z/7zip/releases/download/26.05/7zr.exe'
     $sevenZipExpected = '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7'
     $sevenZip = Join-Path $root '7zr.exe'
-    if (-not (Test-Path -LiteralPath $unpack -PathType Container)) {
-        New-Item -ItemType Directory -Path $unpack -Force | Out-Null
+    # The SHA-pinned archive does NOT authenticate a possibly stale/tampered
+    # extracted directory. On every Prepare, re-extract only our dedicated QA
+    # unpack folder from the official pinned archive and 7zr. Never reuse DLLs
+    # merely because opengl32.dll and libgallium_wgl.dll happen to exist.
+    if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
+        Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        try {
+            Invoke-WebRequest -Uri $sevenZipUrl -OutFile $sevenZip -MaximumRedirection 8 -TimeoutSec 120 -UseBasicParsing
+        } catch {
+            Remove-Item -LiteralPath $sevenZip -Force -ErrorAction SilentlyContinue
+            throw
+        }
     }
+    $actual7z = (Get-FileHash -LiteralPath $sevenZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual7z -cne $sevenZipExpected) {
+        throw "7ZR_SHA256_MISMATCH: expected=$sevenZipExpected actual=$actual7z. Refusing execution."
+    }
+    Say "7ZR_SHA256_VERIFIED: $actual7z"
+    & $sevenZip t $archive
+    if ($LASTEXITCODE -ne 0) { throw "7zr.exe archive CRC test failed: exit $LASTEXITCODE" }
+    # The unpack directory belongs to this QA launcher; remove partial tar output only.
+    if (Test-Path -LiteralPath $unpack -PathType Container) {
+        Remove-Item -LiteralPath $unpack -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $unpack -Force | Out-Null
+    Say 'Extracting SHA256-verified Mesa .7z with official standalone 7zr.exe.'
+    & $sevenZip x -y "-o$unpack" $archive
+    if ($LASTEXITCODE -ne 0) { throw "7zr.exe extraction failed: exit $LASTEXITCODE" }
     $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
         Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
-    if ($mesaCandidates.Count -ne 1) {
-        if (-not (Test-Path -LiteralPath $sevenZip -PathType Leaf)) {
-            Say 'Downloading official standalone 7-Zip 26.05 (7zr.exe); no installation.'
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            try {
-                Invoke-WebRequest -Uri $sevenZipUrl -OutFile $sevenZip -MaximumRedirection 8 -TimeoutSec 120 -UseBasicParsing
-            } catch {
-                Remove-Item -LiteralPath $sevenZip -Force -ErrorAction SilentlyContinue
-                throw
-            }
-        }
-        $actual7z = (Get-FileHash -LiteralPath $sevenZip -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($actual7z -cne $sevenZipExpected) {
-            throw "7ZR_SHA256_MISMATCH: expected=$sevenZipExpected actual=$actual7z. Refusing execution."
-        }
-        Say "7ZR_SHA256_VERIFIED: $actual7z"
-        & $sevenZip t $archive
-        if ($LASTEXITCODE -ne 0) { throw "7zr.exe archive CRC test failed: exit $LASTEXITCODE" }
-        # The unpack directory belongs to this QA launcher; remove partial tar output only.
-        if (Test-Path -LiteralPath $unpack -PathType Container) {
-            Remove-Item -LiteralPath $unpack -Recurse -Force
-        }
-        New-Item -ItemType Directory -Path $unpack -Force | Out-Null
-        Say 'Extracting SHA256-verified Mesa .7z with official standalone 7zr.exe.'
-        & $sevenZip x -y "-o$unpack" $archive
-        if ($LASTEXITCODE -ne 0) { throw "7zr.exe extraction failed: exit $LASTEXITCODE" }
-        $mesaCandidates = @(Get-ChildItem -LiteralPath $unpack -Recurse -File -Filter 'opengl32.dll' -ErrorAction SilentlyContinue |
-            Where-Object { $_.Directory.Name -ieq 'x64' -and (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'libgallium_wgl.dll')) })
-    }
+
     if ($mesaCandidates.Count -ne 1) {
         throw "Expected exactly one x64/opengl32.dll in pinned Mesa distribution, found $($mesaCandidates.Count)."
     }
@@ -115,11 +120,9 @@ function Prepare-MesaRuntime {
             throw "Runtime staging incomplete; missing $required"
         }
     }
-    $gitPath = 'C:\Program Files\Git\cmd\git.exe'
-    $sourceSha = 'NOT_CHECKED'
-    if (Test-Path -LiteralPath $gitPath) {
-        $sourceSha = (& $gitPath -C $repo rev-parse HEAD | Out-String).Trim()
-        if ($LASTEXITCODE -ne 0) { $sourceSha = 'NOT_CHECKED' }
+    $dllHashes = [ordered]@{}
+    foreach ($item in @(Get-ChildItem -LiteralPath $runDir -Filter '*.dll' -File)) {
+        $dllHashes[$item.Name] = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     }
     $report = [ordered]@{
         timestamp = (Get-Date -Format 'o')
@@ -132,9 +135,11 @@ function Prepare-MesaRuntime {
         mesa_archive_sha256 = $shaExpected
         mesa_bin = $mesaBin
         mesa_dll_count = $libraries.Count
-        source_sha = $sourceSha
-        original_app_sha256 = (Get-FileHash -LiteralPath $sourceApp -Algorithm SHA256).Hash
-        isolated_app_sha256 = (Get-FileHash -LiteralPath (Join-Path $runDir 'tikzarium-app.exe') -Algorithm SHA256).Hash
+        source_sha = $proof.source_sha
+        source_proof = $proof
+        original_app_sha256 = $proof.app_sha256
+        isolated_app_sha256 = (Get-FileHash -LiteralPath (Join-Path $runDir 'tikzarium-app.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+        runtime_dll_sha256 = $dllHashes
         source_unchanged = $true
         system_drivers_modified = $false
         registry_modified = $false
@@ -154,6 +159,7 @@ function Run-IsolatedGui {
             throw "Runtime not prepared: $required. First use -Action PrepareAndRun."
         }
     }
+    Assert-W3PreparedRuntime -Repo $repo -AppPath $sourceApp -RunDir $runDir -ReportPath $evidence -ExpectedSourceSha $ExpectedSourceSha
     New-Item -ItemType Directory -Path $workspace -Force | Out-Null
     $oldGallium = [Environment]::GetEnvironmentVariable('GALLIUM_DRIVER', 'Process')
     $oldSoftware = [Environment]::GetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', 'Process')
@@ -197,7 +203,7 @@ function Run-IsolatedGui {
         $childPath += $oldPath
         $env:Path = $childPath -join ';'
         Say 'Launching isolated GUI with GALLIUM_DRIVER=llvmpipe; no system OpenGL modification.'
-        Say 'If Build appears inert, inspect Save As dialog, TeX-discovery status and View > Diagnostics.'
+        Say 'Unsaved Build shows in-app Save & Build; use Escape for Cancel, then inspect XeLaTeX diagnostics/PDF.'
         Push-Location -LiteralPath $workspace
         try {
             & $candidate
@@ -212,6 +218,15 @@ function Run-IsolatedGui {
         [Environment]::SetEnvironmentVariable('GALLIUM_DRIVER', $oldGallium, 'Process')
         [Environment]::SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', $oldSoftware, 'Process')
     }
+}
+if ($Action -eq 'SelfTest') {
+    Test-W3ProvenancePure
+    return
+}
+# A release-grade physical GUI trial must always name its previously accepted
+# exact main commit. A stale local main or old compiled EXE is not valid W3.
+if ($ExpectedSourceSha -cnotmatch '^[0-9a-f]{40}$') {
+    throw 'W3_EXPECTED_SOURCE_SHA_REQUIRED: pass -ExpectedSourceSha with the full previously accepted 40-digit main SHA.'
 }
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit Windows PowerShell for x64 TikZarium/Mesa.' }
 # Read-only edition/build check works in Codex restricted token (WMI may be denied).
