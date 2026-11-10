@@ -8,6 +8,8 @@
 
 **Исправление в [PR #150](https://github.com/i-shutov/tikzarium/pull/150):** `Setup.ps1` сохраняется с UTF‑8 BOM; GitHub-hosted PS5.1 CI теперь проверяет реальный BOM у всех скриптов с русскими литералами. Добавлен самостоятельный [Audit-TikZarium-WindowsPdf.ps1](../scripts/workstation/windows10/Audit-TikZarium-WindowsPdf.ps1): только читает готовый PDF, запускает уже установленный `pdffonts` и `pdftotext` в режимах standard/raw/layout с **строгим UTF‑8 и NFC**, фиксирует наличие обеих строк, Arial/ToUnicode, SHA256, первые кодовые точки и исходные текстовые файлы. Нет установки, Cargo, XeLaTeX, изменения исходников или PDF. Положительный результат нельзя объявлять из одного созданного PDF.
 
+**Hosted audit PS5.1:** [#42792382319](https://github.com/i-shutov/tikzarium/actions/runs/42792382319) SUCCESS, в том числе UTF8 BOM и независимые Unicode-codepoint-тесты. В [единой инструкции](../scripts/workstation/windows10/README_RU.md) закреплена команда повторного аудита без компиляции.
+
 **Следующее действие:** под `Admin` один раз выполнить независимый postflight-аудит имеющегося PDF. При PASS — принять `CurrentUser` как готовую CLI/PDF среду и продолжить W3 GUI через isolated Mesa/Computer Use; при FAIL — изучить сохранённые UTF‑8 text/JSON, не менять шрифты и требования проверки вслепую. Полный W3 GUI и W4 stable остаются NO-GO.
 
 

@@ -2,6 +2,27 @@
 
 ## 2026-11-10 — WS11: Admin Cargo/XeLaTeX PASS, аудитор кириллицы не принял PDF
 
+### Проверка уже созданного PDF под Admin — без повторной установки и компиляции
+
+Ни `-Phase CurrentUser`, ни Cargo, ни MiKTeX заново не запускать. Скрипт не меняет исходный PDF и сохраняет отдельный JSON с диагностикой.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$source = 'https://raw.githubusercontent.com/i-shutov/tikzarium/1987a132de0e7c89043cd1dbb7c465b19f0b0faf/scripts/workstation/windows10/Audit-TikZarium-WindowsPdf.ps1'
+$audit = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\setup\Audit-TikZarium-WindowsPdf.ps1'
+$pdf = Join-Path $env:USERPROFILE 'Documents\TikZarium-QA\evidence\20261110-041404\windows-cyrillic.pdf'
+Invoke-WebRequest -Uri $source -OutFile $audit -UseBasicParsing
+$bytes = [IO.File]::ReadAllBytes($audit)
+if ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) { throw 'Auditor UTF8 BOM missing' }
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $audit -SelfTest
+if ($LASTEXITCODE -ne 0) { throw 'Auditor self-test failed' }
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $audit -PdfPath $pdf
+if ($LASTEXITCODE -ne 0) { throw 'PDF requires inspection of the saved pdf-recheck.json/text files' }
+```
+
+Hosted Windows PowerShell 5.1 [#42792382319](https://github.com/i-shutov/tikzarium/actions/runs/42792382319) подтвердил синтаксис/BOM и self-test, **но это ещё не проверка оригинального PDF Admin**. При неуспехе сохранить файлы из `pdf-recheck-*` и рассмотреть их; не отключать проверку кириллицы ради зелёного статуса.
+
+
 Оригинальный вывод владельца из `C:\Users\Admin` на той же Win10 Pro 22H2: `tikzarium-app` нативно собран за 1m59s, CLI создал `windows-cyrillic.pdf` размером **16 449 байт**, 93 зависимости, время **10.8436788 с**; MiKTeX warning «So far, you have not checked for MiKTeX updates» не был фатальным. Только после успешной сборки `-Phase CurrentUser` остановилась в сравнении результата `pdftotext` со строками `Точка` и `Кириллица`. Оригинальные файл и `pdf-extracted.txt` остались в `Documents\TikZarium-QA\evidence\20261110-041404`.
 
 **Обнаруженная причинная уязвимость**: GitHub `TikZarium-Win10-Setup.ps1` содержал кириллические литералы проверки в **UTF‑8 без BOM**. Windows PowerShell 5.1 на Windows с ANSI codepage может неверно декодировать сам `.ps1` при `-File`, в отличие от UTF‑8 PDF-данных. Под `tikzarium-qa` локальные патчи сохранялись через PowerShell `Set-Content -Encoding UTF8` (с BOM), что согласуется с предыдущим PASS. Это подтверждённый дефект исходной кодировки; до повторного независимого анализа *оригинального PDF Admin* нельзя однозначно заявлять, что он был единственной причиной отказа.
