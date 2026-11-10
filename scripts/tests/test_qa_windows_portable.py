@@ -51,6 +51,25 @@ class WindowsArtifactAcceptance(unittest.TestCase):
         self.assertEqual(report["hosted_extracted_cli"], "NOT_RUN")
         self.assertEqual(report["physical_windows10"], "NOT_RUN")
 
+    def test_windows_readme_not_cross_platform_preview(self):
+        # The Windows release candidate must not ship a generic Linux/macOS
+        # N5 readme that implies an unsupported cross-platform installer.
+        with zipfile.ZipFile(self.zip) as z:
+            content = z.read("Tikzarium-preview/README_RU.md").decode("utf-8")
+            provenance = json.loads(z.read("Tikzarium-preview/PROVENANCE.json"))
+        for required in (
+            "Windows 10 x64", "100% / 96 DPI", "125%", "200%",
+            "OpenGL 2.0+", "MiKTeX/XeLaTeX", "Save & Build",
+            "W4", "NOT_RUN", "НЕ stable 1.0", SHA, RUN,
+        ):
+            self.assertIn(required, content)
+        for wrong in (
+            "N5 native portable PREVIEW", "Linux bundle",
+            "macOS .app", "x86_64/X11",
+        ):
+            self.assertNotIn(wrong, content)
+        self.assertEqual(provenance["physical_windows10"], "NOT_RUN")
+
     def test_cp1252_console_json_keeps_unicode_round_trip(self):
         evidence = {"text": "Фигура — Не менять", "sha": SHA}
         console = qa.console_json(evidence)
