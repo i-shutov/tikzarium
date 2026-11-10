@@ -109,7 +109,11 @@ def validate(root: Path, expected_sha: str) -> dict:
             "Input must not self-assert physical W3 PASS")
 
     host = _as_dict(m.get("host"), "host")
-    require(host.get("os_caption") == "Windows 10 Pro"
+    caption = host.get("os_caption")
+    # Win10 can report "Microsoft Windows 10 Pro" or localized
+    # "Майкрософт Windows 10 Pro"; do not accept Server/Win11.
+    require(isinstance(caption, str)
+            and re.search(r"(?:^|\s)Windows 10 Pro$", caption) is not None
             and type(host.get("os_build")) is int and host["os_build"] >= 19045
             and host.get("arch") == "x64", "W3 requires owner Windows 10 Pro x64")
     require(type(host.get("session_id")) is int and host["session_id"] > 0
@@ -178,8 +182,12 @@ def validate(root: Path, expected_sha: str) -> dict:
                 f"{tool}: expected exactly {count} progressively saved GUI commands")
     require(check_paths[snapshots[TOOLS[-1]]].read_bytes() == final,
             "Final GUI-saved source differs from sixth captured step")
-    seven = owners(check_paths[files["seventh_source"]].read_bytes())
-    require(len(seven) == 7 and tuple(x["tool"] for x in seven[:6]) == TOOLS,
+    seventh_source = check_paths[files["seventh_source"]].read_bytes()
+    require(original_preserved(base, seventh_source),
+            "Seventh gesture mutated unrelated source bytes")
+    seven = owners(seventh_source)
+    require(len(seven) == 7 and tuple(x["tool"] for x in seven[:6]) == TOOLS
+            and seven[:6] == six and seven[6]["id"] not in {x["id"] for x in six},
             "No independent seventh temporary gesture before Undo")
     require(check_paths[files["undo_source"]].read_bytes() == final
             and check_paths[files["reopened_source"]].read_bytes() == final,
