@@ -15,6 +15,7 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{ExtensionStatus, primitives::Evidence};
 
+mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
@@ -670,6 +671,9 @@ struct TikzariumApp {
     help_query: String,
     source_caret: Option<(usize, u64)>,
     show_log: bool,
+    pending_build: bool,
+    pending_build_save_path: String,
+    pending_build_validation_error: Option<String>,
     pending_open: Option<PathBuf>,
     pending_open_save_path: String,
     pending_open_validation_error: Option<String>,
@@ -856,6 +860,9 @@ impl TikzariumApp {
             help_query: String::new(),
             source_caret: None,
             show_log: true,
+            pending_build: false,
+            pending_build_save_path: String::new(),
+            pending_build_validation_error: None,
             pending_open: None,
             pending_open_save_path: String::new(),
             pending_open_validation_error: None,
@@ -883,7 +890,7 @@ impl TikzariumApp {
     }
 
     fn modal_active(&self) -> bool {
-        self.pending_open.is_some() || self.pending_close
+        self.pending_open.is_some() || self.pending_close || self.pending_build
     }
 
     fn intercept_close(&mut self, ctx: &egui::Context) {
@@ -939,6 +946,49 @@ impl TikzariumApp {
                 self.status = error.clone();
                 self.pending_close_validation_error = Some(error);
                 ctx.request_repaint();
+            }
+            None => {}
+        }
+    }
+
+    fn pending_build_ui(&mut self, ctx: &egui::Context) {
+        if !self.pending_build || self.pending_close || self.pending_open.is_some() {
+            return;
+        }
+        let previous_destination = self.pending_build_save_path.clone();
+        let decision = build_save_dialog::show(
+            ctx,
+            &self.document,
+            &mut self.pending_build_save_path,
+            self.pending_build_validation_error.as_deref(),
+        );
+        if self.pending_build_save_path != previous_destination {
+            self.pending_build_validation_error = None;
+        }
+        match decision {
+            Some(build_save_dialog::BuildSaveAction::Save(path)) => {
+                if self.save_to_path(path) {
+                    self.pending_build = false;
+                    self.pending_build_save_path.clear();
+                    self.pending_build_validation_error = None;
+                    // Build uses the newly confirmed document.path, not the
+                    // unrelated Open-path field or another native file dialog.
+                    self.build();
+                } else {
+                    self.pending_build_validation_error = Some(self.status.clone());
+                    ctx.request_repaint();
+                }
+            }
+            Some(build_save_dialog::BuildSaveAction::Reject(error)) => {
+                self.status = error.clone();
+                self.pending_build_validation_error = Some(error);
+                ctx.request_repaint();
+            }
+            Some(build_save_dialog::BuildSaveAction::Cancel) => {
+                self.pending_build = false;
+                self.pending_build_save_path.clear();
+                self.pending_build_validation_error = None;
+                self.status = "Сборка отменена: исходник не изменён".into();
             }
             None => {}
         }
@@ -1169,6 +1219,7 @@ impl TikzariumApp {
             return;
         }
         if self.receiver.is_some() {
+            self.status = "XeLaTeX уже выполняет сборку; дождитесь завершения или отмените её".into();
             return;
         }
         let Some(xelatex) = self.tex.xelatex.clone() else {
@@ -1176,6 +1227,15 @@ impl TikzariumApp {
                 "XeLaTeX missing: install TeX Live/MiKTeX or set TIKZARIUM_XELATEX".into();
             return;
         };
+        if self.document.path.is_none() {
+            // A native Save As picker can be hidden behind an RDP window.
+            // Make the necessary user decision explicit, visible and testable.
+            self.pending_build = true;
+            self.pending_build_save_path.clear();
+            self.pending_build_validation_error = None;
+            self.status = "Укажите путь нового .tex в окне «Сохранение перед сборкой»".into();
+            return;
+        }
         if !self.save() {
             return;
         }
@@ -2840,6 +2900,7 @@ impl eframe::App for TikzariumApp {
                 None => {}
             }
         }
+        self.pending_build_ui(ctx);
     }
 }
 
