@@ -116,7 +116,7 @@ mod tests {
     }
 
     #[test]
-    fn w3_real_egui_save_build_button_preserves_utf8_crlf_and_cancel_is_inert() {
+    fn w3_real_egui_save_build_button_requires_click_and_preserves_utf8_crlf() {
         let dir = tempfile::tempdir().unwrap();
         let destination = dir.path().join("рисунок из GUI.tex");
         let original = "% Комментарий\r\n\\draw (0,0) -- (1,1);\r\n";
