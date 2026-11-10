@@ -2,6 +2,17 @@
 
 ## Актуальный план — 10 ноября 2026
 
+**Отдельная UX-ветка — приоритет читаемого кода и рабочего цикла.** [Критический аудит интерфейса](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) по свежему main, оригинальным PNG и живому осмотру через внешний Default-desktop worker; [релизный UX-план](../roadmap/UX_2026-11-10_RELEASE_PLAN_RU.md). **Синтаксическая подсветка TeX/TikZ в настоящем редакторе обязательна в первой UX-поставке**; выделение созданной строки или приглушение metadata её не заменяют.
+
+| UX-блок | Предлагаемая post-1.0 поставка | Результат / gate | Статус |
+| --- | --- | --- | --- |
+| UX-0 | Baseline | 14 находок, original/live evidence и provenance; пользовательские времена ещё измерить | AUDIT DONE / TIMING NOT_RUN |
+| UX-1 | 1.1 — Читаемый код | Подсветка, номера строк, Find/Replace, Go to line, размер шрифта, metadata styling; source integrity + native editor + performance | PLANNED |
+| UX-2 + UX-3 | 1.2 — Рабочая область и PDF-цикл | Доступные инструменты, компактные свойства/F1, Save & Build picker, состояния/диагностика/export; end-to-end task acceptance | PLANNED |
+| UX-4 | 1.3 — Масштаб и доступность | 125%/200% DPI, keyboard/accessibility, большие исходники и Figure Explorer; физическая и AT9-интеграционная приёмка | PLANNED |
+
+Номера UX-релизов — предложения, не опубликованные теги и не календарные обещания. Существующий draft [PR #128](https://github.com/i-shutov/tikzarium/pull/128) переиспользуется после конфликт-ревью; он не содержит полной подсветки. UX идёт самостоятельной веткой; общие editor/inspector-контракты нужны до массовой GUI-приёмки 88 примеров, **не только в AT9**. Заморозка 1.0 и текущие W2b/IME/W4 остаются по отдельному release control.
+
 **Релиз 1.0:** Windows 10 x64, 100% / 96 DPI, отдельные обязательные W2b/W4, полный build/provenance; 125%/200% перенесены в следующие релизы ([issue #161](https://github.com/i-shutov/tikzarium/issues/161)). PR #155 и #158 интегрированы в main, физическая приёмка и stable GO **не объявлены**. [W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) · [release plan](RELEASE_PREP_WINDOWS_1_0_20261110_RU.md). Все ниже датированные исторические записи остаются архивом, а не актуальными стоп-факторами.
 
 **Новый обязательный post-1.0 scope по решению владельца:** поддержать **все элементы** [AI_TIKZ_SKILLS_2026-11-10](https://drive.google.com/drive/folders/1SVuTweUP2dl5718n0VPtcQ4ryB2ymUW0): **88 конкретных примеров в 16 тематических классах, 35 специализированных расширений, 23 именованные библиотеки, 13 доступных skills и полный контур версий, зависимостей, QA и визуального атласа**. Подробный план и условия приёмки: **[AI TIKZ Skills full support roadmap](../roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md)**, таблица **[88 source cases](../roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv)**. Движки: **85 XeLaTeX + 3 LuaLaTeX** (№65,68,86); LuaLaTeX — строго отдельный будущий explicit project opt-in, не скрытая подмена принятого XeLaTeX.
