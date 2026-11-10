@@ -1,0 +1,136 @@
+name: Windows 10 workstation bootstrap syntax (hosted only)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/workstation/windows10/**'
+      - '.github/workflows/windows10-bootstrap-syntax.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/workstation/windows10/**'
+      - '.github/workflows/windows10-bootstrap-syntax.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ps51-parse:
+    name: Parse PowerShell 5.1 scripts without executing
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Read-only Windows PowerShell 5.1 parser
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $directory = 'scripts/workstation/windows10'
+          $files = @(Get-ChildItem -LiteralPath $directory -File -Filter '*.ps1' -Recurse)
+          if ($files.Count -lt 9) { throw ('Expected at least 9 PS scripts, found ' + $files.Count) }
+          foreach ($f in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$parseErrors)
+            if (@($parseErrors).Count -gt 0) {
+              foreach ($issue in $parseErrors) { Write-Error ($f.Name + ': ' + $issue.Message) }
+              throw ('PowerShell parser failed for ' + $f.Name)
+            }
+            Write-Host ('PARSE PASS: ' + $f.Name)
+          }
+          # Windows PowerShell 5.1 interprets BOM-less .ps1 as ANSI on many
+          # Windows locales. Scripts with literal Cyrillic must be UTF8 BOM.
+          foreach ($filename in @('TikZarium-Win10-Setup.ps1','Audit-TikZarium-WindowsPdf.ps1')) {
+            $file = Join-Path $directory $filename
+            $bytes = [IO.File]::ReadAllBytes($file)
+            if ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) {
+                throw "PS5.1 Unicode literal regression: UTF8 BOM missing in $filename"
+            }
+            Write-Host "PS5.1 UTF8 BOM PASS: $filename"
+          }
+          $setup = Get-Content -LiteralPath (Join-Path $directory 'TikZarium-Win10-Setup.ps1') -Raw
+          if ($setup -match '\$build:') { throw 'Invalid $build: interpolation regression' }
+          if ($setup -match 'winget not found') { throw 'winget dependency regression' }
+          if ($setup -match 'tikzarium-bootstrap-rustup-1\.29\.3\.exe') { throw 'Rustup installer renamed to invalid proxy name' }
+          if ($setup -notmatch 'tikzarium-rustup-1\.29\.3\\rustup-init\.exe') { throw 'Rustup installer must retain rustup-init.exe basename' }
+          if ($setup -notmatch '38027d51d69a5d05493627a0634dbea52d6cd793c8f072d2373d3f4163eec7db') { throw 'Rustup 1.29.3 x64 pinned SHA256 regression' }
+
+          Write-Host 'HOSTED SYNTAX PASS (parser only; physical Windows10 NOT_RUN)'
+      - name: Pure MiKTeX installed-state regression (no external binaries)
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_miktex_package_states.ps1'
+          if ($LASTEXITCODE -ne 0) { throw 'MiKTeX package state test failed' }
+
+      - name: Mesa local per-app launcher static contracts (no graphics or downloads)
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_mesa_w3_launcher.ps1'
+          if ($LASTEXITCODE -ne 0) { throw 'Mesa launcher static contracts failed' }
+
+      - name: Current-user medium-token Admin and WMI fallback static contracts
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_current_user_profile.ps1'
+          if ($LASTEXITCODE -ne 0) { throw 'CurrentUser static contracts failed' }
+
+      - name: Physical Win10 preflight contract with mocked WMI denied (PS5.1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $test = './scripts/workstation/windows10/tests/test_preflight_wmi_denied.ps1'
+          $pass = @(powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test -SimulatedOS Win10 2>&1)
+          if ($LASTEXITCODE -ne 0 -or (($pass | Out-String) -notmatch 'PREFLIGHT PASS')) {
+            throw ('Win10 WMI denied fallback failed: ' + ($pass | Out-String))
+          }
+          $rejected = @(powershell.exe -NoProfile -ExecutionPolicy Bypass -File $test -SimulatedOS Server 2>&1)
+          if ($LASTEXITCODE -eq 0 -or (($rejected | Out-String) -notmatch 'PREFLIGHT FAIL')) {
+            throw ('Windows Server was not rejected: ' + ($rejected | Out-String))
+          }
+          Write-Host 'PREFLIGHT PS5.1 WMI_DENIED_WIN10_PASS SERVER_REJECTION_PASS; no installers executed'
+          # The expected Server rejection leaves LASTEXITCODE=1. GitHub's
+          # PowerShell shell forwards stale LASTEXITCODE after this step.
+          # Both expected outcomes above were checked explicitly.
+          exit 0
+
+      - name: Cyrillic PDF postflight pure text and UTF8 selftest (no TeX)
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/Audit-TikZarium-WindowsPdf.ps1' -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw 'PDF postflight selftest failed' }
+
+  mesa-archive-extraction:
+    name: Verify pinned Mesa archive and x64 DLL layout (hosted-only)
+    if: github.event_name == 'pull_request'
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - name: Verify both publisher SHA256 digests and 7z extraction
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $dir = Join-Path $env:RUNNER_TEMP 'mesa-pinned-extraction'
+          New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          $exe = Join-Path $dir '7zr.exe'
+          $archive = Join-Path $dir 'mesa.7z'
+          $output = Join-Path $dir 'unpacked'
+          Invoke-WebRequest -Uri 'https://github.com/ip7z/7zip/releases/download/26.05/7zr.exe' -OutFile $exe -UseBasicParsing -TimeoutSec 120
+          if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ine '9bf582b894dfa665f852d7e9112b02290a1c303c2d95a21fcdc41ffcb03143b7') { throw 'Publisher 7zr SHA256 mismatch' }
+          Invoke-WebRequest -Uri 'https://github.com/pal1000/mesa-dist-win/releases/download/26.2.6/mesa3d-26.2.6-release-mingw.7z' -OutFile $archive -UseBasicParsing -TimeoutSec 240
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine 'da0f71d9181b672c1918f3c342f11118c687f6059a46b16502845160733cc388') { throw 'Pinned Mesa SHA256 mismatch' }
+          & $exe t $archive
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Mesa archive CRC failed' }
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          & $exe x -y "-o$output" $archive
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Mesa archive extraction failed' }
+          $gl = @(Get-ChildItem -LiteralPath $output -File -Recurse -Filter opengl32.dll | Where-Object { $_.Directory.Name -ieq 'x64' })
+          if ($gl.Count -ne 1) { throw "Expected one x64/opengl32.dll, found $($gl.Count)" }
+          if (-not (Test-Path -LiteralPath (Join-Path $gl[0].Directory.FullName 'libgallium_wgl.dll'))) { throw 'Pinned Mesa x64/libgallium_wgl.dll missing' }
+          Write-Host 'MESA_PINNED_7ZR_EXTRACTION_AND_X64_DLL_LAYOUT_PASS'
+          Write-Host 'This is hosted archive QA, not real Windows 10 W3 GUI acceptance.'
+
