@@ -199,6 +199,14 @@ class W3EvidenceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(EvidenceError, "unrelated source"):
             validate(self.root, SOURCE_SHA)
 
+    def test_prior_native_geometry_mutation_with_same_owner_marker_rejected(self):
+        path = self.root / self.m["source_snapshots"]["rectangle"]
+        path.write_bytes(path.read_bytes().replace(b"\\\\draw (0,0)", b"\\\\draw (9,9)", 1))
+        self.m["sha256"][self.m["source_snapshots"]["rectangle"]] = digest(path)
+        save(self.root, self.m)
+        with self.assertRaisesRegex(EvidenceError, "prior native TikZ command"):
+            validate(self.root, SOURCE_SHA)
+
     def test_lost_real_input_step_and_foreign_owner_rejected(self):
         self.m["events"][3]["pid"] = 999
         save(self.root, self.m)
