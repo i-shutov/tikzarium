@@ -12,15 +12,11 @@
 - **Пользовательская интерактивная RDP-сессия `Admin`:** владелец **явно запускает** только диагностический скрипт из *обычного, неповышенного PowerShell* внутри `Default`. Запуск из консоли Codex, терминала sandbox, службы или отключённого RDP даст корректный `BLOCKED`.
 - **Родной Win32 capture:** используется уже существующий `scripts/tools/qa_windows_owned_client_capture.ps1`. Он проверяет PID, session, foreground, DPI, активный input desktop и реальные клиентские пиксели; захват не содержит чтения всего рабочего стола. При сбое OpenGL/PrintWindow вернуть `BLOCKED`, не подставлять кадры и не объявлять W3 PASS.
 
-## Важная поправка к запуску TikZarium
+## Важная поправка: GUI должен запускаться из реального Default
 
-Процесс TikZarium, **порождённый командой из CodexSandboxDesktop**, может унаследовать этот изолированный desktop и никогда не появиться в пользовательском Default. Поэтому просто открыть в Default отдельный диагностический PowerShell недостаточно. Нужно **явно запустить уже подготовленный Mesa RunPrepared из обычного RDP PowerShell**, не из локального терминала Codex (если оригинальный GUI от Codex ещё работает на sandbox desktop, его не следует считать физическим GUI). В первом RDP окне:
-```powershell
-$mesa = "$env:USERPROFILE\Documents\TikZarium-QA\Invoke-TikZarium-W3-Mesa.ps1"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $mesa -Action RunPrepared
-```
-Если скрипт был сохранён по другому пути, указать существующий проверенный launcher; скачивать повторно Mesa или менять системные библиотеки не нужно. Этот процесс работает до закрытия окна TikZarium. **Второе** окно PowerShell используется для запуска диагностики из этапа A. Не запускать из среды Codex Sandbox, не отправлять команды между desktop через запланированные задачи.
+Процесс TikZarium, **порождённый командой из CodexSandboxDesktop**, может унаследовать этот изолированный desktop и не появиться в пользовательском `Default`. Скрипт имеет явно выбранное владельцем действие **`LaunchAndProbe`**: при отсутствии TikZarium на текущем Default он запускает **уже проверенный** `W3-Mesa-26.2.6\runtime\tikzarium-app.exe` с процессным llvmpipe окружением, затем ограниченно ожидает собственный HWND и проверяет геометрию. Повторной загрузки Mesa, установки TeX, изменения глобального PATH, драйверов или реестра нет. Если настоящая Default GUI-сессия не подтверждена, запуск даже не начинается. Не запускать эту команду из Codex Sandbox: это не средство перехода через границу desktop.
 
+Уже существующий на `CodexSandboxDesktop` процесс PID 7088 не является доказательством рабочего интерактивного GUI в `Default`; он может продолжать существовать отдельно и не должен использоваться для W3. Для владельца достаточно одного обычного PowerShell, открытого непосредственно в RDP-сессии Admin.
 ## Этап A — read-only Default-desktop probe
 
 **Только если уже открыт обычный, не elevated PowerShell в интерактивной RDP-сессии Admin:** убедиться, что checkout `C:\Users\Admin\source\tikzarium` обновлён из доверенного `main`, в нём есть `scripts\tools\qa_windows_owned_client_capture.ps1`, а TikZarium запущен через прежний Mesa launcher.
@@ -29,10 +25,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File $mesa -Action RunPrepare
 
 ```powershell
 $script = "$env:USERPROFILE\source\tikzarium\scripts\workstation\windows10\Invoke-TikZarium-W3-DefaultDesktop-Probe.ps1"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Action Probe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Action LaunchAndProbe
 ```
 
-Для чтения ONLY диагностического скрипта (до интеграции в main) можно использовать GitHub raw URL закреплённого SHA. **Проверять ссылку и SHA перед запуском**. Скрипт в режиме `Probe` не нажимает кнопки, не переводит окно в foreground, не меняет документы и не захватывает изображение. Он создаёт новый каталог доказательств с JSON (десктоп, WTS, PID/HWND, geometry, SHA256 EXE), никогда не перезаписывает прежние отчёты.
+Для чтения ONLY диагностического скрипта (до интеграции в main) можно использовать GitHub raw URL закреплённого SHA. **Проверять ссылку и SHA перед запуском**. Режим `Probe` не запускает окна и не делает скриншоты. `LaunchAndProbe` открывает только подготовленный локальный EXE (если его нет на Default), но не меняет системные настройки, не переключает desktop, не нажимает кнопки и не захватывает изображение. Он создаёт новый каталог доказательств с JSON (десктоп, WTS, PID/HWND, geometry, SHA256 EXE), никогда не перезаписывает прежние отчёты.
 
 - `PHYSICAL_DEFAULT_DESKTOP_GEOMETRY_PASS_NOT_W3` подтверждает только доступность настоящей клиентской геометрии из `Default`.
 - `BLOCKED` означает отсутствие подходящего desktop/session/window или неверный EXE. Открыть JSON и исследовать причину. **Не менять UAC, RDP и sandbox ради этого.**
