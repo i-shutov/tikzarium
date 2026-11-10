@@ -71,26 +71,34 @@ fn is_owned_marker(line_before: &str, comment: &str) -> bool {
     if !prefix.ends_with(';') {
         return false;
     }
-    let starts_with_owned_command = ["\\draw", "\\path", "\\node"]
-        .iter()
-        .any(|command| prefix.strip_prefix(command).is_some_and(|tail| {
-            tail.chars().next().is_some_and(|c| matches!(c, ' ' | '[' | '('))
-        }));
+    let starts_with_owned_command = ["\\draw", "\\path", "\\node"].iter().any(|command| {
+        prefix.strip_prefix(command).is_some_and(|tail| {
+            tail.chars()
+                .next()
+                .is_some_and(|c| matches!(c, ' ' | '[' | '('))
+        })
+    });
     if !starts_with_owned_command {
         return false;
     }
-    let Some(payload) = comment.trim_end_matches(|c| c == '\r' || c == '\n')
-        .strip_prefix("% tikzarium:n1:") else {
+    let Some(payload) = comment
+        .trim_end_matches(|c| c == '\r' || c == '\n')
+        .strip_prefix("% tikzarium:n1:")
+    else {
         return false;
     };
-    let Ok(serde_json::Value::Array(items)) = serde_json::from_str::<serde_json::Value>(payload) else {
+    let Ok(serde_json::Value::Array(items)) = serde_json::from_str::<serde_json::Value>(payload)
+    else {
         return false;
     };
     items.len() == 4
         && items[0].as_u64() == Some(2)
         && items[1].as_u64().is_some_and(|id| id > 0)
         && items[2].as_str().is_some_and(|kind| {
-            matches!(kind, "line" | "arrow" | "rectangle" | "circle" | "node" | "bezier")
+            matches!(
+                kind,
+                "line" | "arrow" | "rectangle" | "circle" | "node" | "bezier"
+            )
         })
         && items[3].is_object()
 }
@@ -126,7 +134,10 @@ pub(crate) fn tokenize(source: &str) -> Vec<Span> {
                 ("\\begin{Verbatim}", "\\end{Verbatim}"),
                 ("\\begin{lstlisting}", "\\end{lstlisting}"),
             ];
-            if let Some((begin, end)) = blocks.iter().find(|(begin, _)| source[i..].starts_with(begin)) {
+            if let Some((begin, end)) = blocks
+                .iter()
+                .find(|(begin, _)| source[i..].starts_with(begin))
+            {
                 span(&mut spans, i, i + begin.len(), Kind::Plain);
                 verbatim_end = Some(end);
                 i += begin.len();
@@ -219,7 +230,11 @@ pub(crate) fn tokenize(source: &str) -> Vec<Span> {
                 i += 1;
             }
             b'$' => {
-                let end = if source[i..].starts_with("$$") { i + 2 } else { i + 1 };
+                let end = if source[i..].starts_with("$") {
+                    i + 2
+                } else {
+                    i + 1
+                };
                 span(&mut spans, i, end, Kind::Math);
                 i = end;
             }
@@ -337,12 +352,8 @@ pub(crate) fn layout_job(
     colors: Palette,
     max_width: f32,
 ) -> egui::text::LayoutJob {
-    let mut job = egui::text::LayoutJob::simple(
-        String::new(),
-        font.clone(),
-        colors.plain,
-        max_width,
-    );
+    let mut job =
+        egui::text::LayoutJob::simple(String::new(), font.clone(), colors.plain, max_width);
     for part in tokenize(source) {
         job.append(
             &source[part.start..part.end],
@@ -382,10 +393,7 @@ mod tests {
             tokens.iter().filter(|x| x.kind == Kind::Metadata).count(),
             1,
         );
-        assert_eq!(
-            tokens.iter().filter(|x| x.kind == Kind::Comment).count(),
-            1,
-        );
+        assert_eq!(tokens.iter().filter(|x| x.kind == Kind::Comment).count(), 1,);
     }
 
     #[test]
@@ -396,7 +404,12 @@ mod tests {
             "\\draw (0,0)--(1,1); % tikzarium:n1:fake",
             "\\draw (0,0)--(1,1); % tikzarium:n1:[2,1,\"opaque\",{}]",
         ] {
-            assert!(tokenize(text).iter().all(|token| token.kind != Kind::Metadata), "{text}");
+            assert!(
+                tokenize(text)
+                    .iter()
+                    .all(|token| token.kind != Kind::Metadata),
+                "{text}"
+            );
         }
     }
 
@@ -411,7 +424,10 @@ mod tests {
         for text in samples {
             let tokens = tokenize(text);
             check_partition(text, &tokens);
-            assert!(tokens.iter().all(|token| token.kind != Kind::Metadata), "{text}");
+            assert!(
+                tokens.iter().all(|token| token.kind != Kind::Metadata),
+                "{text}"
+            );
         }
     }
 
@@ -426,8 +442,16 @@ mod tests {
                 let job = layout_job(source, FontId::monospace(14.0), colors, width);
                 assert_eq!(job.text.as_bytes(), source.as_bytes());
                 assert_eq!(job.wrap.max_width, width);
-                assert!(job.sections.iter().any(|s| s.format.color == colors.command));
-                assert!(job.sections.iter().any(|s| s.format.color == colors.comment));
+                assert!(
+                    job.sections
+                        .iter()
+                        .any(|s| s.format.color == colors.command)
+                );
+                assert!(
+                    job.sections
+                        .iter()
+                        .any(|s| s.format.color == colors.comment)
+                );
                 assert!(job.sections.iter().any(|s| s.format.color == colors.option));
                 assert!(job.sections.iter().any(|s| s.format.color == colors.number));
             }
@@ -464,10 +488,14 @@ mod tests {
             "\\draw (1,1) circle[radius=1cm]; % tikzarium:n1:[2,4,\"circle\",{}]",
             "\\node at (0,0) {Test}; % tikzarium:n1:[2,5,\"node\",{}]",
             "\\draw (0,0)..controls(1,1)and(2,2)..(3,3); % tikzarium:n1:[2,6,\"bezier\",{}]",
-        ].join("\n");
+        ]
+        .join("\n");
         let tokens = tokenize(&lines);
         check_partition(&lines, &tokens);
-        assert_eq!(tokens.iter().filter(|t| t.kind == Kind::Metadata).count(), 6);
+        assert_eq!(
+            tokens.iter().filter(|t| t.kind == Kind::Metadata).count(),
+            6
+        );
         let job = layout_job(
             &lines,
             FontId::monospace(18.0),
@@ -482,6 +510,9 @@ mod tests {
         let text = "\\draw[red,thick] (1cm,2cm)--(3cm,4cm);\r\n".repeat(10_000);
         let tokens = tokenize(&text);
         check_partition(&text, &tokens);
-        assert!(tokens.len() < text.len() / 2, "tokens should coalesce contiguous bytes");
+        assert!(
+            tokens.len() < text.len() / 2,
+            "tokens should coalesce contiguous bytes"
+        );
     }
 }
