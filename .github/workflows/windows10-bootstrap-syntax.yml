@@ -30,7 +30,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $directory = 'scripts/workstation/windows10'
           $files = @(Get-ChildItem -LiteralPath $directory -File -Filter '*.ps1' -Recurse)
-          if ($files.Count -lt 8) { throw ('Expected at least 8 PS scripts, found ' + $files.Count) }
+          if ($files.Count -lt 9) { throw ('Expected at least 9 PS scripts, found ' + $files.Count) }
           foreach ($f in $files) {
             $tokens = $null
             $parseErrors = $null
@@ -85,6 +85,12 @@ jobs:
           # PowerShell shell forwards stale LASTEXITCODE after this step.
           # Both expected outcomes above were checked explicitly.
           exit 0
+
+      - name: Cyrillic PDF postflight pure text and UTF8 selftest (no TeX)
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/Audit-TikZarium-WindowsPdf.ps1' -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw 'PDF postflight selftest failed' }
 
   mesa-archive-extraction:
     name: Verify pinned Mesa archive and x64 DLL layout (hosted-only)
