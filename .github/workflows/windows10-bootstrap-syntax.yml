@@ -71,6 +71,12 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_mesa_w3_launcher.ps1'
           if ($LASTEXITCODE -ne 0) { throw 'Mesa launcher static contracts failed' }
 
+      - name: W3 staged executable/Mesa manifest adversarial PowerShell 5.1 checks
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File './scripts/workstation/windows10/tests/test_w3_prepared_runtime.ps1'
+          if ($LASTEXITCODE -ne 0) { throw 'W3 staged runtime integrity negative tests failed' }
+
       - name: Current-user medium-token Admin and WMI fallback static contracts
         shell: powershell
         run: |
