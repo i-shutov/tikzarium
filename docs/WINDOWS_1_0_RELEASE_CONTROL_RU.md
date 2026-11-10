@@ -1,5 +1,14 @@
 # Windows 1.0 — релизный контроль TikZarium (GO / NO-GO)
 
+## 2026-11-10 — existing Admin profile on Windows 10: CurrentUser bootstrap candidate
+
+Владелец подтвердил, что ChatGPT установлен в профиле `VM-910136\admin` на Windows 10 Pro 22H2 x64 build `19045.4412`. Локальные команды `hostname` и `whoami` выполнились, но `Get-CimInstance Win32_OperatingSystem` в изолированном Codex процессе вернул `Access denied` (medium integrity, Administrator SID `deny-only`). Computer Use смог перечислить окна (пока только ChatGPT), а `tikzarium-app.exe` в текущем профиле не найден. Это **не** отказ системы и не основание менять WMI/UAC.
+
+В [PR #150](https://github.com/i-shutov/tikzarium/pull/150) добавлен явный `-Phase CurrentUser`: те же проверенные Rustup/MiKTeX/Poppler/CLI+PDF шаги, но в текущем непривилегированном процессе под существующим Admin. Старый `-Phase User` для `tikzarium-qa` сохранён, `-Phase Machine` повторять нельзя. Для ОС/версии есть read-only fallback реестра, без WMI ACL. Mesa launcher также поддерживает medium token Admin и read-only registry check. Отдельный hosted PS5.1 статический тест проверяет маршрут и отсутствие требуемого `tikzarium-qa` для `CurrentUser`.
+
+**Статус:** схема успешно испытана под `tikzarium-qa` на физическом Windows10 до GUI start; аналогичный путь под `Admin` — **CANDIDATE / NOT_RUN** до реального запуска. Старое подтверждение W3 GUI START под QA-профилем не переносить автоматически. Для работы Computer Use требуется открыть TikZarium именно в текущем интерактивном профиле Admin, затем воспроизвести Build, F1, мышь, Save/Open и GUI→PDF. Всё выполнять только с разрешением владельца и без прямого изменения `main`.
+
+
 ## 2026-11-09 — W3 физическая Windows 10: нативное GUI-окно появилось через изолированную Mesa
 
 **Новое оригинальное визуальное свидетельство от владельца в RDP-сеансе `tikzarium-qa`:** после SHA-проверенной Mesa 26.2.6 и распаковки через 7zr виден работающий процесс `TikZarium` с настоящим окном. На скриншоте одновременно присутствуют верхнее меню/панель инструментов, вкладки `Эскиз`/`PDF`, редактируемый текст обычного `.tex` в левой колонке (quickstart), сетка холста в центре, правая панель `Свойства`/`Библиотеки`/`Справка`, русские подписи и состояние `Изменено`. Прежний `OpenGL(PainterError("egui_glow requires opengl 2.0+. "))` перестал блокировать создание окна при изолированном пользовательском запуске. **Никаких подтверждений F1, редакторской операции мышью, Save/Open, GUI→PDF или DPI200 из одного скриншота нет.**

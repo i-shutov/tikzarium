@@ -1,5 +1,14 @@
 # TikZarium — release resume, 2026-11-09
 
+## 2026-11-10 — existing Admin profile on Windows 10: CurrentUser bootstrap candidate
+
+Владелец подтвердил, что ChatGPT установлен в профиле `VM-910136\admin` на Windows 10 Pro 22H2 x64 build `19045.4412`. Локальные команды `hostname` и `whoami` выполнились, но `Get-CimInstance Win32_OperatingSystem` в изолированном Codex процессе вернул `Access denied` (medium integrity, Administrator SID `deny-only`). Computer Use смог перечислить окна (пока только ChatGPT), а `tikzarium-app.exe` в текущем профиле не найден. Это **не** отказ системы и не основание менять WMI/UAC.
+
+В [PR #150](https://github.com/i-shutov/tikzarium/pull/150) добавлен явный `-Phase CurrentUser`: те же проверенные Rustup/MiKTeX/Poppler/CLI+PDF шаги, но в текущем непривилегированном процессе под существующим Admin. Старый `-Phase User` для `tikzarium-qa` сохранён, `-Phase Machine` повторять нельзя. Для ОС/версии есть read-only fallback реестра, без WMI ACL. Mesa launcher также поддерживает medium token Admin и read-only registry check. Отдельный hosted PS5.1 статический тест проверяет маршрут и отсутствие требуемого `tikzarium-qa` для `CurrentUser`.
+
+**Статус:** схема успешно испытана под `tikzarium-qa` на физическом Windows10 до GUI start; аналогичный путь под `Admin` — **CANDIDATE / NOT_RUN** до реального запуска. Старое подтверждение W3 GUI START под QA-профилем не переносить автоматически. Для работы Computer Use требуется открыть TikZarium именно в текущем интерактивном профиле Admin, затем воспроизвести Build, F1, мышь, Save/Open и GUI→PDF. Всё выполнять только с разрешением владельца и без прямого изменения `main`.
+
+
 ## 2026-11-09 — единый runbook и Dot W3 GUI handoff
 
 В PR #150 вместо последовательности архивов v1–v5 подготовлена **одна каноническая инструкция** [Windows 10 bootstrap, CLI, Mesa, W3 и Dot](../scripts/workstation/windows10/README_RU.md). Описаны подтверждённые факты Machine/User/CLI PDF, изолированный llvmpipe, исходные доказательства и ограничения по правам. Отдельное [задание для Dot](DOT_WINDOWS10_W3_GUI_HANDOFF_RU.md) предназначено для локальной Work-задачи **после явного Allow access через ChatGPT desktop app** на самой QA-машине; подключение нельзя инициировать только записью в GitHub.
