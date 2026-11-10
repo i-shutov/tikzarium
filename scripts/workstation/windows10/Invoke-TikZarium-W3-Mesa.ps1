@@ -225,24 +225,7 @@ if ($Action -eq 'SelfTest') {
 }
 # A release-grade physical GUI trial must always name its previously accepted
 # exact main commit. A stale local main or old compiled EXE is not valid W3.
-if ($ExpectedSourceSha -cnotmatch '^[0-9a-f]{40}
-# Read-only edition/build check works in Codex restricted token (WMI may be denied).
-$cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
-$build = if ($cv.CurrentBuildNumber) { [int]$cv.CurrentBuildNumber } else { [int]$cv.CurrentBuild }
-if ([string]$cv.ProductName -match 'Windows Server' -or $build -lt 19045) {
-    throw 'Requires Windows 10/11 x64 workstation build 19045+; do not run on personal Server.'
-}
-$current = [Security.Principal.WindowsIdentity]::GetCurrent()
-$principal = New-Object Security.Principal.WindowsPrincipal($current)
-if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw 'Run W3 isolated software GL QA without elevation (medium token); Administrator account itself is allowed.'
-}
-switch ($Action) {
-    'PrepareAndRun' { Prepare-MesaRuntime; Run-IsolatedGui }
-    'PrepareOnly'  { Prepare-MesaRuntime }
-    'RunPrepared'  { Run-IsolatedGui }
-}
-) {
+if ($ExpectedSourceSha -cnotmatch '^[0-9a-f]{40}$') {
     throw 'W3_EXPECTED_SOURCE_SHA_REQUIRED: pass -ExpectedSourceSha with the full previously accepted 40-digit main SHA.'
 }
 if (-not [Environment]::Is64BitProcess) { throw 'Run 64-bit Windows PowerShell for x64 TikZarium/Mesa.' }
