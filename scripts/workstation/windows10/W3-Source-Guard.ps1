@@ -59,10 +59,17 @@ function Get-W3SourceProof {
         Select-Object -ExpandProperty FullName)
     $inputs += @(Get-ChildItem -LiteralPath (Join-Path $Repo 'extensions') -Recurse -File -Filter '*.toml' |
         Select-Object -ExpandProperty FullName)
-    $stale = @($inputs | Where-Object {
-        -not (Test-Path -LiteralPath $_ -PathType Leaf) -or
-        -not (Test-W3Freshness $appUtc (Get-Item -LiteralPath $_).LastWriteTimeUtc)
-    })
+    $stale = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($item in $inputs) {
+        if (-not (Test-Path -LiteralPath $item -PathType Leaf)) {
+            [void]$stale.Add($item)
+            continue
+        }
+        $inputUtc = (Get-Item -LiteralPath $item).LastWriteTimeUtc
+        if (-not (Test-W3Freshness -ExeUtc $appUtc -SourceUtc $inputUtc)) {
+            [void]$stale.Add($item)
+        }
+    }
     if ($stale.Count -gt 0) {
         throw "W3_STALE_APP_EXE: newer build input $($stale[0]); rerun cargo build --locked -j 1 -p tikzarium-app"
     }
