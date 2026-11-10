@@ -91,6 +91,13 @@ function Assert-W3PreparedRuntime {
         throw 'W3_PREPARED_MANIFEST_MISSING: run PrepareAndRun / PrepareOnly'
     }
     $report = Get-Content -LiteralPath $ReportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    # Under Set-StrictMode a missing property throws before a normal $null
+    # check. Enforce a predictable fail-closed error for truncated JSON.
+    foreach ($field in @('scope','status','source_proof','runtime_dll_sha256','isolated_app_sha256')) {
+        if ($null -eq $report.PSObject.Properties[$field]) {
+            throw "W3_PREPARED_MANIFEST_UNVERIFIED: required $field absent"
+        }
+    }
     if ($report.scope -cne 'ISOLATED_USER_W3_MESA_LLVMPIPE_QA_ONLY' -or
         $report.status -cne 'MESA_PREPARED_GUI_NOT_YET_ACCEPTED' -or
         $null -eq $report.source_proof -or
