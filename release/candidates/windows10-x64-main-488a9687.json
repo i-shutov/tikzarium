@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "document_purpose": "QA_PORTABLE_CANDIDATE_NOT_STABLE_RELEASE",
+  "release_target": "TikZarium Windows 1.0",
+  "source_sha": "488a9687c404f9714eecbcb8ccb4edbf97a54d89",
+  "platform": "windows10-x64",
+  "artifact_source": {
+    "github_actions_run": "https://github.com/i-shutov/tikzarium/actions/runs/42801981799",
+    "artifact_id": 13755873935,
+    "artifact_name": "tikzarium-windows-x64-portable-candidate",
+    "outer_artifact_sha256": "68a2085ea045c1c72cf426e267c20c973edd377d8e1ca9fdf2be7b42f5b715b4",
+    "inner_zip_name": "Tikzarium-Windows-x64-portable-candidate.zip",
+    "inner_zip_sha256": "17f30f6b6d9d7a2c6bae24dc81ab17b010564ae2882ad37014265903e6c4b595",
+    "inner_zip_size_bytes": 3779362
+  },
+  "independent_verification": {
+    "method": "read original GitHub-hosted artifact, check ZIP CRC, compare every MANIFEST.sha256 member to actual SHA256",
+    "status": "PASS",
+    "manifest_sha256": "3cebcad9dc386c15724506060cd3117123052b6ab21007895a5e9f3973536b77",
+    "verified_entries": 5,
+    "member_sha256": {
+      "PROVENANCE.json": "002337f2a64b2b98fcf78b13f2f58b7f86b381357a50ec844c735074f842d435",
+      "README_RU.md": "6a3b37406790d3a555b5ce8c65f7756ec00b1cac5f821f33ac762e1524da0c8f",
+      "qa/figure-crlf.tex": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d",
+      "tikzarium-app.exe": "f8f534d36d5fd26fcef5f8c47094871bc81882c3cfbb25411ad46975da3915a5",
+      "tikzarium-cli.exe": "aae564e8198c5adeabda4b32aadf1a3f435b9e01ff5cacd8892f5acf5b36b50c"
+    },
+    "cli_extracted_hosted": "PASS_HELP_NO_XELATEX_HOSTED_WINDOWS",
+    "pe_app_subsystem": 2,
+    "pe_cli_subsystem": 3
+  },
+  "ci": {
+    "native_portable_windows_macos_linux": "https://github.com/i-shutov/tikzarium/actions/runs/42801981799",
+    "qa_matrix": "https://github.com/i-shutov/tikzarium/actions/runs/42801982082",
+    "admin_regression": "https://github.com/i-shutov/tikzarium/actions/runs/42801981806",
+    "workstation_syntax": "https://github.com/i-shutov/tikzarium/actions/runs/42801981821"
+  },
+  "release_gates": {
+    "W0_hosted_portable": "PASS_SOURCE_BOUND",
+    "W1_personal_server_native_pdf": "HISTORIC_PASS_NEEDS_EXACT_RELEASE_HEAD_CHECK",
+    "W2a_personal_server_owned_hwnd_f1": "HISTORIC_PASS",
+    "W2b_personal_server_full_physical_gui": "NOT_ACCEPTED_IN_REPO",
+    "W3_physical_windows10_full_gui": "NOT_ACCEPTED_IN_REPO",
+    "W4_clean_install_uninstall": "NOT_RUN",
+    "signed_installer": "NOT_VERIFIED",
+    "stable_tag": "NOT_CREATED"
+  },
+  "notes": [
+    "This manifest does not itself authorize a stable or pre-release GitHub release.",
+    "No standalone Mesa3D runtime, TeX, copyrighted fonts or developer signing material included in portable ZIP.",
+    "If main changes, rebuild and reverify the exact release SHA before promoting any candidate.",
+    "Owner reported blockers lifted on 2026-11-10; physical original W2b/W3 evidence not yet linked to current main on GitHub."
+  ]
+}
