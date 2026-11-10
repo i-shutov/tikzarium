@@ -1,5 +1,23 @@
 # Roadmap — TikZ-native visual authoring
 
+## Решение владельца 10.11.2026 — ВСЕ UIX-находки входят в Windows 1.0
+
+**Последняя команда владельца: «нет, тащи их в 1.0. делай мердж и веди разработку».** Все **UX-F01…UX-F14** из [критического UIX-аудита](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) теперь обязательны **до** выпуска Windows 1.0 и до массового подключения 35 предметных расширений. Исходный аудит `0f2a1f1` уже влит в main как [PR #166](https://github.com/i-shutov/tikzarium/pull/166). [Авторитетные gates UIX/1.0](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md).
+
+| Порядок 1.0 | Результат | Приёмка |
+| --- | --- | --- |
+| **UX0** | Критический аудит 14 проблем и точное исходное GUI evidence | AUDIT AVAILABLE; user task timings NOT_RUN |
+| **UX1 — текстовый редактор** | Реальная TeX/TikZ подсветка, metadata styling, номера строк, Find/Replace, Go to line, размер шрифта, перенос | G1 byte integrity, G2 physical native GUI, G3 perf, T1/T2/T5; **NOT_ACCEPTED** |
+| **UX2 — рабочая область** | 6 tools за один выбор, понятная разница sketch/PDF, компактный Inspector и F1, единый Apply, клавиатурный focus | T3/T4 + визуальная physical QA; **NOT_ACCEPTED** |
+| **UX3 — сборка/PDF** | Save & Build picker, disabled reason, сообщения, current/stale PDF, доступный export и отмена | T0/T5/T6/T7, exact external XeLaTeX PDF; **NOT_ACCEPTED** |
+| **UX4 — эргономика и масштаб** | Стресс-документы, доступность, реальные **96/125/200% DPI** и смена монитора (#161), IME отдельно от русской раскладки | Physical/independent; **NOT_ACCEPTED** |
+| **UX5 — W2b/W3/W4** | Финальная portable ZIP с exact-source QA, native workflow/rollback и независимой приёмкой | **NO-GO** до обязательных UX и W2b/W3/IME/W4 |
+
+**Последовательность обязательна:** UX1 → UX2 + UX3 → UX4 → UX5/Windows 1.0 → **GUI-адаптеры расширений AT2…AT9**. AT0 source intake и AT1 engine/source research могут идти параллельно, но не заменяют пользовательскую эргономику. 35 пакетов/88 рисунков и Scientific-142 — после 1.0, не в составе 1.0.
+
+**Переопределено:** прежние «1.0 только 96 DPI», «125/200 после релиза», «UX в 1.1–1.3» и «полная заморозка UX» ниже — исторические. Scope 1.0 расширен **только ради UX**; TeX safety, external MiKTeX, W2b/IME/W4 и независимая приёмка сохранены. Новый scope существенно увеличивает release gate, но не является PASS или разрешением поставить стабильный тег.
+
+
 ## Актуальный план — 10 ноября 2026
 
 **Отдельная UX-ветка — приоритет читаемого кода и рабочего цикла.** [Критический аудит интерфейса](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) по свежему main, оригинальным PNG и живому осмотру через внешний Default-desktop worker; [релизный UX-план](../roadmap/UX_2026-11-10_RELEASE_PLAN_RU.md). **Синтаксическая подсветка TeX/TikZ в настоящем редакторе обязательна в первой UX-поставке**; выделение созданной строки или приглушение metadata её не заменяют.
