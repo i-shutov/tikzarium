@@ -4,11 +4,14 @@
 
 **Интегрированные исходники:** `main` `488a9687c404f9714eecbcb8ccb4edbf97a54d89` (PR #150, #152 и #153 включены). Если Win10 Admin локально содержит более старую копию `target\\debug\\tikzarium-app.exe`, её запуск не проверяет новую версию кнопки `▶ Build`. Проверенный изолированный launcher [Invoke-TikZarium-W3-Mesa.ps1](Invoke-TikZarium-W3-Mesa.ps1) теперь использует соседний [W3-Source-Guard.ps1](W3-Source-Guard.ps1): до изменения QA runtime проверяет доверенную локальную main, чистое дерево, включённый PR #152 и свежесть EXE; при запуске сверяет SHA256 подготовленного EXE и всех Mesa DLL. Вновь скачивать Rust/MiKTeX/Poppler, запускать `Machine` или `CurrentUser` **не требуется**.
 
+**Внимание:** commit `488a9687` — исторический подтверждённый срез до последующей интеграции W3 guard. Для нового запуска заменить плейсхолдер `$expected` точным SHA **последнего принятого main** по GitHub и проверить совпадение локального HEAD. Не брать SHA только из самого локального checkout как доказательство его актуальности; несовпадение блокирует запуск, а не служит поводом для `git reset`.
+
 Команды для локального Computer Use / Dot в активном обычном medium-token `Admin` (исполняются самим локальным агентом только при доступном ему GUI/PowerShell, а не данным GitHub-чатом):
 
 ```powershell
 $repo = Join-Path $env:USERPROFILE 'source\\tikzarium'
-$expected = '488a9687c404f9714eecbcb8ccb4edbf97a54d89'
+# SHA нужно взять из последнего независимо принятого GitHub main, а не из старого локального HEAD.
+$expected = 'PASTE_APPROVED_FULL_40_HEX_MAIN_SHA_HERE'
 & 'C:\\Program Files\\Git\\cmd\\git.exe' -C $repo rev-parse HEAD
 $launcher = Join-Path $repo 'scripts\\workstation\\windows10\\Invoke-TikZarium-W3-Mesa.ps1'
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Action SelfTest
