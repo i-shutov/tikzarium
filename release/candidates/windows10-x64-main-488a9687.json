@@ -43,7 +43,11 @@
     "W3_physical_windows10_full_gui": "NOT_ACCEPTED_IN_REPO",
     "W4_clean_install_uninstall": "NOT_RUN",
     "signed_installer": "NOT_VERIFIED",
-    "stable_tag": "NOT_CREATED"
+    "stable_tag": "NOT_CREATED",
+    "W3_96dpi_original_gui_evidence": "INDEPENDENTLY_ACCEPTED_ORIGINAL_45_CHECKS_AND_VISUAL_REVIEW",
+    "W3_120dpi_required_for_1_0": "DEFERRED_BY_OWNER",
+    "W3_192dpi_required_for_1_0": "DEFERRED_BY_OWNER",
+    "W2b_extra_120_192dpi_required_for_1_0": "DEFERRED_BY_OWNER"
   },
   "notes": [
     "This manifest does not itself authorize a stable or pre-release GitHub release.",
@@ -104,5 +108,28 @@
     "verified_exact_full_gui_exe_sha": false,
     "manual_visual_note": "Six figures appear progressively; Arial PDF test label overlaps existing node due to selected insertion coordinates; do not overwrite original evidence",
     "acceptance": "NO_GO_UNTIL_ORIGINAL_BYTES_AND_REMAINING_PHYSICAL_GATES"
+  },
+  "release_1_0_display_scope": {
+    "owner_decision_date": "2026-11-10",
+    "release_platform": "Windows 10 x64",
+    "physically_qualified_dpi": [
+      96
+    ],
+    "dpi_96_independent_original_review": "ACCEPTED_FOR_100_PERCENT_GUI_SUBSET",
+    "deferred_nonblocking_dpi": [
+      120,
+      192
+    ],
+    "deferred_follow_up": "https://github.com/i-shutov/tikzarium/issues/161",
+    "statement": "High-DPI 125% and 200% are not tested/qualified for Windows 1.0; they are deferred, not PASS or FAIL.",
+    "other_gates_unchanged": [
+      "W2b_full_GUI",
+      "IME_composition_scope_or_test",
+      "W4_clean_deploy_and_rollback",
+      "exact_release_sha_postmerge_CI"
+    ],
+    "signed_installer": "NOT_VERIFIED",
+    "stable_release": "NOT_CREATED",
+    "independent_review": "docs/W3_WIN10_20261110_INDEPENDENT_ORIGINAL_REVIEW_RU.md"
   }
 }

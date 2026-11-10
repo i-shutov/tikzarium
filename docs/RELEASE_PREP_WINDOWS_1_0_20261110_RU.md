@@ -2,6 +2,29 @@
 
 > **Режим:** RELEASE PREPARATION / QA CANDIDATE. Не stable GO и не разрешение публиковать `v1.0.0`. Владелец сообщил, что технические блокеры сняты. В публичной базе доказательств при проверке отсутствовала завершённая физическая приёмка W2b/W3. Это две разные констатации: можно готовить пакет сейчас, но нельзя выдумывать результаты физического тестирования.
 
+## Релизный маршрут Windows v1.0.0 — решение 10 ноября 2026
+
+> Scope: **Windows 10 x64 при 100% / 96 DPI**. DPI 120/192 физически не квалифицируем для 1.0, переносим в [#161](https://github.com/i-shutov/tikzarium/issues/161). Это owner override к историческим требованиям W2b/W3; на старых страницах оставлены исходные протоколы, но их DPI125/200-пункты больше не являются release blocker. Нельзя превращать NOT_RUN в PASS.
+
+| Этап | Выходной результат и критерий GO | Состояние на 10.11.2026 |
+| --- | --- | --- |
+| **R0 — freeze и точная матрица** | Windows10 x64, 100% DPI; фиксируются требования, известные ограничения, список релизных PR; отложить PGFPlots/SC и новые функции | **DONE**: решение владельца, [#161](https://github.com/i-shutov/tikzarium/issues/161), W3-96 original accepted |
+| **R1 — интеграция RC** | Ревью и решение по [#155](https://github.com/i-shutov/tikzarium/pull/155) (антиустаревшая Mesa/source), [#156](https://github.com/i-shutov/tikzarium/pull/156) (QA Default-desktop, не runtime), [#157](https://github.com/i-shutov/tikzarium/pull/157) (документы); отдельный code-freeze release SHA; Windows/macOS/Linux exact-head CI + D QA = PASS | **OPEN**, draft PR / неясен итог интеграции |
+| **R2 — физическая продуктовая приёмка** | Принятая оригинальная W3 **при 96 DPI** на конечном source/EXE; **полная W2b Server** (шесть жестов, Undo, Save/Open, GUI→XeLaTeX), IME composition/preedit — физически проверить либо отдельно урегулировать обязательность перед stable; документировать unsupported/unknown | **PARTIAL**: W3-96 original independently accepted на `488a9687`; W2b и IME остаются открытыми |
+| **R3 — W4 чистая поставка** | На чистой Win10 x64 VM: проверить CRC/SHA/PE/PROVENANCE, развернуть release ZIP в директорию с пробелами/кириллицей, старт на совместимом OpenGL GPU, внешнем MiKTeX, безопасные Save/Open/Build, очистку/удаление и откат; не включать QA Mesa в архив. Определить требуемый MSI/portable delivery и состояние code signing (нет подписи → объявлять unsigned) | **NOT_RUN** |
+| **R4 — публикация** | После R1–R3: кандидатный GitHub **pre-release** с exact SHA, binaries/manifest/notes/known issues, контроль загрузки и hash; затем формальное GO и стабильный тег `v1.0.0` с теми же проверенными байтами. Отдельно контролировать несовпадение provenance после любого commit | **NO-GO** до обязательной приёмки |
+| **R5 — следующие релизы** | Отдельная VM с физическим 120/192 DPI, viewport/IME/UI, визуальные PNG и GUI→PDF; разработка PGFPlots/Scientific-142 после freeze | **BACKLOG**: [#161](https://github.com/i-shutov/tikzarium/issues/161) |
+
+### Что уже закрыто и не повторяется бесцельно
+
+На CI для `main=488a9687`: native Windows portable ZIP из [run #42801981799](https://github.com/i-shutov/tikzarium/actions/runs/42801981799), оригинальный ZIP SHA256 `17f30f6b6d9d7a2c6bae24dc81ab17b010564ae2882ad37014265903e6c4b595`; [D QA #42801982082](https://github.com/i-shutov/tikzarium/actions/runs/42801982082) PASS. Принят [W3 оригинальный 96DPI акт](W3_WIN10_20261110_INDEPENDENT_ORIGINAL_REVIEW_RU.md), EXE SHA256 `f8f534d36d5fd26fcef5f8c47094871bc81882c3cfbb25411ad46975da3915a5`. **Новый commit source меняет аттестуемую версию**, поэтому хотя бы exact-source build/provenance/targeted GUI smoke перед публичным стабильным релизом нужны.
+
+### Стоп-факторы релиза, которые решение о DPI не отменяет
+
+- **W2b полная Server GUI-приёмка** по текущему подписанному релизному контракту [#108](https://github.com/i-shutov/tikzarium/issues/108). Если выбирать только Windows10-поставку и убрать обязательную Server-приёмку, это потребует **отдельного явного решения о scope**, а не автоматического переноса вместе с DPI.
+- **IME composition/preedit** для языков со составным вводом: подтверждённая русская физическая раскладка не доказывает IME. До stable либо отдельный оригинальный тест, либо явно утверждённое ограничение совместимости; пользователь отложил **только DPI**.
+- **W4:** физический clean deploy на Windows10 с совместимым OpenGL2+, положительный GUI→PDF и откат. Software Mesa из RDP QA не является зависимостью конечного Windows ZIP и не доказывает normal-GPU startup.
+- **Точная поставка и безопасность:** неизменный source SHA, Cargo.lock, CRC и SHA256 бинарников, документация, список known issues, честная подпись либо `unsigned`, неумышленная утрата пользовательских TEX недопустима.
 ## 1. Источник и уже проверенная сборка
 
 - На момент начала этой подготовки канонический `main`: `488a9687c404f9714eecbcb8ccb4edbf97a54d89` (PR #150, #152, #153 уже включены).
@@ -39,8 +62,8 @@
 | W0 — PE, Cargo.lock, Windows portable ZIP, источники, CI | **PASS hosted** для исходного SHA выше | Перед релизом повторить на неизменённом release SHA; записать SHA ZIP и EXE |
 | W1 — реальный внешний XeLaTeX, PDF, Arial/ToUnicode | **PASS по предыдущим оригинальным материалам**; также Admin Windows10 CLI→PDF 16 449 bytes и 3/3 UTF-8 извлечения | Повторная связка с точным release SHA и сохранённым оригинальным PDF |
 | W2a — Windows Server owned HWND, полный client PNG, F1 | **PASS** на исторически проверенной версии Server | Подтвердить отсутствие регрессии на финальном SHA |
-| W2b — вся вертикаль Server GUI | **NOT_ACCEPTED по доступным доказательствам** | Оригинальные шесть жестов, Undo/Save/Open/IME/DPI, GUI→XeLaTeX PDF, PNG и SHA, независимая приёмка |
-| W3 — отдельная физическая Windows 10 x64 | **NOT_ACCEPTED по доступным доказательствам**, несмотря на сообщение владельца о снятии блокеров | Настоящий активный Default desktop; проверка точного EXE из portable ZIP, Save&Build, F1, шесть жестов, Undo/Save/Open, 100/125/200% DPI, GUI-origin PDF; оригинальные evidence + ревью |
+| W2b — вся вертикаль Server GUI | **NOT_ACCEPTED** | Оригинальные шесть жестов, Undo/Save/Open, GUI→XeLaTeX PDF, PNG и SHA, независимая приёмка; **новые 120/192-DPI проверки не обязательны для 1.0** |
+| W3 — физическая Windows 10 x64 **scope v1.0: 96 DPI/100%** | **ORIGINAL EVIDENCE ACCEPTED** для `main=488a9687`, portable EXE SHA256 `f8f534d36d5fd26fcef5f8c47094871bc81882c3cfbb25411ad46975da3915a5` ([акт](W3_WIN10_20261110_INDEPENDENT_ORIGINAL_REVIEW_RU.md)) | При кодовых изменениях перепривязать EXE/source и повторить затронутые W3 шаги; **DPI 120/192 не требуются в 1.0** ([#161](https://github.com/i-shutov/tikzarium/issues/161)) |
 | W4 — чистая установка, удаление, подпись, документация | **NOT_RUN** | Чистая Windows10 VM, честно указанный статус подписи, описание зависимостей, пробный откат; повторяемый package + source-bounded manifest |
 | Stable `v1.0.0` | **NO-GO до закрытия обязательных gate** | Обновление канонического [W0–W4 release control](WINDOWS_1_0_RELEASE_CONTROL_RU.md) с источниками PASS, approve release, финальный GitHub Release |
 
