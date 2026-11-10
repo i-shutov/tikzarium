@@ -466,6 +466,7 @@ mod tests {
             "\\draw[fill=red!20,thick] (0,0) -- (2,3);\n",
             "$x^2 + \\alpha$ \\(\\frac{a}{b}\\) \\[y=1\\]",
             "\\node{ незакрытые {{ и $",
+            "$🧪",
             "x\\r\n🧪\nбез конечной новой строки",
         ] {
             check_partition(text, &tokenize(text));
