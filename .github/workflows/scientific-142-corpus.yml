@@ -1,0 +1,56 @@
+name: Scientific-142 L0 immutable corpus and negative SHA QA (not GUI)
+
+# Scientific Studio 1.0 SC1 input-integrity gate; corpus L0 only, not L3 GUI acceptance.
+# No XeLaTeX execution, package installation, RDP, personal runner or GUI input.
+on:
+  push:
+    paths:
+      - 'roadmap/Tikzarium_Scientific_142_R4/**'
+      - 'crates/tikzarium-core/**'
+      - '.gitattributes'
+      - '.github/workflows/scientific-142-corpus.yml'
+  pull_request:
+    paths:
+      - 'roadmap/Tikzarium_Scientific_142_R4/**'
+      - 'crates/tikzarium-core/**'
+      - '.gitattributes'
+      - '.github/workflows/scientific-142-corpus.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  corpus-l0:
+    name: SHA-256 sources/data/PDF and negative tamper / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Independent full 142 figure source/data/reference integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python roadmap/Tikzarium_Scientific_142_R4/qa/validate_corpus.py --json
+      - name: Negative tamper / cardinality regression (disposable copy only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python roadmap/Tikzarium_Scientific_142_R4/qa/test_negative.py
+      - name: Report scope
+        shell: bash
+        run: |
+          echo "SCI142_L0_ONLY=PASS_ON_${{ matrix.os }}"
+          echo "SCI142_L1_ENGINE=NOT_RUN"
+          echo "SCI142_L2_RECOGNITION=NOT_RUN"
+          echo "SCI142_L3_GUI_UNDO=NOT_RUN"
+          echo "PHYSICAL_WINDOWS10=NOT_RUN"
