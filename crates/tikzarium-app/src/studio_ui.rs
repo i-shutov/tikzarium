@@ -284,6 +284,9 @@ pub fn icon_button(
         p.rect_filled(rect, egui::CornerRadius::same(7), fill);
         draw_icon(ui, rect, kind, selected);
     }
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
+    });
     response.on_hover_text(tooltip)
 }
 
@@ -363,6 +366,139 @@ pub(crate) fn show_group_rail_observed(
         }
     }
     anchor
+}
+
+/// UX2: one-click access to the six reviewed native tools. Groups are reserved
+/// for extensions, so the first authoring gesture never needs a floating popup.
+/// The rail is a presentation surface; choosing a tool does not patch TeX.
+#[derive(Default)]
+pub struct StudioRailAction {
+    pub selected_tool: Option<Tool>,
+    pub extension_anchor: Option<Pos2>,
+}
+
+fn short_tool_label(tool: Tool) -> &'static str {
+    match tool {
+        Tool::Line => "Линия",
+        Tool::Arrow => "Стрелка",
+        Tool::Rectangle => "Прямоуг.",
+        Tool::Circle => "Круг",
+        Tool::Node => "Текст",
+        Tool::Cubic => "Безье",
+    }
+}
+
+/// A native egui Button owns each clickable icon and its keyboard focus.
+/// The small visible caption is not a second hit target. Tooltip/AccessKit
+/// names come from the existing C catalogue, never a parallel command registry.
+pub fn show_direct_tool_rail(
+    ui: &mut egui::Ui,
+    selected: Option<Tool>,
+    extension_group: &mut Option<StudioGroup>,
+    narrow: bool,
+) -> StudioRailAction {
+    show_direct_tool_rail_observed(
+        ui,
+        selected,
+        extension_group,
+        narrow,
+        |_, _| {},
+        |_| {},
+    )
+}
+
+pub(crate) fn show_direct_tool_rail_observed(
+    ui: &mut egui::Ui,
+    selected: Option<Tool>,
+    extension_group: &mut Option<StudioGroup>,
+    narrow: bool,
+    mut observe_tool: impl FnMut(Tool, Rect),
+    mut observe_extensions: impl FnMut(Rect),
+) -> StudioRailAction {
+    let mut action = StudioRailAction::default();
+    ui.vertical_centered(|ui| {
+        ui.strong("TikZ");
+        ui.small("Создать");
+        ui.separator();
+    });
+    egui::ScrollArea::vertical()
+        .id_salt("ux2-direct-tool-rail")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            for tool in tikz_authoring::TOOLS {
+                let spec = tikz_authoring::spec(tool);
+                let title = spec.title_ru.as_str();
+                let tip = format!(
+                    "{}\n{}\n{}\nPGF/TikZ §{}",
+                    title, spec.help_ru, spec.syntax, spec.manual_section
+                );
+                ui.vertical_centered(|ui| {
+                    let response = ui
+                        .add_sized(
+                            [48.0, 36.0],
+                            egui::Button::new("").selected(selected == Some(tool)),
+                        )
+                        .on_hover_text(&tip);
+                    response.widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Button,
+                            ui.is_enabled(),
+                            title,
+                        )
+                    });
+                    draw_icon(
+                        ui,
+                        response.rect,
+                        StudioIcon::Tool(tool),
+                        selected == Some(tool),
+                    );
+                    observe_tool(tool, response.rect);
+                    if response.clicked() {
+                        action.selected_tool = Some(tool);
+                        *extension_group = None;
+                    }
+                    ui.label(
+                        egui::RichText::new(short_tool_label(tool))
+                            .size(if narrow { 10.0 } else { 11.0 }),
+                    );
+                });
+            }
+            ui.separator();
+            ui.vertical_centered(|ui| {
+                let response = ui
+                    .add_sized(
+                        [48.0, 36.0],
+                        egui::Button::new("")
+                            .selected(*extension_group == Some(StudioGroup::Extensions)),
+                    )
+                    .on_hover_text("Расширения и пакеты: открыть каталог доступности");
+                response.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Button,
+                        ui.is_enabled(),
+                        "Расширения TikZ",
+                    )
+                });
+                draw_icon(
+                    ui,
+                    response.rect,
+                    StudioIcon::Group(StudioGroup::Extensions),
+                    *extension_group == Some(StudioGroup::Extensions),
+                );
+                observe_extensions(response.rect);
+                if response.clicked() {
+                    *extension_group =
+                        if *extension_group == Some(StudioGroup::Extensions) {
+                            None
+                        } else {
+                            Some(StudioGroup::Extensions)
+                        };
+                    action.extension_anchor = Some(response.rect.right_top());
+                }
+                ui.label(egui::RichText::new("Пакеты").size(10.0));
+            });
+        });
+    action
 }
 
 /// Position the popup from the ACTUAL resizable source SidePanel boundary,
@@ -804,6 +940,102 @@ mod tests {
         });
         assert_eq!(source, before);
         source.clear();
+    }
+
+    #[test]
+    fn ux2_six_native_tools_select_in_one_direct_rail_click_without_tex_mutation() {
+        // REAL UNIT_EVENT: same production native Buttons used by Studio.
+        // Distinct from Windows physical W2b/W3, DPI and IME acceptance.
+        struct State {
+            group: Option<StudioGroup>,
+            positions: [Rect; 6],
+            extensions: Rect,
+            session: Session,
+        }
+        impl State {
+            fn frame(&mut self, ctx: &egui::Context, events: Vec<egui::Event>) {
+                let mut action = StudioRailAction::default();
+                let _ = ctx.run(
+                    egui::RawInput {
+                        screen_rect: Some(Rect::from_min_size(
+                            Pos2::ZERO,
+                            egui::vec2(1180.0, 680.0),
+                        )),
+                        events,
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        egui::SidePanel::left("ux2-direct-rail-event")
+                            .resizable(false)
+                            .exact_width(62.0)
+                            .show(ctx, |ui| {
+                                action = show_direct_tool_rail_observed(
+                                    ui,
+                                    self.session.active,
+                                    &mut self.group,
+                                    false,
+                                    |tool, rect| {
+                                        let i = tikz_authoring::TOOLS
+                                            .iter()
+                                            .position(|candidate| *candidate == tool)
+                                            .unwrap();
+                                        self.positions[i] = rect;
+                                    },
+                                    |rect| self.extensions = rect,
+                                );
+                            });
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("Обычный TeX остаётся единственным источником истины");
+                        });
+                    },
+                );
+                if let Some(tool) = action.selected_tool {
+                    self.session.select_tool(tool);
+                }
+            }
+            fn click(&mut self, ctx: &egui::Context, pos: Pos2) {
+                for pressed in [true, false] {
+                    self.frame(
+                        ctx,
+                        vec![
+                            egui::Event::PointerMoved(pos),
+                            egui::Event::PointerButton {
+                                pos,
+                                button: egui::PointerButton::Primary,
+                                pressed,
+                                modifiers: Default::default(),
+                            },
+                        ],
+                    );
+                }
+            }
+        }
+        let ctx = egui::Context::default();
+        let source = "% пользовательский CRLF\r\n\\unknown{жёстко}\r\n".to_owned();
+        let untouched = source.clone();
+        let mut state = State {
+            group: None,
+            positions: [Rect::NOTHING; 6],
+            extensions: Rect::NOTHING,
+            session: Session::default(),
+        };
+        state.session.reset(&source);
+        for (index, tool) in tikz_authoring::TOOLS.into_iter().enumerate() {
+            state.frame(&ctx, vec![]);
+            assert!(state.positions[index].is_positive(), "{tool:?} not visible");
+            state.click(&ctx, state.positions[index].center());
+            assert_eq!(state.session.active, Some(tool), "{tool:?} failed direct click");
+            assert_eq!(state.group, None, "basic tools must not open a floating group");
+            assert_eq!(source.as_bytes(), untouched.as_bytes());
+            assert!(!state.session.undo_available());
+        }
+        state.frame(&ctx, vec![]);
+        assert!(state.extensions.is_positive());
+        state.click(&ctx, state.extensions.center());
+        assert_eq!(state.group, Some(StudioGroup::Extensions));
+        state.click(&ctx, state.extensions.center());
+        assert_eq!(state.group, None);
+        assert_eq!(source, "% пользовательский CRLF\r\n\\unknown{жёстко}\r\n");
     }
 
     #[test]
