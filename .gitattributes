@@ -5,3 +5,8 @@ Cargo.lock text eol=lf
 scripts/maintenance/trusted-compiler-smoke.tex text eol=lf
 # This repository-owned proof fixture is compared byte-for-byte across Windows/Linux.
 examples/windows-cyrillic.tex text eol=lf
+
+# Scientific-142 supplied originals and data have manifest SHA-256 over their exact bytes.
+# Windows git checkout must NOT convert their TeX or .dat LF to CRLF.
+/roadmap/Tikzarium_Scientific_142_R4/fixtures/** -text
+/roadmap/Tikzarium_Scientific_142_R4/provenance/** -text
