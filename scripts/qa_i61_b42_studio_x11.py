@@ -22,7 +22,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # These are NOT a physical Win10 result; screenshot and persisted TeX evidence
 # MUST pass on this exact app tree before the run can be accepted. The previously
 # accepted B42 group/palette coordinates are historical and intentionally removed.
-APP_TREE = "77c0fbd9b96d44321d45902ac311cb4ef32634cf"
+APP_TREE = "97750f2aaf0ea9d7b9bc7bc19710b33123667124"
 BUTTONS = [
     # Tool order still leaves Node selected for the later I64 Inspector test.
     ("line", (30, 165), (646, 350), (750, 377)),
