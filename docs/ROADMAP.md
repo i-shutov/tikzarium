@@ -1,5 +1,12 @@
 # TikZarium Studio — единый roadmap: научная графика первой, данные последними
 
+## 1.0 REBASE — scientific Studio is the actual stable release target
+
+**Owner-approved 11.11.2026:** TikZarium stable v1.0.0 now means **the entire agreed ST-SCI scientific first release**, NOT the historical limited six-tool/UX Windows release. Normative [MUST/excludes and release gates](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [execution plan](../plans/2026-11-11_SCI_1_0_EXECUTION.md), [Windows Codex QA assignment](../plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). Complete ST-SCI includes premium multi-document native Studio and UX-F01…F14/G3; TikZ and PGFPlots scientific source edits, SCI142 142/103, scientific AI88 cases, scoped Asymptote and Typst/CeTZ verified GUI + build/export, scientific-quality publication outputs. Penrose is research/candidate, not automatically a universal solver gate. Full Data Figure/import/analysis remains last; the already-required PGFPlots .dat/.csv dependencies remain.
+
+Release state **NO-GO** until science corpus, engine/operation matrix, all source/UX/G3 and native W0…W4 + real Win10/Server GUI/IME/96/120/192 are independently accepted on exact source. The former statements below "release number not assigned"/"Scientific-142 after 1.0"/"only UX in Windows 1.0" are historical as release scope. All future domain priority remains ST-SCI→ST-UML→ST-BPMN→ST-ENG→ST-CHEMBIO→ST-ANIM→ST-OTHER→ST-DATA.
+
+
 **Редакция SCIENCE_FIRST_DATA_LAST, 11 ноября 2026.** Последняя команда владельца задаёт порядок: «научную графику, потом UML, BPMN, потом инженерию, потом химию и биологию, потом анимацию и потом все остальное. данные -- в конец».
 
 Полноценная Multi-Engine Scientific Studio остаётся целью. Меняется последовательность поставок, а не качество, полнота прежних обязательств или факт их приёмки. Этот документ — единственный текущий roadmap; [исполнительский план](../plans/2026-11-11_STUDIO_REBASE.md) задаёт ближайшие задачи. Нумерация ST0–ST8 и порядок из PR #173 сохранены только в [историческом snapshot](https://github.com/i-shutov/tikzarium/blob/a2a6c79ee14c58282da8a4a1106392faf9643029/docs/ROADMAP.md).

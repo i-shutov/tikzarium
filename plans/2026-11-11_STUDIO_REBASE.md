@@ -1,5 +1,10 @@
 # Текущий план работ — Scientific Studio первой, Data последней
 
+## Release goal correction 11.11.2026 — v1.0 = full ST-SCI
+
+Explicit owner approval means **Scientific Studio is the 1.0 release**, not a standalone post-1.0 wave. Normative [release scope](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [concrete execution ownership and gates](2026-11-11_SCI_1_0_EXECUTION.md), [ready-to-copy native Win10 Codex task](2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). Implementation work: first repair/test open UX2 draft #172; concurrently design #169, Inspector #170, QA #171, G3 incremental editor/document/build; then PGFPlots SCI142/scientific AI88, Asymptote/Typst/CeTZ native scientific operations, original Windows/Server/IME/DPI acceptance. The prior below "current task is only 5 docs" describes the older PR #174 checkpoint; this new task requires code/CI/native evidence. Do not represent issues as launched subagents or prior W3-96 as new scientific PASS. Stable NO-GO.
+
+
 Редакция SCIENCE_FIRST_DATA_LAST, 11 ноября 2026. Главный маршрут — [docs/ROADMAP.md](../docs/ROADMAP.md). Этот файл заменяет прежний исполнительский порядок ST1/ST2 Graphviz-first в PR #173, не создаёт второй roadmap.
 
 ## 1. Последняя директива и текущий фокус

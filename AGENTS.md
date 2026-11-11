@@ -1,5 +1,10 @@
 # TikZarium Studio — engineering instructions
 
+## Latest owner release decision — 2026-11-11: Scientific Studio v1.0.0
+
+The owner expressly approves **the complete ST-SCI scientific product as TikZarium stable v1.0.0**, not the historical UX-only narrow Windows/TikZ release. Authoritative [release contract](docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [execution tasks](plans/2026-11-11_SCI_1_0_EXECUTION.md), [Win10 local Codex QA](plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). All UX-F01–F14/G3, source safety, physical W0–W4/real IME/96-120-192 DPI remain mandatory. SCI142 142=100AK+42Sarov/103, scientific AI88, PGFPlots shared SC3/AT4, Asymptote and Typst/CeTZ with scoped native scientific GUI editing/build/export belong to the v1.0 target. Penrose is scoped research until operations approved; full nonscientific 88/35/23/13 corpus remains for later stages UML→BPMN→engineering→chemistry/biology→animation→other→data last. No silent engine install, system changes, OS sandbox claims or premature version/tag. This APPROVES SCOPE, not software implementation or release GO. Former statements below about "only UX in Windows 1.0" or scientific-after-1.0 are SUPERSEDED for release scope only; their technical acceptance/safety requirements persist.
+
+
 ## Latest owner priority correction — 2026-11-11: SCIENCE FIRST, DATA LAST
 
 The full Multi-Engine Scientific Studio remains the principal product. The owner's subsequent instruction supersedes the delivery order in PR #173: **scientific graphics → UML → BPMN → engineering → chemistry and biology → animation → everything else → data, strictly last**. UML and BPMN are distinct acceptance stages within the second requested domain wave. Do not demote BPMN back into later engineering, put animation after the general extras, or start Data Figure in the scientific stage.

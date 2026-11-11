@@ -1,5 +1,10 @@
 # TikZarium 1.0 — Windows x64 (черновик релизных заметок)
 
+## 11.11.2026 — DRAFT REQUIRES SCIENTIFIC STUDIO REWRITE BEFORE PUBLICATION
+
+Approved [Scientific Studio v1.0.0 scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) supersedes the old narrow TikZ/96DPI candidate described below. This document is historical DRAFT, not accurate current user-facing release notes. Stable 1.0 MUST include UX-F01…14, scientific PGFPlots/SCI142 142/103/scientific AI88, Asymptote/Typst-CeTZ scoped native scientific GUI/build/export, exact-source Windows W2b/W3/real IME/96/120/192/W4. No engine, scientific or physical PASS can be inferred from old descriptions. Rewrite the complete release notes only once exact candidate and all science/platform gates are independently accepted; **stable NO-GO**.
+
+
 > **DRAFT — stable только после UX-F01–F14 и W2b/W3/IME/W4.** Версия целевого выпуска: `v1.0.0`. Актуальный scope и очередность — [единый roadmap](ROADMAP.md). Исходный физически проверенный материал этого черновика относится к `488a9687c404f9714eecbcb8ccb4edbf97a54d89`; финальный релизный SHA ещё не принят.
 
 ## Границы выпуска Windows 1.0 (решение владельца 10 ноября 2026)
