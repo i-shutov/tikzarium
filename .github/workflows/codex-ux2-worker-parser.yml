@@ -1,0 +1,52 @@
+name: Codex UX2 Windows launcher parser and safety check
+
+# Parser only; never execute Codex workers in CI, use personal machine,
+# create accounts, install tools, change OS settings or access a selfhosted runner.
+on:
+  push:
+    paths:
+      - 'tools/windows/Start-TikZarium-Codex-Workers.ps1'
+      - '.github/workflows/codex-ux2-worker-parser.yml'
+  pull_request:
+    paths:
+      - 'tools/windows/Start-TikZarium-Codex-Workers.ps1'
+      - '.github/workflows/codex-ux2-worker-parser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-parse-only:
+    name: PowerShell 5.1 static parse and forbidden operations
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Static Windows PowerShell parser, do NOT execute script
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = Join-Path $PWD 'tools/windows/Start-TikZarium-Codex-Workers.ps1'
+          $tokens = $null
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $path,[ref]$tokens,[ref]$errors)
+          if ($null -eq $ast -or $errors.Count -ne 0) {
+            $errors | Out-String | Write-Host
+            throw 'Codex launcher is not valid PowerShell 5.1'
+          }
+          $body = [IO.File]::ReadAllText($path)
+          foreach ($forbidden in @('--yolo','danger-full-access','Set-ExecutionPolicy','Set-ItemProperty','New-Service','Install-Package','Start-Service')) {
+            if ($body.Contains($forbidden)) {
+              throw "Forbidden or unsupported launcher operation: $forbidden"
+            }
+          }
+          if (!$body.Contains('--sandbox workspace-write')) {
+            throw 'Scoped workspace-write sandbox must be explicit'
+          }
+          Write-Host 'PS51_STATIC_PARSE=PASS; two local worker sessions per batch only'
+          Write-Host 'NATIVE_WIN10_CODEX_AGENTS=NOT_RUN'
+          Write-Host 'PHYSICAL_WINDOWS_IME_DPI=NOT_RUN'
