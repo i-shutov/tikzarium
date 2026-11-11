@@ -1893,9 +1893,9 @@ impl TikzariumApp {
             self.highlight_generated_line = true;
         }
         ui.separator();
-        if let Some(line) =
-            self.scientific
-                .show(ui, &mut self.authoring, &mut self.document.source)
+        if let Some(line) = self
+            .scientific
+            .show(ui, &mut self.authoring, &mut self.document.source)
         {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
