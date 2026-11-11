@@ -397,14 +397,7 @@ pub fn show_direct_tool_rail(
     extension_group: &mut Option<StudioGroup>,
     narrow: bool,
 ) -> StudioRailAction {
-    show_direct_tool_rail_observed(
-        ui,
-        selected,
-        extension_group,
-        narrow,
-        |_, _| {},
-        |_| {},
-    )
+    show_direct_tool_rail_observed(ui, selected, extension_group, narrow, |_, _| {}, |_| {})
 }
 
 pub(crate) fn show_direct_tool_rail_observed(
@@ -440,11 +433,7 @@ pub(crate) fn show_direct_tool_rail_observed(
                         )
                         .on_hover_text(&tip);
                     response.widget_info(|| {
-                        egui::WidgetInfo::labeled(
-                            egui::WidgetType::Button,
-                            ui.is_enabled(),
-                            title,
-                        )
+                        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), title)
                     });
                     draw_icon(
                         ui,
@@ -457,10 +446,11 @@ pub(crate) fn show_direct_tool_rail_observed(
                         action.selected_tool = Some(tool);
                         *extension_group = None;
                     }
-                    ui.label(
-                        egui::RichText::new(short_tool_label(tool))
-                            .size(if narrow { 10.0 } else { 11.0 }),
-                    );
+                    ui.label(egui::RichText::new(short_tool_label(tool)).size(if narrow {
+                        10.0
+                    } else {
+                        11.0
+                    }));
                 });
             }
             ui.separator();
@@ -487,12 +477,11 @@ pub(crate) fn show_direct_tool_rail_observed(
                 );
                 observe_extensions(response.rect);
                 if response.clicked() {
-                    *extension_group =
-                        if *extension_group == Some(StudioGroup::Extensions) {
-                            None
-                        } else {
-                            Some(StudioGroup::Extensions)
-                        };
+                    *extension_group = if *extension_group == Some(StudioGroup::Extensions) {
+                        None
+                    } else {
+                        Some(StudioGroup::Extensions)
+                    };
                     action.extension_anchor = Some(response.rect.right_top());
                 }
                 ui.label(egui::RichText::new("Пакеты").size(10.0));
@@ -1024,8 +1013,15 @@ mod tests {
             state.frame(&ctx, vec![]);
             assert!(state.positions[index].is_positive(), "{tool:?} not visible");
             state.click(&ctx, state.positions[index].center());
-            assert_eq!(state.session.active, Some(tool), "{tool:?} failed direct click");
-            assert_eq!(state.group, None, "basic tools must not open a floating group");
+            assert_eq!(
+                state.session.active,
+                Some(tool),
+                "{tool:?} failed direct click"
+            );
+            assert_eq!(
+                state.group, None,
+                "basic tools must not open a floating group"
+            );
             assert_eq!(source.as_bytes(), untouched.as_bytes());
             assert!(!state.session.undo_available());
         }

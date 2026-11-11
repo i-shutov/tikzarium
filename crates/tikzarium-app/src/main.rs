@@ -1948,9 +1948,7 @@ impl TikzariumApp {
                     .min_size(egui::vec2(116.0, 34.0)),
                 );
                 let build_response = if ready {
-                    build_response.on_hover_text(
-                        "Собрать точный PDF внешним XeLaTeX · Ctrl+Enter",
-                    )
+                    build_response.on_hover_text("Собрать точный PDF внешним XeLaTeX · Ctrl+Enter")
                 } else {
                     build_response.on_disabled_hover_text(
                         "Недоступно, пока открыт диалог или выполняется сборка",
@@ -2048,7 +2046,9 @@ impl TikzariumApp {
             ui.horizontal(|ui| {
                 let prior_focus = self.pdf_focus_in_split;
                 ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз")
-                    .on_hover_text("Создаваемые объекты: предварительная направляющая, не полный рендер TeX");
+                    .on_hover_text(
+                        "Создаваемые объекты: предварительная направляющая, не полный рендер TeX",
+                    );
                 ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF исходника")
                     .on_hover_text("Точный результат последней сборки через внешний XeLaTeX");
                 if self.pdf_focus_in_split && !prior_focus {
