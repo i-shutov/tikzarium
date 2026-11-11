@@ -79,6 +79,15 @@ fn tool(id: &str) -> Result<Tool, String> {
 }
 fn group_id(group: studio_ui::StudioGroup) -> &'static str {
     match group {
+        // Legacy groups exist only when cargo builds the historical tests.
+        // The ordinary QA-control executable and the Studio expose the direct
+        // six-tool rail; keep the unit-test match exhaustive in both modes.
+        #[cfg(test)]
+        studio_ui::StudioGroup::Geometry => "geometry",
+        #[cfg(test)]
+        studio_ui::StudioGroup::Connections => "connections",
+        #[cfg(test)]
+        studio_ui::StudioGroup::Text => "text",
         studio_ui::StudioGroup::Extensions => "extensions",
     }
 }
