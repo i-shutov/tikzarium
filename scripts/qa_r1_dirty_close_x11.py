@@ -100,9 +100,10 @@ def main() -> int:
             time.sleep(1.1)
             screenshot(out, "01-before-edit")
 
-            # Pinned B42 source coordinates previously accepted in I61.
+            # UX1 source body, reviewed in the original native editor PNGs
+            # and bootstrap 42981807266; y=209 is now above the TextEdit.
             # This regression intentionally fails if the reviewed app layout moves.
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             run("xdotool", "type", "--clearmodifiers", "--delay", "70", "releasecanary")
             time.sleep(0.5)
             source_before = copied_source()
@@ -124,7 +125,7 @@ def main() -> int:
             report["steps"].append("dirty_WM_close_intercepted_process_alive")
 
             key("Escape")  # Cancel the native close, keep the buffer.
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             source_after = copied_source()
             if source_after != source_before:
                 raise RuntimeError("Cancel altered the source buffer")
@@ -138,7 +139,7 @@ def main() -> int:
                 raise RuntimeError("DATA LOSS: Alt+F4 closed dirty source")
             screenshot(out, "05-keyboard-close-confirmation")
             key("Escape")
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             if copied_source() != source_before:
                 raise RuntimeError("Keyboard close Cancel changed source")
             report["steps"].append("Alt_F4_cancel_preserves_source")
