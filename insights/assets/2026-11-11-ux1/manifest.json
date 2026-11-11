@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "kind": "UX1_LOCAL_LINUX_NATIVE_AND_CPU_EVIDENCE",
+  "date": "2026-11-11",
+  "status": "LOCAL_SUBSETS_VERIFIED_NOT_FULL_UX1_ACCEPTANCE",
+  "capture": "Original selected TikZarium client PNGs from CUA, not desktop crops or generated images",
+  "client_pixels": [
+    1180,
+    680
+  ],
+  "native_editor": {
+    "app_tree": "7d0301df524decdc0e1a5f156e5ff9e7b4787b7f",
+    "binary_sha256": "c9faee014266b495ebd9006116a11b607fb46d28cd3e5874f0de25e21ac3456b",
+    "directory": "native",
+    "checks": [
+      "Find 3 literal matches",
+      "Replace All exact saved UTF-8 and 12 CRLF / no bare LF",
+      "One native Ctrl+Z byte-exact restoration",
+      "Native Ctrl+Shift+Z byte-exact redo",
+      "Go to physical line 10 and 1",
+      "Fixed gutter during no-wrap horizontal scrolling"
+    ],
+    "discovered_defect": "Theme ComboBox closed parent View menu; fixed in subsequent stage"
+  },
+  "native_themes": {
+    "app_tree": "2c85223f58b0b954de8655a5f5cf63515d0e4c39",
+    "binary_sha256": "3c2991c58812548889b596a20e41f04e82f2021f7fadb0aecb693994c1317b70",
+    "directory": "themes",
+    "checks": [
+      "Light, Dark, Midnight, Paper selected in native Studio submenu",
+      "Saved source byte-equal to examples/quickstart.tex"
+    ],
+    "changed_since_editor_stage": [
+      "ui_theme.rs"
+    ]
+  },
+  "automated": {
+    "toolchain": "Rust 1.91.0",
+    "workspace_tests_passed": 431,
+    "workspace_tests_failed": 0,
+    "workspace_tests_ignored": 2,
+    "ignored_explanation": "Existing probe_process::tests::probe_child helper and explicit manual local_cpu_highlight_cost benchmark; benchmark separately run in release"
+  },
+  "gates": {
+    "G3_native_p95": "NOT_RUN",
+    "G3_large_document_response": "NOT_ACCEPTED",
+    "Windows10": "NOT_RUN",
+    "Windows_Server": "NOT_RUN_IN_THIS_SESSION",
+    "OS_IME": "NOT_RUN",
+    "physical_DPI": "NOT_RUN",
+    "stable": "NO_GO"
+  },
+  "files": {
+    ".gitattributes": {
+      "bytes": 24,
+      "sha256": "d04f180a4b483df7cba5e0ed19fc31494dab8b28c68df6205c88ec96c91c4081"
+    },
+    "benchmark-report.json": {
+      "bytes": 22972,
+      "sha256": "c1744fa42e1879935882ca52a352124e2e08e70458cc190e5d1bed2d47eddcb4"
+    },
+    "native/01-startup.png": {
+      "bytes": 99134,
+      "sha256": "9c88cf76bb17224a1497d4a72e0a07966e2d01e201040d470d696aab378eb016"
+    },
+    "native/02-find-highlight.png": {
+      "bytes": 128604,
+      "sha256": "5e592ea2f0905dc6db1ba4c5b0b0bfaa88b05425db4a5f9898584157b2d9b7fb"
+    },
+    "native/03-replace-preview.png": {
+      "bytes": 128883,
+      "sha256": "8aeccd737424f6506b72dd025e9b3c73322549299617c2d78611d6a707cd1c97"
+    },
+    "native/04-replace-applied.png": {
+      "bytes": 128206,
+      "sha256": "76cbcbede00cb3d2743f8f3b26deb39ad12225fe51a9a3a12ef411d7707779bf"
+    },
+    "native/05-one-undo-restored.png": {
+      "bytes": 128349,
+      "sha256": "d87df6d2c5d48d639c13baa9fde9be3dde1cdc9853157897720e8dc8fbfc54a9"
+    },
+    "native/06-goto-wrapped-line.png": {
+      "bytes": 115492,
+      "sha256": "bfbf0d2e7a64b9373d2d1bd714a940b9c420cb28c6ac287c5e911a0913534d9f"
+    },
+    "native/07-fixed-gutter-horizontal.png": {
+      "bytes": 80248,
+      "sha256": "d39704092935fbab2357b610ece34d72928a27564709472afb594aa66dac215f"
+    },
+    "native/08-navigation-restored.png": {
+      "bytes": 98787,
+      "sha256": "14f7537d005c401daf3682744603e5cffaa5663ca5551d67df8508f8fedac96a"
+    },
+    "native/09-theme-menu-before.png": {
+      "bytes": 115961,
+      "sha256": "5e8942b29cd8f3c3c90988bf13ea86fba0a70df5cff25d3cb78d3281afc3c5c3"
+    },
+    "native/10-theme-menu-closed-defect.png": {
+      "bytes": 113338,
+      "sha256": "ccdba11aba2bf6b02cf786de2e9623a8d1575b986e70c068302320983bfdbc05"
+    },
+    "native/input-expected.tex": {
+      "bytes": 671,
+      "sha256": "2477576011d7a8f27ce9715e3f9d5ebff46ef00175c28f2c203ebdcec811dc42"
+    },
+    "native/redo-saved.tex": {
+      "bytes": 677,
+      "sha256": "a5e4c7a3acd8de5420e8fa087d6443daa39f179d88d3def4ff7f7bbc456aea3a"
+    },
+    "native/replace-all-saved.tex": {
+      "bytes": 677,
+      "sha256": "a5e4c7a3acd8de5420e8fa087d6443daa39f179d88d3def4ff7f7bbc456aea3a"
+    },
+    "native/undo-restored.tex": {
+      "bytes": 671,
+      "sha256": "2477576011d7a8f27ce9715e3f9d5ebff46ef00175c28f2c203ebdcec811dc42"
+    },
+    "release-benchmark.log": {
+      "bytes": 12025,
+      "sha256": "f0df04daab1c83c24500e02cc597fcbf47e1da03cc50b974d025c72ab43f83a8"
+    },
+    "themes/01-midnight.png": {
+      "bytes": 106766,
+      "sha256": "99758fc2ea4db802afb0f110cb643c322ae8a4d246b2a52c9fac6c4944995257"
+    },
+    "themes/02-submenu-four-themes.png": {
+      "bytes": 113027,
+      "sha256": "9d538210a4d1a56eb456c270d5fe017c82db1117b7a81cf3b3710ef178ee0e6e"
+    },
+    "themes/03-light.png": {
+      "bytes": 107740,
+      "sha256": "7d3f07514f8448023e57f630543f302160a6c251227f2142dfd9a3add9882fd2"
+    },
+    "themes/04-dark.png": {
+      "bytes": 101457,
+      "sha256": "8d049b509d3cd99b794c9cbf188b57f127814253605fbfb4226e88e763980ca1"
+    },
+    "themes/05-paper.png": {
+      "bytes": 106551,
+      "sha256": "db584f699dd2ecb3529745db0456b6657a5a4ef8801e49109353f5599b52e20a"
+    },
+    "themes/06-midnight-restored-saved.png": {
+      "bytes": 102209,
+      "sha256": "aa91741184fb425aa6a1aa468dc92d2ff0d978d3af55adc67fd43e56ac84a1be"
+    },
+    "themes/source-after-four-themes.tex": {
+      "bytes": 472,
+      "sha256": "c95f0648b37f0df3668dfb8f183f32fa517f9caa45d9b7b26749586db3fd209a"
+    },
+    "workspace-tests.log": {
+      "bytes": 42517,
+      "sha256": "c8033b89e2c78c76cdc3ab55d7fd69a5ebd3819f61633a943816d67b429b6e24"
+    }
+  }
+}

@@ -130,15 +130,16 @@ impl UiPreferences {
 
     pub fn draw_toolbar(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         let mut changed = false;
-        egui::ComboBox::from_id_salt("tikzarium-ui-theme")
-            .selected_text(format!("Theme: {}", self.theme.label()))
-            .show_ui(ui, |ui| {
-                for theme in UiTheme::ALL {
-                    changed |= ui
-                        .selectable_value(&mut self.theme, theme, theme.label())
-                        .changed();
-                }
-            });
+        // Ui::menu_button selects SubMenuButton inside Studio's View menu
+        // and MenuButton in the classical toolbar. Both participate in egui's
+        // menu hierarchy, so opening themes cannot dismiss their parent menu.
+        ui.menu_button(format!("Theme: {}", self.theme.label()), |ui| {
+            for theme in UiTheme::ALL {
+                changed |= ui
+                    .selectable_value(&mut self.theme, theme, theme.label())
+                    .changed();
+            }
+        });
         changed |= ui.checkbox(&mut self.compact, "Compact").changed();
         if changed {
             self.theme.apply(ctx, self.compact);
@@ -197,6 +198,104 @@ mod tests {
         for theme in UiTheme::ALL {
             theme.apply(&ctx, true);
             assert_eq!(prefs.figure_fonts().proof_source().unwrap(), original);
+        }
+    }
+    #[test]
+    fn real_menu_pointer_events_reach_all_themes_in_studio_and_classical_toolbar() {
+        fn frame(
+            ctx: &egui::Context,
+            prefs: &mut UiPreferences,
+            nested: bool,
+            events: Vec<egui::Event>,
+        ) -> egui::FullOutput {
+            ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(800.0, 600.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("test-toolbar").show(ctx, |ui| {
+                        if nested {
+                            egui::MenuBar::new().ui(ui, |ui| {
+                                ui.menu_button("View", |ui| prefs.draw_toolbar(ui, ctx));
+                            });
+                        } else {
+                            ui.horizontal(|ui| prefs.draw_toolbar(ui, ctx));
+                        }
+                    });
+                },
+            )
+        }
+        fn label_center(output: &egui::FullOutput, label: &str, exact: bool) -> egui::Pos2 {
+            output
+                .shapes
+                .iter()
+                .find_map(|shape| {
+                    if let egui::Shape::Text(text) = &shape.shape {
+                        let found = if exact {
+                            text.galley.text() == label
+                        } else {
+                            text.galley.text().contains(label)
+                        };
+                        if found {
+                            return Some(text.pos + text.galley.size() / 2.0);
+                        }
+                    }
+                    None
+                })
+                .unwrap_or_else(|| panic!("visible menu label missing: {label}"))
+        }
+        fn click(
+            ctx: &egui::Context,
+            prefs: &mut UiPreferences,
+            nested: bool,
+            position: egui::Pos2,
+        ) -> egui::FullOutput {
+            for pressed in [true, false] {
+                frame(
+                    ctx,
+                    prefs,
+                    nested,
+                    vec![
+                        egui::Event::PointerMoved(position),
+                        egui::Event::PointerButton {
+                            pos: position,
+                            button: egui::PointerButton::Primary,
+                            pressed,
+                            modifiers: egui::Modifiers::NONE,
+                        },
+                    ],
+                );
+            }
+            frame(ctx, prefs, nested, vec![])
+        }
+        for nested in [true, false] {
+            for theme in UiTheme::ALL {
+                let ctx = egui::Context::default();
+                let mut prefs = UiPreferences::default();
+                let fonts_before = prefs.figure_fonts().proof_source().unwrap();
+                let mut output = frame(&ctx, &mut prefs, nested, vec![]);
+                if nested {
+                    let position = label_center(&output, "View", true);
+                    output = click(&ctx, &mut prefs, nested, position);
+                }
+                let position = label_center(&output, "Theme:", false);
+                output = click(&ctx, &mut prefs, nested, position);
+                // Reaching every item also proves the View popup stayed alive
+                // when its submenu opened, rather than closing on that click.
+                for available in UiTheme::ALL {
+                    label_center(&output, available.label(), true);
+                }
+                let position = label_center(&output, theme.label(), true);
+                click(&ctx, &mut prefs, nested, position);
+                assert_eq!(prefs.theme, theme);
+                assert_eq!(prefs.figure_fonts().proof_source().unwrap(), fonts_before);
+                assert_eq!(prefs.source_font_size, 14.0);
+            }
         }
     }
 }

@@ -47,7 +47,7 @@ jobs:
           toolchain: '1.91.0'
       - name: Exact B42 app source-tree lease (fail closed before GUI)
         run: |
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'bbc80f3b347e4fbb92994f2a78bf3c4c54a91519'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '2c85223f58b0b954de8655a5f5cf63515d0e4c39'
           # Catch disagreement between workflow and Python QA before heavy TeX install.
           grep -Fqx "APP_TREE = \"$(git rev-parse HEAD:crates/tikzarium-app/src)\"" scripts/qa_i61_b42_studio_x11.py
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"

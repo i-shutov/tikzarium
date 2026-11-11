@@ -1,0 +1,288 @@
+**********************
+PowerShell transcript start
+Start time: 20261110132609
+Username: VM-910136\Admin
+RunAs User: VM-910136\Admin
+Configuration Name: 
+Machine: VM-910136 (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Users\Admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.dll -NoProfile -File C:\Users\Admin\Documents\ChatGPT\Tikzarium\work\ux-audit\worker.ps1
+Process ID: 6920
+PSVersion: 7.6.9
+PSEdition: Core
+GitCommitId: 7.6.9
+OS: Microsoft Windows 10.0.19045
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+{
+  "worker_pid": 6920,
+  "identity": "VM-910136\\Admin",
+  "station": "WinSta0",
+  "thread_desktop": "Default",
+  "input_desktop": "Default",
+  "session": 2,
+  "wts_state": 0,
+  "out": "C:\\Users\\Admin\\Documents\\TikZarium-QA\\evidence\\ux-audit-20261110-132609"
+}
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 0,
+  "unpainted_samples": 0,
+  "method": null
+}
+{
+  "outcome": "CONFIRMED_OWNED_FOREGROUND",
+  "reason": "RESPONSIVE_AND_STABLE_OWNED_FOREGROUND",
+  "method": "SETFOREGROUND_WM_NULL_BARRIER_NO_QUEUE_ATTACH",
+  "attempted": 1,
+  "trace": [
+    {
+      "attempt": 1,
+      "elapsed_ms": 1,
+      "activation_return": true,
+      "owned_raise_return": null,
+      "activation_route": "SETFOREGROUND_ONLY",
+      "ready": true,
+      "processed": true,
+      "foreground_hwnd": "459002",
+      "reason": "RESPONSIVE_AND_STABLE_OWNED_FOREGROUND"
+    }
+  ],
+  "elapsed_ms": 305,
+  "used_temporary_input_queue_attachment": false,
+  "used_owned_input_queue_attachment": false
+}
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 170,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY app=10572 hwnd=459002 out=C:\Users\Admin\Documents\TikZarium-QA\evidence\ux-audit-20261110-132609
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 170,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 160,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 163,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 163,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 163,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 116,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+{
+  "left": 28,
+  "top": 51,
+  "width": 1184,
+  "height": 721,
+  "window_left": 20,
+  "window_top": 20,
+  "window_width": 1200,
+  "window_height": 760,
+  "screen_left": 0,
+  "screen_top": 0,
+  "screen_width": 1470,
+  "screen_height": 918,
+  "window_dpi": 96,
+  "owner_pid": 10572,
+  "hwnd": "459002",
+  "coordinate_space": "PHYSICAL_PIXELS_PER_MONITOR_V2",
+  "capture_dpi_context": "PER_MONITOR_AWARE_V2",
+  "caller_dpi_context": "2147508240",
+  "dpi_context_restored": true,
+  "window_repositioned": false,
+  "unique_sample_colors": 153,
+  "unpainted_samples": 0,
+  "method": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+}
+UX_READY
+**********************
+PowerShell transcript end
+End time: 20261110132759
+**********************

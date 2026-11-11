@@ -1,0 +1,12 @@
+\documentclass{standalone}
+\usepackage{fontspec}
+\usepackage{tikz}
+% Не менять: Ж, α, é; opaque bytes stay literal
+\newcommand{\OpaqueLabel}{Не менять}
+\begin{document}
+\begin{tikzpicture}
+\node at (0,0) {\OpaqueLabel}; % needle
+\draw (0,0) -- (1,1); % needle
+% needle long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker long-marker 
+\end{tikzpicture}
+\end{document}
