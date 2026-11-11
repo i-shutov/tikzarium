@@ -2,7 +2,7 @@
 //! Tool and parameter semantics belong to the existing C catalogue. Vector
 //! icon strokes are only UI affordances, never a second PGF renderer.
 use crate::tikz_authoring::{self, Session, Tool};
-use eframe::egui::{self, Pos2, Rect, Sense, Shape, Stroke, Vec2};
+use eframe::egui::{self, Pos2, Rect, Shape, Stroke};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -278,18 +278,12 @@ pub fn icon_button(
     side: f32,
     tooltip: &str,
 ) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click());
-    if ui.is_rect_visible(rect) {
-        let p = ui.painter_at(rect);
-        let fill = if selected {
-            ui.visuals().selection.bg_fill
-        } else if response.hovered() {
-            ui.visuals().widgets.hovered.bg_fill
-        } else {
-            ui.visuals().widgets.inactive.bg_fill
-        };
-        p.rect_filled(rect, egui::CornerRadius::same(7), fill);
-        draw_icon(ui, rect, kind, selected);
+    // A real egui Button provides keyboard focus and AccessKit semantics.
+    // A manually allocated Sense::click() icon can paint nicely while
+    // remaining unavailable to keyboard-only users and screen readers.
+    let response = ui.add_sized([side, side], egui::Button::new("").selected(selected));
+    if ui.is_rect_visible(response.rect) {
+        draw_icon(ui, response.rect, kind, selected);
     }
     response.widget_info(|| {
         egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
