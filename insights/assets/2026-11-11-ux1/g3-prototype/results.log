@@ -1,0 +1,6 @@
+TEXTEDIT_SELECTION_COW_PASS frames=3 source_bytes_unchanged=true
+ORACLE_PASS cases=168 unicode_crlf_insert_delete_newline_wrap_dpi=true source_and_intrinsic_and_all_cursor_positions=true
+lines=100000 unique=true initial_ms=5580.143 reflows=100001 reused=0
+MEMORY lines=100000 unique=true unique_rows=100001 mesh_capacity_bytes=748800000 glyph_capacity_bytes=530400000 job_capacity_bytes=442300000 active_entries=100001 composite_rows=100001
+lines=100000 unique=true after_idle_edit_ms=1164.379 reflows=1 reused=100000
+lines=100000 unique=true sequential_median_ms=618.588 min=564.318 max=1071.939 reflows=1 reused=100000

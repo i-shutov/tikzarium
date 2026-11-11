@@ -1,0 +1,1 @@
+ORACLE_PASS cases=72 unicode_crlf_insert_delete_newline_wrap_dpi=true source_and_intrinsic_and_all_cursor_positions=true

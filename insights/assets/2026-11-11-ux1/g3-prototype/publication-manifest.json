@@ -1,0 +1,77 @@
+{
+  "created_utc": "2026-11-11T08:47:00.662089+00:00",
+  "base_main": "19187fc17968659267540fe279702bf77eeb77e6",
+  "base_git_tree": "7126aa2657cf823a6c7e660415dd52ac7b0b5c33",
+  "app_tree_unchanged": "e9f47c46042119b2fb58b187fcfaf0fafa076a64",
+  "scope": "isolated evidence branch; no production or CI changes; G3 NOT_ACCEPTED",
+  "original_experiment_files_preserved": true,
+  "original_scratch_binary_not_committed": true,
+  "integrator_verification": {
+    "command": "reproduce.sh <pinned-release-eframe-rlib> <scratch-output>; <scratch-output> (no --bench)",
+    "binary_sha256": "15d8fc86e1ca4cbec62ca1bbd8c9efb05ee5b9d626c63ad308669a126d058dfc",
+    "exit_code": 0,
+    "oracle_cases": 168,
+    "headless_textedit_selection_frames": 3,
+    "native_input_ime_undo": "NOT_RUN",
+    "native_p95": "NOT_RUN",
+    "new_benchmark": "NOT_RUN"
+  },
+  "files": {
+    "README.md": {
+      "bytes": 6658,
+      "sha256": "2a675e5c8ebe0b34c4a2e914897310dd0a86f78252d058715df3c3a7fe359b6f"
+    },
+    "REPORT.md": {
+      "bytes": 10953,
+      "sha256": "72a19eb53fdbcbc7d72229a8fc4b2ed574df17097493eaa75ac3cf03aa705b2b"
+    },
+    "baseline-results.log": {
+      "bytes": 7650,
+      "sha256": "e7cd83f117d00919c6d24f96ee7cdf920b3a0a12e298bcdb7751be072ea4b516"
+    },
+    "baseline-unique-detail.log": {
+      "bytes": 5331,
+      "sha256": "153df464d357d0140c8d607e9a13207aaa5abeb4466a464f4d458d06b2ede6e1"
+    },
+    "build.sh": {
+      "bytes": 699,
+      "sha256": "e6a7fef03a85d0f259729ec953fe5ad3f7f039e2c595b2e54bd8b57caefa7a90"
+    },
+    "contract_oracle.rs": {
+      "bytes": 7102,
+      "sha256": "0d756466902086b9cb39671c431eba71e29eda8d47bb0f6e8fa25e584ad7a3c4"
+    },
+    "integrator-oracle.log": {
+      "bytes": 187,
+      "sha256": "2f8e8384c0d6f0d46244c2b6d3412d715b9bbdf8deacc53d6d8e7f0f9e63100d"
+    },
+    "metadata.json": {
+      "bytes": 2365,
+      "sha256": "b1429bf1ce2de028de51863d4d68dfa6de4d916570037040b434b903e2350b6e"
+    },
+    "oracle.log": {
+      "bytes": 121,
+      "sha256": "e58826b2f5226fdab59141a295e9953f40e9d5716c951ec4f341ac9029f05df3"
+    },
+    "prototype.rs": {
+      "bytes": 16123,
+      "sha256": "e5b62972ef12e6ec5207908b7755abb7bef791c36462a354a9e74c048e562a1b"
+    },
+    "reproduce.sh": {
+      "bytes": 655,
+      "sha256": "20cc14ee7fb34943a1e25e3941aa5e0880d93e2544dbe05593922bb34d2469dd"
+    },
+    "results-before-capacity-trim.log": {
+      "bytes": 1795,
+      "sha256": "219fe6d55cfe7f0965606a2c310038eefab5ac07ce09fb8b8d1ebd5d33834783"
+    },
+    "results.log": {
+      "bytes": 621,
+      "sha256": "9837d7b2e387b1d5b0befdad261ccb4de2b0c0be43795782d30c3f9ea85048e6"
+    },
+    "source_highlight_snapshot.rs": {
+      "bytes": 18798,
+      "sha256": "1dd2aaa48ea10dc8cec7cea8dc7c676be5e2098e79f503507223d947e3d7ecd5"
+    }
+  }
+}

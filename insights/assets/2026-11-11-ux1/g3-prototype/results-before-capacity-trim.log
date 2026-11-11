@@ -1,0 +1,17 @@
+ORACLE_PASS cases=168 unicode_crlf_insert_delete_newline_wrap_dpi=true source_and_intrinsic_and_all_cursor_positions=true
+lines=10000 unique=false initial_ms=67.738 reflows=3 reused=9998
+MEMORY lines=10000 unique=false unique_rows=3 mesh_capacity_bytes=16224 glyph_capacity_bytes=17408 job_capacity_bytes=22647230 active_entries=10001 composite_rows=10001
+lines=10000 unique=false after_idle_edit_ms=60.957 reflows=1 reused=10000
+lines=10000 unique=false sequential_median_ms=27.623 min=24.099 max=31.710 reflows=0 reused=10001
+lines=10000 unique=true initial_ms=595.031 reflows=10001 reused=0
+MEMORY lines=10000 unique=true unique_rows=10001 mesh_capacity_bytes=81120000 glyph_capacity_bytes=87040000 job_capacity_bytes=56710416 active_entries=10001 composite_rows=10001
+lines=10000 unique=true after_idle_edit_ms=95.002 reflows=1 reused=10000
+lines=10000 unique=true sequential_median_ms=36.425 min=33.630 max=92.415 reflows=1 reused=10000
+lines=100000 unique=false initial_ms=737.933 reflows=3 reused=99998
+MEMORY lines=100000 unique=false unique_rows=3 mesh_capacity_bytes=16224 glyph_capacity_bytes=17408 job_capacity_bytes=226407230 active_entries=100001 composite_rows=100001
+lines=100000 unique=false after_idle_edit_ms=789.107 reflows=1 reused=100000
+lines=100000 unique=false sequential_median_ms=247.062 min=244.837 max=253.078 reflows=0 reused=100001
+lines=100000 unique=true initial_ms=5280.281 reflows=100001 reused=0
+MEMORY lines=100000 unique=true unique_rows=100001 mesh_capacity_bytes=811200000 glyph_capacity_bytes=870400000 job_capacity_bytes=567100416 active_entries=100001 composite_rows=100001
+lines=100000 unique=true after_idle_edit_ms=979.976 reflows=1 reused=100000
+lines=100000 unique=true sequential_median_ms=507.001 min=472.146 max=540.654 reflows=1 reused=100000

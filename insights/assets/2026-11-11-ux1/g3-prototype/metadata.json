@@ -1,0 +1,38 @@
+{
+  "created_utc": "2026-11-11T08:41:38.471865+00:00",
+  "verdict": "PUBLIC_API_FEASIBLE_NOT_PRODUCTION_READY_G3_NOT_ACCEPTED",
+  "native_p95": "NOT_RUN",
+  "production_modified": false,
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "cpu": "AMD EPYC 9V74",
+  "affinity_cpus": 9,
+  "rustc": "1.91.0",
+  "flags": [
+    "--edition=2024",
+    "-C opt-level=3",
+    "-C debuginfo=0"
+  ],
+  "source_authority": "single original source buffer; only immutable derived paragraph jobs/geometry cached",
+  "files_sha256": {
+    "oracle.log": "e58826b2f5226fdab59141a295e9953f40e9d5716c951ec4f341ac9029f05df3",
+    "prototype": "d9ce9b2a516b6df86b199b4b688c2518484f6fae8098144cb42b0cb57a100fee",
+    "results.log": "9837d7b2e387b1d5b0befdad261ccb4de2b0c0be43795782d30c3f9ea85048e6",
+    "REPORT.md": "72a19eb53fdbcbc7d72229a8fc4b2ed574df17097493eaa75ac3cf03aa705b2b",
+    "prototype.rs": "e5b62972ef12e6ec5207908b7755abb7bef791c36462a354a9e74c048e562a1b",
+    "build.sh": "e6a7fef03a85d0f259729ec953fe5ad3f7f039e2c595b2e54bd8b57caefa7a90",
+    "baseline-results.log": "e7cd83f117d00919c6d24f96ee7cdf920b3a0a12e298bcdb7751be072ea4b516",
+    "baseline-unique-detail.log": "153df464d357d0140c8d607e9a13207aaa5abeb4466a464f4d458d06b2ede6e1",
+    "contract_oracle.rs": "0d756466902086b9cb39671c431eba71e29eda8d47bb0f6e8fa25e584ad7a3c4",
+    "source_highlight_snapshot.rs": "1dd2aaa48ea10dc8cec7cea8dc7c676be5e2098e79f503507223d947e3d7ecd5",
+    "results-before-capacity-trim.log": "219fe6d55cfe7f0965606a2c310038eefab5ac07ce09fb8b8d1ebd5d33834783"
+  },
+  "memory_counting": "unique Arc<Row> allocations; unique paragraph Arc<LayoutJob> allocations + distinct composite job; capacities counted; no total RSS/peak assertion",
+  "peak_memory": "NOT_MEASURED",
+  "historical_binary_limitation": "pre-trim complete-run binary was overwritten and not separately hashed; final source/binary and both logs retained",
+  "release_dependencies_sha256": {
+    "libeframe-d04273f22ae6115f.rlib": "80182fe384ed9234bdf1a46321d37779e2d43948365d56b1f2ea1f2ec252d13f",
+    "libegui-1abcc1dda74bb44d.rlib": "dc795610d933f6839b2154eef9fdabe0cb44bfb8b13a65e1bd2289286241cd75",
+    "libepaint-86ecb0cdccf82419.rlib": "dcda3b7e033a73b7effa0c218454e7b1cc7aa76fa588893b6fbaea2d72576e14"
+  },
+  "finalization": "Rustfmt only, then recompiled final binary; no new benchmark or production changes."
+}
