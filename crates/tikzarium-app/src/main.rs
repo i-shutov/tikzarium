@@ -19,6 +19,7 @@ mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
+mod scientific_inspector;
 mod source_editor;
 mod source_fonts;
 mod source_highlight;
@@ -40,6 +41,7 @@ use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
+use scientific_inspector::ScientificInspector;
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
@@ -800,6 +802,7 @@ struct TikzariumApp {
     studio_palette_anchor: egui::Pos2,
     studio_extension_filter: String,
     authoring: tikz_authoring::Session,
+    scientific: ScientificInspector,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
     // history that could restore commands or bytes from a previous file.
@@ -994,6 +997,7 @@ impl TikzariumApp {
                 state.reset(QUICKSTART);
                 state
             },
+            scientific: ScientificInspector::default(),
             highlight_generated_line: false,
             reset_source_editor_undo_history: false,
             source_editor: source_editor::SourceEditor::default(),
@@ -1137,6 +1141,7 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                self.scientific = ScientificInspector::default();
                 self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
@@ -1887,6 +1892,14 @@ impl TikzariumApp {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
+        ui.separator();
+        if let Some(line) = self
+            .scientific
+            .show(ui, &mut self.authoring, &mut self.document.source)
+        {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         if self.show_packages {
             ui.separator();
             ui.collapsing("Library inventory · from C registry", |ui| {
@@ -2136,6 +2149,20 @@ impl TikzariumApp {
                             &mut self.reset_source_editor_undo_history,
                         );
                     }
+                    ui.separator();
+                    let prior = self.authoring.source_revision();
+                    if let Some(line) =
+                        self.scientific
+                            .show(ui, &mut self.authoring, &mut self.document.source)
+                    {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    fence_source_editor_undo_on_revision_change(
+                        prior,
+                        &self.authoring,
+                        &mut self.reset_source_editor_undo_history,
+                    );
                 }
                 StudioDock::Libraries => {
                     ui.heading("Библиотеки проекта");
@@ -2173,6 +2200,10 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    let scientific_help_shown = self.scientific.show_selected_help(ui);
+                    if scientific_help_shown {
+                        ui.separator();
+                    }
                     // Avoid a second generic "choose a tool" help card after a
                     // successful caret lookup; the user's source is the context.
                     let mut source_parameter_help_shown = false;
@@ -2203,7 +2234,7 @@ impl TikzariumApp {
                         ui.separator();
                     }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
-                    if !source_parameter_help_shown {
+                    if !source_parameter_help_shown && !scientific_help_shown {
                         ui.separator();
                         studio_ui::show_context_help(ui, &self.authoring);
                     }
