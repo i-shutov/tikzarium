@@ -1,0 +1,40 @@
+# TikZarium 1.0 Scientific Studio — рабочие блоки и владение
+
+Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
+
+## Выполнение: два последовательных интеграционных вертикальных среза
+
+**V1, немедленно:** native scientific TikZ workflow в Studio: project/new/open → 6 direct tools → Inspector/Apply/F1/source → Save/Undo → XeLaTeX PDF, диагностика, stale/last-good, export/reopen. Прежде чем закрывать V1, нужны native compact GUI и проверенный source/evidence. Это часть Scientific 1.0, но ещё НЕ вся 1.0.
+
+**V2:** shared PGFPlots SC3/AT4 axis/addplot/формулы/сохранение .dat/.csv dependencies, реальный Inspector→минимальный patch→Undo→XeLaTeX PDF; затем весь corpus MUST SCI142/научный AI88. Только после подтверждения shared scientific runtime — Asymptote, Typst/CeTZ. Никаких Graphviz-first/D2/Mermaid-first работ и Data Figure раньше научной приёмки.
+
+## Исполнительские пакеты и DoD
+
+| ID | Задание | Узкое владение файлами | Приёмка |
+| --- | --- | --- | --- |
+| SCI-UI / #172 | Исправить ошибки PR #172, шесть native direct tools, primary Build, Properties, source/palette state; rebase к текущему main | studio_ui.rs + GUI tests; main.rs только интегратор | rustfmt/clippy -D warnings/all targets, real raw-pointer clicks 6/6, exact Unicode/CRLF, original desktop PNG и клавиатура |
+| SCI-DESIGN / #169 | 4 темы, typography/spacing/contrast/hover/focus/disabled, responsive 1180×680/1366×768 | ui_theme.rs и отдельные token modules; не main.rs | 4 themes при OS theme hint, real native PNG, contrast/keyboard, figure TeX source unchanged |
+| SCI-INSPECTOR / #170 | Compact coordinates/units, single Apply, no duplicated F1, help navigation | tikz_canvas/inspector helper + catalog, main.rs bridge only integrator | source patch→Undo→PDF, no hidden mutation, no clipped fields, F1 and focus |
+| SCI-EDITOR-G3 | Bounded incremental editor layout & memory; source/Undo/IME; 3-document independent revisions/views | source editor/project/document modules (isolated) | native p95≤50ms at10k/1MiB, first editable≤2s, stress100k/10MiB, actual memory stats, exact UTF-8/CRLF |
+| SCI-BUILD | Descriptor/profile/request/result, existing XeLaTeX backwards compatible, cancel/stale/diagnostic dependency | tikzarium-core build + CLI, NOT UI layout | locked workspace tests, real XeLaTeX positive/negative, child cancel, version and dependencies; no second MiKTeX |
+| SCI-PGF | Source-preserving SC1–SC6 plus PGFPlots shared SC3/AT4; corpus-specific visuals | extensions/catalogue + new scientific modules | axis/addplot 1 real GUI vertical, 142/103 tracking, AI88 relevant IDs, source and PDF/Undo checks |
+| SCI-ASY | Verify Asymptote version/licence/CLI/platform, build profile and supported native scientific parameter edit | isolated scientific adapter/fixtures | local scientific file→real GUI build/preview→edit/Undo→export, negative missing executable |
+| SCI-TYP | Verify Typst/CeTZ and add scoped native profile after SCI-ASY | separate Typst adapter/fixtures | real supported .typ source→edit→build→preview→PDF, version and licence proof |
+| SCI-CORPUS-QA / #171 | Independent source/render/scientific/UX reviewers | QA scripts/ledgers/originals (not the author's production files) | SCI142 142/103 acceptance; AI88 per ID; screenshots/PDF/logs; no false PASS |
+| SCI-WIN10-CODEX | Native Windows10 local Codex for read-only environment and GUI/evidence, Server separate | personal QA evidence path only | W0/W1/W2b/W3/IME/96/120/192/W4 separately; original SHA+PNG+Tex/PDF/log; non-intrusive |
+| SCI-RELEASE | exact engine/operation matrix, freeze, packaging, release notes, rollback | docs/release manifests integrator only | source exact SHA, original E2E scientific artifacts + cross-platform CI + physical Windows GO |
+
+**Ownership discipline:** one integrator owns main.rs, shared schema, merges and release changes. Junior models may receive implementation/fixtures/research tasks *only through a confirmed launcher*. GitHub assignment to Copilot was refused (HTTP 422); writing issues is NOT running subagents. Record actual model/session/branch/checkpoint when launched. Independent source audit and native QA are separate from code author.
+
+## Blockers to remove with evidence, not assumptions
+
+1. **PR #172 is OPEN DRAFT, its checked HEAD has failed checks.** Read exact failing job logs and fix rustfmt/clippy/dead-code & GUI source-tree/coordinate lease correctly. Do NOT relax fail-closed QA hash, delete old evidence, or run untrusted PR on permanent Server.
+2. **Personal Server 2025 job previously queued/runner_id 0.** Determine actual runner state/labels/service using an authorised **read-only** probe on Server; don't infer offline from queued alone, don't touch FlowBridge runner.
+3. **Windows10 native channel not available directly from this chat.** Use [ready-to-paste Codex task](2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md) in the existing native Admin session; record ownership of screenshots, exact SHA, genuine IME vs RU keyboard and DPI, not clipboard substitutions.
+4. **UX1 G3 not accepted:** idle cache improvement ≠ p95 key-to-frame; paragraph prototype had high memory. Test bounded incremental layout in release/native before merge.
+5. **Scientific 1.0 engine / package gaps:** versions/licences/source and independent L3 edit support not yet verified for Asymptote/Typst/PGFPlots. Do per-engine source/provenance audit before user-installed exe use; never silently install.
+6. **Historical vs new scope:** latest release gate always [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), not historical narrow notes or 96-only accepted candidate.
+
+## Reporting after each substantive block
+
+Use: commit/PR/base exact SHA, modified files, change in user workflow, fmt+test+clippy, hosted/physical/native originals, data and source fidelity, current W0–W4/UX/SCI status, blockers with verbatim failure, next executable action. No arbitrary readiness %, no calendar promises, no CLAIM of subagents not actually launched. Stable v1.0 requires explicit independently accepted **all** MUST and owner GO.

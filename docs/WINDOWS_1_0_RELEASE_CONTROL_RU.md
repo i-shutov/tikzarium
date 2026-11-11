@@ -1,5 +1,12 @@
 ## Owner gate amendment — 10.11.2026 / UIX-first Windows 1.0
 
+# LATEST OWNER RELEASE DECISION 11.11.2026 — FULL SCIENTIFIC STUDIO v1.0.0
+
+**This heading OVERRIDES all dated narrow-scope amendments below.** Owner approves [full ST-SCI as Scientific Studio stable 1.0](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), not historical six-tools/UX-only Windows candidate. Include multi-document scientific Studio, all UX-F01…14/G3, PGFPlots shared SC3/AT4, SCI142 142=100AK+42Sarov/103, scientific AI88, Asymptote+Typst/CeTZ with real GUI scientific edits/Undo/build/export and publication-quality scientific output. UML→BPMN→engineering→chemistry/biology→animation→other→data LAST are later product stages.
+
+Keep all physical W0/W1 exact final SHA, personal Server2025 W2b, Win10 W3 original GUI/IME/96-120-192 DPI, W4 clean native GPU deploy/remove/rollback, original EXE/PDF/fonts/PNG, scientific/visual acceptance. **Stable NO-GO**; previous W3-96 on SHA 488a9687 and Linux rc1 do not qualify enlarged scope. This file's earlier 10.11 UX-only, 96-only and release-cutover paragraphs are historic evidence, not today's v1.0 release contract; do not delete their test records.
+
+
 **Новый release scope 1.0:** все UX-F01…UX-F14 по проверенному [UIX-аудиту `0f2a1f1`](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md), требования/порядок/тесты из [нормативного owner плана](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md). До stable принять UX1 редактор (syntax highlight, Find/Replace, gutter, Go to line, font) → UX2 workspace/tools/inspector/help → UX3 Save & Build/current-stale PDF/diagnostics → UX4 DPI/accessibility и usability, затем W2b/W3/IME/W4. **Старый релизный вариант 96 DPI-only superseded** новым приказом владельца «всё UIX — в 1.0»; 125/200 DPI из [#161](https://github.com/i-shutov/tikzarium/issues/161) возвращаются в физический gate. Это не PASS ни одного DPI, GUI или пакета.
 
 Scope exception **только для UX**; предметные расширения 35 TeX/88 examples вне 1.0. Исходники TeX, SHA/CRLF, protections current trusted Administrator, external independent MiKTeX, shell escape OFF, rollback, physical QA и запрет stable до полного доказательства остаются. Все предыдущие dated 96-only/status paragraphs ниже архивные.

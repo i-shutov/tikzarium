@@ -1,5 +1,10 @@
 # TikZarium Studio — продуктовая спецификация
 
+## Approved v1.0.0 target — complete Scientific Studio (11 November 2026)
+
+The owner approved the **full ST-SCI scientific product as version 1.0**, not a narrower TikZ GUI. [Normative scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Included: beautiful multi-document scientific Studio; all UX/G3 and Windows gates; TikZ/PGFPlots SC3/AT4 with verified edits; Scientific-142 142 figures/103 requirements; scientific AI88; Asymptote and Typst/CeTZ with independently agreed real scientific GUI actions/source/Undo/engine build/export. Penrose remains candidate until approved L3/L4 scope. Full nondo-main 88/35/23/13 obligations follow the domain priority, no silent scope reduction. New Data Figure/analysis remains LAST while existing scientific .dat/.csv dependencies remain required NOW. Old "number of first release will be chosen later" statements below are historical. Stable NO-GO; target scope ≠ shipped capability.
+
+
 **11 ноября 2026, редакция SCIENCE_FIRST_DATA_LAST.** Это целевой продукт, не описание уже реализованных функций. Последняя команда владельца задаёт порядок: **научная графика → UML → BPMN → инженерия → химия/биология → анимация → остальное → данные последними**. Подробный порядок и приёмка — в [едином roadmap](ROADMAP.md), ближайшие задачи — [в исполнительском плане](../plans/2026-11-11_STUDIO_REBASE.md).
 
 ## 1. Продукт и приоритет

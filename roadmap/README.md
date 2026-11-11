@@ -1,5 +1,8 @@
 # TikZarium / roadmap
 
+> **APPROVED SCIENTIFIC STUDIO v1.0.0 — 11.11.2026:** [normative release scope](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [single current roadmap](../docs/ROADMAP.md), [execution](../plans/2026-11-11_SCI_1_0_EXECUTION.md). Release includes SCI142 142/103, PGFPlots, science AI88 and scoped Asymptote/Typst/CeTZ alongside all UX-F01…14/G3 and native Windows W0–W4/IME/DPI. Nonscientific 88/35/23/13 packs stay in next subject phases. Old "Scientific after 1.0" or "only UX in 1.0" rows below are historical, not approved current scope. Stable 1.0 NO-GO.
+
+
 **Единый текущий план исполнения:** [docs/ROADMAP.md](../docs/ROADMAP.md). Этот каталог хранит нормативные приложения и матрицы, а не конкурирующие текущие маршруты. Первый реализационный блок — [UX1, 11.11.2026](../plans/2026-11-11_UX1_EXECUTION.md).
 
 ## Приоритет Windows 1.0: UIX-first

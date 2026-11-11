@@ -1,5 +1,10 @@
 # TikZarium Windows 1.0 — UIX-first scope и обязательные UX gates
 
+## SCIENTIFIC 1.0 OWNER OVERRIDE — 11.11.2026
+
+All UX-F01…F14, T0…T8, G1…G6, real Windows 96/120/192 DPI and native W2b/W3/IME/W4 in this file remain **MUST** for 1.0. Its historical "scope exception ONLY UX / SCI142 and 35 packages after 1.0" is superseded by the new explicit approval of [full ST-SCI as v1.0.0](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Now include SCI142 142/103, PGFPlots shared SC3/AT4, science AI88, Asymptote+Typst/CeTZ scoped native scientific workflows and premium scientific Studio. All other subject packs follow future domain order; data last. Full UX still mandatory; new release stable NO-GO. Previous QA evidence remains version/SHA-specific.
+
+
 **Решение владельца:** 10 ноября 2026, после публикации исходного UIX-аудита `0f2a1f19f06c39170bf5bb670ce10bf73a062d11`: **«нет, тащи их в 1.0. делай мердж и веди разработку»**.
 
 **Статус:** нормативный новый scope / implementation plan. Никакая функция UX-F01…F14 не объявляется исправленной без отдельного доказательства. Релиз 1.0 пока **NO-GO**.

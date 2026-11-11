@@ -1,5 +1,10 @@
 # TikZarium — release resume, 2026-11-11
 
+## SCIENTIFIC STUDIO v1.0.0 — OWNER APPROVED SCOPE, 11.11.2026
+
+[Normative scientific release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Full ST-SCI is the target for stable 1.0 (not historical narrow TikZ/96DPI RC): scientifically accepted TikZ/PGFPlots, SCI142 142/103, science AI88, scoped native Asymptote/Typst/CeTZ GUI edits and builds, premium multi-document UX/G3, exact-source W2b/W3/IME/96/120/192/W4. Stable still NO-GO. Prior dated resume sections record older source SHA and cannot transfer previous PASS to new enlarged candidate. [Current execution](../plans/2026-11-11_SCI_1_0_EXECUTION.md), [Win10 Codex request](../plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). PR #172 remains unmerged draft with failed checks at last inspected SHA. User can run local Codex to collect native facts; no automatic system adjustment.
+
+
 ## 2026-11-11 — единый roadmap и реализация UX1
 
 **Результат первого блока:** 431 workspace test PASS, независимое ревью и нативные Linux subsets; G3 и Windows-приёмка открыты. [Отчёт с исходными evidence](../insights/2026-11-11_UX1_IMPLEMENTATION_RU.md).

@@ -1,5 +1,10 @@
 # Architecture — TikZarium Multi-Engine Scientific Studio
 
+## Release binding 2026-11-11: full Scientific Studio v1.0.0
+
+The owner has fixed [v1.0 release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) to the **whole ST-SCI**: multi-document source-safe scientific Studio, all UX/G3, native TikZ/PGFPlots/SCI142/scientific AI88, scoped Asymptote and Typst/CeTZ scientific profiles with real editable GUI operations, exact source/build/export and native W0–W4. Shared project/engine/action APIs are built only as needed for this science-first vertical; no mandatory Graphviz/D2/Mermaid-first, generic multi-engine compositor or Data Figure. Penrose remains scoped investigation unless its detailed operations are approved. No operation-level ME-L3/4 acceptance from mere renderer/CLI. These are target architecture requirements, NOT implementation evidence. Stable release NO-GO.
+
+
 Date: 2026-11-11, revision SCIENCE_FIRST_DATA_LAST. **Target architecture, not implemented capability.** Read [AGENTS](../AGENTS.md), [ROADMAP](ROADMAP.md) and [current execution plan](../plans/2026-11-11_STUDIO_REBASE.md). Delivery order is now scientific graphics → UML → BPMN → engineering → chemistry/biology → animation → other extensions → data LAST. The earlier PR #173 Graphviz-first and early-data migration order is superseded.
 
 ## 1. Existing base, minimal enabling foundations

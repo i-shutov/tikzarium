@@ -1,5 +1,10 @@
 # TikZarium Windows 1.0 — известные ограничения и непроверенные режимы
 
+## CURRENT SCIENTIFIC STUDIO v1.0.0 OPEN ITEMS — 11.11.2026
+
+The [approved full ST-SCI release](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) has **NOT ACCEPTED** scientific corpus coverage (142/103, science AI88, PGFPlots), scientific Asymptote/Typst-CeTZ native editing/build/export, all UX/G3 and W2b/W3/IME/96-120-192/W4 on exact candidate. This previous issue list below documents only the historical narrow TikZ/Windows version and is incomplete for the new scientific release. No stable GO. The [execution plan](../plans/2026-11-11_SCI_1_0_EXECUTION.md) tracks current blockers with actual evidence. Old 96-DPI evidence is not new release acceptance.
+
+
 > Релизный комплект находится на стадии подготовки. Действующий [scope UIX/1.0](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md) включает все UX-F01–F14, реальные **100%/125%/200% = 96/120/192 DPI**, W2b/W3/IME/W4. Историческое доказательство при 100% относится к source `488a9687`, а не к любому следующему EXE. Текущий порядок работ — [единый roadmap](ROADMAP.md).
 
 ## Дисплей и RDP
