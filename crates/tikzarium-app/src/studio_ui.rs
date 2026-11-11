@@ -2,7 +2,7 @@
 //! Tool and parameter semantics belong to the existing C catalogue. Vector
 //! icon strokes are only UI affordances, never a second PGF renderer.
 use crate::tikz_authoring::{self, Session, Tool};
-use eframe::egui::{self, Pos2, Rect, Sense, Shape, Stroke, Vec2};
+use eframe::egui::{self, Pos2, Rect, Shape, Stroke};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
