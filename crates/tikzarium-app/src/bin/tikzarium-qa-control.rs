@@ -78,12 +78,17 @@ fn tool(id: &str) -> Result<Tool, String> {
         .ok_or_else(|| format!("unknown TikZ catalogue tool: {id}"))
 }
 fn group_id(group: studio_ui::StudioGroup) -> &'static str {
-    use studio_ui::StudioGroup;
     match group {
-        StudioGroup::Geometry => "geometry",
-        StudioGroup::Connections => "connections",
-        StudioGroup::Text => "text",
-        StudioGroup::Extensions => "extensions",
+        // Legacy groups exist only when cargo builds the historical tests.
+        // The ordinary QA-control executable and the Studio expose the direct
+        // six-tool rail; keep the unit-test match exhaustive in both modes.
+        #[cfg(test)]
+        studio_ui::StudioGroup::Geometry => "geometry",
+        #[cfg(test)]
+        studio_ui::StudioGroup::Connections => "connections",
+        #[cfg(test)]
+        studio_ui::StudioGroup::Text => "text",
+        studio_ui::StudioGroup::Extensions => "extensions",
     }
 }
 fn observed(layout: &mut BTreeMap<String, Rect>, id: String, rect: Rect) {
@@ -238,22 +243,28 @@ impl Control {
                     observed(&mut layout, "panel.source".into(), source_panel);
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            if let Some(pos) = studio_ui::show_group_rail_observed(
+                            let mut tools = Vec::new();
+                            let mut extension = Rect::NOTHING;
+                            let action = studio_ui::show_direct_tool_rail_observed(
                                 ui,
+                                session.active,
                                 group,
                                 true,
-                                |kind, rect| {
-                                    observed(
-                                        &mut layout,
-                                        format!("group.{}", group_id(kind)),
-                                        rect,
-                                    );
-                                },
-                            ) {
+                                |kind, rect| tools.push((kind, rect)),
+                                |rect| extension = rect,
+                            );
+                            for (tool, rect) in tools {
+                                observed(&mut layout, format!("tool.{}", tool.id()), rect);
+                            }
+                            observed(&mut layout, "group.extensions".into(), extension);
+                            if let Some(pos) = action.extension_anchor {
                                 next_anchor = Some(studio_ui::palette_anchor_at_source_edge(
                                     source_panel,
                                     pos,
                                 ));
+                            }
+                            if let Some(tool) = action.selected_tool {
+                                studio_ui::activate_studio_tool(session, tool, dock, inspector);
                             }
                         });
                         ui.vertical(|ui| {
@@ -778,12 +789,9 @@ mod api_tests {
         let output = qa
             .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":1.0}))
             .unwrap();
-        assert!(output["layout"]["group.geometry"]["pixels"].is_array());
+        assert!(output["layout"]["tool.line"]["pixels"].is_array());
+        assert!(output["layout"]["group.extensions"]["pixels"].is_array());
         assert!(output["layout"]["guide.canvas"]["center_px"].is_array());
-        qa.handle(&json!({"op":"input.click","target":"group.geometry"}))
-            .unwrap();
-        let info = qa.layout();
-        assert!(info["tool.line"]["center_px"].is_array());
         let tool_rect = qa.last_layout.get("tool.line").copied().unwrap();
         let source_rect = qa.last_layout.get("panel.source").copied().unwrap();
         let inspector_rect = qa.last_layout.get("panel.inspector").copied().unwrap();
@@ -792,9 +800,7 @@ mod api_tests {
         assert_eq!(
             qa.authoring.active,
             Some(Tool::Line),
-            "virtual click did not route: popup group={:?} anchor={:?} tool_rect={:?} source={:?} inspector={:?} window={}x{} dpi={} after_layout={:?}",
-            qa.group,
-            qa.anchor,
+            "virtual direct click failed: tool_rect={:?} source={:?} inspector={:?} window={}x{} dpi={} after_layout={:?}",
             tool_rect,
             source_rect,
             inspector_rect,
@@ -804,10 +810,12 @@ mod api_tests {
             qa.last_layout.get("tool.line")
         );
         assert_eq!(qa.authoring.selected, None);
+        assert_eq!(qa.dock, studio_ui::StudioDock::Properties);
+        assert!(!qa.authoring.help);
         let scaled = qa
             .handle(&json!({"op":"window.set","width":1366,"height":768,"dpi":2.0}))
             .unwrap();
-        assert!(scaled["layout"]["group.geometry"]["pixels"].is_array());
+        assert!(scaled["layout"]["tool.line"]["pixels"].is_array());
         assert!(scaled["layout"]["guide.canvas"]["center_px"].is_array());
     }
     #[test]

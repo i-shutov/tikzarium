@@ -33,7 +33,6 @@ def run() -> dict:
     cases = [
         {"op": "api.describe"},
         {"op": "window.set", "width": 1366, "height": 768, "dpi": 1.0},
-        {"op": "input.click", "target": "group.geometry"},
         {"op": "input.click", "target": "tool.line"},
         {"op": "state.snapshot"},
         {"op": "input.key", "key": "F1", "down": True},
@@ -75,30 +74,30 @@ def run() -> dict:
         rows = [json.loads(line) for line in output.splitlines()]
         check(len(rows) == len(cases), f"Expected {len(cases)} JSON replies, got {len(rows)}. {stderr[-1200:]}")
         for index, row in enumerate(rows):
-            expected_success = index not in (18, 19)
+            expected_success = index not in (17, 18)
             check(row.get("ok") is expected_success, f"operation {index}, {cases[index]['op']} unexpectedly failed: {row}")
         describe = rows[0]["result"]
         check("input.drag" in describe["operations"] and "tool.insert" in describe["operations"],
               "Required API operations unavailable")
         layout = rows[1]["result"]["layout"]
-        check("group.geometry" in layout and "guide.canvas" in layout,
+        check("tool.line" in layout and "group.extensions" in layout and "guide.canvas" in layout,
               "Real egui widget rectangles not captured")
-        check(rows[4]["result"]["tool"] == "line", "Native egui group/palette click did not select tool")
-        check(rows[8]["result"]["owned_count"] == 1, "Same Session did not insert real C TikZ line")
-        edited = rows[11]["result"]["source"]
+        check(rows[3]["result"]["tool"] == "line", "Native egui direct-rail click did not select tool")
+        check(rows[7]["result"]["owned_count"] == 1, "Same Session did not insert real C TikZ line")
+        edited = rows[10]["result"]["source"]
         check("4.25cm" in edited, "Parameter apply did not mutate editable TeX")
-        undone = rows[12]["result"]["source"]
+        undone = rows[11]["result"]["source"]
         check(undone != edited and "Кириллица" in undone and "\r\n" in undone,
               "Undo failed to restore byte-accurate CRLF and Unicode")
         saved = (Path(tmp) / "qa-unicode-source.tex").read_bytes()
         check(saved == undone.encode("utf-8"), "Save As did not preserve exact TeX bytes")
-        check(rows[15]["result"]["hits"], "F1 search does not use catalogue")
-        check(rows[16]["result"]["dock"] == "Libraries" if "dock" in rows[16]["result"] else True,
+        check(rows[14]["result"]["hits"], "F1 search does not use catalogue")
+        check(rows[15]["result"]["dock"] == "Libraries" if "dock" in rows[15]["result"] else True,
               "Library dock change failed")
-        check(rows[18]["error"].startswith("stale source revision"), "Stale revision did not fail closed")
-        check("relative" in rows[19]["error"] or "no" in rows[19]["error"],
+        check(rows[17]["error"].startswith("stale source revision"), "Stale revision did not fail closed")
+        check("relative" in rows[18]["error"] or "no" in rows[18]["error"],
               "Traversal outside QA root was accepted")
-        final = rows[20]["result"]
+        final = rows[19]["result"]
         check(final["source"] == undone and final["owned_count"] == 1,
               "Rejected operations mutated source")
         check(final["evidence"]["native_window"] == "NOT_RUN"

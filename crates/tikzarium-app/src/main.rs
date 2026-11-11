@@ -1935,16 +1935,26 @@ impl TikzariumApp {
                 {
                     self.save();
                 }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Build,
-                    self.receiver.is_some(),
-                    34.0,
-                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter",
-                )
-                .clicked()
-                    && ready
-                {
+                // Primary CTA is a real labelled button with keyboard focus.
+                // A successful click still uses the existing bounded XeLaTeX path.
+                let build_response = ui.add_enabled(
+                    ready,
+                    egui::Button::new(
+                        egui::RichText::new("Собрать PDF")
+                            .strong()
+                            .color(egui::Color32::WHITE),
+                    )
+                    .fill(ui.visuals().selection.bg_fill)
+                    .min_size(egui::vec2(116.0, 34.0)),
+                );
+                let build_response = if ready {
+                    build_response.on_hover_text("Собрать точный PDF внешним XeLaTeX · Ctrl+Enter")
+                } else {
+                    build_response.on_disabled_hover_text(
+                        "Недоступно, пока открыт диалог или выполняется сборка",
+                    )
+                };
+                if build_response.clicked() {
                     self.build();
                 }
                 if studio_ui::icon_button(
@@ -1986,7 +1996,7 @@ impl TikzariumApp {
                 }
                 ui.menu_button("Вид", |ui| {
                     if ui
-                        .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
+                        .checkbox(&mut self.prefs.studio_tool_rail, "Инструменты TikZ")
                         .changed()
                         && !self.prefs.studio_tool_rail
                     {
@@ -2035,8 +2045,12 @@ impl TikzariumApp {
             });
             ui.horizontal(|ui| {
                 let prior_focus = self.pdf_focus_in_split;
-                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз");
-                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF");
+                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз")
+                    .on_hover_text(
+                        "Создаваемые объекты: предварительная направляющая, не полный рендер TeX",
+                    );
+                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF исходника")
+                    .on_hover_text("Точный результат последней сборки через внешний XeLaTeX");
                 if self.pdf_focus_in_split && !prior_focus {
                     self.fit_page_active = true;
                     self.authoring.cancelled_pointer_capture |=
@@ -2100,14 +2114,14 @@ impl TikzariumApp {
                 StudioDock::Properties => {
                     if self.authoring.active.is_none() {
                         ui.heading("Выберите инструмент");
-                        ui.label("Нажмите на группу иконок слева, затем выберите команду TikZ.");
+                        ui.label("Выберите один из шести инструментов на левой панели.");
                         ui.small("Параметры и примеры появятся здесь из единого каталога.");
                         ui.separator();
                         ui.small("Исходный .tex остаётся редактируемым. Точный результат — внешний XeLaTeX.");
                     } else {
                         let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();
-                        if let Some(line) = tikz_canvas::show_inspector(
+                        if let Some(line) = tikz_canvas::show_inspector_studio(
                             ui,
                             &mut self.authoring,
                             &mut self.document.source,
@@ -2994,7 +3008,9 @@ impl eframe::App for TikzariumApp {
             && self.workspace == WorkspaceMode::Split
             && self.prefs.studio_tool_rail
         {
-            egui::SidePanel::left("b42-tool-groups")
+            // UX2: six reviewed C tools are selectable in ONE direct click.
+            // The only floating palette in Studio is the extensions catalogue.
+            let rail_action = egui::SidePanel::left("b42-tool-groups")
                 .resizable(false)
                 .exact_width(
                     studio_ui::StudioLayout::for_width(ctx.available_rect().width())
@@ -3004,14 +3020,25 @@ impl eframe::App for TikzariumApp {
                     if self.modal_active() {
                         ui.disable();
                     }
-                    if let Some(anchor) = studio_ui::show_group_rail(
+                    studio_ui::show_direct_tool_rail(
                         ui,
+                        self.authoring.active,
                         &mut self.studio_group,
                         studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
-                    ) {
-                        self.studio_palette_anchor = anchor;
-                    }
-                });
+                    )
+                })
+                .inner;
+            if let Some(tool) = rail_action.selected_tool {
+                studio_ui::activate_studio_tool(
+                    &mut self.authoring,
+                    tool,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
+            }
+            if let Some(anchor) = rail_action.extension_anchor {
+                self.studio_palette_anchor = anchor;
+            }
         }
         let source_layout = if self.prefs.studio_mode {
             split_layout.reserving_center(ctx.available_rect().width())

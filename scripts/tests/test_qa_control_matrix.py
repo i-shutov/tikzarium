@@ -34,7 +34,6 @@ def run() -> dict:
     add("window.set", width=1366, height=768, dpi=1.0)
     add("frame.run")
     add("layout.snapshot")
-    add("input.click", target="group.geometry")
     add("input.click", target="tool.line")
     add("state.snapshot")
     add("input.key", key="F1", down=True)
@@ -127,38 +126,38 @@ def run() -> dict:
             passed.append(label)
 
         passed: list[str] = []
-        check("GUI group/palette hit route", replies[6]["result"]["tool"] == "line")
-        check("F1 actual key handling", replies[9]["result"]["help"] != replies[6]["result"]["help"])
+        check("GUI direct-tool rail hit route", replies[5]["result"]["tool"] == "line")
+        check("F1 actual key handling", replies[8]["result"]["help"] != replies[5]["result"]["help"])
         check("real pointer drag inserts one C-owned primitive",
-              replies[15]["result"]["owned_count"] == 1)
-        check("direct C generator second insertion", replies[16]["result"]["owned_count"] == 2)
-        check("all six native tools create owned source", replies[21]["result"]["owned_count"] == 7)
-        check("inspector modifies selected circle", "radius=0.8cm" in replies[24]["result"]["source"])
-        check("undo restores exact source", replies[25]["result"]["source"]
-              != replies[24]["result"]["source"])
+              replies[14]["result"]["owned_count"] == 1)
+        check("direct C generator second insertion", replies[15]["result"]["owned_count"] == 2)
+        check("all six native tools create owned source", replies[20]["result"]["owned_count"] == 7)
+        check("inspector modifies selected circle", "radius=0.8cm" in replies[23]["result"]["source"])
+        check("undo restores exact source", replies[24]["result"]["source"]
+              != replies[23]["result"]["source"])
         check("library connect/disconnect preserved other source",
-              "positioning" in replies[26]["result"]["source"]
-              and "positioning" not in replies[27]["result"]["source"])
+              "positioning" in replies[25]["result"]["source"]
+              and "positioning" not in replies[26]["result"]["source"])
         check("Russian F1 uses C catalogue",
-              any(i.get("id") == "tikz.circle" for i in replies[28]["result"]["hits"]))
-        check("dock shows shared state", replies[30]["result"]["dock"] == "Libraries")
-        check("200% DPI virtual geometry", "guide.canvas" in replies[32]["result"])
-        check("850x560 virtual viewport", replies[34]["result"]["viewport"]
+              any(i.get("id") == "tikz.circle" for i in replies[27]["result"]["hits"]))
+        check("dock shows shared state", replies[29]["result"]["dock"] == "Libraries")
+        check("200% DPI virtual geometry", "guide.canvas" in replies[31]["result"])
+        check("850x560 virtual viewport", replies[33]["result"]["viewport"]
               == {"width": 850, "height": 560, "dpi": 1.0})
-        tex = replies[35]["result"]["source"]
-        check("Save/Open exact CRLF UTF-8", replies[37]["result"]["source"] == tex
+        tex = replies[34]["result"]["source"]
+        check("Save/Open exact CRLF UTF-8", replies[36]["result"]["source"] == tex
               and (directory / "qa-unicode.tex").read_bytes() == tex.encode("utf-8"))
-        check("optimistic source revision used", replies[38]["result"]["source"]
+        check("optimistic source revision used", replies[37]["result"]["source"]
               == SOURCE + "% ручная правка\r\n")
         check("invalid operations preserve document",
-              replies[50]["result"]["source"] == replies[38]["result"]["source"])
+              replies[49]["result"]["source"] == replies[37]["result"]["source"])
         check("unrelated file not overwritten",
               (directory / "occupied.tex").read_bytes() == b"UNTOUCHED")
         check("NO virtual GUI claimed as physical Windows",
-              replies[50]["result"]["evidence"]["physical_windows10"] == "NOT_RUN"
-              and replies[50]["result"]["evidence"]["external_xelatex_pdf"] == "NOT_RUN")
+              replies[49]["result"]["evidence"]["physical_windows10"] == "NOT_RUN"
+              and replies[49]["result"]["evidence"]["external_xelatex_pdf"] == "NOT_RUN")
         check("all v0 API actions covered", advertised.issubset(exercised))
-        final_sha = hashlib.sha256(replies[50]["result"]["source"].encode("utf-8")).hexdigest()
+        final_sha = hashlib.sha256(replies[49]["result"]["source"].encode("utf-8")).hexdigest()
         return {
             "status": "PASS_ALL_DECLARED_GUI_API_V0_ACTIONS_UNIT_EVENT_NOT_PHYSICAL_GUI",
             "schema_version": 1, "api_actions": len(advertised),
