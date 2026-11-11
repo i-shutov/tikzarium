@@ -971,7 +971,9 @@ fn show_inspector_mode(
         ui.small("Изменение источника — только после «Применить параметры».");
     } else {
         ui.heading("TikZ · параметры и справка");
-        ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
+        ui.small(
+            "Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.",
+        );
     }
     ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
         ui.small(format!(
@@ -1200,6 +1202,55 @@ fn show_inspector_mode(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scientific_studio_compact_labels_preserve_authoritative_source() {
+        assert_eq!(studio_parameter_label("start_x"), "Начало X");
+        assert_eq!(studio_parameter_label("end_y"), "Конец Y");
+        assert_eq!(studio_parameter_label("center_x"), "Центр X");
+        assert_eq!(studio_parameter_label("control2_y"), "Упр. 2 Y");
+        assert_eq!(studio_parameter_label("content"), "Текст / формула");
+        assert_eq!(studio_parameter_label("unrecognized_param"), "unrecognized_param");
+        assert_eq!(studio_parameter_group("start_x"), "Начальная точка");
+        assert_eq!(studio_parameter_group("start_y"), "Начальная точка");
+        assert_eq!(studio_parameter_group("end_x"), "Конечная точка");
+
+        // A frame which merely displays the scientific property draft must
+        // not patch TeX, alter CRLF, or produce a source Undo transaction.
+        let source_bytes = "% неизменный комментарий\r\n\\mystery{Ж}\r\n".to_owned();
+        let mut source = source_bytes.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Line);
+        let ctx = egui::Context::default();
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(
+                    Pos2::ZERO,
+                    Vec2::new(680.0, 540.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    assert!(show_inspector_studio(
+                        ui,
+                        &mut session,
+                        &mut source,
+                        Capabilities {
+                            installed: true,
+                            loaded: Evidence::Confirmed,
+                            engine_compatible: true,
+                            implemented: true,
+                        },
+                    )
+                    .is_none());
+                });
+            },
+        );
+        assert_eq!(source.as_bytes(), source_bytes.as_bytes());
+        assert!(!session.undo_available());
+    }
 
     // B41: real egui pointer/keyboard event frames, not fabricated UI flags.
     // The pinned Apply sits above a long scrollable inspector and must commit
