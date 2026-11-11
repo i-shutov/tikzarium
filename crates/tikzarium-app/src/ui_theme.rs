@@ -28,6 +28,13 @@ impl UiTheme {
     }
 
     pub fn apply(self, ctx: &egui::Context, compact: bool) {
+        // These four choices are explicit application preferences. Select the
+        // active style slot before customizing it; a later first native OS
+        // theme hint must not switch to the untouched opposite slot.
+        ctx.set_theme(match self {
+            Self::Light | Self::Paper => egui::Theme::Light,
+            Self::Dark | Self::Midnight => egui::Theme::Dark,
+        });
         let mut visuals = match self {
             Self::Light | Self::Paper => egui::Visuals::light(),
             Self::Dark | Self::Midnight => egui::Visuals::dark(),
@@ -295,6 +302,80 @@ mod tests {
                 assert_eq!(prefs.theme, theme);
                 assert_eq!(prefs.figure_fonts().proof_source().unwrap(), fonts_before);
                 assert_eq!(prefs.source_font_size, 14.0);
+            }
+        }
+    }
+    #[test]
+    fn explicit_theme_before_first_frame_survives_opposite_and_changing_system_theme() {
+        // eframe loads preferences before its first native RawInput. The first
+        // OS hint must not switch away from the slot we customized at startup.
+        for theme in [
+            UiTheme::Midnight,
+            UiTheme::Light,
+            UiTheme::Dark,
+            UiTheme::Paper,
+        ] {
+            let ctx = egui::Context::default();
+            let mut prefs = UiPreferences::default();
+            if theme != UiTheme::default() {
+                let encoded = serde_json::to_string(&UiPreferences {
+                    theme,
+                    ..Default::default()
+                })
+                .unwrap();
+                prefs = serde_json::from_str(&encoded).unwrap();
+            }
+            prefs.theme.apply(&ctx, true);
+            let intended = ctx.style();
+            let expected_theme = match theme {
+                UiTheme::Light | UiTheme::Paper => egui::Theme::Light,
+                UiTheme::Dark | UiTheme::Midnight => egui::Theme::Dark,
+            };
+            let opposite = match expected_theme {
+                egui::Theme::Light => egui::Theme::Dark,
+                egui::Theme::Dark => egui::Theme::Light,
+            };
+            for system_theme in [
+                Some(opposite),
+                Some(egui::Theme::Light),
+                Some(egui::Theme::Dark),
+                None,
+                Some(opposite),
+            ] {
+                let _ = ctx.run(
+                    egui::RawInput {
+                        system_theme,
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            assert_eq!(
+                                ui.visuals().panel_fill,
+                                intended.visuals.panel_fill,
+                                "{theme:?} background changed after OS hint {system_theme:?}"
+                            );
+                            assert_eq!(
+                                ui.visuals().extreme_bg_color,
+                                intended.visuals.extreme_bg_color,
+                                "{theme:?} editor background changed"
+                            );
+                            assert_eq!(
+                                ui.visuals().dark_mode,
+                                matches!(expected_theme, egui::Theme::Dark)
+                            );
+                        });
+                        assert_eq!(
+                            ctx.theme(),
+                            expected_theme,
+                            "explicit {theme:?} must own the active style slot"
+                        );
+                        assert_eq!(ctx.style().spacing.item_spacing, egui::vec2(5.0, 3.0));
+                    },
+                );
+                assert_eq!(
+                    prefs.theme, theme,
+                    "native OS hint must not override persisted choice"
+                );
             }
         }
     }

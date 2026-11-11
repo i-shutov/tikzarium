@@ -3,7 +3,7 @@
   "kind": "UX1_LOCAL_LINUX_NATIVE_AND_CPU_EVIDENCE",
   "date": "2026-11-11",
   "status": "LOCAL_SUBSETS_VERIFIED_NOT_FULL_UX1_ACCEPTANCE",
-  "capture": "Original selected TikZarium client PNGs from CUA, not desktop crops or generated images",
+  "capture": "Original unmodified evidence: native/ and themes/ are CUA selected app-client PNGs; windows-startup/ is hosted Win32 PrintWindow client capture. No generated images or desktop crops.",
   "client_pixels": [
     1180,
     680
@@ -36,10 +36,17 @@
   },
   "automated": {
     "toolchain": "Rust 1.91.0",
-    "workspace_tests_passed": 431,
+    "workspace_tests_passed": 432,
     "workspace_tests_failed": 0,
     "workspace_tests_ignored": 2,
-    "ignored_explanation": "Existing probe_process::tests::probe_child helper and explicit manual local_cpu_highlight_cost benchmark; benchmark separately run in release"
+    "ignored_explanation": "Existing probe_process::tests::probe_child helper and explicit manual local_cpu_highlight_cost benchmark; benchmark separately run in release",
+    "previous_workspace_tests": {
+      "passed": 431,
+      "app_tree": "2c85223f58b0b954de8655a5f5cf63515d0e4c39",
+      "log": "workspace-tests.log"
+    },
+    "app_tree": "e9f47c46042119b2fb58b187fcfaf0fafa076a64",
+    "workspace_tests_log": "workspace-tests-system-theme.log"
   },
   "gates": {
     "G3_native_p95": "NOT_RUN",
@@ -150,6 +157,71 @@
     "workspace-tests.log": {
       "bytes": 42517,
       "sha256": "c8033b89e2c78c76cdc3ab55d7fd69a5ebd3819f61633a943816d67b429b6e24"
+    },
+    "g3/REPORT.md": {
+      "bytes": 11074,
+      "sha256": "9ac81c9a3e4275c4b63b4c24a9f18c7060d6a4ef780400e3cd153cb1f5b75288"
+    },
+    "g3/benchmark.rs": {
+      "bytes": 8554,
+      "sha256": "b3b81cd49d034d1a4fc0d196651b01c5c1703086688067b460f77e7b3c1d5b79"
+    },
+    "g3/metadata-and-results.json": {
+      "bytes": 31614,
+      "sha256": "529533868400322463f652094fa142577abf02255f4271cbcb2ce90a365abf8a"
+    },
+    "g3/results.log": {
+      "bytes": 7650,
+      "sha256": "e7cd83f117d00919c6d24f96ee7cdf920b3a0a12e298bcdb7751be072ea4b516"
+    },
+    "g3/row_clone.log": {
+      "bytes": 1116,
+      "sha256": "cb1f7845e0a99678db6f063b7e63972c8ad74866fe14c0c2fe9a409bc6cdfadc"
+    },
+    "g3/source_highlight_snapshot.rs": {
+      "bytes": 18818,
+      "sha256": "7381eef72c9dd9e1865da268496ce628ba011bbe19ac2f7ab325e2e6ff34f38c"
+    },
+    "g3/unique_detail.log": {
+      "bytes": 5331,
+      "sha256": "153df464d357d0140c8d607e9a13207aaa5abeb4466a464f4d458d06b2ede6e1"
+    },
+    "windows-startup/before-fix.png": {
+      "bytes": 128784,
+      "sha256": "1774843749f2c385bca7a5f324b754d90ef808347db4862762f0a6fbe39ee15c"
+    },
+    "windows-startup/original-hosted-report.json": {
+      "bytes": 9161,
+      "sha256": "ceef51e9297dbb6973903fb319bfeed170ba352d1893a937cd756e081f312595"
+    },
+    "workspace-tests-system-theme.log": {
+      "bytes": 42624,
+      "sha256": "7180309faad19e693602c8817669395df03177a6fa9932f78dd6cc98562505e8"
     }
-  }
+  },
+  "windows_startup_defect": {
+    "source_head": "92c7c6877613b4f4e07ee9fc705e808436cae708",
+    "app_tree": "2c85223f58b0b954de8655a5f5cf63515d0e4c39",
+    "run_id": 42982804521,
+    "artifact_id": 13838885142,
+    "environment": "HOSTED_WINDOWS_SERVER_2022_96DPI_NOT_PERSONAL_SERVER_OR_WIN10",
+    "directory": "windows-startup",
+    "finding": "Initial system Light input switches to stock Light style while selected Midnight syntax palette remains; contrast mismatch",
+    "fix_app_tree": "e9f47c46042119b2fb58b187fcfaf0fafa076a64",
+    "fix_unit_regression": "RED_BEFORE_GREEN_AFTER",
+    "fix_native_recheck": "PENDING_NEW_EXACT_HEAD_ORIGINALS",
+    "client_pixels": [
+      992,
+      680
+    ],
+    "capture": "WIN32_PRINTWINDOW_PW_CLIENTONLY_RENDERFULLCONTENT_NO_SCREEN_READ"
+  },
+  "g3_diagnosis": {
+    "directory": "g3",
+    "runtime_source_head": "e8a3410cb65f3bda2fd20b4050de3e169454c100",
+    "scope": "LOCAL_CPU_ONLY_SYNTAX_VS_MONO_REPEAT_AND_UNIQUE",
+    "decision": "INCREMENTAL_DERIVED_LAYOUT_STAGE_REQUIRED_NO_SMALL_FIX_DEMONSTRATED",
+    "gate": "NOT_ACCEPTED"
+  },
+  "client_pixels_scope": "native/ and themes/ only"
 }

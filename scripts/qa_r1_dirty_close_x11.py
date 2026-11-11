@@ -47,9 +47,22 @@ def key(value: str) -> None:
 
 
 def copied_source() -> str:
+    # A stale clipboard must not impersonate a successful source selection.
+    subprocess.run(
+        ["xclip", "-selection", "clipboard", "-i"],
+        input=b"__R1_CLIPBOARD_SENTINEL__", timeout=8, check=True,
+    )
     key("ctrl+a")
     key("ctrl+c")
-    return run("xclip", "-selection", "clipboard", "-o")
+    # Generic run().strip() discarded terminal whitespace in the old evidence.
+    # Keep exact UTF-8/CRLF bytes; invalid UTF-8 must fail rather than be replaced.
+    copied = subprocess.run(
+        ["xclip", "-selection", "clipboard", "-o"],
+        capture_output=True, timeout=8, check=True,
+    ).stdout
+    if copied == b"__R1_CLIPBOARD_SENTINEL__":
+        raise RuntimeError("Native source Copy did not replace the clipboard sentinel")
+    return copied.decode("utf-8")
 
 
 def main() -> int:
@@ -148,8 +161,8 @@ def main() -> int:
             key("ctrl+s")
             output = out / "figure.tex"
             wait(output.exists, "Save .tex", 12)
-            if "releasecanary" not in output.read_text("utf-8"):
-                raise RuntimeError("Saved document lacks the canary")
+            if output.read_bytes() != source_before.encode("utf-8"):
+                raise RuntimeError("Saved document differs from the exact source before close")
             run("wmctrl", "-i", "-c", window)
             wait(lambda: process.poll() is not None, "clean WM close", 12)
             report["steps"].append("save_then_clean_WM_close")

@@ -9,9 +9,9 @@ UX1 опубликован в [PR #167](https://github.com/i-shutov/tikzarium/pu
 ## Проверки кода
 
 - `source_editor`: 9 тестов; `source_highlight`: 17 тестов.
-- Итоговый полный workspace: **431 passed, 0 failed, 2 ignored**; manual CPU benchmark запущен отдельно в release. [Исходный лог](assets/2026-11-11-ux1/workspace-tests.log).
+- Итоговый полный workspace после startup-theme fix: **432 passed, 0 failed, 2 ignored**; manual CPU benchmark запущен отдельно в release. [Исходный финальный лог](assets/2026-11-11-ux1/workspace-tests-system-theme.log). Первоначальный прогон 431 теста сохранён отдельным исходным логом и отмечен в manifest.
 - `cargo fmt --all --check`, `cargo build --locked -p tikzarium-app` и `cargo clippy --locked --workspace --all-targets -- -D warnings` проходят на итоговом срезе.
-- Исправление меню темы использует `menu_button`, чтобы открытие подменю не закрывало родительское меню «Вид». Прошли 5 тестов темы, включая 8 pointer-путей: четыре темы в Studio и классическом режиме. После пересборки все четыре темы выбраны в настоящем Studio, исходный `.tex` после сохранения побайтово совпал с `examples/quickstart.tex`.
+- Исправление меню темы использует `menu_button`, чтобы открытие подменю не закрывало родительское меню «Вид». Прошли 6 тестов темы, включая 8 pointer-путей и отдельную регрессию первого системного сообщения о теме. После исправления меню все четыре темы выбраны в настоящем Studio, исходный `.tex` после сохранения побайтово совпал с `examples/quickstart.tex`; последующая startup-регрессия и её исправление описаны отдельно ниже.
 - Последний просмотр девяти event-тестов подтвердил сценарии Find/GoToLine, Enter в том же кадре, IME preedit/commit, Escape/focus, ReplaceAll с одним Undo/Redo, смену документа и сброс устаревшего preview, Unicode/CRLF, перенос строк и горизонтальную прокрутку с фиксированным gutter.
 
 ## Реальная Linux CUA-проверка
@@ -27,7 +27,7 @@ UX1 опубликован в [PR #167](https://github.com/i-shutov/tikzarium/pu
 - Go to line перешёл к строке 10.
 - При отключённом переносе горизонтальный переход к концу оставил gutter на месте; переход к строке 1 снова показал её текст.
 
-После обнаружения и исправления меню выполнен отдельный native проход четырёх тем на итоговом app tree **`2c85223f58b0b954de8655a5f5cf63515d0e4c39`**, binary SHA-256 **`3c2991c58812548889b596a20e41f04e82f2021f7fadb0aecb693994c1317b70`**. Между двумя app trees изменился только `ui_theme.rs`; editor/lexer/navigation остаются теми же source blobs. Сценарии и снимки двух запусков явно разделены в [manifest](assets/2026-11-11-ux1/manifest.json); ни один запуск не назван физической Windows-приёмкой.
+После обнаружения и исправления меню выполнен отдельный native проход четырёх тем на app tree **`2c85223f58b0b954de8655a5f5cf63515d0e4c39`**, binary SHA-256 **`3c2991c58812548889b596a20e41f04e82f2021f7fadb0aecb693994c1317b70`**. Между двумя app trees изменился только `ui_theme.rs`; editor/lexer/navigation остаются теми же source blobs. Сценарии и снимки двух запусков явно разделены в [manifest](assets/2026-11-11-ux1/manifest.json); они предшествуют startup-fix и не названы физической Windows-приёмкой.
 
 Исходные evidence расположены в `assets/2026-11-11-ux1/`: `native/01-startup.png`, `native/02-find-highlight.png`, `native/03-replace-preview.png`, `native/04-replace-applied.png`, `native/05-one-undo-restored.png`, `native/06-goto-wrapped-line.png`, `native/07-fixed-gutter-horizontal.png`, `native/08-navigation-restored.png`, `native/replace-all-saved.tex`, `native/undo-restored.tex`, `native/redo-saved.tex`.
 
@@ -38,6 +38,8 @@ UX1 опубликован в [PR #167](https://github.com/i-shutov/tikzarium/pu
 **G3 и отзывчивость 100 тыс. строк: NOT_ACCEPTED.** Измерялись CPU lexer/egui layout операции без native input dispatch, GPU/renderer, compositor и видимого кадра; частота/загрузка shared runner не закреплялись. Повторяющиеся строки максимизируют reuse paragraph cache; ownership marker тоже повторяется. Количество повторов мало для оценки p95, а измерение не представляет уникальный пользовательский документ. Данные честно показывают низкую цену idle cache и сохраняющийся высокий риск полного relayout при редактировании большого файла, но не доказывают приемлемую задержку ввода.
 
 [Первичный отчёт замеров](assets/2026-11-11-ux1/benchmark-report.json) и [исходный release лог](assets/2026-11-11-ux1/release-benchmark.log) сохранены рядом. Полный файл содержит профили, повторности, диапазоны, fixture hashes и ограничения эксперимента.
+
+Дополнительный [диагностический эксперимент G3](assets/2026-11-11-ux1/g3/REPORT.md) сравнил тот же production cache с одноцветным layout на повторяющихся и уникальных строках. На 100k/8 MB после idle даже одноцветный вариант занял 2,8–3,8 с в двух локальных сериях. Найдены полный hash/split LayoutJob, удаление внутренних paragraph cache entries и глубокое копирование геометрии строк. Отключение подсветки не закрывает проблему. Следующий отдельный этап — кэш производной геометрии абзацев и пересчёт изменённой области с сохранением единственного source buffer, native TextEdit/Undo/IME и ограничением памяти. Это предложение, а не уже проверенная incremental-реализация; исходный harness, snapshot, metadata и raw logs сохранены рядом с отчётом.
 
 ## Исправления по review
 
@@ -51,14 +53,24 @@ UX1 опубликован в [PR #167](https://github.com/i-shutov/tikzarium/pu
 - [I61 run 42981807388](https://github.com/i-shutov/tikzarium/actions/runs/42981807388), artifact `13837623958`: автоматическая часть шести инструментов, Inspector Apply, Undo, Save/Open и external PDF прошла. N2 Connect/Disconnect/Undo и CRLF/Open/Save также прошли, а N3 остановился на повторной установке caret. PNG `n2-evidence/17-n3-prefix-in-source-editor.png` показывает импорт в пятой строке около y=295; старый y=239 попадает в `\\documentclass{standalone}`. Реально скопированы четыре символа `tand`, а не `arro`. Вместо новой координаты строки сценарий повторяет уже проверенную последовательность Ctrl+Home, четыре Down, Home; sentinel и точная проверка `arro` сохранены. ZIP SHA-256: `60409463bb3bf30267b4b697123c7497b91f88427cc90d6fbca9c24031e60f7c`.
 - Точки фокуса исходника в R1 dirty-close и R3 native-picker перенесены с `(130,209)` на `(130,260)` по той же фактически просмотренной раскладке. Это адаптация сценариев, а не утверждение об успешном повторном выполнении R1/R3.
 
-Root и независимый Sol reviewer просмотрели оригинальные снимки и diff сценариев. Clipboard sentinels, byte equality, CRLF, PDF/font и fail-closed tree проверки сохранены. Python syntax и diff checks прошли. **Повторный hosted GUI прогон и полный просмотр его оригиналов на момент этой записи ожидаются; первоначальные failed runs не переименовываются в PASS.**
+Root и независимый Sol reviewer просмотрели оригинальные снимки и diff сценариев. Повторные [bootstrap 42982804616](https://github.com/i-shutov/tikzarium/actions/runs/42982804616), [I61 42982804670](https://github.com/i-shutov/tikzarium/actions/runs/42982804670) и [N5 42982804485](https://github.com/i-shutov/tikzarium/actions/runs/42982804485) прошли на `92c7c687`. Проверены архивные digests и report-listed hashes, просмотрены исходные bootstrap PNG, N3 caret/F1/Complete/Undo и R1/R3 native close/Open/Save/Export. Первоначальные failed runs не переименовываются в PASS. Эти результаты относятся к app tree `2c85223f…`, до startup-fix.
+
+При review R1 обнаружено ограничение старого helper: `run().strip()` удалял trailing whitespace из clipboard evidence. Само приложение потери байтов не показало. Helper теперь отравляет clipboard sentinel, читает исходные UTF-8 bytes без strip/нормализации и сравнивает конечный сохранённый файл со всем snapshot, включая terminal LF/CRLF. Повторный N5 должен проверить усиленный контракт.
+
+## Windows startup theme: найдено по оригиналу, исправлено в коде
+
+[Hosted Windows run 42982804521](https://github.com/i-shutov/tikzarium/actions/runs/42982804521) был зелёным, но просмотр [оригинального PNG](assets/2026-11-11-ux1/windows-startup/before-fix.png) выявил плохой контраст: белый editor background сочетался с Midnight syntax palette. Это конкретный дефект, который success статуса HWND/F1 не обнаруживает. Исходный [Win32 report](assets/2026-11-11-ux1/windows-startup/original-hosted-report.json) и PNG сохранены без преобразования; это hosted Server 2022/96 DPI, не личный Server 2025 и не Win10.
+
+Первый `RawInput.system_theme=Light` переключал активный egui style slot после применения сохранённой Midnight темы в конструкторе. `set_visuals` менял только прежний слот. Новый regression воспроизвёл фактический `#F8F8F8` вместо Midnight `#131A27` до исправления. `UiTheme::apply` теперь сначала явно выбирает Light/Dark slot через `ctx.set_theme`, затем устанавливает согласованные visuals и spacing. Проверены все четыре persisted/default выбора до первого системного input и последующие Light/Dark/None сигналы; regression прошёл после fix.
+
+Новый app tree **`e9f47c46042119b2fb58b187fcfaf0fafa076a64`** отличается от `2c85223f…` только `ui_theme.rs`. Независимый code review и 432 workspace tests прошли. **Новая hosted Windows original-PNG проверка и exact-head I61/N5 после этого fix на момент записи ожидаются**; старые снимки не выдаются за подтверждение исправления.
 
 ## Текущие границы приёмки
 
 - **Windows physical acceptance: BLOCKED / NOT_RUN.** Канал к Windows 10 VM не подтверждён, поэтому native Win10 mouse/IME/save/Undo/PDF проверка не состоялась.
 - **G3/performance acceptance: NOT_ACCEPTED** по результатам CPU-only benchmark выше.
 - **Stable: NO-GO.** Отсутствие оставшихся известных code blockers не является release acceptance.
-- I61 workflow/Python source-tree lease обновлён согласованно до итогового app tree после native просмотра исходного редактора и меню темы. Fail-closed equality guards сохранены. Начальная точка фокуса в исходнике изменена с `(130,209)` на `(130,260)`: первая строка содержимого теперь начинается около client y=200, ниже новой панели навигации. Остальные dock/rail/palette layout paths не менялись; их прежние координаты на 1366×768 остаются предметом повторного hosted I61/N5 и независимого просмотра оригинальных артефактов. Локальный 1180×680 проход не выдаётся за полный I61 или W3.
+- I61 workflow/Python source-tree lease согласован с новым app tree `e9f47c46042119b2fb58b187fcfaf0fafa076a64`; fail-closed equality guards сохранены. Начальная точка фокуса source `(130,260)` и исправленные сценарии уже прошли на предыдущем app tree. Startup-fix не меняет редактор, dock/rail/palette или их координаты; повторный exact-head прогон всё равно обязателен. Локальный 1180×680 проход не выдаётся за полный I61 или W3.
 
 ## Следующий критический путь
 
