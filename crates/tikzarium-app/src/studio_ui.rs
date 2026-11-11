@@ -282,7 +282,7 @@ pub fn icon_button(
     // A manually allocated Sense::click() icon can paint nicely while
     // remaining unavailable to keyboard-only users and screen readers.
     let response = ui.add_sized(
-        Vec2::splat(side).to_array(),
+        [side, side],
         egui::Button::new("").selected(selected),
     );
     if ui.is_rect_visible(response.rect) {
