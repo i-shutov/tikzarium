@@ -281,10 +281,7 @@ pub fn icon_button(
     // A real egui Button provides keyboard focus and AccessKit semantics.
     // A manually allocated Sense::click() icon can paint nicely while
     // remaining unavailable to keyboard-only users and screen readers.
-    let response = ui.add_sized(
-        [side, side],
-        egui::Button::new("").selected(selected),
-    );
+    let response = ui.add_sized([side, side], egui::Button::new("").selected(selected));
     if ui.is_rect_visible(response.rect) {
         draw_icon(ui, response.rect, kind, selected);
     }
