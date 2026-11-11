@@ -3029,11 +3029,12 @@ impl eframe::App for TikzariumApp {
                 })
                 .inner;
             if let Some(tool) = rail_action.selected_tool {
-                self.authoring.select_tool(tool);
-                // The contextual editor opens where parameters actually are,
-                // rather than leaving the user on stale Help or Libraries.
-                self.prefs.studio_dock = StudioDock::Properties;
-                self.prefs.studio_inspector_open = true;
+                studio_ui::activate_studio_tool(
+                    &mut self.authoring,
+                    tool,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
             }
             if let Some(anchor) = rail_action.extension_anchor {
                 self.studio_palette_anchor = anchor;

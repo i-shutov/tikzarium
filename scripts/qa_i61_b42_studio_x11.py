@@ -22,7 +22,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # These are NOT a physical Win10 result; screenshot and persisted TeX evidence
 # MUST pass on this exact app tree before the run can be accepted. The previously
 # accepted B42 group/palette coordinates are historical and intentionally removed.
-APP_TREE = "c5aca3579cd1e95f042700d91c3afc05629aff11"
+APP_TREE = "ab157c73a12ca311d7cea60367d62a7deaea8eb4"
 BUTTONS = [
     # Tool order still leaves Node selected for the later I64 Inspector test.
     ("line", (30, 165), (646, 350), (750, 377)),
@@ -346,7 +346,7 @@ def main() -> int:
         # I62: real desktop assertions follow the already-proven six gestures
         # and PDF. Source bytes and screenshots must be independently reviewed.
         click(found, 28, 77)  # Return to the guide from the PDF viewport.
-        click(found, 1091, 109)  # Real Properties tab after N5 resize.
+        click(found, 1055, 109)  # Verified original I61 screenshot: Properties center x1025..1090.
         held_f1()  # UIX2 layout moved the toolbar; use the real stable Help shortcut.
         held_f1()  # Return to Properties before the next independent F1 check.
         screenshot(out, "26-properties-before-f1")

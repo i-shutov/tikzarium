@@ -366,6 +366,21 @@ pub(crate) fn show_group_rail_observed(
     anchor
 }
 
+/// UX2: selecting a direct Studio tool opens Properties, not the F1 dock.
+/// Session::select_tool enables legacy contextual help, so normalize that
+/// flag when Studio routes users directly to the Properties inspector.
+pub fn activate_studio_tool(
+    session: &mut Session,
+    tool: Tool,
+    dock: &mut StudioDock,
+    inspector_open: &mut bool,
+) {
+    session.select_tool(tool);
+    session.help = false;
+    *dock = StudioDock::Properties;
+    *inspector_open = true;
+}
+
 /// UX2: one-click access to the six reviewed native tools. Groups are reserved
 /// for extensions, so the first authoring gesture never needs a floating popup.
 /// The rail is a presentation surface; choosing a tool does not patch TeX.
@@ -927,6 +942,66 @@ mod tests {
         });
         assert_eq!(source, before);
         source.clear();
+    }
+
+    #[test]
+    fn ux2_direct_tool_selection_keeps_f1_and_properties_in_sync() {
+        let ctx = egui::Context::default();
+        let source = "% русский CRLF\r\n\\myOpaque{не менять}\r\n";
+        let mut session = Session::default();
+        session.reset(source);
+        let mut dock = StudioDock::Help;
+        let mut open = false;
+        activate_studio_tool(&mut session, Tool::Node, &mut dock, &mut open);
+        assert_eq!(session.active, Some(Tool::Node));
+        assert_eq!(dock, StudioDock::Properties);
+        assert!(open);
+        assert!(!session.help);
+        for (expected_help, expected_dock) in [
+            (true, StudioDock::Help),
+            (false, StudioDock::Properties),
+        ] {
+            let pressed = egui::Event::Key {
+                key: egui::Key::F1,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::default(),
+            };
+            let _ = ctx.run(
+                egui::RawInput {
+                    events: vec![pressed],
+                    ..Default::default()
+                },
+                |ctx| {
+                    let old = session.help;
+                    crate::tikz_canvas::handle_help_shortcut(ctx, &mut session);
+                    route_studio_help_toggle(old, session.help, &mut dock, &mut open);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("Исходник и PDF являются независимыми видами");
+                    });
+                },
+            );
+            assert_eq!(session.help, expected_help);
+            assert_eq!(dock, expected_dock);
+            assert!(open);
+            // An actual second F1 press must follow a key-up event.
+            let _ = ctx.run(
+                egui::RawInput {
+                    events: vec![egui::Event::Key {
+                        key: egui::Key::F1,
+                        physical_key: None,
+                        pressed: false,
+                        repeat: false,
+                        modifiers: egui::Modifiers::default(),
+                    }],
+                    ..Default::default()
+                },
+                |_| {},
+            );
+        }
+        assert!(!session.undo_available());
+        assert_eq!(source, "% русский CRLF\r\n\\myOpaque{не менять}\r\n");
     }
 
     #[test]
