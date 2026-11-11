@@ -642,9 +642,6 @@ pub(crate) fn show_palette_observed(
                         }
                     });
                     ui.small("Наведите на иконку для команды и справки.");
-                    if selected == StudioGroup::Connections {
-                        ui.small("Стрелки arrows.meta требуют явного подключения.");
-                    }
                 }
             });
         });
@@ -957,10 +954,9 @@ mod tests {
         assert_eq!(dock, StudioDock::Properties);
         assert!(open);
         assert!(!session.help);
-        for (expected_help, expected_dock) in [
-            (true, StudioDock::Help),
-            (false, StudioDock::Properties),
-        ] {
+        for (expected_help, expected_dock) in
+            [(true, StudioDock::Help), (false, StudioDock::Properties)]
+        {
             let pressed = egui::Event::Key {
                 key: egui::Key::F1,
                 physical_key: None,
