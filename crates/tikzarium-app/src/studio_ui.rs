@@ -25,12 +25,17 @@ impl StudioDock {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StudioGroup {
+    // Old grouped palette is retained only for historical unit regression.
+    #[cfg(test)]
     Geometry,
+    #[cfg(test)]
     Connections,
+    #[cfg(test)]
     Text,
     Extensions,
 }
 impl StudioGroup {
+    #[cfg(test)]
     pub const ALL: [Self; 4] = [
         Self::Geometry,
         Self::Connections,
@@ -39,16 +44,22 @@ impl StudioGroup {
     ];
     pub const fn label(self) -> &'static str {
         match self {
+            #[cfg(test)]
             Self::Geometry => "Геометрия",
+            #[cfg(test)]
             Self::Connections => "Линии и стрелки",
+            #[cfg(test)]
             Self::Text => "Узлы и подписи",
             Self::Extensions => "Расширения TikZ",
         }
     }
     pub const fn tools(self) -> &'static [Tool] {
         match self {
+            #[cfg(test)]
             Self::Geometry => &[Tool::Line, Tool::Rectangle, Tool::Circle, Tool::Cubic],
+            #[cfg(test)]
             Self::Connections => &[Tool::Arrow],
+            #[cfg(test)]
             Self::Text => &[Tool::Node],
             Self::Extensions => &[],
         }
@@ -83,7 +94,6 @@ pub enum StudioIcon {
     Group(StudioGroup),
     Open,
     Save,
-    Build,
     Export,
     Help,
     Console,
@@ -161,6 +171,7 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
             }
             p.add(Shape::line(points, stroke));
         }
+        #[cfg(test)]
         StudioIcon::Group(StudioGroup::Geometry) => {
             p.circle_stroke(point(-0.45, -0.4), t * 0.60, stroke);
             p.add(Shape::closed_line(
@@ -173,9 +184,11 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
                 stroke,
             ));
         }
+        #[cfg(test)]
         StudioIcon::Group(StudioGroup::Connections) => {
             draw_icon(ui, rect, StudioIcon::Tool(Tool::Arrow), selected)
         }
+        #[cfg(test)]
         StudioIcon::Group(StudioGroup::Text) => {
             draw_icon(ui, rect, StudioIcon::Tool(Tool::Node), selected)
         }
@@ -214,12 +227,6 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
             line(&p, point(-0.43, -0.9), point(-0.43, -0.3), stroke);
             line(&p, point(-0.43, -0.3), point(0.38, -0.3), stroke);
             line(&p, point(-0.43, 0.25), point(0.55, 0.25), stroke);
-        }
-        StudioIcon::Build => {
-            p.add(Shape::closed_line(
-                vec![point(-0.65, -1.0), point(1.0, 0.0), point(-0.65, 1.0)],
-                stroke,
-            ));
         }
         StudioIcon::Export => {
             p.add(Shape::line(
@@ -323,17 +330,8 @@ pub fn toggle_studio_help_button(
     }
 }
 
-/// Narrow permanent rail: four *groups* rather than dozens of buttons.
-/// Clicking a group opens a floating palette; the code and PDF keep their size.
-pub fn show_group_rail(
-    ui: &mut egui::Ui,
-    active: &mut Option<StudioGroup>,
-    narrow: bool,
-) -> Option<Pos2> {
-    show_group_rail_observed(ui, active, narrow, |_, _| {})
-}
-
 // Observe native widget rectangles in event tests without changing production clicks.
+#[cfg(test)]
 pub(crate) fn show_group_rail_observed(
     ui: &mut egui::Ui,
     active: &mut Option<StudioGroup>,
