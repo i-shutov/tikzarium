@@ -820,6 +820,79 @@ fn parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -
     control_rect
 }
 
+/// Compact Scientific Studio only: labels come from stable catalogue IDs.
+/// Unknown future properties still show their literal native identifier.
+fn studio_parameter_label(id: &str) -> &str {
+    match id {
+        "start_x" => "Начало X",
+        "start_y" => "Начало Y",
+        "end_x" => "Конец X",
+        "end_y" => "Конец Y",
+        "center_x" => "Центр X",
+        "center_y" => "Центр Y",
+        "control1_x" => "Упр. 1 X",
+        "control1_y" => "Упр. 1 Y",
+        "control2_x" => "Упр. 2 X",
+        "control2_y" => "Упр. 2 Y",
+        "x" => "Положение X",
+        "y" => "Положение Y",
+        "radius" => "Радиус",
+        "tip" => "Наконечник",
+        "mode" => "Режим",
+        "content" => "Текст / формула",
+        _ => id,
+    }
+}
+
+fn studio_parameter_group(id: &str) -> &'static str {
+    match id {
+        "start_x" | "start_y" => "Начальная точка",
+        "end_x" | "end_y" => "Конечная точка",
+        "center_x" | "center_y" => "Центр",
+        "control1_x" | "control1_y" => "Управляющая точка 1",
+        "control2_x" | "control2_y" => "Управляющая точка 2",
+        "x" | "y" => "Положение",
+        _ => "Параметры",
+    }
+}
+
+/// Native two-column property rows: a stable label, one real editable widget
+/// and the complete C-owned help in a tooltip instead of repeated paragraphs.
+/// This edits the draft only; only the pinned Apply may patch the user TeX.
+fn studio_parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -> Rect {
+    let help = parameter_help(p);
+    let mut control = Rect::NOTHING;
+    ui.horizontal(|ui| {
+        ui.add_sized(
+            [84.0, ui.spacing().interact_size.y],
+            egui::Label::new(studio_parameter_label(&p.id)).truncate(),
+        )
+        .on_hover_text(&help);
+        if p.kind == "choice" {
+            control = egui::ComboBox::from_id_salt(("studio-parameter", &p.id))
+                .width(ui.available_width().max(75.0))
+                .selected_text(value.as_str())
+                .show_ui(ui, |ui| {
+                    for candidate in &p.allowed_values {
+                        ui.selectable_value(value, candidate.clone(), candidate);
+                    }
+                })
+                .response
+                .on_hover_text(&help)
+                .rect;
+        } else {
+            control = ui
+                .add_sized(
+                    [ui.available_width().max(75.0), ui.spacing().interact_size.y],
+                    egui::TextEdit::singleline(value),
+                )
+                .on_hover_text(&help)
+                .rect;
+        }
+    });
+    control
+}
+
 /// A property is *pending* only if its selected marker is still unique,
 /// byte-validated against the C generator and different from the source.
 /// An opaque/manual command can never be enabled by this convenience action.
@@ -868,9 +941,38 @@ pub fn show_inspector(
     source: &mut String,
     caps: Capabilities,
 ) -> Option<usize> {
+    show_inspector_mode(ui, session, source, caps, false)
+}
+
+/// The Studio uses the same C-owned source/Undo semantics as the classic
+/// Inspector but keeps only one pinned Apply and one contextual F1 dock.
+pub fn show_inspector_studio(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> Option<usize> {
+    show_inspector_mode(ui, session, source, caps, true)
+}
+
+fn show_inspector_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    studio: bool,
+) -> Option<usize> {
     let mut jump = None;
-    ui.heading("TikZ · параметры и справка");
-    ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
+    if studio {
+        ui.horizontal(|ui| {
+            ui.strong("Научный Inspector");
+            ui.small("TikZ");
+        });
+        ui.small("Изменение источника — только после «Применить параметры».");
+    } else {
+        ui.heading("TikZ · параметры и справка");
+        ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
+    }
     ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
         ui.small(format!(
             "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · GUI-инструмент=реализован · справка=доступна",
@@ -910,8 +1012,13 @@ pub fn show_inspector(
     if let Some(tool) = session.active {
         let info = tikz_authoring::spec(tool);
         ui.separator();
-        ui.strong(&info.title_ru);
-        ui.label(&info.help_ru);
+        if studio {
+            ui.label(egui::RichText::new(&info.title_ru).strong())
+                .on_hover_text(&info.help_ru);
+        } else {
+            ui.strong(&info.title_ru);
+            ui.label(&info.help_ru);
+        }
         let import_state = tikz_authoring::requirements_status(source, tool);
         let loaded = import_state == tikzarium_extensions::primitives::Evidence::Confirmed;
         ui.small(format!(
@@ -947,7 +1054,18 @@ pub fn show_inspector(
                 }
             });
         }
+        let mut previous_group = "";
         for parameter in &info.parameter {
+            if studio {
+                let group = studio_parameter_group(&parameter.id);
+                if group != previous_group {
+                    if !previous_group.is_empty() {
+                        ui.add_space(5.0);
+                    }
+                    ui.label(egui::RichText::new(group).strong().size(12.0));
+                    previous_group = group;
+                }
+            }
             let value = session
                 .draft
                 .values
@@ -960,14 +1078,24 @@ pub fn show_inspector(
                     }
                 });
             ui.push_id((&info.id, &parameter.id), |ui| {
-                parameter_control(ui, parameter, value)
+                if studio {
+                    studio_parameter_control(ui, parameter, value)
+                } else {
+                    parameter_control(ui, parameter, value)
+                }
             });
         }
         ui.separator();
         match tikz_authoring::command(tool, &session.draft) {
             Ok(code) => {
-                ui.label("Команда из общего каталога:");
-                ui.code(code);
+                if studio {
+                    ui.collapsing("Исходный TikZ · предпросмотр", |ui| {
+                        ui.code(code);
+                    });
+                } else {
+                    ui.label("Команда из общего каталога:");
+                    ui.code(code);
+                }
             }
             Err(error) => {
                 ui.colored_label(ui.visuals().error_fg_color, error);
@@ -983,12 +1111,15 @@ pub fn show_inspector(
             } else {
                 ui.small("Параметры совпадают с исходником; новой правки нет.");
             }
-            if ui
-                .add_enabled(
-                    pending,
-                    egui::Button::new("Применить параметры · изменить только эту команду"),
-                )
-                .clicked()
+            // Scientific Studio already has ONE pinned Apply above the
+            // scrolling Inspector. Preserve the old button in classic mode.
+            if !studio
+                && ui
+                    .add_enabled(
+                        pending,
+                        egui::Button::new("Применить параметры · изменить только эту команду"),
+                    )
+                    .clicked()
             {
                 match session.apply_parameters(source) {
                     Ok(line) => jump = Some(line),
@@ -1028,7 +1159,9 @@ pub fn show_inspector(
                 }
             }
         }
-        if ui
+        if studio {
+            ui.small("F1 · полная справка и параметры во вкладке «Справка».");
+        } else if ui
             .button(if session.help {
                 "Скрыть подробную справку · F1"
             } else {
@@ -1038,7 +1171,7 @@ pub fn show_inspector(
         {
             session.help = !session.help;
         }
-        if session.help {
+        if session.help && !studio {
             ui.separator();
             ui.strong("Контекстная справка");
             ui.code(&info.syntax);
