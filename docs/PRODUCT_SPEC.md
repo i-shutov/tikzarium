@@ -1,68 +1,88 @@
-## Актуальный owner scope 10.11.2026: UIX обязателен для Windows 1.0
+# TikZarium Studio — продуктовая спецификация
 
-Владелец переносит **все 14 UX-находок** [аудита `0f2a1f1`](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) непосредственно в **релиз 1.0**. Требуются цветной редактируемый TeX/TikZ + номера строк/Find/Replace/Go to line, удобная навигация и F1, компактный Inspector, шесть инструментов в один выбор, native Save & Build и PDF-цикл с понятными состояниями, ясный disabled/feedback, accessibility, физические 100%/125%/200% (96/120/192 DPI). [Нормативный новый roadmap](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md). Прежние 1.1–1.3 / только 96DPI для всех UX — исторические ограничения, заменены последней командой. Это исключение из feature freeze только для UX; 35 доменных TeX-адаптеров откладываются до эргономической приёмки, AT0/AT1 research можно выполнять параллельно. Независимые W2b/W3/IME/W4 gates, внешний XeLaTeX, current Administrator safety и отсутствие самообновлений TeX сохранены. Stable GO не объявлен.
+Дата: 11 ноября 2026. Статус: целевой продукт по новой директиве владельца; не описание уже готовых функций. Порядок реализации — в [едином roadmap](ROADMAP.md). Инженерные решения ниже конкретизируют приложенную концепцию, а не объявляются её дословными требованиями.
 
-# TikZarium — product requirements, owner-corrected scope
+## 1. Продукт
 
-**LATEST RELEASE STATUS (2026-11-07):** Windows 1.0 first. Current main 4b79d71a has W0 hosted native/ZIP PASS, W1 personal Server current-user MiKTeX PDF PASS, W2 actual RDP visible native HWND @125% but foreground/F1/PNG BLOCKED, physical Windows10 W3 NOT_RUN, installer/stable W4 BLOCKED. Existing HIGH Administrator is supported with visible trusted-document warning; old non-admin/HIGH restrictions below are historical, not release gates. [Canonical W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) · [79 problems/solutions](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
+**TikZarium Multi-Engine Scientific Studio** — локальная профессиональная среда создания, редактирования, компоновки и публикации научной и технической графики. Единый красивый интерфейс объединяет проекты, исходники, предметные инструменты, данные, сборки, предпросмотр, диагностику и экспорт. TikZ — первый полноценный профиль студии, а не предел её архитектуры.
 
+Это не коллекция кнопок запуска чужих рендереров. Пользователь должен проходить законченный путь: проект → рисунок/данные → исходник и поддержанное визуальное редактирование → сборка → проверка → публикационная композиция → экспорт → воспроизводимое повторное открытие.
 
-**LATEST owner correction — 2026-11-06 (supersedes the old HIGH-token prohibition):** TikZarium supports an existing Administrators-group account, including HIGH/elevated Administrator. External XeLaTeX/PDF helpers use the **current user's existing privileges**; no forced elevation, UAC/account changes or mandatory filtered-child launcher. The Windows GUI must visibly warn that elevated execution **is not a sandbox** and only trusted documents should be compiled; retain original MiKTeX warnings and exit codes, keep shell escape off, offline/no auto-package installation, bounded/cancellable processes. Unknown/SYSTEM tokens may remain unsupported. W1 needs actual product CLI→personal Server MiKTeX→Unicode/embedded PDF; W2 real Server GUI, W3 physical Win10 and W4 stable/installer are separate release gates. [Owner decision](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6695354140) · [Plan](../plans/2026-11-06_OWNER_ADMIN_BLOCKER_CORRECTION.md).
+## 2. Что сохраняется
 
-**Текущая платформа первого релиза (решение владельца 2026-11-05): Windows 10 x64 с установленным пользователем MiKTeX/XeLaTeX.** Заморозка функций; Windows portable ZIP и реальные GUI/TeX/PDF smoke до инсталлятора. Linux 1.0.0-rc.1 остаётся принятой кандидатной сборкой (без физической R4 и стабильного тега), Linux/macOS CI сохранены. Раздел 2026-11-04 ниже — исторический. Актуальные критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
-## Current platform priority (owner, 2026-11-04)
+Весь прежний scope сохраняется: шесть настоящих TikZ-инструментов, исходный TeX рядом с рисунком, русская F1, библиотеки, Inspector/Apply/Undo, обычные .tex/.tikz, внешний XeLaTeX/MiKTeX, качественный PDF, четыре темы, source safety и реальные платформенные проверки. Все UX-F01…F14 остаются обязательными. Scientific-142 и AI88 имеют самостоятельную приёмку, а не растворяются в списке движков.
 
-**First full release: Linux desktop x86_64**, external independently installed XeLaTeX (TeX Live reference), real X11 GUI event/screenshot acceptance, with **iterative ergonomics/usability approval** before shipment. Preserve original cross-platform Rust/egui design, Windows 10 x64 external MiKTeX and macOS ARM external XeLaTeX compatibility and hosted tests from the outset; their **physical platform qualification and separate release packaging come after Linux**. Do not construe the older "Required environment" list as requiring all three physical platforms before the first Linux release. The editor must be usable at compact 1366×768, with balanced canvas/code/help, readable Cyrillic, grouped icon palettes, correct F1, safe editing, Undo, Save/Open, native dialogs and PDF. Source safety and external-engine constraints remain unchanged. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+Новый курс меняет предел продукта и порядок разработки: проектная модель и несколько движков становятся основным направлением уже сейчас. Старое правило «вся Studio только после узкого 1.0» больше не управляет программой. Это не отменяет freeze конкретного кандидата и не разрешает выпускать непроверенный код.
 
+## 3. Проект, документы, данные и публикация
 
-Date: 2026-10-31. This replaces the earlier general graphics/CAD interpretation, not the implemented XeLaTeX workbench.
+Проект содержит обычные файлы исходников, каталог рисунков, данные, оригинальные/редактируемые ресурсы и явные зависимости. Метаданные проекта описывают движок и сборочный профиль каждого рисунка, рабочие каталоги, экспортные пресеты и связи; не заменяют оригинальные языки собственным монолитным форматом.
 
-## Product
+Много документов в проекте не означает один гигантский холст. Каждый рисунок имеет собственный исходник, историю, ревизию и preview. Вкладки переключают активный документ без потери курсора, выделения, черновика свойств и несохранённого текста. Открытие/закрытие/внешнее изменение дают предсказуемые решения «сохранить / отменить / сравнить», без молчаливого перезаписывания.
 
-A local native Rust/egui **visual editor of TikZ commands**, with editable code permanently beside the drawing in the normal workflow and explanatory help for functions and parameters. The available tools follow the packages/libraries selected for the project. We use TeX; we do not rebuild it.
+Публикационная композиция — отдельный документ со связанными панелями: размеры в физических единицах, сетка, выравнивание, поля, подписи (a)/(b), общая типографика, порядок слоёв и экспортные профили. Обновление дочернего рисунка помечает композицию устаревшей. Компонент остаётся редактируемым в родном языке; вставленный PDF не объявляется восстановленным TikZ.
 
-Canonical loop: **choose TikZ tool → enter/draw parameters → inspect ordinary generated TikZ code → run external XeLaTeX → view exact PDF**. Both code and form/canvas are authoring interfaces to the same source. The UI may draw temporary selection handles, grids and drag previews; they are not a substitute for TeX rendering.
+## 4. Единый интерфейс Studio
 
-## Required environment
-
-- Windows 10 x64: **MiKTeX is installed independently by the user**. TikZarium locates its XeLaTeX or accepts an explicit executable path, records the distribution/version and checks requirements. It does not bundle TeX or manage a second distribution.
-- macOS ARM64 M1/M4: external user-installed XeLaTeX, with explicit executable path and distribution identity.
-- Missing packages/fonts are diagnosed. Package installation and updates remain in the external distribution manager. Do not silently trigger automatic MiKTeX installs, change global settings, or replace the compiler.
-- Ordinary editing and installed-package compilation are offline; no account, telemetry or cloud service is required.
-
-## First complete user workflow
-
-Create a line, arrow, rectangle, circle, text/math node or cubic Bézier using its native TikZ construction. Set coordinates/size/style from a readable inspector; show the exact generated command immediately. Compile it with XeLaTeX, display the result, save/reopen and undo the edit without altering unrelated source. A button that only copies a snippet is an intermediate implementation, not acceptance of mouse authoring.
-
-## Visible code and explanatory assistance
-
-The default workspace keeps canvas, code and parameter help accessible together at compact desktop resolution and Retina scale. Selecting a known tool/command/key exposes:
-
-| Field | Required content |
+| Область | Назначение и контракт |
 | --- | --- |
-| Identity | Original TikZ/PGF/package command or key name, readable Russian label |
-| Syntax | Exact command/key syntax and parameter roles |
-| Values | Type, units, allowed values or limits; explicit UNKNOWN where not established |
-| Default | Only a source-verified default; distinguish editor preset from TikZ default |
-| Explanation | What changes in the figure; interactions and important limitations |
-| Example | Small valid source example with necessary imports |
-| Requirements | Package/library, engine compatibility and relevant version |
-| Provenance | Manual title, section/anchor, URL or local texdoc target |
+| Project Hub / Explorer | Создать/открыть проект, недавние документы, рисунки, исходники, данные, assets и результаты; поиск и возвращение назад |
+| Workspace + document tabs | Исходник и preview рядом; один активный документ; сохранение/сброс расположения, явные focus views |
+| Toolbox | Прямой доступ к базовым инструментам, профиль текущего документа, отдельные расширения; без ложных кнопок готовности |
+| Inspector + Outline/Layers | Контекстный объект/параметры, единицы, группировка, один Apply, reversible edits; только доказанные операции |
+| Source editor | Подсветка конкретного языка, номера физических строк, Find/Replace, Go to line, диагностика, UTF-8/CRLF и native Undo |
+| Preview | Авторитетный результат движка, масштаб, страницы/сцена по возможностям; отдельные current/stale/absent/error состояния |
+| Build Centre | Очередь и ход сборок, отмена, правильный документ/движок/версия, диагностический переход, последний успешный результат |
+| Data Figure | Выбор таблицы и столбцов, типы/единицы, серии, оси, погрешности и сохраняемая спецификация; без скрытой правки измерений |
+| Publication | Связанные рисунки, компоновка нескольких панелей, размеры/подписи/профили экспорта |
+| Libraries / Engine Manager | Независимые состояния установлен/подключён/совместим/поддержан/справка; явный путь и выбор движка |
+| F1 / Command search | Одна контекстная карточка, пример, проверенная семантика, версия/источник; сохранение фокуса и контекста |
+| History / Compare | Undo по транзакциям, сравнение исходника и результатов; история приложения не изображает несуществующий Git-интерфейс |
+| Animation workspace | Поздняя специализированная сцена и timeline, связанные с нативным исходником анимационного профиля |
 
-The same catalogue feeds toolbar, inspector, completion and contextual F1/hover. Help is not postponed until a later documentation release. User mathematical expressions remain TeX expressions; the editor must not substitute a home-grown solver.
+Существующая карта UI-00…UI-13 развивается в эти области, а не выбрасывается. Будущие панели не показываются как работающие до реализации. Общая студия не состоит из 30 независимых чужих окон. WebView/внешний редактор допустимы как явно обоснованные адаптеры, не как подмена всего продукта.
 
-## Package-aware editing
+## 5. Семь предметных направлений из концепции
 
-Separate installed, project-loaded, engine-compatible, tool-implemented and help-available states. When a package is installed but not loaded, offer a visible undoable preamble change. Missing/unimplemented tools explain their state. Unknown macros remain editable in source and compilable by XeLaTeX; they are not deleted or regenerated to fit a GUI model. An unsupported engine requirement is explicit, never a hidden compiler switch.
+A. Научная графика, математика и 3D: TikZ/PGFPlots, Asymptote, Typst/CeTZ, позднее Penrose; Ipe — референс и кандидат взаимодействия.
 
-## Fonts, themes and exports
+B. Автоматическая компоновка: Graphviz, D2, Mermaid; затем LikeC4/Structurizr. Kroki — необязательный локальный/пользовательский gateway, не обязательное облако.
 
-Keep figure typography through fontspec/unicode-math, Cyrillic and mathematical glyph checks, PDF font embedding, and the existing independent Light/Dark/Midnight/Paper GUI themes. Changing GUI appearance never changes the TeX figure. PDF export is canonical; other exports require a separately verified pipeline.
+C. Данные: Vega-Lite, Matplotlib, затем Gnuplot/Plotly по отдельным операциям и форматам.
 
-## Not mandatory for first drawing
+D. Инженерные схемы: WaveDrom, SchemDraw, WireViz, BPMN через оценку bpmn-js; прежние TikZ-пакеты сохраняются.
 
-A full TeX interpreter/parser, a general CST for arbitrary macros, a universal scene reconstruction from PDF, CAS/constraint solver, GeoGebra-like computation engine, generic CAD tools or executable WASM plugin host. Lightweight known-command recognition, coordinate conversion and source-span edits are sufficient initially. Later work is justified by concrete TikZ/package workflows, not by recreating Photoshop/Corel.
+E. Химия и биология: RDKit и прежние chemistry-пакеты; предметные шаблоны поверх схемных профилей, без подмены научной семантики компоновкой.
 
-## Acceptance
+F. Векторное редактирование и обмен: SVG/PDF, Excalidraw, diagrams.net, Ipe. tldraw остаётся кандидатом отдельной оценки лицензирования и интеграции, не обязательной зависимостью.
 
-Record exact Git SHA and actual environment for generated-source tests, external XeLaTeX builds, library activation, glyph checks, unknown-source preservation and undo. Separately record physical Windows 10 + MiKTeX and M1/M4 GUI tests, native dialogs, IME, scale and theme persistence. Hosted Windows Server/TeX Live success is not Windows 10/MiKTeX acceptance. See the revised roadmap and plans/insights pair.
+G. Анимация/3D: Manim, расширение Asymptote; Blender — возможный внешний мост, не собственный CAD/3D-движок.
+
+Это целевые кандидаты по предоставленному материалу. Версии, лицензии, реальные экспортные форматы, локальные зависимости, platform support и способы встраивания каждого подлежат проверке до включения в поставку.
+
+## 6. Уровни интеграции
+
+Для нового многодвижкового контура используются ME-L1…ME-L4, чтобы не смешивать их со SCI-L0…L4 и AI-S0…S4.
+
+- ME-L1: открыть нативный исходник и показать результат; ограничения явно видимы.
+- ME-L2: редактирование кода, запуск выбранного движка, диагностика, отмена, сохранение и проверенный экспорт.
+- ME-L3: предметные палитры/Inspector и минимальные безопасные source edits для перечисленных операций.
+- ME-L4: двустороннее визуальное редактирование заявленного подмножества с source mapping, invalidation и round-trip tests.
+
+ME-L2 не является «полноценным визуальным редактором». ME-L4 не обещается для произвольного Python, TeX, SVG, макросов или всех возможностей языка. Готовность определяется операциями и исходными примерами, не логотипами движков.
+
+## 7. Красота и эргономика — приёмочные требования
+
+Цель — целостная премиальная научная студия: согласованная типографика и отступы, ясные primary/secondary действия, качественные векторные иконки, аккуратные панели и устойчивые состояния hover/active/focus/disabled/error. Light/Dark/Midnight/Paper — части одной системы. Декорации не уменьшают рабочий холст, не скрывают предупреждения и не задерживают ввод.
+
+Проверять настоящие экраны пустого проекта, обычного рисунка, данных, нескольких документов, сборки, ошибки, stale preview, F1, композиции и экспорта. Размеры 1180×680, 1366×768, 1920×1080; стресс 1024×640. Масштабы 100/125/200% = 96/120/192 DPI, клавиатура, IME и доступность — реальная проверка, не уменьшенный PNG. Сохранённый пилот на пяти людях остаётся отдельным formative-тестом, не имитируется агентами.
+
+## 8. Безопасность, воспроизводимость и качество
+
+Обычное редактирование и доступные локальные сборки работают offline. Никаких скрытых установок, загрузок, engine fallback или обязательного аккаунта. Исполняемые исходники запускаются только по явному решению и политике доверия. Ограничение времени, no-shell-escape и работа под Administrator не называются песочницей. Сетевой gateway показывает адрес и передаваемые материалы и требует opt-in.
+
+Preview/экспорт связаны с точной ревизией исходника, данными, параметрами, движком и ресурсами. Ошибка сохраняет last-good, но не выдаёт его за текущий. Кириллица, формулы, физические размеры, геометрия и встроенные шрифты проверяются по подходящим для формата критериям. Тема приложения не меняет научный рисунок. PDF/SVG/PNG и поздние MP4/GIF включаются только по реально принятому маршруту; PDF остаётся основным проверенным целевым форматом TikZ-профиля.
+
+Windows 10 Pro — основной пользовательский стенд; Server 2025 — отдельная интеграция/GUI; macOS ARM M1/M4 и Linux сохраняются. Каждый выпуск имеет свою матрицу фактических платформ и зависимостей, W0–W4 и независимые оригиналы. Номер версии и тег этим документом не изменяются.
+
+Предыдущая спецификация и все исторические решения доступны в [фиксированном snapshot](https://github.com/i-shutov/tikzarium/blob/19187fc17968659267540fe279702bf77eeb77e6/docs/PRODUCT_SPEC.md). Они сохраняют значение для TikZ-профиля и доказательств; новая директива расширяет целевой продукт.

@@ -1,71 +1,81 @@
-# Architecture — TikZ-native authoring, external XeLaTeX
+# Architecture — TikZarium Multi-Engine Scientific Studio
 
-**LATEST owner correction — 2026-11-06 (supersedes the old HIGH-token prohibition):** TikZarium supports an existing Administrators-group account, including HIGH/elevated Administrator. External XeLaTeX/PDF helpers use the **current user's existing privileges**; no forced elevation, UAC/account changes or mandatory filtered-child launcher. The Windows GUI must visibly warn that elevated execution **is not a sandbox** and only trusted documents should be compiled; retain original MiKTeX warnings and exit codes, keep shell escape off, offline/no auto-package installation, bounded/cancellable processes. Unknown/SYSTEM tokens may remain unsupported. W1 needs actual product CLI→personal Server MiKTeX→Unicode/embedded PDF; W2 real Server GUI, W3 physical Win10 and W4 stable/installer are separate release gates. [Owner decision](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6695354140) · [Plan](../plans/2026-11-06_OWNER_ADMIN_BLOCKER_CORRECTION.md).
+Date: 2026-11-11. **Target architecture, not implemented capability.** The new owner direction is authoritative in [AGENTS](../AGENTS.md); delivery order is in [ROADMAP](ROADMAP.md). This document proposes engineering contracts derived from the supplied concept. It does not claim upstream API/version/licence verification.
 
-**2026-11-05 — АКТУАЛЬНЫЙ ПОРЯДОК РЕЛИЗА:** Windows 10 x64 native egui, внешний уже установленный пользователем MiKTeX/XeLaTeX; Linux 1.0.0-rc.1 принят как RC, Mac ARM и Linux остаются архитектурными и CI-платформами. Заморозка функций. Прежний Linux-first абзац от 2026-11-04 ниже является историческим. Критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
-**Release order (2026-11-04):** first full Linux x86_64 desktop GUI/ergonomics release with user-installed external XeLaTeX; Windows 10/MiKTeX and macOS ARM/external XeLaTeX are preserved as first-class **architectural and hosted CI** targets, with physical GUI qualification in later releases. The diagram below is an architectural illustration, not a first-release platform gate. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+## 1. Keep the working base; generalise responsibilities
 
+The existing Rust/egui app, core, CLI and extensions catalogue remain the implementation base. XeLaTeX build/diagnostics/fonts and source-preserving TikZ authoring are retained behind explicit adapters. Introduce modules first; create a separate crate only when a tested boundary justifies it. A successful adapter must run through the actual Studio, not only a CLI stub.
 
-Owner correction: 2026-10-31. Supersedes the universal CAD/geometry-engine dependency chain. This is the target architecture, not a claim that all authoring tools are already implemented.
+Target responsibilities:
 
-## 1. Responsibilities
+- Studio shell: project/document navigation, source/preview split, contextual tools, docks, palettes, keyboard/focus, preferences.
+- Project/document service: ordinary native sources, explicit root/working directory, dependencies, per-document revisions, dirty state, transactional save/close/recovery.
+- Engine registry and build scheduler: explicit profiles, discovery/requirements, run/cancel, resource limits, structured diagnostics, artifacts and provenance.
+- Language/domain adapters: supported-object recognition, source mapping, minimal edits, help and operation-level capabilities.
+- Preview/export service: reviewed PDF/SVG/raster/media paths; current/stale/failed state and file/version provenance.
+- Data/publication service: immutable input references, transformations with recorded parameters, figure composition and export profiles.
 
-```text
-Project: ordinary .tex/.tikz + preamble + included resources
-                         ↕ minimal revision-checked edits / undo
-  egui: TikZ tools + parameter inspector | editable code | contextual help
-                         ↓ native command generation
-                  Existing source document
-                         ↓ external build service
- Linux: external XeLaTeX | Windows: MiKTeX | macOS: external XeLaTeX
-                         ↓
-             Exact PDF → preview / export / diagnostics
-```
+No universal graphics AST is the authoritative document. A derived common interface can expose selection IDs, bounding boxes, property schemas and operations; opaque unsupported content stays in its native source.
 
-A shared catalogue supplies command syntax, parameter metadata, required packages/libraries, Russian explanations, examples and manual locators. It drives tool availability, inspector controls, source completion and help. Rust manages interaction, source edits and processes; TeX/PGF and their packages perform typesetting, expression evaluation, layout and final drawing.
+## 2. Document and project contracts
 
-## 2. Reuse the current workspace
+A DocumentId identifies one native source and format, not an assumed .tex buffer. Each document keeps an in-memory revision, saved revision, path/encoding/EOL facts, view state and its own edit history. Project metadata names figures, sources, assets/data and render profiles; it is additive and must not rewrite original files on import.
 
-Keep `tikzarium-app` (egui), `tikzarium-core` (documents/build/diagnostics/fonts), `tikzarium-cli` (doctor/build) and `tikzarium-extensions` (catalogue and requirements). Add a small authoring module only when needed; do not create empty crates for a speculative universal scene/CAS/geometry platform.
+Save/Open/tab switch and external modification are revision checked. A generated edit carries expected revision, exact source range/value and inverse operation. Mixed native text/visual Undo has a single explicit transaction policy; stale derived handles cannot revive an old buffer. No-op operations preserve bytes; unsupported format-wide reserialisation is not silently substituted for a minimal edit.
 
-A typed authored-command instance needs a catalogue ID, parameter bindings, source range/revision and optional edit handles. Literal geometry for pointer interaction is allowed. TikZ expressions, anchors, transforms, loops and macro evaluation remain with TeX unless a specific safe edit is supported. No universal PDF reverse mapping is assumed.
+A project supports many figures but keeps one explicitly active document per editor. A publication document references figure artifacts and source identities plus layout properties. Its own revision advances independently. Dependency invalidation travels from source/data to figure output to publication output. Cycles, missing resources and outside-root references must be diagnosed rather than guessed. Filesystem/symlink safety is an explicit implementation/test concern.
 
-## 3. Shared command contract
+## 3. Proposed engine boundary
 
-The catalogue owner C proposes a versioned serializable contract and B consumes it rather than maintaining competing schemas. Minimum fields: command ID and syntax; label/summary in Russian; package/library requirements and engine constraints; parameter type, units, allowed values, documented default versus editor preset; parameter explanation and examples; manual/version/section locator; source-generation rule; supported edit operations.
+The following are design contracts, not already-existing Rust APIs:
 
-Help-only entries are permitted for constructs without a graphical adapter. Default values without a verified manual source must remain UNKNOWN. Explanations are authored summaries, not bulk redistribution of manuals. A later plugin adds tools/help/generation metadata without changing the TeX compiler.
+| Contract | Required information |
+| --- | --- |
+| EngineDescriptor | Stable ID, native input kinds, executable/runtime, version probe, supported platforms and licences pending/verified |
+| EngineCapabilities | Output formats, cancellation, diagnostics/source-map precision, optional interactivity, L3/L4 operation scopes |
+| RenderProfile | Engine + validated arguments, working root, inputs/dependencies, output policy, environment fingerprint and trust decision |
+| BuildRequest | Project/document ID, revision set, dependency hashes, requested format, purpose and cancellation token |
+| BuildResult | Exit facts, diagnostics, bounded logs, artifacts, provenance, dependency observations and limitations |
+| Artifact | Kind, source/dependency identity, engine/version/options, path/hash, dimensions, audit result, current/stale/last-good |
 
-## 4. Library activation and source editing
+Selection by file extension is a suggestion, not permission to run code or switch engine. Fragment/preamble wrapping is explicit. External XeLaTeX is migrated through this interface first, with before/after regressions. Then Graphviz is the first proposed non-TeX vertical slice; D2/Mermaid follow the same public boundary. This ordering is an engineering plan, not a claim of measured implementation cost.
 
-Keep independent states for installation, project loading, engine compatibility, graphical tool implementation and help availability. Scan explicit `\usepackage`/`\usetikzlibrary` declarations and includes conservatively; macro-dependent activation may be UNKNOWN. Compiler observations may provide additional evidence, not a universal static parser.
+## 4. Build lifecycle and trust
 
-New commands are inserted at an explicit authoring location. Editing a recognized command checks its source revision, applies the smallest edit and creates one undo step. Connecting a library produces a visible, undoable preamble patch. Comments, unknown macros and unrelated bytes remain intact. Manual code edits invalidate stale handles and trigger targeted re-recognition, not whole-document regeneration.
+Use typed lifecycle states: queued, preparing, running, cancelling, succeeded, failed, cancelled; distinguish document dirty and artifact stale from process state. A finite scheduler bounds global and per-engine concurrency. A result applies only to the captured revision/dependency snapshot; an older job never overwrites a newer accepted preview. Cancelling stops the supported child process tree and cleans only owned temporary outputs.
 
-The normal drawing mode always shows code beside the canvas. Highlight the affected source after an action. Unsupported scopes remain source-first; do not claim accurate coordinate mapping where the editor cannot establish it. Temporary interaction overlays are clearly different from the last exact compiled PDF.
+Cache keys include native source, dependencies, options, engine/runtime version and relevant fonts/resources. Record non-deterministic inputs (seed/time/network) or mark the result non-reproducible. Timestamp-bearing output need not be byte identical unless the specific engine profile promises it; compare normalised semantic/render invariants with declared rules, while preserving originals.
 
-## 5. External runtime and builds
+Direct argv invocation; no silent shell, network or package-install fallback. Opening a project does not execute Python, Manim or other code. User-selected live preview may debounce trusted document changes, cancel superseded requests and never override trust controls. Existing Administrator/HIGH support remains for trusted sources with visible warnings; it is not isolation. Enforced OS sandboxing, network denial and resource limits require their own platform proof. Unknown capabilities are displayed honestly.
 
-Windows 10 uses the user's independently installed MiKTeX. Detect distribution/executable/version and permit explicit configuration; do not install another TeX distribution. MiKTeX documents `--disable-installer` for its XeTeX implementation; A must verify the actual XeLaTeX invocation and use distribution-specific options rather than assuming TeX Live compatibility. Package downloads/updates and global settings remain external.
+User-provided Kroki endpoints are optional adapters. They do not replace local engines and cannot receive private source/data without explicit opt-in. Embedded web surfaces require a specific feasibility/security/UI acceptance, including offline resources; no app-wide migration is assumed.
 
-Preserve direct process invocation, safe filenames, no shell escape by default, cancellation, time/resource bounds, optional persistent logs, `.fls` dependency tracking and structured source/line diagnostics. No-shell-escape is not an OS sandbox. Project profiles support full documents and fragments with explicit preambles, not implicit destructive wrapping.
+## 5. Visual and domain adapters
 
-Keep the last-good PDF stale/nonexportable after failure or dependency change. Only navigate a logged diagnostic when its file is established, never jump to an included file's line in the wrong buffer. Retain the existing typed font audit. A zero exit code does not prove complete glyph coverage.
+Each adapter states the exact constructs it recognises and the operations it can patch. Properties carry native syntax, type, units, provenance/default status, validation and required packages. The same catalogue feeds tools, Inspector, completion and F1. Engine defaults are not editor presets.
 
-## 6. Rendering, fonts and cache
+A renderer is not a visual editor. ME-L1/L2 cover source/render workflows; ME-L3 is bounded property editing; ME-L4 requires reverse mapping and round-trip tests for the supported subset. Unsupported transformations/macros remain source-first. Imported SVG/PDF is not automatically a reconstructed TikZ scene. Unknown fields/comments are retained; raw input is always recoverable.
 
-XeLaTeX PDF is authoritative; Poppler or another reviewed PDF backend displays it. The Rust overlay is not a PGF replacement. Bound worker duration and image decoding. Record renderer/tool versions and cache keys containing source, project profile, dependencies and relevant environment. Figure fontspec/unicode-math choices are independent of egui fonts and theme palettes.
+PGFPlots SC3 and AT4 share one implementation; SCI142 and AI88 retain separate acceptance. The 85 XeLaTeX and three LuaLaTeX AI88 examples require explicit engine configuration, never a hidden fallback. Other domain adapters reuse project/build/preview contracts, not a second package registry.
 
-## 7. Platform and evidence boundaries
+## 6. Preview, publication and data
 
-Native Windows 10 x64 + MiKTeX and physical Mac ARM64 M1/M4 remain acceptance targets. Hosted Windows Server and TeX Live checks are supplementary, not substitutes. Installable/portable application artifacts do not include a private TeX distribution or user font binaries. Offline runtime, unknown-source preservation, code visibility, contextual help and font/theme invariance must be tested as whole user workflows.
+Treat PDF/SVG/PNG as artifact formats, not interchangeable engine languages. Disable active content/external fetches in the chosen SVG preview route unless explicitly permitted; bound decoding and media size. Export availability follows verified engine/format capabilities. Figure fontspec/unicode-math/font configuration is independent of GUI themes; font files are never redistributed implicitly.
 
-## Sources for runtime/language contracts
+Data Figure stores original dataset identity, column mapping, units, transformations, plot specification and source. Changing source measurements through a plotting inspector is prohibited; derived data is separate and traceable. Uncertainty/error bars and numerical relationships require domain tests, not screenshot resemblance.
 
-- PGF/TikZ path syntax: https://tikz.dev/tikz-paths
-- Path actions: https://tikz.dev/tikz-actions
-- Nodes/edges: https://tikz.dev/tikz-shapes
-- MiKTeX independent Windows installation: https://miktex.org/howto/install-miktex
-- MiKTeX XeTeX options: https://docs.miktex.org/manual/miktex-xetex.html
+Publication stores layout and references: physical units, bounding boxes, alignment, panel labels, typography and output preset. Rendering a composite consumes child artifacts and preserves links back to native sources. Mixed-engine publication is a release scenario; deleting the editable inputs after flattening is not acceptable. Exact composite format/renderer must be chosen by a tested ADR, not invented as already decided.
 
-These sources explain upstream behavior. They do not establish that the corresponding TikZarium GUI implementation has passed testing.
+## 7. UI shell and performance
+
+Reuse Rust/egui with a central design-token layer and four themes. Project Explorer, document tabs, tool rail, editable source, preview, context dock, diagnostics and job status share one action/state contract. The selected document controls commands and capability presentation. Essential six TikZ tools remain one-click; field grouping and one Apply remain mandatory.
+
+Avoid layout changes that destroy focus, selected objects, pending drafts or IME composition. Preserve visual/source integrity while solving the existing large-document memory/latency issue. Incremental parsing/layout is derived, bounded work; do not keep unbounded full-document meshes merely to make idle frames fast. Measure native input-to-frame separately from CPU harness timings.
+
+## 8. Qualification and migration
+
+Windows 10 Pro is the main native user environment; existing Server 2025 is a separate integration and GUI gate. Keep macOS ARM M1/M4 and Linux compatibility/CI; qualify native binaries independently. Do not alter UAC/accounts/RDP/system MiKTeX/FlowBridge to make tests appear successful.
+
+Stage migration: extracted build contract → existing TikZ regressions → new engine in actual Studio → multi-document/cancellation/stale tests → data/composition → selected domain edits. Preserve old .tex/.tikz compatibility, preferences with safe defaults, immutable evidence and rollback. Every shipped engine/version/platform has originals, source integrity, diagnostics, visual and applicable scientific checks. No stable tag or release follows merely from the strategy change.
+
+The original implementation-oriented architecture is preserved in [the pre-Studio snapshot](https://github.com/i-shutov/tikzarium/blob/19187fc17968659267540fe279702bf77eeb77e6/docs/ARCHITECTURE.md). Existing source/runtime safeguards remain; this target architecture broadens the product rather than declaring a completed rewrite.
