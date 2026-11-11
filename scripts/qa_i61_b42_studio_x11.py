@@ -368,14 +368,14 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
+        click(found, 1125, 627)  # Reviewed original PNG 28a: selected Node x TextEdit (not explanatory text).
         key("ctrl+a")
         paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
         screenshot(out, "28b-inspector-draft-only")
         click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
         if source.read_bytes() != inspector_before:
             raise RuntimeError("Inspector draft unexpectedly changed saved source")
-        click(found, 1235, 157)  # Actual pinned 'Применить параметры' control.
+        click(found, 1150, 192)  # Reviewed original PNG 28a: pinned 'Применить параметры' control.
         screenshot(out, "28c-inspector-applied")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() != inspector_before,
@@ -401,7 +401,7 @@ def main() -> int:
             "after_sha256": sha(source),
             "changed_line_number": altered[0] + 1,
         })
-        click(found, 1085, 157)  # Same real inspector's visual Undo.
+        click(found, 1125, 157)  # Reviewed original PNG: pinned visual Undo control.
         screenshot(out, "28d-inspector-apply-undo")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() == inspector_before,
@@ -434,7 +434,7 @@ def main() -> int:
         wait(lambda: len(owners(source.read_bytes())) == 7,
              "Seventh actual GUI gesture did not persist a native command")
         screenshot(out, "31-seven-before-visual-undo")
-        click(found, 1085, 157)  # Visible inspector visual Undo.
+        click(found, 1125, 157)  # Reviewed original PNG: pinned visual Undo.
         screenshot(out, "32-visual-undo-click")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() == six_bytes,
