@@ -278,18 +278,15 @@ pub fn icon_button(
     side: f32,
     tooltip: &str,
 ) -> egui::Response {
-    let (rect, response) = ui.allocate_exact_size(Vec2::splat(side), Sense::click());
-    if ui.is_rect_visible(rect) {
-        let p = ui.painter_at(rect);
-        let fill = if selected {
-            ui.visuals().selection.bg_fill
-        } else if response.hovered() {
-            ui.visuals().widgets.hovered.bg_fill
-        } else {
-            ui.visuals().widgets.inactive.bg_fill
-        };
-        p.rect_filled(rect, egui::CornerRadius::same(7), fill);
-        draw_icon(ui, rect, kind, selected);
+    // A real egui Button provides keyboard focus and AccessKit semantics.
+    // A manually allocated Sense::click() icon can paint nicely while
+    // remaining unavailable to keyboard-only users and screen readers.
+    let response = ui.add_sized(
+        Vec2::splat(side).to_array(),
+        egui::Button::new("").selected(selected),
+    );
+    if ui.is_rect_visible(response.rect) {
+        draw_icon(ui, response.rect, kind, selected);
     }
     response.widget_info(|| {
         egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
