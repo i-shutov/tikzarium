@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-11 — UX1 source editor candidate, Windows 1.0 gates retained
+
+- Extend PR #167 with physical line numbers, current-line/column status, literal Find/Replace All, Go to line and one-action native Undo/Redo. Preserve UTF-8, CRLF, unrelated TeX bytes and document/revision fences.
+- Cache lexical spans and rendered text geometry independently; idle frames reuse `Arc<Galley>`. Recognize TikZ path operators, literal environments and actual authoring ownership; keep catcode-dependent text opaque.
+- Keep the gutter fixed during horizontal scrolling, protect IME composition and fix Studio's inaccessible theme submenu. Four themes remain independent of figure fonts.
+- Local 431-test workspace, strict Clippy/format, independent code review and original Linux native subsets are recorded in [UX1 evidence](insights/2026-11-11_UX1_IMPLEMENTATION_RU.md). Large-document relayout remains a measured performance limitation; no G3, physical Windows, IME/DPI or stable-release GO is asserted.
+- Consolidate the roadmap and align current portable/release documentation with all UX-F01–F14 and 100/125/200% (96/120/192 DPI) in Windows 1.0.
+
 ## 2026-11-08 — real personal Server W2a 125%-DPI evidence accepted
 
 - Trusted main `ef95c1c9ef1ac2b311a654c1daac53c97c8d7ef9`, PR #134 merged, postmerge Windows/macOS/Linux, D and owner PS5.1 CI PASS. 105 auditor assertions enforced with Python optimization, decoded PNG/F1 pixel checks and separate read-only upload diagnosis.

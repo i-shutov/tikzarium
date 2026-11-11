@@ -1,0 +1,1328 @@
+{
+  "created_utc": "2026-11-11T08:02:39.961763+00:00",
+  "runtime_source_head": "e8a3410cb65f3bda2fd20b4050de3e169454c100",
+  "review_head": "92c7c6877613b4f4e07ee9fc705e808436cae708",
+  "runtime_equivalence": "GitHub compare e8a3410...92c7c687 has only5 insights/scripts files; no app runtime changes",
+  "source_highlight_sha256": "bade707a383be55bae0189a3af34cbf16c7dc595be69511a35662c1747d1ef23",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+  "affinity_cpus": 9,
+  "rustc": "1.91.0",
+  "optimization": "rustc -C opt-level=3 -C debuginfo=0 linked to existing optimized release eframe/egui/epaint rlibs",
+  "clock": "Instant wall clock around CPU work; shared host, scheduler/allocations/cache effects included; no native events/GPU/p95",
+  "fixtures": {
+    "line_bytes": 80,
+    "line_counts": [
+      10000,
+      100000
+    ],
+    "bytes": [
+      800000,
+      8000000
+    ],
+    "unique_definition": "only a six-digit line number in the comment differs per physical line",
+    "changes": "last α toggles to β/γ/δ; same UTF8 byte length and no line break change",
+    "sha256": {
+      "10000-unique-false": "7e1c32ea3045d80ccd78c1d4a60d09034a69f248f66e5fd943d82e6300897bdb",
+      "10000-unique-true": "7ce6e25c0e55206fcb64d31f4ccd081f808149db085f4ac161c2fc6bf5c202da",
+      "100000-unique-false": "debb6fafcfe741a43b50758e18cb60827ba0152da2c5882aa3a8b4e4d4581547",
+      "100000-unique-true": "1bfb68203c9766494109d1aa9b11dd385265c46cffe5626948d88775e15c8904"
+    }
+  },
+  "harness_transforms": [
+    "copy source_highlight only into scratch",
+    "remove cfg(test) gates and the unit-test module so layout_job/layout_spans can be timed",
+    "expose layout_spans visibility in scratch copy",
+    "minimal four-variant UiTheme declaration; literal palette implementation retained",
+    "ownership stub panics if called; all fixtures assert no ownership marker; ownership path was not measured here"
+  ],
+  "hashes": {
+    "benchmark.rs": "b3b81cd49d034d1a4fc0d196651b01c5c1703086688067b460f77e7b3c1d5b79",
+    "source_highlight_snapshot.rs": "7381eef72c9dd9e1865da268496ce628ba011bbe19ac2f7ab325e2e6ff34f38c",
+    "benchmark": "186c117289593cde7c179b7d8ecc82f6bc06e55637ec4fd85c3d348d2d0a808a",
+    "results.log": "e7cd83f117d00919c6d24f96ee7cdf920b3a0a12e298bcdb7751be072ea4b516",
+    "unique_detail.log": "153df464d357d0140c8d607e9a13207aaa5abeb4466a464f4d458d06b2ede6e1",
+    "row_clone.log": "cb1f7845e0a99678db6f063b7e63972c8ad74866fe14c0c2fe9a409bc6cdfadc"
+  },
+  "logs": {
+    "results.log": [
+      {
+        "profile": "rustc-opt3-release-dependencies",
+        "debug_assertions": false,
+        "clock": "Instant-wall",
+        "renderer": "none"
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "stage": "tokenize",
+        "median_ms": 2.462,
+        "min_ms": 1.533,
+        "max_ms": 11.612,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 9.147,
+        "min_ms": 3.186,
+        "max_ms": 65.04,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.066,
+        "min_ms": 0.065,
+        "max_ms": 0.066,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.017,
+        "min_ms": 0.017,
+        "max_ms": 0.06,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 254.125
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.003,
+        "min_ms": 0.003,
+        "max_ms": 0.039,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 345.781,
+        "mono_job_ms": 0.989,
+        "mono_fonts_ms": 340.968
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 16.18,
+        "min_ms": 13.256,
+        "max_ms": 17.01,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 0.085
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "sections": 190000
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 6.139,
+        "min_ms": 6.12,
+        "max_ms": 6.632,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 2.069,
+        "min_ms": 1.894,
+        "max_ms": 2.538,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 36.637
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.022,
+        "min_ms": 0.022,
+        "max_ms": 0.09,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 289.582,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 36.439,
+        "min_ms": 33.81,
+        "max_ms": 42.385,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": false,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 6.634
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "stage": "tokenize",
+        "median_ms": 1.448,
+        "min_ms": 1.43,
+        "max_ms": 1.563,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 2.883,
+        "min_ms": 2.785,
+        "max_ms": 2.95,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.061,
+        "min_ms": 0.06,
+        "max_ms": 0.063,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.018,
+        "min_ms": 0.017,
+        "max_ms": 0.045,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 124.532
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.007,
+        "min_ms": 0.003,
+        "max_ms": 9.829,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 410.801,
+        "mono_job_ms": 0.073,
+        "mono_fonts_ms": 407.064
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 29.086,
+        "min_ms": 25.579,
+        "max_ms": 29.406,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 0.231
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "sections": 190000
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 6.14,
+        "min_ms": 6.094,
+        "max_ms": 6.154,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 1.733,
+        "min_ms": 1.63,
+        "max_ms": 1.917,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 125.585
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.029,
+        "min_ms": 0.021,
+        "max_ms": 12.03,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 332.829,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 48.699,
+        "min_ms": 45.922,
+        "max_ms": 49.005,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 7.102
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "stage": "tokenize",
+        "median_ms": 35.443,
+        "min_ms": 34.564,
+        "max_ms": 36.739,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 308.43,
+        "min_ms": 76.824,
+        "max_ms": 315.7,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.767,
+        "min_ms": 0.716,
+        "max_ms": 0.882,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.328,
+        "min_ms": 0.319,
+        "max_ms": 1.136,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 1746.966
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.003,
+        "min_ms": 0.003,
+        "max_ms": 0.042,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 3700.533,
+        "mono_job_ms": 18.855,
+        "mono_fonts_ms": 3633.127
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 169.727,
+        "min_ms": 142.696,
+        "max_ms": 174.194,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 0.971
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "sections": 1900000
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 63.542,
+        "min_ms": 63.033,
+        "max_ms": 64.692,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 22.366,
+        "min_ms": 21.492,
+        "max_ms": 22.544,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 399.015
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.227,
+        "min_ms": 0.206,
+        "max_ms": 0.619,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 1694.192,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 489.334,
+        "min_ms": 389.811,
+        "max_ms": 502.694,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": false,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 71.745
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "tokenize",
+        "median_ms": 39.916,
+        "min_ms": 39.641,
+        "max_ms": 40.084,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 78.911,
+        "min_ms": 77.067,
+        "max_ms": 83.548,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.634,
+        "min_ms": 0.618,
+        "max_ms": 0.651,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.304,
+        "min_ms": 0.218,
+        "max_ms": 0.435,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 1664.907
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.015,
+        "min_ms": 0.003,
+        "max_ms": 185.121,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 2777.091,
+        "mono_job_ms": 0.666,
+        "mono_fonts_ms": 2739.628
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 295.888,
+        "min_ms": 256.012,
+        "max_ms": 297.421,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 2.338
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "sections": 1900000
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 62.175,
+        "min_ms": 62.001,
+        "max_ms": 62.324,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 21.216,
+        "min_ms": 20.828,
+        "max_ms": 21.72,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 1403.497
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.455,
+        "min_ms": 0.306,
+        "max_ms": 209.63,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 2241.6,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 506.858,
+        "min_ms": 469.599,
+        "max_ms": 511.901,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 78.948
+      }
+    ],
+    "unique_detail.log": [
+      {
+        "profile": "rustc-opt3-release-dependencies",
+        "debug_assertions": false,
+        "clock": "Instant-wall",
+        "renderer": "none"
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "stage": "tokenize",
+        "median_ms": 2.8,
+        "min_ms": 1.411,
+        "max_ms": 2.926,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 6.826,
+        "min_ms": 3.036,
+        "max_ms": 9.214,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.063,
+        "min_ms": 0.061,
+        "max_ms": 0.065,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.018,
+        "min_ms": 0.017,
+        "max_ms": 0.035,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 848.526
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "geometry",
+        "rows": 10001,
+        "glyphs": 780000,
+        "vertices": 2880000,
+        "indices": 4320000,
+        "source_bytes_verified": true
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.011,
+        "min_ms": 0.003,
+        "max_ms": 13.92,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 467.693,
+        "mono_job_ms": 0.054,
+        "mono_fonts_ms": 461.907
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 37.203,
+        "min_ms": 30.803,
+        "max_ms": 105.309,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 0.435
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "changed_paragraph_prepared_fonts_only",
+        "total_ms": 29.09
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": false,
+        "stage": "after_idle_prepared_fonts_only",
+        "total_ms": 90.051
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "sections": 190000
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 6.586,
+        "min_ms": 6.496,
+        "max_ms": 6.869,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 2.097,
+        "min_ms": 1.808,
+        "max_ms": 2.302,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 135.147
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "geometry",
+        "rows": 10001,
+        "glyphs": 780000,
+        "vertices": 2880000,
+        "indices": 4320000,
+        "source_bytes_verified": true
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.112,
+        "min_ms": 0.027,
+        "max_ms": 15.766,
+        "n": 5
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 272.083,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 58.125,
+        "min_ms": 52.385,
+        "max_ms": 64.45,
+        "n": 3
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 6.911
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "changed_paragraph_prepared_fonts_only",
+        "total_ms": 49.871
+      },
+      {
+        "lines": 10000,
+        "unique": true,
+        "bytes": 800000,
+        "syntax": true,
+        "stage": "after_idle_prepared_fonts_only",
+        "total_ms": 589.772
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "tokenize",
+        "median_ms": 22.083,
+        "min_ms": 21.931,
+        "max_ms": 22.515,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 88.042,
+        "min_ms": 87.726,
+        "max_ms": 258.437,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "sections": 1
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "hash_job",
+        "median_ms": 0.771,
+        "min_ms": 0.652,
+        "max_ms": 1.071,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "clone_job",
+        "median_ms": 0.397,
+        "min_ms": 0.333,
+        "max_ms": 0.461,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "initial",
+        "total_ms": 7634.468
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "geometry",
+        "rows": 100001,
+        "glyphs": 7800000,
+        "vertices": 28800000,
+        "indices": 43200000,
+        "source_bytes_verified": true
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "idle",
+        "median_ms": 0.015,
+        "min_ms": 0.003,
+        "max_ms": 253.429,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "edit_after_idle",
+        "total_ms": 3840.125,
+        "mono_job_ms": 0.694,
+        "mono_fonts_ms": 3803.286
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "sequential_edit",
+        "median_ms": 318.697,
+        "min_ms": 263.408,
+        "max_ms": 441.047,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 2.939
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "changed_paragraph_prepared_fonts_only",
+        "total_ms": 288.315
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": false,
+        "stage": "after_idle_prepared_fonts_only",
+        "total_ms": 831.12
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "sections": 1900000
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 64.72,
+        "min_ms": 63.849,
+        "max_ms": 66.426,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 23.302,
+        "min_ms": 22.837,
+        "max_ms": 23.467,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 1900.828
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "geometry",
+        "rows": 100001,
+        "glyphs": 7800000,
+        "vertices": 28800000,
+        "indices": 43200000,
+        "source_bytes_verified": true
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "idle",
+        "median_ms": 0.371,
+        "min_ms": 0.229,
+        "max_ms": 219.425,
+        "n": 5
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "edit_after_idle",
+        "total_ms": 2519.966,
+        "mono_job_ms": 0.0,
+        "mono_fonts_ms": 0.0
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "sequential_edit",
+        "median_ms": 534.055,
+        "min_ms": 502.841,
+        "max_ms": 540.469,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "warm_prepared_fonts_only",
+        "total_ms": 86.97
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "changed_paragraph_prepared_fonts_only",
+        "total_ms": 430.33
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "after_idle_prepared_fonts_only",
+        "total_ms": 1671.407
+      }
+    ],
+    "row_clone.log": [
+      {
+        "profile": "rustc-opt3-release-dependencies",
+        "debug_assertions": false,
+        "clock": "Instant-wall",
+        "renderer": "none"
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "tokenize",
+        "median_ms": 30.323,
+        "min_ms": 27.502,
+        "max_ms": 33.707,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "stage": "syntax_job_from_cached_spans",
+        "median_ms": 89.403,
+        "min_ms": 89.206,
+        "max_ms": 214.588,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "sections": 1900000
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "hash_job",
+        "median_ms": 65.455,
+        "min_ms": 63.806,
+        "max_ms": 69.127,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "clone_job",
+        "median_ms": 243.782,
+        "min_ms": 156.346,
+        "max_ms": 437.092,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "initial",
+        "total_ms": 7502.941
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "geometry",
+        "rows": 100001,
+        "glyphs": 7800000,
+        "vertices": 28800000,
+        "indices": 43200000,
+        "source_bytes_verified": true
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "shallow_placed_rows_clone",
+        "median_ms": 1.231,
+        "min_ms": 1.034,
+        "max_ms": 2.282,
+        "n": 3
+      },
+      {
+        "lines": 100000,
+        "unique": true,
+        "bytes": 8000000,
+        "syntax": true,
+        "stage": "deep_row_clone",
+        "median_ms": 603.377,
+        "min_ms": 591.469,
+        "max_ms": 824.433,
+        "n": 3
+      }
+    ]
+  },
+  "g3": "NOT_RUN; no native p95 or responsiveness acceptance",
+  "production_files_changed_by_experiment": false,
+  "dependency_sha256": {
+    "libeframe-d04273f22ae6115f.rlib": "80182fe384ed9234bdf1a46321d37779e2d43948365d56b1f2ea1f2ec252d13f",
+    "libegui-1abcc1dda74bb44d.rlib": "dc795610d933f6839b2154eef9fdabe0cb44bfb8b13a65e1bd2289286241cd75",
+    "libepaint-86ecb0cdccf82419.rlib": "dcda3b7e033a73b7effa0c218454e7b1cc7aa76fa588893b6fbaea2d72576e14"
+  },
+  "report_sha256": "7d4b81f1873968db93ad5e8dc01d9107757c639f24f3dee49b58e384e820c5d0"
+}

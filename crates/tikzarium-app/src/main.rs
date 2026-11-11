@@ -19,7 +19,10 @@ mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
+mod source_editor;
 mod source_fonts;
+mod source_highlight;
+mod source_navigation;
 mod studio_ui;
 mod tex_discovery;
 mod tikz_authoring;
@@ -39,7 +42,7 @@ use pdf_navigation::{
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
-use ui_theme::{STORAGE_KEY, UiPreferences};
+use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
 
 const QUICKSTART: &str = include_str!("../../../examples/quickstart.tex");
 // The Linux Save action cannot use a native dialog: this is an actual, editable
@@ -300,11 +303,34 @@ fn fence_source_editor_undo_on_revision_change(
 
 /// Switching documents must not reuse egui TextEdit's native Undo snapshots:
 /// those snapshots belong to the old .tex buffer, not the new source file.
+#[cfg(test)]
 fn show_source_text_edit(
     ui: &mut egui::Ui,
     source: &mut String,
     reset_undo_history: &mut bool,
     soft_wrap: bool,
+    theme: UiTheme,
+    font_size: f32,
+) -> egui::text_edit::TextEditOutput {
+    show_source_text_edit_cached(
+        ui,
+        source,
+        reset_undo_history,
+        soft_wrap,
+        theme,
+        font_size,
+        &mut source_highlight::SourceHighlightCache::default(),
+    )
+}
+
+fn show_source_text_edit_cached(
+    ui: &mut egui::Ui,
+    source: &mut String,
+    reset_undo_history: &mut bool,
+    soft_wrap: bool,
+    theme: UiTheme,
+    font_size: f32,
+    cache: &mut source_highlight::SourceHighlightCache,
 ) -> egui::text_edit::TextEditOutput {
     let fenced = *reset_undo_history;
     // INFINITY disables wrapping. The alternative only changes visual galley
@@ -320,16 +346,21 @@ fn show_source_text_edit(
     };
     let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, wrap_width: f32| {
         let actual_wrap_width = if soft_wrap { wrap_width } else { f32::INFINITY };
-        let job = egui::text::LayoutJob::simple(
-            text.as_str().to_owned(),
-            egui::TextStyle::Monospace.resolve(ui.style()),
-            ui.visuals().widgets.inactive.text_color(),
+        cache.galley(
+            ui,
+            text.as_str(),
+            egui::FontId::monospace(font_size.clamp(12.0, 24.0)),
+            source_highlight::palette(theme, ui.visuals().widgets.inactive.text_color()),
             actual_wrap_width,
-        );
-        ui.fonts_mut(|fonts| fonts.layout_job(job))
+        )
     };
     let mut output = egui::TextEdit::multiline(source)
+        .id(egui::Id::new("tikz-source-editor"))
+        // Navigation backgrounds are painted below native selection/glyphs;
+        // keep TextEdit's focus border, without covering those backgrounds.
+        .background_color(egui::Color32::TRANSPARENT)
         .code_editor()
+        .font(egui::FontId::monospace(font_size.clamp(12.0, 24.0)))
         .desired_width(edit_width)
         .desired_rows(36)
         .layouter(&mut layouter)
@@ -342,6 +373,88 @@ fn show_source_text_edit(
         ui.ctx().request_repaint();
     }
     output
+}
+
+/// The vertical viewport owns both gutter and source. Only the code child
+/// scrolls horizontally, so physical line numbers remain visible in no-wrap.
+fn show_source_with_gutter(
+    ui: &mut egui::Ui,
+    source: &mut String,
+    reset: &mut bool,
+    soft_wrap: bool,
+    theme: UiTheme,
+    font_size: f32,
+    editor: &mut source_editor::SourceEditor,
+) -> (egui::text_edit::TextEditOutput, egui::Rect, egui::Rect) {
+    editor.refresh(source);
+    let navigation_target = editor.navigation_target();
+    let previous_caret = editor.caret;
+    let background = ui.painter().add(egui::Shape::Noop);
+    let mut gutter = egui::Rect::NOTHING;
+    let mut editor_clip = ui.clip_rect();
+    let output = ui
+        .horizontal_top(|ui| {
+            let digits = editor.line_count().to_string().len();
+            gutter = ui
+                .allocate_exact_size(
+                    egui::vec2(14.0 + digits as f32 * 8.0, 1.0),
+                    egui::Sense::hover(),
+                )
+                .0;
+            if soft_wrap {
+                editor_clip = ui
+                    .clip_rect()
+                    .intersect(egui::Rect::from_min_max(ui.cursor().min, ui.max_rect().max));
+                let mut output = show_source_text_edit_cached(
+                    ui,
+                    source,
+                    reset,
+                    true,
+                    theme,
+                    font_size,
+                    &mut editor.highlight,
+                );
+                editor.finish_interaction(ui, &mut output, source);
+                output
+            } else {
+                let scrolled = egui::ScrollArea::horizontal()
+                    .id_salt("source-horizontal-scroll")
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        editor_clip = ui.clip_rect();
+                        let mut output = show_source_text_edit_cached(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            theme,
+                            font_size,
+                            &mut editor.highlight,
+                        );
+                        editor.finish_interaction(ui, &mut output, source);
+                        output
+                    });
+                editor_clip = scrolled.inner_rect.intersect(ui.clip_rect());
+                scrolled.inner
+            }
+        })
+        .inner;
+    gutter.max.y = output.response.rect.bottom();
+    editor.paint(ui, &output, gutter, editor_clip, background);
+    // The horizontal child consumes scroll requests for both axes. Repeat the
+    // vertical request in the shared parent so gutter and code move together.
+    if let Some(character) = navigation_target {
+        ui.scroll_to_rect(
+            source_caret_target(&output.galley, output.galley_pos, character),
+            Some(egui::Align::Center),
+        );
+    } else if output.response.has_focus() && editor.caret != previous_caret {
+        ui.scroll_to_rect(
+            source_caret_target(&output.galley, output.galley_pos, editor.caret),
+            None,
+        );
+    }
+    (output, gutter, editor_clip)
 }
 
 /// A floating geometry palette should never cover the canvas while the user
@@ -691,6 +804,7 @@ struct TikzariumApp {
     // A source patch or document replacement must not leave native TextEdit
     // history that could restore commands or bytes from a previous file.
     reset_source_editor_undo_history: bool,
+    source_editor: source_editor::SourceEditor,
     font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
     font_proof_status: String,
     font_proof_report: String,
@@ -882,6 +996,7 @@ impl TikzariumApp {
             },
             highlight_generated_line: false,
             reset_source_editor_undo_history: false,
+            source_editor: source_editor::SourceEditor::default(),
             font_proof_rx: None,
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
@@ -1580,6 +1695,30 @@ impl TikzariumApp {
                         .on_hover_text(
                             "Переносить длинные строки только на экране. Не меняет TeX, CRLF и PDF. Выключите для горизонтальной прокрутки.",
                         );
+                    ui.separator();
+                    if ui
+                        .add_enabled(
+                            self.prefs.source_font_size < 24.0,
+                            egui::Button::new("A+"),
+                        )
+                        .on_hover_text("Увеличить шрифт кода (не влияет на TeX и PDF)")
+                        .clicked()
+                    {
+                        self.prefs.source_font_size =
+                            (self.prefs.source_font_size + 1.0).min(24.0);
+                    }
+                    ui.label(format!("{:.0} pt", self.prefs.source_font_size));
+                    if ui
+                        .add_enabled(
+                            self.prefs.source_font_size > 12.0,
+                            egui::Button::new("A−"),
+                        )
+                        .on_hover_text("Уменьшить шрифт кода")
+                        .clicked()
+                    {
+                        self.prefs.source_font_size =
+                            (self.prefs.source_font_size - 1.0).max(12.0);
+                    }
                 },
             );
         });
@@ -1596,16 +1735,53 @@ impl TikzariumApp {
         );
         ui.add(egui::Label::new(basename).truncate())
             .on_hover_text(path_description);
+        if self.reset_source_editor_undo_history {
+            self.source_editor.document_changed();
+        }
+        self.source_editor
+            .toolbar(ui, &self.document.source, self.authoring.source_revision());
+        let replaced = if let Some(preview) = self.source_editor.apply.take() {
+            if self.reset_source_editor_undo_history {
+                self.source_editor
+                    .error("Редактор сменил документ: повторите предпросмотр замены");
+                false
+            } else {
+                match source_editor::apply_replacement(
+                    ui.ctx(),
+                    &mut self.document.source,
+                    self.authoring.source_revision(),
+                    &preview,
+                ) {
+                    Ok(changed) => {
+                        self.source_editor.focus_editor |= changed;
+                        changed
+                    }
+                    Err(error) => {
+                        self.source_editor.error(error);
+                        false
+                    }
+                }
+            }
+        } else {
+            false
+        };
+        self.source_editor.refresh(&self.document.source);
         ui.separator();
-        egui::ScrollArea::new([!self.prefs.source_soft_wrap, true])
+        egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                let mut output = show_source_text_edit(
+                let (mut output, _, _) = show_source_with_gutter(
                     ui,
                     &mut self.document.source,
                     &mut self.reset_source_editor_undo_history,
                     self.prefs.source_soft_wrap,
+                    self.prefs.theme,
+                    self.prefs.source_font_size,
+                    &mut self.source_editor,
                 );
+                if replaced {
+                    output.response.mark_changed();
+                }
                 // Both the desktop and UNIT_EVENT frames handle the same
                 // TextEdit change signal before visual Undo can be offered.
                 tikz_canvas::observe_source_text_edit(
@@ -1644,7 +1820,16 @@ impl TikzariumApp {
                             },
                         ));
                         self.highlight_generated_line = false;
+                        self.source_editor.external_jump(
+                            output
+                                .state
+                                .cursor
+                                .char_range()
+                                .map_or(position, |range| range.primary.index),
+                            position,
+                        );
                         output.state.store(ui.ctx(), output.response.id);
+                        ui.ctx().request_repaint();
                         // Scroll/highlight without stealing keyboard focus.
                         // A new guide gesture must own Ctrl/Cmd+Z until its
                         // mouse-up; users click the source to edit text.
@@ -1656,7 +1841,7 @@ impl TikzariumApp {
                             Some(egui::Align::Center),
                         );
                     } else {
-                        self.status = format!("Line {line} is outside this document");
+                        self.status = format!("Строки {line} нет в этом документе");
                     }
                 }
             });
@@ -3161,7 +3346,8 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, true);
+                        let output =
+                            show_source_text_edit(ui, source, reset, true, UiTheme::Midnight, 14.0);
                         actual_editor = output.response.rect;
                         dismiss_studio_palette_on_source_click(&output.response, group);
                     });
@@ -3259,6 +3445,8 @@ mod split_layout_tests {
                                         &mut source,
                                         &mut reset,
                                         soft_wrap,
+                                        UiTheme::Midnight,
+                                        14.0,
                                     );
                                     observed_rows = output.galley.rows.len();
                                 });
@@ -3396,7 +3584,14 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, false);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         tikz_canvas::observe_source_text_edit(&output.response, session, source);
                         if focus {
                             output.response.request_focus();
@@ -4532,7 +4727,14 @@ mod split_layout_tests {
                 },
                 |ctx| {
                     egui::CentralPanel::default().show(ctx, |ui| {
-                        let output = show_source_text_edit(ui, source, reset, false);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         if focus_editor {
                             output.response.request_focus();
                         }
@@ -4727,7 +4929,14 @@ mod split_layout_tests {
                         if modal {
                             ui.disable();
                         }
-                        let output = show_source_text_edit(ui, source, reset, false);
+                        let output = show_source_text_edit(
+                            ui,
+                            source,
+                            reset,
+                            false,
+                            UiTheme::Midnight,
+                            14.0,
+                        );
                         if focus_editor {
                             output.response.request_focus();
                         }

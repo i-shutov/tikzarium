@@ -1,6 +1,14 @@
-# TikZarium — release resume, 2026-11-09
+# TikZarium — release resume, 2026-11-11
 
-## 2026-11-10 — Admin: CLI PDF / кириллица / Arial **PASS**, следующий этап — GUI W3
+## 2026-11-11 — единый roadmap и реализация UX1
+
+**Результат первого блока:** 431 workspace test PASS, независимое ревью и нативные Linux subsets; G3 и Windows-приёмка открыты. [Отчёт с исходными evidence](../insights/2026-11-11_UX1_IMPLEMENTATION_RU.md).
+
+Текущий маршрут задан [docs/ROADMAP.md](ROADMAP.md), контракт первого блока — [UX1 execution](../plans/2026-11-11_UX1_EXECUTION.md). База `main=0a5dd9a81bd240ffe924630fadd8dfc53f9a36f9`, код редактора развивается в [PR #167](https://github.com/i-shutov/tikzarium/pull/167). Все UX-F01–F14 входят в Windows 1.0. Масштабы: 100%/125%/200% = 96/120/192 DPI. Полные W2b/W3/IME/W4 остаются открытыми. Старые профильные результаты Admin/QA ниже сохраняют собственную дату, source SHA и границы приёмки.
+
+Первый блок: подсветка и кэш → номера физических строк → поиск/замена и Go to line → native Undo/source integrity → независимая проверка. Реальная Windows10-приёмка нового UI ещё не выполнена. Точные результаты текущей реализации публикуются в её PR/checkpoint, без переноса исторического W3 PASS на новый бинарник.
+
+## История: 2026-11-10 — Admin: CLI PDF / кириллица / Arial **PASS**, следующий этап — GUI W3
 
 **Фактический результат владельца на Windows 10 Pro в профиле `Admin`:** после сборки `tikzarium-app` (`Finished dev profile` за 1m59s) `tikzarium-cli.exe` успешно сгенерировал `windows-cyrillic.pdf` (**16 449 байт**, 93 зависимости, 10.8436788 с). Независимый от установки **повторный аудит уже созданного PDF** завершился `PDF_CYRILLIC_POSTFLIGHT_PASS via standard` без Cargo, MiKTeX и пересборки.
 

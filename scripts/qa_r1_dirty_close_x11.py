@@ -47,9 +47,22 @@ def key(value: str) -> None:
 
 
 def copied_source() -> str:
+    # A stale clipboard must not impersonate a successful source selection.
+    subprocess.run(
+        ["xclip", "-selection", "clipboard", "-i"],
+        input=b"__R1_CLIPBOARD_SENTINEL__", timeout=8, check=True,
+    )
     key("ctrl+a")
     key("ctrl+c")
-    return run("xclip", "-selection", "clipboard", "-o")
+    # Generic run().strip() discarded terminal whitespace in the old evidence.
+    # Keep exact UTF-8/CRLF bytes; invalid UTF-8 must fail rather than be replaced.
+    copied = subprocess.run(
+        ["xclip", "-selection", "clipboard", "-o"],
+        capture_output=True, timeout=8, check=True,
+    ).stdout
+    if copied == b"__R1_CLIPBOARD_SENTINEL__":
+        raise RuntimeError("Native source Copy did not replace the clipboard sentinel")
+    return copied.decode("utf-8")
 
 
 def main() -> int:
@@ -100,9 +113,10 @@ def main() -> int:
             time.sleep(1.1)
             screenshot(out, "01-before-edit")
 
-            # Pinned B42 source coordinates previously accepted in I61.
+            # UX1 source body, reviewed in the original native editor PNGs
+            # and bootstrap 42981807266; y=209 is now above the TextEdit.
             # This regression intentionally fails if the reviewed app layout moves.
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             run("xdotool", "type", "--clearmodifiers", "--delay", "70", "releasecanary")
             time.sleep(0.5)
             source_before = copied_source()
@@ -124,7 +138,7 @@ def main() -> int:
             report["steps"].append("dirty_WM_close_intercepted_process_alive")
 
             key("Escape")  # Cancel the native close, keep the buffer.
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             source_after = copied_source()
             if source_after != source_before:
                 raise RuntimeError("Cancel altered the source buffer")
@@ -138,7 +152,7 @@ def main() -> int:
                 raise RuntimeError("DATA LOSS: Alt+F4 closed dirty source")
             screenshot(out, "05-keyboard-close-confirmation")
             key("Escape")
-            run("xdotool", "mousemove", "--sync", "130", "209", "click", "1")
+            run("xdotool", "mousemove", "--sync", "130", "260", "click", "1")
             if copied_source() != source_before:
                 raise RuntimeError("Keyboard close Cancel changed source")
             report["steps"].append("Alt_F4_cancel_preserves_source")
@@ -147,8 +161,8 @@ def main() -> int:
             key("ctrl+s")
             output = out / "figure.tex"
             wait(output.exists, "Save .tex", 12)
-            if "releasecanary" not in output.read_text("utf-8"):
-                raise RuntimeError("Saved document lacks the canary")
+            if output.read_bytes() != source_before.encode("utf-8"):
+                raise RuntimeError("Saved document differs from the exact source before close")
             run("wmctrl", "-i", "-c", window)
             wait(lambda: process.poll() is not None, "clean WM close", 12)
             report["steps"].append("save_then_clean_WM_close")

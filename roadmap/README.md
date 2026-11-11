@@ -1,5 +1,7 @@
 # TikZarium / roadmap
 
+**Единый текущий план исполнения:** [docs/ROADMAP.md](../docs/ROADMAP.md). Этот каталог хранит нормативные приложения и матрицы, а не конкурирующие текущие маршруты. Первый реализационный блок — [UX1, 11.11.2026](../plans/2026-11-11_UX1_EXECUTION.md).
+
 ## Приоритет Windows 1.0: UIX-first
 
 **Последнее решение владельца (10.11.2026):** все **14 UX-F01…F14** из [ревью](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) перенесены в **Windows 1.0**, а не в 1.1/1.2/1.3. [Авторитетный UX/1.0 порядок и QA gates](WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md): читаемый editable TeX с подсветкой и навигацией → удобный workspace и Inspector/F1 → native Save & Build, актуальный PDF/диагностика → DPI/accessibility → W2b/W3/IME/W4. Владелец требует **принимать эргономику до GUI-адаптеров дополнительных 35 пакетов/88 примеров**. AT0 source intake и AT1 engine research допустимы параллельно без GUI acceptance. Старые строки о 96DPI-only и deferred UX ниже исторические.

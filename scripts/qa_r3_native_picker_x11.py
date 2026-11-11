@@ -171,7 +171,9 @@ def main() -> int:
             report["steps"].append("genuine_portal_open_window_visible")
             choose_path(native_id, original)
             cmd("wmctrl", "-i", "-a", app_id)
-            click(130, 209)  # real editable .tex panel
+            # UX1 source body below the navigation toolbar; original native
+            # editor PNGs and bootstrap 42981807266 place y=209 above it.
+            click(130, 260)
             source = copied_tex()
             if "R3-Picker-Canary" not in source:
                 raise RuntimeError("Native Open selected file but app source has no canary")
@@ -190,13 +192,13 @@ def main() -> int:
             key("Escape")
             wait(lambda: native_id not in windows(), "Cancel closing picker", 12)
             cmd("wmctrl", "-i", "-a", app_id)
-            click(130, 209)
+            click(130, 260)
             if copied_tex() != source:
                 raise RuntimeError("Cancelled native dialog rewrote editor source")
             report["steps"].append("portal_cancel_keeps_editable_source")
 
             # Native Save As must use the OS picker and preserve the source file.
-            click(130, 209)
+            click(130, 260)
             key("ctrl+End")
             key("Return")
             clipboard("%R3-Native-Save-Canary")

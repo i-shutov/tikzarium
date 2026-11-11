@@ -1,0 +1,693 @@
+{
+  "schema": 1,
+  "created_at_utc": "2026-11-11T07:25:10.996068+00:00",
+  "description": "UX1 local wall-clock microbenchmark of CPU-only lexer/egui text-layout operations; no native key-to-visible-frame measurement",
+  "gate_status": {
+    "physical_G3": "NOT_RUN",
+    "native_input_latency": "NOT_RUN",
+    "100k_responsiveness": "NOT_ACCEPTED: repeated release fixture edits measured 0.8–2.0 seconds"
+  },
+  "environment": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "cpu": {
+      "vendor_id": "AuthenticAMD",
+      "cpu family": "25",
+      "model": "17",
+      "model name": "AMD EPYC 9V74 80-Core Processor",
+      "stepping": "1",
+      "cpu MHz": "2596.144",
+      "cache size": "1024 KB"
+    },
+    "cpu_affinity_count": 9,
+    "rustc": "rustc 1.91.0 (f8297e351 2025-10-28)",
+    "renderer": "none; headless egui::Context CPU font layout only",
+    "scheduling": "shared managed environment; frequency/load not pinned"
+  },
+  "command": {
+    "debug": "cargo test -p tikzarium-app local_cpu_highlight_cost --locked -- --ignored --nocapture",
+    "release": "cargo test --release -p tikzarium-app local_cpu_highlight_cost --locked -- --ignored --nocapture",
+    "env": {
+      "RUSTUP_HOME": "/workspace/scratch/c934e9a9f24a/rustup",
+      "CARGO_HOME": "/workspace/scratch/c934e9a9f24a/cargo",
+      "PATH_prefix": "/workspace/scratch/c934e9a9f24a/cargo/bin"
+    },
+    "working_directory": "/workspace/scratch/c934e9a9f24a/tikzarium"
+  },
+  "source": {
+    "base_git_HEAD": "5c76d535a65dc01c0ebfb3a336cd2ecc50d3eca2",
+    "uncommitted_integration": "PR167 plus merged main and UX1 work; base HEAD is not an exact code snapshot",
+    "file_sha256": {
+      "Cargo.toml": "0cd922d0909a754fcbbfc6a36ad48d97f5f044929a84a1f43687fa3af6b89e02",
+      "Cargo.lock": "825cb71d9c20c894399b77d97f730cc067c5944417a37b68b986210aa2ca304d",
+      "rust-toolchain.toml": "d77718ea6bac6c35c4bebcf784a65531b890abb6155e7014af9e074cd64b23de",
+      "crates/tikzarium-app/src/main.rs": "360a2499137701aee021c68ccbdc7047328bdf3b40856a9e0dc04b13aa08399e",
+      "crates/tikzarium-app/src/source_editor.rs": "3cf7d3dd174d9b608440b599e36549cca80cc37e838f8d398ef167af3a077c97",
+      "crates/tikzarium-app/src/source_navigation.rs": "99b9d01ca7d7dd1a10b7a73efdc635e21e6ae93d81507db7cb452250761b0206",
+      "crates/tikzarium-app/src/source_highlight.rs": "bade707a383be55bae0189a3af34cbf16c7dc595be69511a35662c1747d1ef23",
+      "crates/tikzarium-app/src/ui_theme.rs": "44ac6b8655b0fbf13892acb33a5765bf603dc7c1ab27ccb34b747e8e0d0c0762"
+    },
+    "release_test_binary": "/workspace/scratch/c934e9a9f24a/tikzarium/target/release/deps/tikzarium_app-ef552104cc48679c",
+    "release_test_binary_sha256": "26fc6ba9b2e5f45ee84443a5ba706f3045bc0a1a24bcadf9696a307bd0c67170"
+  },
+  "fixtures": {
+    "plain_line": "\\draw[red,thick] (1cm,2cm)--(3cm,4cm); % preserved xxxxxxxxxxxxxxxxxxxxxxxxxα\r\n",
+    "plain_line_bytes": 80,
+    "plain_sha256": {
+      "10000": "684544f08a062861f08fac09d34b8e44b4cec1ed3648c59250ff154145f66b00",
+      "100000": "6bf6fe27b513f81e7f2ec58adb61a3fb00fa7004174274039e0f7f4de0e47e72"
+    },
+    "sizes_lines": [
+      10000,
+      100000
+    ],
+    "plain_bytes": [
+      800000,
+      8000000
+    ],
+    "mixed_bytes": [
+      821500,
+      8215000
+    ],
+    "mixed_description": "Every twentieth line is the same C-generated default Tool::Line ownership id1 (121 bytes plus CRLF); other lines repeat plain_line. 500/5000 metadata comments.",
+    "edits": "Replace the last α with β and back, preserving byte length and allocation.",
+    "critical_limitation": "Identical repeated lines maximize egui paragraph-cache reuse. Mixed ownership id1 repeats too. These fixtures are not unique authored documents or representative native performance acceptance."
+  },
+  "measurement": {
+    "clock": "std::time::Instant wall-clock elapsed around CPU-only operations",
+    "repetitions": "5 for 10k job/token operations and galley idle; 3 for 100k operations, sequential galley edit, and incomplete begin scans; initial and first edit are single samples",
+    "statistics": "Reported median/min/max only. Sample count is too small for a meaningful p95; outliers retained.",
+    "excluded": "Native input dispatch, source editor gutter/navigation, GPU rendering, compositor/presentation, scrolling, physical Windows/DPI/IME validation"
+  },
+  "findings": [
+    "Production idle path returns the same Arc<Galley> and avoids cloning or rehashing the complete LayoutJob.",
+    "Ownership uses a LazyLock catalogue; no per-marker SharedCatalog reconstruction was found. Existing authoritative ownership checks remain intact.",
+    "The compatibility owned LayoutJob API still has O(n) clone cost and is cfg(test); production editor uses galley().",
+    "Full source edits still tokenize/format/hash the document. 100k-line optimized stress remains a significant UI responsiveness risk.",
+    "Incomplete literal environment scans stop at the first invalid name byte; measured 10x input growth gave approximately 11x CPU elapsed for the tested malformed cases."
+  ],
+  "profiles": {
+    "debug-before": {
+      "log": "/workspace/scratch/c934e9a9f24a/ux1-debug-before-bench.log",
+      "log_sha256": "3021d6bf9554b37e476c6f48db73444c01541e0d49646cd962b2324e96dd4fa5",
+      "optimized": false,
+      "debug_assertions": true,
+      "metrics": [
+        {
+          "label": "lines=10000 mixed=false bytes=800000 tokenize",
+          "median": 33.937,
+          "min": 33.625,
+          "max": 37.821,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 idle_cached_clone",
+          "median": 13.574,
+          "min": 13.362,
+          "max": 19.686,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 presentation_width",
+          "median": 35.49,
+          "min": 29.507,
+          "max": 38.905,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 one_character_edit",
+          "median": 67.304,
+          "min": 66.525,
+          "max": 69.119,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 tokenize",
+          "median": 43.517,
+          "min": 42.732,
+          "max": 46.454,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 idle_cached_clone",
+          "median": 14.877,
+          "min": 13.928,
+          "max": 105.535,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 presentation_width",
+          "median": 30.246,
+          "min": 29.518,
+          "max": 46.221,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 one_character_edit",
+          "median": 78.375,
+          "min": 72.596,
+          "max": 88.257,
+          "n": 5
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 tokenize",
+          "median": 376.794,
+          "min": 370.49,
+          "max": 393.366,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 idle_cached_clone",
+          "median": 209.128,
+          "min": 199.624,
+          "max": 216.571,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 presentation_width",
+          "median": 427.279,
+          "min": 420.194,
+          "max": 434.096,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 one_character_edit",
+          "median": 859.831,
+          "min": 843.57,
+          "max": 1019.106,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 tokenize",
+          "median": 490.021,
+          "min": 466.695,
+          "max": 626.455,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 idle_cached_clone",
+          "median": 198.323,
+          "min": 196.822,
+          "max": 199.653,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 presentation_width",
+          "median": 434.948,
+          "min": 429.897,
+          "max": 485.724,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 one_character_edit",
+          "median": 913.179,
+          "min": 910.132,
+          "max": 1048.26,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=19",
+          "median": 25.994,
+          "min": 25.451,
+          "max": 26.13,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=21",
+          "median": 34.412,
+          "min": 33.541,
+          "max": 35.344,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=37",
+          "median": 50.704,
+          "min": 49.74,
+          "max": 51.014,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=19",
+          "median": 295.951,
+          "min": 252.003,
+          "max": 330.565,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=21",
+          "median": 336.565,
+          "min": 330.174,
+          "max": 350.123,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=37",
+          "median": 544.897,
+          "min": 502.27,
+          "max": 600.638,
+          "n": 3
+        }
+      ],
+      "raw_fixture_metadata": [
+        "profile_debug_assertions=true owned_line_bytes=121 layout_section_bytes=104 span_bytes=24",
+        "lines=10000 mixed=false bytes=800000 spans=210000 sections=210001 owned_markers=0 section_storage_bytes=21840104",
+        "lines=10000 mixed=true bytes=821500 spans=208501 sections=208502 owned_markers=500 section_storage_bytes=21684208",
+        "lines=100000 mixed=false bytes=8000000 spans=2100000 sections=2100001 owned_markers=0 section_storage_bytes=218400104",
+        "lines=100000 mixed=true bytes=8215000 spans=2085001 sections=2085002 owned_markers=5000 section_storage_bytes=216840208"
+      ]
+    },
+    "debug-after": {
+      "log": "/workspace/scratch/c934e9a9f24a/ux1-debug-after-bench.log",
+      "log_sha256": "038bd2a3caca847205e8bdc64298044f927ddf81e5aee1dbb44ff0f60d236a35",
+      "optimized": false,
+      "debug_assertions": true,
+      "metrics": [
+        {
+          "label": "lines=10000 mixed=false bytes=800000 tokenize",
+          "median": 32.954,
+          "min": 32.264,
+          "max": 34.703,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 idle_cached_clone",
+          "median": 12.724,
+          "min": 12.331,
+          "max": 16.794,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 presentation_width",
+          "median": 30.33,
+          "min": 25.401,
+          "max": 31.551,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 one_character_edit",
+          "median": 62.871,
+          "min": 61.322,
+          "max": 90.297,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 tokenize",
+          "median": 42.168,
+          "min": 41.503,
+          "max": 45.599,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 idle_cached_clone",
+          "median": 12.999,
+          "min": 12.515,
+          "max": 13.618,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 presentation_width",
+          "median": 30.955,
+          "min": 26.272,
+          "max": 31.812,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 one_character_edit",
+          "median": 75.357,
+          "min": 73.744,
+          "max": 77.868,
+          "n": 5
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 tokenize",
+          "median": 381.102,
+          "min": 377.104,
+          "max": 499.984,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 idle_cached_clone",
+          "median": 230.731,
+          "min": 192.422,
+          "max": 299.071,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 presentation_width",
+          "median": 358.605,
+          "min": 354.502,
+          "max": 417.478,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 one_character_edit",
+          "median": 782.8,
+          "min": 771.201,
+          "max": 813.613,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 tokenize",
+          "median": 511.232,
+          "min": 484.182,
+          "max": 618.194,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 idle_cached_clone",
+          "median": 239.028,
+          "min": 231.557,
+          "max": 251.021,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 presentation_width",
+          "median": 482.707,
+          "min": 415.703,
+          "max": 624.376,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 one_character_edit",
+          "median": 888.112,
+          "min": 782.591,
+          "max": 949.361,
+          "n": 3
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 initial_ms",
+          "value_ms": 347.81,
+          "n": 1
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 idle",
+          "median": 0.212,
+          "min": 0.091,
+          "max": 0.268,
+          "n": 5
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 first_edit_after_idle_ms",
+          "value_ms": 299.619,
+          "n": 1
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 sequential_edit",
+          "median": 304.359,
+          "min": 295.9,
+          "max": 448.22,
+          "n": 3
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 initial_ms",
+          "value_ms": 5327.895,
+          "n": 1
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 idle",
+          "median": 0.42,
+          "min": 0.358,
+          "max": 1.782,
+          "n": 5
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 first_edit_after_idle_ms",
+          "value_ms": 2968.167,
+          "n": 1
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 sequential_edit",
+          "median": 3011.408,
+          "min": 2988.446,
+          "max": 5129.722,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=19",
+          "median": 24.447,
+          "min": 24.435,
+          "max": 24.674,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=21",
+          "median": 32.513,
+          "min": 32.153,
+          "max": 32.645,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=37",
+          "median": 48.007,
+          "min": 47.452,
+          "max": 48.086,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=19",
+          "median": 247.52,
+          "min": 246.372,
+          "max": 314.033,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=21",
+          "median": 333.017,
+          "min": 330.13,
+          "max": 337.201,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=37",
+          "median": 556.603,
+          "min": 525.725,
+          "max": 622.353,
+          "n": 3
+        }
+      ],
+      "raw_fixture_metadata": [
+        "profile_debug_assertions=true owned_line_bytes=121 layout_section_bytes=104 span_bytes=24",
+        "lines=10000 mixed=false bytes=800000 spans=210000 sections=190000 owned_markers=0 section_storage_bytes=19760000",
+        "lines=10000 mixed=true bytes=821500 spans=208501 sections=189501 owned_markers=500 section_storage_bytes=19708104",
+        "lines=100000 mixed=false bytes=8000000 spans=2100000 sections=1900000 owned_markers=0 section_storage_bytes=197600000",
+        "lines=100000 mixed=true bytes=8215000 spans=2085001 sections=1895001 owned_markers=5000 section_storage_bytes=197080104"
+      ]
+    },
+    "release": {
+      "log": "/workspace/scratch/c934e9a9f24a/ux1-release-bench.log",
+      "log_sha256": "f0df04daab1c83c24500e02cc597fcbf47e1da03cc50b974d025c72ab43f83a8",
+      "optimized": true,
+      "debug_assertions": false,
+      "metrics": [
+        {
+          "label": "lines=10000 mixed=false bytes=800000 tokenize",
+          "median": 1.372,
+          "min": 1.225,
+          "max": 3.022,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 idle_cached_clone",
+          "median": 2.173,
+          "min": 2.068,
+          "max": 8.657,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 presentation_width",
+          "median": 7.013,
+          "min": 5.868,
+          "max": 14.487,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=false bytes=800000 one_character_edit",
+          "median": 13.033,
+          "min": 8.259,
+          "max": 13.219,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 tokenize",
+          "median": 2.54,
+          "min": 2.266,
+          "max": 2.933,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 idle_cached_clone",
+          "median": 2.102,
+          "min": 1.924,
+          "max": 2.413,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 presentation_width",
+          "median": 11.361,
+          "min": 6.808,
+          "max": 19.198,
+          "n": 5
+        },
+        {
+          "label": "lines=10000 mixed=true bytes=821500 one_character_edit",
+          "median": 27.24,
+          "min": 15.891,
+          "max": 556.381,
+          "n": 5
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 tokenize",
+          "median": 38.506,
+          "min": 35.231,
+          "max": 43.409,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 idle_cached_clone",
+          "median": 100.985,
+          "min": 99.413,
+          "max": 104.605,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 presentation_width",
+          "median": 200.218,
+          "min": 194.529,
+          "max": 205.063,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=false bytes=8000000 one_character_edit",
+          "median": 232.026,
+          "min": 227.481,
+          "max": 883.426,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 tokenize",
+          "median": 45.059,
+          "min": 43.791,
+          "max": 45.414,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 idle_cached_clone",
+          "median": 104.609,
+          "min": 99.153,
+          "max": 106.1,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 presentation_width",
+          "median": 197.54,
+          "min": 193.763,
+          "max": 199.461,
+          "n": 3
+        },
+        {
+          "label": "lines=100000 mixed=true bytes=8215000 one_character_edit",
+          "median": 258.256,
+          "min": 243.716,
+          "max": 742.28,
+          "n": 3
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 initial_ms",
+          "value_ms": 67.036,
+          "n": 1
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 idle",
+          "median": 0.022,
+          "min": 0.021,
+          "max": 0.375,
+          "n": 5
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 first_edit_after_idle_ms",
+          "value_ms": 49.918,
+          "n": 1
+        },
+        {
+          "label": "galley lines=10000 bytes=800000 sequential_edit",
+          "median": 42.267,
+          "min": 42.003,
+          "max": 78.076,
+          "n": 3
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 initial_ms",
+          "value_ms": 2255.008,
+          "n": 1
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 idle",
+          "median": 0.489,
+          "min": 0.221,
+          "max": 0.708,
+          "n": 5
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 first_edit_after_idle_ms",
+          "value_ms": 803.81,
+          "n": 1
+        },
+        {
+          "label": "galley lines=100000 bytes=8000000 sequential_edit",
+          "median": 1552.686,
+          "min": 1361.215,
+          "max": 2006.374,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=19",
+          "median": 0.774,
+          "min": 0.763,
+          "max": 0.786,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=21",
+          "median": 0.964,
+          "min": 0.943,
+          "max": 1.032,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=10000 line_bytes=37",
+          "median": 1.63,
+          "min": 1.574,
+          "max": 1.756,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=19",
+          "median": 8.485,
+          "min": 8.239,
+          "max": 9.126,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=21",
+          "median": 10.428,
+          "min": 10.169,
+          "max": 10.682,
+          "n": 3
+        },
+        {
+          "label": "incomplete_begin count=100000 line_bytes=37",
+          "median": 18.435,
+          "min": 17.744,
+          "max": 20.585,
+          "n": 3
+        }
+      ],
+      "raw_fixture_metadata": [
+        "profile_debug_assertions=false owned_line_bytes=121 layout_section_bytes=104 span_bytes=24",
+        "lines=10000 mixed=false bytes=800000 spans=210000 sections=190000 owned_markers=0 section_storage_bytes=19760000",
+        "lines=10000 mixed=true bytes=821500 spans=208501 sections=189501 owned_markers=500 section_storage_bytes=19708104",
+        "lines=100000 mixed=false bytes=8000000 spans=2100000 sections=1900000 owned_markers=0 section_storage_bytes=197600000",
+        "lines=100000 mixed=true bytes=8215000 spans=2085001 sections=1895001 owned_markers=5000 section_storage_bytes=197080104"
+      ]
+    }
+  }
+}

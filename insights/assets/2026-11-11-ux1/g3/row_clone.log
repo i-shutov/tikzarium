@@ -1,0 +1,10 @@
+profile=rustc-opt3-release-dependencies,debug_assertions=false,clock=Instant-wall,renderer=none
+lines=100000,unique=true,bytes=8000000,stage=tokenize,median_ms=30.323,min_ms=27.502,max_ms=33.707,n=3
+lines=100000,unique=true,bytes=8000000,stage=syntax_job_from_cached_spans,median_ms=89.403,min_ms=89.206,max_ms=214.588,n=3
+lines=100000,unique=true,bytes=8000000,syntax=true,sections=1900000
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=hash_job,median_ms=65.455,min_ms=63.806,max_ms=69.127,n=3
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=clone_job,median_ms=243.782,min_ms=156.346,max_ms=437.092,n=3
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=initial,total_ms=7502.941
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=geometry,rows=100001,glyphs=7800000,vertices=28800000,indices=43200000,source_bytes_verified=true
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=shallow_placed_rows_clone,median_ms=1.231,min_ms=1.034,max_ms=2.282,n=3
+lines=100000,unique=true,bytes=8000000,syntax=true,stage=deep_row_clone,median_ms=603.377,min_ms=591.469,max_ms=824.433,n=3

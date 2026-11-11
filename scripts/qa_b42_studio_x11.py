@@ -142,7 +142,10 @@ def main() -> int:
         # first line, forcing native TextEdit + ScrollArea to expose its end.
         # The resulting screenshot is independent visual evidence; a key
         # event alone is not claimed as proof that scrolling happened.
-        cmd("xdotool", "mousemove", "175", "178")
+        # UX1 adds a navigation toolbar above the source. Original bootstrap
+        # run 42981807266 shows y=178 opening Go to line; y=268 is the same
+        # actual TextEdit point already byte-verified twice above.
+        cmd("xdotool", "mousemove", "175", "268")
         cmd("xdotool", "click", "1")
         cmd("xdotool", "key", "--clearmodifiers", "ctrl+Home")
         cmd("xdotool", "key", "--clearmodifiers", "End")

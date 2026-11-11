@@ -310,12 +310,15 @@ def main():
         wait(lambda: source.read_bytes() == n3_prefix,
              "N3 native TextEdit did not preserve the exact one-name CRLF patch")
         report["n3_prefix_native_textedit"] = "PASS_REAL_X11_ONE_NAME_CRLF"
-        # Save moves focus off TextEdit. Re-focus its visible fifth line and
-        # place the actual caret BEFORE '}' using Home + counted Right keys.
-        # Avoid the prior unobserved Left-from-End caret assumption.
-        # Exact 39f2ed2a X11 screenshot: y229 was the Cyrillic COMMENT;
-        # y239 targets the fifth row with the real library name.
-        click(window, 177, 239)
+        # Save moves focus off TextEdit. UX1 adds a navigation toolbar:
+        # original run 42981807388 shows old y=239 selecting 'tand' from
+        # the first line, while the import is now at y=295. Reuse the native
+        # navigation already byte-verified for the prefix patch above instead
+        # of assuming a pixel row. Keep the real clipboard caret proof below.
+        click(window, 177, 380)
+        key("ctrl+Home")
+        for _ in range(4):  # Literal import remains the fifth source line.
+            key("Down")
         key("Home")
         for _ in range(len(r"\usetikzlibrary{arro")):
             key("Right")

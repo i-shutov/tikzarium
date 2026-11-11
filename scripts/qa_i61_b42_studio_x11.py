@@ -23,7 +23,13 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # Original N5 I61 41937982066 PNG: geometry popup X=500..762;
 # icon centers are 532/585/639/693, not old 599/653/707/761.
 # This source-tree lease deliberately requires renewed visual QA after UI changes.
-APP_TREE = "7630f6b5bf0bcd447ec947e07cdbe62620abfe40"
+# UX1 renewal: original native 1180x680 client screenshots and source review
+# are in insights/2026-11-11_UX1_IMPLEMENTATION_RU.md. Only the source editor
+# layout changed: its first content row is now y=200 in client pixels. The
+# initial source focus point below moves inside that reviewed content region.
+# Existing rail/palette/dock coordinates still require the unchanged 1366x768
+# hosted probe and independent original-artifact review; local UX1 is not W3.
+APP_TREE = "e9f47c46042119b2fb58b187fcfaf0fafa076a64"
 BUTTONS = [
     ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
@@ -223,7 +229,7 @@ def main() -> int:
         # Popup's editable custom path is separately NOT_RUN.
         click(found, 321, 40)
         screenshot(out, "02-file-menu-default-path")
-        click(found, 130, 209)
+        click(found, 130, 260)  # UX1: below the new navigation toolbar/gutter.
         key("ctrl+a")
         paste(fixture, out / "clipboard-source.txt")
         screenshot(out, "04-source-pasted")
