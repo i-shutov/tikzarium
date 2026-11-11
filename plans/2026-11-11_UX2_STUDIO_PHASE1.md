@@ -1,5 +1,7 @@
 # UX2 Studio — первый инженерный срез
 
+**Current owner release:** [Scientific Studio v1.0.0 contract](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). This UX2 slice contributes to SCI-UI, not a standalone completed old Windows/TikZ 1.0. Original prior-status text below is historical; source/IME/DPI/Scientific-142 gates remain independently open.
+
 Дата: 11 ноября 2026. Base main: 19187fc17968659267540fe279702bf77eeb77e6, tree: 7126aa2657cf823a6c7e660415dd52ac7b0b5c33. Это **только UX2-A-first slice**, не полный UX2 GO.
 
 ## Согласованное визуальное направление

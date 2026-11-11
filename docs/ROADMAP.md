@@ -1,142 +1,181 @@
-# Tikzarium — единый план поставок и приёмки
+# TikZarium Studio — единый roadmap: научная графика первой, данные последними
 
-Дата актуализации: **11 ноября 2026**. Документ задаёт приоритеты и зависимости; он не заявляет, что запланированные функции уже реализованы или приняты.
+## 1.0 REBASE — scientific Studio is the actual stable release target
 
-## Текущий приоритет: UX в Windows 1.0
+**Owner-approved 11.11.2026:** TikZarium stable v1.0.0 now means **the entire agreed ST-SCI scientific first release**, NOT the historical limited six-tool/UX Windows release. Normative [MUST/excludes and release gates](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [execution plan](../plans/2026-11-11_SCI_1_0_EXECUTION.md), [Windows Codex QA assignment](../plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). Complete ST-SCI includes premium multi-document native Studio and UX-F01…F14/G3; TikZ and PGFPlots scientific source edits, SCI142 142/103, scientific AI88 cases, scoped Asymptote and Typst/CeTZ verified GUI + build/export, scientific-quality publication outputs. Penrose is research/candidate, not automatically a universal solver gate. Full Data Figure/import/analysis remains last; the already-required PGFPlots .dat/.csv dependencies remain.
 
-Владелец включил **все UX-F01…F14** из критического аудита в Windows 1.0. UX-работа является ограниченным исключением из feature freeze; массовые предметные GUI-адаптеры, новый TeX-интерпретатор, небезопасное выполнение, изменение UAC/учётных записей/MiKTeX/FlowBridge и обход source-safety в это исключение не входят. Стабильный тег и релиз остаются запрещены до фактического общего GO.
+Release state **NO-GO** until science corpus, engine/operation matrix, all source/UX/G3 and native W0…W4 + real Win10/Server GUI/IME/96/120/192 are independently accepted on exact source. The former statements below "release number not assigned"/"Scientific-142 after 1.0"/"only UX in Windows 1.0" are historical as release scope. All future domain priority remains ST-SCI→ST-UML→ST-BPMN→ST-ENG→ST-CHEMBIO→ST-ANIM→ST-OTHER→ST-DATA.
 
-Авторитетные критерии по каждому UX-F, задачам T0–T8 и gates G1–G6 приведены в [owner override UX/1.0](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md), [исходном UIX-аудите](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) и [подробном UX-плане](../roadmap/UX_2026-11-10_RELEASE_PLAN_RU.md). Этот roadmap сводит их порядок с дальнейшими Scientific/AT поставками и не дублирует приложения.
 
-### Порядок до Windows 1.0
+**Редакция SCIENCE_FIRST_DATA_LAST, 11 ноября 2026.** Последняя команда владельца задаёт порядок: «научную графику, потом UML, BPMN, потом инженерию, потом химию и биологию, потом анимацию и потом все остальное. данные -- в конец».
 
-| Очерёдность | Результат | Минимальная граница приёмки | Статус на срезе main `0a5dd9a8` |
+Полноценная Multi-Engine Scientific Studio остаётся целью. Меняется последовательность поставок, а не качество, полнота прежних обязательств или факт их приёмки. Этот документ — единственный текущий roadmap; [исполнительский план](../plans/2026-11-11_STUDIO_REBASE.md) задаёт ближайшие задачи. Нумерация ST0–ST8 и порядок из PR #173 сохранены только в [историческом snapshot](https://github.com/i-shutov/tikzarium/blob/a2a6c79ee14c58282da8a4a1106392faf9643029/docs/ROADMAP.md).
+
+## 1. Обязательная очередь
+
+| Приоритет | Постоянный ID | Предметная поставка | Состояние планирования |
 | --- | --- | --- | --- |
-| **UX1 — исходный код** | Полноценная TeX/TikZ подсветка в редактируемом TextEdit, физические номера строк, Find/Replace, Go to line, текущая строка, шрифт и visual wrap | G1: точные UTF-8/CRLF байты и безопасные диапазоны; native edit/Undo; G3 perf: 10k строк/1 MiB p95 ≤50 ms, первый editable frame ≤2 s, стресс 100k строк без потери ввода | **#167 IMPLEMENTATION_IN_PROGRESS; NOT full PASS** |
-| **UX2 — рабочая область** | Шесть основных инструментов за один выбор, ясный sketch/PDF, компактный Inspector, единый Apply, доступная F1 и клавиатурный фокус | Нативные сценарии T3/T4, отсутствие перекрытия на согласованных размерах окна, все P1/P2 явно закрыты или отдельно решены владельцем | NOT_ACCEPTED |
-| **UX3 — Save/Build/PDF** | Нативный Save & Build, объяснение недоступности, локализованная диагностика, состояния PDF absent/current/stale/error и отмена | T0/T5/T6/T7: точный `.tex`, внешний XeLaTeX, оригинальные source/PDF/log, отмена и возврат к last-good | NOT_ACCEPTED |
-| **UX4 — масштаб и доступность** | Физическая проверка масштаба, keyboard/focus и крупных документов | Реальные Windows 10 проверки **100/125/200% = 96/120/192 DPI**, multi-monitor, IME отдельно от раскладки; доступность и performance | NOT_ACCEPTED |
-| **W2b → W3 → W4** | Независимое завершение Windows release gates на точной версии продукта | Read-only readiness не считается GUI; нужны реальные W2b действия, физический Win10 W3 и exact-source portable/recovery W4 | W2b NOT_ACCEPTED; W3/IME/W4 NOT_RUN |
-| **Stable 1.0** | Только после всех UX и Windows gates | Exact-head hosted evidence + независимые исходные физические доказательства + сводный owner GO | **NO-GO** |
+| 1 | ST-SCI | Научная графика, математика, статическая 2D/3D-графика | **ТЕКУЩИЙ ФОКУС; НЕ ПРИНЯТО** |
+| 2 | ST-UML | UML: структурные и поведенческие диаграммы | QUEUED_BY_PRIORITY |
+| 3 | ST-BPMN | BPMN: моделирование бизнес-процессов | QUEUED_BY_PRIORITY |
+| 4 | ST-ENG | Инженерные схемы | QUEUED_BY_PRIORITY |
+| 5 | ST-CHEMBIO | Химия и биология | QUEUED_BY_PRIORITY |
+| 6 | ST-ANIM | Научная анимация | QUEUED_BY_PRIORITY |
+| 7 | ST-OTHER | Остальные направления и общие расширенные средства | QUEUED_BY_PRIORITY |
+| 8 | ST-DATA | Данные, анализ и Data Figure | **ПОСЛЕДНИЙ ПРЕДМЕТНЫЙ ЭТАП** |
 
-**Обязательная последовательность:** UX1 → UX2 и UX3 → UX4 → W2b/W3/W4 → stable. UX2 и UX3 допускают параллельную реализацию после UX1-контрактов, но общий UX4/релизный GO зависит от обеих. Оценка календарных сроков пока не дана.
+UML и BPMN выделены в самостоятельные последовательные этапы внутри запрошенной второй предметной волны. BPMN больше не спрятан в поздней инженерии. Анимация идёт до «всего остального». Работа с данными не находится ни в первой научной поставке, ни между инженерией и анимацией.
 
-### Трассировка 14 UIX-находок
+**ST-BASE — не отдельная предварительная продуктовая очередь.** Красивый shell, проекты/вкладки, source editor, общий engine API, сборка/preview/export и QA развиваются ровно настолько, насколько нужны текущему научному сценарию. Нельзя сначала месяцами делать универсальную платформу, три общих диаграммных движка или Publication Studio и только затем приступать к научной графике. Контракты должны допускать остальные этапы, но их реализации не конкурируют с ST-SCI.
 
-| ID | Основной результат | Веха |
+## 2. Что пересмотрено по отношению к PR #173
+
+- Отменена обязательная связка «Graphviz → D2 → Mermaid» как первый проверочный многодвижковый продукт. Сначала сохраняемый XeLaTeX/TikZ, затем научный Asymptote и Typst/CeTZ. Общий контракт доказывается научным результатом.
+- Убран объединённый ранний блок «Scientific + Data». PGFPlots/научные исходники остаются рано; новый Data Figure, CSV import UI, обработка и анализ — строго ST-DATA.
+- UML повышен из общего списка диаграмм до явной поставки; PlantUML — кандидат профильного адаптера, а не только пример gateway. Выбор конкретных инструментов требует upstream-проверки и не является утверждением готовой поддержки.
+- BPMN выделен до инженерии со своим native source и критериями, а не принимается по изображению блок-схемы.
+- Полная междвижковая публикационная композиция, общий graph/C4/vector обмен и необязательный gateway относятся к ST-OTHER; качественный экспорт научного рисунка и требуемые исходными корпусами композиции нужны уже ST-SCI.
+- Реестр будущих профилей сохраняется; приоритет не означает удаление соответствующего scope. Исторические source/QA доказательства не переписываются.
+
+## 3. Точная граница «научная графика» / «данные в конце»
+
+**В ST-SCI:** научная геометрия, формулы, координатные/параметрические графики, поверхности/проекции, подписи, слои, размеры, выбранные семантические математические объекты; PGFPlots axis/addplot и его существующие табличные/статические fixtures, error bars и прочие обязательные конструкции корпуса. Существующий .dat/.csv — зависимость исходного рисунка; сохраняем его bytes/hash, путь и invalidation. Нельзя ломать существующий пример или отложить SCI142 MUST только потому, что TeX читает таблицу.
+
+**Только в ST-DATA:** новый мастер загрузки и предпросмотра таблиц, GUI mapping столбцов/типов/единиц, очистка, преобразования, статистический анализ, интерактивные аналитические панели, Data Figure и новые продуктовые интеграции Vega-Lite/Matplotlib/Gnuplot/Plotly. До этого не создавать их панели, модули или отдельные runtime-поставки под видом общего scientific foundation.
+
+Это инженерная граница реализации последней команды, а не новая просьба владельца об исключениях. Она сохраняет уже обязательную совместимость и не переносит новый data-продукт вперёд. Спорный corpus case классифицируется письменно по его исходному требованию, без переименования ради обхода приоритета.
+
+## 4. ST-SCI — первая полноценная предметная поставка
+
+### 4.1. Рабочая Studio и исходники
+
+Довести UX1/UX2/UX3/UX4: подсветка, номера строк, поиск/замена, Go to line, Undo, шесть прямых инструментов, компактные свойства с одним Apply, единая F1, native Save/Open, понятные причины disabled и состояния PDF absent/current/stale/error. Сохранить панели source + preview рядом, проекты и безопасное переключение документов. Профили разных движков не должны навечно зависеть от единственного .tex в main.rs.
+
+Дизайн-система Light/Dark/Midnight/Paper, типографика, отступы, иконки, focus/hover/disabled/error и читаемость — приёмочные требования, не украшение после реализации. Проверять пустой проект, насыщенный научный рисунок, длинные свойства, ошибку, stale preview, F1 и экспорт на настоящем приложении.
+
+G3 остаётся обязательным: 10k строк/до 1 MiB, p95 native input-to-frame <=50 ms, первый доступный для редактирования кадр <=2 s; 100k строк/10 MiB без потери ввода. CPU-harness и быстрый idle не доказывают эти цели; полнодокументная геометрия с неограниченной памятью не принимается как решение.
+
+### 4.2. Научные инструменты и движки
+
+Основной порядок внутри первого направления:
+
+1. Существующий TikZ/XeLaTeX без регрессий; безопасное распознавание/редактирование нужных научных конструкций и shared SC1–SC2 source/dependency contracts.
+2. **PGFPlots SC3/AT4**: один адаптер для SCI142 и соответствующих AI88, axis/series/formula/static-data, диапазоны, ticks, labels, стили, затем остальные обязательные семейства исходных корпусов. Сохранить compat, исходные данные, формулы и Unicode.
+3. SC4–SC6: пути/пересечения/fill/layers/clip, углы/размеры/формы, поддержанные PGF Math/macros/foreach; неизвестное не регенерировать.
+4. Первый дополнительный профиль — **Asymptote**; затем **Typst/CeTZ**. Проверить upstream, executable/version/licence/platform/output и выполнить настоящий source→build→preview→edit→Undo→export. Общий build API сначала сохраняет XeLaTeX-проверки.
+5. **Penrose** — научно-математический кандидат внутри ST-SCI для ограниченного согласованного набора семантических операций. Его исследования не превращать в обязательный универсальный solver до первого полезного результата. Ipe можно использовать как UX-референс; полноценный обмен с редактором — ST-OTHER.
+
+Перечень возможностей новых кандидатов — план, не проверенная характеристика их текущих версий. ME-L2 source/render и ME-L3/ME-L4 visual subsets принимаются раздельно; не выдавать запуск движка за готовый предметный редактор.
+
+### 4.3. Научная приёмка и первая поставка
+
+Законченный маршрут: создать/открыть научный проект → выбрать фигуру → изменить геометрию/формулу/подпись/стиль → увидеть минимальный source patch → Undo → сборка → исправить ошибку → получить актуальный публикационный результат → повторно открыть проект без потерь.
+
+SCI142 принимается отдельно: **142 = 100 AK + 42 Sarov, 103 требования**. Обязательны originals, source integrity, содержательные GUI-операции, внешний результат, визуальные и применимые физико-математические инварианты. Растровое сходство не является самостоятельной научной приёмкой. Научные AI88 cases принимаются по исходным ID и S0–S4, остальные переходят в свои предметные этапы, но не исчезают.
+
+Внутренние сборки допустимы по проверенным подсценариям, однако переход к следующей продуктовой волне требует принятия согласованного scope ST-SCI; существующие MUST не понижать без решения владельца. Windows 10 Pro и Server 2025 имеют отдельные проверки. Номер версии и stable GO не устанавливаются этим roadmap.
+
+## 5. ST-UML — после научной графики
+
+Выделить спецификацию UML-подмножества и операционную матрицу до кода: предлагаемые семейства — классы/объекты, компоненты/развёртывание, варианты использования, последовательности, состояния и деятельности. Это декомпозиция проекта, не заявление поддержки всех UML-возможностей.
+
+Кандидаты: профильные TikZ/UML-пакеты, отдельный PlantUML adapter; Mermaid или иные движки — только для подтверждённого подмножества. Graphviz/D2 — возможные вспомогательные средства layout/связей, не доказательство соответствия UML. Сохраняются native text, идентичность элементов/связей, Inspector, safe patches/Undo, source mapping, подписи и экспорт.
+
+Приёмка: выбранные diagram kinds имеют проверенные семантику/операции и негативные fixtures; переименование/связь/параметр изменяют правильный native source, ручная правка инвалидирует устаревшие handles, round-trip сохраняет неподдержанное. Нельзя заменить UML набором произвольных прямоугольников или PNG.
+
+## 6. ST-BPMN — после UML, до инженерии
+
+Самостоятельный профиль процессов: native .bpmn/XML, идентичность элементов/связей, геометрия/расположение как отдельные данные представления, palette/Inspector, навигация, валидация поддержанного подмножества, import/save/Undo/export. Предлагаемый scope для спецификации: события, задачи/подпроцессы, шлюзы, потоки, pools/lanes; точные правила уточняются по первичной документации перед реализацией.
+
+bpmn-js — кандидат frontend/integration, с отдельной проверкой лицензии, offline resources, WebView либо внешнего режима и возврата в общий Studio workflow. Не создавать обязательный облачный editor. Редактор модели не объявляется BPMN execution engine.
+
+Приёмка: import→edit→save→reopen с сохранением IDs, поддержанной семантики и неизвестных extensions; no-op не переписывает документ. Проверить связность/ограничения подмножества и реальные canvas/Inspector операции. Изображение BPMN без редактируемого исходника не закрывает этап.
+
+## 7. ST-ENG — инженерия
+
+После UML/BPMN: Circuitikz и прежние engineering-пакеты, WaveDrom, SchemDraw, WireViz; электрические/временные/соединительные/механические и иные утверждённые инженерные семейства. Требования математической геометрии/оптики, уже обязательные для SCI142, не откладываются сюда задним числом.
+
+Содержательные предметные операции, единицы и связи, источник/данные изделия, reusable components, Inspector/F1, Undo и export. Наличие красивого символа не доказывает правильность соединений/параметров. Исполняемые Python-профили требуют явной политики доверия; auto-run при открытии запрещён. BPMN не повторяется здесь как ещё не начатая задача.
+
+## 8. ST-CHEMBIO — химия и биология
+
+RDKit и ранее утверждённые chemistry-пакеты, структурные формулы/реакционные представления в поддержанном scope; биологические схемы и шаблоны, позже ограниченные предметные адаптеры. Graphviz/D2 могут использоваться как конкретная зависимость биологического сценария, но не меняют его научную семантику.
+
+Приёмка — корректность поддержанных атомов/связей/отношений/обозначений, native format, revision/Undo, labels/formulas и export. Проверки предметных инвариантов отдельны от layout. Схема из шаблона не объявляется научной моделью, если такой семантики нет.
+
+## 9. ST-ANIM — анимация до остальных расширений
+
+Manim и поддержанные научные animation-профили: сцены, параметры, временная шкала, keyframes/frames в заявленном подмножестве, preview, очередь/отмена и media export. Исходный script/scene сохраняется; timeline не обещает декомпиляцию произвольного Python. Статическая 3D-научная графика остаётся ST-SCI, движение и время — здесь.
+
+Приёмка: воспроизводимая научная сцена, реальная правка параметров/времени и Undo, deterministic inputs либо явные ограничения, корректная отмена, проверенные кадры/MP4/GIF по фактически поддержанному маршруту и лицензиям. Не откладывать этот этап за универсальный vector editor, C4 или Data Figure.
+
+## 10. ST-OTHER — затем всё остальное
+
+Общие графы/деревья/сети и архитектурные схемы вне уже принятых UML/BPMN; самостоятельные Graphviz/D2/Mermaid профили, LikeC4/Structurizr; расширенная междвижковая Publication Studio; обмен/интеграция с SVG/PDF, Excalidraw, diagrams.net, Ipe; optional local/user Kroki; tldraw и Blender bridge только после отдельной feasibility/licence/security оценки.
+
+Publication связывает исходные документы и артефакты: физические размеры, layout/alignment, labels, typography, export profiles и invalidation. Это не блокер первого научного экспорта и не способ перенести data pipeline раньше. Редакторский обмен сохраняет native files и возврат в Studio; нет обязательных iframe/облака и вымышленных произвольных cross-language round-trips.
+
+Перед стартом этапа зафиксировать конечный перечень его операций/кандидатов. «Всё остальное» не означает бесконечное накопление новых идей: новые факультативные пожелания не должны вечно блокировать последний этап данных без решения владельца.
+
+## 11. ST-DATA — строго последним предметным этапом
+
+Теперь добавить Data Figure и новые профили Vega-Lite, Matplotlib, Gnuplot, Plotly: загрузка/предпросмотр таблиц, column mapping, типы/единицы, transformations/statistics, научные графики и error bars, интерактивные представления и воспроизводимые specifications. Поддержанные форматы и операции проверяются отдельно.
+
+Приёмка: original dataset не изменён; provenance и parameters записаны; преобразования дают отдельный результат; source specification, series/axes/units/error model, hashes и export воспроизводимы в заявленном окружении. Numerical correctness проверяется отдельно от изображения. Таблицы/сцены прежних корпусов, уже обязательные как inputs, не требуют ждать этого нового UI.
+
+После ST-DATA — только итоговая эксплуатационная консолидация/поставка, а не ещё одно предметное направление. Native packaging, документация, обновление/откат и QA выполняются на каждом этапе и в конце; «данные последними» относится к продуктовой очереди, не отменяет финальную проверку.
+
+## 12. Что выполняем сейчас: рабочий маршрут ST-SCI
+
+**SCI-01:** актуализировать и довести #172 до корректной проверяемой базы на свежем main. Не сливать draft из-за одного зелёного теста; исправить кодовые замечания, проверить реальные расположения controls перед обновлением GUI QA, сохранить F1/Undo/source/Build.
+
+**SCI-02:** #169/#170 — дизайн-система и полноценная научная рабочая область. Выделить action/document/state contracts минимально, без переписывания всего ядра. Compact Inspector/единый Apply, четыре темы, tabs/view state и восстановление документа.
+
+**SCI-03:** source/performance + existing XeLaTeX build contract. Ограничить память и full-layout churn, measure native G3. Обернуть текущую сборку в общий API, сохранив dependency/stale/cancel/diagnostic tests. Это не отдельная Graphviz-first программа.
+
+**SCI-04:** shared SC1–SC3/AT4 распознавание/SourcePatch/PGFPlots с корпусными примерами, затем SC4–SC6 и научная матрица; общий каталог параметров/F1.
+
+**SCI-05:** upstream audit и Asymptote vertical в реальной Studio; затем Typst/CeTZ, ограниченная математическая семантика по отдельному scope. Поздние data/diagram/engineering реализации не начинаются параллельно этому пакету.
+
+**SCI-QA:** #171 — независимые scientific/UX/source/engine и Windows оригиналы. Нативный Win10 100/125/200%, Server отдельно; W0–W4 и IME не подменяются hosted evidence. Если прямой доступ отсутствует, записать BLOCKED/NOT_RUN и продолжать независимую часть текущего научного этапа.
+
+Параллельно допускаются design, editor/G3, build contract, научные fixtures/адаптеры и independent QA с разными файлами. main.rs и интеграция общих схем принадлежат одному исполнителю. Последующие домены — очередь, а не фоновые реализации под видом research.
+
+## 13. Сохранение обязательств и уровней приёмки
+
+| Обязательство | Где закрываем | Что нельзя потерять |
 | --- | --- | --- |
-| **UX-F01** | Читаемая цветовая токенизация TeX/TikZ в editable source | UX1 |
-| **UX-F02** | Ownership metadata различимо, комментарии пользователя сохраняются; перенос управляемый | UX1 |
-| **UX-F03** | Gutter, текущая строка, Find/Replace и Go to line | UX1 |
-| **UX-F04** | Различать эскиз новых объектов и PDF исходника; объяснить первое действие | UX2 |
-| **UX-F05** | Удобный native Save & Build picker и явная отмена | UX3 |
-| **UX-F06** | Шесть основных инструментов доступны за один выбор | UX2 |
-| **UX-F07** | Компактный Inspector, единый Apply и короткие понятные подписи | UX2 |
-| **UX-F08** | Убрать дублирование F1/context help, сохранив доступные подробности | UX2 |
-| **UX-F09** | Реальные disabled states и объяснение недоступности действия | UX3 |
-| **UX-F10** | Согласованный русский язык интерфейса и пользовательских статусов | UX3 |
-| **UX-F11** | Раздельные состояния документа, сборки, ошибки и current/stale PDF | UX3 |
-| **UX-F12** | Размер кода и адаптация интерфейса; физическая проверка масштаба | UX1 + UX4 |
-| **UX-F13** | Семантические имена, видимый focus и keyboard/accessibility тесты | UX2 + UX4 |
-| **UX-F14** | UX-приёмка предшествует массовым предметным GUI-адаптерам | Порядок всего плана |
+| UX-F01…F14, T0–T8, G1–G6 | ST-BASE внутри ST-SCI; регрессии во всех поставках | Настоящий код/навигация, визуальные действия, F1, компактность, localised states и user pilot |
+| UX1 G3 | ST-SCI/editor | 10k/1MiB p95<=50ms, first editable<=2s; 100k/10MiB stress; native и CPU раздельно |
+| W0–W4, IME, DPI | Каждая заявленная Windows-поставка | Exact SHA/EXE/originals, независимые Server/Win10 проверки, без переноса старого PASS |
+| SCI142: 142=100AK+42Sarov; 103 requirements | **ST-SCI** | Полная corpus/scientific/source/GUI приёмка; обязательные static data inputs сохраняются |
+| AI88: 88 cases/35 packages/23 libraries/13 skills | Научные cases в ST-SCI, затем по предметной очереди; общая финальная сверка | Исходные IDs и S0–S4, полное покрытие без дубликатов и понижения MUST |
+| AI88 engines | Явно в этапах соответствующих cases | 85 XeLaTeX и 3 LuaLaTeX: 65/68/86; никакого silent fallback |
+| SC3 + AT4 | ST-SCI | Один общий PGFPlots adapter, две независимые ведомости |
+| AT6 Figure Explorer | Минимальная научная навигация сейчас, полная коллекция по этапам | Нет отдельного 88-оконного UI; source/result/requirements и возврат без потерь |
 
-Таблица служит краткой навигацией к первичному аудиту и owner override; acceptance detail, severity и evidence остаются в этих нормативных документах. Завершение вехи не устанавливается только по соответствию строки таблицы.
+Новая многодвижковая матрица ME-L1…ME-L4 не заменяет SCI-L0…L4 или AI-S0…S4. ME-L1 — открыть/показать, ME-L2 — source/build/diagnostics/export, ME-L3 — предметные source-preserving операции, ME-L4 — проверенный двусторонний subset. OPAQUE/UNKNOWN честны, но не являются выполненным GUI MUST. Не обещать произвольную конвертацию языков и восстановление TeX из PDF.
 
-### Текущий срез и доказательства
+AI88 cases требуют явной классификации по исходным требованиям до распределения: данный roadmap не выдумывает число случаев в каждой категории и не меняет CSV fixtures. Пересекающий несколько областей case отмечается зависимостями, не засчитывается дважды. Отложенное не значит принятое или удалённое.
 
-- Базовый main для начала UX1: [`0a5dd9a81bd240ffe924630fadd8dfc53f9a36f9`](https://github.com/i-shutov/tikzarium/commit/0a5dd9a81bd240ffe924630fadd8dfc53f9a36f9). На этом срезе W0 hosted native/ZIP — **PASS**.
-- W1 personal Server и W2a historical — **PASS** согласно [Windows release control](WINDOWS_1_0_RELEASE_CONTROL_RU.md). Исторический PASS не заменяет повторную проверку изменённой UX-версии.
-- W2b — **NOT_ACCEPTED**. Чтение WTS состояния не доказывает настоящие pointer gestures, Undo/Save/Open, IME или GUI→XeLaTeX.
-- W3 исторически имеет только ограниченный **96-DPI subset** на SHA `488a9687…`; он не проверяет новый UI. W3 на текущей UX-версии — **NOT_RUN**.
-- Физический IME на новой версии и W4 — **NOT_RUN**. Server/Windows10 channel в этой сессии **BLOCKED_DIRECT_CHANNEL**; отсутствие живого доступа не переводит ни один gate в PASS.
-- PR #167 находится в реализации; отдельные куски и green checks не являются полной UX1-приёмкой.
-- Подробные исторические записи старого roadmap доступны в [GitHub blob на базовом main](https://github.com/i-shutov/tikzarium/blob/0a5dd9a81bd240ffe924630fadd8dfc53f9a36f9/docs/ROADMAP.md). Ссылки на первичные приложения ниже сохраняют provenance; отдельная копия старого файла не создаётся.
+## 14. Единая Definition of Done и управление выпуском
 
-| Release gate | Смысл доказательства | Что не заменяет его |
-| --- | --- | --- |
-| **W0** | Exact-source hosted native/ZIP baseline, binary/archive provenance | Старый hosted run после изменения source |
-| **W1** | Существующий personal Server MiKTeX/XeLaTeX workflow с PDF/font evidence | Успех компиляции на чужом TeX окружении |
-| **W2a** | Исторический Server native GUI smoke/focus subset | Read-only RDP readiness или только HWND enumeration |
-| **W2b** | Реальные взаимодействия Server GUI, Undo/Save/Open/IME/GUI-to-TeX | Пустой/pending Actions jobs list или read-only session probe |
-| **W3** | Реальный Windows 10 GUI для точной UX сборки, DPI и IME | W3 исторического SHA `488a9687…`, hosted GUI или текстовый отчёт |
-| **W4** | Финальный exact-source release artifact, rollback/recovery и независимая проверка | Сборка предыдущего SHA или создание release tag без GO |
+Приёмка блока: работающий пользовательский маршрут в Studio; exact-source/revision/Undo/dependency tests; доказанные engine/version/licence facts; ошибки/cancel/last-good; original source/PDF/SVG/PNG/log/hash; visual и применимые scientific/domain проверки; нативная заявленная платформа; инструкция/ограничения/rollback. Каждая полезная поставка имеет собственный ограниченный scope. Изменение приоритетов само по себе ничего не принимает.
 
-Каждый gate имеет собственные доказательства в [release control](WINDOWS_1_0_RELEASE_CONTROL_RU.md). Здесь кратко отражён статус, а не создаётся второй release ledger. Если локальный Windows channel недоступен, записать `BLOCKED_DIRECT_CHANNEL` и сохранить физическую часть как `NOT_RUN`.
+«Премиальный» UI проверяется в четырёх темах, compact 1180×680/1366×768/1920×1080, stress1024×640, real96/120/192 DPI, focus/keyboard/IME/assistive. Пользовательский пилот на пяти людях не заменять пятью агентами. Продуктовую готовность не выводить из количества кнопок/движков, PR или процентов тестов.
 
-### Связанные PR: обзор границ, не таблица готовности
+Windows 10 Pro — главный пользовательский стенд, Server 2025 — отдельный интеграционный/GUI стенд, macOS ARM M1/M4 и Linux сохраняются с самостоятельной native квалификацией. Никаких скрытых изменений ОС/UAC/RDP/MiKTeX/FlowBridge, автоустановок, cloud отправки или shell escape. Existing Administrator/HIGH требует честного trust warning, не называется sandbox. Хранить native sources и права на сторонние ресурсы/шрифты.
 
-| PR | Роль в общем плане | Текущее использование |
-| --- | --- | --- |
-| [#167](https://github.com/i-shutov/tikzarium/pull/167) | UX1: редактор и навигация по исходнику | **IMPLEMENTATION_IN_PROGRESS; не full PASS** |
-| [#165](https://github.com/i-shutov/tikzarium/pull/165) | AT0 intake/ledger для будущих примеров | Исследовательский вход; не закрывает UX или S0–S4 |
-| [#156](https://github.com/i-shutov/tikzarium/pull/156) | Win10 Default-desktop QA probe | Инфраструктурная проверка; не продуктовый runtime и не физический W3 сама по себе |
-| [#157](https://github.com/i-shutov/tikzarium/pull/157) | Документация локального Default-desktop QA | Контекст и runbook; не подтверждает доступный сейчас канал |
-| [#146](https://github.com/i-shutov/tikzarium/pull/146) | Scientific-142 / будущий source work | После 1.0 в последовательности SC; отдельный L0–L4 gate |
-| [#148](https://github.com/i-shutov/tikzarium/pull/148) | Scientific-142 / будущий source work | Не включать в Windows 1.0 UX scope |
-| [#149](https://github.com/i-shutov/tikzarium/pull/149) | Scientific-142 / будущий source work | Не считать GUI-адаптеры принятыми по факту PR |
-| [#151](https://github.com/i-shutov/tikzarium/pull/151) | Scientific-142 / будущий source work | Сохраняет независимую трассировку научного корпуса |
-| [#128](https://github.com/i-shutov/tikzarium/pull/128) | Старый source metadata/Inspector draft | Выбирать полезные части после ревью; draft не заменяет UX1 lexer, integrity, Find/Replace, gutter и acceptance |
+Субагентам — ограниченные задачи текущего этапа, ясные входы/files/DoD; младшие модели только из доступного launcher, независимый review отдельно. Issue/план не является запущенной моделью. Checkpoint после содержательного блока: base/head SHA, код и tests, реальные originals, ограничения, следующая одна задача. Сроки не выдумывать. Переход на следующий предметный этап — после согласованной приёмки предыдущего; изменение порядка — только по владельцу.
 
-### Ближайший исполнимый блок
+## 15. Срез этой редакции и нормативные указатели
 
-Сейчас завершить UX1 как единый проверяемый vertical slice на ветке текущего main: lexer и четыре темы в mutable source editor; gutter; Find/ReplaceAll/GoToLine; корректные selection/caret; native editing; байтовая целостность и интеграция с source revision/Undo. Затем провести независимый code review, strict Rust/targeted event tests и замеры G3. После реализации получить review UX1 и сделать реальную проверку в локальном Windows 10 GUI. Физический этап заблокирован до восстановления прямого Computer Use к VM-910136; hosted checks или статус задачи runner его не заменяют.
+Проверенный main перед правкой: `a2a6c79ee14c58282da8a4a1106392faf9643029` (PR #173). UX1 #167 интегрирован; #172 по API OPEN/DRAFT на `fef081d7481bd095182c2e74e5eb830cbd1e6612`, не merged и не принят. Эта редакция меняет документы и постановки, не Rust/fixtures/workflows/Cargo.lock, не запускает Windows, не выпускает версию и не заявляет новых runtime PASS.
 
-Перед расширением UX1 обязательно проверить: исходник CRLF/UTF-8/Unicode/неизвестные макросы, no-op и пустой query, Replace All как один обратимый edit, stale search result после внешней правки и Open, смешанный native/visual Undo, GoToLine на пустых/trailing строках и wrapped/unwrapped документе, IME composition и границы фокуса. Полная матрица критериев остаётся в [UX execution plan](../plans/2026-11-11_UX1_EXECUTION.md) и нормативных UX приложениях.
+- [Product spec](PRODUCT_SPEC.md), [architecture](ARCHITECTURE.md), [AGENTS](../AGENTS.md), [current execution/checkpoint](../plans/2026-11-11_STUDIO_REBASE.md).
+- [Windows evidence ledger](WINDOWS_1_0_RELEASE_CONTROL_RU.md); [UX criteria](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md), [detailed UX plan](../roadmap/UX_2026-11-10_RELEASE_PLAN_RU.md), [original audit](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md).
+- [Scientific-142 R4](../roadmap/Tikzarium_Scientific_142_R4/README.md), [requirements](../roadmap/Tikzarium_Scientific_142_R4/REQUIREMENTS.csv), [TRD](../roadmap/Tikzarium_Scientific_142_R4/docs/SCIENTIFIC_142_TRD_R4.md).
+- [AI88 support plan](../roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md), [88-case ledger](../roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv).
+- [PR #173 strategy snapshot](https://github.com/i-shutov/tikzarium/blob/a2a6c79ee14c58282da8a4a1106392faf9643029/docs/ROADMAP.md), [pre-Studio roadmap](https://github.com/i-shutov/tikzarium/blob/19187fc17968659267540fe279702bf77eeb77e6/docs/ROADMAP.md): исторические очереди, не конкурирующие планы.
 
-**Результат реализации 11.11 в PR #167:** редактор и кэш реализованы, 432 workspace tests проходят, независимые code-review findings устранены; проверены отдельные нативные Linux-сценарии и четыре темы. Просмотр Windows originals выявил startup theme mismatch, для которого добавлен воспроизводящий regression и исправление. [Оригинальные результаты и ограничения](../insights/2026-11-11_UX1_IMPLEMENTATION_RU.md). G3 остаётся **NOT_ACCEPTED**: полный relayout 100k-строчного fixture занимает секунды. [Отдельная CPU-диагностика](../insights/assets/2026-11-11-ux1/g3/REPORT.md) показала, что даже одноцветный layout не устраняет задержку после idle. Следующий обязательный этап — производный paragraph/row cache с пересчётом изменённой области, ограничением памяти и сохранением source/Undo/IME; после него нужны реальные input-to-frame измерения. Это не основание переносить UX1 или DPI за 1.0.
-
-## После Windows 1.0: общий платформенный и предметный план
-
-Работы ниже **не входят** в Windows 1.0. AT0/AT1 source intake и engine research могут идти параллельно UX-разработке, но не означают принятие новых GUI-адаптеров. Все новые предметные поставки сохраняют существующие ограничения редактора одного рисунка, source-preserving `SourcePatch`, внешнего TeX-компилятора и отсутствия автоматической установки пакетов.
-
-### Путь Scientific-142
-
-| Блок | Основной результат | Переход к следующему блоку |
-| --- | --- | --- |
-| **SC1 → SC2 + AT1/AT2** | Один активный рисунок, dependency snapshot для `.tex`/`.dat`/`\input`; ограниченный распознаватель, ownership/byte ranges, revision-checked `SourcePatch`/Undo; AT1 runtime и AT2 versioned package/library catalogue | L0/L1 provenance, source safety, негативные тесты OPAQUE/UTF-8/CRLF/revision conflict и общий редакторный контракт |
-| **SC3 + AT4** | Первый PGFPlots adapter: `axis`, `\addplot`, expressions/data, Axis/Series Inspector и реальные внешние PDF примеры | Проверенные значения/единицы/диапазоны, сохранённый `compat=1.17` исходного корпуса, source/PDF/Undo exactness |
-| **SC4–SC6** | Именованные пути/layers/fill, углы/размеры/формы, ограниченные PGF Math/`\foreach` data adapters | Fixture-level tests и ясный OPAQUE для нераспознанного синтаксиса; никаких координат, выведенных из PDF |
-| **SCI142 L0–L4** | Отдельная интеграционная и научная приёмка исходного корпуса | 142 source cases с provenance, external compile, GUI edit/Undo и независимыми визуальными/научными критериями |
-
-**Счёт корпуса SCI142:** **142 = 100 AK + 42 Sarov**. Это один отдельный корпус, не «100 плюс 142». В нём **103 нормативных requirements** из существующего `REQUIREMENTS.csv`; они не прибавляются к числу рисунков.
-
-Подробности, файлы, версии, source, контрольные суммы и лицензии остаются в [Scientific-142 R4](../roadmap/Tikzarium_Scientific_142_R4/README.md), исходном [TRD](../roadmap/Tikzarium_Scientific_142_R4/docs/SCIENTIFIC_142_TRD_R4.md), [REQUIREMENTS.csv](../roadmap/Tikzarium_Scientific_142_R4/REQUIREMENTS.csv), `QA_MANIFEST.json`, `QA_MATRIX.csv`, `SHA256SUMS.txt` и `provenance/`. Не редактировать эти приложения этим roadmap и не мигрировать fixture молча.
-
-### Общий пакет предметных примеров и навигации
-
-Параллельная предметная цепочка после принятия UX-контрактов:
-
-**AT3 geometry/graphs + AT5 STEM adapters → AT6 Figure Explorer для одного рисунка → AI88 S0–S4 и platform qualification.** AT4 PGFPlots одновременно использует SC3; готовность AT6 не создаёт многофигурный холст. AT6 индексирует и открывает один источник за раз, даёт переходы «пример → `.tex` → PDF/preview → требования», сохраняет возврат без потери текущего source.
-
-| Область | Зафиксированный объём | Definition of Done |
-| --- | --- | --- |
-| AI TIKZ Skills source set | **88** конкретных примеров в 16 классах; отдельная ведомость source IDs и зависимостей | 88/88 с provenance, версиями, engine, независимыми S0–S4 evidence; PLANNED не считается PASS |
-| Subject catalogue | **35** специализированных packages, плюс базовые `tikz` и `booktabs` вне этого счёта | Раздельно verified package/version, installed, loaded, compatible, GUI adapter и help; неизвестное состояние остаётся UNKNOWN |
-| TikZ libraries | **23** именованные библиотеки из каталога | Source-aware Connect/Disconnect/Undo и явные engine/version/help status |
-| Assistant contracts | **13** доступных skills | Версионированные контракты для поиска/QA/help; никакого произвольного исполнения skill-инструкций в продукте |
-| Atlas / one-figure navigation | HTML/PDF atlas, source files, reference previews, error/stale status | Поиск и переходы по одному рисунку; недоступный исходник или skill показывается как отсутствующий |
-| Platform qualification | Windows 10/11, macOS ARM, Linux и заявленные внешние engines | Отдельные exact-source GUI, compiler, PDF/font, visual, performance и platform evidence; ограничения обозначены явно |
-
-**Engine mapping AI88:** 85 XeLaTeX и 3 LuaLaTeX (ID **65/68/86**). LuaLaTeX требует явного per-project opt-in и отдельной проверки после 1.0; он не становится скрытым fallback для XeLaTeX. Поддержка движка не равна проверке всех адаптеров.
-
-**Разделять ведомости:** 88 AI examples и 142 Scientific figures не объединять. Учитывать в AI88 именно **35 packages / 23 libraries / 13 skills**; 142 корпуса остаются отдельными 100 AK + 42 Sarov с собственными 103 requirements. Не прибавлять 100 AK к 142 и не считать контракты/требования новыми примерами.
-
-Существующие нормативные приложения хранят точные списки исходников, версий и лицензий: [AI TIKZ Skills support roadmap](../roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md), [88-case CSV](../roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv), [references/SOURCES.md](../roadmap/Tikzarium_Scientific_142_R4/references/SOURCES.md), `references/DOMAIN_PACKAGES.md`, `references/IMAGE_EXAMPLES.md`, `dependencies/`, CTAN checksums, каталоги лицензий и подписанный R4 baseline. Авторские шрифты и сторонние файлы не перепаковывать без проверки прав.
-
-### Общие правила готовности и статусов
-
-- Различать `PLANNED`, `IMPLEMENTED_NOT_VERIFIED`, unit/event, hosted GUI, physical QA, independently accepted и blocked. PR, код или зелёный CI по отдельности не закрывают продуктовый gate.
-- Exact-source проверки привязаны к принятому SHA и оригинальным `.tex`, PDF/PNG/log, зависимостям и контрольным суммам. После изменения source, engine, package version, `compat`, шрифта или renderer затронутые доказательства повторяются.
-- Пользовательский XeLaTeX/MiKTeX остаётся внешним; shell escape выключен, автоматическая установка пакетов запрещена. Неизвестные TeX макросы/области остаются редактируемым исходником либо получают явный OPAQUE; не нормализовать комментарии, CRLF и Unicode без пользовательского решения.
-- Историческая приёмка никогда не переносится на новый SHA или новый layout. Hosted Windows не равен физической Win10, а read-only readiness не равен GUI доказательству.
-- Календарных обещаний нет. Оценка объёма делается после принятых вертикалей и фактических измерений, а не по числу PR, пакетов или файлов.
-
-## Нормативные указатели
-
-- [Windows 1.0 release control W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) — статусы и release gates.
-- [Owner override UIX/1.0](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md) — обязательный UX scope и критерии.
-- [UX1 execution plan](../plans/2026-11-11_UX1_EXECUTION.md) — ownership, implementation/review boundary и acceptance checklist.
-- [AI TIKZ Skills full support roadmap](../roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md) — 88 examples, 35 packages, 23 libraries, 13 skills, sources and platform details.
-- [Scientific-142 R4 README](../roadmap/Tikzarium_Scientific_142_R4/README.md) и [TRD](../roadmap/Tikzarium_Scientific_142_R4/docs/SCIENTIFIC_142_TRD_R4.md) — SC1–SC6, fixtures, L0–L4 и нормативные приложения.
-- [Историческая версия roadmap на main `0a5dd9a8`](https://github.com/i-shutov/tikzarium/blob/0a5dd9a81bd240ffe924630fadd8dfc53f9a36f9/docs/ROADMAP.md) — dated context, не конкурирующая актуальная последовательность.
-Точные acceptance records обновляются в соответствующих нормативных приложениях после получения нового проверяемого evidence.
+Исходная приложенная концепция сохраняет реестр направлений и принцип native formats; её прежний Graphviz-first/Data-middle порядок заменён последней командой. Дополнительная технологическая декомпозиция здесь является планом исполнителя; актуальные upstream возможности/версии/лицензии ещё подлежат проверке перед реализацией.

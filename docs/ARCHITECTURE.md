@@ -1,71 +1,95 @@
-# Architecture — TikZ-native authoring, external XeLaTeX
+# Architecture — TikZarium Multi-Engine Scientific Studio
 
-**LATEST owner correction — 2026-11-06 (supersedes the old HIGH-token prohibition):** TikZarium supports an existing Administrators-group account, including HIGH/elevated Administrator. External XeLaTeX/PDF helpers use the **current user's existing privileges**; no forced elevation, UAC/account changes or mandatory filtered-child launcher. The Windows GUI must visibly warn that elevated execution **is not a sandbox** and only trusted documents should be compiled; retain original MiKTeX warnings and exit codes, keep shell escape off, offline/no auto-package installation, bounded/cancellable processes. Unknown/SYSTEM tokens may remain unsupported. W1 needs actual product CLI→personal Server MiKTeX→Unicode/embedded PDF; W2 real Server GUI, W3 physical Win10 and W4 stable/installer are separate release gates. [Owner decision](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6695354140) · [Plan](../plans/2026-11-06_OWNER_ADMIN_BLOCKER_CORRECTION.md).
+## Release binding 2026-11-11: full Scientific Studio v1.0.0
 
-**2026-11-05 — АКТУАЛЬНЫЙ ПОРЯДОК РЕЛИЗА:** Windows 10 x64 native egui, внешний уже установленный пользователем MiKTeX/XeLaTeX; Linux 1.0.0-rc.1 принят как RC, Mac ARM и Linux остаются архитектурными и CI-платформами. Заморозка функций. Прежний Linux-first абзац от 2026-11-04 ниже является историческим. Критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
-**Release order (2026-11-04):** first full Linux x86_64 desktop GUI/ergonomics release with user-installed external XeLaTeX; Windows 10/MiKTeX and macOS ARM/external XeLaTeX are preserved as first-class **architectural and hosted CI** targets, with physical GUI qualification in later releases. The diagram below is an architectural illustration, not a first-release platform gate. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+The owner has fixed [v1.0 release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) to the **whole ST-SCI**: multi-document source-safe scientific Studio, all UX/G3, native TikZ/PGFPlots/SCI142/scientific AI88, scoped Asymptote and Typst/CeTZ scientific profiles with real editable GUI operations, exact source/build/export and native W0–W4. Shared project/engine/action APIs are built only as needed for this science-first vertical; no mandatory Graphviz/D2/Mermaid-first, generic multi-engine compositor or Data Figure. Penrose remains scoped investigation unless its detailed operations are approved. No operation-level ME-L3/4 acceptance from mere renderer/CLI. These are target architecture requirements, NOT implementation evidence. Stable release NO-GO.
 
 
-Owner correction: 2026-10-31. Supersedes the universal CAD/geometry-engine dependency chain. This is the target architecture, not a claim that all authoring tools are already implemented.
+Date: 2026-11-11, revision SCIENCE_FIRST_DATA_LAST. **Target architecture, not implemented capability.** Read [AGENTS](../AGENTS.md), [ROADMAP](ROADMAP.md) and [current execution plan](../plans/2026-11-11_STUDIO_REBASE.md). Delivery order is now scientific graphics → UML → BPMN → engineering → chemistry/biology → animation → other extensions → data LAST. The earlier PR #173 Graphviz-first and early-data migration order is superseded.
 
-## 1. Responsibilities
+## 1. Existing base, minimal enabling foundations
 
-```text
-Project: ordinary .tex/.tikz + preamble + included resources
-                         ↕ minimal revision-checked edits / undo
-  egui: TikZ tools + parameter inspector | editable code | contextual help
-                         ↓ native command generation
-                  Existing source document
-                         ↓ external build service
- Linux: external XeLaTeX | Windows: MiKTeX | macOS: external XeLaTeX
-                         ↓
-             Exact PDF → preview / export / diagnostics
-```
+Retain Rust/egui, core/app/CLI/extensions, the working XeLaTeX build/diagnostics/fonts and source-preserving TikZ authoring. Introduce tested modules before new crates. Build only the shared abstractions needed by the current scientific vertical, without forcing a universal platform, graph engines, full compositor or data service ahead of it.
 
-A shared catalogue supplies command syntax, parameter metadata, required packages/libraries, Russian explanations, examples and manual locators. It drives tool availability, inspector controls, source completion and help. Rust manages interaction, source edits and processes; TeX/PGF and their packages perform typesetting, expression evaluation, layout and final drawing.
+Target responsibilities:
 
-## 2. Reuse the current workspace
+- Studio shell: scientific project/document navigation, source/preview split, tools, docks, properties, help, keyboard/focus and four-theme design system; later domain profiles use the same shell.
+- Project/document service: ordinary native sources, working root/resources, per-document revision/dirty/history/view state, transactional save/close/recovery.
+- Engine registry/build scheduler: explicit profiles/discovery/requirements, run/cancel, resource bounds, diagnostics, artifacts/provenance; first exercised with XeLaTeX and scientific engines.
+- Language/domain adapters: supported recognition, source mapping, minimal patches, semantic validation, catalogue/help and operation-level capabilities.
+- Preview/export: reviewed PDF/SVG/raster and later media routes, current/stale/error and verified dimensions/fonts/source identity.
+- Linked publication service: full composition in ST-OTHER, not a prerequisite for correct scientific output or required existing corpus layouts.
+- Data service: new import/mapping/transformation/statistics/Data Figure ONLY in ST-DATA; native resource/dependency handling is available earlier and stays separate.
 
-Keep `tikzarium-app` (egui), `tikzarium-core` (documents/build/diagnostics/fonts), `tikzarium-cli` (doctor/build) and `tikzarium-extensions` (catalogue and requirements). Add a small authoring module only when needed; do not create empty crates for a speculative universal scene/CAS/geometry platform.
+A shared API does not make a universal graphics AST authoritative. Derived selection IDs, bounding boxes, properties and operations are allowed only where mapped safely to native source. Unknown constructs stay editable and cannot be regenerated through an invented common language.
 
-A typed authored-command instance needs a catalogue ID, parameter bindings, source range/revision and optional edit handles. Literal geometry for pointer interaction is allowed. TikZ expressions, anchors, transforms, loops and macro evaluation remain with TeX unless a specific safe edit is supported. No universal PDF reverse mapping is assumed.
+## 2. Document/project/source contracts
 
-## 3. Shared command contract
+DocumentId identifies a native source, not an assumed .tex buffer. Keep revision, saved revision, native format/path/encoding/EOL facts, view/caret/selection and edit history per document. Project metadata is additive: figures, source identities, explicit profiles/assets/dependencies. No-op import/save must not rewrite original files.
 
-The catalogue owner C proposes a versioned serializable contract and B consumes it rather than maintaining competing schemas. Minimum fields: command ID and syntax; label/summary in Russian; package/library requirements and engine constraints; parameter type, units, allowed values, documented default versus editor preset; parameter explanation and examples; manual/version/section locator; source-generation rule; supported edit operations.
+Save/Open/tab switch and external edits are revision checked. A visual operation carries expected revision, exact range/value and inverse action. Mixed text/visual Undo has one explicit transaction policy; stale handles cannot restore an old snapshot over new input. Unsupported format-wide reserialisation is not silently substituted for a minimal patch. Pending drafts and IME focus survive lawful context changes.
 
-Help-only entries are permitted for constructs without a graphical adapter. Default values without a verified manual source must remain UNKNOWN. Explanations are authored summaries, not bulk redistribution of manuals. A later plugin adds tools/help/generation metadata without changing the TeX compiler.
+Projects may contain many figures while each editor has an active document. Resource references can include existing .dat/.csv files needed for PGFPlots/SCI142/AI88; keep bytes/hashes and invalidation. This is not a data-import or analysis UI. Full publication documents later reference source/artifact identities and independent layout revisions. Cycles, missing files, outside-root paths and symlink behaviour require explicit safety tests.
 
-## 4. Library activation and source editing
+## 3. Engine boundary and scientific-first migration
 
-Keep independent states for installation, project loading, engine compatibility, graphical tool implementation and help availability. Scan explicit `\usepackage`/`\usetikzlibrary` declarations and includes conservatively; macro-dependent activation may be UNKNOWN. Compiler observations may provide additional evidence, not a universal static parser.
+These are proposed contracts, not already-existing public APIs:
 
-New commands are inserted at an explicit authoring location. Editing a recognized command checks its source revision, applies the smallest edit and creates one undo step. Connecting a library produces a visible, undoable preamble patch. Comments, unknown macros and unrelated bytes remain intact. Manual code edits invalidate stale handles and trigger targeted re-recognition, not whole-document regeneration.
+| Contract | Required information |
+| --- | --- |
+| EngineDescriptor | Stable ID, native inputs, executable/runtime, version probe, platform/licence verification status |
+| EngineCapabilities | Actual output formats, cancellation, diagnostic/source-map precision, L3/L4 operation subsets |
+| RenderProfile | Explicit engine/validated argv, root/working directory, dependencies/output policy, environment fingerprint/trust |
+| BuildRequest | Project/document IDs and captured revisions, dependency hashes, format/purpose/cancellation token |
+| BuildResult | Exit facts, bounded logs, diagnostics, artifacts, observed dependencies, limitations |
+| Artifact | Format, source/dependency/options/version identity, hash/path/dimensions/audit, current/stale/last-good |
 
-The normal drawing mode always shows code beside the canvas. Highlight the affected source after an action. Unsupported scopes remain source-first; do not claim accurate coordinate mapping where the editor cannot establish it. Temporary interaction overlays are clearly different from the last exact compiled PDF.
+Migration order: preserve existing XeLaTeX positives/negatives under the interface → scientific TikZ/PGFPlots editing → **Asymptote** as the first proposed additional scientific profile → Typst/CeTZ. Scoped Penrose mathematical semantics is evaluated within scientific work, not a universal solver prerequisite. New upstream facts require primary-source verification before delivery.
 
-## 5. External runtime and builds
+**Graphviz is no longer the mandatory first non-TeX backend.** Graphviz/D2/Mermaid are later scoped domain implementations or documented essential dependencies, not general product gates before science. UML/BPMN then get their own source/semantic contracts. Extensions are chosen by current domain operations; architecture convenience must not reverse the owner's priority.
 
-Windows 10 uses the user's independently installed MiKTeX. Detect distribution/executable/version and permit explicit configuration; do not install another TeX distribution. MiKTeX documents `--disable-installer` for its XeTeX implementation; A must verify the actual XeLaTeX invocation and use distribution-specific options rather than assuming TeX Live compatibility. Package downloads/updates and global settings remain external.
+File extension suggests a profile but does not authorise execution or engine switching. Fragment/preamble wrapping, LuaLaTeX and other engine choices are explicit. AI88's 85 XeLaTeX and cases65/68/86 LuaLaTeX retain separate tests, no silent fallback.
 
-Preserve direct process invocation, safe filenames, no shell escape by default, cancellation, time/resource bounds, optional persistent logs, `.fls` dependency tracking and structured source/line diagnostics. No-shell-escape is not an OS sandbox. Project profiles support full documents and fragments with explicit preambles, not implicit destructive wrapping.
+## 4. Build lifecycle, cache and trust
 
-Keep the last-good PDF stale/nonexportable after failure or dependency change. Only navigate a logged diagnostic when its file is established, never jump to an included file's line in the wrong buffer. Retain the existing typed font audit. A zero exit code does not prove complete glyph coverage.
+Typed states: queued/preparing/running/cancelling/succeeded/failed/cancelled, distinct from document dirty and artifact stale. Bound global/per-engine concurrency. Apply results only to the captured revision/dependency snapshot; a slower old job never overwrites a newer preview. Cancel the supported child-process tree and clean only owned temporary paths.
 
-## 6. Rendering, fonts and cache
+Cache source/dependencies/options/runtime version/fonts/resources and record seeds/time/network or declare non-reproducibility. Byte-identical output is required only where the profile promises it; otherwise use explicit normalised semantic/render invariants and retain originals. UI styling changes must preserve native source bytes and figure semantics.
 
-XeLaTeX PDF is authoritative; Poppler or another reviewed PDF backend displays it. The Rust overlay is not a PGF replacement. Bound worker duration and image decoding. Record renderer/tool versions and cache keys containing source, project profile, dependencies and relevant environment. Figure fontspec/unicode-math choices are independent of egui fonts and theme palettes.
+Invoke direct argv, no implicit shell/network/package install. Opening a project does not execute Python, Manim or scripts. Opt-in live preview respects trust and cancels superseded requests. Existing Administrator/HIGH is supported with warning for trusted sources, not called isolation. Timeouts/no-shell-escape are not OS sandboxing. Network denial and resource isolation must be truly enforced and tested before claiming them.
 
-## 7. Platform and evidence boundaries
+Optional user-selected Kroki/gateways are ST-OTHER; local engines stay usable. Any remote operation names the endpoint and content and requires opt-in. Embedded web components require isolated feasibility/security/offline/native-focus acceptance; no app-wide web rewrite or mandatory cloud. Do not alter UAC/users/RDP/system MiKTeX/fonts/drivers/FlowBridge.
 
-Native Windows 10 x64 + MiKTeX and physical Mac ARM64 M1/M4 remain acceptance targets. Hosted Windows Server and TeX Live checks are supplementary, not substitutes. Installable/portable application artifacts do not include a private TeX distribution or user font binaries. Offline runtime, unknown-source preservation, code visibility, contextual help and font/theme invariance must be tested as whole user workflows.
+## 5. Adapter and semantic boundaries
 
-## Sources for runtime/language contracts
+The versioned catalogue serves Toolbox/Inspector/completion/F1 with native syntax, type/units, validation, documented default versus editor preset, dependencies and provenance. Every adapter lists constructs and safe operations. ME-L1/L2 source/render, ME-L3 property edits and ME-L4 round-trip subsets remain distinct; OPAQUE is not accepted visual support.
 
-- PGF/TikZ path syntax: https://tikz.dev/tikz-paths
-- Path actions: https://tikz.dev/tikz-actions
-- Nodes/edges: https://tikz.dev/tikz-shapes
-- MiKTeX independent Windows installation: https://miktex.org/howto/install-miktex
-- MiKTeX XeTeX options: https://docs.miktex.org/manual/miktex-xetex.html
+UML is a dedicated stage with diagram-kind and relation/element semantics, not a renamed generic graph. PlantUML/TikZ profiles are candidates; other renderers need explicit supported-subset proof. BPMN is the next distinct stage, before engineering: preserve native model IDs/unknown extensions and diagram representation, validate declared constructs, and test save/reopen/Undo. bpmn-js integration is a candidate, not a fact already established. Modelling does not imply process execution.
 
-These sources explain upstream behavior. They do not establish that the corresponding TikZarium GUI implementation has passed testing.
+Engineering, chemistry/biology and animation use independent semantic fixtures. Layout/geometry alone cannot prove circuit connectivity, chemical relationships or biological meaning. Animation timeline actions map only to supported scene/source subsets, not arbitrary Python decompilation. Static scientific 3D belongs to ST-SCI; time-based scenes to ST-ANIM.
+
+PGFPlots SC3/AT4 is one mandatory scientific adapter for two separate corpus ledgers. Preserve compat, expressions, resources, raw data and unknown macros. Mathematical/static plots and existing table inputs remain early; new dataset tools and data-engine product integrations stay last.
+
+## 6. Preview, publication and last-stage data
+
+PDF/SVG/PNG are artifact formats, not equivalent source languages. Verify preview/export pipelines, bound decoding/media size, disable SVG active content/remote fetch unless explicitly authorised. Figure fontspec/unicode-math/runtime fonts remain separate from GUI typography; user font binaries are not redistributed. Export eligibility follows currentness and actually verified capabilities.
+
+Scientific export, physical dimensions, formula/Unicode/font audit and existing multi-panel corpus cases are accepted early. The general linked Publication Studio comes in ST-OTHER: source/artifact references, physical-unit layout/alignment/panel labels/styles, child invalidation, project portability. Flattening output must not delete native inputs. Choose composite format/renderer by a tested ADR.
+
+**Data service is deferred to ST-DATA, after animation AND the bounded ST-OTHER scope.** Dataset identity, column mapping, units/transforms/statistics, derived results and plotting specification are late product functionality. Preserve original measurements; later transformations produce separately traceable outputs. Reusing a source dataset as a read-only scientific dependency earlier does not activate this service.
+
+## 7. UI quality and performance
+
+Shared design tokens/four themes, scientific workspace, project tabs, direct tools, editable source, preview/context dock, one Apply, one F1 and diagnostics share an action/state contract. Extend by domains in the owner's order; do not fill the first UI with empty Data/Animation/BPMN placeholders.
+
+Verify all real states, compact windows and physical DPI, visible focus and accessibility roles. Preserve cursor/selection/draft/IME across layout changes. G3 requires bounded layout memory and measured native 10k/1MiB p95<=50ms/first edit<=2s plus 100k/10MiB stress without input loss; CPU-only experiments are separate. Quick idle frames do not justify full-document mesh retention or slow changed frames.
+
+## 8. Qualification and phased migration
+
+Windows 10 Pro is the primary user desktop; Server 2025 is a separate native integration/GUI environment. macOS ARM M1/M4 and Linux remain architecture/CI targets with independent native qualification. Hosted Windows2022/Linux Xvfb do not prove Win10/Server2025/DPI/IME. Readiness requires an actually available channel, not an old comment.
+
+Current path: reviewed UX2 scientific shell + editor/G3 + minimal document/build contracts → existing TikZ/PGFPlots/scientific corpus operations → Asymptote/Typst profiles → independent scientific acceptance → UML → BPMN → engineering → chemistry/biology → animation → other → data. Publication/data are not gates before the first scientific result. QA/packaging/recovery recur in every scoped release and in final consolidation, not a competing subject stage.
+
+Retain old native documents, additive preference defaults/rollback, immutable originals and separate SCI142/AI88 ledgers. Every shipped operation/version/platform needs real source/diagnostic/visual/domain proof, W0–W4 where applicable, 96/120/192 DPI and IME. No stable tag, version bump or new PASS follows from this documentation edit.
+
+History: [architecture before priority correction](https://github.com/i-shutov/tikzarium/blob/a2a6c79ee14c58282da8a4a1106392faf9643029/docs/ARCHITECTURE.md), [pre-Studio architecture](https://github.com/i-shutov/tikzarium/blob/19187fc17968659267540fe279702bf77eeb77e6/docs/ARCHITECTURE.md). Shared responsibilities and safeguards are retained; the previous Graphviz-first/data-before-domain sequence is not current guidance.

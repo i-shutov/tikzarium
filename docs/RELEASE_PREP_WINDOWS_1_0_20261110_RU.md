@@ -1,5 +1,10 @@
 # TikZarium 1.0 Windows — подготовка выпуска (10.11.2026)
 
+## ACTIVE CUTOVER REPLACEMENT — Scientific Studio v1.0.0, 11.11.2026
+
+Owner fixes full [ST-SCI Scientific Studio](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) as v1.0.0. Historical R0 "DONE 96 DPI, PGFPlots/SCI deferred" below is no longer the release freeze. Current preparation includes SCI142 142/103 and scientific AI88, shared PGFPlots, Asymptote/Typst-CeTZ scoped GUI scientific operations, polished multi-doc UX/G3, all actual W2b/W3/IME/96/120/192/W4 and final original source/EXE/PDF evidence. **NO-GO** until completion. Older R0…R4 details remain as provenance of previous limited candidate; no blanket transfer of historical PASS.
+
+
 ## Актуальная навигация — 11.11.2026
 
 **Ниже сохранён исторический план подготовки до расширения UIX-scope.** Его строки «96 DPI only», перенос DPI после 1.0 и R0 DONE не являются текущими критериями. Действуют [единый roadmap](ROADMAP.md) и [решение UIX/1.0](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md): все UX-F01–F14 → реальные 100%/125%/200% (96/120/192 DPI), W2b/W3/IME → W4 portable и независимое GO. Принятые оригиналы `488a9687` остаются свидетельством той версии. Новый финальный SHA ещё не принят.

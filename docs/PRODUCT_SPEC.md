@@ -1,68 +1,83 @@
-## Актуальный owner scope 10.11.2026: UIX обязателен для Windows 1.0
+# TikZarium Studio — продуктовая спецификация
 
-Владелец переносит **все 14 UX-находок** [аудита `0f2a1f1`](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) непосредственно в **релиз 1.0**. Требуются цветной редактируемый TeX/TikZ + номера строк/Find/Replace/Go to line, удобная навигация и F1, компактный Inspector, шесть инструментов в один выбор, native Save & Build и PDF-цикл с понятными состояниями, ясный disabled/feedback, accessibility, физические 100%/125%/200% (96/120/192 DPI). [Нормативный новый roadmap](../roadmap/WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md). Прежние 1.1–1.3 / только 96DPI для всех UX — исторические ограничения, заменены последней командой. Это исключение из feature freeze только для UX; 35 доменных TeX-адаптеров откладываются до эргономической приёмки, AT0/AT1 research можно выполнять параллельно. Независимые W2b/W3/IME/W4 gates, внешний XeLaTeX, current Administrator safety и отсутствие самообновлений TeX сохранены. Stable GO не объявлен.
+## Approved v1.0.0 target — complete Scientific Studio (11 November 2026)
 
-# TikZarium — product requirements, owner-corrected scope
-
-**LATEST RELEASE STATUS (2026-11-07):** Windows 1.0 first. Current main 4b79d71a has W0 hosted native/ZIP PASS, W1 personal Server current-user MiKTeX PDF PASS, W2 actual RDP visible native HWND @125% but foreground/F1/PNG BLOCKED, physical Windows10 W3 NOT_RUN, installer/stable W4 BLOCKED. Existing HIGH Administrator is supported with visible trusted-document warning; old non-admin/HIGH restrictions below are historical, not release gates. [Canonical W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) · [79 problems/solutions](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
+The owner approved the **full ST-SCI scientific product as version 1.0**, not a narrower TikZ GUI. [Normative scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Included: beautiful multi-document scientific Studio; all UX/G3 and Windows gates; TikZ/PGFPlots SC3/AT4 with verified edits; Scientific-142 142 figures/103 requirements; scientific AI88; Asymptote and Typst/CeTZ with independently agreed real scientific GUI actions/source/Undo/engine build/export. Penrose remains candidate until approved L3/L4 scope. Full nondo-main 88/35/23/13 obligations follow the domain priority, no silent scope reduction. New Data Figure/analysis remains LAST while existing scientific .dat/.csv dependencies remain required NOW. Old "number of first release will be chosen later" statements below are historical. Stable NO-GO; target scope ≠ shipped capability.
 
 
-**LATEST owner correction — 2026-11-06 (supersedes the old HIGH-token prohibition):** TikZarium supports an existing Administrators-group account, including HIGH/elevated Administrator. External XeLaTeX/PDF helpers use the **current user's existing privileges**; no forced elevation, UAC/account changes or mandatory filtered-child launcher. The Windows GUI must visibly warn that elevated execution **is not a sandbox** and only trusted documents should be compiled; retain original MiKTeX warnings and exit codes, keep shell escape off, offline/no auto-package installation, bounded/cancellable processes. Unknown/SYSTEM tokens may remain unsupported. W1 needs actual product CLI→personal Server MiKTeX→Unicode/embedded PDF; W2 real Server GUI, W3 physical Win10 and W4 stable/installer are separate release gates. [Owner decision](https://github.com/i-shutov/tikzarium/issues/108#issuecomment-6695354140) · [Plan](../plans/2026-11-06_OWNER_ADMIN_BLOCKER_CORRECTION.md).
+**11 ноября 2026, редакция SCIENCE_FIRST_DATA_LAST.** Это целевой продукт, не описание уже реализованных функций. Последняя команда владельца задаёт порядок: **научная графика → UML → BPMN → инженерия → химия/биология → анимация → остальное → данные последними**. Подробный порядок и приёмка — в [едином roadmap](ROADMAP.md), ближайшие задачи — [в исполнительском плане](../plans/2026-11-11_STUDIO_REBASE.md).
 
-**Текущая платформа первого релиза (решение владельца 2026-11-05): Windows 10 x64 с установленным пользователем MiKTeX/XeLaTeX.** Заморозка функций; Windows portable ZIP и реальные GUI/TeX/PDF smoke до инсталлятора. Linux 1.0.0-rc.1 остаётся принятой кандидатной сборкой (без физической R4 и стабильного тега), Linux/macOS CI сохранены. Раздел 2026-11-04 ниже — исторический. Актуальные критерии: `plans/2026-11-05_WINDOWS_X64_RELEASE.md`.\n\n
-## Current platform priority (owner, 2026-11-04)
+## 1. Продукт и приоритет
 
-**First full release: Linux desktop x86_64**, external independently installed XeLaTeX (TeX Live reference), real X11 GUI event/screenshot acceptance, with **iterative ergonomics/usability approval** before shipment. Preserve original cross-platform Rust/egui design, Windows 10 x64 external MiKTeX and macOS ARM external XeLaTeX compatibility and hosted tests from the outset; their **physical platform qualification and separate release packaging come after Linux**. Do not construe the older "Required environment" list as requiring all three physical platforms before the first Linux release. The editor must be usable at compact 1366×768, with balanced canvas/code/help, readable Cyrillic, grouped icon palettes, correct F1, safe editing, Undo, Save/Open, native dialogs and PDF. Source safety and external-engine constraints remain unchanged. See `plans/2026-11-04_LINUX_FIRST_CROSS_PLATFORM_RELEASE.md`.
+TikZarium Multi-Engine Scientific Studio — локальная профессиональная среда научной и технической графики. Единый красивый интерфейс объединяет проекты, native sources, предметные инструменты, сборку, предпросмотр, диагностику, публикационный экспорт и поэтапно все утверждённые направления. TikZ — первый полноценный профиль, не предел архитектуры.
 
+Первый продуктовый результат — **научная Studio**: рисунок/формула/геометрия/поддержанная поверхность → source + visual editing → сборка → проверка → качественный экспорт → повторное открытие без потерь. UML и BPMN следуют после научной графики, а не заменяют её ранней общей диаграммной платформой. Data Figure и анализ данных — последняя поставка, а не обязательный стартовый экран.
 
-Date: 2026-10-31. This replaces the earlier general graphics/CAD interpretation, not the implemented XeLaTeX workbench.
+Studio foundations развиваются вместе с первым научным сценарием. Общая архитектура готова к нескольким языкам, но не требует сначала интегрировать Graphviz/D2/Mermaid, полный compositor и data stack. Конкретный кандидат выпуска имеет ограниченный scope, freeze и реальную приёмку; стратегия не публикует stable версию сама по себе.
 
-## Product
+## 2. Все прежние обязательства сохраняются
 
-A local native Rust/egui **visual editor of TikZ commands**, with editable code permanently beside the drawing in the normal workflow and explanatory help for functions and parameters. The available tools follow the packages/libraries selected for the project. We use TeX; we do not rebuild it.
+Шесть настоящих TikZ-инструментов, editable TeX рядом с рисунком, русская F1, библиотеки, компактный Inspector/один Apply/Undo, обычные .tex/.tikz, внешний XeLaTeX/MiKTeX, качественный PDF, Light/Dark/Midnight/Paper и source safety остаются. Все UX-F01…F14 обязательны. SCI142=100AK+42Sarov/103 requirements и AI88=88 cases/35 packages/23 libraries/13 skills имеют отдельную полную приёмку. PGFPlots SC3/AT4 — одна ранняя реализация для двух независимых ведомостей.
 
-Canonical loop: **choose TikZ tool → enter/draw parameters → inspect ordinary generated TikZ code → run external XeLaTeX → view exact PDF**. Both code and form/canvas are authoring interfaces to the same source. The UI may draw temporary selection handles, grids and drag previews; they are not a substitute for TeX rendering.
+Перенос данных в конец не разрешает сломать existing .dat/.csv inputs научных примеров или отложить обязательный static PGFPlots case. Сохранение native resources, hashes и invalidation — научная совместимость. Новый import UI, column mapping, transformations/statistics, dashboards и Vega-Lite/Matplotlib/Gnuplot/Plotly integrations — ST-DATA.
 
-## Required environment
+## 3. Проект, документы и публикация
 
-- Windows 10 x64: **MiKTeX is installed independently by the user**. TikZarium locates its XeLaTeX or accepts an explicit executable path, records the distribution/version and checks requirements. It does not bundle TeX or manage a second distribution.
-- macOS ARM64 M1/M4: external user-installed XeLaTeX, with explicit executable path and distribution identity.
-- Missing packages/fonts are diagnosed. Package installation and updates remain in the external distribution manager. Do not silently trigger automatic MiKTeX installs, change global settings, or replace the compiler.
-- Ordinary editing and installed-package compilation are offline; no account, telemetry or cloud service is required.
+Проект хранит обычные native sources, рисунки, assets и явные зависимости. Метаданные описывают profile/engine/working root/output relationships, не заменяют языки закрытым монолитным форматом. Данные могут существовать как файлы ресурсов до появления data-продукта.
 
-## First complete user workflow
+Каждый документ имеет ID, ревизию, saved/dirty state, view/caret/selection и историю. Tabs/Open/close/external-change не теряют source или pending draft; конфликты требуют явного сохранения/отмены/сравнения. No-op операции не меняют Unicode/CRLF/comments/unknown fields. Несколько документов не равны одному универсальному многофигурному холсту.
 
-Create a line, arrow, rectangle, circle, text/math node or cubic Bézier using its native TikZ construction. Set coordinates/size/style from a readable inspector; show the exact generated command immediately. Compile it with XeLaTeX, display the result, save/reopen and undo the edit without altering unrelated source. A button that only copies a snippet is an intermediate implementation, not acceptance of mouse authoring.
+Для научных рисунков сразу нужны корректные физические размеры, labels/fonts/formulas и принятые экспортные маршруты. **Полная междвижковая Publication Studio относится к ST-OTHER:** отдельный linked composition document, панели/сетка/выравнивание/подписи (a)/(b)/общие стили и profiles, invalidation от компонентов. Исходник компонента остаётся редактируемым; PDF/SVG не объявляются восстановленным TikZ.
 
-## Visible code and explanatory assistance
+## 4. Карта интерфейса и последовательность активации
 
-The default workspace keeps canvas, code and parameter help accessible together at compact desktop resolution and Retina scale. Selecting a known tool/command/key exposes:
+| Область | Контракт | Когда активируется |
+| --- | --- | --- |
+| Project Hub / Explorer / tabs | Проект, документы, ресурсы/зависимости, поиск/возврат, сохранение контекста | Минимально в ST-SCI, расширяется по доменам |
+| Source + Preview workspace | Native language, подсветка/gutter/Find/Replace/Go to line, Undo; точный result, pages/zoom, current/stale/error | ST-SCI и регрессии во всех профилях |
+| Toolbox / Inspector / Outline | Шесть direct TikZ tools; параметры/единицы/один Apply/F1; outline/layers только доказанных конструкций | ST-SCI, затем предметные profiles |
+| Build Centre / Engine Manager | Явный engine/path/version, capabilities/dependencies, очередь/cancel/diagnostics/last-good | На существующем XeLaTeX и научном дополнительном engine |
+| UML workspace | Поддержанные diagram kinds, элементы/отношения, native source/свойства | ST-UML |
+| BPMN workspace | Native model/diagram representation, palette/Inspector/validation, save/reopen | ST-BPMN до инженерии |
+| Engineering / Chemistry / Biology | Профильные инструменты/семантика/экспорт, общая оболочка | ST-ENG и ST-CHEMBIO |
+| Animation workspace | Native сцены, параметры, timeline, кадры/media | ST-ANIM до остальных extras |
+| Publication / extended vector exchange | Linked multi-panel composition, physical layout, обратные ссылки на sources | Полная версия ST-OTHER |
+| Data Figure | Таблицы, столбцы, units/types, transformations, статистика, воспроизводимый plotting | **ST-DATA — последним** |
+| History / Compare / F1 | Source transactions, сравнение, одна контекстная карточка/manual/version, сохранение focus | Общая работа по нуждам активного домена |
 
-| Field | Required content |
-| --- | --- |
-| Identity | Original TikZ/PGF/package command or key name, readable Russian label |
-| Syntax | Exact command/key syntax and parameter roles |
-| Values | Type, units, allowed values or limits; explicit UNKNOWN where not established |
-| Default | Only a source-verified default; distinguish editor preset from TikZ default |
-| Explanation | What changes in the figure; interactions and important limitations |
-| Example | Small valid source example with necessary imports |
-| Requirements | Package/library, engine compatibility and relevant version |
-| Provenance | Manual title, section/anchor, URL or local texdoc target |
+Согласованная карта UI-00…UI-13 сохраняется и расширяется; не выдавать будущие вкладки за работающие функции. Общий UI не состоит из чужих окон/iframe. WebView или внешний editor требуют доказанного сценария, offline/security/licence и возврата в Studio.
 
-The same catalogue feeds toolbar, inspector, completion and contextual F1/hover. Help is not postponed until a later documentation release. User mathematical expressions remain TeX expressions; the editor must not substitute a home-grown solver.
+## 5. Предметные профили в порядке владельца
 
-## Package-aware editing
+1. **Научная графика:** TikZ/PGFPlots/SCI142, Asymptote, Typst/CeTZ, scoped mathematical Penrose; статическая научная 2D/3D-графика. Общие механизмы вводятся для этого сценария.
+2. **UML:** подтверждённое подмножество структурных/поведенческих diagram kinds; кандидаты native TikZ/UML и PlantUML, дополнительные renderers только по доказанной семантике. Generic graph не приравнивается к UML.
+3. **BPMN:** native .bpmn/XML и supported model/diagram edits; bpmn-js — кандидат integration, не уже выбранный runtime. Редактор не объявляется execution engine.
+4. **Инженерия:** прежние engineering-пакеты, Circuitikz, WaveDrom, SchemDraw, WireViz; connections/units/domain invariants.
+5. **Химия и биология:** прежние chemistry-пакеты, RDKit, биологические схемы и предметные шаблоны; layout не подменяет научное содержание.
+6. **Анимация:** Manim/поддержанные scientific scenes/timeline, кадры и verified media exports; не reverse engineering произвольного Python.
+7. **Остальное:** standalone generic Graphviz/D2/Mermaid, LikeC4/Structurizr, SVG/PDF/editor exchange, Excalidraw/diagrams.net/Ipe, full Publication, optional local/user Kroki; tldraw/Blender bridge по отдельной feasibility.
+8. **Данные:** Data Figure, Vega-Lite/Matplotlib/Gnuplot/Plotly, import/mapping/transformation/statistics и interactive analysis — строго в конце.
 
-Separate installed, project-loaded, engine-compatible, tool-implemented and help-available states. When a package is installed but not loaded, offer a visible undoable preamble change. Missing/unimplemented tools explain their state. Unknown macros remain editable in source and compilable by XeLaTeX; they are not deleted or regenerated to fit a GUI model. An unsupported engine requirement is explicit, never a hidden compiler switch.
+Все новые технологические строки являются кандидатами. Версии, лицензии, actual export formats, runtime dependencies, платформы, безопасность и способы интеграции подлежат primary-source проверке до реализации/поставки. Это план, а не новые подтверждённые сведения о внешних продуктах.
 
-## Fonts, themes and exports
+## 6. Уровни интеграции
 
-Keep figure typography through fontspec/unicode-math, Cyrillic and mathematical glyph checks, PDF font embedding, and the existing independent Light/Dark/Midnight/Paper GUI themes. Changing GUI appearance never changes the TeX figure. PDF export is canonical; other exports require a separately verified pipeline.
+ME-L1 — native source и просмотр; ME-L2 — editable code/build/diagnostics/cancel/save/export; ME-L3 — перечисленные предметные операции с минимальным reversible source patch; ME-L4 — source mapping и двустороннее редактирование заявленного subset с round-trip tests. Они отделены от SCI-L0…L4 и AI-S0…S4.
 
-## Not mandatory for first drawing
+ME-L2 не равно визуальному редактору, OPAQUE не равно выполненному MUST, а одна красивая картинка не доказывает UML/BPMN/химическую или физическую корректность. Произвольные TeX/Python/macros/SVG и все возможности языка не обещаются как universal scene graph.
 
-A full TeX interpreter/parser, a general CST for arbitrary macros, a universal scene reconstruction from PDF, CAS/constraint solver, GeoGebra-like computation engine, generic CAD tools or executable WASM plugin host. Lightweight known-command recognition, coordinate conversion and source-span edits are sufficient initially. Later work is justified by concrete TikZ/package workflows, not by recreating Photoshop/Corel.
+## 7. Красота и эргономика
 
-## Acceptance
+Премиальная научная студия: единая типографика, отступы, ясные primary/secondary действия, качественные векторные иконки, аккуратные панели и различимые hover/active/focus/disabled/error. Все четыре темы согласованы, figure typography/colours не меняются от темы GUI. Декоративные эффекты не уменьшают рабочую площадь и не задерживают ввод.
 
-Record exact Git SHA and actual environment for generated-source tests, external XeLaTeX builds, library activation, glyph checks, unknown-source preservation and undo. Separately record physical Windows 10 + MiKTeX and M1/M4 GUI tests, native dialogs, IME, scale and theme persistence. Hosted Windows Server/TeX Live success is not Windows 10/MiKTeX acceptance. See the revised roadmap and plans/insights pair.
+Принять реальные screens научного проекта/ошибки/F1/stale/export прежде чем переходить к другим доменам; затем соответствующие UML/BPMN/инженерные/химические/animation состояния. Data screens проверяются на последнем этапе, не блокируют ST-SCI. Viewports1180×680/1366×768/1920×1080 и stress1024×640, physical100/125/200%=96/120/192DPI, keyboard/focus/IME/assistive. Пилот на пяти людях сохраняется, не заменяется агентами. G3 performance budget и source integrity остаются.
+
+## 8. Безопасность, качество, платформы
+
+Local/offline с внешними независимо установленными engines; никаких скрытых install/download/fallback/обязательного аккаунта/телеметрии. Исполняемые источники запускаются только по явной trust policy. Timeout/no-shell-escape/Administrator не являются sandbox. Remote gateway требует opt-in, endpoint и видимость отправляемого содержимого. No UAC/accounts/system-font/RDP/MiKTeX/FlowBridge changes.
+
+Результат связан с точной revision/dependencies/options/engine version; stale/last-good не выдаётся за current, ошибки указывают правильный файл. Формулы/Unicode/physical sizes/geometry/font embedding/права на ресурсы проверяются для реально поддержанного формата. Пользовательские font binaries не распространяются. Локальные preferences имеют безопасные defaults и rollback без переписывания native source.
+
+Windows 10 Pro — основной пользовательский стенд, Server 2025 — отдельная integration/GUI проверка; macOS ARM M1/M4 и Linux сохраняются. W0–W4, native IME/DPI и независимые оригиналы остаются условиями заявленной поставки; hosted Server не заменяет Win10. Исторические PASS сохраняют свои SHA, версия/тег этим документом не меняются.
+
+История: [первоначальный Studio scope](https://github.com/i-shutov/tikzarium/blob/a2a6c79ee14c58282da8a4a1106392faf9643029/docs/PRODUCT_SPEC.md), [прежний TikZ scope](https://github.com/i-shutov/tikzarium/blob/19187fc17968659267540fe279702bf77eeb77e6/docs/PRODUCT_SPEC.md). Функциональные обязательства сохранены, приоритеты заменены последней командой.

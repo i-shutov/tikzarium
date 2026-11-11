@@ -1,5 +1,10 @@
 # QA / Release acceptance contract
 
+## SCIENTIFIC STUDIO v1.0.0 ACCEPTANCE OVERRIDE — 11.11.2026
+
+[Approved entire ST-SCI release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) supersedes any outdated UX-only, 96DPI-only or Scientific-after-1.0 claim below. Complete multi-document polished Studio, all UX-F01…14/G3, corpus SCI142 142/103, science AI88, PGFPlots and Asymptote/Typst/CeTZ real scoped native scientific source-edit/Undo/build/export, independent scientific/visual QA, exact-final-source W0–W4 on Windows10/Server, IME and 96/120/192. Old source SHA passes do not qualify current scientific release. Stable 1.0 NO-GO; no relaxed tests.
+
+
 **LATEST RELEASE STATUS (2026-11-07):** Windows 1.0 first. Current main 4b79d71a has W0 hosted native/ZIP PASS, W1 personal Server current-user MiKTeX PDF PASS, W2 actual RDP visible native HWND @125% but foreground/F1/PNG BLOCKED, physical Windows10 W3 NOT_RUN, installer/stable W4 BLOCKED. Existing HIGH Administrator is supported with visible trusted-document warning; old non-admin/HIGH restrictions below are historical, not release gates. [Canonical W0–W4](WINDOWS_1_0_RELEASE_CONTROL_RU.md) · [79 problems/solutions](TECHNICAL_INCIDENTS_AND_REMEDIATIONS_RU.md).
 
 
