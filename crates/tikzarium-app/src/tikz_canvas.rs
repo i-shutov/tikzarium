@@ -1210,7 +1210,10 @@ mod tests {
         assert_eq!(studio_parameter_label("center_x"), "Центр X");
         assert_eq!(studio_parameter_label("control2_y"), "Упр. 2 Y");
         assert_eq!(studio_parameter_label("content"), "Текст / формула");
-        assert_eq!(studio_parameter_label("unrecognized_param"), "unrecognized_param");
+        assert_eq!(
+            studio_parameter_label("unrecognized_param"),
+            "unrecognized_param"
+        );
         assert_eq!(studio_parameter_group("start_x"), "Начальная точка");
         assert_eq!(studio_parameter_group("start_y"), "Начальная точка");
         assert_eq!(studio_parameter_group("end_x"), "Конечная точка");
@@ -1225,26 +1228,25 @@ mod tests {
         let ctx = egui::Context::default();
         let _ = ctx.run(
             egui::RawInput {
-                screen_rect: Some(Rect::from_min_size(
-                    Pos2::ZERO,
-                    Vec2::new(680.0, 540.0),
-                )),
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(680.0, 540.0))),
                 ..Default::default()
             },
             |ctx| {
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    assert!(show_inspector_studio(
-                        ui,
-                        &mut session,
-                        &mut source,
-                        Capabilities {
-                            installed: true,
-                            loaded: Evidence::Confirmed,
-                            engine_compatible: true,
-                            implemented: true,
-                        },
-                    )
-                    .is_none());
+                    assert!(
+                        show_inspector_studio(
+                            ui,
+                            &mut session,
+                            &mut source,
+                            Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        )
+                        .is_none()
+                    );
                 });
             },
         );
