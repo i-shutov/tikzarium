@@ -29,7 +29,7 @@ from qa_n1_desktop import FIXTURE, original_preserved, owners
 # initial source focus point below moves inside that reviewed content region.
 # Existing rail/palette/dock coordinates still require the unchanged 1366x768
 # hosted probe and independent original-artifact review; local UX1 is not W3.
-APP_TREE = "e9f47c46042119b2fb58b187fcfaf0fafa076a64"
+APP_TREE = "5ea9f8ce7dc6c1374e1eb3bbe951e9a9b0e684a9"
 BUTTONS = [
     ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
     ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
