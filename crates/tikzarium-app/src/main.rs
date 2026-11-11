@@ -2121,7 +2121,7 @@ impl TikzariumApp {
                     } else {
                         let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();
-                        if let Some(line) = tikz_canvas::show_inspector(
+                        if let Some(line) = tikz_canvas::show_inspector_studio(
                             ui,
                             &mut self.authoring,
                             &mut self.document.source,
