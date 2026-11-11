@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashSet,
     ffi::OsString,
+    fmt::Write as _,
     fs::{self, File},
     io::{self, Read},
     path::{Path, PathBuf},
@@ -13,13 +14,40 @@ use std::{
 /// Above this size, the path is deliberately *unverifiable*, never reported as fresh.
 pub const MAX_TRACKED_FILE_BYTES: u64 = 64 * 1024 * 1024;
 
+/// A single author file is distinct from a dependency discovered via TeX's .fls recorder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectInputOrigin {
+    AuthorSource,
+    FlsInput,
+}
+
+/// One local source/dependency checksum captured for the current build.
+/// sha256 is the *captured* digest, never silently refreshed after changes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectInputRecord {
+    pub origin: ProjectInputOrigin,
+    pub recorded_path: PathBuf,
+    pub resolved_path: PathBuf,
+    pub sha256: Option<String>,
+    pub bytes_current: bool,
+}
+
 #[derive(Debug, Clone)]
 struct ProjectInput {
     /// Resolved target at capture time (retained for the existing public paths API).
     path: PathBuf,
     /// Original recorded spelling must survive to catch symlink retargeting.
     recorded_path: PathBuf,
+    origin: ProjectInputOrigin,
     digest: Option<[u8; 32]>,
+}
+
+impl ProjectInput {
+    fn bytes_current(&self) -> bool {
+        self.digest.is_some()
+            && canonicalize_existing_prefix(&self.recorded_path) == self.path
+            && file_digest(&self.recorded_path).ok().flatten() == self.digest
+    }
 }
 
 /// A read-only snapshot of inputs inside a selected project root.
@@ -96,6 +124,11 @@ impl ProjectDependencySnapshot {
                     digest: file_digest(&recorded_path).ok().flatten(),
                     path: resolved,
                     recorded_path,
+                    origin: if index == 0 {
+                        ProjectInputOrigin::AuthorSource
+                    } else {
+                        ProjectInputOrigin::FlsInput
+                    },
                 });
             } else {
                 ignored_external.push(resolved);
@@ -138,6 +171,53 @@ impl ProjectDependencySnapshot {
             .collect()
     }
 
+    /// Captured local author and .fls INPUT checksum ledger for one figure.
+    /// Records retain their original spelling (including relative components)
+    /// and canonical target; external TeX-distribution inputs remain explicitly
+    /// unverified via ignored_external_paths(), never falsely certified fresh.
+    #[must_use]
+    pub fn project_input_records(&self) -> Vec<ProjectInputRecord> {
+        self.project_inputs
+            .iter()
+            .map(|item| {
+                let sha256 = item.digest.map(|bytes| {
+                    let mut value = String::with_capacity(64);
+                    for byte in bytes {
+                        // Writing to a String cannot fail.
+                        let _ = write!(&mut value, "{byte:02x}");
+                    }
+                    value
+                });
+                ProjectInputRecord {
+                    origin: item.origin,
+                    recorded_path: item.recorded_path.clone(),
+                    resolved_path: item.path.clone(),
+                    sha256,
+                    bytes_current: item.bytes_current(),
+                }
+            })
+            .collect()
+    }
+
+    /// Confirm that an externally built figure actually used this exact open
+    /// author source, not merely an unrelated or older .fls snapshot. A clean
+    /// source on disk must match the caller's current UTF-8 bytes and the
+    /// captured SHA-256. Recorder completion is checked by the caller.
+    #[must_use]
+    pub fn matches_author_source_bytes(&self, source: &Path, bytes: &[u8]) -> bool {
+        let Ok(resolved) = source.canonicalize() else {
+            return false;
+        };
+        let digest: [u8; 32] = Sha256::digest(bytes).into();
+        self.source_is_project_local
+            && self.project_inputs.iter().any(|input| {
+                input.origin == ProjectInputOrigin::AuthorSource
+                    && input.path == resolved
+                    && input.digest == Some(digest)
+                    && input.bytes_current()
+            })
+    }
+
     /// Paths whose bytes changed, disappeared, became unreadable, or could
     /// not be fingerprinted at capture time (e.g. over the size cap).
     /// Content hashing detects same-length edits with unchanged timestamps.
@@ -145,11 +225,7 @@ impl ProjectDependencySnapshot {
     pub fn invalidated_project_paths(&self) -> Vec<PathBuf> {
         self.project_inputs
             .iter()
-            .filter(|item| {
-                item.digest.is_none()
-                    || canonicalize_existing_prefix(&item.recorded_path) != item.path
-                    || file_digest(&item.recorded_path).ok().flatten() != item.digest
-            })
+            .filter(|item| !item.bytes_current())
             .map(|item| item.path.clone())
             .collect()
     }
