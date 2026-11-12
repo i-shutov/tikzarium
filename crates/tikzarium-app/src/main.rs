@@ -20,6 +20,7 @@ mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
+mod project_scope;
 mod scientific_inspector;
 mod scientific_resource_view;
 mod source_editor;
@@ -44,6 +45,7 @@ use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
+use project_scope::checked_project_root;
 use scientific_inspector::ScientificInspector;
 use scientific_resource_view::ScientificResourceView;
 use source_fonts::scan_explicit_font_hints;
@@ -772,6 +774,8 @@ struct TikzariumApp {
     preview_lod_rx: Option<PreviewLodReceiver>,
     pdf: Option<Vec<u8>>,
     build_resources: BuildResources,
+    /// Explicit root for this open document; None means its source directory.
+    project_root: Option<PathBuf>,
     built_source: Option<String>,
     built_path: Option<PathBuf>,
     building_source: Option<String>,
@@ -965,6 +969,7 @@ impl TikzariumApp {
             preview_lod_rx: None,
             pdf: None,
             build_resources: BuildResources::default(),
+            project_root: None,
             built_source: None,
             built_path: None,
             building_source: None,
@@ -1152,6 +1157,7 @@ impl TikzariumApp {
                 self.scientific = ScientificInspector::default();
                 self.scientific_resources = ScientificResourceView::default();
                 self.build_resources = BuildResources::default();
+                self.project_root = None;
                 self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
@@ -1277,6 +1283,39 @@ impl TikzariumApp {
             None => {
                 self.status = "Выбор открытия отменён или XDG file portal недоступен; можно ввести путь вручную".into();
             }
+        }
+    }
+
+    fn select_project_root(&mut self) {
+        if self.receiver.is_some() {
+            return;
+        }
+        let Some(source) = self.document.path.as_deref() else {
+            self.status = "Сначала сохраните или откройте исходный файл.".into();
+            return;
+        };
+        let start = self
+            .project_root
+            .as_deref()
+            .or_else(|| source.parent())
+            .unwrap_or_else(|| Path::new("."));
+        let Some(root) = rfd::FileDialog::new()
+            .set_title("Папка проекта с исходником и ресурсами")
+            .set_directory(start)
+            .pick_folder()
+        else {
+            self.status = "Выбор папки проекта отменён.".into();
+            return;
+        };
+        match checked_project_root(source, &root) {
+            Ok(root) if self.project_root.as_ref() != Some(&root) => {
+                self.project_root = Some(root);
+                self.build_resources = BuildResources::default();
+                self.status =
+                    "Папка проекта выбрана; соберите PDF для проверки входных файлов.".into();
+            }
+            Ok(_) => {}
+            Err(error) => self.status = error,
         }
     }
 
@@ -1409,7 +1448,10 @@ impl TikzariumApp {
             source: source.clone(),
             xelatex,
             pdf_renderer: self.tex.pdf_renderer.clone(),
-            options: BuildOptions::default(),
+            options: BuildOptions {
+                project_root: self.project_root.clone(),
+                ..BuildOptions::default()
+            },
         };
         let (tx, rx) = mpsc::channel();
         let service = BuildService::new();
@@ -1443,11 +1485,41 @@ impl TikzariumApp {
             let build_path = self.building_path.take();
             match result {
                 Ok(artifact) => {
-                    self.build_resources.capture(
+                    let mut completed_resources = BuildResources::default();
+                    completed_resources.capture(
                         artifact.project_dependencies,
                         build_path.as_deref(),
                         build_source.as_deref().unwrap_or_default(),
                     );
+                    if !completed_resources.is_current() {
+                        // The engine may succeed after reading inputs that changed
+                        // during its run. Such an output must not replace last-good.
+                        self.last_build_failed = true;
+                        self.status = format!("PDF не принят: {}", completed_resources.report());
+                        self.log = format!(
+                            "{}\nBuild input verification: {}",
+                            artifact.log,
+                            completed_resources.verification_details()
+                        );
+                        self.diagnostics = artifact.diagnostics;
+                        self.diagnostics.push(BuildDiagnostic {
+                            severity: Severity::Error,
+                            message: self.status.clone(),
+                            source: None,
+                            line: None,
+                        });
+                        self.bottom_view = BottomView::Issues;
+                        self.preview_status = if self.pdf.is_some() {
+                            "Показан предыдущий PDF; новая сборка не прошла проверку входных файлов.".into()
+                        } else {
+                            "PDF не принят: входные файлы не подтверждены.".into()
+                        };
+                        if self.pdf.is_none() {
+                            self.build_resources = completed_resources;
+                        }
+                        return;
+                    }
+                    self.build_resources = completed_resources;
                     self.preview_epoch = self.preview_epoch.wrapping_add(1);
                     self.page_index = 1;
                     self.page_count = None;
@@ -2224,6 +2296,31 @@ impl TikzariumApp {
                 }
                 StudioDock::Libraries => {
                     ui.heading("Ресурсы проекта");
+                    ui.small("Папка проекта для открытого документа:");
+                    ui.label(
+                        self.project_root
+                            .as_deref()
+                            .map(|path| path.display().to_string())
+                            .unwrap_or_else(|| "Каталог исходного файла (по умолчанию)".into()),
+                    );
+                    ui.horizontal_wrapped(|ui| {
+                        if ui.add_enabled(
+                            self.document.path.is_some() && self.receiver.is_none(),
+                            egui::Button::new("Выбрать папку проекта…"),
+                        ).clicked() {
+                            self.select_project_root();
+                        }
+                        if ui.add_enabled(
+                            self.project_root.is_some() && self.receiver.is_none(),
+                            egui::Button::new("Папка исходника"),
+                        ).clicked() {
+                            self.project_root = None;
+                            self.build_resources = BuildResources::default();
+                            self.status = "Используется папка исходника; соберите PDF заново.".into();
+                        }
+                    });
+                    ui.small("Для ресурсов в ../data выберите общую папку. Относительные пути TeX по-прежнему считаются от папки исходного файла.");
+                    ui.separator();
                     if let Some(line) = self.scientific_resources.show(
                         ui, &self.document.source, self.authoring.source_revision(),
                     ) {

@@ -49,15 +49,19 @@ impl BuildResources {
             return false;
         };
         let recorder_complete = snapshot.recorder_complete();
+        let build_inputs_verified = snapshot.build_inputs_verified();
         let source_matches = snapshot.matches_author_source_bytes(source_path, source.as_bytes());
         let project_fresh = snapshot.is_project_fresh();
-        self.current = recorder_complete && source_matches && project_fresh;
+        self.current =
+            recorder_complete && build_inputs_verified && source_matches && project_fresh;
         self.captured_records = records;
         self.unverified_external = external;
         self.report = if self.current {
-            "Локальные входные файлы совпадают со снимком сборки.".into()
+            "Локальные входные файлы совпали до и после сборки и остаются актуальными.".into()
         } else if !recorder_complete {
             "Снимок неполон: список входных файлов TeX не подтверждён.".into()
+        } else if !build_inputs_verified {
+            "Входные файлы до и после сборки не подтверждены. Проверьте папку проекта и соберите PDF заново.".into()
         } else if !source_matches {
             "Открытый исходник или файл проекта изменился после сборки.".into()
         } else {
@@ -76,6 +80,13 @@ impl BuildResources {
         &self.report
     }
 
+    pub fn verification_details(&self) -> String {
+        self.snapshot
+            .as_ref()
+            .map(|snapshot| format!("{:?}", snapshot.build_input_verification()))
+            .unwrap_or_else(|| "No build input snapshot".into())
+    }
+
     pub fn show(&self, ui: &mut egui::Ui) {
         egui::CollapsingHeader::new("Входные файлы сборки")
             .default_open(false)
@@ -88,6 +99,17 @@ impl BuildResources {
                 ui.small(
                     "Проверено при сборке/последней проверке; перед экспортом проверяется заново.",
                 );
+                if let Some(snapshot) = &self.snapshot {
+                    ui.small(format!("Папка проекта: {}", snapshot.root().display()));
+                    if !snapshot.build_inputs_verified() {
+                        ui.collapsing(
+                            "Подробности проверки файлов",
+                            |ui| {
+                                ui.small(self.verification_details());
+                            },
+                        );
+                    }
+                }
                 for record in &self.captured_records {
                     let origin = match record.origin {
                         ProjectInputOrigin::AuthorSource => "Исходник",
@@ -124,19 +146,22 @@ impl BuildResources {
 mod tests {
     use super::*;
     use std::fs;
+    use tikzarium_core::ProjectBuildBaseline;
 
     fn fixture(root: &Path, complete: bool) -> (PathBuf, PathBuf, ProjectDependencySnapshot) {
         let source = root.join("figure.tex");
         let data = root.join("curve.dat");
         fs::write(&source, "source").unwrap();
         fs::write(&data, b"abc\n").unwrap();
-        let snapshot = ProjectDependencySnapshot::capture(
+        let baseline = ProjectBuildBaseline::capture(root).unwrap();
+        let mut snapshot = ProjectDependencySnapshot::capture(
             root,
             &source,
             std::slice::from_ref(&data),
             complete,
         )
         .unwrap();
+        baseline.validate_and_mark(&mut snapshot);
         (source, data, snapshot)
     }
 
@@ -201,13 +226,15 @@ mod tests {
         let class = outside.path().join("article.cls");
         fs::write(&source, "source").unwrap();
         fs::write(&class, b"class").unwrap();
-        let snapshot = ProjectDependencySnapshot::capture(
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        let mut snapshot = ProjectDependencySnapshot::capture(
             project.path(),
             &source,
             std::slice::from_ref(&class),
             true,
         )
         .unwrap();
+        baseline.validate_and_mark(&mut snapshot);
         let mut resources = BuildResources::default();
         resources.capture(snapshot, Some(&source), "source");
         assert!(resources.is_current());
@@ -219,5 +246,70 @@ mod tests {
                 .unverified_external
                 .contains(&class.canonicalize().unwrap())
         );
+    }
+
+    #[test]
+    fn post_build_bytes_alone_do_not_authorize_export_or_become_verified_on_recheck() {
+        let project = tempfile::tempdir().unwrap();
+        let source = project.path().join("figure.tex");
+        let data = project.path().join("curve.dat");
+        fs::write(&source, "source").unwrap();
+        fs::write(&data, b"abc\n").unwrap();
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        // The engine has read abc. Before its result is collected, another
+        // process saves xyz with the same length: a post-only hash looks fresh.
+        fs::write(&data, b"xyz\n").unwrap();
+        let mut snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&data),
+            true,
+        )
+        .unwrap();
+        assert!(snapshot.is_project_fresh());
+        baseline.validate_and_mark(&mut snapshot);
+        assert!(!snapshot.build_inputs_verified());
+        let mut resources = BuildResources::default();
+        resources.capture(snapshot, Some(&source), "source");
+        assert!(!resources.is_current());
+        assert!(!resources.recheck(Some(&source), "source"));
+        assert!(resources.report().contains("до и после"));
+
+        let legacy =
+            ProjectDependencySnapshot::capture(project.path(), &source, &[data], true).unwrap();
+        assert!(legacy.is_project_fresh());
+        resources.capture(legacy, Some(&source), "source");
+        assert!(
+            !resources.is_current(),
+            "a post-only snapshot has no build proof"
+        );
+    }
+
+    #[test]
+    fn selected_common_root_verifies_parent_data_on_first_build() {
+        let project = tempfile::tempdir().unwrap();
+        let figures = project.path().join("figures");
+        let data_dir = project.path().join("data");
+        fs::create_dir(&figures).unwrap();
+        fs::create_dir(&data_dir).unwrap();
+        let source = figures.join("figure.tex");
+        let bytes = "\\def\\datadir{../data}\r\n";
+        fs::write(&source, bytes).unwrap();
+        fs::write(data_dir.join("curve.dat"), b"0 1\n").unwrap();
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        let mut snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            &[figures.join("../data/curve.dat")],
+            true,
+        )
+        .unwrap();
+        baseline.validate_and_mark(&mut snapshot);
+        let mut resources = BuildResources::default();
+        resources.capture(snapshot, Some(&source), bytes);
+        assert!(resources.is_current());
+        assert_eq!(resources.captured_records.len(), 2);
+        assert!(resources.unverified_external.is_empty());
+        assert_eq!(fs::read_to_string(source).unwrap(), bytes);
     }
 }

@@ -17,7 +17,9 @@ pub use build::{
     parse_fls_with_cwd,
 };
 pub use dependencies::{
-    MAX_TRACKED_FILE_BYTES, ProjectDependencySnapshot, ProjectInputOrigin, ProjectInputRecord,
+    BuildInputVerification, MAX_BUILD_INVENTORY_BYTES, MAX_BUILD_INVENTORY_FILES,
+    MAX_TRACKED_FILE_BYTES, ProjectBuildBaseline, ProjectDependencySnapshot, ProjectInputOrigin,
+    ProjectInputRecord,
 };
 pub use diagnostics::{BuildDiagnostic, Severity, extract_diagnostics};
 pub use discovery::{

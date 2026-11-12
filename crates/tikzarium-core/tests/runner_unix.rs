@@ -28,6 +28,19 @@ done
 name=$(basename "$last")
 stem=$(printf '%s' "$name" | sed 's/\.tex$//')
 case "$name" in
+    mutate-data.tex)
+        cat ../data/curve.dat >/dev/null
+        printf '1 2\n' > ../data/curve.dat
+        printf 'PWD %s\nINPUT ./%s\nINPUT ../data/curve.dat\n' "$PWD" "$name" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
+    read-parent-data.tex)
+        cat ../data/curve.dat >/dev/null
+        printf 'PWD %s\nINPUT ./%s\nINPUT ../data/curve.dat\n' "$PWD" "$name" > "$out/$stem.fls"
+        printf '%%PDF-1.4\n' > "$out/$stem.pdf"
+        exit 0
+        ;;
     broken.tex)
         printf '! Undefined control sequence.\nl.9 \\badmacro\n' > "$out/$stem.log"
         printf 'simulated engine failure\n' >&2
@@ -90,6 +103,12 @@ fn request(source: &Path, engine: &Path) -> BuildRequest {
     }
 }
 
+fn request_with_project_root(source: &Path, engine: &Path, root: &Path) -> BuildRequest {
+    let mut request = request(source, engine);
+    request.options.project_root = Some(root.to_path_buf());
+    request
+}
+
 fn wait_for_engine_start(directory: &Path) {
     let marker = directory.join("fake-engine-ready");
     let started = Instant::now();
@@ -131,6 +150,79 @@ fn dotted_job_name_dependencies_and_direct_argv_are_preserved() {
             .contains(&assets.join("shape.tex").canonicalize().unwrap())
     );
     assert_eq!(artifact.dependencies.len(), 2);
+}
+
+#[test]
+fn build_rejects_same_length_data_changed_after_engine_read() {
+    let project = tempfile::tempdir().unwrap();
+    let source_dir = project.path().join("figures");
+    let data_dir = project.path().join("data");
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(&data_dir).unwrap();
+    let source = source_dir.join("mutate-data.tex");
+    let data = data_dir.join("curve.dat");
+    fs::write(
+        &source,
+        b"\\pgfplotstableread{../data/curve.dat}\\table\r\n",
+    )
+    .unwrap();
+    fs::write(&data, b"1 1\n").unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new()
+        .run(&request_with_project_root(&source, &engine, project.path()))
+        .unwrap();
+    assert_eq!(artifact.pdf, b"%PDF-1.4\n");
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert!(!artifact.project_dependencies.build_inputs_verified());
+    assert_eq!(fs::read(&data).unwrap(), b"1 2\n");
+}
+
+#[test]
+fn explicit_project_root_verifies_source_parent_resource() {
+    let project = tempfile::tempdir().unwrap();
+    let source_dir = project.path().join("figures");
+    let data_dir = project.path().join("data");
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(&data_dir).unwrap();
+    let source = source_dir.join("read-parent-data.tex");
+    let data = data_dir.join("curve.dat");
+    fs::write(
+        &source,
+        b"\\pgfplotstableread{../data/curve.dat}\\table\r\n",
+    )
+    .unwrap();
+    fs::write(&data, b"1 1\n").unwrap();
+    let engine = fake_xelatex(project.path());
+
+    let artifact = BuildService::new()
+        .run(&request_with_project_root(&source, &engine, project.path()))
+        .unwrap();
+    assert!(artifact.project_dependencies.is_project_fresh());
+    assert!(artifact.project_dependencies.build_inputs_verified());
+    assert!(
+        artifact
+            .dependencies
+            .contains(&data.canonicalize().unwrap())
+    );
+}
+
+#[test]
+fn project_root_that_does_not_contain_source_is_rejected_before_compilation() {
+    let directory = tempfile::tempdir().unwrap();
+    let source_dir = directory.path().join("source");
+    let other_root = directory.path().join("other-project");
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(&other_root).unwrap();
+    let source = source_dir.join("figure.tex");
+    fs::write(&source, "% source").unwrap();
+    let engine = fake_xelatex(directory.path());
+
+    let error = BuildService::new()
+        .run(&request_with_project_root(&source, &engine, &other_root))
+        .unwrap_err();
+    assert!(matches!(error, BuildError::InvalidProjectRoot { .. }));
+    assert!(!other_root.join("fake-engine-ready").exists());
 }
 
 #[test]

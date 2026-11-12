@@ -219,6 +219,7 @@ impl OneFigureSession {
         let verified_source = self.document.path.as_deref().is_some_and(|path| {
             !self.document.dirty()
                 && dependencies.recorder_complete()
+                && dependencies.build_inputs_verified()
                 && dependencies.is_project_fresh()
                 && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
         });
@@ -270,6 +271,7 @@ impl OneFigureSession {
         let verified_source = self.document.path.as_deref().is_some_and(|path| {
             !self.document.dirty()
                 && dependencies.recorder_complete()
+                && dependencies.build_inputs_verified()
                 && dependencies.is_project_fresh()
                 && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
         });
@@ -339,6 +341,7 @@ impl OneFigureSession {
         if pdf.source_path != self.document.path
             || pdf.source_sha256 != hash(self.document.source.as_bytes())
             || !pdf.dependencies.is_project_fresh()
+            || !pdf.dependencies.build_inputs_verified()
             || pdf.path.as_ref().is_some_and(|path| {
                 fs::read(path).ok().map(|bytes| hash(&bytes)) != Some(pdf.path_sha256)
             })
