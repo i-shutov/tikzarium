@@ -10,3 +10,7 @@ examples/windows-cyrillic.tex text eol=lf
 # Windows git checkout must NOT convert their TeX or .dat LF to CRLF.
 /roadmap/Tikzarium_Scientific_142_R4/fixtures/** -text
 /roadmap/Tikzarium_Scientific_142_R4/provenance/** -text
+# The recovered native UI atlas is an immutable binary artifact.
+design/studio-compact-atlas/published/*.pdf binary
+# Raw command captures retain their terminal blank lines byte-for-byte.
+insights/assets/2026-11-12-compact-recovery/*.log whitespace=-blank-at-eof

@@ -698,7 +698,7 @@ pub(crate) fn show_inspector_action_bar_frame(
         let button = ui
             .add_enabled(
                 session.undo_available(),
-                egui::Button::new("↶ Отменить правку"),
+                egui::Button::new("Отменить правку"),
             )
             .on_hover_text("Undo TikZ/source-правки; Ctrl/Cmd+Z вне текстовых полей. В редакторе Ctrl/Cmd+Z остаётся текстовым Undo.");
         if let Some(rect) = undo_rect {

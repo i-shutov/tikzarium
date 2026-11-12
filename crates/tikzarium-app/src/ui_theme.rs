@@ -139,11 +139,11 @@ impl UiTheme {
         ctx.set_visuals(visuals);
         ctx.style_mut(|style| {
             style.spacing.item_spacing = if compact {
-                egui::vec2(5.0, 3.0)
+                egui::vec2(5.0, 4.0)
             } else {
-                egui::vec2(8.0, 6.0)
+                egui::vec2(6.0, 5.0)
             };
-            style.spacing.interact_size.y = if compact { 23.0 } else { 29.0 };
+            style.spacing.interact_size.y = if compact { 26.0 } else { 28.0 };
             style
                 .text_styles
                 .insert(egui::TextStyle::Body, egui::FontId::proportional(14.0));
@@ -155,7 +155,7 @@ impl UiTheme {
                 .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
             style.text_styles.insert(
                 egui::TextStyle::Heading,
-                egui::FontId::proportional(if compact { 17.0 } else { 19.0 }),
+                egui::FontId::proportional(if compact { 18.0 } else { 19.0 }),
             );
             style
                 .text_styles
@@ -194,7 +194,7 @@ impl Default for UiPreferences {
             studio_console_open: false,
             studio_dock: StudioDock::default(),
             theme: UiTheme::default(),
-            compact: false,
+            compact: true,
             source_soft_wrap: true,
             source_font_size: 14.0,
             show_font_lab: false,
@@ -296,13 +296,16 @@ mod tests {
             assert_eq!(style.visuals.override_text_color, None);
             assert_eq!(style.visuals.widgets.inactive.fg_stroke.color, c.text);
             assert_eq!(style.visuals.widgets.hovered.fg_stroke.color, c.text);
+            assert_eq!(style.spacing.item_spacing, egui::vec2(6.0, 5.0));
+            assert_eq!(style.spacing.interact_size.y, 28.0);
+            assert_eq!(style.text_styles[&egui::TextStyle::Body].size, 14.0);
         }
     }
 
     #[test]
     fn preferences_default_and_legacy_partial_data() {
         let defaults = UiPreferences::default();
-        assert!(!defaults.compact);
+        assert!(defaults.compact);
         assert!(defaults.studio_mode);
         assert_eq!(defaults.studio_dock, StudioDock::Properties);
         assert_eq!(defaults.math_font, "latinmodern-math.otf");
@@ -310,8 +313,22 @@ mod tests {
         let restored: UiPreferences = serde_json::from_str(old).unwrap();
         assert_eq!(restored.theme, UiTheme::Paper);
         assert_eq!(restored.source_font_size, 14.0);
-        assert!(!restored.compact);
+        assert!(restored.compact);
         assert!(restored.studio_mode);
+    }
+
+    #[test]
+    fn default_compact_metrics_keep_body_text_readable_in_every_theme() {
+        for theme in UiTheme::ALL {
+            let ctx = egui::Context::default();
+            theme.apply(&ctx, UiPreferences::default().compact);
+            let style = ctx.style();
+            assert_eq!(style.spacing.item_spacing, egui::vec2(5.0, 4.0));
+            assert_eq!(style.spacing.interact_size.y, 26.0);
+            assert_eq!(style.text_styles[&egui::TextStyle::Body].size, 14.0);
+            assert_eq!(style.text_styles[&egui::TextStyle::Monospace].size, 14.0);
+            assert_eq!(style.text_styles[&egui::TextStyle::Button].size, 13.0);
+        }
     }
 
     #[test]
@@ -501,7 +518,7 @@ mod tests {
                             expected_theme,
                             "explicit {theme:?} must own the active style slot"
                         );
-                        assert_eq!(ctx.style().spacing.item_spacing, egui::vec2(5.0, 3.0));
+                        assert_eq!(ctx.style().spacing.item_spacing, egui::vec2(5.0, 4.0));
                     },
                 );
                 assert_eq!(

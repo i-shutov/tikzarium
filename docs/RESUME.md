@@ -1,5 +1,15 @@
 # TikZarium — release resume, 2026-11-12
 
+## 2026-11-12 — Compact Studio: восстановлен точный app tree, публикация PR #189
+
+[Отчёт восстановления](../insights/2026-11-12_COMPACT_STUDIO_RECOVERY_RU.md), [атлас реального интерфейса, 6 страниц](../design/studio-compact-atlas/published/TikZarium_Studio_Compact_UI_Atlas_RU.pdf), [свежие исходные журналы](../insights/assets/2026-11-12-compact-recovery/validation.json).
+
+Последний процесс успел загрузить app tree `6c3208dc309a4c31ba36c4cf3ccda63b85083bd9` и PDF blob, но не обновил ветку. Восстановлены все 25 app blobs; base `eb9d415e` и 1440 записей опубликованного дерева сверены. Это точная поздняя версия, а не восстановление интерфейса по скриншоту или перенос непроверенного CP03. Верхнее меню, компактные иконки, gutter, отдельный fold преамбулы, revision-checked source Undo/Redo и порядок source → tools → canvas → Inspector включены в единый блок.
+
+**Свежие 562 workspace tests PASS / 0 failed / 4 ignored; fmt, strict Clippy, app/CLI build PASS.** Два независимых static review не выявили блокирующих дефектов. Новый native GUI здесь не состоялся из-за недоступного keyboard focus desktop; прежние native кадры атласа не стали новой приёмкой. Финальный SHA/ref, CI и пакет восстановления фиксируются в описании [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189) и delivery receipt в [рабочей папке](https://drive.google.com/drive/folders/1KOiMLat9r0QN-J0R1mTjZuIx2QvEDw4H).
+
+Следующая исполнимая задача: exact-tree native 1366×768 PGFPlots Inspector → patch → Undo → Save/Open → XeLaTeX → PDF с оригиналами; затем проверка старых APP_TREE-gated сценариев на новой геометрии. Локальный кандидат `fe85cc60` из атласа не является новым remote SHA. Stable v1.0 **NO-GO**.
+
 ## 2026-11-12 — SCI-BUILD и настоящий F14_3 GUI → PDF
 
 [Текущий checkpoint](../insights/2026-11-12_SCI_BUILD_CHECKPOINT_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [папка чекпойнтов на Google Диске](https://drive.google.com/drive/folders/1KOiMLat9r0QN-J0R1mTjZuIx2QvEDw4H).

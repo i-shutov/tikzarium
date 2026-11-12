@@ -260,6 +260,10 @@ impl Control {
                             if let Some(pos) = action.extension_anchor {
                                 next_anchor = Some(studio_ui::palette_anchor_at_source_edge(
                                     source_panel,
+                                    // This headless harness nests its rail inside
+                                    // the source panel, so the popup clears the
+                                    // complete panel rather than an adjacent rail.
+                                    None,
                                     pos,
                                 ));
                             }

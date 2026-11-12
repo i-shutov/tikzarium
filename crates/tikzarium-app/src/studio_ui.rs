@@ -80,7 +80,7 @@ impl StudioLayout {
             0.0
         };
         Self {
-            tool_rail_width: 62.0,
+            tool_rail_width: 46.0,
             inspector_width: (width * 0.22).clamp(225.0, 300.0),
             inspector_max: (width * 0.28).clamp(260.0, 350.0),
             narrow: width < 1050.0,
@@ -92,27 +92,33 @@ impl StudioLayout {
 pub enum StudioIcon {
     Tool(Tool),
     Group(StudioGroup),
+    Build,
+    Undo,
+    Redo,
+    Search,
+    Settings,
+    Inspector,
+    ChevronRight,
+    ChevronDown,
     Open,
     Save,
     Export,
     Help,
     Console,
 }
+
+/// Native toolbar hit area; the authoring rail uses the same icons at 30 pt.
+pub const ICON_BUTTON_SIDE: f32 = 32.0;
+const TOOL_BUTTON_SIDE: f32 = 30.0;
+
 fn line(p: &egui::Painter, a: Pos2, b: Pos2, stroke: Stroke) {
     p.line_segment([a, b], stroke);
 }
-fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
+fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, color: egui::Color32) {
     let p = ui.painter_at(rect);
     let c = rect.center();
-    let t = rect.width().min(rect.height()) * 0.28;
-    let stroke = Stroke::new(
-        1.9,
-        if selected {
-            ui.visuals().selection.stroke.color
-        } else {
-            ui.visuals().text_color()
-        },
-    );
+    let t = rect.width().min(rect.height()) * 0.29;
+    let stroke = Stroke::new(1.5, color);
     let point = |x: f32, y: f32| Pos2::new(c.x + t * x, c.y + t * y);
     match kind {
         StudioIcon::Tool(Tool::Line) => {
@@ -186,11 +192,11 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
         }
         #[cfg(test)]
         StudioIcon::Group(StudioGroup::Connections) => {
-            draw_icon(ui, rect, StudioIcon::Tool(Tool::Arrow), selected)
+            draw_icon(ui, rect, StudioIcon::Tool(Tool::Arrow), color)
         }
         #[cfg(test)]
         StudioIcon::Group(StudioGroup::Text) => {
-            draw_icon(ui, rect, StudioIcon::Tool(Tool::Node), selected)
+            draw_icon(ui, rect, StudioIcon::Tool(Tool::Node), color)
         }
         StudioIcon::Group(StudioGroup::Extensions) => {
             for (x, y) in [(-0.65, -0.65), (0.65, -0.65), (-0.65, 0.65), (0.65, 0.65)] {
@@ -198,6 +204,72 @@ fn draw_icon(ui: &egui::Ui, rect: Rect, kind: StudioIcon, selected: bool) {
             }
             line(&p, point(-0.65, -0.65), point(0.65, 0.65), stroke);
             line(&p, point(-0.65, 0.65), point(0.65, -0.65), stroke);
+        }
+        StudioIcon::Build => {
+            // A compact play mark over a stable baseline reads as the primary
+            // compile action without implying a different renderer.
+            p.add(Shape::closed_line(
+                vec![point(-0.38, -0.82), point(0.72, 0.0), point(-0.38, 0.82)],
+                stroke,
+            ));
+            line(&p, point(-0.88, 1.02), point(0.88, 1.02), stroke);
+        }
+        StudioIcon::Undo => {
+            line(&p, point(-0.82, -0.15), point(0.45, -0.15), stroke);
+            line(&p, point(0.45, -0.15), point(0.82, 0.18), stroke);
+            line(&p, point(0.82, 0.18), point(0.82, 0.75), stroke);
+            line(&p, point(-0.82, -0.15), point(-0.32, -0.65), stroke);
+            line(&p, point(-0.82, -0.15), point(-0.32, 0.35), stroke);
+        }
+        StudioIcon::Redo => {
+            line(&p, point(-0.45, -0.15), point(0.82, -0.15), stroke);
+            line(&p, point(-0.82, 0.18), point(-0.82, 0.75), stroke);
+            line(&p, point(-0.82, 0.18), point(-0.45, -0.15), stroke);
+            line(&p, point(0.82, -0.15), point(0.32, -0.65), stroke);
+            line(&p, point(0.82, -0.15), point(0.32, 0.35), stroke);
+        }
+        StudioIcon::Search => {
+            p.circle_stroke(point(-0.16, -0.18), t * 0.57, stroke);
+            line(&p, point(0.28, 0.30), point(0.88, 0.92), stroke);
+        }
+        StudioIcon::Settings => {
+            p.circle_stroke(c, t * 0.84, stroke);
+            p.circle_stroke(c, t * 0.30, stroke);
+            for tooth in 0..8 {
+                let angle = tooth as f32 * std::f32::consts::FRAC_PI_4;
+                let dx = angle.cos();
+                let dy = angle.sin();
+                line(
+                    &p,
+                    point(dx * 0.82, dy * 0.82),
+                    point(dx * 1.12, dy * 1.12),
+                    stroke,
+                );
+            }
+        }
+        StudioIcon::Inspector => {
+            p.add(Shape::closed_line(
+                vec![
+                    point(-1.0, -0.8),
+                    point(1.0, -0.8),
+                    point(1.0, 0.8),
+                    point(-1.0, 0.8),
+                ],
+                stroke,
+            ));
+            line(&p, point(0.32, -0.8), point(0.32, 0.8), stroke);
+        }
+        StudioIcon::ChevronRight => {
+            p.add(Shape::line(
+                vec![point(-0.35, -0.65), point(0.3, 0.0), point(-0.35, 0.65)],
+                stroke,
+            ));
+        }
+        StudioIcon::ChevronDown => {
+            p.add(Shape::line(
+                vec![point(-0.65, -0.35), point(0.0, 0.3), point(0.65, -0.35)],
+                stroke,
+            ));
         }
         StudioIcon::Open => {
             p.add(Shape::line(
@@ -278,15 +350,80 @@ pub fn icon_button(
     side: f32,
     tooltip: &str,
 ) -> egui::Response {
+    icon_button_enabled(ui, kind, true, selected, side, tooltip, tooltip)
+}
+
+/// A native icon Button with a concise accessible name and a richer hover
+/// description (including a shortcut where available). Disabled actions keep
+/// their normal hit area and cannot receive activation or keyboard focus.
+pub fn icon_button_enabled(
+    ui: &mut egui::Ui,
+    kind: StudioIcon,
+    enabled: bool,
+    selected: bool,
+    side: f32,
+    label: &str,
+    tooltip: &str,
+) -> egui::Response {
     // A real egui Button provides keyboard focus and AccessKit semantics.
     // A manually allocated Sense::click() icon can paint nicely while
     // remaining unavailable to keyboard-only users and screen readers.
-    let response = ui.add_sized([side, side], egui::Button::new("").selected(selected));
+    let response = ui.add_enabled(
+        enabled,
+        egui::Button::new("")
+            .selected(selected)
+            .min_size(egui::vec2(side, side)),
+    );
     if ui.is_rect_visible(response.rect) {
-        draw_icon(ui, response.rect, kind, selected);
+        let mut color = ui
+            .style()
+            .interact_selectable(&response, selected)
+            .fg_stroke
+            .color;
+        // add_enabled restores the parent painter before custom icon painting.
+        // A disabled parent Ui already applies its opacity, so fade only the
+        // action disabled locally by this helper.
+        if !response.enabled() && ui.is_enabled() {
+            color = color.gamma_multiply(ui.visuals().disabled_alpha());
+        }
+        draw_icon(ui, response.rect, kind, color);
     }
     response.widget_info(|| {
-        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
+        egui::WidgetInfo::selected(
+            egui::WidgetType::Button,
+            response.enabled(),
+            selected,
+            label,
+        )
+    });
+    response.on_hover_text(tooltip)
+}
+
+/// One native command target with a 16pt vector slot and a visible label.
+/// Atom layout reserves the icon space without changing the accessible name
+/// or introducing a second clickable region beside the button text.
+pub fn command_button(
+    ui: &mut egui::Ui,
+    kind: StudioIcon,
+    enabled: bool,
+    label: &str,
+    tooltip: &str,
+) -> egui::Response {
+    let icon_id = ui.next_auto_id().with("command-icon");
+    let response = ui.add_enabled(enabled, |ui: &mut egui::Ui| {
+        let button =
+            egui::Button::new((egui::Atom::custom(icon_id, egui::Vec2::splat(16.0)), label))
+                .min_size(egui::vec2(92.0, ICON_BUTTON_SIDE))
+                .atom_ui(ui);
+        if ui.is_rect_visible(button.response.rect)
+            && let Some(rect) = button
+                .custom_rects()
+                .find_map(|(id, rect)| (id == icon_id).then_some(rect))
+        {
+            let color = ui.style().interact(&button.response).fg_stroke.color;
+            draw_icon(ui, rect.expand(6.0), kind, color);
+        }
+        button.response
     });
     response.on_hover_text(tooltip)
 }
@@ -384,20 +521,9 @@ pub struct StudioRailAction {
     pub extension_anchor: Option<Pos2>,
 }
 
-fn short_tool_label(tool: Tool) -> &'static str {
-    match tool {
-        Tool::Line => "Линия",
-        Tool::Arrow => "Стрелка",
-        Tool::Rectangle => "Прямоуг.",
-        Tool::Circle => "Круг",
-        Tool::Node => "Текст",
-        Tool::Cubic => "Безье",
-    }
-}
-
 /// A native egui Button owns each clickable icon and its keyboard focus.
-/// The small visible caption is not a second hit target. Tooltip/AccessKit
-/// names come from the existing C catalogue, never a parallel command registry.
+/// Names and native command details stay in tooltip/AccessKit text from the
+/// existing C catalogue; the rail stays icon-only to keep all six tools close.
 pub fn show_direct_tool_rail(
     ui: &mut egui::Ui,
     selected: Option<Tool>,
@@ -411,14 +537,13 @@ pub(crate) fn show_direct_tool_rail_observed(
     ui: &mut egui::Ui,
     selected: Option<Tool>,
     extension_group: &mut Option<StudioGroup>,
-    narrow: bool,
+    _narrow: bool,
     mut observe_tool: impl FnMut(Tool, Rect),
     mut observe_extensions: impl FnMut(Rect),
 ) -> StudioRailAction {
     let mut action = StudioRailAction::default();
     ui.vertical_centered(|ui| {
         ui.strong("TikZ");
-        ui.small("Создать");
         ui.separator();
     });
     egui::ScrollArea::vertical()
@@ -427,60 +552,37 @@ pub(crate) fn show_direct_tool_rail_observed(
         .show(ui, |ui| {
             for tool in tikz_authoring::TOOLS {
                 let spec = tikz_authoring::spec(tool);
-                let title = spec.title_ru.as_str();
                 let tip = format!(
                     "{}\n{}\n{}\nPGF/TikZ §{}",
-                    title, spec.help_ru, spec.syntax, spec.manual_section
+                    spec.title_ru, spec.help_ru, spec.syntax, spec.manual_section
                 );
                 ui.vertical_centered(|ui| {
-                    let response = ui
-                        .add_sized(
-                            [48.0, 36.0],
-                            egui::Button::new("").selected(selected == Some(tool)),
-                        )
-                        .on_hover_text(&tip);
-                    response.widget_info(|| {
-                        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), title)
-                    });
-                    draw_icon(
+                    let response = icon_button_enabled(
                         ui,
-                        response.rect,
                         StudioIcon::Tool(tool),
+                        true,
                         selected == Some(tool),
+                        TOOL_BUTTON_SIDE,
+                        &spec.title_ru,
+                        &tip,
                     );
                     observe_tool(tool, response.rect);
                     if response.clicked() {
                         action.selected_tool = Some(tool);
                         *extension_group = None;
                     }
-                    ui.label(egui::RichText::new(short_tool_label(tool)).size(if narrow {
-                        10.0
-                    } else {
-                        11.0
-                    }));
                 });
             }
             ui.separator();
             ui.vertical_centered(|ui| {
-                let response = ui
-                    .add_sized(
-                        [48.0, 36.0],
-                        egui::Button::new("")
-                            .selected(*extension_group == Some(StudioGroup::Extensions)),
-                    )
-                    .on_hover_text("Расширения и пакеты: открыть каталог доступности");
-                response.widget_info(|| {
-                    egui::WidgetInfo::labeled(
-                        egui::WidgetType::Button,
-                        ui.is_enabled(),
-                        "Расширения TikZ",
-                    )
-                });
-                draw_icon(
+                let response = icon_button_enabled(
                     ui,
-                    response.rect,
                     StudioIcon::Group(StudioGroup::Extensions),
+                    true,
                     *extension_group == Some(StudioGroup::Extensions),
+                    TOOL_BUTTON_SIDE,
+                    "Расширения TikZ",
+                    "Расширения и пакеты: открыть каталог доступности",
                 );
                 observe_extensions(response.rect);
                 if response.clicked() {
@@ -491,17 +593,21 @@ pub(crate) fn show_direct_tool_rail_observed(
                     };
                     action.extension_anchor = Some(response.rect.right_top());
                 }
-                ui.label(egui::RichText::new("Пакеты").size(10.0));
             });
         });
     action
 }
 
-/// Position the popup from the ACTUAL resizable source SidePanel boundary,
-/// never from its default width. No PDF-to-guide coordinate mapping is implied.
+/// Position the popup beyond the current source and adjacent tool rail,
+/// never from a default width or the button's old horizontal position.
 /// The floating palette itself adds a small 6pt gap in show_palette.
-pub fn palette_anchor_at_source_edge(source_panel: Rect, rail_anchor: Pos2) -> Pos2 {
-    Pos2::new(source_panel.right() + 8.0, rail_anchor.y)
+pub fn palette_anchor_at_source_edge(
+    source_panel: Rect,
+    rail_panel: Option<Rect>,
+    button_anchor: Pos2,
+) -> Pos2 {
+    let edge = rail_panel.map_or(source_panel.right(), |rail| rail.right());
+    Pos2::new(edge + 8.0, button_anchor.y)
 }
 
 /// Floating grouped palette. It never takes space from the code/PDF columns.
@@ -703,7 +809,7 @@ mod tests {
     fn compact_group_rail_is_bounded_with_expansion_as_floating_overlay() {
         for width in [850.0_f32, 1180.0, 1366.0, 1920.0] {
             let layout = StudioLayout::for_width(width);
-            assert_eq!(layout.tool_rail_width, 62.0);
+            assert_eq!(layout.tool_rail_width, 46.0);
             assert!(width - layout.tool_rail_width - layout.inspector_width - 240.0 > 190.0);
         }
     }
@@ -902,18 +1008,33 @@ mod tests {
     }
 
     #[test]
-    fn palette_follows_actual_source_pane_resize_not_default_width() {
-        // Simulated measured response rectangles from a resizable source panel.
+    fn palette_follows_resized_source_and_stays_beyond_adjacent_tool_rail() {
+        // Current response rectangles model source -> rail -> canvas. The
+        // saved button x deliberately remains stale while the source resizes.
         let button = Pos2::new(61.0, 178.0);
-        let narrow = Rect::from_min_size(Pos2::new(62.0, 60.0), Vec2::new(240.0, 600.0));
-        let wide = Rect::from_min_size(Pos2::new(62.0, 60.0), Vec2::new(475.0, 600.0));
-        let a = palette_anchor_at_source_edge(narrow, button);
-        let b = palette_anchor_at_source_edge(wide, button);
-        assert_eq!(a.x, narrow.right() + 8.0);
-        assert_eq!(b.x, wide.right() + 8.0);
-        assert_eq!(b.x - a.x, 235.0);
-        assert_eq!(a.y, button.y);
-        assert_eq!(b.y, button.y);
+        let mut popup_lefts = Vec::new();
+        for source_width in [240.0, 475.0] {
+            let source = Rect::from_min_size(Pos2::new(0.0, 60.0), Vec2::new(source_width, 600.0));
+            let rail = Rect::from_min_size(source.right_top(), Vec2::new(46.0, source.height()));
+            let anchor = palette_anchor_at_source_edge(source, Some(rail), button);
+            let popup_left = anchor.x + 6.0;
+            assert!(
+                popup_left >= rail.right() + 6.0,
+                "popup must not obscure rail targets"
+            );
+            assert_eq!(anchor.x, rail.right() + 8.0);
+            assert_eq!(anchor.y, button.y);
+            popup_lefts.push(popup_left);
+        }
+        assert_eq!(popup_lefts[1] - popup_lefts[0], 235.0);
+    }
+
+    #[test]
+    fn palette_without_tool_rail_follows_current_source_edge() {
+        let source = Rect::from_min_size(Pos2::new(0.0, 60.0), Vec2::new(475.0, 600.0));
+        let button = Pos2::new(61.0, 178.0);
+        let anchor = palette_anchor_at_source_edge(source, None, button);
+        assert_eq!(anchor, Pos2::new(source.right() + 8.0, button.y));
     }
 
     #[test]
@@ -1021,7 +1142,7 @@ mod tests {
                     |ctx| {
                         egui::SidePanel::left("ux2-direct-rail-event")
                             .resizable(false)
-                            .exact_width(62.0)
+                            .exact_width(46.0)
                             .show(ctx, |ui| {
                                 action = show_direct_tool_rail_observed(
                                     ui,
@@ -1124,7 +1245,7 @@ mod tests {
                     |ctx| {
                         egui::SidePanel::left("ux2-keyboard-rail")
                             .resizable(false)
-                            .exact_width(62.0)
+                            .exact_width(46.0)
                             .show(ctx, |ui| {
                                 action = show_direct_tool_rail_observed(
                                     ui,
@@ -1197,7 +1318,7 @@ mod tests {
             |ctx| {
                 egui::SidePanel::left("ux2-disabled-rail")
                     .resizable(false)
-                    .exact_width(62.0)
+                    .exact_width(46.0)
                     .show(ctx, |ui| {
                         ui.add_enabled_ui(false, |ui| {
                             action = show_direct_tool_rail_observed(
@@ -1238,7 +1359,7 @@ mod tests {
                 |ctx| {
                     egui::SidePanel::left("ux2-disabled-rail")
                         .resizable(false)
-                        .exact_width(62.0)
+                        .exact_width(46.0)
                         .show(ctx, |ui| {
                             ui.add_enabled_ui(false, |ui| {
                                 action = show_direct_tool_rail_observed(
@@ -1323,6 +1444,84 @@ mod tests {
     }
 
     #[test]
+    fn compact_toolbar_icons_skip_disabled_actions_and_report_named_keyboard_activation() {
+        fn frame(
+            ctx: &egui::Context,
+            events: Vec<egui::Event>,
+        ) -> (egui::FullOutput, Vec<egui::Response>) {
+            let mut buttons = Vec::new();
+            let output = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(400.0, 200.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    egui::TopBottomPanel::top("compact-icon-toolbar").show(ctx, |ui| {
+                        ui.horizontal(|ui| {
+                            buttons.push(icon_button_enabled(
+                                ui,
+                                StudioIcon::Undo,
+                                false,
+                                false,
+                                ICON_BUTTON_SIDE,
+                                "Отменить",
+                                "Отменить (Ctrl+Z)",
+                            ));
+                            buttons.push(icon_button_enabled(
+                                ui,
+                                StudioIcon::Search,
+                                true,
+                                false,
+                                ICON_BUTTON_SIDE,
+                                "Найти",
+                                "Найти в исходнике (Ctrl+F)",
+                            ));
+                            buttons.push(command_button(
+                                ui,
+                                StudioIcon::Build,
+                                true,
+                                "Собрать",
+                                "Собрать документ (Ctrl+Enter)",
+                            ));
+                        });
+                    });
+                },
+            );
+            (output, buttons)
+        }
+        let key = |key, pressed| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
+        for activation in [egui::Key::Enter, egui::Key::Space] {
+            let ctx = egui::Context::default();
+            let (_, buttons) = frame(&ctx, vec![]);
+            assert!(!buttons[0].enabled());
+            for button in &buttons[..2] {
+                assert_eq!(button.rect.size(), Vec2::splat(ICON_BUTTON_SIDE));
+            }
+            assert_eq!(buttons[2].rect.height(), ICON_BUTTON_SIDE);
+            assert!((92.0..=110.0).contains(&buttons[2].rect.width()));
+            frame(&ctx, vec![key(egui::Key::Tab, true)]);
+            let (_, buttons) = frame(&ctx, vec![key(egui::Key::Tab, false)]);
+            assert!(!buttons[0].has_focus());
+            assert!(buttons[1].has_focus());
+            let (output, buttons) = frame(&ctx, vec![key(activation, true)]);
+            assert!(!buttons[0].clicked());
+            assert!(buttons[1].clicked(), "{activation:?}");
+            assert!(output.platform_output.events.iter().any(|event| matches!(
+                event,
+                egui::output::OutputEvent::Clicked(info)
+                    if info.enabled && info.label.as_deref() == Some("Найти")
+            )));
+        }
+    }
+
+    #[test]
     fn b42_rawinput_group_and_six_native_tool_icons_use_production_handlers() {
         // Actual egui press/release; layout positions are observed from
         // production widgets, not guessed or supplied as alternate controls.
@@ -1356,7 +1555,7 @@ mod tests {
                     |ctx| {
                         egui::SidePanel::left("b42-real-event-rail")
                             .resizable(false)
-                            .exact_width(62.0)
+                            .exact_width(46.0)
                             .show(ctx, |ui| {
                                 if let Some(next) =
                                     show_group_rail_observed(ui, group, true, |kind, rect| {

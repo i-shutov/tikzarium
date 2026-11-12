@@ -2,6 +2,10 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
+## Checkpoint 12.11.2026 — Compact Studio: exact recovery
+
+[Восстановление и свежая проверка](../insights/2026-11-12_COMPACT_STUDIO_RECOVERY_RU.md): original app tree `6c3208dc…`, 25/25 blobs, 562 tests/fmt/strict Clippy/build PASS. Компактное меню/toolbar, source sections, глобальные offsets, единый source Undo/Redo и six-page native atlas восстановлены для публикации в существующий PR #189. Старые GUI PASS не перенесены; новая native попытка заблокирована desktop focus до запуска приложения. APP_TREE leases не ослаблялись. Следующий executable block — повторный полный native PGFPlots workflow 1366×768 с оригинальными свидетельствами, затем актуализация соответствующих сценариев acceptance.
+
 ## Checkpoint 12.11.2026 — SCI-BUILD, PR #189
 
 [Текущий отчёт и оригинальные свидетельства](../insights/2026-11-12_SCI_BUILD_CHECKPOINT_RU.md). Code `79168f6`: 531 workspace tests/fmt/strict Clippy/build PASS; начальный bounded SHA inventory + фактический post-build recorder, явный project root и CLI fail-closed publication. Native Linux F14_3 с `../data`: ручной root → Build → Preview → Export PASS; same-length external data edit → stale/blocked export/last-good retained PASS. Исходные данные восстановлены. Системный folder picker не открылся, введён проверенный ручной маршрут. Это не приёмка полного scientific/Windows scope.

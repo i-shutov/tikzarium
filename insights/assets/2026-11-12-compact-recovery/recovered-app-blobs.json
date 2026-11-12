@@ -1,0 +1,156 @@
+{
+  "app_tree": "6c3208dc309a4c31ba36c4cf3ccda63b85083bd9",
+  "base_head": "eb9d415e796d9e84f14550f417c1ebfb272016b7",
+  "files": [
+    {
+      "path": "crates/tikzarium-app/src/bin/n1-authoring-proof.rs",
+      "sha": "5eeff3c3a166061d28eead5868a7784f992f6e32",
+      "size": 4920,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/bin/tikzarium-qa-control.rs",
+      "sha": "04c90f349ac7b2aea5c0567ce5236403284ec6ee",
+      "size": 37584,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/build_resources.rs",
+      "sha": "c157da6eaa8e5b15349915bb384749ca14cb2904",
+      "size": 13586,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/build_save_dialog.rs",
+      "sha": "bc903f1ee8133b337c505708ec20070a9fa91be6",
+      "size": 5963,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/font_proof.rs",
+      "sha": "fc0ce97288609a73c364b8074ba9ae55f32708f2",
+      "size": 5675,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/main.rs",
+      "sha": "3078c54ccd462663548cd46b0349caffea96713a",
+      "size": 256545,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/pdf_navigation.rs",
+      "sha": "68609574786d88fc817f40b989c186b03a9d6bcd",
+      "size": 11306,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/preview_image.rs",
+      "sha": "4cc9ac7fee0ee40890b1ac43dd80cc1c6c9ba801",
+      "size": 8109,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/project_scope.rs",
+      "sha": "09fea10568b15154bca2eacf529ecf072297820f",
+      "size": 2947,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/scientific_inspector.rs",
+      "sha": "8cfad3eeb007688ac8311abc3e3246e232fe24ed",
+      "size": 24494,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/scientific_resource_view.rs",
+      "sha": "a1a7b192d927653bab1b318d17f706fa48c9b0a8",
+      "size": 4500,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_editing.rs",
+      "sha": "4401c64bf80ccc16b17978fe8be11f9e1434998d",
+      "size": 13347,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_editor.rs",
+      "sha": "34faac3016287931df7b95f2e793644104a19a16",
+      "size": 40655,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_fonts.rs",
+      "sha": "64e82a0430701e1055a2b31748c8d0e316556e6a",
+      "size": 6921,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_highlight.rs",
+      "sha": "60e778a1608e380665cf287af46a707f8abea97c",
+      "size": 45284,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_navigation.rs",
+      "sha": "626b240f5f0ed7d6ea8117a59b1f80ef97297dd2",
+      "size": 5087,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_sections.rs",
+      "sha": "05158f09cc6550f796f5054200c88143d4cf9efa",
+      "size": 26704,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/source_workspace_tests.rs",
+      "sha": "eea92cd9096d773e63df94647c302d41bbc5125c",
+      "size": 22476,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/studio_ui.rs",
+      "sha": "91f13c313086a67fdb5310a27074a9d698872636",
+      "size": 65245,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/tex_discovery.rs",
+      "sha": "ebc921993b2ae32e78ec8fa60acaa81aed921543",
+      "size": 5089,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/tikz_authoring.rs",
+      "sha": "b6e2633b1be1a8f571b2e5fdf8ca23eae2db288c",
+      "size": 54301,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/tikz_canvas.rs",
+      "sha": "a440bfeb7e18dcdff3eaa5fff1944420e3b19d5e",
+      "size": 162188,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/tikz_libraries.rs",
+      "sha": "db004bfd0aed6bf781cc6a9a415614a6e472bf4d",
+      "size": 22850,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/ui_state.rs",
+      "sha": "bc7a8e3861767765c545f4e5dee41363cc643cd7",
+      "size": 11223,
+      "mode": "100644"
+    },
+    {
+      "path": "crates/tikzarium-app/src/ui_theme.rs",
+      "sha": "28660254dfda01265906cbe358d7cc6508d7c8d2",
+      "size": 20930,
+      "mode": "100644"
+    }
+  ]
+}
