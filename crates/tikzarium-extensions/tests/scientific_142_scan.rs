@@ -2,7 +2,8 @@
 use sha2::{Digest, Sha256};
 use tikzarium_extensions::scientific_scan::{
     EditRefusal, LiteralEditRequest, RecognitionConfidence, ScanRefusal, ScientificKind,
-    SourceView, plan_literal_key_edit, scan_scientific_source, scientific_property_help,
+    SourceView, literal_key_value, plan_literal_key_edit, scan_scientific_source,
+    scientific_property_help,
 };
 
 const SV001: &str =
@@ -389,4 +390,136 @@ fn scientific_parameter_help_is_versioned_source_limited_and_never_invents_defau
     assert!(domain.example.contains(":"));
     assert_eq!(domain.verified_tex_default, "UNKNOWN");
     assert!(scientific_property_help("unsupported PGFPlots key").is_none());
+}
+
+#[test]
+fn forged_descriptor_cannot_move_an_axis_edit_into_global_options() {
+    let text = r"\pgfplotsset{samples=11}
+\begin{tikzpicture}\begin{axis}[samples=150]
+\addplot[ymin=0,samples=120] {x};
+\end{axis}\end{tikzpicture}";
+    let view = SourceView { text, revision: 5 };
+    let instances = scan_scientific_source(view).unwrap();
+    let axis = instances
+        .iter()
+        .find(|item| item.kind == ScientificKind::Axis)
+        .unwrap();
+    let mut forged = axis.clone();
+    let start = text.find("samples=11").unwrap();
+    forged.range = 0..text.len();
+    forged.option_range = Some(start..start + "samples=11".len());
+    assert_eq!(
+        literal_key_value(view, &forged, "samples"),
+        Err(EditRefusal::SourceConflict)
+    );
+    assert_eq!(
+        plan_literal_key_edit(LiteralEditRequest {
+            view,
+            instance: &forged,
+            key: "samples",
+            expected_old: "11",
+            replacement: "12",
+        })
+        .unwrap_err(),
+        EditRefusal::SourceConflict
+    );
+
+    let mut retagged = instances
+        .iter()
+        .find(|item| item.kind == ScientificKind::AddPlot)
+        .unwrap()
+        .clone();
+    retagged.kind = ScientificKind::Axis;
+    assert_eq!(
+        literal_key_value(view, &retagged, "ymin"),
+        Err(EditRefusal::SourceConflict)
+    );
+    assert_eq!(literal_key_value(view, axis, "samples").unwrap(), "150");
+}
+
+#[test]
+fn unrelated_style_keys_never_become_axis_properties() {
+    for (options, key) in [
+        ("legend style={samples=150}", "samples"),
+        ("every node/.style={domain=-3:3}", "domain"),
+        ("custom/.style={mark=none}", "mark"),
+        (
+            "every axis plot/.style={every node/.style={samples=150}}",
+            "samples",
+        ),
+        ("every axis plot/.style={ymin=0}", "ymin"),
+        ("every axis plot post/.style={xlabel={Время}}", "xlabel"),
+    ] {
+        let text = format!(
+            "\\begin{{tikzpicture}}\\begin{{axis}}[{options}]\\end{{axis}}\\end{{tikzpicture}}"
+        );
+        let view = SourceView {
+            text: &text,
+            revision: 0,
+        };
+        let instances = scan_scientific_source(view).unwrap();
+        assert_eq!(
+            literal_key_value(view, &instances[0], key),
+            Err(EditRefusal::Opaque),
+            "{options}"
+        );
+    }
+}
+
+#[test]
+fn direct_axis_property_is_not_ambiguous_with_legend_or_node_style() {
+    let text = "\\begin{tikzpicture}\r\n\\begin{axis}[samples=150,legend style={samples=99},every node/.style={samples=50}]\r\n\\end{axis}\r\n\\end{tikzpicture}\r\n";
+    let view = SourceView { text, revision: 3 };
+    let instances = scan_scientific_source(view).unwrap();
+    let patch = plan_literal_key_edit(LiteralEditRequest {
+        view,
+        instance: &instances[0],
+        key: "samples",
+        expected_old: "150",
+        replacement: "180",
+    })
+    .unwrap();
+    let mut edited = text.to_owned();
+    let mut revision = 3;
+    let undo = patch.apply(&mut edited, &mut revision).unwrap();
+    assert_eq!(edited, text.replacen("samples=150", "samples=180", 1));
+    undo.apply(&mut edited, &mut revision).unwrap();
+    assert_eq!(edited.as_bytes(), text.as_bytes());
+}
+
+#[test]
+fn only_reviewed_axis_plot_styles_expose_their_direct_plot_properties() {
+    for style in [
+        "every axis plot/.style",
+        "every axis plot/.append style",
+        "every axis plot post/.style",
+        "every axis plot post/.append style",
+    ] {
+        let text = format!(
+            "\\begin{{tikzpicture}}\\begin{{axis}}[{style}={{samples=150,domain=-3:3,mark=none}}]\\end{{axis}}\\end{{tikzpicture}}"
+        );
+        let view = SourceView {
+            text: &text,
+            revision: 0,
+        };
+        let instances = scan_scientific_source(view).unwrap();
+        for (key, expected) in [("samples", "150"), ("domain", "-3:3"), ("mark", "none")] {
+            assert_eq!(
+                literal_key_value(view, &instances[0], key).unwrap(),
+                expected,
+                "{style}"
+            );
+        }
+    }
+    let text = r"\begin{tikzpicture}\begin{axis}\addplot[every axis plot/.style={samples=150}] {x};\end{axis}\end{tikzpicture}";
+    let view = SourceView { text, revision: 0 };
+    let instances = scan_scientific_source(view).unwrap();
+    let addplot = instances
+        .iter()
+        .find(|item| item.kind == ScientificKind::AddPlot)
+        .unwrap();
+    assert_eq!(
+        literal_key_value(view, addplot, "samples"),
+        Err(EditRefusal::Opaque)
+    );
 }

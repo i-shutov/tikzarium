@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""I61: real B42 Studio X11 group-click -> six native TikZ gestures -> saved TeX/PDF.
+"""I61: real UX2 Studio X11 direct-click -> six native gestures -> saved TeX/PDF.
 
 Never infer PASS from a screenshot alone; this script requires actual process
 events and bytes that the running GUI persisted. Independent manual inspection
@@ -18,25 +18,19 @@ import time
 
 from qa_n1_desktop import FIXTURE, original_preserved, owners
 
-# Candidate click coordinates are tied to the exact app/src Git tree and
-# previously inspected B42 bootstrap screenshots, not a general GUI contract.
-# Original N5 I61 41937982066 PNG: geometry popup X=500..762;
-# icon centers are 532/585/639/693, not old 599/653/707/761.
-# This source-tree lease deliberately requires renewed visual QA after UI changes.
-# UX1 renewal: original native 1180x680 client screenshots and source review
-# are in insights/2026-11-11_UX1_IMPLEMENTATION_RU.md. Only the source editor
-# layout changed: its first content row is now y=200 in client pixels. The
-# initial source focus point below moves inside that reviewed content region.
-# Existing rail/palette/dock coordinates still require the unchanged 1366x768
-# hosted probe and independent original-artifact review; local UX1 is not W3.
-APP_TREE = "5ea9f8ce7dc6c1374e1eb3bbe951e9a9b0e684a9"
+# Candidate native X11 coordinates for the UX2 one-click rail.
+# These are NOT a physical Win10 result; screenshot and persisted TeX evidence
+# MUST pass on this exact app tree before the run can be accepted. The previously
+# accepted B42 group/palette coordinates are historical and intentionally removed.
+APP_TREE = "bf8ec7532f7c3f11d32567722828b43c83c17a7d"
 BUTTONS = [
-    ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
-    ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
-    ("circle", (30, 150), (639, 169), (810, 351), (840, 351)),
-    ("cubic", (30, 150), (693, 169), (777, 470), (902, 460)),
-    ("arrow", (30, 199), (532, 216), (615, 535), (743, 552)),
-    ("node", (30, 248), (532, 266), (850, 550), (851, 550)),
+    # Tool order still leaves Node selected for the later I64 Inspector test.
+    ("line", (30, 165), (646, 350), (750, 377)),
+    ("rectangle", (30, 285), (681, 425), (765, 477)),
+    ("circle", (30, 345), (810, 351), (840, 351)),
+    ("cubic", (30, 465), (777, 470), (902, 460)),
+    ("arrow", (30, 225), (615, 535), (743, 552)),
+    ("node", (30, 405), (850, 550), (851, 550)),
 ]
 
 
@@ -224,10 +218,10 @@ def main() -> int:
         report["app_sha256"] = sha(args.app)
         screenshot(out, "01-real-studio")
 
-        # Real File-popup screenshot confirms "figure.tex" as app default.
+        # Candidate file-popup location requires original image review; it confirms "figure.tex" as app default.
         # GUI starts in out/, so clicking real Save writes out/figure.tex.
         # Popup's editable custom path is separately NOT_RUN.
-        click(found, 321, 40)
+        click(found, 403, 40)
         screenshot(out, "02-file-menu-default-path")
         click(found, 130, 260)  # UX1: below the new navigation toolbar/gutter.
         key("ctrl+a")
@@ -282,11 +276,10 @@ def main() -> int:
         report["steps"].append({"case": "paste_and_save", "sha256": sha(source)})
         screenshot(out, "05-source-saved")
 
-        for index, (tool, group, tool_button, start, end) in enumerate(BUTTONS, 1):
+        for index, (tool, tool_button, start, end) in enumerate(BUTTONS, 1):
             before = source.read_bytes()
             count = len(owners(before))
-            click(found, *group)
-            screenshot(out, f"{index:02d}-{tool}-group-popup")
+            screenshot(out, f"{index:02d}-{tool}-rail-before")
             click(found, *tool_button)
             screenshot(out, f"{index:02d}-{tool}-selected")
             gesture(found, start, end)
@@ -298,14 +291,14 @@ def main() -> int:
             authored = owners(after)
             if len(authored) != count + 1 or authored[-1]["tool"] != tool:
                 raise RuntimeError(
-                    f"{tool}: real group/tool/pointer did not persist a new "
+                    f"{tool}: real one-click rail/pointer did not persist a new "
                     f"native owned command (before={count}, after={authored})")
             if not original_preserved(fixture, after):
                 raise RuntimeError(f"{tool}: source bytes outside C command changed")
             if tool == "cubic" and b".. controls " not in after:
                 raise RuntimeError("Cubic did not produce native TikZ Bezier")
             report["steps"].append({
-                "case": "real_group_and_pointer_" + tool,
+                "case": "real_direct_rail_and_pointer_" + tool,
                 "source_sha256": sha(source),
                 "owner_count": len(authored),
                 "owner_id": authored[-1]["id"],
@@ -328,7 +321,7 @@ def main() -> int:
         click(found, 73, 77)  # Studio PDF tab, code pane still visible.
         time.sleep(1.5)
         screenshot(out, "23-pdf-view-before-export")
-        click(found, 259, 39)  # Real export action.
+        click(found, 341, 39)  # Export icon moves right of labelled Build CTA.
         wait(pdf.is_file, "Studio Export did not write a real XeLaTeX PDF", 20)
         if sha(source) != report["final_source_sha256"]:
             raise RuntimeError("Saved source changed during PDF export")
@@ -353,9 +346,9 @@ def main() -> int:
         # I62: real desktop assertions follow the already-proven six gestures
         # and PDF. Source bytes and screenshots must be independently reviewed.
         click(found, 28, 77)  # Return to the guide from the PDF viewport.
-        click(found, 1091, 109)  # Real Properties tab after N5 resize.
-        click(found, 402, 39)  # Help toolbar ON.
-        click(found, 402, 39)  # Help toolbar OFF; deterministic initial state.
+        click(found, 1055, 109)  # Verified original I61 screenshot: Properties center x1025..1090.
+        held_f1()  # UIX2 layout moved the toolbar; use the real stable Help shortcut.
+        held_f1()  # Return to Properties before the next independent F1 check.
         screenshot(out, "26-properties-before-f1")
         properties = dock_signature(out, "26-properties-before-f1")
         held_f1()
@@ -375,14 +368,14 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
+        click(found, 1125, 627)  # Reviewed original PNG 28a: selected Node x TextEdit (not explanatory text).
         key("ctrl+a")
         paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
         screenshot(out, "28b-inspector-draft-only")
         click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
         if source.read_bytes() != inspector_before:
             raise RuntimeError("Inspector draft unexpectedly changed saved source")
-        click(found, 1235, 157)  # Actual pinned 'Применить параметры' control.
+        click(found, 1150, 192)  # Reviewed original PNG 28a: pinned 'Применить параметры' control.
         screenshot(out, "28c-inspector-applied")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() != inspector_before,
@@ -408,7 +401,7 @@ def main() -> int:
             "after_sha256": sha(source),
             "changed_line_number": altered[0] + 1,
         })
-        click(found, 1085, 157)  # Same real inspector's visual Undo.
+        click(found, 1125, 157)  # Reviewed original PNG: pinned visual Undo control.
         screenshot(out, "28d-inspector-apply-undo")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() == inspector_before,
@@ -435,14 +428,13 @@ def main() -> int:
              "Native Ctrl+Z failed to restore exactly six-tool source")
         report["native_text_undo"] = "PASS_REAL_X11_SAVED_SOURCE_BYTES"
 
-        click(found, 30, 150)  # Geometry group.
-        click(found, 532, 169)  # Native shared-C line.
+        click(found, 30, 165)  # UX2: direct C-owned Line, no group popup.
         gesture(found, (845, 400), (948, 421))
         click(found, 177, 39)
         wait(lambda: len(owners(source.read_bytes())) == 7,
              "Seventh actual GUI gesture did not persist a native command")
         screenshot(out, "31-seven-before-visual-undo")
-        click(found, 1085, 157)  # Visible inspector visual Undo.
+        click(found, 1125, 157)  # Reviewed original PNG: pinned visual Undo.
         screenshot(out, "32-visual-undo-click")
         click(found, 177, 39)
         wait(lambda: source.read_bytes() == six_bytes,
@@ -463,16 +455,16 @@ def main() -> int:
             "\\end{document}\r\n"
         ).encode("utf-8")
         secondary.write_bytes(secondary_input)
-        click(found, 321, 40)
+        click(found, 403, 40)
         time.sleep(0.45)
         screenshot(out, "33-file-menu-before-open")
-        click(found, 440, 93)  # Exact root-pixel point inside File TextEdit.
+        click(found, 522, 93)  # Exact root-pixel point inside File TextEdit.
         screenshot(out, "33a-file-path-focused")
         key("ctrl+a")
         screenshot(out, "33b-file-path-selected")
         paste(b"second-crlf.tex", out / "clipboard-open-path.txt")
         screenshot(out, "34-second-path-entered")
-        click(found, 351, 124)  # Actual GUI 'Открыть путь'.
+        click(found, 433, 124)  # Actual GUI 'Открыть путь'.
         time.sleep(0.75)
         screenshot(out, "35-second-opened")
         append = b"% I62_GUI_SECOND_SAVED"
@@ -546,12 +538,12 @@ def main() -> int:
         key("ctrl+End")
         paste(pending, out / "clipboard-dirty-source.txt")
         screenshot(out, "38-dirty-source")
-        click(found, 321, 40)
+        click(found, 403, 40)
         time.sleep(0.44)
-        click(found, 440, 93)
+        click(found, 522, 93)
         key("ctrl+a")
         paste(b"figure.tex", out / "clipboard-first-path.txt")
-        click(found, 351, 124)
+        click(found, 433, 124)
         time.sleep(0.55)
         screenshot(out, "39-pending-dirty-open")
         key("Escape")
@@ -585,12 +577,12 @@ def main() -> int:
             "\\end{document}\r\n"
         ).encode("utf-8")
         n3_file.write_bytes(n3_input)
-        click(found, 321, 40)  # Existing real File menu.
+        click(found, 403, 40)  # Existing real File menu.
         time.sleep(0.36)
-        click(found, 440, 93)
+        click(found, 522, 93)
         key("ctrl+a")
         paste(b"n3-source-parameter-crlf.tex", out / "clipboard-n3-file-path.txt")
-        click(found, 351, 124)
+        click(found, 433, 124)
         time.sleep(0.65)
         screenshot(out, "41-n3-real-file-opened")
         click(found, 1055, 109)  # Properties dock before F1 transition.

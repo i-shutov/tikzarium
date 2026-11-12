@@ -19,6 +19,7 @@ mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
+mod scientific_inspector;
 mod source_editor;
 mod source_fonts;
 mod source_highlight;
@@ -40,6 +41,7 @@ use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
+use scientific_inspector::ScientificInspector;
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
@@ -800,6 +802,7 @@ struct TikzariumApp {
     studio_palette_anchor: egui::Pos2,
     studio_extension_filter: String,
     authoring: tikz_authoring::Session,
+    scientific: ScientificInspector,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
     // history that could restore commands or bytes from a previous file.
@@ -994,6 +997,7 @@ impl TikzariumApp {
                 state.reset(QUICKSTART);
                 state
             },
+            scientific: ScientificInspector::default(),
             highlight_generated_line: false,
             reset_source_editor_undo_history: false,
             source_editor: source_editor::SourceEditor::default(),
@@ -1137,6 +1141,7 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                self.scientific = ScientificInspector::default();
                 self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
@@ -1887,6 +1892,14 @@ impl TikzariumApp {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
+        ui.separator();
+        if let Some(line) = self
+            .scientific
+            .show(ui, &mut self.authoring, &mut self.document.source)
+        {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         if self.show_packages {
             ui.separator();
             ui.collapsing("Library inventory · from C registry", |ui| {
@@ -1917,47 +1930,74 @@ impl TikzariumApp {
             ui.horizontal(|ui| {
                 ui.strong(egui::RichText::new("TikZarium").size(20.0));
                 ui.separator();
-                if studio_ui::icon_button(ui, StudioIcon::Open, false, 34.0, "Открыть TeX · Ctrl+O")
+                if ui
+                    .add_enabled_ui(ready, |ui| {
+                        studio_ui::icon_button(
+                            ui,
+                            StudioIcon::Open,
+                            false,
+                            34.0,
+                            "Открыть TeX · Ctrl+O",
+                        )
+                    })
+                    .inner
                     .clicked()
-                    && ready
                 {
                     self.open_document_dialog();
                 }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Save,
-                    false,
-                    34.0,
-                    "Сохранить исходник · Ctrl+S",
-                )
-                .clicked()
-                    && ready
+                if ui
+                    .add_enabled_ui(ready, |ui| {
+                        studio_ui::icon_button(
+                            ui,
+                            StudioIcon::Save,
+                            false,
+                            34.0,
+                            "Сохранить исходник · Ctrl+S",
+                        )
+                    })
+                    .inner
+                    .clicked()
                 {
                     self.save();
                 }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Build,
-                    self.receiver.is_some(),
-                    34.0,
-                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter",
-                )
-                .clicked()
-                    && ready
-                {
+                // Primary CTA is a real labelled button with keyboard focus.
+                // A successful click still uses the existing bounded XeLaTeX path.
+                let build_response = ui.add_enabled(
+                    ready,
+                    egui::Button::new(
+                        egui::RichText::new("Собрать PDF")
+                            .strong()
+                            .color(egui::Color32::WHITE),
+                    )
+                    .fill(ui.visuals().selection.bg_fill)
+                    .min_size(egui::vec2(116.0, 34.0)),
+                );
+                let build_response = if ready {
+                    build_response.on_hover_text("Собрать точный PDF внешним XeLaTeX · Ctrl+Enter")
+                } else {
+                    build_response.on_disabled_hover_text(
+                        "Недоступно, пока открыт диалог или выполняется сборка",
+                    )
+                };
+                if build_response.clicked() {
                     self.build();
                 }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Export,
-                    false,
-                    34.0,
-                    "Экспорт PDF. Только актуальный результат XeLaTeX.",
-                )
-                .clicked()
-                    && self.pdf.is_some()
-                    && !self.preview_stale()
-                {
+                let export_ready = ready && self.pdf.is_some() && !self.preview_stale();
+                let export_response = ui
+                    .add_enabled_ui(export_ready, |ui| {
+                        studio_ui::icon_button(
+                            ui,
+                            StudioIcon::Export,
+                            false,
+                            34.0,
+                            "Экспорт PDF. Только актуальный результат XeLaTeX.",
+                        )
+                    })
+                    .inner
+                    .on_disabled_hover_text(
+                        "Сначала завершите диалог или сборку и соберите актуальный PDF",
+                    );
+                if export_response.clicked() {
                     self.export();
                 }
                 if self.receiver.is_some()
@@ -1986,7 +2026,7 @@ impl TikzariumApp {
                 }
                 ui.menu_button("Вид", |ui| {
                     if ui
-                        .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
+                        .checkbox(&mut self.prefs.studio_tool_rail, "Инструменты TikZ")
                         .changed()
                         && !self.prefs.studio_tool_rail
                     {
@@ -2035,8 +2075,12 @@ impl TikzariumApp {
             });
             ui.horizontal(|ui| {
                 let prior_focus = self.pdf_focus_in_split;
-                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз");
-                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF");
+                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз")
+                    .on_hover_text(
+                        "Создаваемые объекты: предварительная направляющая, не полный рендер TeX",
+                    );
+                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF исходника")
+                    .on_hover_text("Точный результат последней сборки через внешний XeLaTeX");
                 if self.pdf_focus_in_split && !prior_focus {
                     self.fit_page_active = true;
                     self.authoring.cancelled_pointer_capture |=
@@ -2099,15 +2143,14 @@ impl TikzariumApp {
             .show(ui, |ui| match self.prefs.studio_dock {
                 StudioDock::Properties => {
                     if self.authoring.active.is_none() {
-                        ui.heading("Выберите инструмент");
-                        ui.label("Нажмите на группу иконок слева, затем выберите команду TikZ.");
-                        ui.small("Параметры и примеры появятся здесь из единого каталога.");
+                        ui.heading("Параметры рисунка");
+                        ui.label("Для графика выберите команду PGFPlots ниже. Для геометрии — инструмент слева.");
                         ui.separator();
                         ui.small("Исходный .tex остаётся редактируемым. Точный результат — внешний XeLaTeX.");
                     } else {
                         let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();
-                        if let Some(line) = tikz_canvas::show_inspector(
+                        if let Some(line) = tikz_canvas::show_inspector_studio(
                             ui,
                             &mut self.authoring,
                             &mut self.document.source,
@@ -2122,6 +2165,20 @@ impl TikzariumApp {
                             &mut self.reset_source_editor_undo_history,
                         );
                     }
+                    ui.separator();
+                    let prior = self.authoring.source_revision();
+                    if let Some(line) =
+                        self.scientific
+                            .show(ui, &mut self.authoring, &mut self.document.source)
+                    {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    fence_source_editor_undo_on_revision_change(
+                        prior,
+                        &self.authoring,
+                        &mut self.reset_source_editor_undo_history,
+                    );
                 }
                 StudioDock::Libraries => {
                     ui.heading("Библиотеки проекта");
@@ -2159,6 +2216,10 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    let scientific_help_shown = self.scientific.show_selected_help(ui, self.authoring.source_revision());
+                    if scientific_help_shown {
+                        ui.separator();
+                    }
                     // Avoid a second generic "choose a tool" help card after a
                     // successful caret lookup; the user's source is the context.
                     let mut source_parameter_help_shown = false;
@@ -2189,7 +2250,7 @@ impl TikzariumApp {
                         ui.separator();
                     }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
-                    if !source_parameter_help_shown {
+                    if !source_parameter_help_shown && !scientific_help_shown {
                         ui.separator();
                         studio_ui::show_context_help(ui, &self.authoring);
                     }
@@ -2994,7 +3055,9 @@ impl eframe::App for TikzariumApp {
             && self.workspace == WorkspaceMode::Split
             && self.prefs.studio_tool_rail
         {
-            egui::SidePanel::left("b42-tool-groups")
+            // UX2: six reviewed C tools are selectable in ONE direct click.
+            // The only floating palette in Studio is the extensions catalogue.
+            let rail_action = egui::SidePanel::left("b42-tool-groups")
                 .resizable(false)
                 .exact_width(
                     studio_ui::StudioLayout::for_width(ctx.available_rect().width())
@@ -3004,14 +3067,25 @@ impl eframe::App for TikzariumApp {
                     if self.modal_active() {
                         ui.disable();
                     }
-                    if let Some(anchor) = studio_ui::show_group_rail(
+                    studio_ui::show_direct_tool_rail(
                         ui,
+                        self.authoring.active,
                         &mut self.studio_group,
                         studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
-                    ) {
-                        self.studio_palette_anchor = anchor;
-                    }
-                });
+                    )
+                })
+                .inner;
+            if let Some(tool) = rail_action.selected_tool {
+                studio_ui::activate_studio_tool(
+                    &mut self.authoring,
+                    tool,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
+            }
+            if let Some(anchor) = rail_action.extension_anchor {
+                self.studio_palette_anchor = anchor;
+            }
         }
         let source_layout = if self.prefs.studio_mode {
             split_layout.reserving_center(ctx.available_rect().width())
