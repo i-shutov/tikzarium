@@ -40,7 +40,8 @@ fn genuine_f14_3_reports_three_read_only_macro_paths_without_resolution_claims()
 fn comments_unicode_crlf_and_escaped_percent_preserve_ranges_and_lines() {
     let source = concat!(
         "% \\input{commented.tex}\r\n",
-        "\\draw plot file {данные/a.dat}; % \\include{hidden.tex}\r\n",
+        "\\begin{tikzpicture}\\draw plot file {данные/a.dat}; % \\include{hidden.tex}\r\n",
+        "\\end{tikzpicture}\r\n",
         "\\input{literal\\%name.tex}\r\n",
         "\\include{folder/часть.tex}\r\n",
     );
@@ -57,9 +58,9 @@ fn comments_unicode_crlf_and_escaped_percent_preserve_ranges_and_lines() {
         references[1].status,
         ScientificResourceStatus::MacroContaining
     );
-    assert_eq!(references[1].line, 3);
+    assert_eq!(references[1].line, 4);
     assert_eq!(references[2].path, "folder/часть.tex");
-    assert_eq!(references[2].line, 4);
+    assert_eq!(references[2].line, 5);
     for reference in references {
         assert_eq!(reference.path, source[reference.path_range.clone()]);
         assert_eq!(

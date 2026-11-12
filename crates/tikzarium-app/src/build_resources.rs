@@ -2,10 +2,7 @@
 //! Rechecking is explicit; drawing this view performs no filesystem IO.
 
 use eframe::egui;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 use tikzarium_core::{ProjectDependencySnapshot, ProjectInputOrigin, ProjectInputRecord};
 
 #[derive(Default)]
@@ -126,6 +123,7 @@ impl BuildResources {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     fn fixture(root: &Path, complete: bool) -> (PathBuf, PathBuf, ProjectDependencySnapshot) {
         let source = root.join("figure.tex");
