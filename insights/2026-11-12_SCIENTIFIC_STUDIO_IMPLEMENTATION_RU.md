@@ -1,5 +1,7 @@
 # Scientific Studio: интеграция, ресурсы и атлас интерфейсов
 
+**Последующее продолжение:** [SCI-BUILD checkpoint](2026-11-12_SCI_BUILD_CHECKPOINT_RU.md) фиксирует pre/post input verification, явный project root, 531 tests и реальный Linux GUI F14_3 → PDF. Ниже сохранён исторический checkpoint с собственными SHA и прежними ограничениями.
+
 Дата: 12.11.2026. Рабочий блок V1/V2 в рамках ST-SCI. [Draft PR #189](https://github.com/i-shutov/tikzarium/pull/189). Полный Scientific Studio v1.0.0 остаётся **NO-GO** до выполнения нормативного scope и независимой платформенной приёмки.
 
 ## Опубликованная основа и точность исходников

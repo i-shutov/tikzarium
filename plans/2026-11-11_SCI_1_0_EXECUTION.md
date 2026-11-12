@@ -2,6 +2,12 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
+## Checkpoint 12.11.2026 — SCI-BUILD, PR #189
+
+[Текущий отчёт и оригинальные свидетельства](../insights/2026-11-12_SCI_BUILD_CHECKPOINT_RU.md). Code `79168f6`: 531 workspace tests/fmt/strict Clippy/build PASS; начальный bounded SHA inventory + фактический post-build recorder, явный project root и CLI fail-closed publication. Native Linux F14_3 с `../data`: ручной root → Build → Preview → Export PASS; same-length external data edit → stale/blocked export/last-good retained PASS. Исходные данные восстановлены. Системный folder picker не открылся, введён проверенный ручной маршрут. Это не приёмка полного scientific/Windows scope.
+
+**Ближайший блок:** SCI-PGF/SCI-QA, реальный compact Inspector → patch → Undo → Save → PDF. Старые APP_TREE gates проверять вместе с соответствующими сценариями, не перепривязывать по одному startup/F14 screenshot. Неизменяемый snapshot для произвольных конкурентных изменений входов остаётся отдельным ограничением SCI-BUILD; pre/post comparison не обнаруживает modify-and-revert. Следующие движки и домены сохраняют прежний порядок.
+
 ## Выполнение: два последовательных интеграционных вертикальных среза
 
 **V1, немедленно:** native scientific TikZ workflow в Studio: project/new/open → 6 direct tools → Inspector/Apply/F1/source → Save/Undo → XeLaTeX PDF, диагностика, stale/last-good, export/reopen. Прежде чем закрывать V1, нужны native compact GUI и проверенный source/evidence. Это часть Scientific 1.0, но ещё НЕ вся 1.0.

@@ -1,8 +1,18 @@
 # TikZarium — release resume, 2026-11-12
 
-## 2026-11-12 — Scientific Studio: интеграция и атлас, PR #189
+## 2026-11-12 — SCI-BUILD и настоящий F14_3 GUI → PDF
 
-[Текущий checkpoint](../insights/2026-11-12_SCIENTIFIC_STUDIO_IMPLEMENTATION_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [атлас PDF, 14 страниц](../design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf).
+[Текущий checkpoint](../insights/2026-11-12_SCI_BUILD_CHECKPOINT_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [папка чекпойнтов на Google Диске](https://drive.google.com/drive/folders/1KOiMLat9r0QN-J0R1mTjZuIx2QvEDw4H).
+
+Проверенный опубликованный code commit `79168f6838d29748bc4cd51a372b7c267fd97386`, tree `aaa57d868e836d6dab8588c32b5bc2b4da289a8a`; ветка `feat/studio-scientific-integration-20261112`. **531 workspace tests PASS**, fmt/strict Clippy/build PASS. Реализованы bounded pre/post input baseline, явный project root для `../data`, CLI refusal до изменения PDF и ручной ввод папки при недоступном системном picker. Регрессия с `.dat`, изменённым во время TeX, отклоняет неподтверждённый кандидат. Изменение с восстановлением байтов между наблюдениями всё ещё вне гарантии; внешняя TeX-установка не сертифицирована.
+
+Desktop восстановлен. На точном Linux binary `708e3a8c…` в окне 1180×680 выполнены F14_3 Open → общий root → XeLaTeX → Preview → Export; recorder показал source + три `.dat`. После same-length изменения тестового `.dat` повторный экспорт заблокирован, last-good PDF сохранён и помечен stale. Данные восстановлены, исходный corpus не изменён. F1 открыл справку. Это конкретный native Linux subset; полный Inspector/Undo workflow, physical Win10/IME/DPI/G3 и full scientific acceptance **не приняты**.
+
+CP00/CP01 сохранены на Google Диске, итоговый CP02 фиксируется отдельным delivery receipt. Атлас 14 страниц сохранён. На code `79168f6` два hosted задания остановились на прежнем APP_TREE до своих проверок; общий CI не зелёный. Gates не ослаблялись. **Следующий шаг:** native PGFPlots Inspector → patch → Undo → Save → PDF с оригиналами, затем корректная актуализация соответствующих APP_TREE/GUI scripts. Stable v1.0 **NO-GO**.
+
+## Предыдущий checkpoint 2026-11-12 — интеграция и атлас, PR #189
+
+[Предыдущий checkpoint](../insights/2026-11-12_SCIENTIFIC_STUDIO_IMPLEMENTATION_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [атлас PDF, 14 страниц](../design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf).
 
 Проверенный code commit `1784a48246cbdfd260fb80ce4731c7f165ad52c5`, tree `3bb17ee38e0f77d6d06a125d4076c70f1f707bf1`; ветка `feat/studio-scientific-integration-20261112`. **512 workspace tests PASS**, strict Clippy/fmt/build PASS, 20-operation API и 53-request/26-action matrix PASS, два explicit SC3 exports и реальные CLI/XeLaTeX PDFs PASS. Hosted Win32 startup/F1/slow-probe subset на последующем QA-only commit `8fa502c277920599f0ca8e43b49ef74b7bb31591` — **PASS**; полный native scientific workflow и physical Win10 — **NOT_ACCEPTED**, stable v1.0 **NO-GO**.
 
