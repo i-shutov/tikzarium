@@ -393,6 +393,29 @@ fn scientific_parameter_help_is_versioned_source_limited_and_never_invents_defau
 }
 
 #[test]
+fn unsupported_environment_definitions_and_stringified_commands_cannot_own_axis_edits() {
+    for prefix in [
+        r"\newenvironment{fake}{\begin{tikzpicture}\begin{axis}[ymin=0]}{\end{axis}\end{tikzpicture}}",
+        r"\renewenvironment{fake}{\begin{tikzpicture}\begin{axis}[ymin=0]}{\end{axis}\end{tikzpicture}}",
+        r"\string\begin{tikzpicture}\begin{axis}[ymin=0]\end{axis}\end{tikzpicture}",
+        r"\detokenize{\begin{tikzpicture}\begin{axis}[ymin=0]\end{axis}\end{tikzpicture}}",
+    ] {
+        let source = format!(
+            "{prefix}\r\n\\begin{{tikzpicture}}\\begin{{axis}}[ymin=1]\\end{{axis}}\\end{{tikzpicture}}"
+        );
+        let original = source.clone();
+        assert_eq!(
+            scan_scientific_source(SourceView {
+                text: &source,
+                revision: 17,
+            }),
+            Err(ScanRefusal::UnsupportedTeXControl),
+        );
+        assert_eq!(source, original);
+    }
+}
+
+#[test]
 fn forged_descriptor_cannot_move_an_axis_edit_into_global_options() {
     let text = r"\pgfplotsset{samples=11}
 \begin{tikzpicture}\begin{axis}[samples=150]

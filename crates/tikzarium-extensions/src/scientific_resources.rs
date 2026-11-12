@@ -222,6 +222,23 @@ fn definition_end(
                 }
             }
         }
+        "newenvironment" | "renewenvironment" => {
+            if bytes.get(i) == Some(&b'*') {
+                i += 1;
+            }
+            i = required_group(text, skip_space_comments(bytes, i))?.next;
+            for _ in 0..2 {
+                i = skip_space_comments(bytes, i);
+                if bytes.get(i) == Some(&b'[') {
+                    i = bracket_group(text, i)?
+                        .ok_or(ScientificResourceScanRefusal::MalformedReference)?
+                        .next;
+                }
+            }
+            i = required_group(text, skip_space_comments(bytes, i))?.next;
+            i = required_group(text, skip_space_comments(bytes, i))?.next;
+            return Ok(Some(i));
+        }
         _ => return Ok(None),
     }
     Ok(Some(required_group(text, i)?.next))
@@ -306,11 +323,26 @@ fn verbatim_end(
         .ok_or(ScientificResourceScanRefusal::MalformedReference)?
         .1;
     let closing = format!("\\end{{{env}}}");
-    let close = text
-        .get(body..)
-        .and_then(|rest| rest.find(&closing).map(|n| body + n))
-        .ok_or(ScientificResourceScanRefusal::UnbalancedSource)?;
-    Ok(close + closing.len())
+    let mut search = body;
+    while let Some(relative) = text.get(search..).and_then(|rest| rest.find(&closing)) {
+        let close = search + relative;
+        let line_start = text[..close].rfind('\n').map_or(0, |newline| newline + 1);
+        let line_end = text[close..]
+            .find('\n')
+            .map_or(text.len(), |newline| close + newline);
+        let horizontal_space = |bytes: &[u8]| {
+            bytes
+                .iter()
+                .all(|byte| byte.is_ascii_whitespace() && !matches!(byte, b'\n'))
+        };
+        if horizontal_space(&text.as_bytes()[line_start..close])
+            && horizontal_space(&text.as_bytes()[close + closing.len()..line_end])
+        {
+            return Ok(close + closing.len());
+        }
+        search = close + 1;
+    }
+    Err(ScientificResourceScanRefusal::UnbalancedSource)
 }
 
 fn literal_regions(text: &str) -> Result<Vec<Range<usize>>, ScientificResourceScanRefusal> {
@@ -334,12 +366,47 @@ fn literal_regions(text: &str) -> Result<Vec<Range<usize>>, ScientificResourceSc
             i = after;
             continue;
         }
+        if matches!(name, "newenvironment" | "renewenvironment") {
+            let end = definition_end(text, name, after)?
+                .ok_or(ScientificResourceScanRefusal::MalformedReference)?;
+            result.push(start..end);
+            i = end;
+            continue;
+        }
         if let Some(end) = definition_end(text, name, after)? {
             i = end;
             continue;
         }
         if name == "foreach" {
             i = foreach_end(text, after)?;
+            continue;
+        }
+        if name == "string" {
+            let token_start = skip_space_comments(bytes, after);
+            let token_end = if bytes.get(token_start) == Some(&b'\\') {
+                command_at(text, token_start).1
+            } else {
+                let tail = text
+                    .get(token_start..)
+                    .ok_or(ScientificResourceScanRefusal::MalformedReference)?;
+                token_start
+                    + tail
+                        .chars()
+                        .next()
+                        .ok_or(ScientificResourceScanRefusal::MalformedReference)?
+                        .len_utf8()
+            };
+            if token_end <= token_start || token_end > bytes.len() {
+                return Err(ScientificResourceScanRefusal::MalformedReference);
+            }
+            result.push(start..token_end);
+            i = token_end;
+            continue;
+        }
+        if name == "detokenize" {
+            let group = required_group(text, skip_space_comments(bytes, after))?;
+            result.push(start..group.next);
+            i = group.next;
             continue;
         }
         if name == "verb" || name == "lstinline" {

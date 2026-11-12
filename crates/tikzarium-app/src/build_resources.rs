@@ -212,6 +212,12 @@ mod tests {
         resources.capture(snapshot, Some(&source), "source");
         assert!(resources.is_current());
         assert_eq!(resources.captured_records.len(), 1);
-        assert!(resources.unverified_external.contains(&class));
+        // External entries are resolved paths. macOS /var and /private/var
+        // can spell the same temporary file without being byte-equal paths.
+        assert!(
+            resources
+                .unverified_external
+                .contains(&class.canonicalize().unwrap())
+        );
     }
 }

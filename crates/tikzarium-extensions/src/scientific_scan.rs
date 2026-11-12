@@ -460,7 +460,13 @@ pub fn scan_scientific_source(
         // Scope and catcode safety apply to the preamble too. Otherwise a
         // macro definition containing a literal tikzpicture could fabricate
         // an editable picture even though it was never executed.
-        if word == "catcode" || word == "csname" {
+        if matches!(
+            word,
+            "catcode" | "csname" | "newenvironment" | "renewenvironment" | "string" | "detokenize"
+        ) {
+            // These controls can turn apparent picture/axis commands into
+            // definition bodies or printed text. Until their source-editing
+            // grammar is supported, never grant ownership of those spans.
             return Err(ScanRefusal::UnsupportedTeXControl);
         }
         if word == "verb" || word == "lstinline" {

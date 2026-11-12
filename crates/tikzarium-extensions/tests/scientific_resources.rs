@@ -96,8 +96,12 @@ fn verbatim_environments_are_bounded_and_mask_fake_tikz_scopes() {
         "\\input{fake.tex}\r\n",
         "\\end{tikzpicture}\r\n",
         "\\end{Verbatim}\r\n",
-        "\\begin{lstlisting}plot file {also-fake.dat}\\end{lstlisting}\r\n",
-        "\\begin{minted}{tex}\\include{minted-fake.tex}\\end{minted}\r\n",
+        "\\begin{lstlisting}\r\n",
+        "plot file {also-fake.dat} \\end{lstlisting} \\input{midline-fake.tex}\r\n",
+        "\\end{lstlisting}\r\n",
+        "\\begin{minted}{tex}\r\n",
+        "\\include{minted-fake.tex}\r\n",
+        "\\end{minted}\r\n",
         "\\input{real.tex}\r\n",
     );
     let references = scan_scientific_resources(SourceView {
@@ -107,7 +111,7 @@ fn verbatim_environments_are_bounded_and_mask_fake_tikz_scopes() {
     .unwrap();
     assert_eq!(references.len(), 1);
     assert_eq!(references[0].path, "real.tex");
-    assert_eq!(references[0].line, 8);
+    assert_eq!(references[0].line, 12);
     for source in [
         "\\begin{verbatim}\\input{hidden.tex}",
         "\\begin{minted}{tex}no close",
@@ -120,6 +124,24 @@ fn verbatim_environments_are_bounded_and_mask_fake_tikz_scopes() {
             Err(ScientificResourceScanRefusal::UnbalancedSource)
         );
     }
+}
+
+#[test]
+fn string_skips_space_and_comments_before_its_token() {
+    let source = concat!(
+        "\\string  \\input{shown.tex}\r\n",
+        "\\string% comment consumed with the next token\r\n",
+        "  \\include{also-shown.tex}\r\n",
+        "\\input{real.tex}\r\n",
+    );
+    let references = scan_scientific_resources(SourceView {
+        text: source,
+        revision: 12,
+    })
+    .unwrap();
+    assert_eq!(references.len(), 1);
+    assert_eq!(references[0].path, "real.tex");
+    assert_eq!(references[0].line, 4);
 }
 
 #[test]
@@ -217,6 +239,35 @@ fn definitions_foreach_and_input_arguments_do_not_create_fake_plot_scopes() {
         references[0].status,
         ScientificResourceStatus::MacroContaining
     );
+}
+
+#[test]
+fn environment_definitions_string_and_detokenize_are_opaque_but_later_refs_remain() {
+    let source = concat!(
+        "\\newenvironment{demo}{\\input{begin-only.tex}\\begin{tikzpicture}\\draw plot file {fake.dat};}{\\include{end-only.tex}}\r\n",
+        "\\renewenvironment{demo}[1][x]{\\input{renew-only.tex}}{\\input{renew-end-only.tex}}\r\n",
+        "\\string\\input{shown-only.tex} \r\n",
+        "\\detokenize{\\input{also-shown-only.tex} \\begin{tikzpicture}\\draw plot file {hidden.dat};} \r\n",
+        "\\begin{tikzpicture}\\draw plot file {реальный.dat};\\end{tikzpicture}\r\n",
+        "\\input{real.tex}\r\n",
+    );
+    let references = scan_scientific_resources(SourceView {
+        text: source,
+        revision: 11,
+    })
+    .unwrap();
+    assert_eq!(
+        references
+            .iter()
+            .map(|r| r.path.as_str())
+            .collect::<Vec<_>>(),
+        ["реальный.dat", "real.tex"]
+    );
+    assert_eq!(references[0].kind, ScientificResourceKind::TikzPlotFile);
+    assert_eq!(references[0].path, source[references[0].path_range.clone()]);
+    assert_eq!(references[0].line, 5);
+    assert_eq!(references[1].kind, ScientificResourceKind::TexInput);
+    assert_eq!(references[1].line, 6);
 }
 
 #[test]
