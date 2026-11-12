@@ -776,6 +776,8 @@ struct TikzariumApp {
     build_resources: BuildResources,
     /// Explicit root for this open document; None means its source directory.
     project_root: Option<PathBuf>,
+    /// Editable project-root draft for the current document.
+    project_root_draft: String,
     built_source: Option<String>,
     built_path: Option<PathBuf>,
     building_source: Option<String>,
@@ -970,6 +972,7 @@ impl TikzariumApp {
             pdf: None,
             build_resources: BuildResources::default(),
             project_root: None,
+            project_root_draft: String::new(),
             built_source: None,
             built_path: None,
             building_source: None,
@@ -1158,6 +1161,10 @@ impl TikzariumApp {
                 self.scientific_resources = ScientificResourceView::default();
                 self.build_resources = BuildResources::default();
                 self.project_root = None;
+                self.project_root_draft = path
+                    .parent()
+                    .map(|parent| parent.display().to_string())
+                    .unwrap_or_default();
                 self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
@@ -1304,19 +1311,51 @@ impl TikzariumApp {
             .set_directory(start)
             .pick_folder()
         else {
-            self.status = "Выбор папки проекта отменён.".into();
+            self.status = "Выбор отменён. Путь папки проекта можно ввести вручную.".into();
             return;
         };
-        match checked_project_root(source, &root) {
+        self.apply_project_root(&root);
+    }
+
+    fn apply_project_root(&mut self, root: &Path) {
+        if self.receiver.is_some() {
+            return;
+        }
+        let Some(source) = self.document.path.as_deref() else {
+            self.status = "Сначала сохраните или откройте исходный файл.".into();
+            return;
+        };
+        if root.as_os_str().is_empty() {
+            self.status = "Укажите путь к папке проекта.".into();
+            return;
+        }
+        match checked_project_root(source, root) {
             Ok(root) if self.project_root.as_ref() != Some(&root) => {
+                self.project_root_draft = root.display().to_string();
                 self.project_root = Some(root);
                 self.build_resources = BuildResources::default();
                 self.status =
                     "Папка проекта выбрана; соберите PDF для проверки входных файлов.".into();
             }
-            Ok(_) => {}
+            Ok(root) => {
+                self.project_root_draft = root.display().to_string();
+                self.status = "Папка проекта уже выбрана.".into();
+            }
             Err(error) => self.status = error,
         }
+    }
+
+    fn reset_project_root_to_source(&mut self) {
+        self.project_root = None;
+        self.project_root_draft = self
+            .document
+            .path
+            .as_deref()
+            .and_then(Path::parent)
+            .map(|parent| parent.display().to_string())
+            .unwrap_or_default();
+        self.build_resources = BuildResources::default();
+        self.status = "Используется папка исходника; соберите PDF заново.".into();
     }
 
     fn export_pdf_picker(&mut self) {
@@ -2303,7 +2342,24 @@ impl TikzariumApp {
                             .map(|path| path.display().to_string())
                             .unwrap_or_else(|| "Каталог исходного файла (по умолчанию)".into()),
                     );
+                    let root_controls_enabled =
+                        self.document.path.is_some() && self.receiver.is_none();
+                    let response = ui.add_enabled(
+                        root_controls_enabled,
+                        egui::TextEdit::singleline(&mut self.project_root_draft)
+                            .hint_text("Путь к папке проекта")
+                            .desired_width(f32::INFINITY),
+                    );
+                    let mut apply_root = root_controls_enabled
+                        && response.lost_focus()
+                        && ui.input(|input| input.key_pressed(egui::Key::Enter));
                     ui.horizontal_wrapped(|ui| {
+                        if ui
+                            .add_enabled(root_controls_enabled, egui::Button::new("Применить"))
+                            .clicked()
+                        {
+                            apply_root = true;
+                        }
                         if ui.add_enabled(
                             self.document.path.is_some() && self.receiver.is_none(),
                             egui::Button::new("Выбрать папку проекта…"),
@@ -2314,11 +2370,13 @@ impl TikzariumApp {
                             self.project_root.is_some() && self.receiver.is_none(),
                             egui::Button::new("Папка исходника"),
                         ).clicked() {
-                            self.project_root = None;
-                            self.build_resources = BuildResources::default();
-                            self.status = "Используется папка исходника; соберите PDF заново.".into();
+                            self.reset_project_root_to_source();
                         }
                     });
+                    if apply_root {
+                        let draft = PathBuf::from(self.project_root_draft.clone());
+                        self.apply_project_root(&draft);
+                    }
                     ui.small("Для ресурсов в ../data выберите общую папку. Относительные пути TeX по-прежнему считаются от папки исходного файла.");
                     ui.separator();
                     if let Some(line) = self.scientific_resources.show(
