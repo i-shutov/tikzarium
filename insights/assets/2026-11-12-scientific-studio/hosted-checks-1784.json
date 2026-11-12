@@ -1,0 +1,184 @@
+{
+  "head": "1784a48246cbdfd260fb80ce4731c7f165ad52c5",
+  "counts": {
+    "success": 25,
+    "skipped": 1,
+    "failure": 3
+  },
+  "checks": [
+    {
+      "name": "Independently audit uploaded MiKTeX PDF/source/log evidence / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526459/job/131060215069"
+    },
+    {
+      "name": "D05 independent uploaded evidence / ubuntu-24.04",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131059821114"
+    },
+    {
+      "name": "Rust native / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526260/job/131058414479"
+    },
+    {
+      "name": "Rust native / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526260/job/131058414243"
+    },
+    {
+      "name": "XeLaTeX real fixtures / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526260/job/131058413893"
+    },
+    {
+      "name": "independent-original-server-pdf",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526518/job/131058411835"
+    },
+    {
+      "name": "Rust fmt/clippy/test + QA harness / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058411042"
+    },
+    {
+      "name": "Actual XeLaTeX CLI / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058411013"
+    },
+    {
+      "name": "authoring-proof",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526695/job/131058410998"
+    },
+    {
+      "name": "Rust fmt/clippy/test + QA harness / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058410932"
+    },
+    {
+      "name": "Rust fmt/clippy/test + QA harness / ubuntu-24.04",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058410929"
+    },
+    {
+      "name": "Actual XeLaTeX CLI / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058410873"
+    },
+    {
+      "name": "linux-portable",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526493/job/131058410625"
+    },
+    {
+      "name": "Actual XeLaTeX CLI / ubuntu-24.04",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526574/job/131058410549"
+    },
+    {
+      "name": "actual-studio",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526478/job/131058410417"
+    },
+    {
+      "name": "native-policy-and-transport",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526518/job/131058410352"
+    },
+    {
+      "name": "MiKTeX 25.12 XeLaTeX / hosted Windows Server 2022 x64 only",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526459/job/131058410148"
+    },
+    {
+      "name": "Cyrillic + Unicode math + PDF embedding",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526461/job/131058410054"
+    },
+    {
+      "name": "SHA-256 sources/data/PDF and negative tamper / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526379/job/131058410025"
+    },
+    {
+      "name": "SHA-256 sources/data/PDF and negative tamper / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526379/job/131058409944"
+    },
+    {
+      "name": "Disposable native Win32 HWND/F1 and independent PNG evidence",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526405/job/131058409896"
+    },
+    {
+      "name": "Source-owning scientific Inspector / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526241/job/131058409875"
+    },
+    {
+      "name": "SHA-256 sources/data/PDF and negative tamper / ubuntu-24.04",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526379/job/131058409740"
+    },
+    {
+      "name": "studio-full-vertical",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526358/job/131058409575"
+    },
+    {
+      "name": "Source-owning scientific Inspector / ubuntu-24.04",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526241/job/131058409409"
+    },
+    {
+      "name": "Source-owning scientific Inspector / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526241/job/131058409022"
+    },
+    {
+      "name": "Rust native / macos-15",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181404978/job/131058013248"
+    },
+    {
+      "name": "Rust native / windows-2022",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181404978/job/131058013161"
+    },
+    {
+      "name": "XeLaTeX real fixtures / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43181404978/job/131058012752"
+    }
+  ]
+}

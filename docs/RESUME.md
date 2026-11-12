@@ -12,6 +12,8 @@
 
 Исторические записи ниже сохраняют свои source SHA и даты.
 
+Дополнение к текущему checkpoint: [hosted follow-up](../insights/assets/2026-11-12-scientific-studio/HOSTED_FOLLOWUP.md). На `1784a482` Rust/Inspector/CLI hosted checks прошли; оригинальные Win32 startup/F1 PNG просмотрены и дают только Windows Server 2022/96 DPI partial. Локальный интерактивный канал, полный GUI workflow и physical Windows10 остаются открытыми. Два старых APP_TREE gate и slow-probe overlap проверка не пройдены; общий CI не зелёный.
+
 ## SCIENTIFIC STUDIO v1.0.0 — OWNER APPROVED SCOPE, 11.11.2026
 
 [Normative scientific release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Full ST-SCI is the target for stable 1.0 (not historical narrow TikZ/96DPI RC): scientifically accepted TikZ/PGFPlots, SCI142 142/103, science AI88, scoped native Asymptote/Typst/CeTZ GUI edits and builds, premium multi-document UX/G3, exact-source W2b/W3/IME/96/120/192/W4. Stable still NO-GO. Prior dated resume sections record older source SHA and cannot transfer previous PASS to new enlarged candidate. [Current execution](../plans/2026-11-11_SCI_1_0_EXECUTION.md), [Win10 Codex request](../plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). PR #172 remains unmerged draft with failed checks at last inspected SHA. User can run local Codex to collect native facts; no automatic system adjustment.

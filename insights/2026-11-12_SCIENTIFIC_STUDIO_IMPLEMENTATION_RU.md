@@ -50,7 +50,7 @@
 | SC3 edited source → TikZarium CLI → XeLaTeX | PASS: axis bounds и style/ticks/height/mark, реальные PDFs, logs и просмотр рендеров |
 | Оригинальные SV-001 и AK/F14_3 → XeLaTeX | PASS в изолированном QA environment, существующий `/usr/bin/xelatex` |
 | AK/F14_3 → настоящий TikZarium CLI | PASS, 19858 bytes, 118 dependencies reported; отдельный runtime результат на code tree a865797/476d2c |
-| Native GUI нового кандидата | **BLOCKED / NOT_RUN**: runtime рабочего стола после перезапуска не запускается |
+| Локальная интерактивная проверка нового GUI | **BLOCKED / NOT_RUN**: runtime рабочего стола после перезапуска не запускается |
 | Windows10/IME/DPI/G3/полный SCI142 | **NOT_ACCEPTED**, прежние свидетельства на новый кандидат не перенесены |
 
 Четыре ignored workspace tests: два специально запускаемых SC3 exports (выше выполнены отдельно), ручной CPU benchmark и дочерний owned-process probe, который вызывается родительскими тестами. Это не четыре неизвестных падения.
@@ -60,6 +60,8 @@ Headless API не подтверждает OS file picker, native screenshot, IM
 Исходный SV-001: SHA-256 `d6f5f8ea1a5876b6ef191b07c8f7b35177fbe56ef152ed1ce564fbff66959301`. Axis-edited source: `43d473b71f96e9e9133c5e13928e4bdb2504a442c9938107ded65afeb75492b5`; style-edited source: `2d4f141bd5546286846f43e5e8e16fac0160936e7cd3d85d9962ab3db9674786`. Последние PDF hashes приведены в manifest. В F14_3 lexical test точно распознаёт три `\datadir/...dat`; CLI stdout сообщает число зависимостей, но не перечисляет их. Поэтому имена `.dat` не выдаются за подтверждённые именно этим stdout/TeX log `.fls` записи.
 
 Hosted macOS на предыдущем `476d2c` обнаружил тестовое сравнение `/var` с `/private/var`; corrected assertion сравнивает canonical path по существующему контракту. Это не изменение механизма freshness. Новые hosted jobs относятся к собственным head SHA; завершённый Linux local run не является macOS/Windows PASS. CI-ссылки и конкретные заблокированные native gates сохранены в архиве; общий зелёный CI не объявляется.
+
+**Позднейшее дополнение:** [hosted follow-up](assets/2026-11-12-scientific-studio/HOSTED_FOLLOWUP.md) сохраняет завершённые результаты exact code `1784a482`: 25 success / 3 failure / 1 skipped с сохранением push/PR duplicates. Rust, Inspector и CLI проходят соответствующие hosted OS. Независимо получены оригинальные Win32 PNG/JSON, проверен SHA архива и просмотрено переключение F1: это **hosted Windows Server 2022, 96 DPI, startup/F1 partial**, а не физический Win10 и не весь native workflow. Два APP_TREE gate и отдельная проверка overlap slow-probe ещё не дают общего CI PASS.
 
 ## Атлас дизайна
 
@@ -75,7 +77,7 @@ Hosted macOS на предыдущем `476d2c` обнаружил тестов�
 
 | Агент | Чёткая задача | Проверка интегратором |
 | --- | --- | --- |
-| `/root/scientific_next` | Bounded resource scanner, его regressions и BuildResources helper; последующие false-positive fixes | Root source review, exact-tree tests/Clippy/build; main.rs bridge только root |
+| `/root/scientific_next` | Bounded resource scanner, его regressions и BuildResources helper; false-positive fixes; отдельное исправление hosted capture/probe interval audit | Root source review, exact-tree tests/Clippy/build; независимое QA-script review; main.rs bridge только root |
 | `/root/atlas_design` | 14-страничный атлас и генератор; затем отдельное read-only ревью scanner/ledger | Root просмотр contact sheet и ключевых полноразмерных страниц; findings исправлены либо явно оставлены открытыми |
 | `/root/recover_checkpoint` | Восстановление QA toolchain/resources, настоящие XeLaTeX/CLI fixture checks, hashes и CI failure audit | Root прочитал logs/notes, повторил SC3 CLI путь и сверил неизменность corpus |
 

@@ -161,7 +161,9 @@ public static class TikzariumW2Win32 {
  # into a private bitmap. No desktop DC/screen pixels, even at DWM invisible borders.
  . (Join-Path $PSScriptRoot 'qa_windows_owned_client_capture.ps1')
  $first=Join-Path $work 'real-window-before-f1.png'
+ $report.before_f1_capture_started_at_utc=[DateTime]::UtcNow.ToString('o')
  $client=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $first
+ $report.before_f1_captured_at_utc=[DateTime]::UtcNow.ToString('o')
  $report.client_area=@{left=$client.left;top=$client.top;width=$client.width;height=$client.height}
  $report.capture_geometry_before=$client
  $report.capture_method=$client.method
@@ -169,14 +171,15 @@ public static class TikzariumW2Win32 {
  $report.client_unpainted_samples=$client.unpainted_samples
  $report.window_screenshot='CAPTURED_CLIENT_PRINTWINDOW_NO_SCREEN_READ_NOT_MANUALLY_REVIEWED'
  $report.first_png_sha256=(Get-FileHash -LiteralPath $first -Algorithm SHA256).Hash.ToLowerInvariant()
- $report.before_f1_captured_at_utc=[DateTime]::UtcNow.ToString('o')
  if((Get-W2OwnedRuntimeStatus $handle $appProcess.Id ([int]$token.session_id)) -cne 'OWNED_ACTIVE_DEFAULT_DESKTOP' -or
     [TikzariumW2Win32]::GetForegroundWindow() -ne $handle){throw 'Owned HWND/desktop changed before F1'}
  [System.Windows.Forms.SendKeys]::SendWait('{F1}')
  Start-Sleep -Milliseconds 800
  if([TikzariumW2Win32]::GetForegroundWindow() -eq $handle){
   $second=Join-Path $work 'real-window-after-f1.png'
+  $report.after_f1_capture_started_at_utc=[DateTime]::UtcNow.ToString('o')
   $after=Save-TikzariumOwnedClient -Handle $handle -ExpectedPid $appProcess.Id -Path $second
+  $report.after_f1_captured_at_utc=[DateTime]::UtcNow.ToString('o')
   if($after.width -ne $client.width -or $after.height -ne $client.height){throw 'Actual native client geometry changed during F1 capture'}
   $report.second_png_sha256=(Get-FileHash -LiteralPath $second -Algorithm SHA256).Hash.ToLowerInvariant()
   $report.capture_geometry_after=$after
