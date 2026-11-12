@@ -32,4 +32,14 @@ The hosted capture script now records UTC start/end immediately around both orig
 
 Self-tests cover before/after success, no overlap, equal-start acceptance, equal-end and partial-overlap rejection, invalid intervals, and invalid data after an earlier matching pair. Independent junior review caught an early-return validation gap; root corrected it to validate all intervals before returning the first proof. This changes QA scripts only; all Rust crate Git objects remain identical to the 512-test code snapshot.
 
-PowerShell is unavailable in the local Linux workspace. At submission this QA correction is **IMPLEMENTED_NOT_VERIFIED** by native execution; the subsequent exact-head hosted job and original artifact are required. Latest results belong to [PR #189](https://github.com/i-shutov/tikzarium/pull/189), not retroactively to the failed 1784 job or its unchanged original evidence.
+PowerShell is unavailable in the local Linux workspace. At submission this QA correction was **IMPLEMENTED_NOT_VERIFIED** by native execution. The subsequent exact-head result is recorded below; it does not retroactively change the failed 1784 job or its original evidence.
+
+## Verified correction on 8fa502c
+
+The [exact-head Win32 job](https://github.com/i-shutov/tikzarium/actions/runs/43183582686/job/131065210740) completed **success** for source `8fa502c277920599f0ca8e43b49ef74b7bb31591`. The [complete check snapshot](hosted-checks-8fa502c.json) has **26 success, 2 failure, 1 skipped** (29 completed check runs, retaining push/PR duplicates). The two remaining failures are `linux-portable` and `studio-full-vertical`, stopped by the unchanged APP_TREE gates. Overall CI is not green.
+
+Downloaded [original artifact 13927891825](https://github.com/i-shutov/tikzarium/actions/runs/43183582686/artifacts/13927891825), checked upstream ZIP SHA-256 `1d3f704ddcd2aa2b5e528bc3f748f1c4876d656693221a19323df9bb5554d893`, checked source SHA and four screenshot hashes against their original reports, and visually inspected both slow-startup PNGs. The retained [nine-file subset](hosted-win32-8fa502c-originals.zip) and [manifest](hosted-win32-8fa502c-manifest.json) preserve the original reports, screenshots, probe log and successful interval audit byte for byte; no probe executable is included.
+
+The original audit status is **PASS_NATIVE_GUI_DURING_SLOW_READONLY_PROBE**. It records the actual `after_f1` capture from `08:33:30.9494318Z` to `08:33:30.9811363Z` wholly inside lookup probe PID 5528, from `08:33:30.1033379Z` to `08:33:32.1235088Z`. Source, HWND/foreground and no-probe-console guards remain active. The report retains `fixture=SYNTHETIC_NOT_REAL_TEX`, `physical_windows10=NOT_RUN` and `full_w2_qualification=NOT_RUN`.
+
+This verifies the QA correction and **hosted Windows Server 2022 / 96 DPI startup, F1 and responsiveness during the synthetic read-only probe**. Rust crate and lock objects remain identical to the 512-test snapshot. It does not accept the complete scientific editing/build/export workflow, physical Win10, IME, other DPI modes or G3. This final follow-up changes documentation and retained evidence only.

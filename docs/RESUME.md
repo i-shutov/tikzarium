@@ -4,7 +4,7 @@
 
 [Текущий checkpoint](../insights/2026-11-12_SCIENTIFIC_STUDIO_IMPLEMENTATION_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [атлас PDF, 14 страниц](../design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf).
 
-Проверенный code commit `1784a48246cbdfd260fb80ce4731c7f165ad52c5`, tree `3bb17ee38e0f77d6d06a125d4076c70f1f707bf1`; ветка `feat/studio-scientific-integration-20261112`. **512 workspace tests PASS**, strict Clippy/fmt/build PASS, 20-operation API и 53-request/26-action matrix PASS, два explicit SC3 exports и реальные CLI/XeLaTeX PDFs PASS. Native/physical приёмка нового UI **NOT_RUN**, stable v1.0 **NO-GO**.
+Проверенный code commit `1784a48246cbdfd260fb80ce4731c7f165ad52c5`, tree `3bb17ee38e0f77d6d06a125d4076c70f1f707bf1`; ветка `feat/studio-scientific-integration-20261112`. **512 workspace tests PASS**, strict Clippy/fmt/build PASS, 20-operation API и 53-request/26-action matrix PASS, два explicit SC3 exports и реальные CLI/XeLaTeX PDFs PASS. Hosted Win32 startup/F1/slow-probe subset на последующем QA-only commit `8fa502c277920599f0ca8e43b49ef74b7bb31591` — **PASS**; полный native scientific workflow и physical Win10 — **NOT_ACCEPTED**, stable v1.0 **NO-GO**.
 
 Интегрированы шесть прямых инструментов, компактный PGFPlots Inspector и shared Undo/F1, read-only resource references, project-local dependency ledger и повторная проверка перед экспортом. Source ownership и opaque TeX случаи усилены по независимому ревью. Подробные hashes/logs и реальные задачи gpt-6-luna сохранены в checkpoint.
 
@@ -12,7 +12,7 @@
 
 Исторические записи ниже сохраняют свои source SHA и даты.
 
-Дополнение к текущему checkpoint: [hosted follow-up](../insights/assets/2026-11-12-scientific-studio/HOSTED_FOLLOWUP.md). На `1784a482` Rust/Inspector/CLI hosted checks прошли; оригинальные Win32 startup/F1 PNG просмотрены и дают только Windows Server 2022/96 DPI partial. Локальный интерактивный канал, полный GUI workflow и physical Windows10 остаются открытыми. Два старых APP_TREE gate и slow-probe overlap проверка не пройдены; общий CI не зелёный.
+Дополнение к текущему checkpoint: [hosted follow-up](../insights/assets/2026-11-12-scientific-studio/HOSTED_FOLLOWUP.md). На `8fa502c` завершены 26 успешных checks, 2 failed APP_TREE gate, 1 skipped. Исправленная проверка полного capture interval прошла: оригинальный кадр после F1 целиком получен во время synthetic lookup probe. JSON, probe log и PNG сохранены с hashes. Это Windows Server 2022/96 DPI startup/F1/responsiveness; локальный интерактивный канал, полный GUI workflow и physical Windows10 остаются открытыми. Rust crate/lock objects не изменены; общий CI пока не зелёный.
 
 ## SCIENTIFIC STUDIO v1.0.0 — OWNER APPROVED SCOPE, 11.11.2026
 

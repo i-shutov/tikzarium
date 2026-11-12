@@ -1,0 +1,72 @@
+{
+  "source_sha": "8fa502c277920599f0ca8e43b49ef74b7bb31591",
+  "upstream_artifact_id": 13927891825,
+  "upstream_zip_sha256": "1d3f704ddcd2aa2b5e528bc3f748f1c4876d656693221a19323df9bb5554d893",
+  "job_url": "https://github.com/i-shutov/tikzarium/actions/runs/43183582686/job/131065210740",
+  "artifact_url": "https://github.com/i-shutov/tikzarium/actions/runs/43183582686/artifacts/13927891825",
+  "retained_subset": {
+    "file": "hosted-win32-8fa502c-originals.zip",
+    "bytes": 650606,
+    "sha256": "263af1280b749507b29b54c4f97e7f027fec970174eb8f9e64f7f26143f65cba"
+  },
+  "entries": [
+    {
+      "path": "hosted-windows-native-gui.json",
+      "bytes": 9374,
+      "sha256": "19d95a49c44f77cab2b37f219406b68df866ce09a4be83499d22920e95d9dfd9"
+    },
+    {
+      "path": "independent-hosted-window-audit.json",
+      "bytes": 506,
+      "sha256": "4c954957dc7539574e6b8c67c615e5c17e95e522f283771f7b74acb9e9354172"
+    },
+    {
+      "path": "hosted-window/real-window-before-f1.png",
+      "bytes": 187508,
+      "sha256": "4491471f57a610cfd088ab70d3ab97b3e1f9e2bbb8ba1e499594459349f564a9"
+    },
+    {
+      "path": "hosted-window/real-window-after-f1.png",
+      "bytes": 157392,
+      "sha256": "f134215c31a6bb1b3b6476224a54143244b7fb96410b3a40b65b59b47b11d059"
+    },
+    {
+      "path": "slow-startup/hosted-windows-native-gui.json",
+      "bytes": 9374,
+      "sha256": "4861f45de1c308b4b5ebc116a59c1e92afb6996f00c0edfc1e70a8f478897138"
+    },
+    {
+      "path": "slow-startup/slow-probe-log.txt",
+      "bytes": 179,
+      "sha256": "5aa44222a7cb1d6fce4331c2fb7b5020ac8fe0fb354e7aedb661a1babbee5833"
+    },
+    {
+      "path": "slow-startup/startup-responsive-audit.json",
+      "bytes": 1511,
+      "sha256": "276dc22c35137079c27b65902b2d7d5e0e364982b138476af2612770f5d42b5c"
+    },
+    {
+      "path": "slow-startup/hosted-window/real-window-before-f1.png",
+      "bytes": 187854,
+      "sha256": "6aab6271cca9f4aa77d12a8a1bd1893a5006918a346779f53af6c3198508959d"
+    },
+    {
+      "path": "slow-startup/hosted-window/real-window-after-f1.png",
+      "bytes": 157735,
+      "sha256": "ac9db76afbbb4bba013222828f55dec0f5b289de75ebcf4887802b618f1c238a"
+    }
+  ],
+  "verified_overlap": {
+    "phase": "after_f1",
+    "capture_started_at_utc": "2026-11-12T08:33:30.9494318+00:00",
+    "capture_finished_at_utc": "2026-11-12T08:33:30.9811363+00:00",
+    "process_id": "5528",
+    "kind": "lookup",
+    "probe_started_at_utc": "2026-11-12T08:33:30.1033379+00:00",
+    "probe_finished_at_utc": "2026-11-12T08:33:32.1235088+00:00"
+  },
+  "status": "PASS_NATIVE_GUI_DURING_SLOW_READONLY_PROBE",
+  "scope": "GITHUB_HOSTED_WINDOWS_SERVER_2022_96_DPI_STARTUP_F1_SLOW_SYNTHETIC_PROBE_ONLY",
+  "physical_windows10": "NOT_RUN",
+  "full_w2_qualification": "NOT_RUN"
+}
