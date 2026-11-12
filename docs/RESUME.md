@@ -1,4 +1,16 @@
-# TikZarium — release resume, 2026-11-11
+# TikZarium — release resume, 2026-11-12
+
+## 2026-11-12 — Scientific Studio: интеграция и атлас, PR #189
+
+[Текущий checkpoint](../insights/2026-11-12_SCIENTIFIC_STUDIO_IMPLEMENTATION_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [атлас PDF, 14 страниц](../design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf).
+
+Проверенный code commit `1784a48246cbdfd260fb80ce4731c7f165ad52c5`, tree `3bb17ee38e0f77d6d06a125d4076c70f1f707bf1`; ветка `feat/studio-scientific-integration-20261112`. **512 workspace tests PASS**, strict Clippy/fmt/build PASS, 20-operation API и 53-request/26-action matrix PASS, два explicit SC3 exports и реальные CLI/XeLaTeX PDFs PASS. Native/physical приёмка нового UI **NOT_RUN**, stable v1.0 **NO-GO**.
+
+Интегрированы шесть прямых инструментов, компактный PGFPlots Inspector и shared Undo/F1, read-only resource references, project-local dependency ledger и повторная проверка перед экспортом. Source ownership и opaque TeX случаи усилены по независимому ревью. Подробные hashes/logs и реальные задачи gpt-6-luna сохранены в checkpoint.
+
+**Следующий исполнимый шаг:** SCI-BUILD regression для изменения `.dat` во время работы TeX и контракт project root для parent-data inputs; затем native compact GUI с новыми оригинальными PNG и корректным обновлением APP_TREE gate. Post-build snapshot не устраняет build-time race; внешние ресурсы не сертифицированы. Desktop runtime в этой сессии после перезапуска не запускается. Старые платформенные PASS не переносятся; Asymptote/Typst и дальнейшие домены не опережают научную приёмку.
+
+Исторические записи ниже сохраняют свои source SHA и даты.
 
 ## SCIENTIFIC STUDIO v1.0.0 — OWNER APPROVED SCOPE, 11.11.2026
 
