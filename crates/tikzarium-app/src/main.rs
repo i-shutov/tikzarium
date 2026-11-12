@@ -15,11 +15,13 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{ExtensionStatus, primitives::Evidence};
 
+mod build_resources;
 mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
 mod scientific_inspector;
+mod scientific_resource_view;
 mod source_editor;
 mod source_fonts;
 mod source_highlight;
@@ -36,12 +38,14 @@ use ui_state::{
     editor_command_from_events, line_start_char_index, preview_is_stale, scaled_zoom,
 };
 
+use build_resources::BuildResources;
 use font_proof::{FontProofResult, spawn_font_proof};
 use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
 use scientific_inspector::ScientificInspector;
+use scientific_resource_view::ScientificResourceView;
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
@@ -767,6 +771,7 @@ struct TikzariumApp {
     preview_lod_texture: Option<egui::TextureHandle>,
     preview_lod_rx: Option<PreviewLodReceiver>,
     pdf: Option<Vec<u8>>,
+    build_resources: BuildResources,
     built_source: Option<String>,
     built_path: Option<PathBuf>,
     building_source: Option<String>,
@@ -803,6 +808,7 @@ struct TikzariumApp {
     studio_extension_filter: String,
     authoring: tikz_authoring::Session,
     scientific: ScientificInspector,
+    scientific_resources: ScientificResourceView,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
     // history that could restore commands or bytes from a previous file.
@@ -958,6 +964,7 @@ impl TikzariumApp {
             preview_lod_texture: None,
             preview_lod_rx: None,
             pdf: None,
+            build_resources: BuildResources::default(),
             built_source: None,
             built_path: None,
             building_source: None,
@@ -998,6 +1005,7 @@ impl TikzariumApp {
                 state
             },
             scientific: ScientificInspector::default(),
+            scientific_resources: ScientificResourceView::default(),
             highlight_generated_line: false,
             reset_source_editor_undo_history: false,
             source_editor: source_editor::SourceEditor::default(),
@@ -1142,6 +1150,8 @@ impl TikzariumApp {
                 self.document = document;
                 self.authoring.reset(&self.document.source);
                 self.scientific = ScientificInspector::default();
+                self.scientific_resources = ScientificResourceView::default();
+                self.build_resources = BuildResources::default();
                 self.source_caret = None;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
@@ -1271,8 +1281,7 @@ impl TikzariumApp {
     }
 
     fn export_pdf_picker(&mut self) {
-        if self.preview_stale() || self.pdf.is_none() {
-            self.status = "Сначала соберите актуальный PDF с внешним XeLaTeX".into();
+        if !self.check_current_export() {
             return;
         }
         let filename = self
@@ -1298,6 +1307,10 @@ impl TikzariumApp {
             self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
             return;
         }
+        // Dependencies can change while the native dialog is open.
+        if !self.check_current_export() {
+            return;
+        }
         match write_new_pdf_without_overwrite(&path, self.pdf.as_deref().expect("checked above")) {
             Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
             Err(error) => {
@@ -1310,15 +1323,40 @@ impl TikzariumApp {
     }
 
     fn preview_stale(&self) -> bool {
-        preview_is_stale(
-            self.pdf.is_some(),
-            self.last_build_failed,
-            self.receiver.is_some(),
-            self.built_source.as_deref(),
-            &self.document.source,
-            self.built_path.as_deref(),
-            self.document.path.as_deref(),
-        )
+        (self.pdf.is_some() && !self.build_resources.is_current())
+            || preview_is_stale(
+                self.pdf.is_some(),
+                self.last_build_failed,
+                self.receiver.is_some(),
+                self.built_source.as_deref(),
+                &self.document.source,
+                self.built_path.as_deref(),
+                self.document.path.as_deref(),
+            )
+    }
+
+    /// Explicit freshness check at both export entry points. Normal frame
+    /// rendering reads the cached result, never hashes dependencies.
+    fn check_current_export(&mut self) -> bool {
+        if self.pdf.is_none() {
+            self.status = "Сначала соберите PDF с внешним XeLaTeX".into();
+            return false;
+        }
+        if !self
+            .build_resources
+            .recheck(self.document.path.as_deref(), &self.document.source)
+        {
+            self.status = format!(
+                "Экспорт недоступен: {} Соберите PDF заново.",
+                self.build_resources.report()
+            );
+            return false;
+        }
+        if self.preview_stale() {
+            self.status = "PDF устарел: соберите текущий исходник перед экспортом".into();
+            return false;
+        }
+        true
     }
 
     fn open_document_dialog(&mut self) {
@@ -1405,6 +1443,11 @@ impl TikzariumApp {
             let build_path = self.building_path.take();
             match result {
                 Ok(artifact) => {
+                    self.build_resources.capture(
+                        artifact.project_dependencies,
+                        build_path.as_deref(),
+                        build_source.as_deref().unwrap_or_default(),
+                    );
                     self.preview_epoch = self.preview_epoch.wrapping_add(1);
                     self.page_index = 1;
                     self.page_count = None;
@@ -1616,8 +1659,7 @@ impl TikzariumApp {
     }
 
     fn export(&mut self) {
-        if self.preview_stale() {
-            self.status = "PDF is stale: rebuild the current file before exporting".into();
+        if !self.check_current_export() {
             return;
         }
         let Some(pdf) = &self.pdf else {
@@ -2181,6 +2223,19 @@ impl TikzariumApp {
                     );
                 }
                 StudioDock::Libraries => {
+                    ui.heading("Ресурсы проекта");
+                    if let Some(line) = self.scientific_resources.show(
+                        ui, &self.document.source, self.authoring.source_revision(),
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = false;
+                    }
+                    if ui.add_enabled(self.pdf.is_some() && self.receiver.is_none(), egui::Button::new("Проверить файлы сборки")).clicked() {
+                        self.build_resources.recheck(self.document.path.as_deref(), &self.document.source);
+                        self.status = self.build_resources.report().to_owned();
+                    }
+                    self.build_resources.show(ui);
+                    ui.separator();
                     ui.heading("Библиотеки проекта");
                     ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
                     let prior = self.authoring.source_revision();

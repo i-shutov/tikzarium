@@ -305,10 +305,8 @@ impl ScientificInspector {
                     .and_then(|index| self.candidates.get(index))
                     .map(|candidate| candidate.instance.kind);
                 let choices = selected_kind.map_or(&[][..], LiteralProperty::choices);
-                if !choices.contains(&self.property) {
-                    if let Some(first) = choices.first() {
-                        self.property = *first;
-                    }
+                if !choices.contains(&self.property) && let Some(first) = choices.first() {
+                    self.property = *first;
                 }
                 ui.label("Параметр");
                 let property_label = self.property.label();
@@ -581,11 +579,13 @@ mod tests {
                 inspector.property = *property;
                 inspector.refresh_literal(&authoring, &source);
                 let ctx = egui::Context::default();
-                let mut input = egui::RawInput::default();
-                input.screen_rect = Some(egui::Rect::from_min_size(
-                    egui::Pos2::ZERO,
-                    egui::vec2(panel_width, 640.0),
-                ));
+                let input = egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(panel_width, 640.0),
+                    )),
+                    ..Default::default()
+                };
                 ctx.begin_pass(input);
                 egui::CentralPanel::default().show(&ctx, |ui| {
                     ui.set_max_width(panel_width);
