@@ -18,3 +18,7 @@ insights/assets/2026-11-13-shared-history/*.log whitespace=-blank-at-eof
 insights/assets/2026-11-13-shared-history/baseline-ci-audit.md whitespace=-blank-at-eof
 insights/assets/2026-11-13-shared-history/**/*.log whitespace=-blank-at-eof
 insights/assets/2026-11-13-shared-history/native-attempts/** whitespace=-blank-at-eof
+# Native evidence copies retain the original source line endings and log bytes.
+insights/assets/2026-11-13-hosted-scientific/*.tex -text whitespace=cr-at-eol
+insights/assets/2026-11-13-hosted-scientific/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-hosted-scientific/independent-original-review.md whitespace=-blank-at-eof

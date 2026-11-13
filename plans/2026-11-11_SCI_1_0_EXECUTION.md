@@ -2,6 +2,12 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
+## Checkpoint 13.11.2026 — scientific mixed Undo принят в hosted GUI
+
+[Независимо проверенный итог](../insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md): exact source `b646c4d46d331a281c1fe51d6bcc79c436ffdf35`, app tree `fe40516186fb1728baceb40d0da137a780c1d9de`, [run 43370706180 SUCCESS](https://github.com/i-shutov/tikzarium/actions/runs/43370706180). Настоящий SV-001 derivative, Unicode Paste, clipboard-confirmed draft151, один байт Apply150→151, два Undo, byte-exact Save/Open, GUI XeLaTeX/current PDF Export прошли с независимым просмотром оригиналов. Scope **HOSTED_GUI Linux/Xvfb 1366×768, клиент1180×680, Midnight**; 1-page PDF и 4 embedded fonts проверены. Локальные 566 tests/fmt/strict Clippy/build и 20 evidence contracts PASS. Все16 CI runs завершены:14 success/2 исторических I61/N5 lease failures. Общий CI/stable/merge GO не объявлен.
+
+**Следующая executable задача:** адаптировать и полностью перепроверить I61/N5 на компактном UI, сохраняя исходные требования и original evidence. Этот SV-001 не закрывает их шесть примитивов, packaged launch или отдельные library/parameter контракты и не разрешает механически заменить pin. Physical Win10/IME/DPI/G3 и полный ST-SCI остаются отдельными обязательными gates.
+
 ## Checkpoint 13.11.2026 — общая история текста и scientific SourcePatch
 
 [Отчёт и оригинальные журналы](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md): исправлен подтверждённый сброс текстового Undo после Inspector Apply и визуального Undo после последующей ручной правки. Production передаёт точные inverse patches в общий bounded ledger с revision/expected-byte fences; Open отделяет document identity и старый queued/raw input. Новых idle source clones нет. **566 tests PASS / 0 failed / 4 ignored**, fmt/strict Clippy/app+CLI build PASS; четыре production-shell raw-egui регрессии `UNIT_EVENT`, collector 16/16 PASS, отдельный static review.

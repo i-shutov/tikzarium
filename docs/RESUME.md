@@ -1,5 +1,13 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — принят hosted scientific workflow с общей историей
+
+**Завершён следующий запланированный сценарий:** SV-001 derivative → native Unicode Paste → PGFPlots draft/Apply `150 → 151` → два общих Undo → точные Save/Open → GUI XeLaTeX → текущий PDF. [Итоговый отчёт и оригинальные свидетельства](../insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md), [успешный run 43370706180](https://github.com/i-shutov/tikzarium/actions/runs/43370706180), [CP05](https://drive.google.com/file/d/1n4cvVs-un4pJRssnA6b7P9dy5dJ3l4a9/view).
+
+Проверенный source commit `b646c4d46d331a281c1fe51d6bcc79c436ffdf35`, app tree `fe40516186fb1728baceb40d0da137a780c1d9de`. Восемь исходных состояний сверены побайтно; Apply изменяет один байт, оба Undo возвращают точные предыдущие состояния. Независимо проверены native clipboard, оригинальные PNG, GUI build log и экспортированный PDF: 1 страница, 4 встроенных шрифта, греческие обозначения без missing-glyph ошибок. Scope — **HOSTED_GUI Linux/Xvfb, экран 1366×768, клиент 1180×680, Midnight**. Полный CI этого exact head завершён: **14 success / 2 failure / 16 runs**; два отказа — прежние I61/N5 APP_TREE leases. Новые локальные gates: **566 PASS / 0 failed / 4 ignored**, fmt/strict Clippy/build PASS, 20/20 evidence contracts.
+
+**Одна следующая исполнимая задача:** пересмотреть I61 и N5 под текущую компактную раскладку и провести их собственные полные сценарии с оригиналами; обновление leases допускается только вместе с проверенной адаптацией, не по одному startup или этому SV-001. Physical Win10 W0–W4/actual W2b/W3, IME, DPI, G3, полный SCI142/103/AI88, Asymptote/Typst и ST-SCI остаются открытыми. **Merge/stable/release GO отсутствуют.** Нижележащие разделы сохраняют промежуточную историю, их pending-состояния этим checkpoint обновлены.
+
 ## 2026-11-13 — единый SourcePatch/Undo для текста и Inspector
 
 [Новый checkpoint](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md), [исходные команды/результаты](../insights/assets/2026-11-13-shared-history/summary.json), [SHA256 evidence manifest](../insights/assets/2026-11-13-shared-history/manifest.json). Исходная база [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189) — `0eee418ca4d4869b2a4b9fb6ea1462d53df84e1d`; новый commit/app-tree и CI интегратор фиксирует после публикации/readback.
