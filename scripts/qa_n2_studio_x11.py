@@ -25,9 +25,11 @@ SCREEN = (1366, 768)
 # main.rs studio_file_menu/show_source_editor/show_studio_inspector. File path,
 # source settings and tabs agree with CP05 run43370706180 originals. Library and
 # completion points are bounded compact candidates, never an acceptance result.
+# Full-source checkbox y174 follows original run43385517101 settings PNG
+# (root y194 minus observed client-origin y20); y150 is the font-size row.
 POINTS = {
     "file_menu": (23, 15), "file_path": (143, 135),
-    "source_settings": (405, 80), "source_full": (490, 150),
+    "source_settings": (405, 80), "source_full": (490, 174),
     "source": (200, 230), "dirty_discard": (505, 407),
     "libraries": (1030, 81), "properties": (960, 81),
     "library_panel": (1034, 543), "library_entry": (1024, 605),
@@ -159,7 +161,7 @@ class Native:
         self.geometry = parse_geometry(geometry)
         self.report.update({"client_geometry": self.geometry, "screen_size": SCREEN,
                             "coordinate_scope": "COMPACT_CLIENT_CANDIDATES_REQUIRE_ORIGINAL_REVIEW"})
-        self.event("owned_production_window", **self.report)
+        self.event("owned_production_window", report=self.report)
 
     def point(self, x: int, y: int):
         self.focus()

@@ -73,6 +73,30 @@ class CompactInputContracts(unittest.TestCase):
                     native.copy_focused(b"10.50cm", out, "wrong-field")
                 self.assertEqual((out / "wrong-field-clipboard.txt").read_bytes(), observed)
 
+    def test_folded_editor_preamble_plus_fixture_is_rejected_and_retained(self):
+        # Failure shape observed in original run 43385517101: the settings
+        # size row was clicked, so Paste replaced only the folded body. This
+        # offline negative proves that containing the entire intended fixture
+        # cannot substitute for exact full-editor readback.
+        expected = native.FIXTURE.encode("utf-8")
+        preamble = (
+            "\\documentclass{standalone}\n"
+            "\\usepackage{fontspec}\n"
+            "\\usepackage{tikz}\n"
+            "\\usetikzlibrary{arrows.meta,calc,positioning}\n"
+            "\\begin{document}\n"
+        ).encode("utf-8")
+        observed = preamble + expected
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            with patch.object(native, "key"), patch.object(native.subprocess, "run",
+                    side_effect=[SimpleNamespace(), SimpleNamespace(stdout=observed)]):
+                with self.assertRaisesRegex(RuntimeError, "actual focused"):
+                    native.copy_focused(expected, out, "folded-source")
+            self.assertEqual((out / "folded-source-clipboard.txt").read_bytes(), observed)
+            self.assertTrue(observed.endswith(expected))
+            self.assertNotEqual(observed, expected)
+
     @staticmethod
     def source():
         lines = [b"% keep opaque \\macro{\xd0\x9d\xd0\xb5} and CRLF\r\n"]

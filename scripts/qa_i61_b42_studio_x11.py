@@ -29,7 +29,7 @@ CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 POINTS = {
     "file_menu": (23, 15), "file_path": (143, 135),
-    "source_settings": (405, 80), "source_full_source": (490, 150),
+    "source_settings": (405, 80), "source_full_source": (490, 174),
     "source": (200, 230), "save": (61, 49), "open": (24, 49),
     "build": (224, 49), "export": (291, 49),
     "guide": (381, 49), "pdf": (439, 49), "undo": (109, 49),

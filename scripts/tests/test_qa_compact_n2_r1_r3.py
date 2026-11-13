@@ -1,4 +1,5 @@
 """Offline native-driver failure guards; these never establish GUI acceptance."""
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -105,6 +106,44 @@ class NativeGuards(unittest.TestCase):
             self.assertEqual(self.native.copy("caret", focus_source=False), b"arro")
         self.native.click.assert_not_called()
         self.native.key.assert_called_once_with("ctrl+c")
+
+    def test_successful_start_records_report_kind_and_observed_pid_without_collision(self):
+        self.native.report.update({"kind": "R3_ACTUAL_XDG_GTK_FILE_CHOOSER", "pid": 999,
+                                   "source_head_sha": "b" * 40, "app_tree_sha": n2.APP_TREE})
+        def command(*argv, **kwargs):
+            if argv[1] == "getdisplaygeometry":
+                return "1366 768"
+            if argv[1] == "getwindowpid":
+                return "42"
+            if argv[1] == "getactivewindow":
+                return "1234"
+            if argv[0] == "xwininfo":
+                return geometry()
+            return ""
+        def observed_process(argv, **kwargs):
+            output = b"Name: Openbox\n" if argv[0] == "wmctrl" else b"1234\n"
+            return subprocess.CompletedProcess(argv, 0, output)
+        with patch.dict(n2.os.environ, {"TIKZARIUM_APP_TREE_SHA": n2.APP_TREE}), \
+             patch.object(n2, "run", side_effect=command), \
+             patch.object(n2.subprocess, "run", side_effect=observed_process), \
+             patch.object(n2.subprocess, "Popen", return_value=self.native.process) as launch, \
+             patch.object(n2, "expected_elf", return_value=self.app), \
+             patch.object(n2.Path, "resolve", return_value=self.app), \
+             patch.object(n2, "sha", return_value="a" * 64), \
+             patch.object(n2.time, "sleep"):
+            self.native.start(self.root)
+        launch.assert_called_once()
+        records = [json.loads(line) for line in (self.root / "native-actions.jsonl").read_text().splitlines()]
+        owned = records[-1]
+        self.assertEqual(owned["event"], "owned_production_window")
+        self.assertEqual(owned["pid"], 42)
+        self.assertEqual(owned["window"], "1234")
+        self.assertEqual(owned["report"]["kind"], "R3_ACTUAL_XDG_GTK_FILE_CHOOSER")
+        self.assertEqual(owned["report"]["pid"], 42)
+        self.assertEqual(owned["report"]["source_head_sha"], "b" * 40)
+        self.assertEqual(owned["report"]["observed_proc_exe_sha256"], "a" * 64)
+        self.assertEqual(owned["report"]["client_geometry"],
+                         {"X": 1, "Y": 20, "WIDTH": 1180, "HEIGHT": 680})
 
     def test_wrong_app_tree_fails_before_any_native_process(self):
         with patch.dict(n2.os.environ, {"TIKZARIUM_APP_TREE_SHA": "0" * 40}):
