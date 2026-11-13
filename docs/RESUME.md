@@ -1,5 +1,13 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — CP07: PGFPlots V2, compact Help и исходные AT4
+
+Продолжение после прерывания восстановлено побайтно в отдельной worktree. [Текущий отчёт и scope](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md). Published `0d33710e` сохранил 17 исходных AT4 и исправил выбор popup; его [native run43403624097](https://github.com/i-shutov/tikzarium/actions/runs/43403624097) выявил расширение Help dock после F1 и остановился до первого Apply. ZIP/CRC и 73 retained hashes проверены независимо; прежние отказы сохранены.
+
+Следующий объединённый блок исправляет сам compact Help, распознаёт поддержанные literal keys у `\addplot3`/`\addplot3+` и проверяет восемь исходных AT4 09/48/49/50/55/56/58/61. Неоднозначные ключи, namespaces, неизвестные макросы и неподдержанные 3D keys сохраняют отказ; исходные формулы, таблицы и CRLF не переписываются. V2 сохраняет все 26 операций в восьми входах. **IMPLEMENTED_NOT_VERIFIED для нового hosted GUI объёма** до собственных run originals и независимого просмотра PDF.
+
+Compact Help меняет app/src с `fe40516186fb1728baceb40d0da137a780c1d9de` на `6ea8f033c5241781e895ecb54af3bb3b48bb0735`. Полные I61/N2/N3 и portable N5/R1/R2/R3/R5 требуют повторного исполнения на этом app tree; прежняя приёмка CP06 не переносится. Следующее действие — locked production build, независимые native V2/AT4 jobs и полный I61/N5, затем CP07 по фактическим результатам. **Draft; merge/stable/release GO отсутствуют.**
+
 ## 2026-11-13 — полные compact I61/N5 независимо приняты
 
 **Закрыт следующий блок после CP05:** полный I61/N2/N3 и portable N5 с R1/R2/R3/R5, scope **HOSTED_GUI Linux/X11**. [Итоговый отчёт](../insights/2026-11-13_COMPACT_I61_N5_ACCEPTANCE_RU.md), [проверенные оригиналы и manifest](../insights/assets/2026-11-13-compact-i61-n5/accepted-fa9/provenance-manifest.json), [CP06](https://drive.google.com/file/d/1c8AqOBGfIgmyjuYgrx2AxaUhqoEa-kBF/view).

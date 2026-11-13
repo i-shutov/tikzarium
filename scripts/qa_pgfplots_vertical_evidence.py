@@ -15,10 +15,13 @@ from pathlib import Path
 from qa_sci_compact_native import normalized_clipboard, original_image_size
 
 SCOPE = "HOSTED_GUI_PGF_V2_BOUNDED_VERTICAL"
+AT4_SCOPE = "HOSTED_GUI_AT4_ORIGINALS_BOUNDED_VERTICAL"
 SCREEN = (1366, 768)
 CLIENT = (1180, 680)
 FIXTURES = Path(__file__).resolve().parent / "fixtures/pgfplots-v2"
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
+AT4_EXAMPLES = SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples"
+AT4_RELATIVE_EXAMPLES = "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples"
 AXIS_KEYS = ("samples", "domain", "xmin", "xmax", "ymin", "ymax", "xtick distance",
              "ytick distance", "xtick", "ytick", "width", "height", "xlabel", "ylabel", "mark")
 ADDPLOT_KEYS = ("samples", "domain", "mark")
@@ -26,17 +29,79 @@ DEPENDENCIES = {"formula": (), "external-tables": ("measurements.dat", "referenc
 NAMED_SV = ("SV-001", "SV-003", "SV-009", "SV-022", "SV-029", "SV-040")
 DEPENDENCIES.update({name: () for name in NAMED_SV})
 
+# Exact original sources and literal edits from the byte-level AT4 proposal.
+# These are corpus inputs, never regenerated synthetic fixtures.
+AT4_CASES = {
+    "AT4-09": {"filename": "scientific-plot.tex", "case_id": "09",
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "161", "after": "181"},
+    "AT4-48": {"filename": "error-bars.tex", "case_id": "48",
+        "sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-49": {"filename": "loglog-convergence.tex", "case_id": "49",
+        "sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-50": {"filename": "confidence-band.tex", "case_id": "50",
+        "sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-55": {"filename": "surface-gaussian.tex", "case_id": "55",
+        "sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "21", "after": "25"},
+    "AT4-56": {"filename": "parametric-helix.tex", "case_id": "56",
+        "sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "181", "after": "201"},
+    "AT4-58": {"filename": "discontinuous-function.tex", "case_id": "58",
+        "sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-61": {"filename": "bode-magnitude.tex", "case_id": "61",
+        "sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "161", "after": "201"},
+}
+SUITES = ("v2", "at4")
+
+
+def _suite(suite: str) -> str:
+    if suite not in SUITES:
+        raise ValueError("Unsupported PGFPlots evidence suite: " + str(suite))
+    return suite
+
+
+def fixtures_for_suite(suite: str = "v2") -> tuple[str, ...]:
+    suite = _suite(suite)
+    # Keep the bounded V2 corpus and checks unchanged, while running SV-009
+    # last so its known strict-log warning cannot prevent earlier cases from
+    # producing their independent evidence.
+    return ("formula", "external-tables", "SV-001", "SV-003", "SV-022",
+            "SV-029", "SV-040", "SV-009") if suite == "v2" else tuple(AT4_CASES)
+
+
+def operation_inventory(suite: str = "v2") -> tuple["Operation", ...]:
+    suite = _suite(suite)
+    return OPERATIONS if suite == "v2" else AT4_OPERATIONS
+
+
+def suite_scope(suite: str = "v2") -> str:
+    suite = _suite(suite)
+    return SCOPE if suite == "v2" else AT4_SCOPE
+
 
 def fixture_path(fixture: str) -> Path:
+    if fixture in AT4_CASES:
+        return AT4_EXAMPLES / AT4_CASES[fixture]["filename"]
     if fixture in NAMED_SV:
         return SOURCE_ROOT / "roadmap/Tikzarium_Scientific_142_R4/fixtures/SR" / fixture / "figure.tex"
+    if fixture not in DEPENDENCIES:
+        raise ValueError("Unknown PGFPlots fixture: " + fixture)
     return FIXTURES / (fixture + ".tex")
 
 
 def fixture_bytes(fixture: str) -> bytes:
     # Named corpus inputs are byte-identical. Disposable CI must have their
     # declared Charis SIL font; absence is a failure, never a substitution.
-    return fixture_path(fixture).read_bytes()
+    contents = fixture_path(fixture).read_bytes()
+    if fixture in AT4_CASES and digest(contents) != AT4_CASES[fixture]["sha256"]:
+        raise ValueError("Original AI88 AT4 case bytes/hash mismatch: " + fixture)
+    return contents
 
 
 @dataclass(frozen=True)
@@ -90,6 +155,11 @@ OPERATIONS = tuple(Operation("formula", 0, "axis", key, before, after) for key, 
     Operation("SV-029", 0, "axis", "height", r"0.3\textwidth", r"0.4\textwidth"),
 )
 
+AT4_OPERATIONS = tuple(Operation(fixture, values["command"], values["kind"], values["key"],
+                                 values["before"], values["after"])
+                      for fixture, values in AT4_CASES.items())
+ALL_OPERATIONS = OPERATIONS + AT4_OPERATIONS
+
 
 def digest(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
@@ -112,11 +182,17 @@ def read_json(path: Path) -> dict:
 
 
 def operations(fixture: str) -> tuple[Operation, ...]:
-    return tuple(operation for operation in OPERATIONS if operation.fixture == fixture)
+    return tuple(operation for operation in ALL_OPERATIONS if operation.fixture == fixture)
+
+
+def _dependencies(fixture: str) -> tuple[str, ...]:
+    if fixture not in DEPENDENCIES and fixture not in AT4_CASES:
+        raise ValueError("Unknown PGFPlots fixture: " + fixture)
+    return DEPENDENCIES.get(fixture, ())
 
 
 def dependency_hashes(directory: Path, fixture: str) -> dict[str, str]:
-    return {name: sha(directory / name) for name in DEPENDENCIES[fixture]}
+    return {name: sha(directory / name) for name in _dependencies(fixture)}
 
 
 def expected_sequence(fixture: str) -> list[tuple[str, bytes]]:
@@ -134,7 +210,26 @@ def expected_sequence(fixture: str) -> list[tuple[str, bytes]]:
     return sequence
 
 
-def prepare(out: Path) -> dict:
+def _original_manifest_entry(fixture: str) -> dict:
+    if fixture in AT4_CASES:
+        case = AT4_CASES[fixture]
+        source_path = f"{AT4_RELATIVE_EXAMPLES}/{case['filename']}"
+        return {"path": source_path, "source_path": source_path,
+                "case_id": case["case_id"], "source_kind": "ORIGINAL_AI88_AT4_CORPUS",
+                "original_sha256": case["sha256"], "runtime_sha256": case["sha256"],
+                "runtime_source_identical_to_original": True,
+                "derivative": "NONE; runtime source is byte-identical to original"}
+    return {"path": str(fixture_path(fixture).relative_to(SOURCE_ROOT)),
+            "original_sha256": sha(fixture_path(fixture)),
+            "runtime_sha256": digest(fixture_bytes(fixture)),
+            "derivative": "NONE; original source and typography byte-identical",
+            "operation_scope": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR" if fixture == "SV-040" else "NAMED_LITERAL_APPLY_UNDO"}
+
+
+def prepare(out: Path, suite: str = "v2") -> dict:
+    suite = _suite(suite)
+    fixtures = fixtures_for_suite(suite)
+    scoped_operations = operation_inventory(suite)
     if out.exists() and any(out.iterdir()):
         raise ValueError("PGFPlots evidence directory must be empty")
     out.mkdir(parents=True, exist_ok=True)
@@ -143,29 +238,28 @@ def prepare(out: Path) -> dict:
     inputs.mkdir()
     live.mkdir()
     fixture_hashes = {}
-    for fixture in DEPENDENCIES:
+    for fixture in fixtures:
         target = live / fixture
         target.mkdir()
-        for name in (fixture + ".tex", *DEPENDENCIES[fixture]):
+        for name in (fixture + ".tex", *_dependencies(fixture)):
             contents = fixture_bytes(fixture) if name.endswith(".tex") else (FIXTURES / name).read_bytes()
             (inputs / name).write_bytes(contents)
             (target / name).write_bytes(contents)
             fixture_hashes[name] = digest(contents)
-        if fixture in NAMED_SV:
+        if fixture in NAMED_SV or fixture in AT4_CASES:
             (inputs / (fixture + ".original-corpus.tex")).write_bytes(fixture_path(fixture).read_bytes())
         for operation in operations(fixture):
             operation.patch((inputs / (fixture + ".tex")).read_bytes())
-    manifest = {"schema_version": 1, "scope": SCOPE, "created_utc": now(),
-                "fixture_origin": "TWO_SYNTHETIC_CASES_PLUS_SIX_BYTE_IDENTICAL_NAMED_CORPUS_INPUTS",
-                "synthetic_optical_scope": "18 Inspector source transactions; explicit tick lists override tick distances; only final revision PDF is built",
-                "named_corpus_inputs": {name: {"path": str(fixture_path(name).relative_to(SOURCE_ROOT)),
-                    "original_sha256": sha(fixture_path(name)),
-                    "runtime_sha256": digest(fixture_bytes(name)),
-                    "derivative": "NONE; original source and typography byte-identical",
-                    "operation_scope": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR" if name == "SV-040" else "NAMED_LITERAL_APPLY_UNDO"}
-                    for name in NAMED_SV},
+    manifest = {"schema_version": 1, "suite": suite, "scope": suite_scope(suite),
+                "fixtures": list(fixtures), "created_utc": now(),
+                "fixture_origin": ("TWO_SYNTHETIC_CASES_PLUS_SIX_BYTE_IDENTICAL_NAMED_CORPUS_INPUTS"
+                                   if suite == "v2" else "EIGHT_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS"),
+                "synthetic_optical_scope": ("18 Inspector source transactions; explicit tick lists override tick distances; only final revision PDF is built"
+                                            if suite == "v2" else "NOT_APPLICABLE_NO_SYNTHETIC_AT4_INPUTS"),
+                "named_corpus_inputs": {name: _original_manifest_entry(name) for name in fixtures
+                                         if name in NAMED_SV or name in AT4_CASES},
                 "fixture_hashes": fixture_hashes,
-                "operations": [asdict(operation) for operation in OPERATIONS],
+                "operations": [asdict(operation) for operation in scoped_operations],
                 "screen": SCREEN, "client": CLIENT,
                 "aggregate_sc3_at4": "NOT_VERIFIED", "physical_win10": "NOT_RUN",
                 "physical_mac_arm": "NOT_RUN", "independent_visual_review": "REQUIRED"}
@@ -182,7 +276,7 @@ def record(out: Path, fixture: str, stage: str, source: Path, editor: Path,
                        ("desktop.original.png", screenshot)):
         (directory / name).write_bytes(path.read_bytes())
     dependencies = {}
-    for name in DEPENDENCIES[fixture]:
+    for name in _dependencies(fixture):
         (directory / name).write_bytes((source.parent / name).read_bytes())
         dependencies[name] = sha(directory / name)
     metadata = {"fixture": fixture, "stage": stage, "captured_utc": now(),
@@ -223,12 +317,17 @@ def validate_stage(out: Path, fixture: str, stage: str) -> dict:
     return metadata
 
 
-def validate_all(out: Path) -> dict:
+def validate_all(out: Path, suite: str = "v2") -> dict:
+    suite = _suite(suite)
+    fixtures = fixtures_for_suite(suite)
+    scoped_operations = operation_inventory(suite)
     manifest = read_json(out / "manifest.json")
-    if manifest.get("scope") != SCOPE or manifest.get("operations") != [asdict(op) for op in OPERATIONS]:
-        raise ValueError("Manifest scope or operation inventory differs")
-    expected_files = {fixture + ".tex" for fixture in DEPENDENCIES} | {
-        name for names in DEPENDENCIES.values() for name in names}
+    if (manifest.get("suite") != suite or manifest.get("fixtures") != list(fixtures)
+            or manifest.get("scope") != suite_scope(suite)
+            or manifest.get("operations") != [asdict(op) for op in scoped_operations]):
+        raise ValueError("Manifest suite, fixture, scope, or operation inventory differs")
+    expected_files = {fixture + ".tex" for fixture in fixtures} | {
+        name for fixture in fixtures for name in _dependencies(fixture)}
     if set(manifest.get("fixture_hashes", {})) != expected_files:
         raise ValueError("Manifest fixture hash inventory differs")
     for name, checksum in manifest["fixture_hashes"].items():
@@ -236,11 +335,25 @@ def validate_all(out: Path) -> dict:
         canonical = fixture_bytes(fixture) if name.endswith(".tex") else (FIXTURES / name).read_bytes()
         if sha(out / "inputs" / name) != checksum or digest(canonical) != checksum:
             raise ValueError("Original fixture input changed: " + name)
-    for fixture in NAMED_SV:
+    for fixture in tuple(name for name in fixtures if name in NAMED_SV or name in AT4_CASES):
         original = out / "inputs" / (fixture + ".original-corpus.tex")
-        if sha(original) != manifest["named_corpus_inputs"][fixture]["original_sha256"] or original.read_bytes() != fixture_path(fixture).read_bytes():
+        entry = manifest.get("named_corpus_inputs", {}).get(fixture, {})
+        canonical = fixture_bytes(fixture)
+        if (entry != _original_manifest_entry(fixture)
+                or sha(original) != entry.get("original_sha256")
+                or original.read_bytes() != canonical
+                or digest(canonical) != entry.get("runtime_sha256")):
             raise ValueError("Original named corpus changed: " + fixture)
-    for fixture in DEPENDENCIES:
+    expected_corpus = {name for name in fixtures if name in NAMED_SV or name in AT4_CASES}
+    if set(manifest.get("named_corpus_inputs", {})) != expected_corpus:
+        raise ValueError("Manifest original corpus inventory differs")
+    expected_inputs = expected_files | {fixture + ".original-corpus.tex" for fixture in expected_corpus}
+    if {path.name for path in (out / "inputs").iterdir()} != expected_inputs:
+        raise ValueError("Input file inventory differs")
+    observed_root = out / "observed"
+    if not observed_root.is_dir() or {path.name for path in observed_root.iterdir()} != set(fixtures):
+        raise ValueError("Observed fixture inventory differs")
+    for fixture in fixtures:
         expected_names = [name for name, _ in expected_sequence(fixture)]
         observed = out / "observed" / fixture
         if sorted(path.name for path in observed.iterdir()) != sorted(expected_names):
@@ -252,6 +365,6 @@ def validate_all(out: Path) -> dict:
             if previous is not None and captured < previous:
                 raise ValueError("Nonmonotonic stage observations: " + stage)
             previous = captured
-    return {"scope": SCOPE, "status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED",
-            "operations_observed": len(OPERATIONS), "aggregate_sc3_at4": "NOT_VERIFIED",
+    return {"suite": suite, "scope": suite_scope(suite), "status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED",
+            "operations_observed": len(scoped_operations), "aggregate_sc3_at4": "NOT_VERIFIED",
             "native_acceptance": "REQUIRES_INDEPENDENT_REVIEW", "physical_win10": "NOT_RUN"}

@@ -1,0 +1,113 @@
+{
+  "status": "UNIT_EVENT_SOURCE_ONLY",
+  "base_commit": "0d33710e4b20dbb8bdef6b2e5fe377e840bd20b9",
+  "app_source_tree": "6ea8f033c5241781e895ecb54af3bb3b48bb0735",
+  "rust": {
+    "passed": 582,
+    "failed": 0,
+    "ignored": 4,
+    "test_binaries": 27,
+    "gates": [
+      {
+        "gate": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "returncode": 0,
+        "elapsed_seconds": 0.48
+      },
+      {
+        "gate": "tests",
+        "argv": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--workspace",
+          "--all-targets"
+        ],
+        "returncode": 0,
+        "elapsed_seconds": 8.02
+      },
+      {
+        "gate": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--offline",
+          "--locked",
+          "--workspace",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "returncode": 0,
+        "elapsed_seconds": 2.25
+      },
+      {
+        "gate": "build",
+        "argv": [
+          "cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "-p",
+          "tikzarium-app",
+          "--bin",
+          "tikzarium-app"
+        ],
+        "returncode": 0,
+        "elapsed_seconds": 1.56
+      }
+    ]
+  },
+  "python": {
+    "pgfplots_v2": 19,
+    "at4": 26,
+    "compact_i61_n2_r1_r3": 34,
+    "failed": 0,
+    "skipped": 0
+  },
+  "rust_source_sha256": {
+    "crates/tikzarium-app/src/tikz_libraries.rs": "2c002e89e42ca299b5d3ad9769d14164d6ad82368d9ed1277fea364fb716a747",
+    "crates/tikzarium-extensions/src/scientific_scan.rs": "bdd62c25a1ce169b61877420089a3b9dac145803004e707d5f8355e5370bad79",
+    "crates/tikzarium-extensions/tests/scientific_addplot3_literals.rs": "aa263844912f1eca38f8d3d1c10e4d806e8bc935247858db57be789fa7988f98",
+    "Cargo.lock": "aa5de536d803b4fc2cd25588d4a9fd8804d8ce8d972d7e7870d61e37283f2884"
+  },
+  "reviews_sha256": {
+    "addplot3-independent-review.json": "7a0ab94c787eeb291d870bb7b2e566a7313ab15a07732c61b113a90ea54c4893",
+    "help-independent-review.json": "811d683673c40c7ec5eafd2a602012984bcf0b774c1fe8c750bc7fa6ce71414c",
+    "at4-independent-review.json": "26870c39b6e2104f92f61c69ebabb6eaf87b141cd1d4c55b8b673015707967f8",
+    "reference-independent-review.json": "a2ccb6b560d682332d7c6df02ffa8f4218a1f37e313b1d0bfbde613d741d493e"
+  },
+  "delegation": [
+    {
+      "task": "/root/checkpoint_recovery",
+      "model": "gpt-6-luna",
+      "role": "recovery, AT4 evidence implementation, integration review"
+    },
+    {
+      "task": "/root/pgf_qa_review",
+      "model": "gpt-6.1-sol",
+      "role": "independent QA review, addplot3 implementation, Help regression"
+    },
+    {
+      "task": "/root/at4_scientific_cases",
+      "model": "gpt-6-luna",
+      "role": "AT4 invariants, independent addplot3 review"
+    }
+  ],
+  "native_gui_acceptance": "NOT_RUN_FOR_NEW_SOURCE",
+  "release_go": false,
+  "external_reference_capture": {
+    "syntax_import_help": "PASS",
+    "actual_compile": "NOT_RUN_LOCAL",
+    "native_gui_acceptance": "NOT_RUN",
+    "source_sha256": "dcc89bc8ac4deb289084d93aa01e82b445c98362fcb7420e7b5ed3206627cbab"
+  }
+}

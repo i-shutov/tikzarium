@@ -21,6 +21,7 @@ import threading
 import time
 
 import qa_pgfplots_vertical_evidence as evidence
+import qa_at4_scientific_invariants as at4_science
 import qa_sci_compact_x11 as common
 from qa_i61_b42_studio_x11 import audit_embedded_fonts
 from qa_n2_studio_x11 import expected_elf, validate_xelatex_log
@@ -176,7 +177,8 @@ class Driver(common.Driver):
         self.raw = self.out / "raw"
         self.raw.mkdir()
         self.live = self.out / "live"
-        self.source = self.live / "formula/formula.tex"
+        first = evidence.fixtures_for_suite(args.suite)[0]
+        self.source = self.live / first / (first + ".tex")
         self.provenance = provenance
         self.points = POINTS.copy()
         if args.coordinates:
@@ -196,14 +198,17 @@ class Driver(common.Driver):
         self.process = self.window = self.geometry = None
         self.serial = 0
         self.current_stage = "startup"
-        self.fixture = "formula"
-        self.report = {"schema_version": 1, "scope": evidence.SCOPE, "status": "FAIL",
+        self.fixture = first
+        self.report = {"schema_version": 2, "scope": evidence.suite_scope(args.suite),
+                       "suite": args.suite, "status": "FAIL",
                        "host": platform.platform(), "coordinates": self.points,
                        "screen": evidence.SCREEN, "client": evidence.CLIENT,
                        "aggregate_sc3_at4": "NOT_VERIFIED", "physical_win10": "NOT_RUN",
                        "physical_mac_arm": "NOT_RUN", "independent_visual_review": "REQUIRED",
-                       "sv040": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR",
-                       "operation_count": len(evidence.OPERATIONS), "builds": {}, **provenance}
+                       "operation_count": len(evidence.operation_inventory(args.suite)),
+                       "builds": {}, **provenance}
+        if args.suite == "v2":
+            self.report["sv040"] = "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR"
         self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals")
 
     def start(self):
@@ -387,9 +392,18 @@ class Driver(common.Driver):
         log.write_bytes(raw_log)
         self.click("console")
         self.stage("built", expected, "Actual GUI XeLaTeX Build/current Export/PDF view/raw-log Copy")
-        validate_xelatex_log(raw_log)
-        if re.search(rb"(?i)(nullfont|missing character:)", raw_log):
-            raise RuntimeError("Actual XeLaTeX output has nullfont/missing glyphs")
+        # Engine success and TeX errors remain immediate failures. The strict
+        # warning gate is recorded and rejected only after all independent PDF,
+        # recorder and source diagnostics have been retained.
+        if b"XeTeX" not in raw_log or b"Output written on" not in raw_log:
+            raise RuntimeError("Actual GUI raw log lacks successful XeLaTeX engine/output proof")
+        if re.search(rb"(?m)^!", raw_log):
+            raise RuntimeError("Actual GUI XeLaTeX log reports missing glyphs or TeX errors")
+        strict_log_warnings = []
+        if b"missing character:" in raw_log.lower():
+            strict_log_warnings.append("missing character")
+        if re.search(rb"(?i)nullfont", raw_log):
+            strict_log_warnings.append("nullfont")
         info = common.run("pdfinfo", str(original_pdf))
         if not re.search(r"(?m)^Pages:\s+1$", info):
             raise RuntimeError("Expected exactly one current PDF page")
@@ -407,9 +421,27 @@ class Driver(common.Driver):
         common.run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "120",
                    str(original_pdf), str(self.raw / (self.fixture + "-rendered-pdf")), timeout=30)
         recorder = self.watcher.proof(self.source, expected, dependencies)
-        self.report["builds"][self.fixture] = {"pdf_sha256": evidence.sha(original_pdf),
+        build_summary = {"pdf_sha256": evidence.sha(original_pdf),
             "source_sha256": evidence.digest(expected), "actual_gui_log_sha256": evidence.sha(log),
             "recorder_proof": recorder, "scientific_visual_review": "REQUIRED"}
+        if self.fixture in evidence.AT4_CASES:
+            case_id = evidence.AT4_CASES[self.fixture]["case_id"]
+            catalogue = evidence.SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/catalogue.original.json"
+            source_check = at4_science.validate_case(case_id, self.source.read_bytes(),
+                at4_science.load_catalogue_record(catalogue, case_id))
+            source_check["compiled_source_sha256"] = evidence.digest(expected)
+            evidence.write_json(self.raw / (self.fixture + "-scientific-source-check.json"), source_check)
+            build_summary["source_semantics"] = source_check
+        build_summary["strict_xelatex_warning_gate"] = (
+            "FAIL" if strict_log_warnings else "PASS")
+        build_summary["strict_xelatex_warning_details"] = strict_log_warnings
+        build_summary["status"] = ("FAIL_STRICT_XELATEX_WARNING_GATE" if strict_log_warnings
+                                   else "EVIDENCE_COLLECTED_REVIEW_REQUIRED")
+        self.report["builds"][self.fixture] = build_summary
+        validate_xelatex_log(raw_log)
+        if strict_log_warnings:
+            raise RuntimeError("Actual XeLaTeX output has nullfont/missing glyphs: "
+                               + ", ".join(strict_log_warnings))
 
     def run_case(self, fixture: str, *, initial=False):
         self.open_case(fixture, initial=initial)
@@ -457,6 +489,7 @@ def main() -> int:
     parser.add_argument("--source-root", type=Path, default=evidence.SOURCE_ROOT)
     parser.add_argument("--build-provenance", type=Path, required=True)
     parser.add_argument("--coordinates", type=Path)
+    parser.add_argument("--suite", choices=("v2", "at4"), default="v2")
     parser.add_argument("--build-timeout", type=float, default=180)
     args = parser.parse_args()
     driver = None
@@ -470,12 +503,12 @@ def main() -> int:
         receipt = evidence.read_json(args.build_provenance)
         if receipt.get("production_binary") is not True or any(receipt.get(key) != value for key, value in provenance.items()):
             raise ValueError("Build receipt differs from exact production source/binary")
-        evidence.prepare(args.out.resolve())
+        evidence.prepare(args.out.resolve(), suite=args.suite)
         driver = Driver(args, provenance)
         driver.start()
-        for index, fixture in enumerate(evidence.DEPENDENCIES):
+        for index, fixture in enumerate(evidence.fixtures_for_suite(args.suite)):
             driver.run_case(fixture, initial=index == 0)
-        driver.report.update(evidence.validate_all(driver.out))
+        driver.report.update(evidence.validate_all(driver.out, suite=args.suite))
     except Exception as error:
         if driver is None:
             print(f"{type(error).__name__}: {error}", file=sys.stderr)

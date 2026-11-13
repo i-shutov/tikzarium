@@ -19,7 +19,7 @@ import time
 
 from qa_i61_b42_studio_x11 import audit_embedded_fonts, run, screenshot, sha, wait
 
-APP_TREE = "fe40516186fb1728baceb40d0da137a780c1d9de"
+APP_TREE = "6ea8f033c5241781e895ecb54af3bb3b48bb0735"
 CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 # main.rs studio_file_menu/show_source_editor/show_studio_inspector. File path,

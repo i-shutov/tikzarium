@@ -588,6 +588,22 @@ pub fn scan_scientific_source(
             _ => continue,
         };
         let mut after = next;
+        // TeX control words contain letters only: `command_at` leaves the
+        // PGFPlots 3D suffix in `\addplot3` before its optional `+` and `[]`.
+        // Reuse the same plot-owned literal keys; never consume a numeric
+        // prefix of an unreviewed spelling such as `\addplot30`/`\addplot3x`.
+        if kind == ScientificKind::AddPlot && b.get(after) == Some(&b'3') {
+            after += 1;
+            let suffix_end = after + usize::from(b.get(after) == Some(&b'+'));
+            if !b.get(suffix_end).is_some_and(|byte| {
+                byte.is_ascii_whitespace() || matches!(byte, b'[' | b'{' | b'(' | b'%')
+            }) {
+                // The rejected command still owns its balanced options/body.
+                // Do not expose nested draw/axis/plot tokens as active source.
+                i = command_semicolon(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
+                continue;
+            }
+        }
         if kind == ScientificKind::AddPlot && b.get(after) == Some(&b'+') {
             after += 1;
         }

@@ -54,7 +54,7 @@ jobs:
       - name: Reviewed compact app source-tree candidate lease (fail closed before GUI)
         run: |
           test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha || github.sha }}'
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = 'fe40516186fb1728baceb40d0da137a780c1d9de'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '6ea8f033c5241781e895ecb54af3bb3b48bb0735'
           # Catch disagreement between workflow and Python QA before heavy TeX install.
           grep -Fqx "APP_TREE = \"$(git rev-parse HEAD:crates/tikzarium-app/src)\"" scripts/qa_i61_b42_studio_x11.py
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"

@@ -24,7 +24,7 @@ from qa_n1_desktop import (FIXTURE, original_preserved, owners,
 # Compact production coordinates derived from app layout and the independently
 # reviewed CP05 native original (43370706180). Candidate until THIS full run's
 # originals are reviewed: CP05 scientific acceptance does not accept I61.
-APP_TREE = "fe40516186fb1728baceb40d0da137a780c1d9de"
+APP_TREE = "6ea8f033c5241781e895ecb54af3bb3b48bb0735"
 CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 POINTS = {

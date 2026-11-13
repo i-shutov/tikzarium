@@ -1,4 +1,4 @@
-name: PGFPlots V2 bounded native vertical (hosted X11, independent review required)
+name: PGFPlots V2 and original AT4 native verticals (hosted X11, independent review required)
 
 # Synthetic 18-property matrix, named SC3-04 SV cases and external table/error
 # bars compatibility. SV-040 is build/preservation-only. Full SC3/AT4 and physical
@@ -9,6 +9,8 @@ on:
     paths:
       - '.github/workflows/pgfplots-native.yml'
       - 'scripts/qa_pgfplots_vertical*'
+      - 'scripts/qa_at4_*'
+      - 'roadmap/AI_TIKZ_SKILLS_2026-11-10/**'
       - 'scripts/fixtures/pgfplots-v2/**'
       - 'scripts/qa_sci_compact*'
       - 'scripts/qa_n2_studio_x11.py'
@@ -23,6 +25,8 @@ on:
     paths:
       - '.github/workflows/pgfplots-native.yml'
       - 'scripts/qa_pgfplots_vertical*'
+      - 'scripts/qa_at4_*'
+      - 'roadmap/AI_TIKZ_SKILLS_2026-11-10/**'
       - 'scripts/fixtures/pgfplots-v2/**'
       - 'scripts/qa_sci_compact*'
       - 'scripts/qa_n2_studio_x11.py'
@@ -43,13 +47,19 @@ concurrency:
 
 jobs:
   pgfplots-bounded-hosted-gui:
+    name: PGFPlots native ${{ matrix.suite }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [v2, at4]
     env:
       TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CARGO_INCREMENTAL: '0'
       CARGO_PROFILE_DEV_DEBUG: '0'
       LIBGL_ALWAYS_SOFTWARE: '1'
+      TIKZARIUM_PGF_SUITE: ${{ matrix.suite }}
     steps:
       - name: Check out exact review source, never the synthetic merge ref
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -113,6 +123,7 @@ jobs:
           set -euo pipefail
           cargo fmt --all -- --check
           python3 -m unittest discover -s scripts -p qa_pgfplots_vertical_test.py -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/artifact-contract-tests.log"
+          python3 -m unittest discover -s scripts -p 'qa_at4_*_test.py' -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/at4-contract-tests.log"
           cargo test --locked -p tikzarium-app --bin tikzarium-app scientific_inspector::tests -- --nocapture 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/inspector-contract-tests.log"
       - name: Build locked production app and CLI, then bind their exact source
         shell: bash
@@ -152,7 +163,7 @@ jobs:
       # GUI assertion fails. A restored cache never replaces the locked build
       # command or the exact source/binary receipt above.
       - name: Save verified build for subsequent native evidence runs
-        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        if: matrix.suite == 'v2' && steps.cargo-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
@@ -181,16 +192,24 @@ jobs:
             python3 scripts/qa_pgfplots_vertical_x11.py \
               --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" \
               --out "$RUNNER_TEMP/pgfplots-native" \
+              --suite "$TIKZARIUM_PGF_SUITE" \
               --build-provenance "$RUNNER_TEMP/pgfplots-build-provenance.json"
           ' 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/native-driver.log"
+      - name: Capture original AT4 reference PDFs for independent scientific comparison (external, not GUI)
+        if: always() && matrix.suite == 'at4'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/qa_at4_original_references.py --out "$RUNNER_TEMP/at4-original-references"
       - name: Preserve original hosted GUI evidence, including partial failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pgfplots-native-${{ github.run_id }}-${{ github.run_attempt }}
+          name: pgfplots-native-${{ matrix.suite }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/pgfplots-native/
             ${{ runner.temp }}/pgfplots-native-logs/
+            ${{ runner.temp }}/at4-original-references/
             ${{ runner.temp }}/pgfplots-build-provenance.json
             !${{ runner.temp }}/pgfplots-native/**/*.ttf
             !${{ runner.temp }}/pgfplots-native/**/*.otf
