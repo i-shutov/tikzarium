@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "kind": "N2_N3_REAL_STUDIO_SOURCE_LIBRARIES",
+  "status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+  "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "source_head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "real_gui": "PASS_AUTOMATED_MANUAL_ARTIFACT_REVIEW_REQUIRED",
+  "coordinates": {
+    "file_menu": [
+      23,
+      15
+    ],
+    "file_path": [
+      143,
+      135
+    ],
+    "source_settings": [
+      405,
+      80
+    ],
+    "source_full": [
+      490,
+      174
+    ],
+    "source": [
+      200,
+      230
+    ],
+    "dirty_discard": [
+      505,
+      407
+    ],
+    "libraries": [
+      1030,
+      81
+    ],
+    "properties": [
+      960,
+      81
+    ],
+    "library_panel": [
+      1034,
+      543
+    ],
+    "library_entry": [
+      1024,
+      605
+    ],
+    "library_connect": [
+      1036,
+      423
+    ],
+    "library_disconnect": [
+      1014,
+      420
+    ],
+    "complete": [
+      989,
+      476
+    ],
+    "undo": [
+      109,
+      49
+    ],
+    "export": [
+      291,
+      49
+    ],
+    "pdf": [
+      439,
+      49
+    ]
+  },
+  "library_panel": "REAL_X11_CATALOGUE_SCREENSHOT_RECORDED",
+  "library_entry": "HOSTED_X11_EXPANDED_DETAILS_MANUAL_REVIEW_REQUIRED",
+  "library_connect": "PASS_REAL_X11_C_CATALOGUE_SOURCE_PATCH",
+  "library_disconnect": "PASS_REAL_X11_INVERSE_SOURCE_BYTES",
+  "library_undo": "PASS_REAL_X11_VISUAL_UNDO",
+  "gui_reopen": "PASS_REAL_X11_EXTERNAL_RELOAD_AND_GUI_SAVE",
+  "gui_save_open": "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE",
+  "xelatex_pdf": "PASS_EXTERNAL_XELATEX_UNICODE_EMBEDDED_FONTS",
+  "manual_artifact_review": "NOT_RUN",
+  "five_statuses": "EXPANDED_ENTRY_SCREENSHOT_REVIEW_REQUIRED",
+  "n3_caret_target": "PASS_REAL_X11_SELECTED_LITERAL_ARRO",
+  "physical_windows10_miktex": "NOT_RUN",
+  "physical_mac_arm": "NOT_RUN",
+  "pid": 6324,
+  "window_id": "6291459",
+  "app_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "app_elf_path": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-app",
+  "app_elf_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "observed_proc_exe": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-app",
+  "observed_proc_exe_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "client_geometry": {
+    "X": 1,
+    "Y": 20,
+    "WIDTH": 1180,
+    "HEIGHT": 680
+  },
+  "screen_size": [
+    1366,
+    768
+  ],
+  "coordinate_scope": "COMPACT_CLIENT_CANDIDATES_REQUIRE_ORIGINAL_REVIEW",
+  "initial_open_source_proof": "FRESH_SENTINEL_BYTE_EXACT_FULL_EDITOR_COPY",
+  "pdf_sha256": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+  "n2_build_originals": {
+    "pdf": "original-n2-before-completion.pdf",
+    "pdf_sha256": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+    "source": "original-n2-built-source.tex",
+    "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "gui_xelatex_log": "n2-build-gui-xelatex.log",
+    "gui_xelatex_log_sha256": "4a4e563d7a2479f4088b912f8c640bb3c538fb28ad40c8d488b86e67c44aeb66"
+  },
+  "n3_prefix_native_textedit": "PASS_REAL_X11_ONE_NAME_CRLF",
+  "n3_caret_f1": "REAL_X11_HELP_SCREENSHOT_MANUAL_REVIEW_REQUIRED",
+  "n3_caret_complete": "PASS_REAL_X11_C_SOURCEPATCH_MINIMAL_BYTES",
+  "n3_xelatex_pdf": "PASS_REAL_GUI_EXTERNAL_XELATEX_CYRILLIC_FONTS",
+  "n3_pdf_sha256": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+  "n3_build_originals": {
+    "pdf": "original-n3-completed.pdf",
+    "pdf_sha256": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+    "source": "original-n3-built-source.tex",
+    "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "gui_xelatex_log": "n3-build-gui-xelatex.log",
+    "gui_xelatex_log_sha256": "7428f4e2f522f1783aa55533ce7c929ec729f86d61b3fa49fa509cd8baee05d2"
+  },
+  "n3_visual_undo": "PASS_REAL_X11_BYTE_EXACT_INVERSE",
+  "files": {
+    "01-studio-initial.png": "f603312b14c291e59abf0d7c6588904140ffceaa376807e7d19cef3495bca620",
+    "02-file-popup.png": "c82a7c910d5c28d44f7e6793032593738b29eba0c467ef6b15d9424634869fa8",
+    "03-open-target.png": "d110ba3d04ac9befb35210f11b7bb04bf1a58988a43992ca5de5f6108fa537a8",
+    "04-scratch-dirty-open-modal.png": "cbe3aab034e6028d590a6039c00e930bb5f3072f859c02e7c01b200562cb5400",
+    "04a-after-gui-open-confirmed.png": "3e700e66e9332b246f27db17fde85d881d98c9b95e1a895a93a18f339515d888",
+    "05-libraries-tab.png": "02e62079bc4db13f7b5247521fc53142b20de9731197938fe736c67619a7a1cd",
+    "06-libraries-catalogue.png": "acf432978273cd0c26abed9e88423960d64a06e551ab9226c18edcffb01de0f2",
+    "07-arrows-meta-help.png": "f26ecb6931b932a11431ebd0eaa02bca8a890324cd5b587402ae2bcb1308a251",
+    "07a-arrows-meta-five-statuses.png": "feaab77ab42cfe839956dcbb20ee05aef6000f2eb4319398bd2858b82d1fcaa3",
+    "07b-arrows-meta-five-statuses.png": "f5f12a2ccb1021dcefe6f98993121ebbcafdfbb693679f47f32558d3b6ffbd24",
+    "08-connect-button-target.png": "c34de9a294577e20a61fa92af4493509e2412eeb8e3d04ce27f05a56a4c4dfa4",
+    "09-after-connect.png": "156496534c2069e786eac581448eea1f7c197c04e5557617d8be534a607ca34d",
+    "10-connect-saved.png": "00f8fbb14bed4fc50b204c367cb7b3956acb2931701f295d1f5c9e21992d8486",
+    "10a-before-disconnect.png": "b06d5127387f7df4bcc2f7dffb65d021ff9cb5a78e2b45b10f11bb46fc9f7a12",
+    "11-after-disconnect.png": "bc4e03425168603a18185ff8436ca428f471fb78cfd4b4dea5c29239130213e3",
+    "12-undo-restored-source.png": "1aeafab361ef6c5e4845cf7992c24a0a8c23ebb06e2f4481ff7e6c24561b9d02",
+    "13-reopened-external-change.png": "3bc9e52c05ed118e488d7bc49570f8bee4be16698f8d566b4521928cea5506fe",
+    "13a-gui-edited-reopened-source.png": "d4b2a0702ded2023eb8e0b43adeea787855402aa74584d0b09affa6bc1379a64",
+    "13b-after-gui-save.png": "0e7ca01b1b5835313e2762f57e3dddea2331976d3c8749f14fc1b3f8f9879748",
+    "15-exact-pdf-tab.png": "c9fecfc71d511a885f007919f2b06354244bd2b197191bf7106d6767729786d8",
+    "16-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb",
+    "17-n3-prefix-in-source-editor.png": "f853a3382beac4b9511b4a4addab69072cad3ca418053115de85203108da1959",
+    "17a-n3-real-caret-before-brace.png": "2f060a807c9090b89257b803d775a408447442d13f89909931cca718fc1b761b",
+    "18-n3-caret-f1.png": "444713da08404d01d75be480b595d0cc23bc76ba3a78f1ecfdaa387193bb793e",
+    "19-n3-caret-complete-target.png": "9378c510470dd190d79a8e983a39c7b66672b54857dc99f7a903d48ea1963c55",
+    "20-n3-complete-click.png": "32ac7e8bd27d479e2996065ec8a63e76d2e8d37a06d3d6fe509c978e2510c6fe",
+    "22-n3-completed-exact-pdf.png": "10d830d5ea592c629807b6c38b66ced1f8a5401f7540b31cdb0a28458e3cfe5a",
+    "23-n3-visual-undo.png": "011bd83eb075156825d5c8ed366b99aa72cae6edd587c73c6b270a099e09cdb6",
+    "app.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-started-4.png": "cff38a561dafef7568acb3efe7632de48937b13d3e0f3590f59e32a178aefb6b",
+    "build-started-7.png": "ddf689867cde64d5c8b2b1c4f4e13a5a1b4466e4748458d7feda09a084251569",
+    "clipboard-input-001-native-open-path.txt": "79478cfbd5d166c63d00b6ff2c8472ab72368f8a1e2ec766e20327d9d5d49ed7",
+    "clipboard-input-002-copy-sentinel.txt": "0322cbaf6d063f7f2f144fdbe00a2fb4b8b5aeacdab7dbd8b0a2c33c3a451875",
+    "clipboard-input-003-copy-sentinel.txt": "f63fbb59947614a2c5bea5923d3ee1738c89375c7b412300b3189ba536a0e9d3",
+    "clipboard-input-004-reopen-edit.txt": "9b2a4a0eb6315df0c1a54f061c5d55aefba101a58006a4fdf92aa38cab074592",
+    "clipboard-input-005-n2-build-log-sentinel.txt": "70aa8bc17ab41873d4846b12023cab19c395c67f5b897ba1daa61befa7825452",
+    "clipboard-input-006-n3-prefix.txt": "4ae479aff51f64c95f81fd0e69c4b81d7d791f1bcd850391c8ddddc28ff878dc",
+    "clipboard-input-007-copy-sentinel.txt": "e07ac06cf357275e0d328aea5fb3c36819899f2b2a0668e49afe684b985040b3",
+    "clipboard-input-008-n3-build-log-sentinel.txt": "0f68db1842d77a05459214883e5be092782d84e0a27aba590bd246b6859f9b85",
+    "connected-source.tex": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+    "disconnect-saved.tex": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+    "external-reopened-observed.txt": "bdde1d7dc8412aa5bbc2e183ecdf3dc5582996428f71da68663fed763ac1d596",
+    "full-source-settings-001.png": "89757a45befc4f932cac1f1da49f32aba6edf6b6f43a25b72451595933778453",
+    "full-source-settings-002.png": "fc343c13cc870cc2ffdc481fe84e861eed7023abb91242734adc8d79d86fe907",
+    "initial-open-observed.txt": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+    "n2-build-actual-console.png": "981b7f3e5a693a17b155084f89cd1c43a90ab23a939b36f16fd5f31dac995431",
+    "n2-build-actual-log-copied.png": "7fa3842d0b396666b4921ee966d355ee4a1d96db4a2b29f9e141507c92b86d68",
+    "n2-build-actual-raw-xelatex.png": "e18c644ed5f843ecf870d99059ad5e32ba35b458015cd1079fc28c89e0a145b8",
+    "n2-build-console-closed.png": "6275799c3f2683ba466a0119fd3ade4b221d6802c9a7006e0c99bc069b5b661d",
+    "n2-build-gui-xelatex.log": "4a4e563d7a2479f4088b912f8c640bb3c538fb28ad40c8d488b86e67c44aeb66",
+    "n2-crlf.pdf": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+    "n2-crlf.tex": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+    "n3-build-actual-console.png": "3e3635466f7635b307b9713ed6d8aad7ca23e38be07b15c46acfc9c2b32fe4f0",
+    "n3-build-actual-log-copied.png": "7cd4e6661f1f9074a7892992b93881b9150d1ef35a8d882af5d3cdf43d220e9e",
+    "n3-build-actual-raw-xelatex.png": "2d5ac2ba644dd45aa62a6e720fc2f1652f17bd328cb0b2da5727e12e306f6f0b",
+    "n3-build-console-closed.png": "df49600099d3f8ef2decd9d89de4fe60365280bec10888154861d4f9164063dd",
+    "n3-build-gui-xelatex.log": "7428f4e2f522f1783aa55533ce7c929ec729f86d61b3fa49fa509cd8baee05d2",
+    "n3-caret-observed.txt": "4ae479aff51f64c95f81fd0e69c4b81d7d791f1bcd850391c8ddddc28ff878dc",
+    "n3-complete-saved.tex": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "n3-pdffonts.txt": "6ed1950ef1e306e0e9f6fe5bb6025c413ed4b78bf97897b3860a6ce42182c1ff",
+    "n3-prefix-saved.tex": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+    "n3-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb",
+    "n3-undo-saved.tex": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+    "native-actions.jsonl": "e44f4473cfba2c91e3d6bde72d106e72cab594ab95339ee277ef3799ff2d75d4",
+    "original-n2-before-completion.pdf": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+    "original-n2-built-source.tex": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "original-n3-built-source.tex": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "original-n3-completed.pdf": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+    "owned-window-xwininfo.txt": "935c52335dc56b1733a0c293f76486406a24a880d2296d4897a6fb9fbeecf260",
+    "pdffonts.txt": "efeb7495bfd526272f87e18055045bb183cfb39e6fa63b5dc061699526f97f00",
+    "pdfinfo.txt": "d5bbaeae600ee0b0813feb219937384f5311d45b7bf2d22c8c5a648bd738f64f",
+    "reopen-edit-saved.tex": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+    "undo-disconnect-saved.tex": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d"
+  }
+}

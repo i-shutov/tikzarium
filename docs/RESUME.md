@@ -1,5 +1,15 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — полные compact I61/N5 независимо приняты
+
+**Закрыт следующий блок после CP05:** полный I61/N2/N3 и portable N5 с R1/R2/R3/R5, scope **HOSTED_GUI Linux/X11**. [Итоговый отчёт](../insights/2026-11-13_COMPACT_I61_N5_ACCEPTANCE_RU.md), [проверенные оригиналы и manifest](../insights/assets/2026-11-13-compact-i61-n5/accepted-fa9/provenance-manifest.json), [CP06](https://drive.google.com/file/d/1c8AqOBGfIgmyjuYgrx2AxaUhqoEa-kBF/view).
+
+Source приёмки `fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d`, root tree `e0e1f9060a41199ad8135ddb567f51e1e498397a`, неизменённый app/src `fe40516186fb1728baceb40d0da137a780c1d9de`. **15/15 workflows SUCCESS**, [полный I61 run43388892327](https://github.com/i-shutov/tikzarium/actions/runs/43388892327) и [полный N5 run43388892262](https://github.com/i-shutov/tikzarium/actions/runs/43388892262). Независимо проверены original source/PNG/PDF/log/ELF, все семь PDF, фактические GTK dialogs и byte-identical повторная упаковка. Последующая публикация отчёта имеет отдельный documentary head; доказательства закреплены за этим source.
+
+Исправлены QA full-source toggle/event payload, реальные координаты Inspector/Library и доказательство старого X перед draft. Production crates/extensions/Cargo не изменены. Шесть инструментов, Scratch Build Cancel, точные Apply/Undo/CRLF/Open/reload/F1, Library Connect/Disconnect/Complete/Undo, dirty close и native file dialogs прошли в полном объёме. Два неудачных candidate и их оригиналы сохранены, критерии не сокращались. Root и independent reviewer повторили 34 compact contracts — PASS.
+
+**Одна следующая исполнимая задача по V2:** полный native PGFPlots SC3/AT4 `axis/addplot → Inspector Apply → общий Undo → Save/reopen → GUI XeLaTeX → current PDF`, с сохранением `.dat/.csv` dependencies и отдельными original evidence. G3, full SCI142/103/scientific AI88, physical Win10/IME/DPI, Asymptote и затем Typst/CeTZ остаются обязательными. **Draft; merge/stable/release GO отсутствуют.** Нижележащие pending-записи сохраняют историю и обновлены этим checkpoint только в указанном hosted scope.
+
 ## 2026-11-13 — следующий блок: полные I61/N5 на компактном UI
 
 [Адаптация и обязательный объём](../insights/2026-11-13_COMPACT_I61_N5_REVALIDATION_RU.md). Восстановлен точный CP05/b1; production app/src `fe40516186fb1728baceb40d0da137a780c1d9de` сохранён. QA переводится на client1180×680/desktop1366×768 с PID/active-window, фактическим `/proc/PID/exe`, абсолютной геометрией и свежим clipboard proof. Сохраняются шесть инструментов, все I61/N2/N3 source/PDF/Undo/Help, packaged launch, R1/R2/R3/R5. Исторический RC явно не означает приёмку полного Scientific Studio.

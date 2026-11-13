@@ -1,0 +1,12 @@
+fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d
+fe40516186fb1728baceb40d0da137a780c1d9de
+rustc 1.91.0 (f8297e351 2025-10-28)
+binary: rustc
+commit-hash: f8297e351a40c1439a467bbbb6879088047f50b3
+commit-date: 2025-10-28
+host: x86_64-unknown-linux-gnu
+release: 1.91.0
+LLVM version: 21.1.2
+eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb  target/release/tikzarium-app
+8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384  target/release/tikzarium-cli
+aa5de536d803b4fc2cd25588d4a9fd8804d8ce8d972d7e7870d61e37283f2884  Cargo.lock

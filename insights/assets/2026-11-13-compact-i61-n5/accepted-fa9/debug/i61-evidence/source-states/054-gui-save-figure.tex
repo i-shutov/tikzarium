@@ -1,0 +1,18 @@
+\documentclass{standalone}
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+% KEEP: original user macro and Cyrillic must remain byte-identical.
+\newcommand{\UserLabel}{Не менять}
+\begin{document}
+\begin{tikzpicture}
+  \node at (0,0) {\UserLabel};
+  \draw (2.00cm,11.00cm) -- (5.50cm,10.00cm); % tikzarium:n1:[2,1,"line",{"end_x":"5.50cm","end_y":"10.00cm","start_x":"2.00cm","start_y":"11.00cm"}]
+  \draw (3.00cm,8.25cm) rectangle (6.00cm,6.50cm); % tikzarium:n1:[2,2,"rectangle",{"end_x":"6.00cm","end_y":"6.50cm","start_x":"3.00cm","start_y":"8.25cm"}]
+  \draw (8.50cm,11.00cm) circle[radius=1.00cm]; % tikzarium:n1:[2,3,"circle",{"center_x":"8.50cm","center_y":"11.00cm","radius":"1.00cm"}]
+  \draw (7.25cm,6.25cm) .. controls (8.67cm,7.05cm) and (10.08cm,7.30cm) .. (11.50cm,6.50cm); % tikzarium:n1:[2,4,"cubic",{"control1_x":"8.67cm","control1_y":"7.05cm","control2_x":"10.08cm","control2_y":"7.30cm","end_x":"11.50cm","end_y":"6.50cm","start_x":"7.25cm","start_y":"6.25cm"}]
+  \draw[-{Stealth}] (1.25cm,3.75cm) -- (5.75cm,3.25cm); % tikzarium:n1:[2,5,"arrow",{"end_x":"5.75cm","end_y":"3.25cm","start_x":"1.25cm","start_y":"3.75cm","tip":"Stealth"}]
+  \node at (10.50cm,3.25cm) {A}; % tikzarium:n1:[2,6,"node",{"content":"A","mode":"text","x":"10.50cm","y":"3.25cm"}]
+\end{tikzpicture}
+\end{document}

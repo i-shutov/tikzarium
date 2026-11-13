@@ -2,6 +2,12 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
+## Checkpoint 13.11.2026 — полный compact I61/N5 принят
+
+[Итоговая приёмка и оригинальные доказательства](../insights/2026-11-13_COMPACT_I61_N5_ACCEPTANCE_RU.md): exact source `fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d`, app/src `fe40516186fb1728baceb40d0da137a780c1d9de`, **15/15 workflows SUCCESS**. Независимо принят полный hosted Linux/X11 I61/N2/N3 и portable N5/R1/R2/R3/R5; семь GUI-generated PDF, source/Undo/CRLF, настоящие GTK dialogs, actual process ELF и воспроизводимость архивов проверены по оригиналам. Production source не изменён; первые два QA failure и их evidence сохранены. Это закрывает предыдущую executable задачу, сохраняя границы платформ и операций.
+
+**Следующая executable задача V2:** native PGFPlots SC3/AT4 `axis/addplot → Inspector Apply → общий Undo → Save/reopen → GUI XeLaTeX → current PDF`, включая неизменность `.dat/.csv` dependencies. CP05 SV-001 и шесть TikZ primitives не принимают этот полный объём. G3/full SCI142/scientific AI88/physical Win10/IME/DPI остаются gates; затем Asymptote и Typst/CeTZ в принятом порядке. Merge/stable/release GO отсутствуют. Следующие checkpoint-разделы — сохранённая история.
+
 ## Checkpoint 13.11.2026 — scientific mixed Undo принят в hosted GUI
 
 Текущий следующий блок: [полная адаптация I61/N5](../insights/2026-11-13_COMPACT_I61_N5_REVALIDATION_RU.md), `IMPLEMENTED_NOT_VERIFIED` до собственных hosted runs и независимой проверки originals. Source app/src сохраняется; полный старый объём I61/N2/N3/packaged/R1/R2/R3/R5 не сокращается. Ближайшее исполнимое действие — exact-head native execution, затем original source/image/PDF/ELF review.

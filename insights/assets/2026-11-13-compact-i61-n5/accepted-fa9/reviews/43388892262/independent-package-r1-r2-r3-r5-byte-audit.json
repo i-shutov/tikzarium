@@ -1,0 +1,932 @@
+{
+  "source_head": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "checks": [
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest PROVENANCE.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest README_RU.md",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest launch.sh",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest qa/figure-crlf.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest tikzarium-app",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz manifest tikzarium-cli",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz executability",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz exact head provenance",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz ELF64 x86_64 tikzarium-app",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-preview.tar.gz ELF64 x86_64 tikzarium-cli",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest PROVENANCE.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest README_RU.md",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest launch.sh",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest qa/figure-crlf.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest tikzarium-app",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz manifest tikzarium-cli",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz executability",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz exact head provenance",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz ELF64 x86_64 tikzarium-app",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz ELF64 x86_64 tikzarium-cli",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "RC app/CLI/launcher same as GUI preview",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "launcher preserves user cwd",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "RC truthful bounded scope",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "preview deterministic archive exact original bytes",
+      "pass": true,
+      "detail": "256d528f5b1d2b9f5c686506270cd795f5996fa49fc28cf0d92ec706af17ccf9"
+    },
+    {
+      "check": "rc deterministic archive exact original bytes",
+      "pass": true,
+      "detail": "4263d5a5284cddb2d092954306c95e22d982188a3b7f4d3d0b8d574c13387c5f"
+    },
+    {
+      "check": "packaged-i61 observed /proc ELF same packaged binary",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-n2 observed /proc ELF same packaged binary",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close observed /proc ELF same packaged binary",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native observed /proc ELF same packaged binary",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "window-geometry.json identity/onscreen",
+      "pass": true,
+      "detail": {
+        "schema_version": 1,
+        "status": "PASS_HOSTED_GEOMETRY_IDENTITY_MANUAL_IMAGE_REVIEW_REQUIRED",
+        "scope": "HOSTED_X11_GEOMETRY_IDENTITY_NOT_PHYSICAL_DPI",
+        "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+        "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+        "window_id": "4194307",
+        "pid": 4674,
+        "screen": [
+          1366,
+          768
+        ],
+        "requested_winit_scale": "1.0",
+        "manual_image_review": "NOT_RUN",
+        "running_executable": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+        "running_executable_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+        "client": {
+          "x": 93,
+          "y": 51,
+          "width": 1180,
+          "height": 680
+        }
+      }
+    },
+    {
+      "check": "r2-desktop/1366x768-scale-1_0/geometry.json identity/onscreen",
+      "pass": true,
+      "detail": {
+        "schema_version": 1,
+        "status": "PASS_HOSTED_GEOMETRY_IDENTITY_MANUAL_IMAGE_REVIEW_REQUIRED",
+        "scope": "HOSTED_X11_GEOMETRY_IDENTITY_NOT_PHYSICAL_DPI",
+        "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+        "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+        "window_id": "6291459",
+        "pid": 4790,
+        "screen": [
+          1366,
+          768
+        ],
+        "requested_winit_scale": "1.0",
+        "manual_image_review": "NOT_RUN",
+        "running_executable": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+        "running_executable_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+        "client": {
+          "x": 93,
+          "y": 51,
+          "width": 1180,
+          "height": 680
+        }
+      }
+    },
+    {
+      "check": "r2-desktop/1920x1080-scale-1_25/geometry.json identity/onscreen",
+      "pass": true,
+      "detail": {
+        "schema_version": 1,
+        "status": "PASS_HOSTED_GEOMETRY_IDENTITY_MANUAL_IMAGE_REVIEW_REQUIRED",
+        "scope": "HOSTED_X11_GEOMETRY_IDENTITY_NOT_PHYSICAL_DPI",
+        "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+        "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+        "window_id": "6291459",
+        "pid": 4851,
+        "screen": [
+          1920,
+          1080
+        ],
+        "requested_winit_scale": "1.25",
+        "manual_image_review": "NOT_RUN",
+        "running_executable": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+        "running_executable_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+        "client": {
+          "x": 222,
+          "y": 122,
+          "width": 1475,
+          "height": 850
+        }
+      }
+    },
+    {
+      "check": "r2-desktop/1920x1080-scale-2_0/geometry.json identity/onscreen",
+      "pass": true,
+      "detail": {
+        "schema_version": 1,
+        "status": "PASS_HOSTED_GEOMETRY_IDENTITY_MANUAL_IMAGE_REVIEW_REQUIRED",
+        "scope": "HOSTED_X11_GEOMETRY_IDENTITY_NOT_PHYSICAL_DPI",
+        "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+        "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+        "window_id": "6291459",
+        "pid": 4913,
+        "screen": [
+          1920,
+          1080
+        ],
+        "requested_winit_scale": "2.0",
+        "manual_image_review": "NOT_RUN",
+        "running_executable": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+        "running_executable_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+        "client": {
+          "x": 1,
+          "y": 20,
+          "width": 1886,
+          "height": 1023
+        }
+      }
+    },
+    {
+      "check": "native-evidence.sha256 linux-n5-packaged-1366x768.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "native-evidence.sha256 native-launch.log",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "native-evidence.sha256 archive.sha256",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "archive.sha256 Tikzarium-linux-x86_64-preview.tar.gz",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "rc-archive.sha256 Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/desktop.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.display.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.display.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.pid.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.pid.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.xdotool.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.xdotool.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.xwininfo.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1366x768-scale-1_0/geometry.xwininfo.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/desktop.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.display.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.display.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.pid.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.pid.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.xdotool.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.xdotool.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.xwininfo.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-1_25/geometry.xwininfo.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/desktop.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.display.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.display.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.pid.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.pid.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.xdotool.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.xdotool.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.xwininfo.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "r2-desktop/SHA256SUMS ./1920x1080-scale-2_0/geometry.xwininfo.stderr.original.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 01-before-edit.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 02-dirty-before-close.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 03-native-close-confirmation.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 04-cancel-keeps-source.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 05-keyboard-close-confirmation.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS 06-saved-before-clean-close.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS app.log",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS clipboard-input-001-canary-native-paste.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS clipboard-input-002-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS clipboard-input-003-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS clipboard-input-004-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS figure.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS full-source-settings-000.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS native-actions.jsonl",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS owned-window-xwininfo.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS report.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS source-after-alt-f4-cancel-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS source-after-wm-cancel-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r1-close/SHA256SUMS source-before-close-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 01-before-dialog.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 02-real-open-picker.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 03-native-open-loaded-source.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 04-real-cancel-picker.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 05-real-save-picker.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 06-native-save-completed.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 07-real-xelatex-pdf-ready.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 08-real-native-pdf-export-picker.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS 09-native-pdf-export-completed.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS app.log",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS before-save-full-editor-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/14/17fad8f7ef586ae7799f486eed6e9a8fef4ffb",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/30/f00b0fbc1c760a88a0490ace648bf2c220285d",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/37/0f6b1f887c31154662b2e4a377a7784665107e",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/5d/769de7ca1a0f3a831d6b9221ba3b4d826e2e05",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/61/a2b9ba84993f150d61f7830fcfa922b3371468",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/83/e138044d245ca5151652dbd57ff43e148c46ea",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/9b/eb7fdb4b42f0d9452e5fa7362dae5cab822650",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/9d/eae2485d1e361f4fa48aa97670cb10223401a0",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/c9/7f3abc2aa9c0afadb24d45f6a31f7e203be77e",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/f1/866713f2d0ddeffde32aac57b6804dda43a607",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/index",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cache/mesa_shader_cache/marker",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cancel-actual-file-menu.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cancel-dialog-window.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS cancel-full-editor-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-001-actual-dialog-location.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-002-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-003-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-004-native-save-marker.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-005-copy-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-006-actual-dialog-location.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-007-r3-build-log-sentinel.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS clipboard-input-008-actual-dialog-location.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS export-actual-file-menu.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS export-dialog-window.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS full-source-settings-001.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS native-actions.jsonl",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS native-pdf-render.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS open-actual-file-menu.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS open-dialog-window.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS open-full-editor-observed.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS original-r3-built-source.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS owned-window-xwininfo.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS pdffonts.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS pdfinfo.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS pdftotext.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS portal-introspection.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS project/figure.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS project/исходный пример.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS project/новая фигура с пробелами.pdf",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS project/новая фигура с пробелами.tex",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS project/экспорт через XDG.pdf",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS r3-build-actual-console.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS r3-build-actual-log-copied.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS r3-build-actual-raw-xelatex.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS r3-build-console-closed.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS r3-build-gui-xelatex.log",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS report.json",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS save-actual-file-menu.png",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "packaged-r3-native/SHA256SUMS save-dialog-window.txt",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R1 native Cancel and AltF4 exact source/save",
+      "pass": true,
+      "detail": {
+        "bytes": 486,
+        "sha256": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4"
+      }
+    },
+    {
+      "check": "R3 original preserved, CRLF, sole native Save marker",
+      "pass": true,
+      "detail": {
+        "original_bytes": 221,
+        "saved_bytes": 243
+      }
+    },
+    {
+      "check": "R3 Open/Cancel actual full editor",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 Save actual full editor",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 genuine GTK open",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 genuine GTK cancel",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 genuine GTK save",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 genuine GTK export",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 native exported exact current PDF",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 GUI raw engine log",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "R3 1page embedded Cyrillic PDF",
+      "pass": true,
+      "detail": null
+    }
+  ],
+  "app_elf_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+  "cli_elf_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+  "launcher_sha256": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+  "r3_pdf": {
+    "sha256": "57042144eb7add9f4b60a602a9e0f27c035ded420597f89d14a5e35ff8f78b49",
+    "fonts": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nSXMEJV+DejaVuSerif                   CID TrueType      Identity-H       yes yes yes      5  0\n",
+    "text": "Фигура R3-Picker-Canary\n\n\f",
+    "info": "Creator:          XeTeX output 2026.11.13:0758\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 08:58:40 2026 CET\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       137.16 x 16.42 pts\nPage rot:        0\nFile size:       10105 bytes\nOptimized:       no\nPDF version:     1.5\n"
+  },
+  "rc_provenance": {
+    "app_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+    "cli_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+    "external_xelatex_gui_pdf": "NOT_RUN",
+    "gtk_xdg_picker_physical": "NOT_RUN",
+    "historical_rc_label": true,
+    "linux_packaged_desktop": "NOT_RUN",
+    "linux_wayland": "NOT_RUN",
+    "notarization": "NOT_RUN",
+    "original_ci_run": "https://github.com/i-shutov/tikzarium/actions/runs/43388892262",
+    "packaging": "local_offline_header_and_hash_verified",
+    "physical_linux_x86_64_x11": "NOT_RUN",
+    "physical_mac_m1": "NOT_RUN",
+    "physical_mac_m4": "NOT_RUN",
+    "physical_windows10": "NOT_RUN",
+    "platform": "linux-x86_64",
+    "product": "TikZarium",
+    "qualified_platform": "Ubuntu 24.04 x86_64/X11 (TARGET_NOT_YET_ACCEPTED)",
+    "release_go": false,
+    "release_scope_document": "docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md",
+    "release_stage": "CANDIDATE_NOT_FINAL",
+    "schema_version": 2,
+    "scientific_studio_scope": "NOT_ACCEPTED",
+    "signed_installer": "NOT_RUN",
+    "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+    "tex_or_fonts_bundled": false,
+    "version": "1.0.0-rc.1"
+  }
+}

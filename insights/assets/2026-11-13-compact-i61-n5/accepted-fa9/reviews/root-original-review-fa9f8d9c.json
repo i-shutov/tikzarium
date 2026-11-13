@@ -1,0 +1,40 @@
+{
+  "reviewer": "/root",
+  "source_head": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_source_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "reviewed_at_utc": "2026-11-13T08:05:39.934403+00:00",
+  "artifacts": [
+    {
+      "run": 43388892327,
+      "artifact_id": 14020396373,
+      "sha256": "84c4fed17e97d71d7121074caaca2d5410ceaaa812213bf0b5a8249a71661b80"
+    },
+    {
+      "run": 43388892262,
+      "artifact_id": 14020476697,
+      "sha256": "0d77eb532e7bd75adf92cea41a08c33502668ab1107cceb6c9416140a2a760e0"
+    }
+  ],
+  "direct_original_visual_review": {
+    "i61_node_apply": "X10.50cm_Y3.25cm_NATIVE_AND_METADATA_X_ONLY",
+    "i61_radius_f1": "ACTUAL_CIRCLE_RADIUS_DIMENSION_8mm_HELP_VISIBLE",
+    "n2_capability_axes": "ALL_FIVE_INDEPENDENT_AXES_VISIBLE_07a_LOADED_ABSENT_OTHER_FOUR_CONFIRMED",
+    "n3_completion": "ACTUAL_arro_SOURCE_AND_arrows.meta_COMPLETE_BUTTON_VISIBLE",
+    "r2_scale_2_0": "FULL_CLIENT_WITHIN_ORIGINAL_DESKTOP_VISIBLE"
+  },
+  "node_apply_byte_check": {
+    "before_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+    "after_sha256": "be3ab4f52d634b4d531fab9e05ab80c1b6285056b6162e158e02031956a17bf1",
+    "only_x_native_and_metadata_changed": true,
+    "differing_bytes": 4
+  },
+  "pdf_review": "SEVEN_CURRENT_ORIGINAL_PDFS_REEXTRACTED_AND_RERENDERED; THREE_UNIQUE_RENDER_GROUPS_DIRECTLY_VIEWED; ONE_PAGE_EMBEDDED_DEJAVU_CYRILLIC_EACH",
+  "pdf_review_file": "root-pdf-review-fa9.json",
+  "package_manifests": "PREVIEW_AND_RC_ALL_SIX_CHECKSUMS_EACH; EXECUTABLE_0755; NATIVE_ELF64_X86_64",
+  "native_app_elf_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+  "native_cli_elf_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+  "scope": "HOSTED_LINUX_X11_ONLY_WITH_SEPARATE_FULL_INDEPENDENT_AUDITS",
+  "physical_win10_ime_dpi": "NOT_RUN",
+  "full_scientific_studio": "NOT_ACCEPTED",
+  "release_go": false
+}

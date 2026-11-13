@@ -1,0 +1,152 @@
+{
+  "review_kind": "N2_N3_ORIGINAL_NATIVE_ARTIFACT_REVIEW",
+  "reviewer_task": "/root/n2_compact_driver_1113b",
+  "status": "PASS_SCOPED_HOSTED_N2_N3_ORIGINALS_REVIEWED",
+  "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "run_id": 43388892327,
+  "scope": "HOSTED_GUI_LINUX_XVFB_OPENBOX_1366x768_CLIENT1180x680_MIDNIGHT",
+  "original_evidence_unchanged": true,
+  "reported_file_hashes_verified": 73,
+  "images_viewed_directly": {
+    "07a-arrows-meta-five-statuses.png": "feaab77ab42cfe839956dcbb20ee05aef6000f2eb4319398bd2858b82d1fcaa3",
+    "07b-arrows-meta-five-statuses.png": "f5f12a2ccb1021dcefe6f98993121ebbcafdfbb693679f47f32558d3b6ffbd24",
+    "09-after-connect.png": "156496534c2069e786eac581448eea1f7c197c04e5557617d8be534a607ca34d",
+    "11-after-disconnect.png": "bc4e03425168603a18185ff8436ca428f471fb78cfd4b4dea5c29239130213e3",
+    "12-undo-restored-source.png": "1aeafab361ef6c5e4845cf7992c24a0a8c23ebb06e2f4481ff7e6c24561b9d02",
+    "13-reopened-external-change.png": "3bc9e52c05ed118e488d7bc49570f8bee4be16698f8d566b4521928cea5506fe",
+    "13b-after-gui-save.png": "0e7ca01b1b5835313e2762f57e3dddea2331976d3c8749f14fc1b3f8f9879748",
+    "17-n3-prefix-in-source-editor.png": "f853a3382beac4b9511b4a4addab69072cad3ca418053115de85203108da1959",
+    "17a-n3-real-caret-before-brace.png": "2f060a807c9090b89257b803d775a408447442d13f89909931cca718fc1b761b",
+    "18-n3-caret-f1.png": "444713da08404d01d75be480b595d0cc23bc76ba3a78f1ecfdaa387193bb793e",
+    "19-n3-caret-complete-target.png": "9378c510470dd190d79a8e983a39c7b66672b54857dc99f7a903d48ea1963c55",
+    "20-n3-complete-click.png": "32ac7e8bd27d479e2996065ec8a63e76d2e8d37a06d3d6fe509c978e2510c6fe",
+    "23-n3-visual-undo.png": "011bd83eb075156825d5c8ed366b99aa72cae6edd587c73c6b270a099e09cdb6",
+    "n2-build-actual-raw-xelatex.png": "e18c644ed5f843ecf870d99059ad5e32ba35b458015cd1079fc28c89e0a145b8",
+    "n3-build-actual-raw-xelatex.png": "2d5ac2ba644dd45aa62a6e720fc2f1652f17bd328cb0b2da5727e12e306f6f0b",
+    "22-n3-completed-exact-pdf.png": "10d830d5ea592c629807b6c38b66ced1f8a5401f7540b31cdb0a28458e3cfe5a",
+    "16-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb",
+    "n3-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb"
+  },
+  "observed_running_executable": {
+    "pid": 6324,
+    "window": "6291459",
+    "path": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-app",
+    "sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+    "matches_build_provenance": true
+  },
+  "five_independent_library_statuses": {
+    "original": "07a-arrows-meta-five-statuses.png",
+    "installed": "CONFIRMED",
+    "project-loaded": "ABSENT",
+    "engine-target": "CONFIRMED",
+    "tool-implemented": "CONFIRMED",
+    "help": "CONFIRMED",
+    "ui_explicitly_distinguishes_engine_target_from_pdf_pass": true
+  },
+  "source_states": {
+    "initial-open-observed.txt": {
+      "bytes": 295,
+      "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+      "crlf": 11
+    },
+    "connected-source.tex": {
+      "bytes": 325,
+      "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+      "crlf": 12
+    },
+    "disconnect-saved.tex": {
+      "bytes": 295,
+      "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+      "crlf": 11
+    },
+    "undo-disconnect-saved.tex": {
+      "bytes": 325,
+      "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+      "crlf": 12
+    },
+    "external-reopened-observed.txt": {
+      "bytes": 334,
+      "sha256": "bdde1d7dc8412aa5bbc2e183ecdf3dc5582996428f71da68663fed763ac1d596",
+      "crlf": 12
+    },
+    "reopen-edit-saved.tex": {
+      "bytes": 360,
+      "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "crlf": 12
+    },
+    "n3-prefix-saved.tex": {
+      "bytes": 353,
+      "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+      "crlf": 12
+    },
+    "n3-complete-saved.tex": {
+      "bytes": 360,
+      "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "crlf": 12
+    },
+    "n3-undo-saved.tex": {
+      "bytes": 353,
+      "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+      "crlf": 12
+    },
+    "original-n2-built-source.tex": {
+      "bytes": 360,
+      "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "crlf": 12
+    },
+    "original-n3-built-source.tex": {
+      "bytes": 360,
+      "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "crlf": 12
+    }
+  },
+  "accepted_operations": [
+    "native Open byte-exact original CRLF/opaque source",
+    "Library arrows.meta Connect single30Bimport and no unrelated changes",
+    "Library Disconnect exact295Boriginal",
+    "common toolbar Undo restores325Bconnectedsource",
+    "native external revision reload has exact334Bfresh-sentinel editor copy",
+    "native source EOFappend and Save produce360B preservingopaque macro/CRLF",
+    "native editor replaces only arrows.meta with arro preservingCRLF",
+    "fresh sentinel caret copy returns exactly4B arro before F1",
+    "genuine F1 Help shows actual arrows.meta completion",
+    "genuine Complete restores exact360Bfullsource",
+    "both actual GUI XeLaTeX builds retained separately with exact built-source/PDF/log originals",
+    "both PDF originals showonepage Cyrillic Фигура and allfonts embedded",
+    "common Undo returns exact353B typedprefix; finalGUI clearly marks retained PDF stale"
+  ],
+  "pdf_originals": {
+    "n2": {
+      "pdf": "original-n2-before-completion.pdf",
+      "pdf_sha256": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+      "source": "original-n2-built-source.tex",
+      "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "gui_xelatex_log": "n2-build-gui-xelatex.log",
+      "gui_xelatex_log_sha256": "4a4e563d7a2479f4088b912f8c640bb3c538fb28ad40c8d488b86e67c44aeb66",
+      "pages": 1,
+      "embedded_fonts": 1,
+      "rendered_text": "Фигура",
+      "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 07:56"
+    },
+    "n3": {
+      "pdf": "original-n3-completed.pdf",
+      "pdf_sha256": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+      "source": "original-n3-built-source.tex",
+      "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+      "gui_xelatex_log": "n3-build-gui-xelatex.log",
+      "gui_xelatex_log_sha256": "7428f4e2f522f1783aa55533ce7c929ec729f86d61b3fa49fa509cd8baee05d2",
+      "pages": 1,
+      "embedded_fonts": 1,
+      "rendered_text": "Фигура",
+      "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 07:56"
+    }
+  },
+  "not_accepted": [
+    "physical Windows10/Linux/macOS qualification",
+    "IME",
+    "physical DPI",
+    "full Scientific Studio",
+    "merge/stable/release GO"
+  ]
+}

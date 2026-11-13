@@ -1,0 +1,165 @@
+{
+  "source_head": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "total": 15,
+  "events": {
+    "pull_request": 14,
+    "push": 1
+  },
+  "success": 15,
+  "failure": 0,
+  "pending": 0,
+  "scope": "ALL_EVENTS_UNFILTERED_HEAD_SHA_QUERY",
+  "runs": [
+    {
+      "id": 43388892188,
+      "name": "Personal Windows Cargo and MiKTeX repair",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892188"
+    },
+    {
+      "id": 43388892281,
+      "name": "Windows owner Administrator regression and original PDF acceptance",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892281"
+    },
+    {
+      "id": 43388892380,
+      "name": "Scientific compact Studio mixed Undo (hosted GUI, not physical Win10)",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892380"
+    },
+    {
+      "id": 43388892133,
+      "name": "XeLaTeX figure fonts and glyph integrity",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892133"
+    },
+    {
+      "id": 43388892385,
+      "name": "Scientific-142 L0 immutable corpus and negative SHA QA (not GUI)",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892385"
+    },
+    {
+      "id": 43388892409,
+      "name": "N1 actual app state to TikZ to XeLaTeX",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892409"
+    },
+    {
+      "id": 43388892237,
+      "name": "SCI142 scientific Inspector / source-owning widgets",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892237"
+    },
+    {
+      "id": 43388892305,
+      "name": "Hosted Windows native egui HWND and F1 (not W2 or W3)",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892305"
+    },
+    {
+      "id": 43388892338,
+      "name": "B42 real Studio icon palettes screenshot audit (bootstrap only)",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892338"
+    },
+    {
+      "id": 43388892336,
+      "name": "D QA matrix - Rust and XeLaTeX",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892336"
+    },
+    {
+      "id": 43388892343,
+      "name": "D06 distinct MiKTeX Windows Server XeLaTeX proof",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892343"
+    },
+    {
+      "id": 43388892327,
+      "name": "I61 B42 real Studio icon-to-native-source/PDF (independent D QA)",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892327"
+    },
+    {
+      "id": 43388892262,
+      "name": "N5 Linux x86_64 portable release and packaged X11 launch",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892262"
+    },
+    {
+      "id": 43388892269,
+      "name": "TikZarium CI",
+      "event": "pull_request",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388892269"
+    },
+    {
+      "id": 43388885392,
+      "name": "TikZarium CI",
+      "event": "push",
+      "head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "url": "https://github.com/i-shutov/tikzarium/actions/runs/43388885392"
+    }
+  ],
+  "native_acceptance": "REQUIRES_SEPARATE_ORIGINAL_REVIEW_NOT_INFERRED_FROM_CI"
+}
