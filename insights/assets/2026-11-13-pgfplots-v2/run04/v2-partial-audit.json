@@ -1,0 +1,83 @@
+{
+  "reviewer": "root original artifact review",
+  "created_utc": "2026-11-13T10:50:57.846781+00:00",
+  "source_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "artifact_sha256": "54db8ad926ebfae933b6d69e93c0c51131d64940c9ff7aa2815046bf47fb25de",
+  "run_id": 43410590342,
+  "suite_status": "FAIL",
+  "root_checks": {
+    "report_file_hashes_verified": 292,
+    "exact_source_editor_stages": 19,
+    "exact_single_literal_apply_and_undo_operations": [
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "samples",
+        "before": "41",
+        "after": "43"
+      },
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "domain",
+        "before": "-3:3",
+        "after": "-2.5:2.5"
+      },
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "xmin",
+        "before": "-3.2",
+        "after": "-3.1"
+      },
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "xmax",
+        "before": "3.2",
+        "after": "3.1"
+      },
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymin",
+        "before": "-0.2",
+        "after": "-0.1"
+      },
+      {
+        "fixture": "formula",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymax",
+        "before": "1.2",
+        "after": "1.3"
+      }
+    ]
+  },
+  "visual_review": {
+    "raw/042-formula-axis0-domain-selected-property-f1.png": "Second F1 shows actual domain Help; compact dock preserved",
+    "raw/134-formula-axis0-ymax-selected-property-f1.png": "Sixth F1 shows actual ymax Help; compact dock preserved",
+    "raw/153-formula-property-menu-scrolled-target.png": "Target Шаг делений x visible around rootY507",
+    "raw/154-formula-property-selected.png": "Actual chosen field is Шаг делений y with0.2, not intended x step1"
+  },
+  "failure": {
+    "type": "QA_POPUP_SCROLL_COORDINATE_MISMATCH",
+    "observed_clipboard": "0.2",
+    "expected_clipboard": "1",
+    "guard": "Stopped before draft or Apply, original bytes preserved"
+  },
+  "not_reached": [
+    "Remaining20 V2 operations",
+    "All V2 PDF build/export stages",
+    "External tables GUI build",
+    "SV-009 strict glyph gate"
+  ],
+  "acceptance": "Six source transactions observed and repeat F1 visibly fixed for inspected cases; full V2 remains FAIL",
+  "release_go": false
+}

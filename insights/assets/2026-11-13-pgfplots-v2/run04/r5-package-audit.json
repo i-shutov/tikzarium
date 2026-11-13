@@ -1,0 +1,87 @@
+{
+  "reviewer": "root independent R5 archive/hash audit",
+  "created_utc": "2026-11-13T10:56:13.957595+00:00",
+  "source_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "run_id": 43410590289,
+  "status": "PASS_SCOPED_R5_REPRODUCIBLE_HOSTED_PACKAGE",
+  "archives": [
+    {
+      "file": "Tikzarium-linux-x86_64-preview.tar.gz",
+      "sha256": "509be1fb1c7557e627cda83988974e3c4f7c5b85bf22a9fe8297e0501825ee9e",
+      "manifest_files_verified": 6,
+      "provenance": {
+        "app_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "cli_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+        "external_xelatex_gui_pdf": "NOT_RUN",
+        "linux_packaged_desktop": "NOT_RUN",
+        "linux_wayland": "NOT_RUN",
+        "notarization": "NOT_RUN",
+        "original_ci_run": "https://github.com/i-shutov/tikzarium/actions/runs/43410590289",
+        "packaging": "local_offline_header_and_hash_verified",
+        "physical_mac_m1": "NOT_RUN",
+        "physical_mac_m4": "NOT_RUN",
+        "physical_windows10": "NOT_RUN",
+        "platform": "linux-x86_64",
+        "schema_version": 1,
+        "signed_installer": "NOT_RUN",
+        "source_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+        "tex_or_fonts_bundled": false
+      }
+    },
+    {
+      "file": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz",
+      "sha256": "eaa4dac743b08959c10c7e9cc3df503828c450288955c0ae60f769eef04b1322",
+      "manifest_files_verified": 6,
+      "provenance": {
+        "app_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "cli_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+        "external_xelatex_gui_pdf": "NOT_RUN",
+        "gtk_xdg_picker_physical": "NOT_RUN",
+        "historical_rc_label": true,
+        "linux_packaged_desktop": "NOT_RUN",
+        "linux_wayland": "NOT_RUN",
+        "notarization": "NOT_RUN",
+        "original_ci_run": "https://github.com/i-shutov/tikzarium/actions/runs/43410590289",
+        "packaging": "local_offline_header_and_hash_verified",
+        "physical_linux_x86_64_x11": "NOT_RUN",
+        "physical_mac_m1": "NOT_RUN",
+        "physical_mac_m4": "NOT_RUN",
+        "physical_windows10": "NOT_RUN",
+        "platform": "linux-x86_64",
+        "product": "TikZarium",
+        "qualified_platform": "Ubuntu 24.04 x86_64/X11 (TARGET_NOT_YET_ACCEPTED)",
+        "release_go": false,
+        "release_scope_document": "docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md",
+        "release_stage": "CANDIDATE_NOT_FINAL",
+        "schema_version": 2,
+        "scientific_studio_scope": "NOT_ACCEPTED",
+        "signed_installer": "NOT_RUN",
+        "source_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+        "tex_or_fonts_bundled": false,
+        "version": "1.0.0-rc.1"
+      }
+    }
+  ],
+  "identical_preview_and_rc_payloads": [
+    "tikzarium-app",
+    "tikzarium-cli",
+    "launch.sh",
+    "qa/figure-crlf.tex"
+  ],
+  "ELF_architecture": "x86_64, ELF64 little-endian, both app and CLI",
+  "safe_tar_members": true,
+  "CI_reproducibility_evidence": {
+    "job_id": 131835717190,
+    "step": "R5 assemble reproducible Linux 1.0 RC from the exact GUI-tested binaries",
+    "job_step_conclusion": "success",
+    "exact_cmp_command": "cmp -s Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz rc-second.tar.gz",
+    "original_log_sha256": "ec895c55e4fa497cf69a2917b9d41369bafb6409d18e832cd4ef1f25ffa54be4",
+    "independent_local_second_build": "NOT_RUN; original hosted cmp success is source-attributed evidence"
+  },
+  "scope_limits": [
+    "Historical RC label only; full Scientific Studio NOT_ACCEPTED in embedded provenance",
+    "release_go=false",
+    "No TeX or fonts bundled",
+    "Physical Linux/Windows/Mac/Wayland remain NOT_RUN"
+  ]
+}

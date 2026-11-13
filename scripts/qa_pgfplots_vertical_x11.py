@@ -23,7 +23,7 @@ import time
 import qa_pgfplots_vertical_evidence as evidence
 import qa_at4_scientific_invariants as at4_science
 import qa_sci_compact_x11 as common
-from qa_i61_b42_studio_x11 import audit_embedded_fonts
+from qa_i61_b42_studio_x11 import audit_embedded_fonts, x11_button1_mask, x11_button1_pressed
 from qa_n2_studio_x11 import expected_elf, validate_xelatex_log
 
 POINTS = {**common.POINTS, "source_full_source": (490, 174),
@@ -54,24 +54,93 @@ def popup_strip_bounds(pixels: list[tuple[int, int, int]]) -> tuple[int, int]:
     return runs[0]
 
 
-def property_menu_plan(index: int, count: int, strip_top: int, strip_height: int) -> dict:
+def property_menu_plan(index: int, count: int, strip_top: int, strip_height: int,
+                       scroll_interval: tuple[float, float] = (0, 0)) -> dict:
     if count not in (3, 15) or not 0 <= index < count:
         raise ValueError("Property menu choice outside approved3/15 inventory")
-    # egui0.33.3 default combo_height200; compact row26 + vertical gap4.
+    # combo_height is a maximum, not the observed viewport: egui can retain
+    # a shorter popup after the same ComboBox previously showed three choices.
     content = count * MENU_ROW - 4
-    viewport = min(content, 200)
-    # Popup frame6px each side, with two rounded-corner pixels excluded by
-    # the padding strip. Run01's actual3-row strip is96px =86+10.
-    if strip_height != viewport + 10:
+    viewport = strip_height - 10
+    if not 3 * MENU_ROW - 4 <= viewport <= min(content, 200):
         raise RuntimeError("Actual popup height differs from scoped compact menu geometry")
-    ticks = max(0, math.ceil((index * MENU_ROW - 150) / 40))
-    scroll = min(ticks * 40, max(0, content - viewport))
-    target = strip_top + 18 + index * MENU_ROW - scroll
-    if not strip_top + 6 <= target <= strip_top + strip_height - 7:
-        raise RuntimeError("Planned property row is clipped by actual popup")
+    maximum = content - viewport
+    low, high = scroll_interval
+    if not 0 <= low <= high <= maximum:
+        raise RuntimeError("Observed scrollbar offset outside actual content boundaries")
+    viewport_top = strip_top + 5
+    # Intersection of the row's interior for EVERY offset permitted by the
+    # raster observation. A clipped/uncertain row is positioned before input.
+    safe_low = math.ceil(max(viewport_top + 2, viewport_top + index * MENU_ROW - low + 2))
+    safe_high = math.floor(min(viewport_top + viewport - 2,
+                              viewport_top + index * MENU_ROW + 26 - high - 2))
+    target = (safe_low + safe_high) // 2 if safe_high - safe_low >= 4 else None
     return {"index": index, "count": count, "strip_top": strip_top,
-            "strip_height": strip_height, "wheel_down_ticks": ticks,
-            "expected_scroll_points": scroll, "target_client_y": target}
+            "strip_height": strip_height, "viewport_top": viewport_top,
+            "viewport_height": viewport, "content_height": content, "maximum_scroll": maximum,
+            "observed_scroll_interval": [low, high], "target_client_y": target,
+            "desired_scroll": min(max(index * MENU_ROW + 13 - viewport / 2, 0), maximum)}
+
+
+def observe_property_popup(pixels, origin: tuple[int, int], index: int, count: int,
+                           *, allow_hidden_scrollbar=False) -> dict:
+    """Exact padding/scrollbar probes on an original screenshot; no OCR.
+
+    Scope stays Midnight/scale1/1180x680, closed 3/15 inventories. Scrollbar
+    mapping follows egui0.33.3's content/viewport geometry, never wheel ticks.
+    """
+    if pixels.size != evidence.SCREEN:
+        raise RuntimeError("Popup observation requires the declared original desktop geometry")
+    def pixel(x, y):
+        if not 0 <= x < evidence.CLIENT[0] or not 0 <= y < evidence.CLIENT[1]:
+            raise RuntimeError("Popup probe exceeds declared client geometry")
+        return pixels.getpixel((origin[0] + x, origin[1] + y))
+    top, height = popup_strip_bounds([pixel(MENU_STRIP_X, y) for y in range(evidence.CLIENT[1])])
+    plan = property_menu_plan(index, count, top, height)
+    right = MENU_STRIP_X
+    while right < evidence.CLIENT[0] and pixel(right, top + 1) == MENU_BACKGROUND:
+        right += 1
+    if not MENU_STRIP_X + 150 <= right < evidence.CLIENT[0]:
+        raise RuntimeError("Popup padding right edge is missing or outside scoped menu width")
+    plan["popup_right_client_x"] = right
+    if not plan["maximum_scroll"]:
+        return plan
+    # Two adjacent columns in the observed right padding's floating scrollbar.
+    # Closed Russian property labels do not enter this band. Track/handle colors
+    # may change on hover, but only the handle has all RGB channels >=120.
+    bounds = []
+    track_top = plan["viewport_top"]
+    track_end = track_top + plan["viewport_height"]
+    for x in (right - 7, right - 6):
+        foreground = [y for y in range(track_top, track_end) if min(pixel(x, y)) >= 120]
+        if foreground:
+            if foreground != list(range(foreground[0], foreground[-1] + 1)):
+                raise RuntimeError("Observed scrollbar thumb is split/ambiguous")
+            bounds.append((foreground[0], foreground[-1] + 1))
+    if not bounds and allow_hidden_scrollbar:
+        return {**plan, "target_client_y": None, "scrollbar_observed": False}
+    if len(bounds) != 2 or any(abs(bounds[0][i] - bounds[1][i]) > 2 for i in (0, 1)):
+        raise RuntimeError("Expected one bounded scrollbar thumb in both observed columns")
+    thumb_top, thumb_end = min(b[0] for b in bounds), max(b[1] for b in bounds)
+    handle = max(plan["viewport_height"] ** 2 / plan["content_height"], 12)
+    # Rounded ends plus raster rounding can remove up to two pixels per end.
+    if abs((thumb_end - thumb_top) - handle) > 4:
+        raise RuntimeError("Observed scrollbar thumb length differs from source-grounded content")
+    # Raster rounding and rounded handle ends bound its ideal top position.
+    ideal_low = max(thumb_top - 2.5, thumb_end - handle - .5, track_top)
+    ideal_high = min(thumb_top + .5, thumb_end - handle + 2.5, track_end - handle)
+    if ideal_low > ideal_high:
+        raise RuntimeError("Observed scrollbar endpoints have no consistent offset interval")
+    travel = plan["viewport_height"] - handle
+    ratio = plan["maximum_scroll"] / travel
+    interval = tuple(min(max((position - track_top) * ratio, 0), plan["maximum_scroll"])
+                     for position in (ideal_low, ideal_high))
+    plan = {**plan, **property_menu_plan(index, count, top, height, interval),
+            "scrollbar_observed": True, "thumb_top": thumb_top, "thumb_end": thumb_end,
+            "scrollbar_client_x": right - 7, "source_handle_height": handle}
+    plan["scrollbar_target_client_y"] = round(track_top + handle / 2
+        + plan["desired_scroll"] / plan["maximum_scroll"] * travel)
+    return plan
 
 
 def recorder_inputs(data: bytes, cwd: Path) -> set[Path]:
@@ -260,18 +329,45 @@ class Driver(common.Driver):
         self.enable_full_source_after_load()
         self.stage("opened", evidence.fixture_bytes(fixture), "Native File path/Open, full-source, fresh-sentinel editor Copy and GUI Save")
 
-    def popup_wheel(self, x: int, y: int, button: int, ticks: int):
+    def popup_pointer(self, x: int, y: int):
         self.owned_focus()
         common.run("xdotool", "mousemove", "--window", self.window, str(x), str(y))
         location = common.run("xdotool", "getmouselocation", "--shell")
         pointer = dict(line.split("=", 1) for line in location.splitlines() if "=" in line)
         actual = (int(pointer["X"]), int(pointer["Y"]))
         if actual != (self.geometry["X"] + x, self.geometry["Y"] + y):
-            raise RuntimeError("Popup wheel pointer differs from actual client origin")
+            raise RuntimeError("Popup pointer differs from actual client origin")
+        return actual
+
+    def popup_wheel(self, x: int, y: int, button: int, ticks: int):
+        actual = self.popup_pointer(x, y)
         self.event("native_popup_wheel", button=button, ticks=ticks,
-                   actual_root_xy=actual, client_xy=(x, y), scoped_points_per_tick=40)
+                   actual_root_xy=actual, client_xy=(x, y), scroll_amount="UNASSUMED_OBSERVE_THUMB")
         common.run("xdotool", "click", "--repeat", str(ticks), "--delay", "20", str(button))
         time.sleep(0.8)
+
+    def popup_drag(self, start: tuple[int, int], end: tuple[int, int]):
+        # ComboBox CloseOnClick closes on a track click. A real held drag
+        # exceeding egui's 6px click distance moves the observed handle instead.
+        if start[0] != end[0] or abs(end[1] - start[1]) < 8:
+            raise RuntimeError("Observed scrollbar drag must exceed the click threshold")
+        actual_start = self.popup_pointer(*start)
+        self.event("native_popup_scrollbar_drag_begin", start=start, end=end, actual_root_xy=actual_start)
+        try:
+            common.run("xdotool", "mousedown", "1")
+            for phase, point in (("pressed", start), ("moved", end)):
+                if phase == "moved":
+                    actual_end = self.popup_pointer(*point)
+                    self.event("native_popup_scrollbar_drag_pointer", client_xy=point, actual_root_xy=actual_end)
+                time.sleep(0.20)  # Same native gesture cadence as qualified I61.
+                mask = x11_button1_mask()
+                self.event("actual_popup_primary_button", phase=phase, mask=mask)
+                if not x11_button1_pressed(mask):
+                    raise RuntimeError("X11 server did not retain primary button during popup drag")
+        finally:
+            common.run("xdotool", "mouseup", "1")
+        time.sleep(0.35)
+        self.event("native_popup_scrollbar_drag_end")
 
     def combo_index(self, name: str, index: int, *, count: int | None = None):
         self.click(name)
@@ -286,20 +382,32 @@ class Driver(common.Driver):
         else:
             if common.audit.Image is None:
                 raise RuntimeError("Existing Pillow required for bounded original-popup geometry")
-            with common.audit.Image.open(image) as opened:
-                pixels = opened.convert("RGB")
-                column = [pixels.getpixel((self.geometry["X"] + MENU_STRIP_X, self.geometry["Y"] + y))
-                          for y in range(evidence.CLIENT[1])]
-            top, height = popup_strip_bounds(column)
-            plan = property_menu_plan(index, count, top, height)
-            pointer_y = top + height // 2
-            self.popup_wheel(self.points[name][0], pointer_y, 4, 20)
-            self.screenshot(self.fixture + "-property-menu-reset-top")
-            if plan["wheel_down_ticks"]:
-                self.popup_wheel(self.points[name][0], pointer_y, 5, plan["wheel_down_ticks"])
-                self.screenshot(self.fixture + "-property-menu-scrolled-target")
+            def observe(path, *, allow_hidden=False):
+                with common.audit.Image.open(path) as opened:
+                    return observe_property_popup(opened.convert("RGB"),
+                        (self.geometry["X"], self.geometry["Y"]), index, count,
+                        allow_hidden_scrollbar=allow_hidden)
+            plan = observe(image, allow_hidden=True)
+            observed_image = image
+            if plan["maximum_scroll"]:
+                pointer_y = plan["viewport_top"] + plan["viewport_height"] // 2
+                self.popup_wheel(self.points[name][0], pointer_y, 4, 20)
+                observed_image = self.screenshot(self.fixture + "-property-menu-reset-top")
+                plan = observe(observed_image)
+                if plan["thumb_top"] > plan["viewport_top"] + 1:
+                    raise RuntimeError("Actual popup reset was not observed at the top boundary")
+                if plan["target_client_y"] is None:
+                    y = plan["scrollbar_target_client_y"]
+                    x = plan["scrollbar_client_x"]
+                    start = (x, (plan["thumb_top"] + plan["thumb_end"]) // 2)
+                    self.popup_drag(start, (x, y))
+                    observed_image = self.screenshot(self.fixture + "-property-menu-positioned-target")
+                    plan = observe(observed_image)
+            if plan["target_client_y"] is None:
+                raise RuntimeError("Target row has no safely visible interior in the actual popup")
             self.points["menu_item"] = (self.points[name][0], plan["target_client_y"])
             self.event("native_property_popup_plan", **plan, original_popup=str(image.relative_to(self.out)),
+                       final_observed_popup=str(observed_image.relative_to(self.out)),
                        exact_padding_strip_client_x=MENU_STRIP_X)
         if not 0 <= self.points["menu_item"][1] < evidence.CLIENT[1]:
             raise RuntimeError("Actual popup item outside declared client")

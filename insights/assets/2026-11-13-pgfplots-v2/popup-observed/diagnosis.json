@@ -1,0 +1,44 @@
+{
+  "task_id": "/root/pgf_qa_review",
+  "run_id": 43410590342,
+  "overall_status": "FAIL_IN_BOTH_SUITES",
+  "native": {
+    "v2": {
+      "source_head_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "error": "RuntimeError: Focused Inspector field does not equal expected literal: formula-axis0-xtick-distance-original",
+      "failed_stage": "formula/formula-axis0-ymax-undo",
+      "status": "FAIL",
+      "independently_verified_report_hashes": 292,
+      "build_fixtures": [],
+      "popup_originals": {
+        "raw/152-formula-property-menu-reset-top.png": "96054df21a4afec03aa73042462ff7e2422056e1bc9ade6d690a3fa0d53dd1eb",
+        "raw/153-formula-property-menu-scrolled-target.png": "a6dfc90258268507131b509dd210514161cd20aa3b6ed75a1b8160806192dd8f"
+      },
+      "wrong_field_original_bytes": "0.2"
+    },
+    "at4": {
+      "source_head_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "error": "RuntimeError: Actual popup height differs from scoped compact menu geometry",
+      "failed_stage": "AT4-48/opened",
+      "status": "FAIL",
+      "independently_verified_report_hashes": 228,
+      "build_fixtures": [
+        "AT4-09"
+      ],
+      "popup_originals": {
+        "raw/078-AT4-48-property-menu.png": "838d67098948335cad33a96785eae11d27ed1cca95a69352c05b710ca070b83a"
+      }
+    }
+  },
+  "v2_cause": "One native downward wheel tick moved rendered rows80px, not assumed40. Old planned client526 selected ytick distance and copied0.2 instead of expected xtick distance1; exact guard stopped before edit. The target row was already safely clickable in the top viewport.",
+  "at4_cause": "AT4-48 axis inventory is15, while actual initial viewport is86px (padding strip96px) after same ComboBox previously showed three AddPlot choices. Three visible rows are not a three-item inventory; old helper incorrectly required210px strip.",
+  "baseline_replay": {
+    "v2_old_target_client_y": 526,
+    "actual_target_after_scroll_client_y_approximately": 486,
+    "at4_old_refusal": "Actual popup height differs from scoped compact menu geometry"
+  },
+  "probes": "Original screenshot files are untouched. New fixture is explicitly DERIVED_RGB_PROBES_NOT_ORIGINAL_DESKTOP and retains original paths/SHA, origin, exact padding/header/scrollbar pixel bytes.",
+  "scope": "Both new failures are QA navigation assumptions, not evidence of source-edit product failure. Existing per-operation qualifications and overall failures remain separate. AT4-09 completed build belongs to independent scientific review. New native popup drag/short viewport operation still requires fresh hosted evidence."
+}

@@ -1,5 +1,11 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — CP07 Run04: собственные результаты нового app tree
+
+[Run04](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run04-f1-и-полный-studio-прошли-обнаружены-два-расхождения-qa-popup): source `81f8acccaa9783f9cfaea3a70321ddca345a0464`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`, **15 SUCCESS / 1 FAIL**. Повторный F1 работает; шесть V2 Apply/Undo и полный AT4-09 source/Undo/reopen/GUI PDF подтверждены оригиналами. Полные I61/N2/N3 и portable N5/R1/R2/R3/R5 независимо приняты по новым оригиналам, включая семь PDF, настоящие GTK dialogs и manifests/повторную упаковку. Scientific mixed Undo независимо принят на этом source.
+
+Текущее executable действие — QA-only исправление двух popup расхождений (наблюдаемая прокрутка и фактическая высота viewport при неизменном списке свойств), затем полный повтор 26+8 операций. V2/AT4 suites остаются FAIL; до исправления ошибочный выбор остановлен clipboard/geometry guards, исходник не повреждён. Production app tree сохраняется. После полного evidence/review — CP07 с историей всех отказов; draft без merge/stable/release GO.
+
 ## 2026-11-13 — CP07 follow-up: повторный F1 и полный native retry
 
 [Run03 и точные границы](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run03-первая-транзакция-прошла-повторный-f1-выявил-рассинхронизацию): на `73667007` завершены 13/3 из 16 workflows. Первые V2 и AT4 Apply/Undo прошли побайтно; повторный F1 выявил stale Help flag после ручной смены вкладки. I61/package-I61 отдельно остановлены original-X guard из-за переноса строк в исправленной узкой панели; исходник не изменён. Восемь оригинальных AT4 reference PDFs прошли внешний compile/font check и независимый научный просмотр, без native claim.
