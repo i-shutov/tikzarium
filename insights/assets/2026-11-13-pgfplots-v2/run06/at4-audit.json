@@ -1,0 +1,1104 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_READ_ONLY_AT4_RUN06_AUDIT",
+  "assessment": "PASS_BOUNDED_EIGHT_CASE_HOSTED_GUI_AT4_VERTICAL; AGGREGATE_SC3_AT4_NOT_VERIFIED",
+  "artifact": {
+    "run_id": 43419233297,
+    "zip_bytes": 67843482,
+    "zip_sha256": "9eae682f16360a2f449acf4494c0fb8213e49fb5e015a23dc66094681026d556",
+    "zip_crc_and_safe_members_root_verified": true,
+    "safe_entries": 1470,
+    "native_hashes_root_verified": 1368,
+    "reference_hashes_root_verified": 90
+  },
+  "runtime_identity": {
+    "source_head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "production_elf_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "observed_proc_elf_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "pid": 5211,
+    "window": "6291459",
+    "startup_action_matches_report_identity": true,
+    "proc_elf_matches_production_elf": true,
+    "native_actions_count": 1351,
+    "production_process_started_event_count": 1,
+    "production_process_terminated_after_capture": true
+  },
+  "suite": {
+    "scope": "HOSTED_GUI_AT4_ORIGINALS_BOUNDED_VERTICAL",
+    "automated_status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED",
+    "operation_count": 8,
+    "operations_observed": 8,
+    "native_acceptance_field": "REQUIRES_INDEPENDENT_REVIEW",
+    "aggregate_sc3_at4": "NOT_VERIFIED",
+    "physical_win10": "NOT_RUN",
+    "physical_mac_arm": "NOT_RUN",
+    "stages_per_case": 7,
+    "stage_count_total": 56,
+    "all_stage_paths_from_exact_stage_json": true,
+    "all_source_editor_and_image_hashes_verified": true,
+    "stage_png_reuse_count": 56,
+    "stage_png_new_visuals_count": 0
+  },
+  "warning_gate_review": {
+    "strict_warning_failures": [],
+    "per_case_gate_pass_count": 8,
+    "per_case_gate_failures": 0,
+    "actual_log_expected_warning": "Package shellesc Warning: Shell escape disabled on input line 73.",
+    "warning_collector_behavior": "The typed strict gate only records missing-character and nullfont conditions; these are absent. Its successful clean path did not misclassify the expected shell-escape-disabled package warning. Each log contains successful output proof and no TeX error line, unresolved references, rerun, overfull, underfull, or other package/LaTeX warning lines. The expected package warning remains disclosed rather than described as no warnings."
+  },
+  "visual_reuse": {
+    "run05_audit_path": "reviews/run05-at4-audit.json",
+    "run05_audit_sha256": "2c001b6a1c7f8050786d6c82459340a975f6ae356f9a581f7b8be93a5b709df5",
+    "run05_correction_path": "reviews/run05-at4-audit-correction.json",
+    "run05_correction_sha256": "c757e8aabfd27dfa7b184d0d998720a942a23a7eb1a7d608e781c90e27d2c35e",
+    "current_pdf_raster_pngs_byte_identical_to_run05": 8,
+    "current_pdf_raster_pngs_new_visuals": 0,
+    "stage_screenshots_byte_identical_to_run05": 56,
+    "stage_screenshots_new_visuals": 0,
+    "visual_acceptance_basis": "All rendered PNGs and all exact-stage screenshots compare byte-for-byte to the directly reviewed run05 evidence. Native PDF binary hashes differ across runs; no attribution is made. The reference PDFs remain external reference-only."
+  },
+  "reference_integrity": {
+    "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+    "scope": "EXTERNAL_REFERENCE_ONLY",
+    "original_reference_source_matches_native_original": {
+      "AT4-09": true,
+      "AT4-48": true,
+      "AT4-49": true,
+      "AT4-50": true,
+      "AT4-55": true,
+      "AT4-56": true,
+      "AT4-58": true,
+      "AT4-61": true
+    },
+    "reference_not_native_GUI_evidence": true
+  },
+  "cases": {
+    "AT4-09": {
+      "source_ownership": {
+        "input_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+        "original_corpus_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+        "external_reference_source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+        "patched_saved_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+        "built_author_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+        "compiled_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/built",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "desktop_png_sha256": "18292f49d047d4f3eb5dc5b889a42af50a5a342ec0cdf4a4f4845f456b10a78b",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "18292f49d047d4f3eb5dc5b889a42af50a5a342ec0cdf4a4f4845f456b10a78b",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/reopened",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "desktop_png_sha256": "31a5b4ca3d391361e1250c73e0f1f56338504cccaea87b53f6c72460d6ddae51",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "31a5b4ca3d391361e1250c73e0f1f56338504cccaea87b53f6c72460d6ddae51",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/final-applied",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "desktop_png_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-applied",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "desktop_png_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/opened",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "desktop_png_sha256": "dfddbdc58f258afb1b5b81d3235579f6d02188c20b3126a869913e1d10848c4a",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "dfddbdc58f258afb1b5b81d3235579f6d02188c20b3126a869913e1d10848c4a",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-undo",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "desktop_png_sha256": "be4e3139b01acdbd1833e4dfff28adf98619bbdd56f94649b077eb9d6c847b57",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "be4e3139b01acdbd1833e4dfff28adf98619bbdd56f94649b077eb9d6c847b57",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-draft",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "desktop_png_sha256": "f507de106589721cbf7eb59ec1cb20133f1423ab284dd58a1155e3a25fe471be",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "f507de106589721cbf7eb59ec1cb20133f1423ab284dd58a1155e3a25fe471be",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "9572e817613add594b8d19fbef6d13892c7826176c2a9ef8f7c4fe3abef0c448",
+        "rendered_pdf_png_sha256": "9692b5d93d97bd3799ced0ce781b75b57adfa741851b4e9ab084cf24032eb2da",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "RLHWEX+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+          "EASJXE+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+          "ARQGMF+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+          "SLNIQJ+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes      8  0"
+        ],
+        "pdftotext": "Model\nSampled model\n\nNormalized intensity\n\n1\n\n0.5\n\n0\n−4\n\n−3\n\n−2\n\n−1\n0\n1\nDetuning ∆\n\n2\n\n3\n\n4",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Even response f(x)=1/(1+x^2); f(0)=1 is the peak; symmetric positive decay. Five separate red points are labelled Sampled model, not measurements.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-09-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-09-rendered-pdf.png",
+        "sha256": "9692b5d93d97bd3799ced0ce781b75b57adfa741851b4e9ab084cf24032eb2da",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-48": {
+      "source_ownership": {
+        "input_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+        "original_corpus_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+        "external_reference_source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+        "patched_saved_source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+        "built_author_source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+        "compiled_source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/built",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "desktop_png_sha256": "b87338006c99012d67c585a03ff7ab831ab8ef8ca2cf05994d609a51b31753d3",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "b87338006c99012d67c585a03ff7ab831ab8ef8ca2cf05994d609a51b31753d3",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-undo",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "desktop_png_sha256": "f645e53634c8d0806c04920283adaa84920520f852cc166605506bfa2e283b44",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "f645e53634c8d0806c04920283adaa84920520f852cc166605506bfa2e283b44",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/reopened",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "desktop_png_sha256": "c7340eb6a65dbdb5ead4c17f9f82d8e0335f60000dafefbebad19f8e8dd32cda",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "c7340eb6a65dbdb5ead4c17f9f82d8e0335f60000dafefbebad19f8e8dd32cda",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/final-applied",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "desktop_png_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/opened",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "desktop_png_sha256": "61915f7ec1f915f2662f93b7c38a4d449380411469bb882ad39ffc8c3a916be5",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "61915f7ec1f915f2662f93b7c38a4d449380411469bb882ad39ffc8c3a916be5",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-applied",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "desktop_png_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-draft",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "desktop_png_sha256": "c3df4ac6311df66ea54c4116b83412bfe7bb83bd4ed2760bbdcff9e04b963a0f",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "c3df4ac6311df66ea54c4116b83412bfe7bb83bd4ed2760bbdcff9e04b963a0f",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "7e49296357cc2feec427cc848769818adbeda08adc894d17abe72e04a15d5dda",
+        "rendered_pdf_png_sha256": "00a5a5d73d390b5c27d9be035ec7d864100c90bd1c38c99e5ebe304015adbbaf",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "DABIQD+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+          "UVQDSK+CMMI10                        Type 1C           Builtin          yes yes yes      6  0"
+        ],
+        "pdftotext": "5\n\ny\n\n4\n3\n2\n0.5\n\n1\n\n1.5\n\n2\n\n2.5\nx\n\n3\n\n3.5\n\n4\n\n4.5",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Four point/error-bar pairs preserved; x errors are zero and y errors are 0.3, 0.2, 0.4, 0.3. Their statistical meaning is not specified.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-48-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-48-rendered-pdf.png",
+        "sha256": "00a5a5d73d390b5c27d9be035ec7d864100c90bd1c38c99e5ebe304015adbbaf",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-49": {
+      "source_ownership": {
+        "input_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+        "original_corpus_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+        "external_reference_source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+        "patched_saved_source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+        "built_author_source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+        "compiled_source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/built",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "desktop_png_sha256": "a7f25b888c5d92bf5e7b5bc475d94ce5be489310d5888143dcc6d3e51d42bb80",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "a7f25b888c5d92bf5e7b5bc475d94ce5be489310d5888143dcc6d3e51d42bb80",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/reopened",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "desktop_png_sha256": "f5de9f956f611a44105333e408055fad76fed7b7e5666f11a3496528b4e2716f",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "f5de9f956f611a44105333e408055fad76fed7b7e5666f11a3496528b4e2716f",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/final-applied",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "desktop_png_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/opened",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "desktop_png_sha256": "d9d1be746a76876dd0385424eef659b4739b2f90e4d48958112fe088702f8a09",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "d9d1be746a76876dd0385424eef659b4739b2f90e4d48958112fe088702f8a09",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-applied",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "desktop_png_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-draft",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "desktop_png_sha256": "409e66539224ecafce5e40b4ee80cce0621d24ee0582bd50d08eb727cad7af50",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "409e66539224ecafce5e40b4ee80cce0621d24ee0582bd50d08eb727cad7af50",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-undo",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "desktop_png_sha256": "966ec1b09864c3c15aae40eb6d73ea7c021d46947e5a37263e9a3ee4cec6a1e2",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "966ec1b09864c3c15aae40eb6d73ea7c021d46947e5a37263e9a3ee4cec6a1e2",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "2b153719a608fcaaa5d26811b9b46c9bfa51661e74d39f5c990ef17bab799ce1",
+        "rendered_pdf_png_sha256": "b535c1363238030c4db86b7af05a1cebb6364483f142fff3f8f2707db36adfa6",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "ZUGORA+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+          "VCOERJ+CMSY7                         Type 1C           Builtin          yes yes yes      6  0",
+          "UGFOOL+CMR7                          Type 1C           Builtin          yes yes yes      7  0",
+          "DDIIKC+CMMI10                        Type 1C           Builtin          yes yes yes      8  0"
+        ],
+        "pdftotext": "E(h)\n\n10−2\n\n10−3\n\n10−4\n10−2\n\n10−1\nh",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Five positive (h,E) points satisfy E=h^2; log10(E) versus log10(h) slope is 2. Synthetic relation, not empirical evidence.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-49-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-49-rendered-pdf.png",
+        "sha256": "b535c1363238030c4db86b7af05a1cebb6364483f142fff3f8f2707db36adfa6",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-50": {
+      "source_ownership": {
+        "input_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+        "original_corpus_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+        "external_reference_source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+        "patched_saved_source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+        "built_author_source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+        "compiled_source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/built",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "desktop_png_sha256": "0541ca667f8c6c3779e1a0cb7c436d99de7de53b9c55635de7011cce4bbe7619",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "0541ca667f8c6c3779e1a0cb7c436d99de7de53b9c55635de7011cce4bbe7619",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-undo",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "desktop_png_sha256": "39ae7936d0b61098eafd3c5014841a0575a8254494cff860702567023489566c",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "39ae7936d0b61098eafd3c5014841a0575a8254494cff860702567023489566c",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-applied",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "desktop_png_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/reopened",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "desktop_png_sha256": "836085f17c326246016cef6a7a6eccb975c6c25f67befbe73357cf5997666547",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "836085f17c326246016cef6a7a6eccb975c6c25f67befbe73357cf5997666547",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/final-applied",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "desktop_png_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/opened",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "desktop_png_sha256": "a4ce6e3875b5bff295df253e9f4c6bd01eb80f7666d220aff6aef872db5a9339",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "a4ce6e3875b5bff295df253e9f4c6bd01eb80f7666d220aff6aef872db5a9339",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-draft",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "desktop_png_sha256": "22c54ea380c7152eaf9684dfa9d847c76d88b98a672f95ecb62a9b9f233f691e",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "22c54ea380c7152eaf9684dfa9d847c76d88b98a672f95ecb62a9b9f233f691e",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "1a53fc73ea556d062b59d72634ee0358c10ac1a1ed06bb84fbed8e15cf39a8cf",
+        "rendered_pdf_png_sha256": "dbdadaf456beb045397ee8bdf6a48ab512e6a961e8abf369044696a9cc4d073c",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "WHQMZJ+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+          "JSYQSK+CMMI10                        Type 1C           Builtin          yes yes yes      6  0"
+        ],
+        "pdftotext": "y\n\n4\n\n2\n\n0\n0\n\n1\n\n2\n\n3\nx\n\n4\n\n5",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "fillbetween binds the named upper/lower paths; separation is exactly 1 over x=0..5. Conditional ±0.5 band, not a confidence interval.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-50-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-50-rendered-pdf.png",
+        "sha256": "dbdadaf456beb045397ee8bdf6a48ab512e6a961e8abf369044696a9cc4d073c",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-55": {
+      "source_ownership": {
+        "input_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+        "original_corpus_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+        "external_reference_source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+        "patched_saved_source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+        "built_author_source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+        "compiled_source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/built",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "desktop_png_sha256": "17ca825ec5f27b653c9b7c13716ab8e84b2352273dd9bdc7850d962005356a09",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "17ca825ec5f27b653c9b7c13716ab8e84b2352273dd9bdc7850d962005356a09",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/reopened",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "desktop_png_sha256": "282543e727bc8c852304af15f5d3d54647205039c33d8aec528d984c81be55b6",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "282543e727bc8c852304af15f5d3d54647205039c33d8aec528d984c81be55b6",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-applied",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "desktop_png_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-undo",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "desktop_png_sha256": "9c2c9f7297a71ca78cf372a4cd88e7dea26b744d7fbe8d63b27c3cd70750a309",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "9c2c9f7297a71ca78cf372a4cd88e7dea26b744d7fbe8d63b27c3cd70750a309",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/final-applied",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "desktop_png_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/opened",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "desktop_png_sha256": "a8d430e11d6cb3f4a85b4dd7f87fae7fdc2166cb2c5e74f5b05489ec4382045b",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "a8d430e11d6cb3f4a85b4dd7f87fae7fdc2166cb2c5e74f5b05489ec4382045b",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-draft",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "desktop_png_sha256": "c9305feb80c8373525bd0312179084b4b86bb8acd709bdf508a28652d7f326e3",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "c9305feb80c8373525bd0312179084b4b86bb8acd709bdf508a28652d7f326e3",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "20b8a96b99d76d727bbd3535f0dc3234b74ab8a49ba4beff45d6126f8bce4074",
+        "rendered_pdf_png_sha256": "b0583df99c9c56323a1461b37f4cbb8e8a5a07ac9968bd6ef79acd3c6fcb5c77",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "SDZMCU+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+          "ILIWJP+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+          "ENAWSH+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+        ],
+        "pdftotext": "z\n\n1\n0.5\n0\n−2\n\n−1\n\n0\nx\n\n1\n\n2 −2\n\n−1\n\n1\n\n0\ny\n\n2",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Analytic z=exp(-x^2-y^2), positive and symmetric with central maximum z(0,0)=1; square domain [-2,2]^2 and view {45}{30} retained. No measurements/fitting claim.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-55-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-55-rendered-pdf.png",
+        "sha256": "b0583df99c9c56323a1461b37f4cbb8e8a5a07ac9968bd6ef79acd3c6fcb5c77",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-56": {
+      "source_ownership": {
+        "input_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+        "original_corpus_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+        "external_reference_source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+        "patched_saved_source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+        "built_author_source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+        "compiled_source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/built",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "desktop_png_sha256": "fa8a9711a63d21e3ae84c1d41fe729f5b2861a95da9dd761839cee5c2210b6d5",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "fa8a9711a63d21e3ae84c1d41fe729f5b2861a95da9dd761839cee5c2210b6d5",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-undo",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "desktop_png_sha256": "6c9b95fe6bc218effe798d7413dbce9fb9c928fd99a15581e903d8d89dd0f133",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "6c9b95fe6bc218effe798d7413dbce9fb9c928fd99a15581e903d8d89dd0f133",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/reopened",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "desktop_png_sha256": "998701006337fb1cd0163747e32106edf2711682500936ee84c1db84e28d3302",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "998701006337fb1cd0163747e32106edf2711682500936ee84c1db84e28d3302",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/final-applied",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "desktop_png_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/opened",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "desktop_png_sha256": "cbc2a50945cd2a17f789782a7dcf86f65bfc4ec05546142072bf3e06a83883e2",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "cbc2a50945cd2a17f789782a7dcf86f65bfc4ec05546142072bf3e06a83883e2",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-draft",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "desktop_png_sha256": "c438fc0c6eb05c043c4108def3350ca3e4dd8fd29dec12ec0d8f3eb25d35043a",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "c438fc0c6eb05c043c4108def3350ca3e4dd8fd29dec12ec0d8f3eb25d35043a",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-applied",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "desktop_png_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "94055a50a347a8ae320b3cccbb7255d6cdb2f98c38779499250df496a77e97f8",
+        "rendered_pdf_png_sha256": "8fc7f92c2825b0b8922ad1d6ae2075512966853222cd32adadd9cb252f9bf12d",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "AOEKZO+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+          "ORJXXL+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+          "NAXZOY+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+        ],
+        "pdftotext": "z\n\n2\n1\n0\n−1\n\n−0.5\n\n0\nx\n\n0.5\n\n1 −1\n\n−0.5\n\n0.5\n\n0\ny\n\n1",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Common-parameter helix (cos(t),sin(t),t/360), PGF degree semantics, t=0..720: two turns, unit radius, z=0..2. No measurement series.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-56-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-56-rendered-pdf.png",
+        "sha256": "8fc7f92c2825b0b8922ad1d6ae2075512966853222cd32adadd9cb252f9bf12d",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-58": {
+      "source_ownership": {
+        "input_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+        "original_corpus_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+        "external_reference_source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+        "patched_saved_source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+        "built_author_source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+        "compiled_source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/built",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "desktop_png_sha256": "4d956998bda694a103b325b05deb24eb41a2daafcfb5ceaaa597e8d103c77e8b",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "4d956998bda694a103b325b05deb24eb41a2daafcfb5ceaaa597e8d103c77e8b",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/reopened",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "desktop_png_sha256": "74d9559f41837e8c3bc2d4a190674c337ccf5b3064cbd1da83269bc69648a184",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "74d9559f41837e8c3bc2d4a190674c337ccf5b3064cbd1da83269bc69648a184",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-applied",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "desktop_png_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-draft",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "desktop_png_sha256": "00d6498e3999642c50cbb0f19accc1f66b0ced728ddd1a963d2942b31de93c0f",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "00d6498e3999642c50cbb0f19accc1f66b0ced728ddd1a963d2942b31de93c0f",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/final-applied",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "desktop_png_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-undo",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "desktop_png_sha256": "d09088b9e84c31040f90dd929afc8f4dd4ca6c03887c36a561aa9a948cef79bc",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "d09088b9e84c31040f90dd929afc8f4dd4ca6c03887c36a561aa9a948cef79bc",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-58/opened",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "desktop_png_sha256": "1a93e5a49aa30cfc0a56a2a868be831e2eee61a43c248e35af973b9bc36d32ba",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "1a93e5a49aa30cfc0a56a2a868be831e2eee61a43c248e35af973b9bc36d32ba",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "37fbe02247aed7e2f589a9baafe8c904e25061c273b3bb8108e568cb1c0a80f6",
+        "rendered_pdf_png_sha256": "b758b34a6b27d0ad6bd42614e6e572d04981266354c56a8afde4765b5eaf2836",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "LXECWE+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+          "EKWIKV+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+          "EASOOP+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+        ],
+        "pdftotext": "y\n\n2\n\n0\n\n−2\n−2\n\n−1.5\n\n−1\n\n−0.5\n\n0\nx\n\n0.5\n\n1\n\n1.5\n\n2",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Sparse 1/x branch samples with unbounded coords=jump and explicit (0,nan); gap handling must avoid bridging the discontinuity.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-58-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-58-rendered-pdf.png",
+        "sha256": "b758b34a6b27d0ad6bd42614e6e572d04981266354c56a8afde4765b5eaf2836",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    },
+    "AT4-61": {
+      "source_ownership": {
+        "input_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+        "original_corpus_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+        "external_reference_source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+        "patched_saved_source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+        "built_author_source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+        "compiled_source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+        "exact_patch_and_source_semantics_reused_from_run05": true
+      },
+      "stage_evidence": [
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/built",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "desktop_png_sha256": "3ee595369345cd7354a2bdebe3f9765bb512f1ac5f1c29f8d920614e87baed81",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "3ee595369345cd7354a2bdebe3f9765bb512f1ac5f1c29f8d920614e87baed81",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/reopened",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "desktop_png_sha256": "a2d09ff39e8014f67b77b92760041d2f9c1aa200ed30acca64caa7862e2ede5d",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "a2d09ff39e8014f67b77b92760041d2f9c1aa200ed30acca64caa7862e2ede5d",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-draft",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-draft",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "desktop_png_sha256": "315c5862f60c0c76d4e0cbc072d91e2574a445db294dd0c041318c83f9bd85f8",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "315c5862f60c0c76d4e0cbc072d91e2574a445db294dd0c041318c83f9bd85f8",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-applied",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "desktop_png_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/final-applied",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "desktop_png_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/opened",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "desktop_png_sha256": "b091579b49039cb691ddfcd0401515f99614f416cbc498cbe82644f2a783fccd",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "b091579b49039cb691ddfcd0401515f99614f416cbc498cbe82644f2a783fccd",
+          "image_byte_identical_to_run05": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-undo",
+          "directory": "validation/attempts/43419233297-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-undo",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "desktop_png_sha256": "32e4b14fc04fd69e95eac0475f4c378e66b02d131ebe67a95138eca1f7eef6c0",
+          "source_editor_bytes_match": true,
+          "stage_manifest_hashes_match_actual_files": true,
+          "expected_source_state_matches": true,
+          "run05_visual_png_sha256": "32e4b14fc04fd69e95eac0475f4c378e66b02d131ebe67a95138eca1f7eef6c0",
+          "image_byte_identical_to_run05": true
+        }
+      ],
+      "build": {
+        "pdf_sha256": "3674159c1c7d5147f0defb0cee46926ce97fb4e3e0bf6299bd9e0e3e0568abe8",
+        "rendered_pdf_png_sha256": "300829e315700784dcdc273dcb5aac16c2b3e98e8749c8ced458daf18720e0e3",
+        "rendered_pdf_png_matches_reviewed_run05_bytes": true,
+        "pages": 1,
+        "fonts_embedded_and_unicode_mapped": true,
+        "font_rows": [
+          "SKSLRF+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+          "RIBSRW+CMSY7                         Type 1C           Builtin          yes yes yes      6  0",
+          "PQEFEQ+CMR7                          Type 1C           Builtin          yes yes yes      7  0",
+          "BQOAEO+CMSY10                        Type 1C           Builtin          yes yes yes      8  0",
+          "ZFXPPZ+CMMI10                        Type 1C           Builtin          yes yes yes      9  0",
+          "FRCNNS+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes     10  0"
+        ],
+        "pdftotext": "20 log10 |H| / dB\n\n0\n\n−20\n\n−40\n10−2\n\n10−1\n\n100\nωRC\n\n101\n\n102",
+        "recorder_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "strict_warning_details": [],
+        "actual_log_warning_lines": [
+          "Package shellesc Warning: Shell escape disabled on input line 73."
+        ],
+        "engine_success_and_no_error_line": true
+      },
+      "scientific_basis_reused": "Bode magnitude −10log10(1+ω²), log x-domain .01..100 unchanged; at ω=1 value −3.0102999566dB; high-frequency slope approaches −20dB/decade. Model calculation, not measured data.",
+      "visual_reuse": {
+        "rendered_pdf_png_path": "validation/attempts/43419233297-at4/originals/pgfplots-native/raw/AT4-61-rendered-pdf.png",
+        "run05_path": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-61-rendered-pdf.png",
+        "sha256": "300829e315700784dcdc273dcb5aac16c2b3e98e8749c8ced458daf18720e0e3",
+        "byte_identical": true,
+        "newly_reviewed_render": false,
+        "reuse_basis": "Same source and same rendered-PDF PNG bytes as directly reviewed run05 case."
+      }
+    }
+  },
+  "limits": [
+    "Bounded to the eight named AT4 cases on this hosted Linux GUI, recorded production ELF and run artifact.",
+    "Windows 10 and macOS/ARM runs are NOT_RUN.",
+    "Aggregate SC3/AT4 remains NOT_VERIFIED.",
+    "Visual review is reused only on exact PNG byte identity with corrected run05 directly reviewed evidence; native PDF binaries differ and are not claimed identical.",
+    "External reference artifacts are not native GUI evidence."
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "SV-003": {
+    "actual_log_sha256": "20a36c45f75b6e1fc8c71ca7865484ca1e8d97f8f95d3106df8f5f8e7555d49e",
+    "actual_warnings": [
+      {
+        "line": 815,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 816,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "actual_output_written_lines": [
+      {
+        "line": 839,
+        "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpvDSJP9"
+      }
+    ],
+    "fatal_tex_bang_lines": 0,
+    "original_source_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+    "unchanged_bare_semicolon_definitions": [
+      {
+        "line": 48,
+        "text": "  \\def\\xo{1.8};"
+      },
+      {
+        "line": 49,
+        "text": "  \\def\\yn{1.1};"
+      }
+    ],
+    "historical": {
+      "id": "SV-003",
+      "corpus": "SR",
+      "status": "PASS",
+      "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "exit_code": "0",
+      "seconds": "1.47",
+      "pdf_pages": "1",
+      "timed_out": "False",
+      "source_preserved": "True",
+      "dependencies_preserved": "True",
+      "nullfont_warnings": "2",
+      "source_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+      "reference_pdf_sha256": "eba57fa4f0d47f15c4f47ccc7e0703d79223ce76247c23c5f73dc91f7323041f",
+      "compiled_pdf_sha256": "e479605a7255cae250bff1b20ae13ab3acdb2e6f599bfde207e62e93fbafc5bc",
+      "tex_log_sha256": "62c42afadc787cf09744c4a7edb21cabc5ebeccc1961f4c0d2da225d7bb8a065",
+      "console_sha256": "21fb86e4f6b1d6e76506aef13ab5ab06a0100054b9712f45476b0f6dafba09aa",
+      "build_folder": "SV-003"
+    },
+    "historical_console_verified_sha256": "21fb86e4f6b1d6e76506aef13ab5ab06a0100054b9712f45476b0f6dafba09aa",
+    "historical_warning_lines": [
+      {
+        "line": 284,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 285,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+  },
+  "SV-029": {
+    "actual_log_sha256": "307dbe87eec864c7454cb5de5b226aecfd40f493eea1d2c4d6b299a9ab72fd54",
+    "actual_warnings": [
+      {
+        "line": 815,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 816,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "actual_output_written_lines": [
+      {
+        "line": 839,
+        "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpBFmKfb"
+      }
+    ],
+    "fatal_tex_bang_lines": 0,
+    "original_source_sha256": "43e7efd9032830d95bc6e402ae941bc93af071a6eb4fd7ddedd4d02e318a4a43",
+    "unchanged_bare_semicolon_definitions": [
+      {
+        "line": 47,
+        "text": "  \\def\\ql{-1};"
+      },
+      {
+        "line": 48,
+        "text": "  \\def\\qr{1};"
+      }
+    ],
+    "historical": {
+      "id": "SV-029",
+      "corpus": "SR",
+      "status": "PASS",
+      "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "exit_code": "0",
+      "seconds": "1.3",
+      "pdf_pages": "1",
+      "timed_out": "False",
+      "source_preserved": "True",
+      "dependencies_preserved": "True",
+      "nullfont_warnings": "2",
+      "source_sha256": "43e7efd9032830d95bc6e402ae941bc93af071a6eb4fd7ddedd4d02e318a4a43",
+      "reference_pdf_sha256": "be604bde99951a68fc05a36aca3d3a3a52c600020610e4a88e70984fe951f1c7",
+      "compiled_pdf_sha256": "47854462a4841c6d55ac6f0675a7a2e35d9c4ee83fb3e2995c57b327761a2eb5",
+      "tex_log_sha256": "a7a8a660cc85ecb23c23b0f8b85038efa58f9984b5b042ed5cc4ef3758f0ffcc",
+      "console_sha256": "d8505bd39b438bd91f9bbb214aafc1868a04b0d3224f84da6bac1b81a7843383",
+      "build_folder": "SV-029"
+    },
+    "historical_console_verified_sha256": "d8505bd39b438bd91f9bbb214aafc1868a04b0d3224f84da6bac1b81a7843383",
+    "historical_warning_lines": [
+      {
+        "line": 284,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 285,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+  },
+  "SV-009": {
+    "actual_log_sha256": "edf3d1f041a87942e87ec24cd7ceb5d73f7eaf00f11ef249638a00f0928f48c1",
+    "actual_warnings": [
+      {
+        "line": 815,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 816,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "actual_output_written_lines": [
+      {
+        "line": 839,
+        "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpTNnwRI"
+      }
+    ],
+    "fatal_tex_bang_lines": 0,
+    "original_source_sha256": "5e6e3dfc2d2b44a74a0a3069e55a402900d2317580fd6991bf39c16648a86fac",
+    "unchanged_bare_semicolon_definitions": [
+      {
+        "line": 48,
+        "text": "  \\def\\xo{0.6};"
+      },
+      {
+        "line": 49,
+        "text": "  \\def\\yn{1.1};"
+      }
+    ],
+    "historical": {
+      "id": "SV-009",
+      "corpus": "SR",
+      "status": "PASS",
+      "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "exit_code": "0",
+      "seconds": "1.123",
+      "pdf_pages": "1",
+      "timed_out": "False",
+      "source_preserved": "True",
+      "dependencies_preserved": "True",
+      "nullfont_warnings": "2",
+      "source_sha256": "5e6e3dfc2d2b44a74a0a3069e55a402900d2317580fd6991bf39c16648a86fac",
+      "reference_pdf_sha256": "e9f88f156a9377166d7ae07d7b7fb591410fd588c6e0727b9cab4908c8d2c2ed",
+      "compiled_pdf_sha256": "7072c85990eb260ffdd9005f4df218491329b31b12446dd899a1470387c09819",
+      "tex_log_sha256": "32fa594b7d8f5d2c30721f9566417adbf81f4673f4f387bb7c37f6841619dacd",
+      "console_sha256": "abdc9d43bbf2c590b5db9f0a8c5c37282dd39c1a94f260052d71d7009b4cab4d",
+      "build_folder": "SV-009"
+    },
+    "historical_console_verified_sha256": "abdc9d43bbf2c590b5db9f0a8c5c37282dd39c1a94f260052d71d7009b4cab4d",
+    "historical_warning_lines": [
+      {
+        "line": 284,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      },
+      {
+        "line": 285,
+        "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+      }
+    ],
+    "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+  }
+}
