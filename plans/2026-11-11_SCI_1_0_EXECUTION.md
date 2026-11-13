@@ -4,6 +4,8 @@
 
 ## Checkpoint 13.11.2026 — scientific mixed Undo принят в hosted GUI
 
+Текущий следующий блок: [полная адаптация I61/N5](../insights/2026-11-13_COMPACT_I61_N5_REVALIDATION_RU.md), `IMPLEMENTED_NOT_VERIFIED` до собственных hosted runs и независимой проверки originals. Source app/src сохраняется; полный старый объём I61/N2/N3/packaged/R1/R2/R3/R5 не сокращается. Ближайшее исполнимое действие — exact-head native execution, затем original source/image/PDF/ELF review.
+
 [Независимо проверенный итог](../insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md): exact source `b646c4d46d331a281c1fe51d6bcc79c436ffdf35`, app tree `fe40516186fb1728baceb40d0da137a780c1d9de`, [run 43370706180 SUCCESS](https://github.com/i-shutov/tikzarium/actions/runs/43370706180). Настоящий SV-001 derivative, Unicode Paste, clipboard-confirmed draft151, один байт Apply150→151, два Undo, byte-exact Save/Open, GUI XeLaTeX/current PDF Export прошли с независимым просмотром оригиналов. Scope **HOSTED_GUI Linux/Xvfb 1366×768, клиент1180×680, Midnight**; 1-page PDF и 4 embedded fonts проверены. Локальные 566 tests/fmt/strict Clippy/build и 20 evidence contracts PASS. Все16 CI runs завершены:14 success/2 исторических I61/N5 lease failures. Общий CI/stable/merge GO не объявлен.
 
 **Следующая executable задача:** адаптировать и полностью перепроверить I61/N5 на компактном UI, сохраняя исходные требования и original evidence. Этот SV-001 не закрывает их шесть примитивов, packaged launch или отдельные library/parameter контракты и не разрешает механически заменить pin. Physical Win10/IME/DPI/G3 и полный ST-SCI остаются отдельными обязательными gates.

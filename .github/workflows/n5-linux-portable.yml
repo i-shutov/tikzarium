@@ -15,6 +15,9 @@ on:
       - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_r1_dirty_close_x11.py'
       - 'scripts/qa_r3_native_picker_x11.py'
+      - 'scripts/qa_n5_viewport.py'
+      - 'scripts/tests/test_qa_compact*.py'
+      - 'scripts/tests/test_qa_n5_viewport.py'
       - 'crates/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -30,6 +33,9 @@ on:
       - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_r1_dirty_close_x11.py'
       - 'scripts/qa_r3_native_picker_x11.py'
+      - 'scripts/qa_n5_viewport.py'
+      - 'scripts/tests/test_qa_compact*.py'
+      - 'scripts/tests/test_qa_n5_viewport.py'
       - 'crates/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -73,6 +79,18 @@ jobs:
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
+      - name: Restore locked release dependencies and build products
+        id: cargo-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-n5-compact-release191-${{ hashFiles('Cargo.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-n5-compact-release191-${{ hashFiles('Cargo.lock') }}-
       - name: Install host GUI development/runtime prerequisites (not TeX)
         shell: bash
         run: |
@@ -81,7 +99,7 @@ jobs:
           fi
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
-            xvfb xauth openbox xdotool wmctrl imagemagick libgl1-mesa-dri libglx-mesa0 \
+            xvfb xauth x11-utils openbox xdotool xclip wmctrl imagemagick python3-pil libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev \
             xdg-desktop-portal xdg-desktop-portal-gtk dbus-x11 libglib2.0-bin
@@ -89,14 +107,32 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p test_package_n5_preview.py -v
       - name: R5 versioned release-candidate packaging regressions (offline only)
         run: python3 -m unittest discover -s scripts/tests -p test_linux_release_candidate.py -v
+      - name: Compact input and viewport provenance contracts (not native acceptance)
+        run: |
+          python3 -m unittest discover -s scripts/tests -p 'test_qa_compact*.py' -v
+          python3 -m unittest discover -s scripts/tests -p test_qa_n5_viewport.py -v
       - name: Native release binaries from exact HEAD (no compiler substitution)
+        id: production-build
         shell: bash
         run: |
           rustc -vV
           cargo build --locked --release -p tikzarium-app -p tikzarium-cli
-          git diff --exit-code -- Cargo.lock
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
           file target/release/tikzarium-app target/release/tikzarium-cli
+          mkdir -p "$RUNNER_TEMP/n5-linux"
+          { git rev-parse HEAD HEAD:crates/tikzarium-app/src; rustc -vV; sha256sum target/release/tikzarium-app target/release/tikzarium-cli Cargo.lock; } > "$RUNNER_TEMP/n5-linux/build-provenance.txt"
+      - name: Save verified native release build before GUI assertions
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
       - name: Package reproducible native Linux x86_64 tarball
+        id: package
         shell: bash
         run: |
           set -euo pipefail
@@ -120,12 +156,16 @@ jobs:
           ./tikzarium-cli help tikz.line > "$RUNNER_TEMP/n5-linux/cli-help.txt"
           grep -F 'tikz.line' "$RUNNER_TEMP/n5-linux/cli-help.txt"
       - name: Real extracted release GUI X11 launch and 1366x768 screenshot
+        id: startup
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/n5-runtime"
           chmod 700 "$RUNNER_TEMP/n5-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-runtime"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/n5-startup-config"
+          export XDG_DATA_HOME="$RUNNER_TEMP/n5-startup-data"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/n5-startup-cache"
           export LIBGL_ALWAYS_SOFTWARE=1
           export EVIDENCE="$RUNNER_TEMP/n5-linux"
           xvfb-run -a -e "$EVIDENCE/xvfb-errors.log" -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
@@ -161,7 +201,7 @@ jobs:
                 cat "$EVIDENCE/app-process.txt" >&2 || true
                 exit 1
               fi
-              xdotool search --onlyvisible --name "TikZarium" > "$EVIDENCE/visible-window.txt" 2>/dev/null || true
+              xdotool search --onlyvisible --pid "$app_pid" --name "TikZarium" > "$EVIDENCE/visible-window.txt" 2>/dev/null || true
               if test -s "$EVIDENCE/visible-window.txt"; then
                 echo "VISIBLE_WINDOW_PROBE=$i" > "$EVIDENCE/window-probe-status.txt"
                 break
@@ -175,14 +215,13 @@ jobs:
               exit 1
             fi
             window_id="$(head -n1 "$EVIDENCE/visible-window.txt")"
-            xdotool getwindowgeometry --shell "$window_id" > "$EVIDENCE/window-geometry.txt"
-            # Original N5 screenshot was a visible but clipped 1366x768 client
-            # at (2,40) on a 1366x768 screen. Reject inaccessible bottom UI.
-            source "$EVIDENCE/window-geometry.txt"
-            test "$X" -ge 0 && test "$Y" -ge 0
-            test "$WIDTH" -ge 850 && test "$HEIGHT" -ge 560
-            test "$((X + WIDTH))" -le 1366
-            test "$((Y + HEIGHT))" -le 768
+            # xdotool double-counts Openbox decorations on this environment.
+            # Require the actual absolute client geometry, PID and live ELF.
+            python3 "$GITHUB_WORKSPACE/scripts/qa_n5_viewport.py" \
+              --window "$window_id" --pid "$app_pid" \
+              --executable "$EVIDENCE/extracted/Tikzarium-preview/tikzarium-app" \
+              --screen-width 1366 --screen-height 768 --min-height 560 \
+              --out "$EVIDENCE/window-geometry.json"
             sleep 2
             import -window root "$EVIDENCE/linux-n5-packaged-1366x768.png"
             test -s "$EVIDENCE/linux-n5-packaged-1366x768.png"
@@ -194,6 +233,8 @@ jobs:
             sha256sum linux-n5-packaged-1366x768.png native-launch.log archive.sha256 > native-evidence.sha256
           )
       - name: R2 three-scale actual extracted X11 desktop geometry and PNG
+        id: r2
+        if: always() && steps.package.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -209,45 +250,55 @@ jobs:
             export R2_WIDTH="${screen%x*}" R2_HEIGHT="${screen#*x}"
             export WINIT_X11_SCALE_FACTOR="$scale"
             export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-r2-runtime-$name"
+            export XDG_CONFIG_HOME="$R2_DIR/config"
+            export XDG_DATA_HOME="$R2_DIR/data"
+            export XDG_CACHE_HOME="$R2_DIR/cache"
             mkdir -p "$R2_DIR" "$XDG_RUNTIME_DIR"
             chmod 700 "$XDG_RUNTIME_DIR"
             xvfb-run -a -s "-screen 0 ${screen}x24 +extension GLX +render -noreset" bash -euo pipefail -c '
               openbox --sm-disable >"$R2_DIR/openbox.log" 2>&1 &
               wm_pid=$!
+              for i in $(seq 1 12); do
+                if wmctrl -m > "$R2_DIR/wm-status.txt" 2>&1 && grep -q "^Name: Openbox" "$R2_DIR/wm-status.txt"; then break; fi
+                sleep 1
+              done
+              grep -q "^Name: Openbox" "$R2_DIR/wm-status.txt"
               "$N5_LAUNCHER" >"$R2_DIR/app.log" 2>&1 &
               app_pid=$!
               trap "kill $app_pid $wm_pid 2>/dev/null || true" EXIT
               window_id=""
               for i in $(seq 1 30); do
                 kill -0 "$app_pid" || { echo "App exited before X11 viewport" >&2; exit 1; }
-                window_id="$(xdotool search --onlyvisible --name TikZarium 2>/dev/null | head -n1 || true)"
+                window_id="$(xdotool search --onlyvisible --pid "$app_pid" --name TikZarium 2>/dev/null | head -n1 || true)"
                 test -z "$window_id" || break
                 sleep 1
               done
               test -n "$window_id"
               sleep 3
-              xdotool getwindowgeometry --shell "$window_id" > "$R2_DIR/geometry.txt"
-              source "$R2_DIR/geometry.txt"
-              echo "$WINIT_X11_SCALE_FACTOR: x=$X y=$Y w=$WIDTH h=$HEIGHT on $R2_WIDTH x $R2_HEIGHT"
-              test "$X" -ge 0 && test "$Y" -ge 0
-              test "$WIDTH" -ge 850 && test "$HEIGHT" -ge 440
-              test "$((X + WIDTH))" -le "$R2_WIDTH"
-              test "$((Y + HEIGHT))" -le "$R2_HEIGHT"
+              python3 "$GITHUB_WORKSPACE/scripts/qa_n5_viewport.py" \
+                --window "$window_id" --pid "$app_pid" \
+                --executable "$RUNNER_TEMP/n5-linux/extracted/Tikzarium-preview/tikzarium-app" \
+                --screen-width "$R2_WIDTH" --screen-height "$R2_HEIGHT" --min-height 440 \
+                --out "$R2_DIR/geometry.json"
               import -window root "$R2_DIR/desktop.png"
               identify -format "%wx%h\n" "$R2_DIR/desktop.png" >"$R2_DIR/png-size.txt"
               test "$(cat "$R2_DIR/png-size.txt")" = "${R2_WIDTH}x${R2_HEIGHT}"
             '
           done
-          (cd "$EVIDENCE" && find . -type f \( -name 'desktop.png' -o -name 'geometry.txt' \) | LC_ALL=C sort | while read -r file; do sha256sum "$file"; done >SHA256SUMS)
+          (cd "$EVIDENCE" && find . -type f \( -name 'desktop.png' -o -name 'geometry.json' -o -name '*.original.txt' \) | LC_ALL=C sort | while read -r file; do sha256sum "$file"; done >SHA256SUMS)
 
       - name: Install external XeLaTeX only on disposable hosted Ubuntu
+        id: external-tex
+        if: always() && steps.package.outcome == 'success'
         shell: bash
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
-            xclip texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+            xclip texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended poppler-utils fonts-dejavu-core fonts-sil-charis
           xelatex --version | head -n 2
           command -v pdffonts
       - name: Real extracted portable launcher six-tool/N2/N3/F1/Undo/Save/Open/XeLaTeX
+        id: full-vertical
+        if: always() && steps.package.outcome == 'success' && steps.external-tex.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -259,13 +310,17 @@ jobs:
           chmod 700 "$RUNNER_TEMP/n5-full-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/n5-full-runtime"
           export LIBGL_ALWAYS_SOFTWARE=1
-          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' \
             bash -euo pipefail -c '
               openbox --sm-disable >"$RUNNER_TEMP/n5-linux/openbox-full.log" 2>&1 &
+              # Collect both independent scenarios even on calibration failure.
+              # Any failure remains a nonzero step/job, never partial PASS.
+              result=0
               python3 scripts/qa_i61_b42_studio_x11.py \
-                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-i61"
+                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-i61" || result=1
               python3 scripts/qa_n2_studio_x11.py \
-                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-n2"
+                --app "$N5_LAUNCHER" --out "$RUNNER_TEMP/n5-linux/packaged-n2" || result=1
+              exit "$result"
             '
           python3 - <<'PY'
           import hashlib, json, os
@@ -283,6 +338,8 @@ jobs:
               assert report["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"]
               # GUI script receives the real launch.sh; manifest locks actual ELF.
               assert report["app_sha256"] == launcher_hash
+              observed_elf = report["running_executable_sha256"] if name == "packaged-i61" else report["observed_proc_exe_sha256"]
+              assert observed_elf == elf_hash, (name, "running PID is not manifest-locked ELF")
               verified[name] = report
           assert verified["packaged-i61"]["six_real_tools"].startswith("PASS_")
           assert verified["packaged-i61"]["real_xelatex_pdf"].startswith("PASS_")
@@ -304,6 +361,8 @@ jobs:
           print(json.dumps(proof))
           PY
       - name: R1 real packaged GUI WM close preserves dirty source and Cancel
+        id: r1
+        if: always() && steps.package.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -327,8 +386,13 @@ jobs:
           assert report["source_sha"] == os.environ["SOURCE_SHA"]
           assert report["app_tree_sha"] == os.environ["TIKZARIUM_APP_TREE_SHA"]
           assert len(report["steps"]) == 5, report
+          import hashlib
+          bundle = Path(os.environ["RUNNER_TEMP"]) / "n5-linux/extracted/Tikzarium-preview"
+          assert report["observed_proc_exe_sha256"] == hashlib.sha256((bundle / "tikzarium-app").read_bytes()).hexdigest()
           PY
       - name: R3 real XDG/GTK native file picker on extracted release (not physical Linux)
+        id: r3
+        if: always() && steps.package.outcome == 'success' && steps.external-tex.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -365,8 +429,12 @@ jobs:
           ], proof
           # The real native Export path must include verified, nonempty PDF evidence.
           assert len(proof.get("native_pdf_sha256", "")) == 64, proof
+          import hashlib
+          bundle = Path(os.environ["RUNNER_TEMP"]) / "n5-linux/extracted/Tikzarium-preview"
+          assert proof["observed_proc_exe_sha256"] == hashlib.sha256((bundle / "tikzarium-app").read_bytes()).hexdigest()
           PY
       - name: R5 assemble reproducible Linux 1.0 RC from the exact GUI-tested binaries
+        id: r5
         shell: bash
         run: |
           set -euo pipefail
@@ -400,6 +468,9 @@ jobs:
           assert p["version"] == "1.0.0-rc.1"
           assert p["source_sha"] == os.environ["SOURCE_SHA"]
           assert p["release_stage"] == "CANDIDATE_NOT_FINAL"
+          assert p["release_go"] is False
+          assert p["scientific_studio_scope"] == "NOT_ACCEPTED"
+          assert p["historical_rc_label"] is True
           assert p["physical_linux_x86_64_x11"] == "NOT_RUN"
           for name, key in [("tikzarium-app","app_sha256"),("tikzarium-cli","cli_sha256")]:
               assert hashlib.sha256((candidate / name).read_bytes()).hexdigest() == p[key]
@@ -407,6 +478,7 @@ jobs:
               json.dumps({"status":"PASS_RC_PACKAGE_HOSTED_NOT_PHYSICAL",
                 "source_sha":p["source_sha"],"version":p["version"],
                 "binary_sha256":p["app_sha256"],
+                "release_go":False,"scientific_studio_scope":"NOT_ACCEPTED",
                 "physical_linux":"NOT_RUN"}, sort_keys=True,indent=2) + "\n")
           PY
           # Actual release binaries, not only synthetic headers, reproduce exactly.
@@ -445,6 +517,9 @@ jobs:
             ${{ runner.temp }}/n5-linux/window-probe-status.txt
             ${{ runner.temp }}/n5-linux/png-size.txt
             ${{ runner.temp }}/n5-linux/cli-help.txt
+            ${{ runner.temp }}/n5-linux/build-provenance.txt
+            ${{ runner.temp }}/n5-linux/window-geometry.json
+            ${{ runner.temp }}/n5-linux/window-geometry.*.original.txt
             ${{ runner.temp }}/n5-linux/openbox-full.log
             ${{ runner.temp }}/n5-linux/packaged-full-proof.json
             ${{ runner.temp }}/n5-linux/packaged-i61/

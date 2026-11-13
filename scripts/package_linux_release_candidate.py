@@ -2,7 +2,8 @@
 """Build a deterministic Linux 1.0 *candidate* from original exact-head ELF files.
 
 Never build binaries, download TeX/fonts or claim physical desktop acceptance.
-The final 1.0 release remains blocked by issue #103 R4 and R5 acceptance.
+The historical RC label is retained for packaging compatibility. Full Scientific
+Studio acceptance and owner GO are required; Linux R4/R5 alone are insufficient.
 """
 from __future__ import annotations
 
@@ -20,6 +21,8 @@ def guide(version: str, source: str, ci_url: str) -> bytes:
     return f"""# TikZarium {version}: Linux x86_64/X11
 
 ЭТО RELEASE CANDIDATE, НЕ ФИНАЛЬНЫЙ РЕЛИЗ 1.0.
+Историческое имя RC сохранено для совместимости упаковки; оно не означает
+приёмку Scientific Studio, новую версию или разрешение публикации stable.
 Исходный SHA: {source}
 Exact-head CI: {ci_url}
 Физический Ubuntu 24.04/X11 с настоящим монитором: R4 NOT_RUN.
@@ -62,15 +65,21 @@ Build использует ТОЛЬКО внешний XeLaTeX: точен PDF, 
 другими дистрибутивами. Нативный Wayland, Windows и macOS физически
 не квалифицированы. Макро-зависимые неизвестные состояния отображаются
 как UNKNOWN. Никакого общего интерпретатора TeX/CAS/solver/CAD.
-Физический Linux/X11 R4 обязан быть принят отдельно до final tag 1.0.
-Канонический реестр: https://github.com/i-shutov/tikzarium/issues/103
+Физический Linux/X11 R4 остаётся отдельной проверкой. Одного R4 недостаточно
+для Scientific Studio v1.0: обязательны SCI142/103, научные AI88, PGFPlots
+SC3/AT4, принятые операции Asymptote и Typst/CeTZ, UX-F01–F14/G3,
+source fidelity, Windows W0–W4, настоящий IME и 96/120/192 DPI.
+Все результаты привязаны к точному исходнику, операции и платформе.
+Полный научный scope НЕ ПРИНЯТ, release/merge/stable GO НЕ ВЫДАН.
+Нормативный scope: docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md.
+Исторический Linux-реестр: https://github.com/i-shutov/tikzarium/issues/103
 Инструкция R4: docs/LINUX_1_0_PHYSICAL_QA_RU.md в исходном репозитории.
 """.encode("utf-8")
 
 
 def make_rc(version: str, source: str, ci_url: str, app: bytes, cli: bytes):
     if not RC_RE.fullmatch(version):
-        raise ValueError("Only 1.0.0-rc.N allowed before physical R4 acceptance")
+        raise ValueError("Only historical 1.0.0-rc.N candidate labels allowed; scientific release GO is absent")
     if not n5.SOURCE_RE.fullmatch(source):
         raise ValueError("Exact 40-character source SHA required")
     n5.check_binary(app, n5.LINUX)
@@ -87,6 +96,10 @@ def make_rc(version: str, source: str, ci_url: str, app: bytes, cli: bytes):
         "product": "TikZarium",
         "version": version,
         "release_stage": "CANDIDATE_NOT_FINAL",
+        "release_go": False,
+        "scientific_studio_scope": "NOT_ACCEPTED",
+        "release_scope_document": "docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md",
+        "historical_rc_label": True,
         "physical_linux_x86_64_x11": "NOT_RUN",
         "gtk_xdg_picker_physical": "NOT_RUN",
         "qualified_platform": "Ubuntu 24.04 x86_64/X11 (TARGET_NOT_YET_ACCEPTED)",
@@ -113,7 +126,7 @@ def main() -> None:
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
     if not RC_RE.fullmatch(a.version):
-        p.error("Only release candidates 1.0.0-rc.N accepted; no final tag before R4")
+        p.error("Only historical candidates 1.0.0-rc.N accepted; no stable label without full scientific acceptance and owner GO")
     if not n5.SOURCE_RE.fullmatch(a.source_sha):
         p.error("Source SHA must be exact lowercase 40-hex")
     if (not a.ci_run_url.startswith("https://github.com/i-shutov/tikzarium/actions/runs/")
@@ -126,7 +139,7 @@ def main() -> None:
     a.output.parent.mkdir(parents=True, exist_ok=True)
     n5.write_archive(n5.LINUX, a.output, make_rc(a.version, a.source_sha, a.ci_run_url, app, cli))
     print(f"{n5.sha256(a.output.read_bytes())}  {a.output}")
-    print("CANDIDATE ONLY. Physical Linux/X11 R4 remains NOT_RUN.")
+    print("HISTORICAL CANDIDATE ONLY. Full Scientific Studio NOT_ACCEPTED; release GO absent; physical Linux/X11 R4 NOT_RUN.")
 
 
 if __name__ == "__main__":

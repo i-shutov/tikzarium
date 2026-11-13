@@ -1,5 +1,11 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — следующий блок: полные I61/N5 на компактном UI
+
+[Адаптация и обязательный объём](../insights/2026-11-13_COMPACT_I61_N5_REVALIDATION_RU.md). Восстановлен точный CP05/b1; production app/src `fe40516186fb1728baceb40d0da137a780c1d9de` сохранён. QA переводится на client1180×680/desktop1366×768 с PID/active-window, фактическим `/proc/PID/exe`, абсолютной геометрией и свежим clipboard proof. Сохраняются шесть инструментов, все I61/N2/N3 source/PDF/Undo/Help, packaged launch, R1/R2/R3/R5. Исторический RC явно не означает приёмку полного Scientific Studio.
+
+**IMPLEMENTED_NOT_VERIFIED:** candidate coordinates и локальные контракты не являются native PASS. Следующее действие — собственные полные exact-head I61/N5 и независимый просмотр originals, затем обновление этого checkpoint результатами. Physical Win10/IME/DPI/G3/full ST-SCI и merge/stable/release GO остаются открытыми.
+
 ## 2026-11-13 — принят hosted scientific workflow с общей историей
 
 **Завершён следующий запланированный сценарий:** SV-001 derivative → native Unicode Paste → PGFPlots draft/Apply `150 → 151` → два общих Undo → точные Save/Open → GUI XeLaTeX → текущий PDF. [Итоговый отчёт и оригинальные свидетельства](../insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md), [успешный run 43370706180](https://github.com/i-shutov/tikzarium/actions/runs/43370706180), [CP05](https://drive.google.com/file/d/1n4cvVs-un4pJRssnA6b7P9dy5dJ3l4a9/view).

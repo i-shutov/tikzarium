@@ -1,6 +1,7 @@
 name: Scientific compact Studio mixed Undo (hosted GUI, not physical Win10)
 
-# Supplements the existing I61/N5 proofs. Their historical leases stay intact.
+# Supplements the full I61/N5 proofs. This SV-001 never substitutes for their
+# own exact-tree compact-layout adaptation and original-evidence acceptance.
 on:
   pull_request:
     branches: [main]
@@ -59,8 +60,8 @@ jobs:
         with:
           toolchain: '1.91.0'
           components: rustfmt
-      # No earlier repository workflow uses a Cargo cache. Reuse the audited
-      # lockfile as the dependency key; keep exact-head entries and scoped restores.
+      # Reuse the audited lockfile as the dependency key; keep exact-head
+      # entries and scoped restores. I61 can also reuse this verified build cache.
       - name: Restore Cargo dependencies and build products
         id: cargo-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830

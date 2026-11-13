@@ -22,3 +22,7 @@ insights/assets/2026-11-13-shared-history/native-attempts/** whitespace=-blank-a
 insights/assets/2026-11-13-hosted-scientific/*.tex -text whitespace=cr-at-eol
 insights/assets/2026-11-13-hosted-scientific/*.log whitespace=-blank-at-eof,-blank-at-eol
 insights/assets/2026-11-13-hosted-scientific/independent-original-review.md whitespace=-blank-at-eof
+# Compact I61/N5 command captures and native source remain exact evidence bytes.
+insights/assets/2026-11-13-compact-i61-n5/**/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-compact-i61-n5/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-compact-i61-n5/**/*.tex -text whitespace=cr-at-eol
