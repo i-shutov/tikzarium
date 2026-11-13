@@ -33,6 +33,39 @@ MENU_BACKGROUND = (26, 36, 53)  # exact default Midnight popup fill
 MENU_STRIP_X = 949  # frame's left padding; outside selectable-row hover fills
 
 
+class StrictXeLaTeXWarningError(RuntimeError):
+    """A completed case retained its evidence but failed the strict glyph gate."""
+
+
+def run_suite(driver, suite: str) -> None:
+    """Collect independent cases after a retained warning, never turn it into PASS.
+
+    Every other exception still aborts immediately. In particular, source,
+    clipboard, process identity, engine success, fonts and recorder checks must
+    all succeed before build() can raise the one recoverable case error.
+    """
+    failures = driver.report.setdefault("strict_warning_failures", [])
+    for index, fixture in enumerate(evidence.fixtures_for_suite(suite)):
+        try:
+            driver.run_case(fixture, initial=index == 0)
+        except StrictXeLaTeXWarningError as error:
+            build = driver.report.get("builds", {}).get(fixture, {})
+            if (driver.current_stage != fixture + "/built"
+                    or build.get("status") != "FAIL_STRICT_XELATEX_WARNING_GATE"
+                    or build.get("strict_xelatex_warning_gate") != "FAIL"):
+                raise RuntimeError("Strict warning continuation lacks completed case proof") from error
+            failure = {"fixture": fixture, "failed_stage": driver.current_stage,
+                       "error": str(error), "status": "FAIL_STRICT_XELATEX_WARNING_GATE"}
+            failures.append(failure)
+            driver.report.update(status="FAIL_STRICT_XELATEX_WARNING_GATE",
+                                 native_acceptance="NOT_ACCEPTED_STRICT_XELATEX_WARNINGS")
+            driver.event("strict_warning_case_failed_evidence_retained", **failure)
+    driver.report.update(evidence.validate_all(driver.out, suite=suite))
+    if failures:
+        driver.report.update(status="FAIL_STRICT_XELATEX_WARNING_GATE",
+                             native_acceptance="NOT_ACCEPTED_STRICT_XELATEX_WARNINGS")
+
+
 def popup_strip_bounds(pixels: list[tuple[int, int, int]]) -> tuple[int, int]:
     """Unique exact-color popup padding run; no OCR/fuzzy/text matching.
 
@@ -546,10 +579,10 @@ class Driver(common.Driver):
         build_summary["status"] = ("FAIL_STRICT_XELATEX_WARNING_GATE" if strict_log_warnings
                                    else "EVIDENCE_COLLECTED_REVIEW_REQUIRED")
         self.report["builds"][self.fixture] = build_summary
-        validate_xelatex_log(raw_log)
         if strict_log_warnings:
-            raise RuntimeError("Actual XeLaTeX output has nullfont/missing glyphs: "
-                               + ", ".join(strict_log_warnings))
+            raise StrictXeLaTeXWarningError("Actual XeLaTeX output has nullfont/missing glyphs: "
+                                           + ", ".join(strict_log_warnings))
+        validate_xelatex_log(raw_log)
 
     def run_case(self, fixture: str, *, initial=False):
         self.open_case(fixture, initial=initial)
@@ -614,9 +647,7 @@ def main() -> int:
         evidence.prepare(args.out.resolve(), suite=args.suite)
         driver = Driver(args, provenance)
         driver.start()
-        for index, fixture in enumerate(evidence.fixtures_for_suite(args.suite)):
-            driver.run_case(fixture, initial=index == 0)
-        driver.report.update(evidence.validate_all(driver.out, suite=args.suite))
+        run_suite(driver, args.suite)
     except Exception as error:
         if driver is None:
             print(f"{type(error).__name__}: {error}", file=sys.stderr)

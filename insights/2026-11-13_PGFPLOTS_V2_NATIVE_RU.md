@@ -2,7 +2,17 @@
 
 Дата: 13.11.2026. Рабочая ветка `feat/studio-scientific-integration-20261112`, существующий [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189). Предыдущий завершённый блок — [compact I61/N5, CP06](2026-11-13_COMPACT_I61_N5_ACCEPTANCE_RU.md).
 
-**Текущий статус: частичные собственные hosted GUI доказательства; полный V2/AT4 остаётся FAIL.** Исправления compact Help и повторного F1 проверены на новом бинарнике. Следующий повтор сохраняет все 26 V2 и восемь AT4 операций, исправляя только автоматический выбор пунктов реального popup. Приёмка отдельных случаев не заменяет общий результат.
+**Текущий статус Run05: AT4 8/8 автоматически исполнены и ожидают независимого review; V2 FAIL после 23/26 операций и четырёх PDF.** Source `24f7ae4cdb483b9097337c38aa0f932ad89e3f80`, root tree `f88fb5caeb62062c1893c5a4cf8eb95c1de36a77`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`; **15 SUCCESS / 1 FAIL**. [PGFPlots run43415761917](https://github.com/i-shutov/tikzarium/actions/runs/43415761917) завершил AT4 job успешно; V2 остановлен на SV-003 строгим glyph gate, а не выбором popup. Оригиналы обоих ZIP проверены по GitHub digest/size/CRC и всем 1454 V2 + 1339 native AT4 + 90 reference hashes.
+
+## Run05: строгий отказ корпуса и следующий полный сбор evidence
+
+V2 прошёл всю synthetic formula matrix (18 операций), external-tables (три), SV-001 и SV-003 (по одной). Actual GUI log SV-003 содержит два `Missing character … ; … nullfont`, при этом XeLaTeX создал PDF; сохранены текущие source/clipboard/recorder/PDF/fonts/text/render. Последующие SV-022/029/040/009 не достигнуты. AT4 завершил восемь native операций и восемь PDF; scientific acceptance ожидает независимой проверки оригиналов. Оба набора остаются раздельными по suite и файлам.
+
+[Run05 Studio/packaged review](assets/2026-11-13-pgfplots-v2/run05/studio-packaged-audit.json) и [Run05 mixed Undo review](assets/2026-11-13-pgfplots-v2/run05/compact-mixed-undo-audit.json) независимо подтверждают прежний hosted объём на exact source24; семь PDF, GTK dialogs, R1 clean exit0, R2 geometry, R5 inner manifests/hosted cmp проверены заново. R3 child exit−15 остаётся cleanup harness, не clean exit claim. [CI outcomes](assets/2026-11-13-pgfplots-v2/run05/ci-final.json) отделены от этой приёмки.
+
+QA follow-up выделяет только законченный strict-warning build в типизированный отказ. Он возникает после прежних engine-success/fatal, current-source, embedded-font, recorder и dependency проверок. Suite сохраняет отказ и его stage, затем открывает следующий независимый case обычным guarded GUI путём. Все прочие ошибки останавливают исполнение. Полная source-stage validation не может перезаписать предупреждение в PASS: итог остаётся `FAIL_STRICT_XELATEX_WARNING_GATE`, `native_acceptance=NOT_ACCEPTED_STRICT_XELATEX_WARNINGS`, exit1. Оригинальный корпус и production app tree не меняются. Это полнота диагностического покрытия, а не допуск предупреждений.
+
+Локально **31 evidence/popup/aggregation contract PASS**: 25 прежних и шесть отрицательных/агрегирующих проверок. [Повтор интегрированного кандидата](assets/2026-11-13-pgfplots-v2/strict-warning-collection/integration-gates.json): **91 PASS / 0 failed** (31 V2, 26 AT4, 34 compact). [Независимый review](assets/2026-11-13-pgfplots-v2/strict-warning-collection/independent-review.json) разрешил QA-only integration/rerun; все Driver methods, кроме указанной завершающей ветки build, AST-identical. Новый native результат до повторного запуска не заявлен. Для успешных случаев приёмка потребует source/PDF review; строгие отказы сохраняются в CP07.
 
 ## Run04: F1 и полный Studio прошли; обнаружены два расхождения QA popup
 

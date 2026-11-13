@@ -12,7 +12,8 @@ from unittest.mock import patch
 
 import qa_pgfplots_vertical_evidence as qa
 from qa_pgfplots_vertical_x11 import (Driver, MENU_BACKGROUND, observe_property_popup, popup_strip_bounds,
-                                     property_menu_plan, recorder_inputs, RecorderWatcher)
+                                     property_menu_plan, recorder_inputs, RecorderWatcher,
+                                     run_suite, StrictXeLaTeXWarningError)
 
 try:
     from PIL import Image
@@ -401,6 +402,87 @@ class ActualRunFourPopupRegression(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "no safely visible interior"):
                 Driver.combo_index(fake, "property", 10, count=15)
         self.assertEqual(clicks, ["property"])
+
+
+class StrictWarningCollectionContracts(unittest.TestCase):
+    """UNIT_EVENT only: strict failures remain failures after later case coverage."""
+
+    def driver(self, errors=None, *, proven=True):
+        errors = errors or {}
+        fake = SimpleNamespace(out=Path("/unit-only"), report={"builds": {}},
+                               current_stage="startup", calls=[], events=[])
+        fake.event = lambda name, **fields: fake.events.append((name, fields))
+        def run_case(fixture, *, initial=False):
+            fake.calls.append((fixture, initial))
+            fake.current_stage = fixture + ("/built" if proven else "/opened")
+            error = errors.get(fixture)
+            if isinstance(error, StrictXeLaTeXWarningError) and proven:
+                fake.report["builds"][fixture] = {
+                    "status": "FAIL_STRICT_XELATEX_WARNING_GATE",
+                    "strict_xelatex_warning_gate": "FAIL"}
+            if error is not None:
+                raise error
+        fake.run_case = run_case
+        return fake
+
+    def validation(self):
+        return patch("qa_pgfplots_vertical_x11.evidence.validate_all", return_value={
+            "status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED", "operations_observed": 26,
+            "native_acceptance": "REQUIRES_INDEPENDENT_REVIEW"})
+
+    def test_clean_suite_keeps_exact_order_and_validates_complete_inventory(self):
+        fake = self.driver()
+        with self.validation() as validate:
+            run_suite(fake, "v2")
+        self.assertEqual(fake.calls, [(f, i == 0) for i, f in enumerate(qa.fixtures_for_suite("v2"))])
+        validate.assert_called_once_with(fake.out, suite="v2")
+        self.assertEqual(fake.report["strict_warning_failures"], [])
+        self.assertEqual(fake.report["status"], "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED")
+
+    def test_two_retained_warning_cases_continue_but_cannot_be_overwritten_by_pass(self):
+        fake = self.driver({f: StrictXeLaTeXWarningError("missing character, nullfont")
+                            for f in ("SV-003", "SV-009")})
+        with self.validation() as validate:
+            run_suite(fake, "v2")
+        self.assertEqual([f for f, _ in fake.calls], list(qa.fixtures_for_suite("v2")))
+        self.assertEqual([f["fixture"] for f in fake.report["strict_warning_failures"]], ["SV-003", "SV-009"])
+        self.assertEqual(len(fake.events), 2)
+        self.assertEqual(fake.report["status"], "FAIL_STRICT_XELATEX_WARNING_GATE")
+        self.assertFalse(fake.report["status"].startswith("PASS_AUTOMATED"))
+        self.assertEqual(fake.report["native_acceptance"], "NOT_ACCEPTED_STRICT_XELATEX_WARNINGS")
+        validate.assert_called_once_with(fake.out, suite="v2")
+
+    def test_source_identity_or_engine_error_still_aborts_before_next_case(self):
+        fake = self.driver({"external-tables": RuntimeError("recorder source mismatch")})
+        with self.validation() as validate, self.assertRaisesRegex(RuntimeError, "recorder source mismatch"):
+            run_suite(fake, "v2")
+        self.assertEqual([f for f, _ in fake.calls], ["formula", "external-tables"])
+        validate.assert_not_called()
+
+    def test_typed_error_without_completed_build_proof_is_not_recoverable(self):
+        fake = self.driver({"formula": StrictXeLaTeXWarningError("unproven warning")}, proven=False)
+        with self.validation() as validate, self.assertRaisesRegex(RuntimeError, "lacks completed case proof"):
+            run_suite(fake, "v2")
+        self.assertEqual(fake.calls, [("formula", True)])
+        self.assertEqual(fake.report["strict_warning_failures"], [])
+        validate.assert_not_called()
+
+    def test_later_hard_failure_keeps_earlier_warning_and_aborts(self):
+        fake = self.driver({"SV-003": StrictXeLaTeXWarningError("nullfont"),
+                            "SV-022": RuntimeError("clipboard mismatch")})
+        with self.validation() as validate, self.assertRaisesRegex(RuntimeError, "clipboard mismatch"):
+            run_suite(fake, "v2")
+        self.assertEqual(fake.calls[-1][0], "SV-022")
+        self.assertEqual(len(fake.report["strict_warning_failures"]), 1)
+        validate.assert_not_called()
+
+    def test_final_inventory_failure_still_propagates_after_warning(self):
+        fake = self.driver({"SV-003": StrictXeLaTeXWarningError("nullfont")})
+        with patch("qa_pgfplots_vertical_x11.evidence.validate_all", side_effect=ValueError("missing stage")):
+            with self.assertRaisesRegex(ValueError, "missing stage"):
+                run_suite(fake, "v2")
+        self.assertEqual(fake.report["status"], "FAIL_STRICT_XELATEX_WARNING_GATE")
+        self.assertEqual(len(fake.report["strict_warning_failures"]), 1)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,11 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — CP07 Run05: восемь AT4 исполнены, V2 остановлен строгим glyph gate
+
+[Run05](https://github.com/i-shutov/tikzarium/actions/runs/43415761917), source `24f7ae4cdb483b9097337c38aa0f932ad89e3f80`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`: **15 SUCCESS / 1 PGFPlots FAIL**. Все восемь AT4 native сценариев автоматически завершены; их независимый source/PDF/science review ещё выполняется. V2 достиг 23/26 операций и четырёх PDF, затем отверг два `nullfont`/missing-character предупреждения SV-003. Эти предупреждения сохраняются в оригинальном журнале; последующие SV-022/029/040/009 в этом прогоне не выполнены. Compact mixed Undo и полные I61/N2/N3/N5/R1/R2/R3/R5 независимо перепроверены на Run05 по собственным source/GUI/PDF/package evidence; сохраняются прежние границы hosted X11.
+
+Следующее действие — QA-only сбор evidence остальных независимых случаев после типизированного отказа законченного build. Предупреждение допускает продолжение лишь после всех source/clipboard/process/font/recorder checks; оно остаётся per-case FAIL и общим FAIL/exit1. Любая другая ошибка немедленно обрывает suite. Production, immutable corpus и строгий glyph gate сохранены. После полного повторного evidence/review — CP07; merge/stable/release GO отсутствуют.
+
 ## 2026-11-13 — CP07 Run04: собственные результаты нового app tree
 
 [Run04](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run04-f1-и-полный-studio-прошли-обнаружены-два-расхождения-qa-popup): source `81f8acccaa9783f9cfaea3a70321ddca345a0464`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`, **15 SUCCESS / 1 FAIL**. Повторный F1 работает; шесть V2 Apply/Undo и полный AT4-09 source/Undo/reopen/GUI PDF подтверждены оригиналами. Полные I61/N2/N3 и portable N5/R1/R2/R3/R5 независимо приняты по новым оригиналам, включая семь PDF, настоящие GTK dialogs и manifests/повторную упаковку. Scientific mixed Undo независимо принят на этом source.
