@@ -444,6 +444,21 @@ pub fn route_studio_help_toggle(
     }
 }
 
+/// Studio F1 follows the visible dock; legacy views keep their own help flag.
+pub fn handle_studio_help_shortcut(
+    ctx: &egui::Context,
+    session: &mut Session,
+    dock: &mut StudioDock,
+    inspector_open: &mut bool,
+) {
+    // Mouse tab selection can leave the legacy flag stale. Normalize from
+    // actual visibility before toggling, including a hidden remembered Help.
+    session.help = *inspector_open && *dock == StudioDock::Help;
+    let was_enabled = session.help;
+    crate::tikz_canvas::handle_help_shortcut(ctx, session);
+    route_studio_help_toggle(was_enabled, session.help, dock, inspector_open);
+}
+
 /// The toolbar Help icon is a toggle, just like F1. A hidden inspector
 /// with a remembered Help tab must reopen, not close.
 pub fn toggle_studio_help_button(
@@ -883,6 +898,154 @@ mod tests {
         assert_eq!(dock, StudioDock::Properties);
         assert_eq!(source, before);
         assert!(!session.undo_available());
+    }
+
+    #[test]
+    fn studio_f1_after_pointer_tab_switch_reopens_help_and_preserves_source_history() {
+        // UNIT_EVENT: real selectable_value pointer clicks and F1 key-up/down.
+        // This reproduces native run03's Help -> Properties -> F1 sequence.
+        fn frame(
+            ctx: &egui::Context,
+            session: &mut Session,
+            dock: &mut StudioDock,
+            open: &mut bool,
+            events: Vec<egui::Event>,
+        ) -> [Rect; 3] {
+            let mut tabs = [Rect::NOTHING; 3];
+            let _ = ctx.run(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(Pos2::ZERO, egui::vec2(850.0, 560.0))),
+                    events,
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_studio_help_shortcut(ctx, session, dock, open);
+                    if *open {
+                        egui::TopBottomPanel::top("studio-f1-tab-regression").show(ctx, |ui| {
+                            ui.horizontal(|ui| {
+                                for (index, tab) in StudioDock::ALL.into_iter().enumerate() {
+                                    tabs[index] = ui.selectable_value(dock, tab, tab.label()).rect;
+                                }
+                            });
+                        });
+                    }
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label("TeX remains authoritative");
+                    });
+                },
+            );
+            tabs
+        }
+        let key = |pressed| egui::Event::Key {
+            key: egui::Key::F1,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
+        let ctx = egui::Context::default();
+        let original = "% Привет; CRLF and unknown macros\r\n\\newcommand{\\opaque}{unknown}\r\n\\begin{tikzpicture}\r\n\\begin{axis}[samples=21]\r\n\\addplot[samples=22]{x};\r\n\\end{axis}\r\n\\end{tikzpicture}\r\n";
+        let mut source = original.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let axis = session.scientific_candidates(&source).unwrap().remove(0);
+        session
+            .apply_scientific_literal(&mut source, &axis, "samples", "21", "25")
+            .unwrap();
+        let before = source.clone();
+        let revision = session.source_revision();
+        assert!(
+            session.undo_available(),
+            "seed a real inverse, not empty history"
+        );
+        let mut dock = StudioDock::Properties;
+        let mut open = true;
+        frame(&ctx, &mut session, &mut dock, &mut open, vec![key(true)]);
+        assert!(session.help && open && dock == StudioDock::Help);
+        let mut tabs = frame(&ctx, &mut session, &mut dock, &mut open, vec![key(false)]);
+        for (index, target) in [(0, StudioDock::Properties), (1, StudioDock::Libraries)] {
+            let pos = tabs[index].center();
+            assert!(tabs[index].is_positive());
+            for pressed in [true, false] {
+                frame(
+                    &ctx,
+                    &mut session,
+                    &mut dock,
+                    &mut open,
+                    vec![
+                        egui::Event::PointerMoved(pos),
+                        egui::Event::PointerButton {
+                            pos,
+                            button: egui::PointerButton::Primary,
+                            pressed,
+                            modifiers: Default::default(),
+                        },
+                    ],
+                );
+            }
+            assert_eq!(dock, target, "the real tab click must select its target");
+            frame(&ctx, &mut session, &mut dock, &mut open, vec![key(true)]);
+            assert!(
+                session.help && open && dock == StudioDock::Help,
+                "F1 after clicking {target:?} must reopen visible Help"
+            );
+            tabs = frame(&ctx, &mut session, &mut dock, &mut open, vec![key(false)]);
+            assert_eq!(source.as_bytes(), before.as_bytes());
+            assert_eq!(session.source_revision(), revision);
+            assert!(session.undo_available());
+        }
+        session.undo(&mut source).unwrap();
+        assert_eq!(
+            source.as_bytes(),
+            original.as_bytes(),
+            "F1/tab clicks must retain the exact inverse"
+        );
+        assert!(!session.undo_available());
+    }
+
+    #[test]
+    fn studio_f1_reopens_remembered_help_in_hidden_inspector_then_closes_visible_help() {
+        let ctx = egui::Context::default();
+        let mut session = Session::default();
+        let source = "% Не менять\r\n\\opaque{unknown}\r\n";
+        session.reset(source);
+        session.help = true;
+        let revision = session.source_revision();
+        let mut dock = StudioDock::Help;
+        let mut open = false;
+        for (pressed, expected) in [
+            (true, StudioDock::Help),
+            (false, StudioDock::Help),
+            (true, StudioDock::Properties),
+            (false, StudioDock::Properties),
+        ] {
+            let _ = ctx.run(
+                egui::RawInput {
+                    events: vec![egui::Event::Key {
+                        key: egui::Key::F1,
+                        physical_key: None,
+                        pressed,
+                        repeat: false,
+                        modifiers: Default::default(),
+                    }],
+                    ..Default::default()
+                },
+                |ctx| {
+                    handle_studio_help_shortcut(ctx, &mut session, &mut dock, &mut open);
+                    egui::CentralPanel::default().show(ctx, |ui| {
+                        ui.label(source);
+                    });
+                },
+            );
+            assert!(
+                open,
+                "F1 must reopen a hidden inspector, not merely change a flag"
+            );
+            assert_eq!(dock, expected);
+            assert_eq!(session.help, expected == StudioDock::Help);
+            assert_eq!(session.source_revision(), revision);
+            assert!(!session.undo_available());
+        }
     }
 
     #[test]

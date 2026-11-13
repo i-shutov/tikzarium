@@ -4,6 +4,8 @@
 
 ## Активный блок 13.11.2026 — CP07 PGFPlots V2 и исходные AT4
 
+Run03 на `73667007`: 13 successful / 3 failed workflows. Первые V2/AT4 Apply/Undo прошли; устранён выявленный repeated-F1 stale flag, две QA координаты Inspector актуализированы по оригиналам. App tree `7d35e7b8064a651084fef931a827ac46b3448c6a`; обязательный полный повтор 34 PGF операций и I61/N5 остаётся текущим executable действием. Восемь исходных reference PDF внешне собраны/независимо просмотрены; это не GUI acceptance.
+
 [Текущий отчёт](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md): восстановление interrupted work завершено, два native отказа сохранены. Исправление compact Help устраняет подтверждённое расширение dock после F1; source scanner добавляет bounded literal editing для `\addplot3`/`\addplot3+` с безопасным отказом при неподдержанном suffix. Следующий native scope — прежние 26 операций V2 и восемь исходных AT4 09/48/49/50/55/56/58/61, собственные source/Undo/reopen/build/PDF доказательства и научная проверка. Новый app tree требует полного повторного I61/N5; CP06 остаётся исторической приёмкой прежнего дерева. Status нового hosted scope — **IMPLEMENTED_NOT_VERIFIED**, merge/stable/release GO отсутствуют.
 
 ## Checkpoint 13.11.2026 — полный compact I61/N5 принят

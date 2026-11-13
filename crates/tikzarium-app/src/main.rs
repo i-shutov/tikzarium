@@ -3566,15 +3566,15 @@ impl eframe::App for TikzariumApp {
         // Pending dirty-Open decisions own the keyboard: do not change source
         // through a global help/visual Undo shortcut behind the modal.
         if !self.modal_active() {
-            let had_help = self.authoring.help;
-            tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
             if self.prefs.studio_mode {
-                studio_ui::route_studio_help_toggle(
-                    had_help,
-                    self.authoring.help,
+                studio_ui::handle_studio_help_shortcut(
+                    ctx,
+                    &mut self.authoring,
                     &mut self.prefs.studio_dock,
                     &mut self.prefs.studio_inspector_open,
                 );
+            } else {
+                tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
             }
             if self.workspace == WorkspaceMode::Split {
                 self.handle_shared_history_shortcuts(ctx);

@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_REFERENCE_RENDER_AUDIT",
+  "overall_status": "REFERENCE_VISUALS_REVIEWED_NATIVE_RUN_FAIL",
+  "candidate_id": "73667007ecc5b6a66b3a178c486700be98bd1aa3",
+  "native_run_id": 43408533617,
+  "native_artifact_id": 14028985645,
+  "artifact_zip_bytes": 6783308,
+  "artifact_zip_sha256": "970be8a565a4777db989eddf6b4330e14f904bd334db28fa581d0a1385a5d6d5",
+  "artifact_integrity": "Root-reported ZIP CRC PASS, 104 native hashes verified, and 90 reference hashes verified; this audit additionally recomputed local source/PDF/PNG and selected AT4-09 source hashes.",
+  "source_head_sha256": "73667007ecc5b6a66b3a178c486700be98bd1aa3",
+  "app_tree_sha256": "6ea8f033c5241781e895ecb54af3bb3b48bb0735",
+  "production_executable_sha256": "74456eeb3105e7ccd690bdc888d57ed9ef5c90849472b3827cb48445d04e69bd",
+  "native_run_status": "FAIL",
+  "native_run_error": "RuntimeError: Actual selected-property F1 did not change the dock",
+  "failed_stage": "AT4-09/AT4-09-addplot1-samples-undo",
+  "native_operation_count": 8,
+  "native_builds": {},
+  "native_aggregate_sc3_at4": "NOT_VERIFIED",
+  "native_independent_visual_review": "REQUIRED",
+  "reference_suite_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+  "reference_suite_scope": "EXTERNAL_REFERENCE_ONLY",
+  "reference_suite_visual_review_flag": "REQUIRED",
+  "method": "Reviewed all eight original-120dpi.png reference images directly. Audited their matching original.tex source hashes, reference PDF hashes, reported embedded-font rows, and scientific source criteria. These are external XeLaTeX reference builds; they are not output from TikZarium native GUI and do not constitute GUI/export acceptance.",
+  "cases": {
+    "AT4-09": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "reference_pdf_sha256": "70649af028cc3ed277f141235b552f61873aa1dc2eaadcb4ea21616980eaef48",
+      "reference_png_sha256": "fd78faf3583384edcc4f7feda0aef746c94bcfcf11eb0f03be92d89ed3745a11",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Blue continuous response is symmetric about detuning 0 with a unit peak; five red sampled-model points lie on the curve. Legend distinguishes Model and Sampled model. This supports the plotted illustrative model only, not measured data.",
+      "scientific_criterion_context": "f(Δ)=1/(1+Δ²): even symmetry and peak f(0)=1; continuous model uses 161 source samples; a separate five-point series is labelled “Sampled model”.",
+      "embedded_fonts": [
+        "BWBCHW+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+        "TWCZTR+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+        "QLHDLU+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+        "ZGSLQL+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes      8  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "Analytic formula/model sampling checks do not validate physical experiment data or rendered appearance.",
+      "native_operation_state": "PARTIAL_NATIVE_OPERATION_SEQUENCE",
+      "at4_09_native_transaction": {
+        "original_field_literal": "161",
+        "proposed_field_literal": "181",
+        "evidence_files": {
+          "original_source": {
+            "path": "originals/pgfplots-native/raw/008-AT4-09-opened-editor.txt",
+            "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+            "bytes": 683
+          },
+          "draft_source": {
+            "path": "originals/pgfplots-native/raw/025-AT4-09-AT4-09-addplot1-samples-draft-editor.txt",
+            "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+            "bytes": 683
+          },
+          "applied_source": {
+            "path": "originals/pgfplots-native/raw/028-AT4-09-AT4-09-addplot1-samples-applied-editor.txt",
+            "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+            "bytes": 683
+          },
+          "undo_source": {
+            "path": "originals/pgfplots-native/raw/031-AT4-09-AT4-09-addplot1-samples-undo-editor.txt",
+            "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+            "bytes": 683
+          },
+          "failure_live_source": {
+            "path": "originals/pgfplots-native/raw/failure-live-source.tex",
+            "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+            "bytes": 683
+          }
+        },
+        "checks": {
+          "draft_stage_source_unchanged": true,
+          "draft_field_is_181": true,
+          "applied_source_changes_samples_161_to_181": true,
+          "undo_source_exactly_matches_original": true,
+          "failure_live_source_exactly_matches_original": true
+        },
+        "interpretation": "Screenshot 023 shows the draft field 181 while editor source remains 161; screenshot 026 shows Apply changed the editor literal to 181; screenshot 029 and byte hashes show Undo restored the exact original 161 source. The subsequent F1/property rediscovery failed, so the native run halted and this is only one completed Apply/Undo sequence. No build or PDF export occurred."
+      }
+    },
+    "AT4-48": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+      "reference_pdf_sha256": "fbaaba290817e58fb9e93da372e6465123940a62ff43b9727ba3fd9d510b9a9a",
+      "reference_png_sha256": "f3ebbc4a37f7e9abe3dcb9aee05382f1608488b81e65c28e634149f66c45a3dc",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Four blue points with vertical error bars are visible at x=1,2,3,4. The render alone does not assign a statistical interpretation to the error bars.",
+      "scientific_criterion_context": "Four x/y points have explicit y-error magnitudes 0.3, 0.2, 0.4, 0.3 and zero x-errors; statistical meaning remains conditional on data source.",
+      "embedded_fonts": [
+        "TJVOII+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+        "GSZBJT+CMMI10                        Type 1C           Builtin          yes yes yes      6  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "Error magnitudes are conditional; their statistical meaning must be supplied by the data source."
+    },
+    "AT4-49": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+      "reference_pdf_sha256": "850c3fcddf896954649ca100059181210f6d258638a8ad70c30e6e505c077a16",
+      "reference_png_sha256": "98515ad847f6b8d406032af97f1bba0dc4dd8fa02c7c90c3da2338fe2ba9a594",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Five positive points form a straight ascending line in log-log axes, consistent with the checked E=h^2 coordinates/slope 2. Coordinates are synthetic, not an empirical convergence result.",
+      "scientific_criterion_context": "Five positive (h,E) pairs satisfy E=h²; log10(E) versus log10(h) slope is 2; these synthetic points do not establish empirical convergence.",
+      "embedded_fonts": [
+        "TJVOII+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+        "GSZBJT+CMSY7                         Type 1C           Builtin          yes yes yes      6  0",
+        "ZCEPTE+CMR7                          Type 1C           Builtin          yes yes yes      7  0",
+        "PNDAUA+CMMI10                        Type 1C           Builtin          yes yes yes      8  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "The five points are synthetic coordinates and do not establish an empirical convergence study."
+    },
+    "AT4-50": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+      "reference_pdf_sha256": "f82796d577faac45930c7812ac5e90a09915d37e2d33ca84844120dccb2f5134",
+      "reference_png_sha256": "dccb1df7826f57dfaa5a8a0edf88542d59f221ff76b7e9e4c110ad1cff50a5d6",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Blue linear center curve lies inside a filled band from x=0 to 5. Reference depicts the conditional ±0.5 band, not a statistically estimated confidence interval.",
+      "scientific_criterion_context": "upper/lower named paths bind to fillbetween and differ by exactly 1 over x=0..5; band is conditional ±0.5, not estimated confidence interval.",
+      "embedded_fonts": [
+        "WRBINX+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+        "UEGSAE+CMMI10                        Type 1C           Builtin          yes yes yes      6  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "The illustrated ±0.5 band is not a statistically estimated confidence interval."
+    },
+    "AT4-55": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "reference_pdf_sha256": "9d5aed39c24b985e0a04890c222981bbe29bbc25da377995b4d6487a2ef37edf",
+      "reference_png_sha256": "fcb6ae8889cab755b86fc957fbfe867efbfdeae610ce2731febbef5178ae07b5",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Rendered 3D colored surface is a centered bell with maximum near z=1 and symmetric decay toward square domain edges. This is original density-21 reference only; no proposed-density-25 native/PDF comparison exists in this run.",
+      "scientific_criterion_context": "z=exp(-x²-y²) on [-2,2]²; center maximum 1; view {45}{30}; original density 21. Density-change visual comparison is deferred.",
+      "embedded_fonts": [
+        "WRBINX+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+        "UEGSAE+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+        "PXUFEE+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "Analytic source/probe checks are not rendered surface or grid-convergence proof; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case."
+    },
+    "AT4-56": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "reference_pdf_sha256": "01f61c661486e892f8efb5dcb6624ab73584955d1a0bd458d6d80ea6d51aa0cb",
+      "reference_png_sha256": "997e68ab1cc620159ae494cbae4244198da1a546065dfbab5139a9647b0ae42d",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Rendered blue helix shows two turns around the vertical axis, spanning z=0 to 2 at unit-radius formula scale. This is original-samples-101 reference only; no proposed-samples-201 native/PDF comparison exists in this run.",
+      "scientific_criterion_context": "x=cos(t), y=sin(t), z=t/360 with degree-based t=0..720: two turns, radius 1, z=0..2; original samples 101. Changed-density visual comparison is deferred.",
+      "embedded_fonts": [
+        "HQGBXC+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+        "MKUXCH+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+        "YSAAUS+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "Default degree-based analytic probes are not rendered winding/pitch evidence; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case."
+    },
+    "AT4-58": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+      "reference_pdf_sha256": "9535cd9210a694864e97d192590e5fa0fc89f056db617b88989e4af2f4d7ddee",
+      "reference_png_sha256": "429f6dc4d0838741125285950d05a8044dbc8479deee49c4c6fc0cccde17f6c4",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Two visible line branches terminate on either side of the gap around x=0; no connecting segment is visible in the original reference image. This checks only this reference render, not the native export pipeline.",
+      "scientific_criterion_context": "unbounded coords=jump and NaN at x=0 split the plotted branches; visual gap is assessed on this original reference only.",
+      "embedded_fonts": [
+        "HQGBXC+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+        "MKUXCH+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+        "YSAAUS+CMMI10                        Type 1C           Builtin          yes yes yes      7  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "The no-bridge claim needs PDF inspection; a NaN token and jump option alone are not visual evidence."
+    },
+    "AT4-61": {
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_gui_acceptance": "NOT_RUN",
+      "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+      "reference_pdf_sha256": "15428a08a70eca1cfe1900cff15a34ad4e4e10935e6722042e42817aff9d27c7",
+      "reference_png_sha256": "84c6d480e6a4c9cbc9f61f17a63c9efb52ba24fbea3a9d49d97a901cdf5c2c4f",
+      "reference_visual_review": "REVIEWED_120DPI_PNG",
+      "visual_observation": "Log-frequency Bode magnitude is near 0 dB at low frequency, crosses about -3 dB near ωRC=1, and falls toward -40 dB by ωRC=100, consistent with the source model and -20 dB/decade asymptote. Reference only.",
+      "scientific_criterion_context": "Bode magnitude on log frequency: -3.0103 dB at ωRC=1; high-frequency asymptote tends to -20 dB/decade; source domain .01..100.",
+      "embedded_fonts": [
+        "DSPEEK+CMR10                         Type 1C           Builtin          yes yes yes      5  0",
+        "PTKYZA+CMSY7                         Type 1C           Builtin          yes yes yes      6  0",
+        "SOZZDI+CMR7                          Type 1C           Builtin          yes yes yes      7  0",
+        "ZKOBJB+CMSY10                        Type 1C           Builtin          yes yes yes      8  0",
+        "WIOMMQ+CMMI10                        Type 1C           Builtin          yes yes yes      9  0",
+        "IDDBII+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes     10  0"
+      ],
+      "external_engine_argv": [
+        "/usr/bin/xelatex",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-file-line-error",
+        "-no-shell-escape",
+        "-recorder",
+        "original.tex"
+      ],
+      "limits": "The high-frequency slope is computed from the stated mathematical transfer function, not experimental data or rendered samples."
+    }
+  },
+  "overall_limit": "Only the AT4-09 first native draft/apply/undo sequence completed before the GUI automation failed on repeated selected-property F1. No native build occurred and AT4-48/49/50/55/56/58/61 did not run natively. No native PDF-to-reference comparison is possible from this run. Do not mark AT4 or aggregate SC3/AT4 as accepted."
+}

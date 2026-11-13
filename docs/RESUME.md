@@ -1,5 +1,11 @@
 # TikZarium — release resume, 2026-11-13
 
+## 2026-11-13 — CP07 follow-up: повторный F1 и полный native retry
+
+[Run03 и точные границы](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run03-первая-транзакция-прошла-повторный-f1-выявил-рассинхронизацию): на `73667007` завершены 13/3 из 16 workflows. Первые V2 и AT4 Apply/Undo прошли побайтно; повторный F1 выявил stale Help flag после ручной смены вкладки. I61/package-I61 отдельно остановлены original-X guard из-за переноса строк в исправленной узкой панели; исходник не изменён. Восемь оригинальных AT4 reference PDFs прошли внешний compile/font check и независимый научный просмотр, без native claim.
+
+Исправлены Studio F1 routing и две подтверждённые QA точки; app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`. Следующее действие — все 34 PGFPlots операции плюс полный I61/N2/N3 и portable N5/R1/R2/R3/R5 на новом exact head. Новый GUI scope **IMPLEMENTED_NOT_VERIFIED**. После оригиналов и независимых reviews — финальный CP07 с сохранением всех отказов. Merge/stable/release GO отсутствуют.
+
 ## 2026-11-13 — CP07: PGFPlots V2, compact Help и исходные AT4
 
 Продолжение после прерывания восстановлено побайтно в отдельной worktree. [Текущий отчёт и scope](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md). Published `0d33710e` сохранил 17 исходных AT4 и исправил выбор popup; его [native run43403624097](https://github.com/i-shutov/tikzarium/actions/runs/43403624097) выявил расширение Help dock после F1 и остановился до первого Apply. ZIP/CRC и 73 retained hashes проверены независимо; прежние отказы сохранены.

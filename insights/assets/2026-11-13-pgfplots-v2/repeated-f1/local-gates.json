@@ -1,0 +1,84 @@
+{
+  "base_commit": "73667007ecc5b6a66b3a178c486700be98bd1aa3",
+  "app_source_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "status": "UNIT_EVENT_SOURCE_ONLY",
+  "rust": {
+    "passed": 586,
+    "failed": 0,
+    "ignored": 4,
+    "test_binaries": 27
+  },
+  "gates": [
+    {
+      "gate": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.65
+    },
+    {
+      "gate": "tests",
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--all-targets"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 11.45
+    },
+    {
+      "gate": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 1.76
+    },
+    {
+      "gate": "build",
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "tikzarium-app",
+        "--bin",
+        "tikzarium-app"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 2.0
+    }
+  ],
+  "source_sha256": {
+    "crates/tikzarium-app/src/main.rs": "18e324aa906a7b298b3c5df95d8b7249140b23b8dbeeeb47172c8c83e3fd3f3b",
+    "crates/tikzarium-app/src/studio_ui.rs": "9fe38619cba43e7ab2338754337acab4f9ade4983c4862325bb25de8a498b349",
+    "crates/tikzarium-app/src/tikz_libraries.rs": "2c002e89e42ca299b5d3ad9769d14164d6ad82368d9ed1277fea364fb716a747",
+    "crates/tikzarium-extensions/src/scientific_scan.rs": "bdd62c25a1ce169b61877420089a3b9dac145803004e707d5f8355e5370bad79"
+  },
+  "python_contracts": {
+    "pgfplots_v2": 19,
+    "at4": 26,
+    "compact": 34,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_status": "NOT_RUN_FOR_CHANGED_APP_TREE",
+  "release_go": false
+}

@@ -24,7 +24,7 @@ from qa_n1_desktop import (FIXTURE, original_preserved, owners,
 # Compact production coordinates derived from app layout and the independently
 # reviewed CP05 native original (43370706180). Candidate until THIS full run's
 # originals are reviewed: CP05 scientific acceptance does not accept I61.
-APP_TREE = "6ea8f033c5241781e895ecb54af3bb3b48bb0735"
+APP_TREE = "7d35e7b8064a651084fef931a827ac46b3448c6a"
 CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 POINTS = {
@@ -33,7 +33,11 @@ POINTS = {
     "source": (200, 230), "save": (61, 49), "open": (24, 49),
     "build": (224, 49), "export": (291, 49),
     "guide": (381, 49), "pdf": (439, 49), "undo": (109, 49),
-    "properties": (960, 81), "node_x": (1050, 457), "apply": (1080, 121),
+    # Current fixed-width Help dock wraps the Inspector's Apply control to a
+    # second row and pushes Position fields down. From retained 1366x768
+    # originals, Node X center is root≈(1051,507), Apply center≈(1000,171);
+    # subtract the observed client origin (1,20) for xdotool window coords.
+    "properties": (960, 81), "node_x": (1050, 487), "apply": (999, 151),
 }
 BUTTONS = [
     # CP05 observed direct rail x448, six 30px icons with 4px row spacing.
