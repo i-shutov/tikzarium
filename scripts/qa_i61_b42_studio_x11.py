@@ -33,7 +33,7 @@ POINTS = {
     "source": (200, 230), "save": (61, 49), "open": (24, 49),
     "build": (224, 49), "export": (291, 49),
     "guide": (381, 49), "pdf": (439, 49), "undo": (109, 49),
-    "properties": (960, 81), "node_x": (1050, 484), "apply": (1000, 151),
+    "properties": (960, 81), "node_x": (1050, 457), "apply": (1080, 121),
 }
 BUTTONS = [
     # CP05 observed direct rail x448, six 30px icons with 4px row spacing.
@@ -151,6 +151,18 @@ def copy_focused(expected: bytes, out: Path, label: str) -> bytes:
     if result != expected:
         raise RuntimeError(label + ": actual focused field/editor bytes differ from expected")
     return result
+
+
+def draft_node_x(window: str, out: Path, node: dict, new_x: bytes) -> None:
+    # Original native run 43386874361 settled at a wider Inspector than the
+    # initial UNIT_EVENT probe: Apply shares Undo's row, and old y484 hit Y.
+    # Prove the original X value from the selected source owner BEFORE typing;
+    # the subsequent proposed-value copy alone cannot distinguish X from Y.
+    click(window, *POINTS["node_x"])
+    copy_focused(node["values"]["x"].encode("utf-8"), out, "28a-focused-original-node-x")
+    key("ctrl+a")
+    paste(new_x, out / "clipboard-inspector-node-x.txt")
+    copy_focused(new_x, out, "28b-focused-node-x")
 
 
 def verify_editor(window: str, out: Path, expected: bytes, label: str) -> None:
@@ -586,10 +598,7 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, *POINTS["node_x"])  # Compact candidate numeric field; focused clipboard proof rejects wrong controls.
-        key("ctrl+a")
-        paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
-        copy_focused(b"10.50cm", out, "28b-focused-node-x")
+        draft_node_x(found, out, before_items[-1], b"10.50cm")
         expected_apply = expected_node_x_patch(inspector_before, "10.50cm")
         screenshot(out, "28b-inspector-draft-only")
         click(found, *POINTS["save"])  # GUI Save must NOT apply an inspector draft.

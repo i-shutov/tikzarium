@@ -107,6 +107,35 @@ class CompactInputContracts(unittest.TestCase):
             lines.append(("  " + code + " % tikzarium:n1:" + metadata + "\r\n").encode())
         return b"".join(lines)
 
+    def test_original_node_y_value_rejects_wrong_field_before_draft_input(self):
+        node = native.owners(self.source())[-1]
+        observed_y = node["values"]["y"].encode("utf-8")
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            with patch.object(native, "click"), patch.object(native, "key"), \
+                    patch.object(native, "paste") as paste, patch.object(native.subprocess, "run",
+                    side_effect=[SimpleNamespace(), SimpleNamespace(stdout=observed_y)]):
+                with self.assertRaisesRegex(RuntimeError, "28a-focused-original-node-x"):
+                    native.draft_node_x("owned-window", out, node, b"10.50cm")
+                paste.assert_not_called()
+            self.assertEqual((out / "28a-focused-original-node-x-clipboard.txt").read_bytes(), observed_y)
+            self.assertFalse((out / "28b-focused-node-x-clipboard.txt").exists())
+
+    def test_node_draft_rejects_unchanged_value_after_original_x_matches(self):
+        node = native.owners(self.source())[-1]
+        original_x = node["values"]["x"].encode("utf-8")
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)
+            with patch.object(native, "click"), patch.object(native, "key"), \
+                    patch.object(native, "paste") as paste, patch.object(native.subprocess, "run",
+                    side_effect=[SimpleNamespace(), SimpleNamespace(stdout=original_x),
+                                 SimpleNamespace(), SimpleNamespace(stdout=original_x)]):
+                with self.assertRaisesRegex(RuntimeError, "28b-focused-node-x"):
+                    native.draft_node_x("owned-window", out, node, b"10.50cm")
+                paste.assert_called_once_with(b"10.50cm", out / "clipboard-inspector-node-x.txt")
+            self.assertEqual((out / "28a-focused-original-node-x-clipboard.txt").read_bytes(), original_x)
+            self.assertEqual((out / "28b-focused-node-x-clipboard.txt").read_bytes(), original_x)
+
     def test_node_patch_changes_exactly_native_and_metadata_x_bytes(self):
         before = self.source()
         after = native.expected_node_x_patch(before, "10.50cm")

@@ -27,13 +27,17 @@ SCREEN = (1366, 768)
 # completion points are bounded compact candidates, never an acceptance result.
 # Full-source checkbox y174 follows original run43385517101 settings PNG
 # (root y194 minus observed client-origin y20); y150 is the font-size row.
+# Connect follows original run43386874361 image08 after13nativewheel ticks:
+# root button y430..456 minus client-origin20 gives center clienty423.
+# Disconnect420 is a settled306px bottom-layout UNIT candidate calibrated
+# against that native Connect original; actual Disconnect original is required.
 POINTS = {
     "file_menu": (23, 15), "file_path": (143, 135),
     "source_settings": (405, 80), "source_full": (490, 174),
     "source": (200, 230), "dirty_discard": (505, 407),
     "libraries": (1030, 81), "properties": (960, 81),
     "library_panel": (1034, 543), "library_entry": (1024, 605),
-    "library_connect": (1036, 581), "library_disconnect": (1014, 508),
+    "library_connect": (1036, 423), "library_disconnect": (1014, 420),
     "complete": (989, 476), "undo": (109, 49),
     "export": (291, 49), "pdf": (439, 49),
 }
@@ -369,9 +373,19 @@ def main():
         # Fixed bounded dock-only scroll; hosted originals must confirm action
         # geometry before the exact byte guard can establish a transaction.
         native.point(1100, 500)
-        for _ in range(13):
+        for _ in range(4):
             run("xdotool", "click", "5")
-        native.event("dock_scroll", ticks=13, expected_points=520, reason="reveal-real-library-connect")
+        native.event("dock_scroll", ticks=4, reason="record-independent-five-library-statuses-first-view")
+        time.sleep(0.65)
+        screenshot(out, "07a-arrows-meta-five-statuses")
+        for _ in range(4):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=4, total_ticks=8, reason="record-independent-five-library-statuses-second-view")
+        time.sleep(0.65)
+        screenshot(out, "07b-arrows-meta-five-statuses")
+        for _ in range(5):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=5, total_ticks=13, reason="reveal-real-library-connect")
         time.sleep(0.65)
         screenshot(out, "08-connect-button-target")
         click("library_connect")
