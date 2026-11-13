@@ -1,0 +1,172 @@
+name: Scientific compact Studio mixed Undo (hosted GUI, not physical Win10)
+
+# Supplements the existing I61/N5 proofs. Their historical leases stay intact.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sci-compact-native.yml'
+      - 'scripts/qa_sci_compact*'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'crates/**'
+      - 'extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sci-compact-native.yml'
+      - 'scripts/qa_sci_compact*'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'crates/**'
+      - 'extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sci-compact-native-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compact-scientific-hosted-gui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - name: Check out exact review source, never the synthetic merge ref
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify checkout and record current source-tree lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/sci-compact-native-logs"
+          git show --no-patch --format=fuller HEAD > "$RUNNER_TEMP/sci-compact-native-logs/source-commit.txt"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt
+      # No earlier repository workflow uses a Cargo cache. Reuse the audited
+      # lockfile as the dependency key; keep exact-head entries and scoped restores.
+      - name: Cache Cargo dependencies and build products
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-sci-compact-rust191-${{ hashFiles('Cargo.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-sci-compact-rust191-${{ hashFiles('Cargo.lock') }}-
+      - name: Install disposable hosted X11, external XeLaTeX and PDF inspectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Bound the previously observed Azure archive stalls on hosted jobs.
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            xvfb xauth openbox xdotool xclip wmctrl imagemagick python3-pil \
+            libgl1-mesa-dri libglx-mesa0 libxkbcommon-dev libxkbcommon-x11-dev \
+            libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended \
+            fonts-dejavu-core fonts-sil-charis poppler-utils
+          { uname -a; rustc -vV; cargo --version; xelatex --version; } > "$RUNNER_TEMP/sci-compact-native-logs/environment.txt"
+          kpsewhich pgfplots.sty
+          kpsewhich standalone.cls
+          fc-match 'DejaVu Sans'
+          fc-match 'Charis SIL'
+          python3 -c 'from PIL import Image; import shutil; tools=("pdfinfo","pdftotext","pdffonts","pdftoppm"); assert all(shutil.which(tool) for tool in tools)'
+      - name: Formatting and mixed source history contracts (UNIT_EVENT)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check
+          python3 -m unittest discover -s scripts -p qa_sci_compact_native_test.py -v 2>&1 | tee "$RUNNER_TEMP/sci-compact-native-logs/artifact-contract-tests.log"
+          cargo test --locked -p tikzarium-app --bin tikzarium-app mixed_shell_ -- --nocapture 2>&1 | tee "$RUNNER_TEMP/sci-compact-native-logs/mixed-history-tests.log"
+      - name: Build locked production app and CLI, then bind their exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --locked -p tikzarium-app -p tikzarium-cli --bin tikzarium-app --bin tikzarium-cli 2>&1 | tee "$RUNNER_TEMP/sci-compact-native-logs/production-build.log"
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = "$TIKZARIUM_APP_TREE_SHA"
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          def digest(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          app = (root / 'target/debug/tikzarium-app').resolve(strict=True)
+          cli = (root / 'target/debug/tikzarium-cli').resolve(strict=True)
+          receipt = {
+              'schema_version': 1,
+              'created_utc': datetime.now(timezone.utc).isoformat(),
+              'source_head_sha': os.environ['TIKZARIUM_SOURCE_SHA'],
+              'app_tree_sha': os.environ['TIKZARIUM_APP_TREE_SHA'],
+              'app_path': str(app), 'app_sha256': digest(app),
+              'cli_path': str(cli), 'cli_sha256': digest(cli),
+              'cargo_lock_sha256': digest(root / 'Cargo.lock'),
+              'build_command': 'cargo build --locked -p tikzarium-app -p tikzarium-cli --bin tikzarium-app --bin tikzarium-cli',
+              'production_binary': True,
+              'rustc_version': subprocess.check_output(['rustc', '-vV'], text=True),
+              'environment': 'GITHUB_HOSTED_UBUNTU_24_04_XVFB_1366_768',
+              'physical_win10': 'NOT_RUN',
+              'run_url': f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+          }
+          destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'sci-build-provenance.json'
+          destination.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          PY
+      - name: Real production PGFPlots Inspector, mixed Undo, Save/Open and XeLaTeX PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sci-compact-runtime"
+          chmod 700 "$RUNNER_TEMP/sci-compact-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/sci-compact-runtime"
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
+            openbox --sm-disable > "$RUNNER_TEMP/sci-compact-native-logs/openbox.log" 2>&1 &
+            wm_pid=$!
+            trap "kill $wm_pid 2>/dev/null || true" EXIT
+            ready=0
+            for attempt in $(seq 1 100); do
+              if wmctrl -m > "$RUNNER_TEMP/sci-compact-native-logs/window-manager.txt" 2>&1 && grep -Fq "Name: Openbox" "$RUNNER_TEMP/sci-compact-native-logs/window-manager.txt"; then ready=1; break; fi
+              sleep 0.1
+            done
+            test "$ready" = 1
+            python3 scripts/qa_sci_compact_x11.py \
+              --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" \
+              --out "$RUNNER_TEMP/sci-compact-native" \
+              --build-provenance "$RUNNER_TEMP/sci-build-provenance.json"
+          ' 2>&1 | tee "$RUNNER_TEMP/sci-compact-native-logs/native-driver.log"
+      - name: Preserve original hosted GUI evidence, including partial failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sci-compact-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/sci-compact-native/
+            ${{ runner.temp }}/sci-compact-native-logs/
+            ${{ runner.temp }}/sci-build-provenance.json
+            !${{ runner.temp }}/sci-compact-native/**/*.ttf
+            !${{ runner.temp }}/sci-compact-native/**/*.otf
+            !${{ runner.temp }}/sci-compact-native/**/*.exe
+          if-no-files-found: warn
+          retention-days: 14

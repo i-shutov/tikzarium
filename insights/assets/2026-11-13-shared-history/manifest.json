@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "SHARED_SOURCE_HISTORY_LOCAL_VERIFICATION_EVIDENCE",
+  "created_utc": "2026-11-13T04:43:53.009579+00:00",
+  "starting_source_head_sha": "0eee418ca4d4869b2a4b9fb6ea1462d53df84e1d",
+  "final_source_commit": "PENDING_INTEGRATOR_PUBLICATION_READBACK",
+  "scope": "Local Rust/UNIT_EVENT/offline collector verification; baseline CI audit is scoped to starting source; no fresh native GUI acceptance",
+  "files": {
+    "artifact-tests.log": {
+      "bytes": 2897,
+      "sha256": "1d0a397d922d55cdada35d3ddfdd0d636f9426ba98ee51049c89added4201ab1"
+    },
+    "baseline-ci-audit.json": {
+      "bytes": 8406,
+      "sha256": "8d3253278283537c36c12c543ebae943e1f5594479018d1153ab036ec9371aa9"
+    },
+    "baseline-ci-audit.md": {
+      "bytes": 5289,
+      "sha256": "bf1dc5e2b76bcaf3d547eabf77260f95e5ba364749852831c0ecf438e92e6339"
+    },
+    "build.log": {
+      "bytes": 183,
+      "sha256": "8bb7007ffeb7ace827f09d797f28c175a5cc518e301ef85b7d993f08b90169e8"
+    },
+    "clippy.log": {
+      "bytes": 7564,
+      "sha256": "3966dab2c1ff16cdb419bbe06c0ef3f2086ffbabe59f760a0a545f845bc6300a"
+    },
+    "commands.json": {
+      "bytes": 1115,
+      "sha256": "c23475f630c170fe06277b318af6bcafaf34c3b99393585fee4ff2e16d204203"
+    },
+    "fmt.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "independent-source-review.md": {
+      "bytes": 4500,
+      "sha256": "f4cdd95b444545677de5ae25665e990eb21051cf868c898ad5ec644843c8f8e3"
+    },
+    "mixed-shell-tests.log": {
+      "bytes": 859,
+      "sha256": "74a4d78fe3e93b9cf857ddc22ad585a97f58bcb330e318128b0d28d28488f8a4"
+    },
+    "source-inspector-undo-review.md": {
+      "bytes": 9397,
+      "sha256": "e52b60510e449635dd8fa540e21e5c2e89e802818d91a19a256bb573eaa6415b"
+    },
+    "summary.json": {
+      "bytes": 354,
+      "sha256": "5afa9a7c1959f4014360f9265ac2ead5388deba648176b39604a2c8d88b00c7c"
+    },
+    "tests.log": {
+      "bytes": 57479,
+      "sha256": "932c6b0561cbfbbe03dac7b336d06ccf895967db6f039453308027a4bae7d68b"
+    }
+  }
+}

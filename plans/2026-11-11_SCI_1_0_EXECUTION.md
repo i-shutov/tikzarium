@@ -2,6 +2,12 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
+## Checkpoint 13.11.2026 — общая история текста и scientific SourcePatch
+
+[Отчёт и оригинальные журналы](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md): исправлен подтверждённый сброс текстового Undo после Inspector Apply и визуального Undo после последующей ручной правки. Production передаёт точные inverse patches в общий bounded ledger с revision/expected-byte fences; Open отделяет document identity и старый queued/raw input. Новых idle source clones нет. **566 tests PASS / 0 failed / 4 ignored**, fmt/strict Clippy/app+CLI build PASS; четыре production-shell raw-egui регрессии `UNIT_EVENT`, collector 16/16 PASS, отдельный static review.
+
+База PR #189 `0eee418…`: 13 success / 2 старых I61/N5 APP_TREE stops; D QA matrix завершён success. Финальный source SHA и CI нового блока фиксирует интегратор после публикации. Локальные production-окно/мышь наблюдались, полный native workflow из-за keyboard focus не принят. Отдельные hosted 1366×768 workflow/driver готовятся, originals/результат ожидаются; I61/N5 не изменены. **Следующая executable задача:** exact-commit SV-001 derivative → Inspector draft/Apply `150 → 151` → два Undo → точные Save/Open → GUI XeLaTeX → PDF с независимым просмотром оригиналов. Physical Win10/IME/DPI/G3/full ST-SCI и stable/merge GO остаются открытыми.
+
 ## Checkpoint 12.11.2026 — Compact Studio: exact recovery
 
 [Восстановление и свежая проверка](../insights/2026-11-12_COMPACT_STUDIO_RECOVERY_RU.md): original app tree `6c3208dc…`, 25/25 blobs, 562 tests/fmt/strict Clippy/build PASS. Компактное меню/toolbar, source sections, глобальные offsets, единый source Undo/Redo и six-page native atlas восстановлены для публикации в существующий PR #189. Старые GUI PASS не перенесены; новая native попытка заблокирована desktop focus до запуска приложения. APP_TREE leases не ослаблялись. Следующий executable block — повторный полный native PGFPlots workflow 1366×768 с оригинальными свидетельствами, затем актуализация соответствующих сценариев acceptance.

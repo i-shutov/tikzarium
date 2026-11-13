@@ -1,4 +1,4 @@
-//! Views of one authoritative source buffer and bounded, revision-checked text Undo.
+//! Views of one authoritative source buffer and bounded, revision-checked source Undo.
 //! Folding changes presentation only; it never owns or regenerates a second document.
 use eframe::egui;
 use std::{collections::VecDeque, ops::Range};
@@ -96,6 +96,22 @@ pub enum HistoryAction {
     Redo,
 }
 
+pub fn history_action(event: &egui::Event) -> Option<HistoryAction> {
+    match event {
+        egui::Event::Key {
+            key,
+            pressed: true,
+            modifiers,
+            ..
+        } if modifiers.command && !modifiers.alt => match (key, modifiers.shift) {
+            (egui::Key::Z, false) => Some(HistoryAction::Undo),
+            (egui::Key::Z, true) | (egui::Key::Y, false) => Some(HistoryAction::Redo),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 /// Dispatch source history in native event order. A text/focus-changing prefix
 /// is rendered before a subsequent Undo; the remaining raw events are carried
 /// to an immediate repaint, never reordered ahead of that text mutation.
@@ -121,19 +137,7 @@ impl SourceInputQueue {
         let mut prefix_has_effect = false;
         let mut events = events.into_iter();
         while let Some(event) = events.next() {
-            let history = match &event {
-                egui::Event::Key {
-                    key,
-                    pressed: true,
-                    modifiers,
-                    ..
-                } if modifiers.command && !modifiers.alt => match (key, modifiers.shift) {
-                    (egui::Key::Z, false) => Some(HistoryAction::Undo),
-                    (egui::Key::Z, true) | (egui::Key::Y, false) => Some(HistoryAction::Redo),
-                    _ => None,
-                },
-                _ => None,
-            };
+            let history = history_action(&event);
             if owns_source
                 && !self.composing
                 && let Some(action) = history
@@ -192,8 +196,8 @@ impl SourceInputQueue {
     }
 }
 
-/// Both editors share the existing SourcePatch contract. Each input frame is
-/// one text transaction; search/replace is likewise one transaction. The
+/// Text views and authored operations share the existing SourcePatch contract.
+/// Each input frame is one text transaction; search/replace is likewise one transaction. The
 /// history keeps at most 100 patches / 16 MiB, retaining the latest patch even
 /// when a single large replacement exceeds that budget. No full-source clones
 /// accumulate in an additional native per-view undo stack.
@@ -243,14 +247,33 @@ impl SourceHistory {
         {
             suffix -= 1;
         }
-        self.undo.push_back(SourcePatch {
+        self.push_inverse(SourcePatch {
             range: start..after.len() - suffix,
             expected_old: after[start..after.len() - suffix].into(),
             replacement: before[start..before.len() - suffix].into(),
             source_revision: revision,
         });
+    }
+    /// Take an inverse already produced by the revision-checked authoring
+    /// adapter. No whole-document clone/diff is needed on idle UI frames.
+    pub fn record_inverse(
+        &mut self,
+        inverse: SourcePatch,
+        previous_revision: u64,
+    ) -> Result<(), &'static str> {
+        if previous_revision.checked_add(1) != Some(inverse.source_revision) {
+            return Err("Авторская транзакция имеет неверную цепочку ревизий");
+        }
+        if self.revision != Some(previous_revision) {
+            self.reset(previous_revision);
+        }
+        self.push_inverse(inverse);
+        Ok(())
+    }
+    fn push_inverse(&mut self, inverse: SourcePatch) {
+        self.revision = Some(inverse.source_revision);
+        self.undo.push_back(inverse);
         self.redo.clear();
-        self.revision = Some(revision);
         let mut bytes: usize = self
             .undo
             .iter()

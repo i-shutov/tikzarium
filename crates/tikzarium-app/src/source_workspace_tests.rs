@@ -628,3 +628,419 @@ fn full_shell_empty_body_owns_boundary_focus_and_native_input() {
     assert_eq!(app.document.source, format!("{prefix}xy"));
     assert_eq!(app.source_editor.caret, first + 2);
 }
+
+// Production shell regressions: raw egui pointer clicks drive the actual
+// scientific Inspector; text and Ctrl+Z/Y pass through the app's input hook.
+// These are UNIT_EVENT evidence, not native desktop or engine acceptance.
+fn mixed_fixture() -> String {
+    concat!(
+        "% Преамбула α🙂 — сохранить\r\n",
+        "\\documentclass{standalone}\r\n\\usepackage{tikz}\r\n\\usepackage{pgfplots}\r\n",
+        "\\newcommand{\\OpaqueUnknown}{неизвестное α}\r\n",
+        "\\begin{document}\r\n% keep\r\n\\begin{tikzpicture}\r\n",
+        "\\begin{axis}[every axis plot post/.append style={samples=150,domain=-3:3},xlabel={$x$}]\r\n",
+        "\\addplot[red] {x^2}; % формула неизменна\r\n",
+        "\\end{axis}\r\n\\end{tikzpicture}\r\n\\end{document}\r\n",
+    ).into()
+}
+
+fn mixed_frame(
+    ctx: &egui::Context,
+    app: &mut TikzariumApp,
+    events: Vec<egui::Event>,
+) -> Vec<(String, egui::Rect)> {
+    let mut raw = egui::RawInput {
+        screen_rect: Some(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(1366.0, 768.0),
+        )),
+        events,
+        ..Default::default()
+    };
+    eframe::App::raw_input_hook(app, ctx, &mut raw);
+    let out = ctx.run(raw, |ctx| {
+        app.handle_shared_history_shortcuts(ctx);
+        app.show_studio_toolbar(ctx);
+        egui::SidePanel::right("mixed-inspector")
+            .exact_width(260.0)
+            .show(ctx, |ui| app.show_studio_inspector(ui));
+        egui::SidePanel::left("mixed-source")
+            .exact_width(600.0)
+            .show(ctx, |ui| app.show_source_editor(ui));
+        egui::CentralPanel::default().show(ctx, |ui| app.show_pdf_canvas(ui));
+    });
+    out.shapes
+        .into_iter()
+        .filter_map(|shape| {
+            if let egui::Shape::Text(text) = shape.shape {
+                let rect = egui::Rect::from_min_size(text.pos, text.galley.size());
+                Some((
+                    text.galley.text().to_owned(),
+                    rect.intersect(shape.clip_rect),
+                ))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn mixed_click(ctx: &egui::Context, app: &mut TikzariumApp, position: egui::Pos2) {
+    mixed_frame(
+        ctx,
+        app,
+        vec![
+            egui::Event::PointerMoved(position),
+            egui::Event::PointerButton {
+                pos: position,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        ],
+    );
+    mixed_frame(
+        ctx,
+        app,
+        vec![egui::Event::PointerButton {
+            pos: position,
+            button: egui::PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        }],
+    );
+}
+
+fn mixed_click_text(ctx: &egui::Context, app: &mut TikzariumApp, label: &str) {
+    let labels = mixed_frame(ctx, app, vec![]);
+    let rect = labels
+        .iter()
+        .find(|(text, rect)| text == label && rect.is_positive())
+        .unwrap_or_else(|| {
+            panic!(
+                "missing widget {label:?}; visible: {:?}",
+                labels.iter().map(|(text, _)| text).collect::<Vec<_>>()
+            )
+        })
+        .1;
+    mixed_click(ctx, app, rect.center());
+}
+
+fn mixed_type_comment(ctx: &egui::Context, app: &mut TikzariumApp, text: &str) {
+    let byte = app.document.source.find("% keep").unwrap() + "% keep".len();
+    let caret = app.document.source[..byte].chars().count();
+    app.source_editor.selection = Some(caret..caret);
+    app.source_editor.focus_editor = true;
+    mixed_frame(ctx, app, vec![]);
+    mixed_frame(ctx, app, vec![egui::Event::Text(text.into())]);
+}
+
+fn mixed_apply_samples(ctx: &egui::Context, app: &mut TikzariumApp) {
+    let original = app.document.source.clone();
+    mixed_click_text(ctx, app, "Распознать оси и ряды");
+    mixed_click_text(ctx, app, "Выберите исходную команду");
+    let line = original[..original.find("\\begin{axis}").unwrap()]
+        .bytes()
+        .filter(|b| *b == b'\n')
+        .count()
+        + 1;
+    mixed_click_text(ctx, app, &format!("axis · строка {line}"));
+    mixed_click_text(ctx, app, "150");
+    mixed_frame(ctx, app, vec![key(egui::Key::A, egui::Modifiers::COMMAND)]);
+    mixed_frame(ctx, app, vec![egui::Event::Text("151".into())]);
+    mixed_click_text(ctx, app, "Применить");
+    assert_eq!(
+        app.document.source.as_bytes(),
+        original
+            .replacen("samples=150", "samples=151", 1)
+            .as_bytes()
+    );
+}
+
+#[test]
+fn mixed_shell_typing_inspector_apply_two_undo_and_redo_preserve_exact_source() {
+    let ctx = egui::Context::default();
+    let original = mixed_fixture();
+    let mut app = shell_app(&ctx, &original);
+    mixed_frame(&ctx, &mut app, vec![]);
+    mixed_type_comment(&ctx, &mut app, " ручная Ω🙂");
+    let typed = app.document.source.clone();
+    assert_ne!(typed, original);
+    mixed_apply_samples(&ctx, &mut app);
+    let patched = app.document.source.clone();
+    // The source-owned Inspector action bar must use the same ledger as the
+    // toolbar. A second click must reach the earlier manual transaction.
+    mixed_click_text(&ctx, &mut app, "Отменить правку");
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    mixed_click_text(&ctx, &mut app, "Отменить правку");
+    assert_eq!(app.document.source.as_bytes(), original.as_bytes());
+    // Undo focuses the source; native Ctrl+Y/Shift+Z enter the raw input hook.
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(
+            egui::Key::Z,
+            egui::Modifiers::COMMAND.plus(egui::Modifiers::SHIFT),
+        )],
+    );
+    assert_eq!(app.document.source.as_bytes(), patched.as_bytes());
+    assert!(
+        !app.source_history
+            .available(HistoryAction::Redo, app.authoring.source_revision())
+    );
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Z, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    mixed_type_comment(&ctx, &mut app, " branch");
+    let branched = app.document.source.clone();
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(
+        app.document.source, branched,
+        "new typing revokes the Inspector redo branch"
+    );
+    assert!(app.document.source.contains("\\OpaqueUnknown"));
+}
+
+#[test]
+fn mixed_shell_inspector_then_typing_undo_redo_save_open_and_revision_fences() {
+    let ctx = egui::Context::default();
+    let original = mixed_fixture();
+    let mut app = shell_app(&ctx, &original);
+    mixed_frame(&ctx, &mut app, vec![]);
+    mixed_apply_samples(&ctx, &mut app);
+    let patched = app.document.source.clone();
+    mixed_type_comment(&ctx, &mut app, " typed after patch");
+    let typed = app.document.source.clone();
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Z, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), patched.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Z, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), original.as_bytes());
+    // Source focus is surrendered: global non-field shortcuts dispatch once.
+    ctx.memory_mut(|memory| memory.surrender_focus(egui::Id::new(BODY_ID)));
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), patched.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    let dir = tempfile::tempdir().unwrap();
+    let saved = dir.path().join("scientific.tex");
+    assert!(app.save_to_path(saved.clone()));
+    assert_eq!(std::fs::read(&saved).unwrap(), typed.as_bytes());
+    let mut queued = egui::RawInput {
+        events: vec![
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+            egui::Event::Text("old document deferred input".into()),
+        ],
+        ..Default::default()
+    };
+    eframe::App::raw_input_hook(&mut app, &ctx, &mut queued);
+    assert_eq!(app.document.source.as_bytes(), patched.as_bytes());
+    assert!(
+        queued.events.is_empty(),
+        "text following Undo waits for its source cursor frame"
+    );
+    let _ = ctx.run(
+        egui::RawInput {
+            events: vec![egui::Event::Text("already delivered old input".into())],
+            ..Default::default()
+        },
+        |ctx| {
+            app.load_path(saved.clone());
+            egui::CentralPanel::default().show(ctx, |ui| app.show_source_editor(ui));
+        },
+    );
+    assert_eq!(
+        app.document.source.as_bytes(),
+        typed.as_bytes(),
+        "Open also fences events already delivered to egui in the same frame"
+    );
+    mixed_frame(&ctx, &mut app, vec![]);
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Z, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(
+        app.document.source.as_bytes(),
+        typed.as_bytes(),
+        "Open fences even an identical same-path buffer"
+    );
+    assert!(
+        !app.source_history
+            .available(HistoryAction::Undo, app.authoring.source_revision())
+    );
+    mixed_type_comment(&ctx, &mut app, " new");
+    // A source change outside the registered transaction cannot be overwritten
+    // by an old inverse, even when old and new documents share a widget ID.
+    app.document.source = app.document.source.replacen(" new", " bad", 1);
+    let mismatched = app.document.source.clone();
+    app.source_history_action(&ctx, HistoryAction::Undo);
+    assert_eq!(
+        app.document.source, mismatched,
+        "expected-byte mismatch fails closed even before revision synchronization"
+    );
+    app.document.source.push_str("% external\r\n");
+    app.authoring.note_manual_source_edit(&app.document.source);
+    let external = app.document.source.clone();
+    app.source_history_action(&ctx, HistoryAction::Undo);
+    assert_eq!(app.document.source, external);
+    assert!(
+        !app.source_history
+            .available(HistoryAction::Undo, app.authoring.source_revision())
+    );
+}
+
+#[test]
+fn mixed_shell_visual_insert_shared_undo_cancels_held_guide_without_ghost_or_double_dispatch() {
+    let ctx = egui::Context::default();
+    let original = mixed_fixture();
+    let mut app = shell_app(&ctx, &original);
+    mixed_frame(&ctx, &mut app, vec![]);
+    mixed_type_comment(&ctx, &mut app, " before visual");
+    let typed = app.document.source.clone();
+    app.authoring.select_tool(tikz_authoring::Tool::Node);
+    let labels = mixed_frame(&ctx, &mut app, vec![]);
+    let guide_label = labels
+        .iter()
+        .find(|(text, _)| text.starts_with("Вспомогательная сетка"))
+        .expect("production guide label")
+        .1;
+    let position = guide_label.left_top() + egui::vec2(80.0, 100.0);
+    mixed_click(&ctx, &mut app, position);
+    let with_node = app.document.source.clone();
+    assert_ne!(
+        with_node, typed,
+        "actual guide click inserts a source-owned node"
+    );
+    assert!(with_node.contains("\\node"));
+    // Begin a second native gesture, then coalesce its release and Undo. The
+    // app must undo exactly one registered source transaction and suppress
+    // the guide's legacy Session-only fallback plus the captured release.
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![
+            egui::Event::PointerMoved(position),
+            egui::Event::PointerButton {
+                pos: position,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        ],
+    );
+    assert!(app.authoring.guide_pointer_armed);
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![
+            key(egui::Key::Z, egui::Modifiers::COMMAND),
+            egui::Event::PointerButton {
+                pos: position,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: Default::default(),
+            },
+        ],
+    );
+    mixed_frame(&ctx, &mut app, vec![]);
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Z, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), original.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), typed.as_bytes());
+    mixed_frame(
+        &ctx,
+        &mut app,
+        vec![key(egui::Key::Y, egui::Modifiers::COMMAND)],
+    );
+    assert_eq!(app.document.source.as_bytes(), with_node.as_bytes());
+}
+
+#[test]
+fn mixed_shell_transfers_multiple_authored_inverses_in_order_without_retaining_legacy_history() {
+    let ctx = egui::Context::default();
+    let original = mixed_fixture();
+    let mut app = shell_app(&ctx, &original);
+    mixed_frame(&ctx, &mut app, vec![]);
+    mixed_type_comment(&ctx, &mut app, " before batch");
+    let typed = app.document.source.clone();
+    let previous = app.authoring.source_revision();
+    for (old, new) in [("150", "151"), ("151", "152")] {
+        let axis = app
+            .authoring
+            .scientific_candidates(&app.document.source)
+            .unwrap()
+            .into_iter()
+            .find(|item| item.kind == tikzarium_extensions::scientific_scan::ScientificKind::Axis)
+            .unwrap();
+        app.authoring
+            .apply_scientific_literal(&mut app.document.source, &axis, "samples", old, new)
+            .unwrap();
+    }
+    app.record_authored_source_change(previous);
+    assert!(
+        !app.authoring.undo_available(),
+        "production transfers, rather than duplicates, standalone inverses"
+    );
+    mixed_frame(&ctx, &mut app, vec![]);
+    for value in ["151", "150"] {
+        app.source_history_action(&ctx, HistoryAction::Undo);
+        assert_eq!(
+            app.document.source,
+            typed.replacen("samples=150", &format!("samples={value}"), 1)
+        );
+    }
+    app.source_history_action(&ctx, HistoryAction::Undo);
+    assert_eq!(app.document.source.as_bytes(), original.as_bytes());
+    // A revision advance without a matching confirmed inverse is an external
+    // chain break and cannot be silently adopted into prior source history.
+    app.source_history_action(&ctx, HistoryAction::Redo);
+    let previous = app.authoring.source_revision();
+    app.document.source.push_str("% external revision\r\n");
+    app.authoring.note_manual_source_edit(&app.document.source);
+    app.record_authored_source_change(previous);
+    let external = app.document.source.clone();
+    app.source_history_action(&ctx, HistoryAction::Undo);
+    assert_eq!(app.document.source, external);
+    assert!(
+        !app.source_history
+            .available(HistoryAction::Undo, app.authoring.source_revision())
+    );
+}

@@ -955,6 +955,7 @@ struct TikzariumApp {
     source_editor: source_editor::SourceEditor,
     source_history: source_editing::SourceHistory,
     source_input: source_editing::SourceInputQueue,
+    source_document_input_fence: bool,
     source_preamble_open: bool,
     source_full_view: bool,
     source_split_active: bool,
@@ -1184,6 +1185,7 @@ impl TikzariumApp {
             source_editor: source_editor::SourceEditor::default(),
             source_history: source_editing::SourceHistory::default(),
             source_input: source_editing::SourceInputQueue::default(),
+            source_document_input_fence: false,
             source_preamble_open: false,
             source_full_view: false,
             source_split_active: false,
@@ -1329,6 +1331,9 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                self.source_history.reset(self.authoring.source_revision());
+                self.source_input = source_editing::SourceInputQueue::default();
+                self.source_document_input_fence = true;
                 self.scientific = ScientificInspector::default();
                 self.scientific_resources = ScientificResourceView::default();
                 self.build_resources = BuildResources::default();
@@ -2012,6 +2017,93 @@ impl TikzariumApp {
             ctx.request_repaint_after(Duration::from_millis(100));
         }
     }
+    /// Transfer confirmed authored inverses into the bounded ledger shared
+    /// with typing. Idle Inspector/guide frames do not clone the source.
+    fn record_authored_source_change(&mut self, previous_revision: u64) {
+        let revision = self.authoring.source_revision();
+        if revision == previous_revision {
+            return;
+        }
+        let transactions = self.authoring.take_source_transactions();
+        let count = u64::try_from(transactions.len()).ok();
+        if count.and_then(|count| previous_revision.checked_add(count)) != Some(revision) {
+            // A revision change without matching confirmed source patches is
+            // external to this transaction chain; never retain stale inverses.
+            self.source_history.reset(revision);
+            self.status = "История исходника сброшена: неподтверждённая цепочка ревизий".into();
+        } else {
+            let mut previous = previous_revision;
+            for inverse in transactions {
+                let next = inverse.source_revision;
+                if let Err(error) = self.source_history.record_inverse(inverse, previous) {
+                    self.source_history.reset(revision);
+                    self.status = error.into();
+                    break;
+                }
+                previous = next;
+            }
+        }
+        fence_source_editor_undo_on_revision_change(
+            previous_revision,
+            &self.authoring,
+            &mut self.reset_source_editor_undo_history,
+        );
+    }
+
+    fn show_shared_inspector_actions(&mut self, ui: &mut egui::Ui) {
+        let revision = self.authoring.source_revision();
+        let available = self
+            .source_history
+            .available(source_editing::HistoryAction::Undo, revision);
+        let (line, undo) = tikz_canvas::show_inspector_action_bar_shared(
+            ui,
+            &mut self.authoring,
+            &mut self.document.source,
+            available,
+        );
+        self.record_authored_source_change(revision);
+        if let Some(line) = line {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
+        if undo {
+            self.source_history_action(ui.ctx(), source_editing::HistoryAction::Undo);
+        }
+    }
+
+    /// Source fields dispatch in raw_input_hook. Other fields retain their own
+    /// local Undo; canvas/toolbar focus dispatches the same source ledger here.
+    fn handle_shared_history_shortcuts(&mut self, ctx: &egui::Context) {
+        let guide_capture = self.authoring.guide_pointer_armed
+            || self.authoring.drag_start.is_some()
+            || self.authoring.alt_selection_capture;
+        if ctx.wants_keyboard_input() && !guide_capture {
+            return;
+        }
+        let actions = ctx.input_mut(|input| {
+            let mut actions = Vec::new();
+            input.events.retain(|event| {
+                let action = source_editing::history_action(event);
+                if let Some(action) = action {
+                    actions.push(action);
+                    false
+                } else {
+                    true
+                }
+            });
+            input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z);
+            input.consume_key(
+                egui::Modifiers::COMMAND.plus(egui::Modifiers::SHIFT),
+                egui::Key::Z,
+            );
+            input.consume_key(egui::Modifiers::COMMAND, egui::Key::Y);
+            actions
+        });
+        for action in actions {
+            self.source_history_action(ctx, action);
+        }
+    }
+
     fn source_history_action(
         &mut self,
         ctx: &egui::Context,
@@ -2021,28 +2113,26 @@ impl TikzariumApp {
             return;
         }
         let revision = self.authoring.source_revision();
-        if action == source_editing::HistoryAction::Undo
-            && !self.source_history.available(action, revision)
-            && self.authoring.undo_available()
+        // A shared Undo also cancels an in-flight guide gesture. Session::sync
+        // invalidates derived handles; no old visual inverse is replayed.
+        if self.authoring.guide_pointer_armed
+            || self.authoring.drag_start.is_some()
+            || self.authoring.alt_selection_capture
+            || ctx.input(|input| input.pointer.primary_down())
         {
-            match self
-                .authoring
-                .undo_and_focus_line(&mut self.document.source)
-            {
-                Ok(line) => {
-                    self.jump_to_line = Some(line);
-                    self.highlight_generated_line = true;
-                    self.reset_source_editor_undo_history = true;
-                }
-                Err(error) => self.status = error,
-            }
-            return;
+            self.authoring.cancelled_pointer_capture = true;
+            self.authoring.guide_pointer_armed = false;
+            self.authoring.drag_start = None;
+            self.authoring.alt_selection_capture = false;
         }
         match self
             .source_history
             .apply(action, &mut self.document.source, revision)
         {
             Ok(Some(caret)) => {
+                self.reset_source_editor_undo_history = false;
+                self.jump_to_line = None;
+                self.highlight_generated_line = false;
                 self.authoring
                     .note_manual_source_edit(&self.document.source);
                 self.source_editor.refresh(&self.document.source);
@@ -2057,12 +2147,17 @@ impl TikzariumApp {
     }
 
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
+        if self.source_document_input_fence {
+            // Open can finish after egui has derived this frame's raw events.
+            // Those events belong to the previous document, as does the queue.
+            ui.input_mut(|input| input.events.clear());
+            self.source_document_input_fence = false;
+        }
         if self.modal_active() {
             ui.disable();
         }
         if self.reset_source_editor_undo_history {
             self.source_editor.document_changed();
-            self.source_history.reset(self.authoring.source_revision());
             source_editing::clear_native_histories(ui.ctx());
             self.reset_source_editor_undo_history = false;
         }
@@ -2430,11 +2525,7 @@ impl TikzariumApp {
                 }
             });
         }
-        fence_source_editor_undo_on_revision_change(
-            previous_revision,
-            &self.authoring,
-            &mut self.reset_source_editor_undo_history,
-        );
+        self.record_authored_source_change(previous_revision);
     }
 
     fn show_studio_view_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
@@ -2496,8 +2587,7 @@ impl TikzariumApp {
                 ui.menu_button("Правка", |ui| {
                     let undo = self
                         .source_history
-                        .available(Undo, self.authoring.source_revision())
-                        || self.authoring.undo_available();
+                        .available(Undo, self.authoring.source_revision());
                     if ui
                         .add_enabled(undo, egui::Button::new("Отменить    Ctrl+Z"))
                         .clicked()
@@ -2612,8 +2702,7 @@ impl TikzariumApp {
                 ui.separator();
                 let undo = self
                     .source_history
-                    .available(Undo, self.authoring.source_revision())
-                    || self.authoring.undo_available();
+                    .available(Undo, self.authoring.source_revision());
                 if studio_ui::icon_button_enabled(
                     ui,
                     StudioIcon::Undo,
@@ -2635,7 +2724,7 @@ impl TikzariumApp {
                     false,
                     side,
                     "Повторить",
-                    "Повторить текстовую правку · Ctrl+Shift+Z / Ctrl+Y",
+                    "Повторить изменение исходника · Ctrl+Shift+Z / Ctrl+Y",
                 )
                 .clicked()
                 {
@@ -2773,21 +2862,13 @@ impl TikzariumApp {
             }
         });
         ui.separator();
-        if self.authoring.active.is_some() || self.authoring.undo_available() {
-            let prior = self.authoring.source_revision();
-            if let Some(line) = tikz_canvas::show_inspector_action_bar(
-                ui,
-                &mut self.authoring,
-                &mut self.document.source,
-            ) {
-                self.jump_to_line = Some(line);
-                self.highlight_generated_line = true;
-            }
-            fence_source_editor_undo_on_revision_change(
-                prior,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+        if self.authoring.active.is_some()
+            || self.source_history.available(
+                source_editing::HistoryAction::Undo,
+                self.authoring.source_revision(),
+            )
+        {
+            self.show_shared_inspector_actions(ui);
             ui.separator();
         }
         egui::ScrollArea::vertical()
@@ -2798,7 +2879,7 @@ impl TikzariumApp {
                         ui.strong("Параметры рисунка");
                         ui.small("Выберите объект на эскизе или команду PGFPlots ниже.");
                     } else {
-                        let prior = self.authoring.source_revision();
+                                        let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();
                         if let Some(line) = tikz_canvas::show_inspector_studio(
                             ui,
@@ -2809,14 +2890,10 @@ impl TikzariumApp {
                             self.jump_to_line = Some(line);
                             self.highlight_generated_line = true;
                         }
-                        fence_source_editor_undo_on_revision_change(
-                            prior,
-                            &self.authoring,
-                            &mut self.reset_source_editor_undo_history,
-                        );
+                        self.record_authored_source_change(prior);
                     }
                     ui.separator();
-                    let prior = self.authoring.source_revision();
+                                let prior = self.authoring.source_revision();
                     if let Some(line) =
                         self.scientific
                             .show(ui, &mut self.authoring, &mut self.document.source)
@@ -2824,11 +2901,7 @@ impl TikzariumApp {
                         self.jump_to_line = Some(line);
                         self.highlight_generated_line = true;
                     }
-                    fence_source_editor_undo_on_revision_change(
-                        prior,
-                        &self.authoring,
-                        &mut self.reset_source_editor_undo_history,
-                    );
+                    self.record_authored_source_change(prior);
                 }
                 StudioDock::Libraries => {
                     ui.heading("Ресурсы проекта");
@@ -2890,7 +2963,7 @@ impl TikzariumApp {
                     ui.separator();
                     ui.heading("Библиотеки проекта");
                     ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
-                    let prior = self.authoring.source_revision();
+                                let prior = self.authoring.source_revision();
                     if let Some(line) = tikz_libraries::show_library_panel(
                         ui,
                         &mut self.authoring,
@@ -2901,11 +2974,7 @@ impl TikzariumApp {
                         self.jump_to_line = Some(line);
                         self.highlight_generated_line = true;
                     }
-                    fence_source_editor_undo_on_revision_change(
-                        prior,
-                        &self.authoring,
-                        &mut self.reset_source_editor_undo_history,
-                    );
+                    self.record_authored_source_change(prior);
                     ui.collapsing("Реестр доступности пакетов", |ui| {
                         for item in &self.package_statuses {
                             ui.strong(&item.manifest.display_name);
@@ -2941,7 +3010,7 @@ impl TikzariumApp {
                                 ui.separator();
                             }
                         }
-                        let prior = self.authoring.source_revision();
+                                        let prior = self.authoring.source_revision();
                         if let Some(line) = tikz_libraries::show_source_caret_completion(
                             ui, &mut self.authoring, &mut self.document.source,
                             caret, revision, self.tex.xelatex.is_some(),
@@ -2951,9 +3020,7 @@ impl TikzariumApp {
                             self.highlight_generated_line = true;
                             self.source_caret = None;
                         }
-                        fence_source_editor_undo_on_revision_change(
-                            prior, &self.authoring, &mut self.reset_source_editor_undo_history,
-                        );
+                        self.record_authored_source_change(prior);
                         ui.separator();
                     }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
@@ -2973,21 +3040,18 @@ impl TikzariumApp {
         if self.prefs.studio_mode && !self.pdf_focus_in_split {
             let prior = self.authoring.source_revision();
             let caps = self.primitive_capabilities();
-            if let Some(line) = tikz_canvas::show_guide_studio(
+            if let Some(line) = tikz_canvas::show_guide_shared(
                 ui,
                 &mut self.authoring,
                 &mut self.document.source,
                 caps,
+                true,
             ) {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
                 ui.ctx().request_repaint();
             }
-            fence_source_editor_undo_on_revision_change(
-                prior,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+            self.record_authored_source_change(prior);
             ui.separator();
             ui.small("Интерактивный эскиз TikZ. Точная геометрия и шрифты — во вкладке PDF после XeLaTeX.");
             return;
@@ -3082,16 +3146,13 @@ impl TikzariumApp {
         if self.workspace == WorkspaceMode::Split && !self.pdf_focus_in_split {
             let caps = self.primitive_capabilities();
             let previous_revision = self.authoring.source_revision();
-            let inserted = if self.prefs.studio_mode {
-                tikz_canvas::show_guide_studio(
-                    ui,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                    caps,
-                )
-            } else {
-                tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
-            };
+            let inserted = tikz_canvas::show_guide_shared(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+                caps,
+                self.prefs.studio_mode,
+            );
             if let Some(line) = inserted {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
@@ -3100,11 +3161,7 @@ impl TikzariumApp {
                 // and highlighted without requiring another mouse interaction.
                 ui.ctx().request_repaint();
             }
-            fence_source_editor_undo_on_revision_change(
-                previous_revision,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+            self.record_authored_source_change(previous_revision);
         } else if self.workspace == WorkspaceMode::Split {
             ui.small("Точный PDF занимает центральную область. Код и свойства остаются видимыми; для нового жеста выберите «Рисовать TikZ».");
         } else {
@@ -3519,16 +3576,8 @@ impl eframe::App for TikzariumApp {
                     &mut self.prefs.studio_inspector_open,
                 );
             }
-            if self.workspace == WorkspaceMode::Split
-                && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
-                    ctx,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                )
-            {
-                self.jump_to_line = Some(line);
-                self.highlight_generated_line = true;
-                self.reset_source_editor_undo_history = true;
+            if self.workspace == WorkspaceMode::Split {
+                self.handle_shared_history_shortcuts(ctx);
             }
         }
         // Read modifiers from EACH key-down event. A real, short X11 Ctrl+O
@@ -3668,23 +3717,10 @@ impl eframe::App for TikzariumApp {
         }
         if !self.prefs.studio_mode && self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
-                let previous_revision = self.authoring.source_revision();
                 if self.modal_active() {
                     ui.disable();
                 }
-                if let Some(line) = tikz_canvas::show_inspector_action_bar(
-                    ui,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                ) {
-                    self.jump_to_line = Some(line);
-                    self.highlight_generated_line = true;
-                }
-                fence_source_editor_undo_on_revision_change(
-                    previous_revision,
-                    &self.authoring,
-                    &mut self.reset_source_editor_undo_history,
-                );
+                self.show_shared_inspector_actions(ui);
                 ui.separator();
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
@@ -3912,6 +3948,10 @@ impl eframe::App for TikzariumApp {
             }
         }
         self.pending_build_ui(ctx);
+        // An Open completed after the editor (or in Canvas-only mode) has no
+        // remaining source widgets this frame. Never carry its raw-event
+        // fence into a later frame and discard fresh native input there.
+        self.source_document_input_fence = false;
     }
 }
 

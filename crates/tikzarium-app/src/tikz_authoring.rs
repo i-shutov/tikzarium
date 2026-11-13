@@ -554,6 +554,11 @@ impl Session {
     pub fn undo_available(&self) -> bool {
         !self.undo.is_empty()
     }
+    /// The production shell transfers these exact inverses to its bounded
+    /// shared source ledger. Standalone Session users retain the usual Undo.
+    pub(crate) fn take_source_transactions(&mut self) -> Vec<SourcePatch> {
+        std::mem::take(&mut self.undo)
+    }
     fn patch(
         &mut self,
         source: &mut String,

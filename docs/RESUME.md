@@ -1,4 +1,14 @@
-# TikZarium — release resume, 2026-11-12
+# TikZarium — release resume, 2026-11-13
+
+## 2026-11-13 — единый SourcePatch/Undo для текста и Inspector
+
+[Новый checkpoint](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md), [исходные команды/результаты](../insights/assets/2026-11-13-shared-history/summary.json), [SHA256 evidence manifest](../insights/assets/2026-11-13-shared-history/manifest.json). Исходная база [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189) — `0eee418ca4d4869b2a4b9fb6ea1462d53df84e1d`; новый commit/app-tree и CI интегратор фиксирует после публикации/readback.
+
+Исправлен подтверждённый разрыв истории: ручной текст → Inspector Apply → Undo → Undo теперь проходит через один bounded ledger точных inverse SourcePatch. Standalone Session API сохранён; старые inverse stacks не дублируются, idle source clones не добавлены. Open отделяет document identity и старый deferred/raw input; общий Undo отменяет удержанный жест без ghost insertion. **566 workspace tests PASS / 0 failed / 4 ignored / 27 suites; fmt, strict Clippy, app/CLI build PASS.** Четыре новые production-shell регрессии — `UNIT_EVENT`; offline collector — 16/16 PASS. Есть отдельный независимый static review.
+
+Аудит исходной базы: 15 runs, из них 13 success и 2 старых APP_TREE lease stops; финальный D QA matrix success. I61/N5 не перепривязаны. Сейчас наблюдались реальное production-окно и мышь, но ненадёжный keyboard focus не позволил принять полный native scientific workflow. Отдельный hosted 1366×768 сценарий готовится; его originals/итог ещё ожидаются. Старые HWND/F1/CLI/PDF PASS не перенесены на новый код.
+
+**Следующий шаг:** exact-commit native SV-001 derivative → Inspector draft/Apply `150 → 151` → два Undo → byte-exact Save/Open → GUI XeLaTeX → текущий PDF Export, затем независимый просмотр originals и provenance. Physical Win10/IME/DPI/G3 и full ST-SCI остаются открытыми. Stable v1.0 и merge/release GO **не выданы**.
 
 ## 2026-11-12 — Compact Studio: восстановлен точный app tree, публикация PR #189
 

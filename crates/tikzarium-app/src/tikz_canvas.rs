@@ -226,6 +226,7 @@ fn hit_authored_anchor(source: &str, rect: Rect, pos: Pos2) -> Result<Option<u64
     }
 }
 
+#[cfg(test)]
 fn show_guide_frame_with_palette(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -239,13 +240,34 @@ fn show_guide_frame_with_palette(
 /// Both workspaces use EXACTLY the same gesture processing and source patching.
 /// Studio moves the existing C-owned palette into a persistent tool rail; it
 /// does not replace the native TikZ drawing handler or TeX with a Rust solver.
+#[allow(dead_code)] // Also used by the independent QA-control binary.
 pub(crate) fn show_guide_frame_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    palette_rects: Option<&mut [Rect; 6]>,
+    legacy_palette: bool,
+) -> (Option<usize>, Rect) {
+    show_guide_frame_inner(
+        ui,
+        session,
+        source,
+        caps,
+        palette_rects,
+        legacy_palette,
+        false,
+    )
+}
+
+fn show_guide_frame_inner(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
     mut palette_rects: Option<&mut [Rect; 6]>,
     legacy_palette: bool,
+    shared_history: bool,
 ) -> (Option<usize>, Rect) {
     if legacy_palette {
         ui.horizontal_wrapped(|ui| {
@@ -453,7 +475,14 @@ pub(crate) fn show_guide_frame_mode(
     let fallback_undo_line =
         if undo_key && held_guide && !escape && !pointer_lost && !session.cancelled_pointer_capture
         {
-            let line = handle_visual_undo_shortcut(ui.ctx(), session, source);
+            let line = if shared_history {
+                // The app dispatches its unified ledger before this guide.
+                // A newly captured press still cancels here without replaying
+                // the Session-only inverse stack a second time.
+                None
+            } else {
+                handle_visual_undo_shortcut(ui.ctx(), session, source)
+            };
             session.drag_start = None;
             session.cancelled_pointer_capture = true;
             line
@@ -577,6 +606,7 @@ pub(crate) fn show_guide_frame_mode(
     (None, rect)
 }
 
+#[cfg(test)]
 fn show_guide_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -588,6 +618,7 @@ fn show_guide_frame(
 
 /// The production handler and UNIT_EVENT egui frames run the same Response
 /// processing. The guide is provisional; neither path decodes a PDF.
+#[cfg(test)]
 pub fn show_guide(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -599,6 +630,7 @@ pub fn show_guide(
 
 /// B42 studio guide: real egui pointer gestures and revision-checked C source
 /// patches are preserved; only the duplicate row of tool buttons is removed.
+#[cfg(test)]
 pub fn show_guide_studio(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -606,6 +638,17 @@ pub fn show_guide_studio(
     caps: Capabilities,
 ) -> Option<usize> {
     show_guide_frame_mode(ui, session, source, caps, None, false).0
+}
+
+/// Production shell guide: native gestures share the app's source history.
+pub fn show_guide_shared(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    studio: bool,
+) -> Option<usize> {
+    show_guide_frame_inner(ui, session, source, caps, None, !studio, true).0
 }
 
 pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
@@ -685,6 +728,7 @@ pub fn observe_source_text_edit(response: &egui::Response, session: &mut Session
 
 /// Always visible above the independently scrollable inspector. The shared
 /// Session inverse patch is the only source authority; no TeX is reconstructed.
+#[allow(dead_code)] // Also used by the independent QA-control binary.
 pub(crate) fn show_inspector_action_bar_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -693,18 +737,56 @@ pub(crate) fn show_inspector_action_bar_frame(
     help_rect: Option<&mut Rect>,
     apply_rect: Option<&mut Rect>,
 ) -> Option<usize> {
+    show_inspector_action_bar_inner(
+        ui, session, source, undo_rect, help_rect, apply_rect, None, &mut false,
+    )
+}
+
+pub fn show_inspector_action_bar_shared(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    undo_available: bool,
+) -> (Option<usize>, bool) {
+    let mut undo = false;
+    let line = show_inspector_action_bar_inner(
+        ui,
+        session,
+        source,
+        None,
+        None,
+        None,
+        Some(undo_available),
+        &mut undo,
+    );
+    (line, undo)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn show_inspector_action_bar_inner(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    undo_rect: Option<&mut Rect>,
+    help_rect: Option<&mut Rect>,
+    apply_rect: Option<&mut Rect>,
+    shared_undo: Option<bool>,
+    undo_requested: &mut bool,
+) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
         let button = ui
             .add_enabled(
-                session.undo_available(),
+                shared_undo.unwrap_or_else(|| session.undo_available()),
                 egui::Button::new("Отменить правку"),
             )
-            .on_hover_text("Undo TikZ/source-правки; Ctrl/Cmd+Z вне текстовых полей. В редакторе Ctrl/Cmd+Z остаётся текстовым Undo.");
+            .on_hover_text("Отменить изменение исходника. Текст и подтверждённые правки используют общую историю.");
         if let Some(rect) = undo_rect {
             *rect = button.rect;
         }
-        if button.clicked() {
+        if button.clicked() && shared_undo.is_some() {
+            *undo_requested = true;
+        } else if button.clicked() {
             match session.undo_and_focus_line(source) {
                 Ok(line) => jump = Some(line),
                 Err(error) => session.status = error,
@@ -754,6 +836,7 @@ pub(crate) fn show_inspector_action_bar_frame(
     jump
 }
 
+#[cfg(test)]
 pub fn show_inspector_action_bar(
     ui: &mut egui::Ui,
     session: &mut Session,
