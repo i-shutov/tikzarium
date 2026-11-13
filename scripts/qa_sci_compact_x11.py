@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import signal
 import subprocess
@@ -148,9 +149,20 @@ class Driver:
     def click(self, name: str) -> None:
         self.owned_focus()
         x, y = self.points[name]
+        # --sync can block indefinitely when the pointer is already at the
+        # requested target (observed first hosted run, before marker input).
+        # Move, query the actual server pointer, then send the real click.
+        run("xdotool", "mousemove", "--window", self.window, str(x), str(y))
+        location = run("xdotool", "getmouselocation", "--shell")
+        pointer = dict(line.split("=", 1) for line in location.splitlines() if "=" in line)
+        actual_root = (int(pointer["X"]), int(pointer["Y"]))
         self.event("x11_click", control=name, client_xy=(x, y),
-                   root_xy=(self.geometry["X"] + x, self.geometry["Y"] + y))
-        run("xdotool", "mousemove", "--sync", "--window", self.window, str(x), str(y), "click", "1")
+                   actual_pointer_root_xy=actual_root,
+                   pointer_window=pointer.get("WINDOW"),
+                   reported_geometry_xy=(self.geometry["X"], self.geometry["Y"]))
+        if actual_root != (self.geometry["X"] + x, self.geometry["Y"] + y):
+            raise RuntimeError("Actual pointer differs from absolute client origin plus requested client point")
+        run("xdotool", "click", "1")
         time.sleep(0.28)
 
     def clipboard(self, data: bytes, detail: str) -> None:
@@ -245,6 +257,20 @@ class Driver:
         (self.raw / "owned-window-geometry.txt").write_text(geometry + "\n", encoding="utf-8")
         values = dict(line.split("=", 1) for line in geometry.splitlines() if "=" in line)
         self.geometry = {key: int(values[key]) for key in ("X", "Y", "WIDTH", "HEIGHT")}
+        self.report["window_geometry_source"] = "XDOTOOL_REPORTED_MAY_INCLUDE_FRAME_TRANSLATION"
+        if shutil.which("xwininfo"):
+            absolute = run("xwininfo", "-id", self.window)
+            (self.raw / "owned-window-xwininfo.txt").write_text(absolute + "\n", encoding="utf-8")
+            labels = {"X": "Absolute upper-left X", "Y": "Absolute upper-left Y",
+                      "WIDTH": "Width", "HEIGHT": "Height"}
+            parsed = {}
+            for key, label in labels.items():
+                match = re.search(r"^\s*" + re.escape(label) + r":\s*(-?\d+)\s*$", absolute, re.MULTILINE)
+                if match is None:
+                    raise RuntimeError("Cannot parse true xwininfo client geometry: " + label)
+                parsed[key] = int(match.group(1))
+            self.geometry = parsed
+            self.report["window_geometry_source"] = "XWININFO_ABSOLUTE_CLIENT"
         if (self.geometry["WIDTH"], self.geometry["HEIGHT"]) != CLIENT:
             raise RuntimeError("Production client geometry differs from reviewed compact coordinates")
         if (self.geometry["X"] < 0 or self.geometry["Y"] < 0
@@ -401,7 +427,7 @@ def main() -> int:
     args = parser.parse_args()
     driver = None
     try:
-        for executable in ("xdotool", "xclip", "wmctrl", "import", "pdfinfo", "pdffonts", "pdftotext", "pdftoppm"):
+        for executable in ("xdotool", "xclip", "wmctrl", "xwininfo", "import", "pdfinfo", "pdffonts", "pdftotext", "pdftoppm"):
             if shutil.which(executable) is None:
                 raise ValueError("Missing preinstalled native QA prerequisite: " + executable)
         if not (1 <= args.build_timeout <= 600):

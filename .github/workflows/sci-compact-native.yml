@@ -61,8 +61,9 @@ jobs:
           components: rustfmt
       # No earlier repository workflow uses a Cargo cache. Reuse the audited
       # lockfile as the dependency key; keep exact-head entries and scoped restores.
-      - name: Cache Cargo dependencies and build products
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      - name: Restore Cargo dependencies and build products
+        id: cargo-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
             ~/.cargo/registry/index/
@@ -82,7 +83,7 @@ jobs:
           fi
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
-            xvfb xauth openbox xdotool xclip wmctrl imagemagick python3-pil \
+            xvfb xauth x11-utils openbox xdotool xclip wmctrl imagemagick python3-pil \
             libgl1-mesa-dri libglx-mesa0 libxkbcommon-dev libxkbcommon-x11-dev \
             libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
             texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended \
@@ -134,6 +135,19 @@ jobs:
           destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'sci-build-provenance.json'
           destination.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
           PY
+      # Preserve a verified build before native calibration, even when a later
+      # GUI assertion fails. A restored cache never replaces the locked build
+      # command or the exact source/binary receipt above.
+      - name: Save verified build for subsequent native evidence runs
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
       - name: Real production PGFPlots Inspector, mixed Undo, Save/Open and XeLaTeX PDF
         shell: bash
         run: |
