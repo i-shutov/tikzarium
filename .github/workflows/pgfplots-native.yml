@@ -1,0 +1,199 @@
+name: PGFPlots V2 bounded native vertical (hosted X11, independent review required)
+
+# Synthetic 18-property matrix, named SC3-04 SV cases and external table/error
+# bars compatibility. SV-040 is build/preservation-only. Full SC3/AT4 and physical
+# Windows/macOS acceptance remain separate; originals require visual review.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgfplots-native.yml'
+      - 'scripts/qa_pgfplots_vertical*'
+      - 'scripts/fixtures/pgfplots-v2/**'
+      - 'scripts/qa_sci_compact*'
+      - 'scripts/qa_n2_studio_x11.py'
+      - 'roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-*/**'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'crates/**'
+      - 'extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pgfplots-native.yml'
+      - 'scripts/qa_pgfplots_vertical*'
+      - 'scripts/fixtures/pgfplots-v2/**'
+      - 'scripts/qa_sci_compact*'
+      - 'scripts/qa_n2_studio_x11.py'
+      - 'roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-*/**'
+      - 'scripts/qa_i61_b42_studio_x11.py'
+      - 'crates/**'
+      - 'extensions/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pgfplots-native-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgfplots-bounded-hosted-gui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      LIBGL_ALWAYS_SOFTWARE: '1'
+    steps:
+      - name: Check out exact review source, never the synthetic merge ref
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify checkout and record current source-tree lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
+          echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/pgfplots-native-logs"
+          git show --no-patch --format=fuller HEAD > "$RUNNER_TEMP/pgfplots-native-logs/source-commit.txt"
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt
+      # Reuse the audited lockfile as the dependency key; keep exact-head
+      # entries and scoped restores. I61 can also reuse this verified build cache.
+      - name: Restore Cargo dependencies and build products
+        id: cargo-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-pgfplots-native-rust191-${{ hashFiles('Cargo.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-pgfplots-native-rust191-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-sci-compact-rust191-${{ hashFiles('Cargo.lock') }}-
+      - name: Install disposable hosted X11, external XeLaTeX and PDF inspectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Bound the previously observed Azure archive stalls on hosted jobs.
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            xvfb xauth x11-utils openbox xdotool xclip wmctrl imagemagick python3-pil \
+            libgl1-mesa-dri libglx-mesa0 libxkbcommon-dev libxkbcommon-x11-dev \
+            libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
+            texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended \
+            fonts-dejavu-core fonts-sil-charis poppler-utils
+          { uname -a; rustc -vV; cargo --version; xelatex --version; } > "$RUNNER_TEMP/pgfplots-native-logs/environment.txt"
+          kpsewhich pgfplots.sty
+          kpsewhich standalone.cls
+          fc-match 'DejaVu Sans'
+          fc-match 'Charis SIL'
+          test "$(fc-match -f '%{family}' 'Charis SIL')" = 'Charis SIL'
+          test "$(fc-match -f '%{family}' 'DejaVu Serif')" = 'DejaVu Serif'
+          python3 -c 'from PIL import Image; import shutil; tools=("pdfinfo","pdftotext","pdffonts","pdftoppm"); assert all(shutil.which(tool) for tool in tools)'
+      - name: Formatting and strict PGFPlots evidence contracts (UNIT_EVENT)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check
+          python3 -m unittest discover -s scripts -p qa_pgfplots_vertical_test.py -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/artifact-contract-tests.log"
+          cargo test --locked -p tikzarium-app --bin tikzarium-app scientific_inspector::tests -- --nocapture 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/inspector-contract-tests.log"
+      - name: Build locked production app and CLI, then bind their exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --locked -p tikzarium-app -p tikzarium-cli --bin tikzarium-app --bin tikzarium-cli 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/production-build.log"
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = "$TIKZARIUM_APP_TREE_SHA"
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          def digest(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          app = (root / 'target/debug/tikzarium-app').resolve(strict=True)
+          cli = (root / 'target/debug/tikzarium-cli').resolve(strict=True)
+          receipt = {
+              'schema_version': 1,
+              'created_utc': datetime.now(timezone.utc).isoformat(),
+              'source_head_sha': os.environ['TIKZARIUM_SOURCE_SHA'],
+              'app_tree_sha': os.environ['TIKZARIUM_APP_TREE_SHA'],
+              'app_path': str(app), 'app_sha256': digest(app),
+              'cli_path': str(cli), 'cli_sha256': digest(cli),
+              'cargo_lock_sha256': digest(root / 'Cargo.lock'),
+              'build_command': 'cargo build --locked -p tikzarium-app -p tikzarium-cli --bin tikzarium-app --bin tikzarium-cli',
+              'production_binary': True,
+              'rustc_version': subprocess.check_output(['rustc', '-vV'], text=True),
+              'environment': 'GITHUB_HOSTED_UBUNTU_24_04_XVFB_1366_768',
+              'physical_win10': 'NOT_RUN',
+              'run_url': f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+          }
+          destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pgfplots-build-provenance.json'
+          destination.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          PY
+      # Preserve a verified build before native calibration, even when a later
+      # GUI assertion fails. A restored cache never replaces the locked build
+      # command or the exact source/binary receipt above.
+      - name: Save verified build for subsequent native evidence runs
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+      - name: Real production PGFPlots axis/series Apply, common Undo, Save/reopen and current XeLaTeX PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pgfplots-native-runtime"
+          chmod 700 "$RUNNER_TEMP/pgfplots-native-runtime"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/pgfplots-native-runtime"
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' bash -euo pipefail -c '
+            openbox --sm-disable > "$RUNNER_TEMP/pgfplots-native-logs/openbox.log" 2>&1 &
+            wm_pid=$!
+            trap "kill $wm_pid 2>/dev/null || true" EXIT
+            ready=0
+            for attempt in $(seq 1 100); do
+              if wmctrl -m > "$RUNNER_TEMP/pgfplots-native-logs/window-manager.txt" 2>&1 && grep -Fq "Name: Openbox" "$RUNNER_TEMP/pgfplots-native-logs/window-manager.txt"; then ready=1; break; fi
+              sleep 0.1
+            done
+            test "$ready" = 1
+            python3 scripts/qa_pgfplots_vertical_x11.py \
+              --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" \
+              --out "$RUNNER_TEMP/pgfplots-native" \
+              --build-provenance "$RUNNER_TEMP/pgfplots-build-provenance.json"
+          ' 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/native-driver.log"
+      - name: Preserve original hosted GUI evidence, including partial failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pgfplots-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/pgfplots-native/
+            ${{ runner.temp }}/pgfplots-native-logs/
+            ${{ runner.temp }}/pgfplots-build-provenance.json
+            !${{ runner.temp }}/pgfplots-native/**/*.ttf
+            !${{ runner.temp }}/pgfplots-native/**/*.otf
+            !${{ runner.temp }}/pgfplots-native/**/*.exe
+          if-no-files-found: warn
+          retention-days: 14

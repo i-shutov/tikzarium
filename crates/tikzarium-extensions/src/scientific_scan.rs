@@ -655,6 +655,41 @@ fn components(text: &str, content: Range<usize>) -> Result<Vec<Range<usize>>, Ed
     Ok(parts)
 }
 
+/// Ignore only trivia surrounding one option token. Interior comments remain
+/// in the range: joining their separated bytes could invent literal ownership.
+fn option_token_range(text: &str, range: Range<usize>) -> Result<Range<usize>, EditRefusal> {
+    let b = text.as_bytes();
+    let start = whitespace_and_comments(text, range.start).min(range.end);
+    let mut i = start;
+    let mut end = start;
+    while i < range.end {
+        match b[i] {
+            byte if byte.is_ascii_whitespace() => i += 1,
+            b'%' => {
+                while i < range.end && b[i] != b'\n' {
+                    i += 1;
+                }
+            }
+            b'\\' => {
+                i += if i + 1 < range.end { 2 } else { 1 };
+                end = i;
+            }
+            b'{' | b'[' => {
+                i = group_at(text, i).ok_or(EditRefusal::Opaque)?.next;
+                if i > range.end {
+                    return Err(EditRefusal::Opaque);
+                }
+                end = i;
+            }
+            _ => {
+                i += 1;
+                end = i;
+            }
+        }
+    }
+    Ok(start..end)
+}
+
 fn locate_key(
     text: &str,
     content: Range<usize>,
@@ -673,6 +708,11 @@ fn locate_key(
         while p < segment.end {
             match b[p] {
                 b'\\' => p += if p + 1 < segment.end { 2 } else { 1 },
+                b'%' => {
+                    while p < segment.end && b[p] != b'\n' {
+                        p += 1;
+                    }
+                }
                 b'{' | b'[' => {
                     p = group_at(text, p).ok_or(EditRefusal::Opaque)?.next;
                 }
@@ -683,12 +723,24 @@ fn locate_key(
                 _ => p += 1,
             }
         }
+        let key = option_token_range(text, segment.start..equals.unwrap_or(segment.end))?;
+        let actual_key = text.get(key).ok_or(EditRefusal::Opaque)?;
+        // TeX removes comments before pgfkeys sees the key. A comment inside
+        // a token can therefore hide an effective duplicate of `wanted`.
+        // Refuse rather than ignoring the entry and editing another value.
+        if actual_key.contains('%') {
+            return Err(EditRefusal::Opaque);
+        }
+        // A pgfkeys path switch changes the owner of following bare keys.
+        // Refuse this list, including naked controls without '=', rather than
+        // assuming a later key or namespace reset belongs to this axis/plot.
+        if actual_key == ".cd" || actual_key.ends_with("/.cd") {
+            return Err(EditRefusal::Opaque);
+        }
         let Some(eq) = equals else {
             continue;
         };
-        let key = trimmed(text, segment.start..eq);
-        let value = trimmed(text, eq + 1..segment.end);
-        let actual_key = text.get(key).ok_or(EditRefusal::Opaque)?;
+        let value = option_token_range(text, eq + 1..segment.end)?;
         if actual_key == wanted {
             hits.push(value);
             continue;

@@ -1,0 +1,417 @@
+#!/usr/bin/env python3
+"""Owned-production-PID PGFPlots Inspector, Undo, reopen and GUI XeLaTeX proof.
+
+Bounded hosted Linux/X11 observations only. Original source, PNG, PDF, clipboard,
+engine recorder and logs survive failed assertions. No compiler is run by this
+driver: Ctrl+Return and current Export are actual production GUI actions.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+
+import qa_pgfplots_vertical_evidence as evidence
+import qa_sci_compact_x11 as common
+from qa_i61_b42_studio_x11 import audit_embedded_fonts
+from qa_n2_studio_x11 import expected_elf, validate_xelatex_log
+
+POINTS = {**common.POINTS, "source_full_source": (490, 174),
+          "property": (1020, 353), "draft": (1020, 428)}
+
+
+def recorder_inputs(data: bytes, cwd: Path) -> set[Path]:
+    text = data.decode("utf-8", "strict")
+    pwd = next((Path(line[4:]) for line in text.splitlines() if line.startswith("PWD ")), cwd)
+    return {(Path(line[6:]) if Path(line[6:]).is_absolute() else pwd / line[6:]).resolve()
+            for line in text.splitlines() if line.startswith("INPUT ")}
+
+
+class RecorderWatcher:
+    """Read-only bounded copies of real engine .fls before BuildService cleanup.
+
+    TMPDIR belongs solely to this production process. Every distinct snapshot is
+    retained as exact bytes; a partial recorder cannot certify a build unless it
+    contains the actual source and all required project dependencies.
+    """
+    def __init__(self, temporary: Path, out: Path):
+        self.temporary = temporary
+        self.out = out
+        temporary.mkdir()
+        out.mkdir()
+        self.done = threading.Event()
+        self.thread = threading.Thread(target=self.watch, daemon=True)
+        self.seen = set()
+        self.records = []
+        self.error = None
+
+    def watch(self):
+        try:
+            while not self.done.is_set():
+                for path in self.temporary.rglob("*"):
+                    if path.suffix not in (".fls", ".log"):
+                        continue
+                    try:
+                        raw = path.read_bytes()
+                    except FileNotFoundError:
+                        continue
+                    identity = (str(path), evidence.digest(raw))
+                    if identity in self.seen:
+                        continue
+                    if len(raw) > 8_000_000 or len(self.records) >= 512:
+                        raise RuntimeError("Actual engine recorder retention exceeded bounded budget")
+                    self.seen.add(identity)
+                    destination = self.out / f"engine-{len(self.records):04d}.original{path.suffix}"
+                    destination.write_bytes(raw)
+                    captured_sources = {}
+                    if path.suffix == ".fls":
+                        for source in recorder_inputs(raw, self.temporary):
+                            if source.suffix == ".tex" and source.is_relative_to(self.temporary.parent / "live"):
+                                try:
+                                    contents = source.read_bytes()
+                                except FileNotFoundError:
+                                    continue
+                                retained = destination.with_suffix("." + source.parent.name + ".input-source.original.tex")
+                                retained.write_bytes(contents)
+                                captured_sources[str(source)] = {"retained": str(retained), "sha256": evidence.digest(contents)}
+                    self.records.append({"original_path": str(path), "retained": str(destination),
+                                         "kind": path.suffix, "sha256": evidence.digest(raw),
+                                         "captured_sources": captured_sources, "captured_utc": evidence.now()})
+                self.done.wait(0.01)
+        except Exception as error:
+            self.error = str(error)
+
+    def start(self):
+        self.thread.start()
+
+    def stop(self):
+        self.done.set()
+        if self.thread.ident is not None:
+            self.thread.join(timeout=5)
+        evidence.write_json(self.out / "recorder-captures.json", {"snapshots": self.records, "error": self.error})
+
+    def proof(self, source: Path, expected: bytes, dependencies: dict[str, str]) -> dict:
+        if self.error:
+            raise RuntimeError("Engine recorder watcher failed: " + self.error)
+        required = {source.resolve(), *(source.parent / name for name in dependencies)}
+        matching = []
+        for record in list(self.records):
+            path = Path(record["retained"])
+            if path.suffix != ".fls":
+                continue
+            if evidence.sha(path) != record["sha256"]:
+                raise RuntimeError("Retained engine recorder hash differs from captured original")
+            if required.issubset(recorder_inputs(path.read_bytes(), source.parent)):
+                captured = record.get("captured_sources", {}).get(str(source.resolve()))
+                if not captured or captured["sha256"] != evidence.digest(expected) or evidence.sha(Path(captured["retained"])) != evidence.digest(expected):
+                    continue
+                matching.append(record)
+        if not matching:
+            raise RuntimeError("No original GUI engine recorder contains source and all actual table inputs")
+        if source.read_bytes() != expected or evidence.dependency_hashes(source.parent, source.stem) != dependencies:
+            raise RuntimeError("GUI source/dependencies changed during engine recorder observation")
+        return {"recorder": matching[-1], "compiled_author_source": str(source.resolve()),
+                "compiled_source_sha256": evidence.digest(expected),
+                "compile_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+                "required_input_paths": sorted(map(str, required)), "dependency_sha256": dependencies}
+
+
+class Driver(common.Driver):
+    def __init__(self, args, provenance):
+        self.args = args
+        self.out = args.out.resolve()
+        self.raw = self.out / "raw"
+        self.raw.mkdir()
+        self.live = self.out / "live"
+        self.source = self.live / "formula/formula.tex"
+        self.provenance = provenance
+        self.points = POINTS.copy()
+        if args.coordinates:
+            overrides = evidence.read_json(args.coordinates)
+            if overrides.get("app_tree_sha") != provenance["app_tree_sha"]:
+                raise ValueError("Coordinate file requires the actual production app tree")
+            for name, point in overrides["points"].items():
+                if name not in self.points or len(point) != 2 or any(type(v) is not int for v in point):
+                    raise ValueError("Invalid coordinate override: " + name)
+                self.points[name] = tuple(point)
+            shutil.copyfile(args.coordinates, self.raw / "coordinate-input.json")
+        if any(not (0 <= x < evidence.CLIENT[0] and 0 <= y < evidence.CLIENT[1]) for x, y in self.points.values()):
+            raise ValueError("Coordinates exceed declared client")
+        self.base_points = self.points.copy()
+        self.action_file = (self.out / "native-actions.jsonl").open("w", encoding="utf-8", buffering=1)
+        self.app_log = (self.out / "app.log").open("wb")
+        self.process = self.window = self.geometry = None
+        self.serial = 0
+        self.current_stage = "startup"
+        self.fixture = "formula"
+        self.report = {"schema_version": 1, "scope": evidence.SCOPE, "status": "FAIL",
+                       "host": platform.platform(), "coordinates": self.points,
+                       "screen": evidence.SCREEN, "client": evidence.CLIENT,
+                       "aggregate_sc3_at4": "NOT_VERIFIED", "physical_win10": "NOT_RUN",
+                       "physical_mac_arm": "NOT_RUN", "independent_visual_review": "REQUIRED",
+                       "sv040": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR",
+                       "operation_count": len(evidence.OPERATIONS), "builds": {}, **provenance}
+        self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals")
+
+    def start(self):
+        previous = os.environ.get("TMPDIR")
+        os.environ["TMPDIR"] = str(self.watcher.temporary)
+        try:
+            super().start()
+        finally:
+            if previous is None:
+                os.environ.pop("TMPDIR", None)
+            else:
+                os.environ["TMPDIR"] = previous
+        elf = expected_elf(self.args.app)
+        proc_exe = Path(f"/proc/{self.process.pid}/exe")
+        if elf.name != "tikzarium-app" or proc_exe.resolve(strict=True) != elf or evidence.sha(proc_exe) != evidence.sha(elf):
+            raise RuntimeError("Owned PID executable differs from production ELF")
+        self.report.update({"pid": self.process.pid, "window": self.window,
+                            "observed_proc_exe": str(proc_exe.resolve()),
+                            "observed_proc_exe_sha256": evidence.sha(proc_exe)})
+        self.watcher.start()
+
+    def stage(self, name: str, expected: bytes, action: str):
+        self.current_stage = self.fixture + "/" + name
+        self.key("ctrl+s")
+        deadline = time.monotonic() + 4
+        while time.monotonic() < deadline and self.source.read_bytes() != expected:
+            self.alive()
+            time.sleep(0.1)
+        image = self.screenshot(self.fixture + "-" + name)
+        editor = self.copy_editor(self.fixture + "-" + name)
+        evidence.record(self.out, self.fixture, name, self.source, editor, image, action=action)
+
+    def open_case(self, fixture: str, *, initial=False):
+        self.fixture = fixture
+        self.source = self.live / fixture / (fixture + ".tex")
+        self.points = self.base_points.copy()
+        self.click("file_menu")
+        self.click("file_path")
+        self.key("ctrl+a")
+        self.paste(str(self.source).encode(), "open-" + fixture)
+        self.key("Escape")
+        self.key("ctrl+o")
+        time.sleep(0.7)
+        self.screenshot(fixture + "-open-before-decision")
+        if initial:
+            self.event("explicit_discard_of_fresh_quickstart_only")
+            self.click("dirty_discard")
+            time.sleep(0.6)
+        self.enable_full_source_after_load()
+        self.stage("opened", evidence.fixture_bytes(fixture), "Native File path/Open, full-source, fresh-sentinel editor Copy and GUI Save")
+
+    def combo_index(self, name: str, index: int):
+        self.click(name)
+        self.screenshot(self.fixture + "-" + name + "-menu")
+        # egui's popup focus layer restricts Tab to menu entries. The subsequent
+        # exact original-field clipboard guard rejects any wrong focus/choice.
+        self.key("Tab")
+        for _ in range(index):
+            self.key("Down")
+        self.key("Return")
+
+    def field_copy(self, detail: str, expected: bytes):
+        self.clipboard(b"__PGF_FIELD_FRESH_SENTINEL__", "field-sentinel")
+        self.key("ctrl+a")
+        self.key("ctrl+c")
+        observed = common.run_bytes("xclip", "-selection", "clipboard", "-o")
+        self.serial += 1
+        path = self.raw / f"{self.serial:03d}-{detail}-field.txt"
+        path.write_bytes(observed)
+        self.event("focused_field_clipboard", file=str(path.relative_to(self.out)),
+                   sha256=evidence.sha(path), expected_utf8=expected.decode(), matches=observed == expected)
+        if observed != expected:
+            raise RuntimeError("Focused Inspector field does not equal expected literal: " + detail)
+
+    def select_operation(self, operation: evidence.Operation):
+        self.click("inspector_properties")
+        current = self.screenshot(operation.name + "-before-scan")
+        reference = self.out / "observed" / self.fixture / "opened/desktop.original.png"
+        proof = common.unique_scan_glyph_offset(reference, current,
+            (self.geometry["X"], self.geometry["Y"]), self.raw / (operation.name + "-scan-calibration.json"))
+        for name in ("scan", "candidate", "first_axis", "property", "draft", "apply"):
+            x, y = self.base_points[name]
+            self.points[name] = (x, y + proof["offset_y"])
+            if not 0 <= self.points[name][1] < evidence.CLIENT[1]:
+                raise RuntimeError("Calibrated point outside bounded client")
+        self.click("scan")
+        self.screenshot(operation.name + "-scanned")
+        self.combo_index("candidate", operation.command)
+        self.combo_index("property", operation.property_index)
+        self.click("draft")
+        self.field_copy(operation.name + "-original", operation.before.encode())
+        before = self.screenshot(operation.name + "-before-f1")
+        self.key("F1")
+        after = self.screenshot(operation.name + "-selected-property-f1")
+        def signature(path):
+            return common.run("convert", str(path), "-crop",
+                f"252x29+{self.geometry['X'] + 921}+{self.geometry['Y'] + 67}",
+                "+repage", "-format", "%#", "info:")
+        if signature(before) == signature(after):
+            raise RuntimeError("Actual selected-property F1 did not change the dock")
+        self.click("inspector_properties")
+        self.click("draft")
+        self.key("ctrl+a")
+        self.paste(operation.after.encode(), "draft-" + operation.name)
+        self.field_copy(operation.name + "-proposed", operation.after.encode())
+
+    def exercise(self, operation: evidence.Operation):
+        original = evidence.fixture_bytes(self.fixture)
+        self.select_operation(operation)
+        self.stage(operation.name + "-draft", original, "Focused original and proposed literals copied; GUI Save before Apply")
+        self.click("apply")
+        self.stage(operation.name + "-applied", operation.patch(original), "Actual Inspector Apply; minimal byte-exact patch and GUI Save")
+        self.click("undo")
+        self.stage(operation.name + "-undo", original, "Actual common toolbar Undo; exact inverse and GUI Save")
+
+    def build(self, expected: bytes):
+        pdf = self.source.with_suffix(".pdf")
+        if pdf.exists():
+            raise RuntimeError("Unexpected preexisting PDF before native build")
+        dependencies = evidence.dependency_hashes(self.source.parent, self.fixture)
+        self.key("Escape")
+        self.key("ctrl+Return")
+        self.screenshot(self.fixture + "-native-build-started")
+        deadline = time.monotonic() + self.args.build_timeout
+        while time.monotonic() < deadline and not pdf.is_file():
+            self.alive()
+            self.click("export")
+            time.sleep(0.8)
+        if not pdf.is_file():
+            raise RuntimeError("GUI Build/current PDF Export timed out")
+        original_pdf = self.raw / (self.fixture + "-current.original.pdf")
+        original_pdf.write_bytes(pdf.read_bytes())
+        (self.raw / (self.fixture + "-built-source.original.tex")).write_bytes(self.source.read_bytes())
+        self.click("pdf_view")
+        self.screenshot(self.fixture + "-current-pdf-view")
+        self.click("console")
+        self.screenshot(self.fixture + "-console")
+        self.click("raw_log")
+        self.screenshot(self.fixture + "-actual-engine-raw-log")
+        self.clipboard(b"__PGF_ACTUAL_GUI_LOG_SENTINEL__", "log-sentinel")
+        self.click("copy_log")
+        raw_log = common.run_bytes("xclip", "-selection", "clipboard", "-o")
+        log = self.raw / (self.fixture + "-actual-gui-xelatex.log")
+        log.write_bytes(raw_log)
+        self.click("console")
+        self.stage("built", expected, "Actual GUI XeLaTeX Build/current Export/PDF view/raw-log Copy")
+        validate_xelatex_log(raw_log)
+        if re.search(rb"(?i)(nullfont|missing character:)", raw_log):
+            raise RuntimeError("Actual XeLaTeX output has nullfont/missing glyphs")
+        info = common.run("pdfinfo", str(original_pdf))
+        if not re.search(r"(?m)^Pages:\s+1$", info):
+            raise RuntimeError("Expected exactly one current PDF page")
+        fonts = common.run("pdffonts", str(original_pdf))
+        embedded = audit_embedded_fonts(fonts)
+        if self.fixture in ("formula", "external-tables") and not any("DejaVu" in row for row in embedded):
+            raise RuntimeError("Synthetic Cyrillic PDF lacks embedded DejaVu")
+        text = common.run("pdftotext", "-enc", "UTF-8", str(original_pdf), "-")
+        if self.fixture == "formula" and "Формула" not in text:
+            raise RuntimeError("Formula PDF lacks expected Cyrillic title")
+        if self.fixture == "external-tables" and "Измерения" not in text:
+            raise RuntimeError("External tables PDF lacks expected Cyrillic title")
+        for suffix, contents in (("pdfinfo.txt", info), ("pdffonts.txt", fonts), ("pdftotext.txt", text)):
+            (self.raw / (self.fixture + "-" + suffix)).write_text(contents + "\n", encoding="utf-8")
+        common.run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "120",
+                   str(original_pdf), str(self.raw / (self.fixture + "-rendered-pdf")), timeout=30)
+        recorder = self.watcher.proof(self.source, expected, dependencies)
+        self.report["builds"][self.fixture] = {"pdf_sha256": evidence.sha(original_pdf),
+            "source_sha256": evidence.digest(expected), "actual_gui_log_sha256": evidence.sha(log),
+            "recorder_proof": recorder, "scientific_visual_review": "REQUIRED"}
+
+    def run_case(self, fixture: str, *, initial=False):
+        self.open_case(fixture, initial=initial)
+        scoped = evidence.operations(fixture)
+        for operation in scoped:
+            self.exercise(operation)
+        final = evidence.fixture_bytes(fixture)
+        if scoped:
+            operation = scoped[-1]
+            self.select_operation(operation)
+            self.click("apply")
+            final = operation.patch(final)
+            self.stage("final-applied", final, "Reapply final supported literal; GUI Save")
+        # Challenge the in-memory buffer independently without touching the
+        # saved file. A no-op Open cannot satisfy the exact reopened readback.
+        challenge = b"\r\n% PGF_REOPEN_CHALLENGE_DO_NOT_SAVE"
+        self.click("source")
+        self.key("ctrl+End")
+        self.paste(challenge, "unsaved-reopen-challenge")
+        observed = self.copy_editor(fixture + "-unsaved-reopen-challenge")
+        if evidence.normalized_clipboard(observed.read_bytes()) != evidence.normalized_clipboard(final + challenge):
+            raise RuntimeError("Native unsaved reopen challenge was not present in the actual editor")
+        if self.source.read_bytes() != final:
+            raise RuntimeError("Unsaved reopen challenge unexpectedly changed the saved file")
+        self.screenshot(fixture + "-unsaved-challenge-before-real-reload")
+        self.key("ctrl+o")
+        time.sleep(0.7)
+        self.screenshot(fixture + "-explicit-reopen-dirty-decision")
+        self.event("explicit_discard_of_known_unsaved_reopen_challenge")
+        self.click("dirty_discard")
+        time.sleep(0.6)
+        self.enable_full_source_after_load()
+        self.stage("reopened", final, "Native Open explicitly discards known unsaved challenge; full-source editor Copy proves saved revision reloaded; GUI Save")
+        self.build(final)
+
+    def stop(self):
+        self.watcher.stop()
+        super().stop()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--app", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, default=evidence.SOURCE_ROOT)
+    parser.add_argument("--build-provenance", type=Path, required=True)
+    parser.add_argument("--coordinates", type=Path)
+    parser.add_argument("--build-timeout", type=float, default=180)
+    args = parser.parse_args()
+    driver = None
+    try:
+        if not 1 <= args.build_timeout <= 600:
+            raise ValueError("Build timeout must be bounded to 1..600 seconds")
+        for name in ("xdotool", "xclip", "wmctrl", "xwininfo", "import", "convert", "pdfinfo", "pdffonts", "pdftotext", "pdftoppm"):
+            if shutil.which(name) is None:
+                raise ValueError("Missing preinstalled hosted GUI prerequisite: " + name)
+        provenance = common.source_provenance(args.source_root.resolve(), args.app.resolve(strict=True))
+        receipt = evidence.read_json(args.build_provenance)
+        if receipt.get("production_binary") is not True or any(receipt.get(key) != value for key, value in provenance.items()):
+            raise ValueError("Build receipt differs from exact production source/binary")
+        evidence.prepare(args.out.resolve())
+        driver = Driver(args, provenance)
+        driver.start()
+        for index, fixture in enumerate(evidence.DEPENDENCIES):
+            driver.run_case(fixture, initial=index == 0)
+        driver.report.update(evidence.validate_all(driver.out))
+    except Exception as error:
+        if driver is None:
+            print(f"{type(error).__name__}: {error}", file=sys.stderr)
+            return 1
+        driver.capture_failure(error)
+    finally:
+        if driver is not None:
+            try:
+                driver.stop()
+            except Exception as error:
+                driver.report.update(status="FAIL", stop_error=str(error))
+            driver.report["files"] = {str(path.relative_to(driver.out)): evidence.sha(path)
+                for path in sorted(driver.out.rglob("*")) if path.is_file()
+                and not path.is_symlink() and path.name != "report.json"}
+            evidence.write_json(driver.out / "report.json", driver.report)
+    print(json.dumps(driver.report, ensure_ascii=False))
+    return 0 if driver.report["status"].startswith("PASS_AUTOMATED") else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
