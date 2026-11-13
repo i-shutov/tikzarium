@@ -5,10 +5,12 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 
 import qa_pgfplots_vertical_evidence as qa
-from qa_pgfplots_vertical_x11 import recorder_inputs, RecorderWatcher
+from qa_pgfplots_vertical_x11 import (Driver, MENU_BACKGROUND, popup_strip_bounds,
+                                     property_menu_plan, recorder_inputs, RecorderWatcher)
 
 try:
     from PIL import Image
@@ -187,6 +189,46 @@ class EngineRecorderContracts(unittest.TestCase):
             source.write_bytes(b"newer author")
             with self.assertRaisesRegex(RuntimeError, "source/dependencies changed"):
                 watcher.proof(source, b"author", qa.dependency_hashes(root, "external-tables"))
+
+
+class ActualRunOnePopupRegression(unittest.TestCase):
+    def test_actual_run01_popup_strip_bounds_and_observed_first_row(self):
+        raw = (qa.FIXTURES / "run01-candidate-popup-strip.rgb").read_bytes()
+        metadata = qa.read_json(qa.FIXTURES / "run01-candidate-popup-strip.json")
+        self.assertEqual(len(raw), 680 * 3)
+        pixels = [tuple(raw[index:index + 3]) for index in range(0, len(raw), 3)]
+        top, height = popup_strip_bounds(pixels)
+        self.assertEqual((top, height), (metadata["expected_strip_top_client"], metadata["expected_strip_height"]))
+        self.assertEqual(property_menu_plan(0, 3, top, height)["target_client_y"], metadata["observed_first_item_client_y"])
+
+    def test_candidate_uses_actual_mouse_rows_without_keyboard_focus_assumption(self):
+        clicks = []
+        fake = SimpleNamespace(points={"first_axis": (1000, 336)}, fixture="formula", out=Path("/unit"),
+            click=clicks.append, screenshot=lambda label: Path("/unit/" + label + ".png"), event=lambda *a, **k: None,
+            key=lambda chord: self.fail("Run01 unsupported popup keyboard navigation repeated: " + chord))
+        Driver.combo_index(fake, "candidate", 2)
+        self.assertEqual(clicks, ["candidate", "menu_item"])
+        self.assertEqual(fake.points["menu_item"], (1000, 396))
+
+    def test_all_property_rows_fit_the_source_grounded_viewport_after_bounded_scroll(self):
+        for count, height in ((3, 96), (15, 210)):
+            for index in range(count):
+                with self.subTest(count=count, index=index):
+                    plan = property_menu_plan(index, count, 380, height)
+                    self.assertLessEqual(plan["wheel_down_ticks"], 7)
+                    self.assertGreaterEqual(plan["target_client_y"], 386)
+                    self.assertLessEqual(plan["target_client_y"], 380 + height - 7)
+        self.assertEqual(property_menu_plan(14, 15, 380, 210)["expected_scroll_points"], 246)
+
+    def test_popup_geometry_refuses_blank_ambiguous_and_wrong_sized_menus(self):
+        with self.assertRaisesRegex(RuntimeError, "observed 0"):
+            popup_strip_bounds([(0, 0, 0)] * 680)
+        with self.assertRaisesRegex(RuntimeError, "observed 2"):
+            popup_strip_bounds([MENU_BACKGROUND] * 96 + [(0, 0, 0)] * 20 + [MENU_BACKGROUND] * 96)
+        with self.assertRaisesRegex(RuntimeError, "popup height"):
+            property_menu_plan(0, 15, 380, 96)
+        with self.assertRaisesRegex(ValueError, "outside approved"):
+            property_menu_plan(15, 15, 380, 210)
 
 
 if __name__ == "__main__":

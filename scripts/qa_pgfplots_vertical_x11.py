@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -26,6 +27,50 @@ from qa_n2_studio_x11 import expected_elf, validate_xelatex_log
 
 POINTS = {**common.POINTS, "source_full_source": (490, 174),
           "property": (1020, 353), "draft": (1020, 428)}
+MENU_ROW = 30  # production compact interact_size.y26 + item_spacing.y4
+MENU_BACKGROUND = (26, 36, 53)  # exact default Midnight popup fill
+MENU_STRIP_X = 949  # frame's left padding; outside selectable-row hover fills
+
+
+def popup_strip_bounds(pixels: list[tuple[int, int, int]]) -> tuple[int, int]:
+    """Unique exact-color popup padding run; no OCR/fuzzy/text matching.
+
+    Scope is default Midnight1180x680 only. Full original desktop images remain
+    the authoritative review evidence; this structural check only bounds input.
+    """
+    runs = []
+    start = None
+    for index, pixel in enumerate([*pixels, (-1, -1, -1)]):
+        if tuple(pixel) == MENU_BACKGROUND:
+            if start is None:
+                start = index
+        elif start is not None:
+            if index - start >= 35:
+                runs.append((start, index - start))
+            start = None
+    if len(runs) != 1:
+        raise RuntimeError(f"Expected one bounded exact Midnight popup strip, observed {len(runs)}")
+    return runs[0]
+
+
+def property_menu_plan(index: int, count: int, strip_top: int, strip_height: int) -> dict:
+    if count not in (3, 15) or not 0 <= index < count:
+        raise ValueError("Property menu choice outside approved3/15 inventory")
+    # egui0.33.3 default combo_height200; compact row26 + vertical gap4.
+    content = count * MENU_ROW - 4
+    viewport = min(content, 200)
+    # Popup frame6px each side, with two rounded-corner pixels excluded by
+    # the padding strip. Run01's actual3-row strip is96px =86+10.
+    if strip_height != viewport + 10:
+        raise RuntimeError("Actual popup height differs from scoped compact menu geometry")
+    ticks = max(0, math.ceil((index * MENU_ROW - 150) / 40))
+    scroll = min(ticks * 40, max(0, content - viewport))
+    target = strip_top + 18 + index * MENU_ROW - scroll
+    if not strip_top + 6 <= target <= strip_top + strip_height - 7:
+        raise RuntimeError("Planned property row is clipped by actual popup")
+    return {"index": index, "count": count, "strip_top": strip_top,
+            "strip_height": strip_height, "wheel_down_ticks": ticks,
+            "expected_scroll_points": scroll, "target_client_y": target}
 
 
 def recorder_inputs(data: bytes, cwd: Path) -> set[Path]:
@@ -210,15 +255,51 @@ class Driver(common.Driver):
         self.enable_full_source_after_load()
         self.stage("opened", evidence.fixture_bytes(fixture), "Native File path/Open, full-source, fresh-sentinel editor Copy and GUI Save")
 
-    def combo_index(self, name: str, index: int):
+    def popup_wheel(self, x: int, y: int, button: int, ticks: int):
+        self.owned_focus()
+        common.run("xdotool", "mousemove", "--window", self.window, str(x), str(y))
+        location = common.run("xdotool", "getmouselocation", "--shell")
+        pointer = dict(line.split("=", 1) for line in location.splitlines() if "=" in line)
+        actual = (int(pointer["X"]), int(pointer["Y"]))
+        if actual != (self.geometry["X"] + x, self.geometry["Y"] + y):
+            raise RuntimeError("Popup wheel pointer differs from actual client origin")
+        self.event("native_popup_wheel", button=button, ticks=ticks,
+                   actual_root_xy=actual, client_xy=(x, y), scoped_points_per_tick=40)
+        common.run("xdotool", "click", "--repeat", str(ticks), "--delay", "20", str(button))
+        time.sleep(0.8)
+
+    def combo_index(self, name: str, index: int, *, count: int | None = None):
         self.click(name)
-        self.screenshot(self.fixture + "-" + name + "-menu")
-        # egui's popup focus layer restricts Tab to menu entries. The subsequent
-        # exact original-field clipboard guard rejects any wrong focus/choice.
-        self.key("Tab")
-        for _ in range(index):
-            self.key("Down")
-        self.key("Return")
+        image = self.screenshot(self.fixture + "-" + name + "-menu")
+        if name == "candidate":
+            if not 0 <= index <= 2:
+                raise ValueError("Native candidate click exceeds observed first3 rows")
+            x, first = self.points["first_axis"]
+            self.points["menu_item"] = (x, first + MENU_ROW * index)
+            self.event("native_candidate_row", first_row_client_y=first, row_spacing=MENU_ROW,
+                       index=index, original_popup=str(image.relative_to(self.out)))
+        else:
+            if common.audit.Image is None:
+                raise RuntimeError("Existing Pillow required for bounded original-popup geometry")
+            with common.audit.Image.open(image) as opened:
+                pixels = opened.convert("RGB")
+                column = [pixels.getpixel((self.geometry["X"] + MENU_STRIP_X, self.geometry["Y"] + y))
+                          for y in range(evidence.CLIENT[1])]
+            top, height = popup_strip_bounds(column)
+            plan = property_menu_plan(index, count, top, height)
+            pointer_y = top + height // 2
+            self.popup_wheel(self.points[name][0], pointer_y, 4, 20)
+            self.screenshot(self.fixture + "-property-menu-reset-top")
+            if plan["wheel_down_ticks"]:
+                self.popup_wheel(self.points[name][0], pointer_y, 5, plan["wheel_down_ticks"])
+                self.screenshot(self.fixture + "-property-menu-scrolled-target")
+            self.points["menu_item"] = (self.points[name][0], plan["target_client_y"])
+            self.event("native_property_popup_plan", **plan, original_popup=str(image.relative_to(self.out)),
+                       exact_padding_strip_client_x=MENU_STRIP_X)
+        if not 0 <= self.points["menu_item"][1] < evidence.CLIENT[1]:
+            raise RuntimeError("Actual popup item outside declared client")
+        self.click("menu_item")
+        self.screenshot(self.fixture + "-" + name + "-selected")
 
     def field_copy(self, detail: str, expected: bytes):
         self.clipboard(b"__PGF_FIELD_FRESH_SENTINEL__", "field-sentinel")
@@ -247,7 +328,8 @@ class Driver(common.Driver):
         self.click("scan")
         self.screenshot(operation.name + "-scanned")
         self.combo_index("candidate", operation.command)
-        self.combo_index("property", operation.property_index)
+        self.combo_index("property", operation.property_index,
+                         count=len(evidence.AXIS_KEYS if operation.kind == "axis" else evidence.ADDPLOT_KEYS))
         self.click("draft")
         self.field_copy(operation.name + "-original", operation.before.encode())
         before = self.screenshot(operation.name + "-before-f1")

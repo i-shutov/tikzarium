@@ -1,0 +1,13 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{compat=1.18}
+
+\begin{document}
+\begin{tikzpicture}[>=Stealth]
+\begin{axis}[width=10cm,height=6cm,grid=major,xlabel={$x$},ylabel={$y$},xmin=.5,xmax=4.5]
+
+\addplot+[only marks,error bars/.cd,y dir=both,y explicit] coordinates {(1,2)+-(0,.3) (2,2.8)+-(0,.2) (3,4.1)+-(0,.4) (4,4.8)+-(0,.3)};
+\end{axis}
+\end{tikzpicture}
+\end{document}
