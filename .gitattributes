@@ -16,3 +16,5 @@ design/studio-compact-atlas/published/*.pdf binary
 insights/assets/2026-11-12-compact-recovery/*.log whitespace=-blank-at-eof
 insights/assets/2026-11-13-shared-history/*.log whitespace=-blank-at-eof
 insights/assets/2026-11-13-shared-history/baseline-ci-audit.md whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/**/*.log whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/native-attempts/** whitespace=-blank-at-eof

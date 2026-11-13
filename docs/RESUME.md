@@ -10,6 +10,8 @@
 
 **Следующий шаг:** exact-commit native SV-001 derivative → Inspector draft/Apply `150 → 151` → два Undo → byte-exact Save/Open → GUI XeLaTeX → текущий PDF Export, затем независимый просмотр originals и provenance. Physical Win10/IME/DPI/G3 и full ST-SCI остаются открытыми. Stable v1.0 и merge/release GO **не выданы**.
 
+Дополнение 13.11: настоящие native attempts cc25 (**13/3 из16 CI**) и QA1 6b3e (**12/3 из15**) подтвердили Open/typed, но не Inspector Apply/Undo/PDF; false draft candidate пойман source guard. Исправлены только устаревший Undo status и QA-coordinate/focused-field proof; повторные локальные **566 tests/fmt/clippy/build PASS**, helper20/20. [Актуальный follow-up и оригинальные аудиты](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md#follow-up-1311--два-настоящих-hosted-прогона-и-точная-граница-результата). Новый native PASS/commit здесь не заявлен.
+
 ## 2026-11-12 — Compact Studio: восстановлен точный app tree, публикация PR #189
 
 [Отчёт восстановления](../insights/2026-11-12_COMPACT_STUDIO_RECOVERY_RU.md), [атлас реального интерфейса, 6 страниц](../design/studio-compact-atlas/published/TikZarium_Studio_Compact_UI_Atlas_RU.pdf), [свежие исходные журналы](../insights/assets/2026-11-12-compact-recovery/validation.json).

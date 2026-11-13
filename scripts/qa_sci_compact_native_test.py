@@ -7,9 +7,11 @@ import tempfile
 import struct
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 import zlib
 
 import qa_sci_compact_native as qa
+import qa_sci_compact_x11 as native_driver
 
 
 class ArtifactContracts(unittest.TestCase):
@@ -229,5 +231,87 @@ class ArtifactContracts(unittest.TestCase):
         self.assertEqual(report["manual_image_pdf_review"], "NOT_RUN")
 
 
+class FocusedDraftContracts(unittest.TestCase):
+    """Offline control guards; no X11 input or synthetic desktop evidence."""
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="sci-draft-unit-only-")
+        self.root = Path(self.temporary.name)
+        self.driver = object.__new__(native_driver.Driver)
+        self.driver.out = self.root
+        self.driver.raw = self.root / "raw"
+        self.driver.raw.mkdir()
+        self.driver.source = self.root / "live.tex"
+        self.driver.source.write_bytes(b"UNIT typed source bytes")
+        self.driver.expected = {"typed": self.driver.source.read_bytes()}
+        self.driver.report = {}
+        self.driver.serial = 0
+        self.actions = []
+        self.driver.clipboard = lambda data, detail: self.actions.append(("clipboard", data))
+        self.driver.key = lambda key: self.actions.append(("key", key))
+        self.driver.event = lambda event, **fields: self.actions.append((event, fields))
+        self.driver.screenshot = lambda label: self.actions.append(("UNIT_no_desktop_capture", label))
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def test_draft_readback_requires_actual_literal_after_fresh_sentinel(self):
+        with patch.object(native_driver, "run_bytes", return_value=b"151"):
+            self.driver.prove_focused_draft(b"151")
+        self.assertEqual(self.actions[:3], [("clipboard", b"SCI_NATIVE_DRAFT_READBACK_SENTINEL"),
+                                          ("key", "ctrl+a"), ("key", "ctrl+c")])
+        proof = self.driver.report["scientific_draft_readback"]
+        self.assertTrue(proof["matches"])
+        self.assertEqual((self.root / proof["file"]).read_bytes(), b"151")
+
+    def test_wrong_focused_field_readback_is_retained_and_rejected(self):
+        with patch.object(native_driver, "run_bytes", return_value=b"150"):
+            with self.assertRaisesRegex(RuntimeError, "did not copy back"):
+                self.driver.prove_focused_draft(b"151")
+        proof = self.driver.report["scientific_draft_readback"]
+        self.assertFalse(proof["matches"])
+        self.assertEqual((self.root / proof["file"]).read_bytes(), b"150")
+
+    def test_draft_cannot_pass_when_source_changed_even_with_correct_readback(self):
+        self.driver.source.write_bytes(b"UNIT unexpected source mutation")
+        with patch.object(native_driver, "run_bytes", return_value=b"151"):
+            with self.assertRaisesRegex(RuntimeError, "Source changed"):
+                self.driver.prove_focused_draft(b"151")
+
+
+@unittest.skipIf(qa.Image is None, "Native glyph calibration requires existing Pillow")
+class ScanGlyphCalibrationContracts(unittest.TestCase):
+    """UNIT image-analysis inputs only; no GUI observation is manufactured."""
+    def test_exact_binary_mask_unique_offset_and_zero_duplicate_blank_failures(self):
+        with tempfile.TemporaryDirectory(prefix="sci-mask-unit-only-") as name:
+            root = Path(name)
+            reference = qa.Image.new("RGB", qa.TARGET_SCREEN, (32, 32, 32))
+            current = reference.copy()
+            # Deliberately asymmetric deterministic UNIT glyph pixels.
+            glyph = qa.Image.new("RGB", (128, 13), (32, 32, 32))
+            for y in range(13):
+                for x in range(128):
+                    if (x * 17 + y * 31 + x * y) % 23 < 7:
+                        glyph.putpixel((x, y), (240, 240, 240))
+            left, top = 1015 - 63, 273 - 6
+            reference.paste(glyph, (left, top))
+            current.paste(glyph, (left, top + 86))
+            ref = root / "UNIT-reference.png"
+            image = root / "UNIT-current.png"
+            reference.save(ref)
+            current.save(image)
+            proof = native_driver.unique_scan_glyph_offset(ref, image, (0, 0), root / "unique.json")
+            self.assertEqual(proof["offset_y"], 86)
+            self.assertEqual(proof["fixed_luminance_threshold"], 144)
+            self.assertEqual(proof["matching_offsets_y"], [86])
+            current.paste(glyph, (left, top + 140))
+            current.save(image)
+            with self.assertRaisesRegex(RuntimeError, "found 2 matches"):
+                native_driver.unique_scan_glyph_offset(ref, image, (0, 0), root / "duplicate.json")
+            qa.Image.new("RGB", qa.TARGET_SCREEN, (32, 32, 32)).save(image)
+            with self.assertRaisesRegex(RuntimeError, "found 0 matches"):
+                native_driver.unique_scan_glyph_offset(ref, image, (0, 0), root / "missing.json")
+            qa.Image.new("RGB", qa.TARGET_SCREEN, (32, 32, 32)).save(ref)
+            with self.assertRaisesRegex(RuntimeError, "blank or lacks meaningful"):
+                native_driver.unique_scan_glyph_offset(ref, image, (0, 0), root / "blank.json")
 if __name__ == "__main__":
     unittest.main()

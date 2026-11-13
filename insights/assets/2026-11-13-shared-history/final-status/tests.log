@@ -1,0 +1,734 @@
+   Compiling tikzarium-app v1.0.0-rc.1 (/workspace/scratch/bd022a30f859/recovered/source/crates/tikzarium-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.60s
+     Running unittests src/bin/n1-authoring-proof.rs (target/debug/deps/n1_authoring_proof-096f535cdf3cc154)
+
+running 18 tests
+test tikz_authoring::tests::ambiguous_picture_and_invalid_parameter_leave_source_unchanged ... ok
+test tikz_authoring::tests::b20_tampered_compact_payload_and_unknown_schema_fail_closed ... ok
+test tikz_authoring::tests::hand_edits_or_duplicate_objects_do_not_gain_write_authority ... ok
+test tikz_authoring::tests::b38_shared_declaration_edit_and_opaque_preamble_fail_closed ... ok
+test tikz_authoring::tests::b20_legacy_hex_reopens_without_reformatting_and_upgrades_only_on_real_edit ... ok
+test tikz_authoring::tests::library_activation_is_explicit_and_reversible ... ok
+test tikz_authoring::tests::manual_source_typing_immediately_revokes_visual_undo_and_selection ... ok
+test tikz_authoring::tests::generated_command_survives_document_save_and_reopen_using_real_document_api ... ok
+test tikz_authoring::tests::b38_connect_disconnect_four_libraries_preserves_crlf_macro_and_undo ... ok
+test tikz_authoring::tests::n2_package_and_arrows_library_are_one_visible_undoable_crlf_patch ... ok
+test tikz_authoring::tests::n3_completion_is_one_undoable_source_patch_and_stale_edits_fail ... ok
+test tikz_authoring::tests::n2_unknown_preamble_never_claims_loaded_or_overwrites_source ... ok
+test tikz_authoring::tests::node_text_is_escaped_and_math_is_explicit_from_same_catalogue ... ok
+test tikz_authoring::tests::parameter_change_and_two_undos_preserve_original_crlf_unicode ... ok
+test tikz_authoring::tests::all_six_app_gestures_use_the_c_generator_and_roundtrip ... ok
+test tikz_authoring::tests::n2_direct_imports_stay_confirmed_after_fontspec_and_opaque_macro ... ok
+test tikz_authoring::tests::scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack ... ok
+test tikz_authoring::tests::b20_compact_readable_metadata_survives_real_document_reopen_and_undo ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/tikzarium_app-ad254da7be96314f)
+
+running 220 tests
+test build_save_dialog::tests::w3_scratch_build_requires_explicit_destination_and_rejects_other_files ... ok
+test build_resources::tests::mismatched_memory_source_missing_snapshot_path_and_incomplete_fls_fail_closed ... ok
+test build_resources::tests::explicit_recheck_invalidates_same_length_edit_or_missing_input ... ok
+test build_resources::tests::post_build_bytes_alone_do_not_authorize_export_or_become_verified_on_recheck ... ok
+test build_resources::tests::external_inputs_are_explicitly_unverified_and_not_local_hash_rows ... ok
+test font_proof::tests::malicious_family_is_rejected_before_spawning_tex ... ok
+test build_resources::tests::matching_snapshot_reports_author_and_project_data_hashes ... ok
+test font_proof::tests::missing_engine_does_not_claim_font_pass ... ok
+test build_resources::tests::selected_common_root_verifies_parent_data_on_first_build ... ok
+test pdf_navigation::tests::page_count_requires_exact_positive_pages_field ... ok
+test pdf_navigation::tests::navigation_never_guesses_unknown_or_out_of_range_pages ... ok
+test pdf_navigation::tests::zero_page_is_rejected_before_any_tool_invocation ... ok
+test preview_image::tests::b37_small_preview_does_not_allocate_invalid_lod ... ok
+test preview_image::tests::compressed_file_budget_checks_bounds_without_large_allocations ... ok
+test pdf_navigation::tests::resource_budgets_fail_closed_at_known_boundaries ... ok
+test preview_image::tests::fail_closed_on_decompression_bomb_header ... ok
+test preview_image::tests::malicious_and_truncated_header_is_rejected ... ok
+test project_scope::tests::common_parent_accepts_scientific_sibling_data_without_rewriting_source ... ok
+test project_scope::tests::source_symlink_cannot_silently_escape_selected_root ... ok
+test preview_image::tests::valid_rgba_png_decodes_without_changing_pixels ... ok
+test scientific_inspector::tests::all_fifteen_properties_map_to_reviewed_keys_and_kind_specific_lists ... ok
+test project_scope::tests::unrelated_missing_or_file_roots_are_rejected ... ok
+test elevated_user_warning_ui_tests::warning_renders_in_actual_egui_frame_without_console ... ok
+test build_save_dialog::tests::w3_real_egui_save_build_button_requires_click_and_preserves_utf8_crlf ... ok
+test scientific_inspector::tests::real_sarov_inspector_selection_apply_and_single_shared_undo ... ok
+test scientific_inspector::tests::real_sv003_axis_plot_style_edit_preserves_foreach_and_is_one_shared_undo ... ok
+test scientific_inspector::tests::unicode_label_edit_preserves_crlf_and_undo_restores_exact_bytes ... ok
+test scientific_resource_view::tests::resource_navigation_uses_current_revision_and_preserves_source ... ok
+test source_editing::tests::stale_revision_cannot_restore_text_from_another_document_or_external_patch ... ok
+test source_editing::tests::text_history_undoes_across_preamble_body_and_split_boundary_changes ... ok
+test source_editing::tests::unicode_shared_byte_prefix_and_new_edit_after_undo_are_safe ... ok
+test source_editing::tests::view_edits_and_native_replace_cannot_touch_adjacent_unicode_crlf_sections ... ok
+test scientific_inspector::tests::revision_change_discards_candidates_and_stale_f1_is_rejected ... ok
+test source_editor::tests::external_jump_synchronizes_status_before_next_editor_frame ... ok
+test b42_file_popup_tests::b42_file_textedit_click_keeps_popup_open_then_real_open_action ... ok
+test scientific_inspector::tests::rendering_idle_inspector_does_not_mutate_source ... ok
+test scientific_inspector::tests::studio_f1_help_uses_shared_property_spec_without_writing_tex ... ok
+test source_editor::tests::real_ime_escape_does_not_close_find_until_composition_finishes ... ok
+test source_editor::tests::real_egui_find_goto_escape_preserve_unicode_crlf_and_focus ... ok
+test source_editor::tests::real_native_replace_all_one_undo_redo_then_document_fence ... ok
+test source_editor::tests::ime_preedit_enter_and_commit_enter_do_not_navigate_or_accept_goto ... ok
+test source_fonts::tests::discovers_fontspec_and_unicode_math_without_comment_false_positives ... ok
+test source_fonts::tests::handles_escaped_percent_multiline_nested_options_and_crlf ... ok
+test source_fonts::tests::ignores_incomplete_and_escaped_commands ... ok
+test source_editor::tests::same_frame_find_text_and_enter_selects_first_match_once ... ok
+test source_highlight::tests::all_syntax_and_metadata_colors_remain_readable_on_each_editor_theme ... ok
+test source_highlight::tests::environment_names_are_literal_utf8_slices_without_inventing_macro_expansion ... ok
+test source_editor::tests::wrapped_gutter_has_one_number_per_physical_line_including_trailing_empty ... ok
+test source_editor::tests::stale_ranges_are_refreshed_before_unicode_paint_and_preview_is_revoked_on_open ... ok
+test source_highlight::tests::escape_percent_and_verbatim_never_turn_into_comments ... ok
+test source_highlight::tests::escaped_percent_parity_keeps_real_comment_boundaries_after_crlf ... ok
+test source_highlight::tests::explicit_catcode_changes_make_remaining_unknown_scope_plain_and_editable ... ok
+test source_highlight::tests::generated_marker_dimmed_but_user_comment_remains_user_comment ... ok
+test source_highlight::tests::inline_verb_is_opaque_with_unicode_delimiters_and_recovers_at_crlf ... ok
+test source_highlight::tests::literal_environments_keep_contents_opaque_and_resume_after_the_terminator ... ok
+test source_highlight::tests::local_cpu_highlight_cost ... ignored, manual local CPU benchmark; allocates 100k-line stress fixtures
+test source_highlight::tests::lookalike_ownership_without_valid_command_or_json_is_not_metadata ... ok
+test source_highlight::tests::nested_unicode_math_and_incomplete_documents_are_all_editable ... ok
+test source_highlight::tests::original_6_geometry_metadata_stays_selectable_and_visible ... ok
+test source_highlight::tests::ownership_requires_the_real_generated_command_and_string_values ... ok
+test source_highlight::tests::source_bytes_offsets_and_layout_text_are_untouched ... ok
+test source_highlight::tests::symbolic_paths_and_dimensions_have_distinct_exact_spans ... ok
+test source_navigation::tests::literal_replacement_preserves_unrelated_bytes_and_rejects_stale ... ok
+test source_navigation::tests::nonoverlap_empty_and_single_match ... ok
+test source_navigation::tests::physical_lines_unicode_crlf_and_trailing_empty ... ok
+test source_sections::tests::byte_char_offsets_and_first_body_line_track_unicode_crlf_edits ... ok
+test source_sections::tests::comments_and_control_symbols_do_not_activate_opaque_commands ... ok
+test source_sections::tests::escaped_brace_does_not_escape_subsequent_structural_braces ... ok
+test source_sections::tests::fragments_duplicates_and_unbalanced_groups_stay_whole ... ok
+test source_sections::tests::ignores_comments_escaped_percent_and_macro_group_markers ... ok
+test source_sections::tests::literal_macro_conditional_and_tokenization_contexts_stay_whole ... ok
+test source_editor::tests::actual_horizontal_scroll_keeps_gutter_fixed_and_navigation_reveals_match ... ok
+test source_sections::tests::non_standalone_markers_are_fragments ... ok
+test source_sections::tests::opening_line_requires_a_terminator_and_lone_cr_stays_whole ... ok
+test source_sections::tests::quickstart_and_complete_f14_document_split_at_the_opening_line ... ok
+test source_sections::tests::simple_braced_parameterless_definitions_are_navigable ... ok
+test source_sections::tests::unicode_crlf_section_edits_preserve_the_other_section_bytes ... ok
+test source_sections::tests::malformed_and_unicode_combinations_never_lose_bytes ... ok
+test source_workspace_tests::empty_body_boundary_at_document_eof_still_belongs_to_body ... ok
+test source_workspace_tests::body_selection_caret_goto_and_gutter_use_full_unicode_crlf_document_coordinates ... ok
+test pdf_navigation::tests::poppler_worker_captures_stdout_and_stderr_without_pipes ... ok
+test source_workspace_tests::exact_fold_boundary_navigation_is_owned_by_body_even_with_preamble_open ... ok
+test source_highlight::tests::galley_idle_reuses_arc_and_invalidates_source_presentation_dpi_and_font_atlas ... ok
+test source_workspace_tests::full_shell_empty_body_owns_boundary_focus_and_native_input ... ok
+test source_workspace_tests::full_shell_typing_after_preamble_eof_migrates_to_body_without_reversing_input ... ok
+test source_highlight::tests::large_source_spans_do_not_multiply_per_character ... ok
+test source_workspace_tests::native_body_typing_and_selection_replace_preserve_every_preamble_byte ... ok
+test source_workspace_tests::mixed_shell_transfers_multiple_authored_inverses_in_order_without_retaining_legacy_history ... ok
+test source_workspace_tests::queued_text_then_undo_reverses_new_typing_before_any_prior_transaction ... ok
+test source_workspace_tests::native_edits_share_undo_redo_across_views_and_delimiter_deletion ... ok
+test source_workspace_tests::queued_undo_text_undo_keeps_native_order_and_restores_undo_caret_before_typing ... ok
+test source_workspace_tests::real_body_horizontal_scroll_moves_code_but_keeps_global_gutter_fixed ... ok
+test split_layout_tests::actual_egui_frames_keep_source_inspector_and_guide_at_minimum_and_resized_widths ... ok
+test source_workspace_tests::mixed_shell_visual_insert_shared_undo_cancels_held_guide_without_ghost_or_double_dispatch ... ok
+test split_layout_tests::b21_source_navigation_targets_actual_textedit_galley_for_long_unicode_lines ... ok
+test split_layout_tests::b31_compact_pdf_fit_is_below_twenty_percent_and_manual_zoom_is_continuous ... ok
+test split_layout_tests::b31_fit_width_respects_actual_center_width_without_false_fit ... ok
+test split_layout_tests::b26_fit_page_button_remains_selected_on_resize_and_new_pdf_raster ... ok
+test source_workspace_tests::mixed_shell_inspector_then_typing_undo_redo_save_open_and_revision_fences ... ok
+test split_layout_tests::b25_fit_page_uses_real_remaining_viewport_not_canvas_width_or_provisional_guide ... ok
+test split_layout_tests::b32_pending_open_protects_the_target_and_other_existing_files ... ok
+test split_layout_tests::b32_new_document_fences_old_native_textedit_history ... ok
+test split_layout_tests::b33_typed_save_rejects_existing_open_target_and_accepts_new_utf8_file ... ok
+test source_workspace_tests::mixed_shell_typing_inspector_apply_two_undo_and_redo_preserve_exact_source ... ok
+test split_layout_tests::b31_real_egui_split_keeps_editable_source_and_fits_pdf_after_guide ... ok
+test split_layout_tests::b32_real_egui_pending_open_click_rejects_target_then_saves_elsewhere ... ok
+test split_layout_tests::b31_x11_resize_refit_repaints_stale_zoom_readout_with_source_untouched ... ok
+test split_layout_tests::b34_dirty_open_modal_blocks_background_pointer_and_escape_cancels ... ok
+test split_layout_tests::b34_focused_source_textedit_does_not_accept_keys_behind_modal ... ok
+test split_layout_tests::b35_rejected_save_is_legible_inside_real_egui_modal ... ok
+test split_layout_tests::b42_dirty_open_scratch_preserves_safe_destination_on_real_egui_save_click ... ok
+test split_layout_tests::b40_native_source_undo_never_resurrects_text_across_visual_transactions ... ok
+test split_layout_tests::b43_after_dock_source_budget_reserves_live_canvas ... ok
+test split_layout_tests::b37_real_egui_pdf_lod_route_preserves_source_and_truthful_fit_feedback ... ok
+test split_layout_tests::b42_studio_save_icon_event_persists_default_utf8_scratch_without_overwriting ... ok
+test split_layout_tests::b43_real_egui_source_click_dismisses_palette_without_touching_tex ... ok
+test split_layout_tests::n3_help_evidence_rows_do_not_promote_unknown_and_separate_all_five_states ... ok
+test split_layout_tests::n5_packaged_startup_fits_compact_desktop_with_window_manager_chrome ... ok
+test split_layout_tests::r1_close_save_target_is_safe_for_unicode_and_occupied_scratch ... ok
+test split_layout_tests::r1_native_close_event_requires_confirmed_save_or_explicit_discard ... ok
+test split_layout_tests::r2_scaled_desktop_fit_preserves_dpi_and_compact_workspace ... ok
+test split_layout_tests::r3_native_picker_path_is_not_permission_to_overwrite_unrelated_tex ... ok
+test split_layout_tests::r3_pdf_export_is_complete_unicode_and_never_overwrites_existing_bytes ... ok
+test split_layout_tests::w3_build_blocker_is_visible_by_toolbar_instead_of_bottom_only ... ok
+test split_layout_tests::b36_compact_pdf_focus_switch_uses_real_egui_frames_and_keeps_tikz_source ... ok
+test split_layout_tests::b43_egui_soft_wrap_preserves_opaque_unicode_crlf_and_preferences ... ok
+test studio_ui::tests::compact_group_rail_is_bounded_with_expansion_as_floating_overlay ... ok
+test split_layout_tests::b42_status_is_full_width_and_does_not_occlude_editable_source_or_guide ... ok
+test split_layout_tests::n3_egui_f1_shows_source_caret_parameter_without_source_change ... ok
+test studio_ui::tests::b42_real_help_toolbar_pointer_and_f1_toggle_the_visible_dock ... ok
+test studio_ui::tests::disabled_icon_button_response_reports_disabled_and_ignores_pointer ... ok
+test studio_ui::tests::groups_cover_all_native_c_tools_once_and_expose_future_adapters ... ok
+test studio_ui::tests::disabled_direct_rail_buttons_do_not_select_or_mutate_source ... ok
+test studio_ui::tests::icon_tooltips_and_dock_types_do_not_duplicate_document_state ... ok
+test studio_ui::tests::palette_follows_resized_source_and_stays_beyond_adjacent_tool_rail ... ok
+test studio_ui::tests::palette_without_tool_rail_follows_current_source_edge ... ok
+test studio_ui::tests::icon_geometry_does_not_change_source_in_egui_frame ... ok
+test studio_ui::tests::compact_toolbar_icons_skip_disabled_actions_and_report_named_keyboard_activation ... ok
+test studio_ui::tests::real_f1_key_frames_toggle_visible_studio_dock_without_editing_tex ... ok
+test studio_ui::tests::ux2_direct_tool_selection_keeps_f1_and_properties_in_sync ... ok
+test tex_discovery::tests::dropped_window_does_not_panic_when_discovery_finishes ... ok
+test tex_discovery::tests::pending_snapshot_never_claims_installed_or_missing ... ok
+test studio_ui::tests::direct_rail_buttons_activate_with_enter_and_space_without_source_edits ... ok
+test tex_discovery::tests::blocked_discovery_does_not_block_gui_thread_or_polling ... ok
+test tikz_authoring::tests::ambiguous_picture_and_invalid_parameter_leave_source_unchanged ... ok
+test tikz_authoring::tests::all_six_app_gestures_use_the_c_generator_and_roundtrip ... ok
+test tikz_authoring::tests::b20_legacy_hex_reopens_without_reformatting_and_upgrades_only_on_real_edit ... ok
+test tikz_authoring::tests::b20_tampered_compact_payload_and_unknown_schema_fail_closed ... ok
+test tikz_authoring::tests::b38_shared_declaration_edit_and_opaque_preamble_fail_closed ... ok
+test tikz_authoring::tests::generated_command_survives_document_save_and_reopen_using_real_document_api ... ok
+test tikz_authoring::tests::b38_connect_disconnect_four_libraries_preserves_crlf_macro_and_undo ... ok
+test tikz_authoring::tests::hand_edits_or_duplicate_objects_do_not_gain_write_authority ... ok
+test tikz_authoring::tests::library_activation_is_explicit_and_reversible ... ok
+test tikz_authoring::tests::manual_source_typing_immediately_revokes_visual_undo_and_selection ... ok
+test tikz_authoring::tests::b20_compact_readable_metadata_survives_real_document_reopen_and_undo ... ok
+test tikz_authoring::tests::n2_package_and_arrows_library_are_one_visible_undoable_crlf_patch ... ok
+test tikz_authoring::tests::n3_completion_is_one_undoable_source_patch_and_stale_edits_fail ... ok
+test tikz_authoring::tests::n2_unknown_preamble_never_claims_loaded_or_overwrites_source ... ok
+test tikz_authoring::tests::parameter_change_and_two_undos_preserve_original_crlf_unicode ... ok
+test tikz_authoring::tests::node_text_is_escaped_and_math_is_explicit_from_same_catalogue ... ok
+test tikz_authoring::tests::scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack ... ok
+test tikz_authoring::tests::n2_direct_imports_stay_confirmed_after_fontspec_and_opaque_macro ... ok
+test studio_ui::tests::ux2_six_native_tools_select_in_one_direct_rail_click_without_tex_mutation ... ok
+test studio_ui::tests::b42_rawinput_group_and_six_native_tool_icons_use_production_handlers ... ok
+test tikz_canvas::tests::actual_egui_textedit_typing_revokes_old_visual_undo_immediately ... ok
+test tikz_canvas::tests::actual_egui_click_and_f1_are_distinct_from_drag_and_pdf_preview ... ok
+test tikz_canvas::tests::alt_pointer_event_selects_existing_marker_for_c_patch_and_undo ... ok
+test tikz_canvas::tests::alt_drag_cannot_insert_even_if_alt_is_released_before_mouse ... ok
+test tikz_canvas::tests::arrow_gesture_requires_explicit_c_n2_import_then_undoes_both_transactions ... ok
+test tikz_canvas::tests::b22_escape_during_alt_select_keeps_source_and_ownership_unchanged ... ok
+test tikz_canvas::tests::b23_missing_c_adapter_or_unverified_project_imports_still_block_source_writes ... ok
+test pdf_navigation::tests::poppler_worker_kills_hung_process_and_reports_not_checked ... ok
+test tikz_canvas::tests::actual_egui_pointer_frames_create_six_c_catalogue_commands_and_preserve_source ... ok
+test tikz_canvas::tests::b24_switching_tool_during_armed_pointer_keeps_release_inert ... ok
+test scientific_inspector::tests::compact_inspector_stays_within_225_and_260_pixel_panels_for_every_axis_option ... ok
+test tikz_canvas::tests::actual_palette_click_then_six_gestures_source_help_reopen_parameter_and_undo ... ok
+test tikz_canvas::tests::b30_ctrl_z_with_no_visual_history_cancels_a_held_gesture ... ok
+test tikz_canvas::tests::b24_manual_utf8_source_edit_cancels_held_click_and_drag_before_mouse_up ... ok
+test tikz_canvas::tests::b41_compact_real_inspector_bar_pointer_apply_stays_above_scroll ... ok
+test tikz_canvas::tests::b41_real_egui_inspector_parameter_edit_pinned_apply_undo_and_reopen ... ok
+test tikz_canvas::tests::b22_escape_cancels_click_and_drag_on_release_or_before_release_all_six_tools ... ok
+test tikz_canvas::tests::c_n2_duplicate_import_sites_remain_individually_selectable ... ok
+test tikz_canvas::tests::c_n2_project_load_status_is_three_way_in_the_inspector ... ok
+test tikz_canvas::tests::c_n2_verified_import_links_use_exact_utf8_source_sites_and_keep_source_unchanged ... ok
+test tikz_canvas::tests::b42_studio_six_pointer_gestures_reopen_and_undo_use_actual_egui_frames ... ok
+test tikz_canvas::tests::b23_external_tex_absence_warns_but_does_not_block_native_c_source_gestures ... ok
+test tikz_canvas::tests::f1_pinned_c_help_is_visible_without_scrolling_and_never_edits_source ... ok
+test tikz_canvas::tests::gesture_mapping_uses_explicit_cm_not_fake_pdf_coordinates ... ok
+test tikz_canvas::tests::f1_without_active_tool_after_reopen_shows_russian_guidance_in_real_egui_frame ... ok
+test tikz_canvas::tests::keyboard_visual_undo_uses_real_frames_without_stealing_textedit_undo ... ok
+test tikz_canvas::tests::overlapping_owned_anchors_refuse_guessed_selection ... ok
+test tikz_canvas::tests::parameter_help_distinguishes_editor_presets_from_tex_defaults ... ok
+test tikz_canvas::tests::releasing_outside_guide_never_authors_unbounded_offscreen_coordinates ... ok
+test tikz_canvas::tests::inspector_undo_button_uses_real_egui_pointer_and_focuses_source ... ok
+test tikz_libraries::tests::b38_capability_axes_remain_independent_and_help_is_from_c ... ok
+test tikz_libraries::tests::b38_egui_frame_with_opaque_source_never_mutates_bytes ... ok
+test tikz_canvas::tests::scientific_studio_compact_labels_preserve_authoritative_source ... ok
+test ui_state::tests::command_shortcuts_respect_platform_command_and_shift ... ok
+test ui_state::tests::failed_build_diagnostics_never_jump_to_an_included_file ... ok
+test ui_state::tests::last_good_pdf_never_masquerades_as_current_after_failure_or_edit ... ok
+test ui_state::tests::navigation_counts_unicode_characters_not_utf8_bytes ... ok
+test ui_state::tests::real_x11_rapid_ctrl_o_uses_keydown_modifiers_not_final_frame_state ... ok
+test ui_state::tests::source_canvas_and_split_have_explicit_boundaries ... ok
+test ui_state::tests::zoom_clamps_and_drops_non_finite_inputs ... ok
+test ui_theme::tests::default_compact_metrics_keep_body_text_readable_in_every_theme ... ok
+test ui_theme::tests::explicit_theme_before_first_frame_survives_opposite_and_changing_system_theme ... ok
+test ui_theme::tests::preferences_default_and_legacy_partial_data ... ok
+test tikz_canvas::tests::escape_cancels_real_egui_drag_without_source_patch_then_allows_next_gesture ... ok
+test ui_theme::tests::source_font_size_is_additive_and_never_changes_figure_fonts ... ok
+test ui_theme::tests::themes_are_stable_and_distinct ... ok
+test ui_theme::tests::themes_change_only_egui_not_xelatex_figure_source ... ok
+test ui_theme::tests::ux2_four_native_theme_tokens_have_readable_surfaces_and_primary_actions ... ok
+test preview_image::tests::b37_thin_line_coverage_survives_cpu_prefilter_for_compact_pdf ... ok
+test tikz_canvas::tests::b28_held_visual_undo_preempts_auto_focused_source_and_consumes_key ... ok
+test ui_theme::tests::real_menu_pointer_events_reach_all_themes_in_studio_and_classical_toolbar ... ok
+test tikz_canvas::tests::b30_same_frame_undo_and_mouse_press_cannot_insert_a_ghost_on_release ... ok
+test tikz_libraries::tests::i56_four_library_egui_pointer_connect_disconnect_keeps_details_open_and_undo_safe ... ok
+test source_highlight::tests::cache_reuses_tokens_for_idle_and_presentation_but_detects_same_allocation_edits ... ok
+test tikz_canvas::tests::b27_keyboard_undo_cancels_held_guide_capture_without_ghost_insertion ... ok
+test tikz_canvas::tests::b25_pointer_loss_or_window_focus_loss_never_commits_a_held_gesture ... ok
+
+test result: ok. 219 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+     Running unittests src/bin/tikzarium-qa-control.rs (target/debug/deps/tikzarium_qa_control-cc3f0ff8d6b387bf)
+
+running 80 tests
+test studio_ui::tests::compact_group_rail_is_bounded_with_expansion_as_floating_overlay ... ok
+test studio_ui::tests::disabled_icon_button_response_reports_disabled_and_ignores_pointer ... ok
+test studio_ui::tests::compact_toolbar_icons_skip_disabled_actions_and_report_named_keyboard_activation ... ok
+test api_tests::stale_source_and_unrelated_file_overwrite_are_rejected ... ok
+test studio_ui::tests::icon_tooltips_and_dock_types_do_not_duplicate_document_state ... ok
+test studio_ui::tests::palette_follows_resized_source_and_stays_beyond_adjacent_tool_rail ... ok
+test studio_ui::tests::palette_without_tool_rail_follows_current_source_edge ... ok
+test studio_ui::tests::icon_geometry_does_not_change_source_in_egui_frame ... ok
+test studio_ui::tests::groups_cover_all_native_c_tools_once_and_expose_future_adapters ... ok
+test studio_ui::tests::disabled_direct_rail_buttons_do_not_select_or_mutate_source ... ok
+test api_tests::all_six_semantic_actions_are_real_source_transactions ... ok
+test studio_ui::tests::real_f1_key_frames_toggle_visible_studio_dock_without_editing_tex ... ok
+test tikz_authoring::tests::ambiguous_picture_and_invalid_parameter_leave_source_unchanged ... ok
+test studio_ui::tests::ux2_direct_tool_selection_keeps_f1_and_properties_in_sync ... ok
+test tikz_authoring::tests::b20_legacy_hex_reopens_without_reformatting_and_upgrades_only_on_real_edit ... ok
+test tikz_authoring::tests::b20_tampered_compact_payload_and_unknown_schema_fail_closed ... ok
+test tikz_authoring::tests::b38_shared_declaration_edit_and_opaque_preamble_fail_closed ... ok
+test tikz_authoring::tests::all_six_app_gestures_use_the_c_generator_and_roundtrip ... ok
+test studio_ui::tests::b42_real_help_toolbar_pointer_and_f1_toggle_the_visible_dock ... ok
+test tikz_authoring::tests::hand_edits_or_duplicate_objects_do_not_gain_write_authority ... ok
+test tikz_authoring::tests::generated_command_survives_document_save_and_reopen_using_real_document_api ... ok
+test tikz_authoring::tests::b38_connect_disconnect_four_libraries_preserves_crlf_macro_and_undo ... ok
+test tikz_authoring::tests::manual_source_typing_immediately_revokes_visual_undo_and_selection ... ok
+test tikz_authoring::tests::library_activation_is_explicit_and_reversible ... ok
+test tikz_authoring::tests::n2_package_and_arrows_library_are_one_visible_undoable_crlf_patch ... ok
+test tikz_authoring::tests::n2_unknown_preamble_never_claims_loaded_or_overwrites_source ... ok
+test tikz_authoring::tests::n3_completion_is_one_undoable_source_patch_and_stale_edits_fail ... ok
+test tikz_authoring::tests::node_text_is_escaped_and_math_is_explicit_from_same_catalogue ... ok
+test tikz_authoring::tests::parameter_change_and_two_undos_preserve_original_crlf_unicode ... ok
+test tikz_authoring::tests::n2_direct_imports_stay_confirmed_after_fontspec_and_opaque_macro ... ok
+test tikz_authoring::tests::scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack ... ok
+test tikz_authoring::tests::b20_compact_readable_metadata_survives_real_document_reopen_and_undo ... ok
+test studio_ui::tests::direct_rail_buttons_activate_with_enter_and_space_without_source_edits ... ok
+test tikz_canvas::tests::actual_egui_textedit_typing_revokes_old_visual_undo_immediately ... ok
+test tikz_canvas::tests::actual_egui_click_and_f1_are_distinct_from_drag_and_pdf_preview ... ok
+test studio_ui::tests::ux2_six_native_tools_select_in_one_direct_rail_click_without_tex_mutation ... ok
+test tikz_canvas::tests::alt_pointer_event_selects_existing_marker_for_c_patch_and_undo ... ok
+test tikz_canvas::tests::alt_drag_cannot_insert_even_if_alt_is_released_before_mouse ... ok
+test tikz_canvas::tests::arrow_gesture_requires_explicit_c_n2_import_then_undoes_both_transactions ... ok
+test studio_ui::tests::b42_rawinput_group_and_six_native_tool_icons_use_production_handlers ... ok
+test tikz_canvas::tests::b22_escape_during_alt_select_keeps_source_and_ownership_unchanged ... ok
+test tikz_canvas::tests::b24_switching_tool_during_armed_pointer_keeps_release_inert ... ok
+test tikz_canvas::tests::b23_missing_c_adapter_or_unverified_project_imports_still_block_source_writes ... ok
+test api_tests::virtual_window_reports_actual_native_egui_widget_rectangles ... ok
+test tikz_canvas::tests::actual_egui_pointer_frames_create_six_c_catalogue_commands_and_preserve_source ... ok
+test tikz_canvas::tests::actual_palette_click_then_six_gestures_source_help_reopen_parameter_and_undo ... ok
+test tikz_canvas::tests::b30_ctrl_z_with_no_visual_history_cancels_a_held_gesture ... ok
+test tikz_canvas::tests::b41_real_egui_inspector_parameter_edit_pinned_apply_undo_and_reopen ... ok
+test tikz_canvas::tests::b41_compact_real_inspector_bar_pointer_apply_stays_above_scroll ... ok
+test tikz_canvas::tests::c_n2_duplicate_import_sites_remain_individually_selectable ... ok
+test tikz_canvas::tests::c_n2_project_load_status_is_three_way_in_the_inspector ... ok
+test tikz_canvas::tests::c_n2_verified_import_links_use_exact_utf8_source_sites_and_keep_source_unchanged ... ok
+test tikz_canvas::tests::escape_cancels_real_egui_drag_without_source_patch_then_allows_next_gesture ... ok
+test tikz_canvas::tests::b42_studio_six_pointer_gestures_reopen_and_undo_use_actual_egui_frames ... ok
+test tikz_canvas::tests::f1_without_active_tool_after_reopen_shows_russian_guidance_in_real_egui_frame ... ok
+test tikz_canvas::tests::gesture_mapping_uses_explicit_cm_not_fake_pdf_coordinates ... ok
+test tikz_canvas::tests::f1_pinned_c_help_is_visible_without_scrolling_and_never_edits_source ... ok
+test tikz_canvas::tests::keyboard_visual_undo_uses_real_frames_without_stealing_textedit_undo ... ok
+test tikz_canvas::tests::overlapping_owned_anchors_refuse_guessed_selection ... ok
+test tikz_canvas::tests::parameter_help_distinguishes_editor_presets_from_tex_defaults ... ok
+test tikz_canvas::tests::releasing_outside_guide_never_authors_unbounded_offscreen_coordinates ... ok
+test tikz_canvas::tests::inspector_undo_button_uses_real_egui_pointer_and_focuses_source ... ok
+test tikz_libraries::tests::b38_capability_axes_remain_independent_and_help_is_from_c ... ok
+test tikz_libraries::tests::b38_egui_frame_with_opaque_source_never_mutates_bytes ... ok
+test tikz_canvas::tests::scientific_studio_compact_labels_preserve_authoritative_source ... ok
+test ui_state::tests::command_shortcuts_respect_platform_command_and_shift ... ok
+test ui_state::tests::failed_build_diagnostics_never_jump_to_an_included_file ... ok
+test ui_state::tests::last_good_pdf_never_masquerades_as_current_after_failure_or_edit ... ok
+test ui_state::tests::navigation_counts_unicode_characters_not_utf8_bytes ... ok
+test ui_state::tests::real_x11_rapid_ctrl_o_uses_keydown_modifiers_not_final_frame_state ... ok
+test ui_state::tests::source_canvas_and_split_have_explicit_boundaries ... ok
+test ui_state::tests::zoom_clamps_and_drops_non_finite_inputs ... ok
+test tikz_canvas::tests::b24_manual_utf8_source_edit_cancels_held_click_and_drag_before_mouse_up ... ok
+test tikz_canvas::tests::b30_same_frame_undo_and_mouse_press_cannot_insert_a_ghost_on_release ... ok
+test tikz_canvas::tests::b23_external_tex_absence_warns_but_does_not_block_native_c_source_gestures ... ok
+test tikz_canvas::tests::b22_escape_cancels_click_and_drag_on_release_or_before_release_all_six_tools ... ok
+test tikz_libraries::tests::i56_four_library_egui_pointer_connect_disconnect_keeps_details_open_and_undo_safe ... ok
+test tikz_canvas::tests::b28_held_visual_undo_preempts_auto_focused_source_and_consumes_key ... ok
+test tikz_canvas::tests::b27_keyboard_undo_cancels_held_guide_capture_without_ghost_insertion ... ok
+test tikz_canvas::tests::b25_pointer_loss_or_window_focus_loss_never_commits_a_held_gesture ... ok
+
+test result: ok. 80 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+     Running unittests src/main.rs (target/debug/deps/tikzarium_cli-07fcfad30441411b)
+
+running 8 tests
+test tests::parses_build_options_in_either_order_and_rejects_bad_arguments ... ok
+test tests::never_overwrite_input_or_non_pdf_with_compiled_bytes ... ok
+test tests::atomic_pdf_write_does_not_mutate_source ... ok
+test tests::refuses_unverified_artifact_without_changing_existing_destination ... ok
+test help::tests::lists_all_native_tools_libraries_and_parameters_offline ... ok
+test help::tests::exact_parameter_reports_provenance_not_an_invented_tikz_default ... ok
+test help::tests::exact_tool_and_library_explain_and_search_full_russian_text ... ok
+test help::tests::unicode_search_and_unknown_entries_are_honest ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/doctor_unix.rs (target/debug/deps/doctor_unix-e81d6e3520f43a15)
+
+running 6 tests
+test invalid_selected_engine_never_uses_path_fallback_for_doctor_or_build ... ok
+test native_argv_build_keeps_unicode_source_bytes_and_never_installs ... ok
+test successful_pdf_with_missing_glyph_reports_explicit_cli_warning ... ok
+test refuses_to_replace_existing_pdf_when_source_changes_during_build ... ok
+test relative_selected_engine_survives_source_directory_switch ... ok
+test doctor_reports_present_and_missing_without_installer_invocation ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running unittests src/lib.rs (target/debug/deps/tikzarium_core-2d2fb2820e36e67f)
+
+running 79 tests
+test build::tests::dependencies_are_deduplicated ... ok
+test build::tests::cancelled_job_never_launches_engine ... ok
+test build::tests::recorder_preserves_symlink_parent_dotdot_without_collapsing_it ... ok
+test build::tests::missing_source_is_reported ... ok
+test build::tests::recorder_pwd_resolves_relative_paths ... ok
+test build::tests::source_operand_is_portable_and_protects_dash_prefixed_names ... ok
+test build::tests::recorder_preserves_link_spelling_without_changing_public_resolved_paths ... ok
+test build::tests::successful_engine_warnings_remain_visible_without_a_false_build_failure ... ok
+test build::tests::successful_engine_without_stderr_keeps_the_original_tex_log_byte_exact ... ok
+test dependencies::build_baseline_regression::pre_build_bytes_reject_persistent_mutation_of_first_build_data_input ... ok
+test dependencies::build_baseline_regression::selected_root_alias_is_allowed_but_project_internal_symlink_is_not ... ok
+test dependencies::build_baseline_regression::inventory_checkpoint_can_abort_for_cancellation_or_deadline ... ok
+test dependencies::build_baseline_regression::growth_after_metadata_consumes_the_actual_total_read_budget ... ok
+test dependencies::build_baseline_regression::unchanged_first_build_inputs_including_source_are_verified ... ok
+test dependencies::recorder_completeness_regression::missing_recorder_cannot_certify_unchanged_source_as_fresh ... ok
+test dependencies::missing_symlink_root_regression::missing_local_input_under_symlinked_root_remains_local ... ok
+test dependencies::root_alias_dedup_regression::relative_recorder_input_and_absolute_source_share_root_alias_spelling ... ok
+test dependencies::source_boundary_regression::external_author_source_never_certifies_freshness ... ok
+test dependencies::build_baseline_regression::used_symlink_input_cannot_be_certified ... ok
+test dependencies::symlinked_parent_component_regression::symlinked_ancestor_then_parent_is_not_falsely_fresh ... ok
+test dependencies::symlinked_parent_component_regression::parent_after_symlink_hashes_the_real_local_target ... ok
+test dependencies::source_boundary_regression::symlinked_author_source_escaping_root_is_never_fresh ... ok
+test dependencies::tests::huge_sparse_input_is_not_misreported_fresh ... ok
+test dependencies::tests::external_paths_are_reported_but_not_claimed_checked ... ok
+test dependencies::tests::missing_input_and_deleted_source_fail_closed ... ok
+test dependencies::tests::detects_same_size_include_edits_without_touching_source ... ok
+test dependencies::tests::retargeted_project_symlink_invalidates_even_when_previous_target_is_unchanged ... ok
+test dependencies::tests::same_input_and_relative_components_deduplicate ... ok
+test diagnostics::tests::deduplicates_error_with_file_line_location ... ok
+test diagnostics::tests::font_warnings_remain_visible_after_source_path_merge ... ok
+test dependencies::tests::symlink_target_outside_project_is_explicitly_untracked ... ok
+test diagnostics::tests::malformed_log_never_produces_a_phantom_line ... ok
+test diagnostics::tests::package_and_box_warnings_are_not_silent ... ok
+test diagnostics::tests::recognizes_windows_paths_and_bare_tex_line_numbers ... ok
+test discovery::tests::distribution_identity_is_explicit_and_fail_closed ... ok
+test discovery::tests::unknown_distribution_cannot_use_an_arbitrary_package_manager ... ok
+test discovery::tests::empty_executable_never_resolves ... ok
+test discovery::tests::traversal_is_not_accepted_as_package_name ... ok
+test document::tests::cannot_save_unbound_document ... ok
+test document::tests::clean_save_preserves_existing_file_bytes_and_identity ... ok
+test discovery::tests::texlive_probe_never_borrows_unrelated_path_helper ... ok
+test discovery::tests::user_and_shared_miktex_roots_do_not_mix_lookup_helpers ... ok
+test document::tests::clean_build_save_preserves_symlink_and_dirty_save_fails_closed ... ok
+test document::tests::changed_disk_source_is_never_overwritten_by_stale_buffer ... ok
+test dependencies::build_baseline_regression::deep_directory_tree_fails_closed_at_the_depth_limit ... ok
+test document::tests::deleted_open_source_cannot_be_silently_recreated ... ok
+test document::tests::explicit_save_as_to_new_path_preserves_the_original ... ok
+test document::tests::readonly_open_source_can_be_built_without_replacement ... ok
+test document::tests::tracks_unsaved_changes ... ok
+test font_audit::tests::clean_log_is_not_a_claim_about_pdf_extraction_or_embedding ... ok
+test font_audit::tests::fontspec_error_other_than_missing_font_stays_distinct ... ok
+test font_audit::tests::missing_font_name_and_source_line_are_explicit ... ok
+test font_audit::tests::primitive_font_load_failure_is_reported ... ok
+test font_audit::tests::warnings_are_not_silently_mislabeled_as_missing_fonts ... ok
+test font_audit::tests::xetex_wrapped_missing_cyrillic_and_greek_remain_distinct ... ok
+test fonts::tests::figure_fonts_are_not_connected_to_gui_theme ... ok
+test fonts::tests::malicious_font_families_do_not_become_tex_commands ... ok
+test fonts::tests::missing_glyphs_are_not_silent_success ... ok
+test fonts::tests::plain_labels_escape_reserved_tex_characters ... ok
+test one_figure_session::byte_budget_tests::unicode_crlf_and_unknown_macro_remain_byte_exact_in_inverse_snapshot ... ok
+test preview::tests::missing_pdf_renderer_is_a_controlled_error ... ok
+test preview::tests::png_read_is_bounded_and_does_not_rewrite_the_file ... ok
+test build::tests::recorder_reader_rejects_oversized_and_invalid_utf8_without_truncating ... ok
+test discovery::tests::miktex_uses_sibling_findtexmf_without_install_option ... ok
+test probe_process::tests::probe_child ... ignored
+test one_figure_session::byte_budget_tests::many_megabyte_scientific_sources_have_bounded_undo_history ... ok
+test probe_process::tests::zero_deadline_does_not_spawn ... ok
+test windows_tex_security::tests::filtered_administrator_medium_token_is_eligible ... ok
+test windows_tex_security::tests::high_or_elevated_current_user_requires_visible_warning ... ok
+test windows_tex_security::tests::owner_administrator_high_token_is_supported_without_elevation ... ok
+test windows_tex_security::tests::unknown_and_system_tokens_are_not_user_document_execution ... ok
+test probe_process::tests::bounded_probe_preserves_real_failure_exit ... ok
+test probe_process::tests::bounded_probe_retains_stdout_stderr_and_success ... ok
+test preview::tests::nonzero_renderer_exit_is_not_treated_as_a_valid_pdf_preview ... ok
+test probe_process::tests::excessive_probe_output_is_rejected_not_truncated_into_identity ... ok
+test preview::tests::fake_poppler_success_preserves_pdf_source_and_returns_png ... ok
+test discovery::tests::transient_executable_busy_probe_is_bounded_and_does_not_fallback ... ok
+test preview::tests::hung_first_page_renderer_is_killed_with_bounded_wall_time ... ok
+test probe_process::tests::stalled_probe_is_terminated_instead_of_blocking_discovery ... ok
+
+test result: ok. 78 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/runner_unix.rs (target/debug/deps/runner_unix-9b747be3d3db1350)
+
+running 17 tests
+test dotted_job_name_dependencies_and_direct_argv_are_preserved ... ok
+test failure_reports_source_line_and_retains_full_log_on_request ... ok
+test build_rejects_same_length_data_changed_after_engine_read ... ok
+test cancelling_active_compilation_stops_the_child ... ok
+test missing_fls_does_not_claim_project_freshness ... ok
+test leading_dash_source_is_a_file_argument_not_a_tex_option ... ok
+test explicit_project_root_verifies_source_parent_resource ... ok
+test external_only_recorder_cannot_certify_source_freshness ... ok
+test unrecognized_engine_refuses_compilation_without_modifying_source ... ok
+test fake_miktex_compiler_receives_no_auto_installer_override ... ok
+test project_root_that_does_not_contain_source_is_rejected_before_compilation ... ok
+test retargeted_author_file_symlink_invalidates_compiled_snapshot ... ok
+test recorded_symlink_retarget_invalidates_real_runner_snapshot_and_preserves_source ... ok
+test real_runner_snapshot_invalidates_after_included_asset_change ... ok
+test runner_symlink_parent_dotdot_is_not_falsely_fresh ... ok
+test symlinked_project_root_keeps_one_author_source_in_snapshot ... ok
+test timeout_retains_partial_log ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.09s
+
+     Running tests/scientific_142_dependencies.rs (target/debug/deps/scientific_142_dependencies-fab03810aa09c73f)
+
+running 2 tests
+test scientific_dat_delete_and_same_length_edit_invalidate_without_touching_tex ... ok
+test scientific_ak_five_real_figures_have_traceable_dependency_sha256 ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/scientific_142_one_figure_session.rs (target/debug/deps/scientific_142_one_figure_session-9e28fa71bce21df4)
+
+running 8 tests
+test one_source_utf8_selection_undo_revisions_and_disk_bytes ... ok
+test unsaved_source_cannot_claim_a_current_pdf_from_an_old_fls ... ok
+test recorded_data_change_and_failure_never_claim_fresh_pdf ... ok
+test native_build_artifact_bytes_are_preserved_without_export_or_second_renderer ... ok
+test delayed_build_outcome_and_tampered_pdf_never_masquerade_as_current ... ok
+test save_as_keeps_original_source_and_marks_old_pdf_stale ... ok
+test missing_or_invalid_pdf_preserves_last_good_as_failed_not_current ... ok
+test unrelated_source_or_changed_recorder_input_never_qualifies_a_pdf ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/tikzarium_extensions-995317d6df5fb9d5)
+
+running 23 tests
+test evidence::tests::lua_negative_cannot_claim_rendered_pdf ... ok
+test evidence::tests::fixture_record_never_enables_visual_editing ... ok
+test evidence::tests::rejects_inconsistent_records ... ok
+test help_search::tests::help_does_not_claim_an_unknown_default_or_minimum_version ... ok
+test project_imports::n2_probe_contract_tests::exact_files_and_three_observations_are_not_inferred_from_names ... ok
+test help_search::tests::oversize_query_fails_closed_without_processing_source ... ok
+test tests::bundled_registry_has_unique_valid_entries ... ok
+test source_assist::tests::one_catalogue_patch_and_inverse_preserve_entire_opaque_crlf_document ... ok
+test tests::directory_does_not_follow_symlinked_manifest ... ok
+test help_search::tests::single_source_of_truth_exposes_every_tool_parameter_and_library ... ok
+test tests::known_missing_beats_indeterminate_and_option_name_is_unsafe ... ok
+test help_search::tests::russian_unicode_and_parameter_search_use_the_shared_catalogue ... ok
+test tests::directory_root_symlinks_are_rejected_without_mutation ... ok
+test tests::directory_load_is_transactional ... ok
+test tests::missing_directory_is_optional_and_size_limit_is_enforced ... ok
+test help_search::tests::n3_offline_search_indexes_c_parameter_semantics ... ok
+test tests::reports_installation_independently_of_compilation_and_editing ... ok
+test tests::regular_file_is_not_an_optional_catalogue_directory ... ok
+test tests::unavailable_probe_is_not_missing ... ok
+test source_assist::parameter_tests::opaque_comments_and_partial_source_fail_closed ... ok
+test tests::rejects_duplicates_unsafe_paths_and_unknown_keys ... ok
+test source_assist::tests::refuse_comments_macros_multi_names_body_and_wrong_candidates ... ok
+test source_assist::parameter_tests::all_27_source_visible_c_parameters_are_recognized_without_editing_source ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/bin/n2-library-fixture.rs (target/debug/deps/n2_library_fixture-4f0640526bfd1312)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/primitive-fixtures.rs (target/debug/deps/primitive_fixtures-cd747cf17865001f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/project-import-fixtures.rs (target/debug/deps/project_import_fixtures-93bb07db64861f3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/library_catalog.rs (target/debug/deps/library_catalog-6eab78178a48b7cc)
+
+running 7 tests
+test unmodified_inverse_import_restores_every_byte_and_rejects_stale_revision ... ok
+test opaque_conditional_import_is_unknown_not_missing_or_installed ... ok
+test already_connected_and_missing_are_distinct_from_unknown ... ok
+test six_libraries_are_in_the_same_schema_as_six_native_tools ... ok
+test installation_loaded_engine_tool_and_help_remain_five_independent_states ... ok
+test late_body_import_remains_unknown_in_shared_library_panel ... ok
+test six_library_connect_disconnect_proposals_are_reversible_with_crlf_and_unicode ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/n1_source_integrity.rs (target/debug/deps/n1_source_integrity-56a8f4801be209d9)
+
+running 17 tests
+test an_explicit_empty_range_inserts_a_command_without_touching_preamble ... ok
+test duplicate_commands_are_selected_by_exact_byte_range_not_first_match ... ok
+test six_generator_results_replace_only_one_span_in_cyrillic_crlf_tex ... ok
+test revision_overflow_is_rejected_before_mutation ... ok
+test plan_rejects_manually_changed_generated_command_without_reformatting_surroundings ... ok
+test stale_revision_rejects_even_if_expected_text_is_identical ... ok
+test identical_generated_commands_edit_the_exact_second_target_not_the_first_match ... ok
+test save_reopen_and_undo_real_tex_file_preserve_all_original_bytes ... ok
+test moved_generated_fragment_inside_unknown_macro_cannot_be_undone_by_global_search ... ok
+test bad_ranges_and_utf8_mid_codepoint_offsets_fail_without_panicking ... ok
+test stale_target_and_changed_prefix_do_not_authorize_edit_after_reopen ... ok
+test successive_edits_same_range_require_revision_rebase_to_undo_older_changes ... ok
+test user_changes_inside_the_expected_range_are_not_overwritten ... ok
+test typed_targets_reject_non_utf8_boundaries_invalid_offsets_and_false_full_document_ranges ... ok
+test two_edits_need_fresh_spans_and_undo_revisions_are_not_automatically_rebased ... ok
+test text_nodes_escape_tex_metacharacters_but_math_is_deliberate_raw_tex ... ok
+test typed_source_target_plans_all_six_parameter_edits_without_touching_crlf_opaque_tex ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/primitive_edit.rs (target/debug/deps/primitive_edit-315ca3fbae995a21)
+
+running 4 tests
+test changed_or_ambiguous_source_is_not_edited_even_with_a_valid_literal ... ok
+test unsupported_or_no_op_parameter_edits_are_rejected_without_mutation ... ok
+test math_mode_and_utf8_node_content_only_change_the_owned_command ... ok
+test every_tool_can_change_a_literal_property_with_undo_and_unrelated_bytes_intact ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/primitives.rs (target/debug/deps/primitives-d9f037e98a769b1d)
+
+running 6 tests
+test known_range_patch_is_minimal_reversible_and_conflict_checked ... ok
+test catalog_is_complete_and_examples_match_executable_schema ... ok
+test negative_literals_cannot_enter_tikz_template ... ok
+test six_commands_match_real_xelatex_fixture ... ok
+test text_is_escaped_but_math_is_intentional_raw_user_tex ... ok
+test installed_loaded_engine_and_tool_are_five_separate_dimensions ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/project_disconnect.rs (target/debug/deps/project_disconnect-112ab96468884d55)
+
+running 9 tests
+test changed_anchor_stale_revision_and_undo_conflicts_fail_without_mutation ... ok
+test absent_names_and_unsupported_packages_never_trigger_hidden_changes ... ok
+test duplicate_imports_are_refused_instead_of_claiming_disconnected ... ok
+test opaque_macros_conditional_imports_and_mixed_line_endings_are_unknown ... ok
+test minimal_comma_range_preserves_surviving_spacing_and_unicode_body ... ok
+test first_middle_last_in_comma_lists_remove_only_one_literal ... ok
+test inline_comments_are_preserved_by_refusing_to_edit_them ... ok
+test standalone_crlf_disconnect_requires_confirmed_diff_and_undo_restores_every_byte ... ok
+test all_four_known_libraries_disconnect_without_changing_other_declarations ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/project_import_provenance.rs (target/debug/deps/project_import_provenance-3924e72149bfd148)
+
+running 7 tests
+test byte_ranges_point_at_exact_names_across_crlf_unicode_options_and_comments ... ok
+test multiple_literal_import_sites_are_reported_without_permitting_unsafe_disconnect ... ok
+test conditional_or_macro_before_literal_import_creates_no_false_site ... ok
+test packages_and_libraries_before_documentclass_are_not_claimed_loaded ... ok
+test trusted_prefix_is_attributed_but_later_opaque_declarations_remain_unknown ... ok
+test utf8_bom_and_indented_declarations_preserve_original_byte_offsets ... ok
+test existing_six_primitive_capabilities_and_help_are_unchanged ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/project_imports.rs (target/debug/deps/project_imports-5957b7be4bf7a7a3)
+
+running 18 tests
+test commented_declarations_are_not_loaded_and_escaped_percent_is_not_a_comment ... ok
+test crlf_proposal_is_visible_then_undo_restores_every_original_byte ... ok
+test core_existing_fixture_does_not_regress_to_unknown_for_pagestyle ... ok
+test direct_package_before_conditional_remains_known_but_conditional_library_unknown ... ok
+test explicit_package_and_library_lists_are_not_installation_evidence ... ok
+test body_side_imports_external_files_and_dynamic_names_fail_closed ... ok
+test body_comments_escaped_control_and_longer_names_do_not_forge_import_hints ... ok
+test literal_package_is_added_only_when_tikz_is_truly_absent ... ok
+test library_before_tikz_is_unknown_and_refused_not_silently_reordered ... ok
+test mixed_indirect_macro_or_conditional_imports_are_unknown_not_missing ... ok
+test stale_revision_wrong_anchor_and_manual_anchor_edits_are_rejected ... ok
+test four_supported_libraries_have_source_patches_and_duplicates_are_noops ... ok
+test unknown_macro_or_conditional_before_direct_import_is_not_positive_evidence ... ok
+test standalone_usepackage_import_is_a_reversible_literal_patch ... ok
+test unsupported_names_refuse_without_touching_source_or_installation ... ok
+test real_late_calc_import_is_unknown_without_false_absence_or_unsafe_patch ... ok
+test generated_primitive_requirements_keep_five_independent_states ... ok
+test n1_fontspec_source_keeps_direct_import_evidence_and_all_six_tools ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/scientific_142_axis_limits.rs (target/debug/deps/scientific_142_axis_limits-fb21e5c5a2f809ad)
+
+running 6 tests
+test sc3_export_original_sarov_patch_for_external_tex ... ignored, Requires explicit hosted SC3 XeLaTeX proof; never writes the owner corpus
+test axis_help_does_not_invent_default_values ... ok
+test macros_duplicate_limits_and_nonfinite_values_are_rejected ... ok
+test sv001_two_axis_bounds_source_patch_stack_reverts_exact_sha ... ok
+test sv001_ymax_and_ymin_numeric_axis_limits_roundtrip ... ok
+test sv003_xmin_xmax_decimal_axis_limits_roundtrip ... ok
+
+test result: ok. 5 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scientific_142_lexical_coverage.rs (target/debug/deps/scientific_142_lexical_coverage-52f2a05865782b85)
+
+running 1 test
+test original_142_sources_are_scanned_without_mutation_or_fabricated_l2 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/scientific_142_scan.rs (target/debug/deps/scientific_142_scan-3921421d670410b8)
+
+running 16 tests
+test direct_axis_property_is_not_ambiguous_with_legend_or_node_style ... ok
+test forged_descriptor_cannot_move_an_axis_edit_into_global_options ... ok
+test comments_macro_bodies_unicode_crlf_and_node_groups_are_not_fake_draws ... ok
+test duplicate_options_and_unsafe_ranges_fail_closed ... ok
+test source_conflict_and_opaque_values_reject_without_modification ... ok
+test preamble_catcode_changes_refuse_even_if_later_tikz_looks_literal ... ok
+test only_reviewed_axis_plot_styles_expose_their_direct_plot_properties ... ok
+test scientific_parameter_help_is_versioned_source_limited_and_never_invents_defaults ... ok
+test sv003_opaque_foreach_does_not_expose_repeat_body_as_one_addplot ... ok
+test macro_definitions_styles_and_overlapping_edits_cannot_claim_a_draw ... ok
+test unsupported_environment_definitions_and_stringified_commands_cannot_own_axis_edits ... ok
+test unrelated_style_keys_never_become_axis_properties ... ok
+test sv009_literal_domain_changes_only_the_series_option_value ... ok
+test preamble_macro_and_verbatim_pictures_are_never_active_editable_figures ... ok
+test sv001_nested_pgfplots_samples_150_to_180_and_exact_inverse ... ok
+test malformed_nested_options_catcode_and_large_source_are_explicitly_refused ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scientific_142_style_literals.rs (target/debug/deps/scientific_142_style_literals-c1f8d1e505f66f69)
+
+running 7 tests
+test sc3_export_style_patch_to_ephemeral_sarov_copy ... ignored, External XeLaTeX evidence runs only on disposable hosted Linux
+test explicit_numeric_tick_list_and_unicode_plain_label_patch_without_other_changes ... ok
+test sv001_nested_style_mark_is_editable_with_unmodified_formula ... ok
+test sarov_math_labels_remain_opaque_and_no_defaults_are_invented ... ok
+test sv001_dimensions_preserve_textwidth_unit_without_regenerating_tex ... ok
+test sv001_axis_tick_spacing_roundtrips_exact_original_sha ... ok
+test deliberate_unsafe_edits_fail_closed_on_original_and_synthetic_sources ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scientific_resources.rs (target/debug/deps/scientific_resources-0cfd6868756636d8)
+
+running 11 tests
+test comment_and_grouped_paths_are_not_mislabelled_as_literal_filenames ... ok
+test definitions_foreach_and_input_arguments_do_not_create_fake_plot_scopes ... ok
+test comments_unicode_crlf_and_escaped_percent_preserve_ranges_and_lines ... ok
+test environment_definitions_string_and_detokenize_are_opaque_but_later_refs_remain ... ok
+test malformed_references_and_unprovable_inline_literals_fail_closed ... ok
+test genuine_f14_3_reports_three_read_only_macro_paths_without_resolution_claims ... ok
+test inline_verb_and_listings_literals_do_not_create_resource_references ... ok
+test plot_file_is_only_reported_from_top_level_active_tikz_path_commands ... ok
+test string_skips_space_and_comments_before_its_token ... ok
+test verbatim_environments_are_bounded_and_mask_fake_tikz_scopes ... ok
+test source_occurrence_and_group_depth_limits_are_bounded ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests tikzarium_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests tikzarium_extensions
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

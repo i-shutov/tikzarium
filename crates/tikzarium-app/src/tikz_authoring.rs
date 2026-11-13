@@ -533,7 +533,7 @@ impl Session {
     pub fn note_manual_source_edit(&mut self, source: &str) {
         match self.sync(source) {
             Ok(true) => {
-                self.status = "Код изменён вручную: старые визуальные Undo отменены; выберите команду повторно".into();
+                self.status = "Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.".into();
             }
             Err(error) => self.status = error,
             Ok(false) => {}

@@ -4,7 +4,7 @@
   "created_utc": "2026-11-13T04:43:53.009579+00:00",
   "starting_source_head_sha": "0eee418ca4d4869b2a4b9fb6ea1462d53df84e1d",
   "final_source_commit": "PENDING_INTEGRATOR_PUBLICATION_READBACK",
-  "scope": "Local Rust/UNIT_EVENT/offline collector verification; baseline CI audit is scoped to starting source; no fresh native GUI acceptance",
+  "scope": "Initial and repeated local verification, UNIT_EVENT layout proposals, two actual hosted calibration failures; no scientific native vertical acceptance",
   "files": {
     "artifact-tests.log": {
       "bytes": 2897,
@@ -30,6 +30,38 @@
       "bytes": 1115,
       "sha256": "c23475f630c170fe06277b318af6bcafaf34c3b99393585fee4ff2e16d204203"
     },
+    "final-status/artifact-tests.log": {
+      "bytes": 3667,
+      "sha256": "d7dcbe807a034d6b1ef2189f44ebb26011e192c2fdfc857f4e9126f647470352"
+    },
+    "final-status/build.log": {
+      "bytes": 183,
+      "sha256": "818d578ed1a5e2beb35d9268009c0f8e248bd847f36a400397444ffcb864bf2c"
+    },
+    "final-status/clippy.log": {
+      "bytes": 183,
+      "sha256": "b9ae85aa385e20f9feeb2bc0eeb876b3b905d073ff5521e176b915d0e182b45f"
+    },
+    "final-status/commands.json": {
+      "bytes": 991,
+      "sha256": "0a57eefab422e97a447e4c5831f78f3fe13b9eac36644e72c26238a6cf65e509"
+    },
+    "final-status/fmt.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "final-status/helper-contracts-20.log": {
+      "bytes": 3307,
+      "sha256": "56ea21ded0de62442f1c8bfd735188391fda11c06ec36408fad9cba5ed5cf61b"
+    },
+    "final-status/summary.json": {
+      "bytes": 491,
+      "sha256": "38b922192d232b7b64a5b68af6a71d6f28944bb4f3a5311a1c77db18357992f6"
+    },
+    "final-status/tests.log": {
+      "bytes": 57129,
+      "sha256": "04959621f5907d3076454fba819a1e55dbd3dedb2dc25c7caaaf5b761bd106a4"
+    },
     "fmt.log": {
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -38,9 +70,37 @@
       "bytes": 4500,
       "sha256": "f4cdd95b444545677de5ae25665e990eb21051cf868c898ad5ec644843c8f8e3"
     },
+    "layout-probe/coordinate-proposals.json": {
+      "bytes": 10218,
+      "sha256": "5e5f0df67fc2a3310a8a1ca74a44314d209f6f97665d5ec20af2fc0e6559db06"
+    },
+    "layout-probe/probe.log": {
+      "bytes": 30814,
+      "sha256": "56fd24a34e2de2932ec91909b295e39f4fda426b0fd89819f0e573549243f231"
+    },
+    "layout-probe/restoration.json": {
+      "bytes": 245,
+      "sha256": "4bb06c5128ce4485bd6cc667d583817f9f5db71ec04ebfe34ffad63b1144536b"
+    },
     "mixed-shell-tests.log": {
       "bytes": 859,
       "sha256": "74a4d78fe3e93b9cf857ddc22ad585a97f58bcb330e318128b0d28d28488f8a4"
+    },
+    "native-attempts/43367842268/audit.md": {
+      "bytes": 3222,
+      "sha256": "9a462d17392d0a1e8ec28720156889a30037564f8198282522b5a25ea2490897"
+    },
+    "native-attempts/43367842268/ci-final.md": {
+      "bytes": 3714,
+      "sha256": "cfbf2a06ebc8a900d4bd866e8b73693e7d10e47d7d9c18e34eba02c60ef16d7c"
+    },
+    "native-attempts/43368808565/audit.md": {
+      "bytes": 3016,
+      "sha256": "4bbc17e118e26e53800441fdb37599fe65e54dca1c9a5156bfff5c7bd2a7516e"
+    },
+    "native-attempts/43368808565/ci-final.md": {
+      "bytes": 3227,
+      "sha256": "9c9d6d54b3d5869f4eb4775dd6c44835b22fdbb9685e8339a5d53dfd7fdd9c34"
     },
     "source-inspector-undo-review.md": {
       "bytes": 9397,
@@ -54,5 +114,10 @@
       "bytes": 57479,
       "sha256": "932c6b0561cbfbbe03dac7b336d06ccf895967db6f039453308027a4bae7d68b"
     }
-  }
+  },
+  "updated_utc": "2026-11-13T05:11:42.030647+00:00",
+  "known_published_heads": [
+    "cc25f815248215f7f4d4e50656cc91545e1c01d0",
+    "6b3e36e94719fab114e23a5a80e4f24b6ab1c770"
+  ]
 }

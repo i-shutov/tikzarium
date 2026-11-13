@@ -26,6 +26,8 @@ from types import SimpleNamespace
 import qa_sci_compact_native as audit
 
 CLIENT = (1180, 680)
+SCAN_REFERENCE = (1015, 273)
+SCAN_MASK_THRESHOLD = 144
 # Client pixels for the compact two-row production UI. This is a new, scoped
 # scientific path: actual original images and source/clipboard checks must
 # independently confirm every operation on the recorded source tree.
@@ -33,11 +35,15 @@ POINTS = {
     "file_menu": (23, 15), "file_path": (143, 135),
     "source_settings": (405, 80), "source_full_source": (490, 150),
     "source": (200, 230), "dirty_discard": (505, 407),
-    "inspector_properties": (960, 81), "scan": (1015, 273),
-    "candidate": (1020, 305), "first_axis": (1000, 333),
-    "samples_value": (1020, 419), "apply": (958, 449),
+    # Base Scan y273 is independently visible before typing. Exact glyph-mask
+    # calibration adds the observed current vertical offset to this whole group.
+    # Downstream offsets +30/+63/+155/+182 use the independent production-widget
+    # UNIT probe; their actual native operations still require original proof.
+    "inspector_properties": (960, 81), "scan": SCAN_REFERENCE,
+    "candidate": (1020, 303), "first_axis": (1000, 336),
+    "samples_value": (1020, 428), "apply": (984, 455),
     "undo": (109, 49), "export": (291, 49), "pdf_view": (439, 49),
-    "console": (1118, 48), "raw_log": (235, 527), "copy_log": (370, 527),
+    "console": (1118, 48), "raw_log": (158, 520), "copy_log": (246, 520),
 }
 
 
@@ -76,6 +82,55 @@ def source_provenance(root: Path, app: Path) -> dict:
     if app.name == "tikzarium-qa-control":
         raise ValueError("Scientific native driver requires the production tikzarium-app binary")
     return {"source_head_sha": head, "app_tree_sha": tree, "app_sha256": audit.sha(app)}
+
+
+def unique_scan_glyph_offset(reference: Path, current: Path, origin: tuple[int, int],
+                             proof_path: Path) -> dict:
+    """Exact binary glyph-mask match, fixed X and threshold; no fuzzy scoring.
+
+    Scope is the driver's default Midnight compact UI only. Original images
+    remain untouched; the .mask.bin file is labelled derived analysis evidence.
+    """
+    if audit.Image is None:
+        raise RuntimeError("Existing Pillow is required for bounded native glyph calibration")
+    if audit.original_image_size(reference) != audit.TARGET_SCREEN or audit.original_image_size(current) != audit.TARGET_SCREEN:
+        raise RuntimeError("Scan calibration requires the actual declared desktop geometry")
+    x = origin[0] + SCAN_REFERENCE[0]
+    y = origin[1] + SCAN_REFERENCE[1]
+    box = (x - 63, y - 6, x + 65, y + 7)
+    with audit.Image.open(reference) as opened:
+        reference_image = opened.convert("L")
+    with audit.Image.open(current) as opened:
+        current_image = opened.convert("L")
+    def mask(image, rectangle):
+        return image.crop(rectangle).point(lambda value: 255 if value >= SCAN_MASK_THRESHOLD else 0).tobytes()
+    reference_mask = mask(reference_image, box)
+    foreground = reference_mask.count(255)
+    mask_path = proof_path.with_suffix(".mask.bin")
+    mask_path.write_bytes(reference_mask)
+    proof = {"status": "FAIL", "scope": "DEFAULT_MIDNIGHT_COMPACT_1180X680_ONLY",
+             "reference_original": str(reference), "reference_sha256": audit.sha(reference),
+             "current_original": str(current), "current_sha256": audit.sha(current),
+             "reference_patch_root_box": box, "fixed_luminance_threshold": SCAN_MASK_THRESHOLD,
+             "derived_binary_mask_file": str(mask_path), "binary_mask_sha256": audit.sha(mask_path),
+             "foreground_pixels": foreground, "total_mask_pixels": len(reference_mask),
+             "search_center_y_inclusive": (y, min(y + 200, current_image.height - 7))}
+    if not (50 <= foreground <= len(reference_mask) * 0.75):
+        proof["error"] = "Reference Scan glyph mask is blank or lacks meaningful foreground/background"
+        audit.write_json(proof_path, proof)
+        raise RuntimeError(proof["error"])
+    matches = [candidate - y for candidate in range(y, proof["search_center_y_inclusive"][1] + 1)
+               if mask(current_image, (box[0], candidate - 6, box[2], candidate + 7)) == reference_mask]
+    proof["matching_offsets_y"] = matches
+    if len(matches) != 1:
+        proof["error"] = f"Scan glyph mask must match uniquely; found {len(matches)} matches"
+        audit.write_json(proof_path, proof)
+        raise RuntimeError(proof["error"])
+    offset = matches[0]
+    proof.update({"status": "UNIQUE_EXACT_BINARY_MASK_MATCH_REQUIRES_ORIGINAL_REVIEW",
+                  "offset_y": offset, "matched_patch_root_box": (box[0], box[1] + offset, box[2], box[3] + offset)})
+    audit.write_json(proof_path, proof)
+    return proof
 
 
 class Driver:
@@ -203,6 +258,27 @@ class Driver:
         self.event("actual_editor_clipboard", file=str(path.relative_to(self.out)), sha256=audit.sha(path))
         return path
 
+    def prove_focused_draft(self, expected: bytes) -> None:
+        # A draft-only Save being unchanged does not prove an Inspector field
+        # was edited. Copy the STILL-FOCUSED field, without clicking elsewhere,
+        # after taking clipboard ownership with a distinct fresh sentinel.
+        self.clipboard(b"SCI_NATIVE_DRAFT_READBACK_SENTINEL", "draft-readback-sentinel")
+        self.key("ctrl+a")
+        self.key("ctrl+c")
+        observed = run_bytes("xclip", "-selection", "clipboard", "-o")
+        self.serial += 1
+        path = self.raw / f"{self.serial:03d}-focused-draft-readback.txt"
+        path.write_bytes(observed)
+        proof = {"file": str(path.relative_to(self.out)), "sha256": audit.sha(path),
+                 "expected_utf8": expected.decode("utf-8"), "matches": observed == expected}
+        self.report["scientific_draft_readback"] = proof
+        self.event("actual_focused_draft_clipboard", **proof)
+        self.screenshot("focused-draft-readback")
+        if observed != expected:
+            raise RuntimeError("Still-focused scientific draft field did not copy back the exact proposed literal151")
+        if self.source.read_bytes() != self.expected["typed"]:
+            raise RuntimeError("Source changed while entering or copying the unapplied scientific draft")
+
     def stage(self, name: str, description: str, *, visible: Path | None = None) -> None:
         self.current_stage = name
         self.key("ctrl+s")
@@ -319,7 +395,22 @@ class Driver:
         self.stage("typed", "Source-editor EOF marker pasted as one native text transaction; GUI Save")
         self.current_stage = "draft"
         self.click("inspector_properties")
-        self.screenshot("before-scientific-scan")
+        current_image = self.screenshot("before-scientific-scan")
+        reference_image = self.out / "observed/opened/screenshot.original.png"
+        proof_path = self.raw / "scan-coordinate-calibration.json"
+        proof = unique_scan_glyph_offset(reference_image, current_image,
+                                        (self.geometry["X"], self.geometry["Y"]), proof_path)
+        correction = SCAN_REFERENCE[1] + proof["offset_y"] - self.points["scan"][1]
+        for name in ("scan", "candidate", "first_axis", "samples_value", "apply"):
+            old_x, old_y = self.points[name]
+            self.points[name] = (old_x, old_y + correction)
+            if not (0 <= self.points[name][1] < CLIENT[1]):
+                raise RuntimeError("Calibrated scientific point exceeds the actual app client")
+        self.report["scientific_coordinate_calibration"] = proof
+        self.report["coordinates"] = self.points.copy()
+        self.event("unique_exact_binary_scan_glyph_match", proof_file=str(proof_path.relative_to(self.out)),
+                   reference_sha256=proof["reference_sha256"], current_sha256=proof["current_sha256"],
+                   offset_y=proof["offset_y"], threshold=SCAN_MASK_THRESHOLD)
         self.click("scan")
         self.screenshot("scientific-scan-results")
         self.click("candidate")
@@ -329,7 +420,8 @@ class Driver:
         self.click("samples_value")
         self.key("ctrl+a")
         self.paste(b"151", "samples-draft")
-        self.stage("draft", "Scientific axis samples draft 151; GUI Save without Apply; source must retain150+typed marker")
+        self.prove_focused_draft(b"151")
+        self.stage("draft", "Scientific axis samples draft151 independently copied back from still-focused field; GUI Save without Apply; source must retain150+typed marker")
 
     def finish(self) -> None:
         self.current_stage = "applied"
