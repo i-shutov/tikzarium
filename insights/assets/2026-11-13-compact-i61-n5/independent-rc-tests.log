@@ -1,0 +1,8 @@
+test_exact_manifest_source_version_and_reproducibility (test_linux_release_candidate.LinuxRcPackage.test_exact_manifest_source_version_and_reproducibility) ... ok
+test_never_publish_unqualified_stable_label (test_linux_release_candidate.LinuxRcPackage.test_never_publish_unqualified_stable_label) ... ok
+test_reject_bad_source_and_non_executable (test_linux_release_candidate.LinuxRcPackage.test_reject_bad_source_and_non_executable) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+OK

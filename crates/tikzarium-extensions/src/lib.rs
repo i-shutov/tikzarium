@@ -10,6 +10,7 @@ pub mod primitive_edit;
 pub mod primitives;
 pub mod project_disconnect;
 pub mod project_imports;
+pub mod scientific_resources;
 pub mod scientific_scan;
 pub mod source_assist;
 

@@ -46,6 +46,9 @@ case "$name" in
     *) printf 'Transcript for %s\n' "$name" > "$output/$stem.log" ;;
 esac
 printf 'PWD %s\nINPUT ./%s\n' "$PWD" "$name" > "$output/$stem.fls"
+if [ -n "${TIKZARIUM_MUTATE_SOURCE:-}" ]; then
+    printf 'mutated during build\n' > "$TIKZARIUM_MUTATE_SOURCE"
+fi
 "#,
     );
     engine
@@ -155,6 +158,8 @@ fn native_argv_build_keeps_unicode_source_bytes_and_never_installs() {
             pdf.to_str().unwrap(),
             "--log",
             log.to_str().unwrap(),
+            "--project-root",
+            project.to_str().unwrap(),
         ],
     );
     assert_eq!(
@@ -166,6 +171,36 @@ fn native_argv_build_keeps_unicode_source_bytes_and_never_installs() {
     assert_eq!(fs::read(&source).unwrap(), original);
     assert_eq!(fs::read(&pdf).unwrap(), b"%PDF-1.4\n");
     assert!(fs::read_to_string(&log).unwrap().contains("точка α.tex"));
+}
+
+#[test]
+fn refuses_to_replace_existing_pdf_when_source_changes_during_build() {
+    let directory = tempfile::tempdir().unwrap();
+    let engine = fake_engine(directory.path());
+    let project = directory.path().join("project");
+    fs::create_dir_all(&project).unwrap();
+    let source = project.join("figure.tex");
+    let pdf = project.join("figure.pdf");
+    fs::write(&source, b"original source\n").unwrap();
+    fs::write(&pdf, b"last known good pdf\n").unwrap();
+
+    let result = Command::new(env!("CARGO_BIN_EXE_tikzarium-cli"))
+        .env("TIKZARIUM_XELATEX", &engine)
+        .env("TIKZARIUM_MUTATE_SOURCE", &source)
+        .args([
+            "build",
+            source.to_str().unwrap(),
+            pdf.to_str().unwrap(),
+            "--project-root",
+            project.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(5));
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("Refusing to publish PDF"), "{stderr}");
+    assert!(stderr.contains("project"), "{stderr}");
+    assert_eq!(fs::read(&pdf).unwrap(), b"last known good pdf\n");
 }
 
 #[test]

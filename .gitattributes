@@ -10,3 +10,19 @@ examples/windows-cyrillic.tex text eol=lf
 # Windows git checkout must NOT convert their TeX or .dat LF to CRLF.
 /roadmap/Tikzarium_Scientific_142_R4/fixtures/** -text
 /roadmap/Tikzarium_Scientific_142_R4/provenance/** -text
+# The recovered native UI atlas is an immutable binary artifact.
+design/studio-compact-atlas/published/*.pdf binary
+# Raw command captures retain their terminal blank lines byte-for-byte.
+insights/assets/2026-11-12-compact-recovery/*.log whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/*.log whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/baseline-ci-audit.md whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/**/*.log whitespace=-blank-at-eof
+insights/assets/2026-11-13-shared-history/native-attempts/** whitespace=-blank-at-eof
+# Native evidence copies retain the original source line endings and log bytes.
+insights/assets/2026-11-13-hosted-scientific/*.tex -text whitespace=cr-at-eol
+insights/assets/2026-11-13-hosted-scientific/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-hosted-scientific/independent-original-review.md whitespace=-blank-at-eof
+# Compact I61/N5 command captures and native source remain exact evidence bytes.
+insights/assets/2026-11-13-compact-i61-n5/**/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-compact-i61-n5/*.log whitespace=-blank-at-eof,-blank-at-eol
+insights/assets/2026-11-13-compact-i61-n5/**/*.tex -text whitespace=cr-at-eol

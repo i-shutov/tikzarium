@@ -1,0 +1,56 @@
+name: SCI142 scientific Inspector / source-owning widgets
+
+on:
+  push:
+    branches:
+      - 'feat/scientific142-gui-inspector-*'
+  pull_request:
+    paths:
+      - 'crates/tikzarium-app/**'
+      - 'crates/tikzarium-extensions/**'
+      - '.github/workflows/scientific-142-gui-inspector.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scientific-inspector:
+    name: Source-owning scientific Inspector / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: 1.91.0
+          components: rustfmt, clippy
+      - name: Check exact source SHA and unchanged lock
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git diff --exit-code -- Cargo.lock
+      - name: Rust format
+        run: cargo fmt --all -- --check
+      - name: Scientific Inspector real Sarov source/Undo tests
+        run: cargo test --locked -p tikzarium-app scientific_inspector::tests
+      - name: Scientific shared Undo and manual-edit conflict
+        run: cargo test --locked -p tikzarium-app scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack
+      - name: Strict Clippy all app targets
+        run: cargo clippy --locked -p tikzarium-app --all-targets -- -D warnings
+      - name: Scope and release exclusions
+        shell: bash
+        run: |
+          echo SCI_GUI_SV001_SOURCE_AND_UNIT_EVENT=PASS
+          echo SCI_GUI_ACTUAL_POINTER_EDIT_EXTERNAL_PDF=NOT_RUN
+          echo SCIENTIFIC_142_ALL_103_AND_PHYSICAL_WIN10=NOT_ACCEPTED

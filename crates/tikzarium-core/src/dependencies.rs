@@ -13,6 +13,18 @@ use std::{
 /// Per-input cap avoids unbounded hashing of huge included resources on the UI thread.
 /// Above this size, the path is deliberately *unverifiable*, never reported as fresh.
 pub const MAX_TRACKED_FILE_BYTES: u64 = 64 * 1024 * 1024;
+/// Bounded pre-build inventory limits. Hitting any limit fails build provenance closed.
+pub const MAX_BUILD_INVENTORY_FILES: usize = 4096;
+pub const MAX_BUILD_INVENTORY_BYTES: u64 = 256 * 1024 * 1024;
+pub const MAX_BUILD_INVENTORY_ENTRIES: usize = 16_384;
+pub const MAX_BUILD_INVENTORY_DIRECTORIES: usize = 4096;
+pub const MAX_BUILD_INVENTORY_DEPTH: usize = 64;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BaselineAbort {
+    Cancelled,
+    Deadline,
+}
 
 /// A single author file is distinct from a dependency discovered via TeX's .fls recorder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +78,285 @@ pub struct ProjectDependencySnapshot {
     source_is_project_local: bool,
     /// A project-spelled .fls input resolving outside root is unverifiable.
     escaped_project_input: bool,
+    build_input_verification: BuildInputVerification,
+}
+
+/// Whether every project-local input used by this build had matching bytes in
+/// the bounded inventory captured before the engine started.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BuildInputVerification {
+    Unverified(String),
+    Verified,
+}
+
+/// Bounded recursive inventory of regular files beneath the explicitly
+/// selected project root, captured before TeX runs. Matching pre/post hashes
+/// detect persistent changes during the build, but cannot detect a file that
+/// changes and reverts between observations. External TeX installation inputs
+/// are not in this root inventory. Symlinks are never traversed; a build that
+/// uses one cannot be verified by this inventory.
+#[derive(Debug, Clone)]
+pub struct ProjectBuildBaseline {
+    root: PathBuf,
+    root_spelling: PathBuf,
+    files: Vec<(PathBuf, [u8; 32])>,
+    complete: bool,
+    reason: Option<String>,
+}
+
+impl ProjectBuildBaseline {
+    pub fn capture(root: &Path) -> io::Result<Self> {
+        Self::capture_with_checkpoint(root, || Ok(())).map_err(|error| match error {
+            BaselineCaptureError::Io(error) => error,
+            BaselineCaptureError::Aborted(_) => io::Error::other("inventory capture aborted"),
+        })
+    }
+
+    pub(crate) fn capture_with_checkpoint(
+        root: &Path,
+        mut checkpoint: impl FnMut() -> Result<(), BaselineAbort>,
+    ) -> Result<Self, BaselineCaptureError> {
+        let root_spelling = if root.is_absolute() {
+            root.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(root)
+        };
+        let root = root.canonicalize()?;
+        let mut baseline = Self {
+            root: root.clone(),
+            root_spelling,
+            files: Vec::new(),
+            complete: true,
+            reason: None,
+        };
+        let mut pending = vec![(root.clone(), 0_usize)];
+        let mut total = 0_u64;
+        let mut visited_entries = 0_usize;
+        let mut visited_directories = 1_usize;
+        while let Some(directory) = pending.pop() {
+            checkpoint().map_err(BaselineCaptureError::Aborted)?;
+            let (_, depth) = &directory;
+            let path_dir = &directory.0;
+            let entries = match fs::read_dir(path_dir) {
+                Ok(entries) => entries,
+                Err(error) => {
+                    baseline.fail(format!("cannot read {}: {error}", path_dir.display()));
+                    break;
+                }
+            };
+            for entry in entries {
+                checkpoint().map_err(BaselineCaptureError::Aborted)?;
+                let entry = match entry {
+                    Ok(entry) => entry,
+                    Err(error) => {
+                        baseline.fail(format!("cannot enumerate {}: {error}", path_dir.display()));
+                        break;
+                    }
+                };
+                visited_entries += 1;
+                if visited_entries > MAX_BUILD_INVENTORY_ENTRIES {
+                    baseline.fail("project inventory exceeds entry limit".into());
+                    break;
+                }
+                let path = entry.path();
+                let metadata = match fs::symlink_metadata(&path) {
+                    Ok(metadata) => metadata,
+                    Err(error) => {
+                        baseline.fail(format!("cannot inspect {}: {error}", path.display()));
+                        break;
+                    }
+                };
+                if metadata.file_type().is_symlink() {
+                    continue;
+                }
+                if metadata.is_dir() {
+                    if *depth + 1 > MAX_BUILD_INVENTORY_DEPTH {
+                        baseline.fail("project inventory exceeds directory depth limit".into());
+                        break;
+                    }
+                    visited_directories += 1;
+                    if visited_directories > MAX_BUILD_INVENTORY_DIRECTORIES {
+                        baseline.fail("project inventory exceeds directory limit".into());
+                        break;
+                    }
+                    pending.push((path, *depth + 1));
+                    continue;
+                }
+                if !metadata.is_file() {
+                    continue;
+                }
+                if baseline.files.len() >= MAX_BUILD_INVENTORY_FILES {
+                    baseline.fail("project inventory exceeds file limit".into());
+                    break;
+                }
+                if metadata.len() > MAX_TRACKED_FILE_BYTES
+                    || metadata.len() > MAX_BUILD_INVENTORY_BYTES.saturating_sub(total)
+                {
+                    baseline.fail("project inventory exceeds byte limit".into());
+                    break;
+                }
+                match file_digest_checked(&path, &mut total, &mut checkpoint) {
+                    Ok(Some(digest)) => baseline.files.push((path, digest)),
+                    Ok(None) => {
+                        baseline.fail(format!("cannot hash {}", path.display()));
+                        break;
+                    }
+                    Err(BaselineCaptureError::Io(error)) => {
+                        baseline.fail(format!("cannot hash {}: {error}", path.display()));
+                        break;
+                    }
+                    Err(BaselineCaptureError::Aborted(reason)) => {
+                        return Err(BaselineCaptureError::Aborted(reason));
+                    }
+                }
+            }
+            if !baseline.complete {
+                break;
+            }
+        }
+        Ok(baseline)
+    }
+
+    fn fail(&mut self, reason: String) {
+        self.complete = false;
+        if self.reason.is_none() {
+            self.reason = Some(reason);
+        }
+    }
+
+    pub fn validate(&self, snapshot: &ProjectDependencySnapshot) -> BuildInputVerification {
+        if !self.complete {
+            return BuildInputVerification::Unverified(
+                self.reason
+                    .clone()
+                    .unwrap_or_else(|| "project inventory incomplete".into()),
+            );
+        }
+        if snapshot.root != self.root {
+            return BuildInputVerification::Unverified(
+                "build root differs from pre-build inventory".into(),
+            );
+        }
+        if !snapshot.recorder_complete {
+            return BuildInputVerification::Unverified("TeX input recorder incomplete".into());
+        }
+        if !snapshot.source_is_project_local
+            || snapshot.escaped_project_input
+            || !snapshot
+                .project_inputs
+                .iter()
+                .any(|input| input.origin == ProjectInputOrigin::AuthorSource)
+        {
+            return BuildInputVerification::Unverified(
+                "author source is outside the selected project root or could not be recorded"
+                    .into(),
+            );
+        }
+        for input in &snapshot.project_inputs {
+            let Some(digest) = input.digest else {
+                return BuildInputVerification::Unverified(format!(
+                    "input could not be hashed: {}",
+                    input.recorded_path.display()
+                ));
+            };
+            if has_symlink_component_within_project(
+                &input.recorded_path,
+                &self.root,
+                &self.root_spelling,
+            ) || input.path != input.recorded_path.canonicalize().unwrap_or_default()
+            {
+                return BuildInputVerification::Unverified(format!(
+                    "input path changed or uses an unsupported symlink: {}",
+                    input.recorded_path.display()
+                ));
+            }
+            match self.files.iter().find(|(path, _)| path == &input.path) {
+                Some((_, before)) if *before == digest => {}
+                Some(_) => {
+                    return BuildInputVerification::Unverified(format!(
+                        "input changed during build: {}",
+                        input.recorded_path.display()
+                    ));
+                }
+                None => {
+                    return BuildInputVerification::Unverified(format!(
+                        "input was not present in pre-build inventory: {}",
+                        input.recorded_path.display()
+                    ));
+                }
+            }
+        }
+        BuildInputVerification::Verified
+    }
+
+    pub fn validate_and_mark(&self, snapshot: &mut ProjectDependencySnapshot) {
+        let status = self.validate(snapshot);
+        snapshot.set_build_input_verification(status);
+    }
+}
+
+fn file_digest_checked(
+    path: &Path,
+    total_bytes_read: &mut u64,
+    checkpoint: &mut impl FnMut() -> Result<(), BaselineAbort>,
+) -> Result<Option<[u8; 32]>, BaselineCaptureError> {
+    let mut file = File::open(path)?;
+    let mut hasher = Sha256::new();
+    let mut bytes_read = 0_u64;
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        checkpoint().map_err(BaselineCaptureError::Aborted)?;
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        bytes_read = bytes_read.saturating_add(count as u64);
+        // Count actual reads, not only the earlier metadata: a concurrently
+        // growing resource must not evade the total inventory budget.
+        *total_bytes_read = total_bytes_read.saturating_add(count as u64);
+        if bytes_read > MAX_TRACKED_FILE_BYTES || *total_bytes_read > MAX_BUILD_INVENTORY_BYTES {
+            return Ok(None);
+        }
+        hasher.update(&buffer[..count]);
+    }
+    Ok(Some(hasher.finalize().into()))
+}
+
+#[derive(Debug)]
+pub(crate) enum BaselineCaptureError {
+    Io(io::Error),
+    Aborted(BaselineAbort),
+}
+
+impl From<io::Error> for BaselineCaptureError {
+    fn from(error: io::Error) -> Self {
+        Self::Io(error)
+    }
+}
+
+fn has_symlink_component_within_project(path: &Path, root: &Path, root_spelling: &Path) -> bool {
+    let mut current = PathBuf::new();
+    for component in path.components() {
+        current.push(component.as_os_str());
+        if fs::symlink_metadata(&current).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
+            let parent_is_project_local = current.parent().is_some_and(|parent| {
+                parent
+                    .canonicalize()
+                    .is_ok_and(|resolved| resolved.starts_with(root))
+            });
+            let target_is_project_child = current
+                .canonicalize()
+                .is_ok_and(|resolved| resolved.starts_with(root) && resolved != root);
+            if current.starts_with(root)
+                || (current != root_spelling && current.starts_with(root_spelling))
+                || parent_is_project_local
+                || target_is_project_child
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 impl ProjectDependencySnapshot {
@@ -141,7 +432,24 @@ impl ProjectDependencySnapshot {
             recorder_complete,
             source_is_project_local,
             escaped_project_input,
+            build_input_verification: BuildInputVerification::Unverified(
+                "no pre-build inventory".into(),
+            ),
         })
+    }
+
+    pub(crate) fn set_build_input_verification(&mut self, status: BuildInputVerification) {
+        self.build_input_verification = status;
+    }
+
+    #[must_use]
+    pub fn build_input_verification(&self) -> &BuildInputVerification {
+        &self.build_input_verification
+    }
+
+    #[must_use]
+    pub fn build_inputs_verified(&self) -> bool {
+        self.build_input_verification == BuildInputVerification::Verified
     }
 
     /// False when the runner could not read a usable .fls INPUT record.
@@ -472,6 +780,177 @@ mod recorder_completeness_regression {
         assert!(!snapshot.recorder_complete());
         assert!(!snapshot.is_project_fresh());
         assert!(snapshot.invalidated_project_paths().is_empty());
+    }
+}
+
+#[cfg(test)]
+mod build_baseline_regression {
+    use super::*;
+
+    #[test]
+    fn growth_after_metadata_consumes_the_actual_total_read_budget() {
+        let project = tempfile::tempdir().unwrap();
+        let data = project.path().join("growing.dat");
+        fs::write(&data, b"").unwrap();
+        assert_eq!(fs::metadata(&data).unwrap().len(), 0);
+        let mut total_read = MAX_BUILD_INVENTORY_BYTES - 2;
+        let mut changed = false;
+        let result = file_digest_checked(&data, &mut total_read, &mut || {
+            if !changed {
+                // Simulate another process extending a resource after its
+                // metadata was accepted but before the first content read.
+                fs::write(&data, b"abcd").unwrap();
+                changed = true;
+            }
+            Ok(())
+        })
+        .unwrap();
+        assert!(result.is_none());
+        assert!(total_read > MAX_BUILD_INVENTORY_BYTES);
+    }
+
+    #[test]
+    fn pre_build_bytes_reject_persistent_mutation_of_first_build_data_input() {
+        let project = tempfile::tempdir().unwrap();
+        let data_dir = project.path().join("data");
+        fs::create_dir_all(&data_dir).unwrap();
+        let source = project.path().join("figures/main.tex");
+        fs::create_dir_all(source.parent().unwrap()).unwrap();
+        let data = data_dir.join("curve.dat");
+        fs::write(&source, b"% keep CRLF\r\n\\input{../data/curve.dat}\r\n").unwrap();
+        fs::write(&data, b"0 0\n1 1\n").unwrap();
+
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        fs::write(&data, b"0 0\n1 2\n").unwrap();
+        // The after-build snapshot alone looks fresh; comparison with the
+        // pre-build inventory correctly refuses to pair the PDF with new data.
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&data),
+            true,
+        )
+        .unwrap();
+        assert!(snapshot.is_project_fresh());
+        assert_eq!(
+            baseline.validate(&snapshot),
+            BuildInputVerification::Unverified(format!(
+                "input changed during build: {}",
+                data.display()
+            ))
+        );
+        assert_eq!(
+            fs::read(&source).unwrap(),
+            b"% keep CRLF\r\n\\input{../data/curve.dat}\r\n"
+        );
+    }
+
+    #[test]
+    fn unchanged_first_build_inputs_including_source_are_verified() {
+        let project = tempfile::tempdir().unwrap();
+        let source = project.path().join("figure.tex");
+        let data = project.path().join("curve.dat");
+        fs::write(&source, b"% opaque\r\n").unwrap();
+        fs::write(&data, b"0 0\n").unwrap();
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&data),
+            true,
+        )
+        .unwrap();
+        assert_eq!(
+            baseline.validate(&snapshot),
+            BuildInputVerification::Verified
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn used_symlink_input_cannot_be_certified() {
+        use std::os::unix::fs::symlink;
+        let project = tempfile::tempdir().unwrap();
+        let source = project.path().join("figure.tex");
+        let target = project.path().join("real.dat");
+        let link = project.path().join("curve.dat");
+        fs::write(&source, "source").unwrap();
+        fs::write(&target, "data").unwrap();
+        symlink(&target, &link).unwrap();
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        let snapshot = ProjectDependencySnapshot::capture(
+            project.path(),
+            &source,
+            std::slice::from_ref(&link),
+            true,
+        )
+        .unwrap();
+        assert!(matches!(
+            baseline.validate(&snapshot),
+            BuildInputVerification::Unverified(_)
+        ));
+    }
+
+    #[test]
+    fn deep_directory_tree_fails_closed_at_the_depth_limit() {
+        let project = tempfile::tempdir().unwrap();
+        let mut nested = project.path().to_path_buf();
+        for _ in 0..=MAX_BUILD_INVENTORY_DEPTH {
+            nested.push("d");
+        }
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("file.tex"), "source").unwrap();
+        let baseline = ProjectBuildBaseline::capture(project.path()).unwrap();
+        assert!(!baseline.complete);
+        assert!(baseline.reason.as_deref().unwrap().contains("depth"));
+    }
+
+    #[test]
+    fn inventory_checkpoint_can_abort_for_cancellation_or_deadline() {
+        let project = tempfile::tempdir().unwrap();
+        let cancelled = ProjectBuildBaseline::capture_with_checkpoint(project.path(), || {
+            Err(BaselineAbort::Cancelled)
+        });
+        assert!(matches!(
+            cancelled,
+            Err(BaselineCaptureError::Aborted(BaselineAbort::Cancelled))
+        ));
+        let deadline = ProjectBuildBaseline::capture_with_checkpoint(project.path(), || {
+            Err(BaselineAbort::Deadline)
+        });
+        assert!(matches!(
+            deadline,
+            Err(BaselineCaptureError::Aborted(BaselineAbort::Deadline))
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn selected_root_alias_is_allowed_but_project_internal_symlink_is_not() {
+        use std::os::unix::fs::symlink;
+        let owner = tempfile::tempdir().unwrap();
+        let project = owner.path().join("project");
+        fs::create_dir_all(&project).unwrap();
+        let source = project.join("main.tex");
+        let target = project.join("real.dat");
+        let link = project.join("asset.dat");
+        fs::write(&source, "source").unwrap();
+        fs::write(&target, "data").unwrap();
+        symlink(&target, &link).unwrap();
+        let alias = owner.path().join("project-alias");
+        symlink(&project, &alias).unwrap();
+        let baseline = ProjectBuildBaseline::capture(&alias).unwrap();
+        let snapshot = ProjectDependencySnapshot::capture(
+            &alias,
+            &alias.join("main.tex"),
+            std::slice::from_ref(&alias.join("asset.dat")),
+            true,
+        )
+        .unwrap();
+        assert!(matches!(
+            baseline.validate(&snapshot),
+            BuildInputVerification::Unverified(_)
+        ));
     }
 }
 

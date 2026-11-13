@@ -1,0 +1,12 @@
+   Compiling tikzarium-app v1.0.0-rc.1 (/workspace/scratch/bd022a30f859/recovered/source/crates/tikzarium-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.50s
+     Running unittests src/main.rs (target/debug/deps/tikzarium_app-ad254da7be96314f)
+
+running 4 tests
+test source_workspace_tests::mixed_shell_transfers_multiple_authored_inverses_in_order_without_retaining_legacy_history ... ok
+test source_workspace_tests::mixed_shell_visual_insert_shared_undo_cancels_held_guide_without_ghost_or_double_dispatch ... ok
+test source_workspace_tests::mixed_shell_inspector_then_typing_undo_redo_save_open_and_revision_fences ... ok
+test source_workspace_tests::mixed_shell_typing_inspector_apply_two_undo_and_redo_preserve_exact_source ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 216 filtered out; finished in 0.07s
+

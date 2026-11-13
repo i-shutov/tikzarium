@@ -1,0 +1,61 @@
+{
+  "reviewer": "root independent original artifact review",
+  "created_utc": "2026-11-13T10:48:18.348975+00:00",
+  "source_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "app_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+  "run_id": 43410590249,
+  "artifact_id": 14029766399,
+  "artifact_sha256": "435ccae2e47b2c5875a4fdb1f2b6c053d6e9e8b6b20972d57a85e1e9cd769489",
+  "status": "PASS_SCOPED_HOSTED_GUI_MIXED_UNDO",
+  "environment": "Linux X11/Xvfb 1366x768; client1180x680; Midnight",
+  "integrity": {
+    "github_size_digest": "PASS",
+    "zip_crc": "PASS",
+    "audit_report_files_sha256": 99,
+    "source_stages_exact": 8,
+    "opened_and_reopened_clipboard": "BYTE_IDENTICAL_ORIGINAL",
+    "live_export_pdf": "BYTE_IDENTICAL"
+  },
+  "source_checks": [
+    "Original CRLF derivative preserved",
+    "Typed source exactly original plus Unicode marker",
+    "Draft151 leaves savedsource equal typed150",
+    "Apply exactly unique samples150 to151 replacement, no other byte edits",
+    "Common Undo restores typed150; second common Undo restores entire original",
+    "Native reopened editor clipboard and savedsource equal original"
+  ],
+  "visual_review": {
+    "raw/021-draft.png": "151 focused draft, source150, Unicode EOF marker preserved",
+    "raw/022-applied.png": "Source151 visible and exact scoped patch status",
+    "raw/023-undo-inspector.png": "Source150 restored",
+    "raw/024-undo-typing.png": "Source150 and EOF typed comment absent",
+    "raw/031-exact-pdf-view-exported.png": "Actual GUI PDF tab with current exported Gaussian curve and exact PDF status",
+    "export/exact-pdf.png": "One red smooth symmetric Gaussian curve, negative x ticks, visible Greek beta/tau and superscript1/2, no clipping or replacement glyphs at supplied120dpi"
+  },
+  "pdf_checks": {
+    "sha256": "0190fcb4c25bea97634576e7b5c997395e6c721bf5efad732ec22ac20b950bc7",
+    "pages": 1,
+    "embedded_fonts": 4,
+    "gui_xelatex_log_exact_copy": true,
+    "missing_character_nullfont_fatal_tex_error": "NONE",
+    "output_line": "Output written on /tmp/.tmppGvfKH/out/compact-pgfplots.pdf (1 page).",
+    "source_log_name": "compact-pgfplots.tex"
+  },
+  "process": {
+    "launched_pid": 5048,
+    "owned_window": "6291459",
+    "absolute_client_origin": [
+      1,
+      20
+    ],
+    "build_provenance_exact_source": "PASS",
+    "provenance_limit": "Compact driver records launched production executable path/hash, PID and owned window; unlike PGF V2 report, does not independently retain /proc/exe hash or FLS input capture."
+  },
+  "limitations": [
+    "Named SV-001 derivative mixed history only",
+    "No new physical Win10/Mac/IME/DPI/G3 acceptance",
+    "Not aggregate SCI142/SC3/AT4 acceptance",
+    "No merge/stable/release GO"
+  ]
+}

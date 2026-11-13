@@ -1,0 +1,137 @@
+{
+  "kind": "SCI_COMPACT_X11_PRODUCTION_DRIVER",
+  "status": "HOSTED_GUI_SEQUENCE_CAPTURED_REQUIRES_INDEPENDENT_REVIEW",
+  "gui": "HOSTED_GUI_LINUX_X11",
+  "phase": "full",
+  "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "screen_size": [
+    1366,
+    768
+  ],
+  "client_size": [
+    1180,
+    680
+  ],
+  "physical_win10": "NOT_RUN",
+  "mac_m1_m4": "NOT_RUN",
+  "native_acceptance": "REQUIRES_INDEPENDENT_REVIEW",
+  "coordinate_scope": "CURRENT_COMPACT_CLIENT_CANDIDATES_REQUIRE_ORIGINAL_IMAGE_REVIEW",
+  "coordinates": {
+    "file_menu": [
+      23,
+      15
+    ],
+    "file_path": [
+      143,
+      135
+    ],
+    "source_settings": [
+      405,
+      80
+    ],
+    "source_full_source": [
+      490,
+      150
+    ],
+    "source": [
+      200,
+      230
+    ],
+    "dirty_discard": [
+      505,
+      407
+    ],
+    "inspector_properties": [
+      960,
+      81
+    ],
+    "scan": [
+      1015,
+      359
+    ],
+    "candidate": [
+      1020,
+      389
+    ],
+    "first_axis": [
+      1000,
+      422
+    ],
+    "samples_value": [
+      1020,
+      514
+    ],
+    "apply": [
+      984,
+      541
+    ],
+    "undo": [
+      109,
+      49
+    ],
+    "export": [
+      291,
+      49
+    ],
+    "pdf_view": [
+      439,
+      49
+    ],
+    "console": [
+      1118,
+      48
+    ],
+    "raw_log": [
+      158,
+      520
+    ],
+    "copy_log": [
+      246,
+      520
+    ]
+  },
+  "artifact_audit_report": "audit-report.json",
+  "source_head_sha": "b646c4d46d331a281c1fe51d6bcc79c436ffdf35",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "app_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "window_geometry_source": "XWININFO_ABSOLUTE_CLIENT",
+  "scientific_coordinate_calibration": {
+    "status": "UNIQUE_EXACT_BINARY_MASK_MATCH_REQUIRES_ORIGINAL_REVIEW",
+    "scope": "DEFAULT_MIDNIGHT_COMPACT_1180X680_ONLY",
+    "reference_original": "/home/runner/work/_temp/sci-compact-native/observed/opened/screenshot.original.png",
+    "reference_sha256": "81868c6f27d2e801b8497783b4e1fb5e0bb54fb5d9fac1f7935b24c07b382305",
+    "current_original": "/home/runner/work/_temp/sci-compact-native/raw/013-before-scientific-scan.png",
+    "current_sha256": "b1c0c32b7e1f83e47702c63995f0521acb961b9dc35bec61f308366b711905eb",
+    "reference_patch_root_box": [
+      953,
+      287,
+      1081,
+      300
+    ],
+    "fixed_luminance_threshold": 144,
+    "derived_binary_mask_file": "/home/runner/work/_temp/sci-compact-native/raw/scan-coordinate-calibration.mask.bin",
+    "binary_mask_sha256": "0055cea2c9a96114fb133352e8ac6804e6b884c3124d29bf5ff8a84a7aa47e92",
+    "foreground_pixels": 373,
+    "total_mask_pixels": 1664,
+    "search_center_y_inclusive": [
+      293,
+      493
+    ],
+    "matching_offsets_y": [
+      86
+    ],
+    "offset_y": 86,
+    "matched_patch_root_box": [
+      953,
+      373,
+      1081,
+      386
+    ]
+  },
+  "scientific_draft_readback": {
+    "file": "raw/019-focused-draft-readback.txt",
+    "sha256": "8e612bd1f5d132a339575b8dafb7842c64614e56bcf3d5ab65a0bc4b34329407",
+    "expected_utf8": "151",
+    "matches": true
+  }
+}

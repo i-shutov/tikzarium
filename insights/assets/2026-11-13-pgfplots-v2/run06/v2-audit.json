@@ -1,0 +1,776 @@
+{
+  "schema_version": 1,
+  "reviewer": {
+    "task_id": "/root/pgf_qa_review",
+    "model": "GPT-6 Codex; inherited parent model"
+  },
+  "reviewed_utc": "2026-11-13T12:02:37.042699+00:00",
+  "run_id": "43419233297",
+  "suite": "v2",
+  "overall_status": "FAIL_STRICT_XELATEX_WARNING_GATE",
+  "native_gui_acceptance": "NOT_ACCEPTED_STRICT_XELATEX_WARNINGS",
+  "review_result": "ALL_BOUNDED_NATIVE_TRANSACTIONS_AND_EIGHT_BUILDS_VERIFIED_WITH_THREE_STRICT_WARNING_FAILURES",
+  "provenance": {
+    "originals_root": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native",
+    "archive_sha256": "b746ecd57835a0bbd09324a19993f3254822201447cfa73f1cb474bb2ab9bdd8",
+    "archive_bytes": 143089466,
+    "root_verified_safe_zip_members": 2115,
+    "independently_verified_report_file_hashes": 2104,
+    "source_head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "app_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "owned_pid": 5017,
+    "window_id": "4194307",
+    "observed_proc_exe_sha_matches_build_receipt": true,
+    "geometry": {
+      "desktop": [
+        1366,
+        768
+      ],
+      "client": [
+        1180,
+        680
+      ],
+      "client_origin": [
+        1,
+        20
+      ]
+    },
+    "binary_limit": "No executable copy is retained in artifact. Production receipt, source guard and owned /proc/PID/exe resolved path/hash bind native observations; ELF bytes were not independently reopened locally."
+  },
+  "attainment": {
+    "planned_and_actual_transactions": 26,
+    "planned_and_actual_stages": 109,
+    "stage_counts": {
+      "formula": 58,
+      "external-tables": 13,
+      "SV-001": 7,
+      "SV-003": 7,
+      "SV-022": 7,
+      "SV-029": 7,
+      "SV-040": 3,
+      "SV-009": 7
+    },
+    "fixture_order": [
+      "formula",
+      "external-tables",
+      "SV-001",
+      "SV-003",
+      "SV-022",
+      "SV-029",
+      "SV-040",
+      "SV-009"
+    ],
+    "builds_actual": 8,
+    "not_run_fixtures": [],
+    "not_run_operations": [],
+    "operation_inventory": [
+      {
+        "name": "formula-axis0-samples",
+        "command": 0,
+        "kind": "axis",
+        "key": "samples",
+        "before": "41",
+        "after": "43",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-domain",
+        "command": 0,
+        "kind": "axis",
+        "key": "domain",
+        "before": "-3:3",
+        "after": "-2.5:2.5",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-xmin",
+        "command": 0,
+        "kind": "axis",
+        "key": "xmin",
+        "before": "-3.2",
+        "after": "-3.1",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-xmax",
+        "command": 0,
+        "kind": "axis",
+        "key": "xmax",
+        "before": "3.2",
+        "after": "3.1",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-ymin",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymin",
+        "before": "-0.2",
+        "after": "-0.1",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-ymax",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymax",
+        "before": "1.2",
+        "after": "1.3",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-xtick-distance",
+        "command": 0,
+        "kind": "axis",
+        "key": "xtick distance",
+        "before": "1",
+        "after": "0.5",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-ytick-distance",
+        "command": 0,
+        "kind": "axis",
+        "key": "ytick distance",
+        "before": "0.2",
+        "after": "0.25",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-xtick",
+        "command": 0,
+        "kind": "axis",
+        "key": "xtick",
+        "before": "{-3,-2,-1,0,1,2,3}",
+        "after": "{-2,0,2}",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-ytick",
+        "command": 0,
+        "kind": "axis",
+        "key": "ytick",
+        "before": "{0,0.5,1}",
+        "after": "{0,0.25,0.5,0.75,1}",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-width",
+        "command": 0,
+        "kind": "axis",
+        "key": "width",
+        "before": "10cm",
+        "after": "11cm",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-height",
+        "command": 0,
+        "kind": "axis",
+        "key": "height",
+        "before": "6cm",
+        "after": "7cm",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-xlabel",
+        "command": 0,
+        "kind": "axis",
+        "key": "xlabel",
+        "before": "{Время x}",
+        "after": "{Время t}",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-ylabel",
+        "command": 0,
+        "kind": "axis",
+        "key": "ylabel",
+        "before": "{Амплитуда y}",
+        "after": "{Амплитуда A}",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-axis0-mark",
+        "command": 0,
+        "kind": "axis",
+        "key": "mark",
+        "before": "none",
+        "after": "+",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-addplot1-samples",
+        "command": 1,
+        "kind": "addplot",
+        "key": "samples",
+        "before": "51",
+        "after": "53",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-addplot1-domain",
+        "command": 1,
+        "kind": "addplot",
+        "key": "domain",
+        "before": "-2.8:2.8",
+        "after": "-2.6:2.6",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "formula-addplot1-mark",
+        "command": 1,
+        "kind": "addplot",
+        "key": "mark",
+        "before": "*",
+        "after": "x",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "external-tables-axis0-ymax",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymax",
+        "before": "2.7",
+        "after": "2.9",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "external-tables-addplot1-mark",
+        "command": 1,
+        "kind": "addplot",
+        "key": "mark",
+        "before": "*",
+        "after": "x",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "external-tables-addplot2-mark",
+        "command": 2,
+        "kind": "addplot",
+        "key": "mark",
+        "before": "+",
+        "after": "x",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "SV-001-axis0-ymax",
+        "command": 0,
+        "kind": "axis",
+        "key": "ymax",
+        "before": "1.4",
+        "after": "1.2",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "SV-003-axis0-xmax",
+        "command": 0,
+        "kind": "axis",
+        "key": "xmax",
+        "before": "1080",
+        "after": "1000",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "SV-009-addplot1-domain",
+        "command": 1,
+        "kind": "addplot",
+        "key": "domain",
+        "before": "0:1.5",
+        "after": "0:1.4",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "SV-022-axis0-width",
+        "command": 0,
+        "kind": "axis",
+        "key": "width",
+        "before": "0.6\\textwidth",
+        "after": "0.7\\textwidth",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      },
+      {
+        "name": "SV-029-axis0-height",
+        "command": 0,
+        "kind": "axis",
+        "key": "height",
+        "before": "0.3\\textwidth",
+        "after": "0.4\\textwidth",
+        "result": "EXACT_DRAFT_APPLY_UNDO_VERIFIED"
+      }
+    ],
+    "SV-040": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR; original bytes compiled unchanged"
+  },
+  "transaction_source_review": {
+    "status": "VERIFIED_ALL26",
+    "checks": [
+      "Manifest exact8fixture/26operation inventory, all pinned input bytes, six original corpus copies and dependency inventory independently validated.",
+      "All109 retained stages have exact identity, timezone-aware monotonic timestamps, original1366x768PNG dimensions, source/editor hashes and expected source/editor bytes.",
+      "Every draft leaves source original, every Apply equals only the declared minimal literal patch, every Undo is the exact original inverse. CRLF, comments, macros, unknown keys and unrelated bytes are preserved.",
+      "Seven final reapplications equal only the final declared patch. All8 unsaved editor challenges and exact saved-file reopen readbacks are retained and verified.",
+      "All66 focused-field clipboard captures equal the expected original/proposed literal bytes (33selection pairs including7finalreapplications).",
+      "All stage paths bind to actual native Open input paths. Every native event retains ownedPID5017; all events after window binding retain window4194307 (the startup process event has window_id=null)."
+    ]
+  },
+  "popup_f1_review": {
+    "status": "VERIFIED_REACHED33_SELECTIONS",
+    "plans_replayed_from_original_pixels": 33,
+    "native_scrollbar_drags": 17,
+    "actual_button_held_proofs": 34,
+    "selected_property_F1_tab_transitions": 33,
+    "geometry": "Observed200px and86px viewports; exact3/15 inventories; final target rows lie in the source-grounded safe interior for every observed scrollbar offset. Actual popup/index/count/target fields replay identically.",
+    "visual_review": "27before/after Properties+F1 original PNG pairs equal run05 exact bytes and reuse that independent visual review. Six fresh Properties/Help pairs and six actual popup crops inspected; correct width/height/domain fields and Help names are visible.",
+    "prior_stage_pngs": {
+      "exact_equal": 84,
+      "compared": 85,
+      "different": "formula/formula-axis0-ytick-undo; independently inspected and sourceinverse verified"
+    },
+    "prior_visual_audit": "/workspace/scratch/24342458ee84/reviews/run05-v2-partial-audit.json",
+    "fresh_pair_provenance": "/workspace/scratch/24342458ee84/reviews/run06-v2/visual-provenance.json"
+  },
+  "build_pdf_review": {
+    "status": "EIGHT_ACTUAL_GUI_OUTPUTS_VERIFIED_FIVE_STRICT_PASS_THREE_STRICT_FAIL",
+    "by_fixture": {
+      "formula": {
+        "pdf_sha256": "aa305da1ed19162df0ebf28b733e585bef00cfc31af3ad297bd7cda2f9717dc4",
+        "source_sha256": "a226abe0f190ef1222e249b50c57a376369f54aa068969681d940afb200ef446",
+        "log_sha256": "2a3a5f99852c157b9f1b2118d963514b32bd2fdc765617af2806b5c4bda61d01",
+        "recorder_sha256": "60269db51ef1edc06e35fabd97c8795732fc769ba3b2f076033e7e4ea8eff612",
+        "warnings": [],
+        "font_rows": 7,
+        "strict_gate": "PASS",
+        "dependencies": {}
+      },
+      "external-tables": {
+        "pdf_sha256": "fd40631e813f3e354485cbabce3c3a00a792f7d4f9e14198dc7dc36684b4758d",
+        "source_sha256": "21691d8977949edea3ab852f9888ea5259c7a6c513842301868977c39348709d",
+        "log_sha256": "e38d1d7b99ea7cd9d10fde0b2af53b67c233b609f9816e84775160b2763fe2d2",
+        "recorder_sha256": "971a27507a9785bef688fc4f6eba7b41496ff95c5e79d3a33f683f036c80632c",
+        "warnings": [],
+        "font_rows": 4,
+        "strict_gate": "PASS",
+        "dependencies": {
+          "measurements.dat": "638a1ea6b925149501b245e601c1297b378d6cbd51d9a1d620fa08f800b33ea9",
+          "reference.csv": "8c5f31af39fa2dfbc0ff94266f36897b6e4e253f3998e3b17d7e078a8b845793"
+        }
+      },
+      "SV-001": {
+        "pdf_sha256": "c4c66a8e7cf6b130e8cf8761b7e0f2eb98e126701ae833d9213e41a5ff6ce58f",
+        "source_sha256": "43d473b71f96e9e9133c5e13928e4bdb2504a442c9938107ded65afeb75492b5",
+        "log_sha256": "e3838979713e0b00f1ceea214c41b22b9f159455125af94cade41bdbf087c46b",
+        "recorder_sha256": "2e73340adb44e65d04ac4fe2068e22fb92ee0fa34a473f6d9b0681dda94a7a07",
+        "warnings": [],
+        "font_rows": 4,
+        "strict_gate": "PASS",
+        "dependencies": {}
+      },
+      "SV-003": {
+        "pdf_sha256": "df1473e768a3554e0306a653e4df55fde32d64099fdc3cfe88760ae1edb4d1b0",
+        "source_sha256": "20ca32e8db7749adbdc6a12d9f0414031eed75e7e19bd33c501012fc2dab82bf",
+        "log_sha256": "20a36c45f75b6e1fc8c71ca7865484ca1e8d97f8f95d3106df8f5f8e7555d49e",
+        "recorder_sha256": "6a11a7ddcb246cd844d4f8f65825ed1a0b52656751dbc43ce3e991f381d86f0f",
+        "warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "font_rows": 5,
+        "strict_gate": "FAIL",
+        "dependencies": {}
+      },
+      "SV-022": {
+        "pdf_sha256": "4cdc56be7caf7a6dc729dbd610146827e3cbf3138155c600606ed8763e3f3c69",
+        "source_sha256": "ac8f9418fce2f686114a9cae49265381f6fe9ec1ee8b425958b3f36b83a714ab",
+        "log_sha256": "42e0ca66f89ebb872900860bd9facd376007abff1d9ac73cb6031a2b6c06076e",
+        "recorder_sha256": "aef0316bc9f40c04c8092000095a68abd2b823b558cee5cd2f8e6cbc8657c1f4",
+        "warnings": [],
+        "font_rows": 2,
+        "strict_gate": "PASS",
+        "dependencies": {}
+      },
+      "SV-029": {
+        "pdf_sha256": "8725662f6ae65b2442c5c3374d186357375b3a386cc653ba02ef6fb9147519f2",
+        "source_sha256": "71f3553b40835842438da3aea37d26a0a1b60159fff579de9bc227cba3a617ac",
+        "log_sha256": "307dbe87eec864c7454cb5de5b226aecfd40f493eea1d2c4d6b299a9ab72fd54",
+        "recorder_sha256": "cae55d324c99588778c952ee3c761a226b4d2d505d32fb2b2a69da30c40bf809",
+        "warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "font_rows": 3,
+        "strict_gate": "FAIL",
+        "dependencies": {}
+      },
+      "SV-040": {
+        "pdf_sha256": "0f6dbcfb98147b8130aeead24af484497f971976ded570d78f71f216512504fb",
+        "source_sha256": "a87af487a06729c3e0195f0d42ed25368338225bc9a033677e537228b4a1fc75",
+        "log_sha256": "1fdc46ed4542abd07ebb3b828cd5d86d4e3fa006e074e17e9b9e25c90c2dfab5",
+        "recorder_sha256": "c098ad960d0fa9c9791549e3a78ec5218794794484c586bd1320857c84b1dc7a",
+        "warnings": [],
+        "font_rows": 4,
+        "strict_gate": "PASS",
+        "dependencies": {}
+      },
+      "SV-009": {
+        "pdf_sha256": "8dc9716ef3c023122bd6a406c79e11ffbf5631de3fddf594f0bbf2ed20950713",
+        "source_sha256": "69ea7287d9a087ad1bf2196c8445a294c9376a809bf774dede0eade7054d1f83",
+        "log_sha256": "edf3d1f041a87942e87ec24cd7ceb5d73f7eaf00f11ef249638a00f0928f48c1",
+        "recorder_sha256": "f59a4402a15fba373e858485bc510760100b7c3e7ea63527f7b3592db68d17ee",
+        "warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "font_rows": 5,
+        "strict_gate": "FAIL",
+        "dependencies": {}
+      }
+    },
+    "checks": [
+      "Each actual copied GUI raw log identifies XeTeX and successful Output written; none has a fatal^!line.",
+      "All8 current exported PDFs have independently verified hashes, exactly1page, embedded fonts, nonemptyUTF8 text and no replacement glyph. Synthetic Cyrillic titles and DejaVu font rows present.",
+      "All8 original.flss contain the actual saved author source. Captured source hash/bytes equal only the approved final source; source/dependency bytes remain unchanged through build.",
+      "External table build records exact measurements.dat and reference.csv inputs; dependency hashes match input, live and every stagecopy.",
+      "No reviewer TeX compilation was performed. All8 actual PDFs independently rendered with Poppler at120dpi; first4 render pixel buffers equal previously reviewed run05 outputs. Newly reached4 independent renders and their full actual GUI built screenshots inspected."
+    ],
+    "scientific_source_and_visual_observations": {
+      "formula": "Run06 render pixels equal reviewed run05: symmetric positive Gaussian, blue final x markers, dashed0.6Gaussian, readable Cyrillic labels. Exact source expressions and all nonfinal edits reverted.",
+      "external-tables": "Run06 render pixels equal reviewed run05: three measured blue points/errorbars and dashed red reference series with finalxmarkers. Actual external mappings/dependencies verified; no manufactured measurements.",
+      "SV-001": "Run06 render pixels equal reviewed run05: smooth symmetric positive single peak, readable mathematical labels. Only ymax1.4→1.2 remains at final build.",
+      "SV-003": "Run06 render pixels equal reviewed run05: four red oscillatory bands and gray reference lines, intact mathematical labels. Only xmax1080→1000 remains; strict warningFAIL.",
+      "SV-022": "Only width0.6\\textwidth→0.7\\textwidth remains; height0.4\\textwidth and function1-2.5*gauss(x,0,1) preserved. Actual PDF shows symmetric red central dip approaching a flat upper level, withn2/t/t0labels and no visible clipping. No before/after numeric measurement claimed.",
+      "SV-029": "Only height0.3\\textwidth→0.4\\textwidth remains; width\\textwidth, domain[-20,20], gauss(x,0,5)-0.2gauss(x,0,1), ql=-1/qr=1 and arrow coordinates preserved. Source implies an even function with centralzero and positive side lobes; actual PDF shows symmetric blue twinlobes, deep central notch, inward reference arrows and intact omega/n2labels. strict warningFAIL remains.",
+      "SV-040": "Original source compiled unchanged; preservation-only case. Actual PDF shows exp(-x*x) bell with centralmaximum, dashed±0.83guides, halfheight segment and original labels. Source uses rawTikZdrawplot rather than a PGFaxis; no Inspector support or scientific relabeling claim.",
+      "SV-009": "Only firstaddplot domain0:1.5→0:1.4 remains; functiondefinition, all coordinate reference lines/nodes, xo/yn and Cyrillic mathematical labels preserved. Actual PDF shows rising red curve, two horizontal reference levels, two dashed vertical guides and intact labels. strict warningFAIL remains."
+    }
+  },
+  "strict_warning_failures": {
+    "fixtures": [
+      "SV-003",
+      "SV-029",
+      "SV-009"
+    ],
+    "actual_failure_events": [
+      {
+        "fixture": "SV-003",
+        "failed_stage": "SV-003/built",
+        "error": "Actual XeLaTeX output has nullfont/missing glyphs: missing character, nullfont",
+        "status": "FAIL_STRICT_XELATEX_WARNING_GATE"
+      },
+      {
+        "fixture": "SV-029",
+        "failed_stage": "SV-029/built",
+        "error": "Actual XeLaTeX output has nullfont/missing glyphs: missing character, nullfont",
+        "status": "FAIL_STRICT_XELATEX_WARNING_GATE"
+      },
+      {
+        "fixture": "SV-009",
+        "failed_stage": "SV-009/built",
+        "error": "Actual XeLaTeX output has nullfont/missing glyphs: missing character, nullfont",
+        "status": "FAIL_STRICT_XELATEX_WARNING_GATE"
+      }
+    ],
+    "warning_next_case_order": [
+      {
+        "warning": "SV-003",
+        "warning_utc": "2026-11-13T11:52:31.270039+00:00",
+        "next_opened": "SV-022",
+        "next_opened_utc": "2026-11-13T11:52:37.665361+00:00"
+      },
+      {
+        "warning": "SV-029",
+        "warning_utc": "2026-11-13T11:54:12.518336+00:00",
+        "next_opened": "SV-040",
+        "next_opened_utc": "2026-11-13T11:54:18.888832+00:00"
+      }
+    ],
+    "last_warning": "SV-009/built warning retained before process termination at2026-11-13T11:55:22.461919+00:00; exact inventory alreadycomplete.",
+    "suite_outcome": "Exact final inventory validation independently reproduced. Final report stillFAIL_STRICT andnative NOT_ACCEPTED; no warningcase converted toPASS.",
+    "process_exit": {
+      "code": 1,
+      "evidence": "original-job.log line1294: 2026-11-13T11:55:22.7393739Z ##[error]Process completed with exit code1."
+    },
+    "source_log_diagnosis": {
+      "SV-003": {
+        "actual_log_sha256": "20a36c45f75b6e1fc8c71ca7865484ca1e8d97f8f95d3106df8f5f8e7555d49e",
+        "actual_warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "actual_output_written_lines": [
+          {
+            "line": 839,
+            "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpvDSJP9"
+          }
+        ],
+        "fatal_tex_bang_lines": 0,
+        "original_source_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+        "unchanged_bare_semicolon_definitions": [
+          {
+            "line": 48,
+            "text": "  \\def\\xo{1.8};"
+          },
+          {
+            "line": 49,
+            "text": "  \\def\\yn{1.1};"
+          }
+        ],
+        "historical": {
+          "id": "SV-003",
+          "corpus": "SR",
+          "status": "PASS",
+          "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+          "exit_code": "0",
+          "seconds": "1.47",
+          "pdf_pages": "1",
+          "timed_out": "False",
+          "source_preserved": "True",
+          "dependencies_preserved": "True",
+          "nullfont_warnings": "2",
+          "source_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+          "reference_pdf_sha256": "eba57fa4f0d47f15c4f47ccc7e0703d79223ce76247c23c5f73dc91f7323041f",
+          "compiled_pdf_sha256": "e479605a7255cae250bff1b20ae13ab3acdb2e6f599bfde207e62e93fbafc5bc",
+          "tex_log_sha256": "62c42afadc787cf09744c4a7edb21cabc5ebeccc1961f4c0d2da225d7bb8a065",
+          "console_sha256": "21fb86e4f6b1d6e76506aef13ab5ab06a0100054b9712f45476b0f6dafba09aa",
+          "build_folder": "SV-003"
+        },
+        "historical_console_verified_sha256": "21fb86e4f6b1d6e76506aef13ab5ab06a0100054b9712f45476b0f6dafba09aa",
+        "historical_warning_lines": [
+          {
+            "line": 284,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 285,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+      },
+      "SV-029": {
+        "actual_log_sha256": "307dbe87eec864c7454cb5de5b226aecfd40f493eea1d2c4d6b299a9ab72fd54",
+        "actual_warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "actual_output_written_lines": [
+          {
+            "line": 839,
+            "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpBFmKfb"
+          }
+        ],
+        "fatal_tex_bang_lines": 0,
+        "original_source_sha256": "43e7efd9032830d95bc6e402ae941bc93af071a6eb4fd7ddedd4d02e318a4a43",
+        "unchanged_bare_semicolon_definitions": [
+          {
+            "line": 47,
+            "text": "  \\def\\ql{-1};"
+          },
+          {
+            "line": 48,
+            "text": "  \\def\\qr{1};"
+          }
+        ],
+        "historical": {
+          "id": "SV-029",
+          "corpus": "SR",
+          "status": "PASS",
+          "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+          "exit_code": "0",
+          "seconds": "1.3",
+          "pdf_pages": "1",
+          "timed_out": "False",
+          "source_preserved": "True",
+          "dependencies_preserved": "True",
+          "nullfont_warnings": "2",
+          "source_sha256": "43e7efd9032830d95bc6e402ae941bc93af071a6eb4fd7ddedd4d02e318a4a43",
+          "reference_pdf_sha256": "be604bde99951a68fc05a36aca3d3a3a52c600020610e4a88e70984fe951f1c7",
+          "compiled_pdf_sha256": "47854462a4841c6d55ac6f0675a7a2e35d9c4ee83fb3e2995c57b327761a2eb5",
+          "tex_log_sha256": "a7a8a660cc85ecb23c23b0f8b85038efa58f9984b5b042ed5cc4ef3758f0ffcc",
+          "console_sha256": "d8505bd39b438bd91f9bbb214aafc1868a04b0d3224f84da6bac1b81a7843383",
+          "build_folder": "SV-029"
+        },
+        "historical_console_verified_sha256": "d8505bd39b438bd91f9bbb214aafc1868a04b0d3224f84da6bac1b81a7843383",
+        "historical_warning_lines": [
+          {
+            "line": 284,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 285,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+      },
+      "SV-009": {
+        "actual_log_sha256": "edf3d1f041a87942e87ec24cd7ceb5d73f7eaf00f11ef249638a00f0928f48c1",
+        "actual_warnings": [
+          {
+            "line": 815,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 816,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "actual_output_written_lines": [
+          {
+            "line": 839,
+            "text": "Output written on /home/runner/work/_temp/pgfplots-native/engine-tmp/.tmpTNnwRI"
+          }
+        ],
+        "fatal_tex_bang_lines": 0,
+        "original_source_sha256": "5e6e3dfc2d2b44a74a0a3069e55a402900d2317580fd6991bf39c16648a86fac",
+        "unchanged_bare_semicolon_definitions": [
+          {
+            "line": 48,
+            "text": "  \\def\\xo{0.6};"
+          },
+          {
+            "line": 49,
+            "text": "  \\def\\yn{1.1};"
+          }
+        ],
+        "historical": {
+          "id": "SV-009",
+          "corpus": "SR",
+          "status": "PASS",
+          "engine_version": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+          "exit_code": "0",
+          "seconds": "1.123",
+          "pdf_pages": "1",
+          "timed_out": "False",
+          "source_preserved": "True",
+          "dependencies_preserved": "True",
+          "nullfont_warnings": "2",
+          "source_sha256": "5e6e3dfc2d2b44a74a0a3069e55a402900d2317580fd6991bf39c16648a86fac",
+          "reference_pdf_sha256": "e9f88f156a9377166d7ae07d7b7fb591410fd588c6e0727b9cab4908c8d2c2ed",
+          "compiled_pdf_sha256": "7072c85990eb260ffdd9005f4df218491329b31b12446dd899a1470387c09819",
+          "tex_log_sha256": "32fa594b7d8f5d2c30721f9566417adbf81f4673f4f387bb7c37f6841619dacd",
+          "console_sha256": "abdc9d43bbf2c590b5db9f0a8c5c37282dd39c1a94f260052d71d7009b4cab4d",
+          "build_folder": "SV-009"
+        },
+        "historical_console_verified_sha256": "abdc9d43bbf2c590b5db9f0a8c5c37282dd39c1a94f260052d71d7009b4cab4d",
+        "historical_warning_lines": [
+          {
+            "line": 284,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          },
+          {
+            "line": 285,
+            "text": "Missing character: There is no ; (\"3B) in font nullfont!"
+          }
+        ],
+        "cause_assessment": "Two bare semicolons remain after macro definitions inside the TikZ picture. Each is a TeX text token in the nullfont context, strongly supported as the cause by the exact two semicolon warnings on both the actual edited derivative and historical exact-hash original. No differential repair compilation was performed; no source repair accepted."
+      }
+    },
+    "classification": "IMMUTABLE_CORPUS_WARNINGS; OUTPUT_CREATED; NO_EVIDENCE_OF_EDITOR_PATCH_OR_DRIVER_FAILURE",
+    "actual_engine_exit_code_limit": "Per-build numeric engine exit codes are not separately retained. Actual GUIOutputwritten and exported1page outputs are retained; historical exact-original numeric exit codes are0.",
+    "no_repair_or_relaxation": true
+  },
+  "supporting_reports": [
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/mechanical-audit.json",
+      "sha256": "97a784415fa75aec3495fc2ac983ae2d9d32d73bf1bdceca92abd89af9c8c292"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/visual-provenance.json",
+      "sha256": "ec3a74fd2bce4f795cfd1ffa06b102ff566d77a70b80bf50cf2bad59f486b207"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/prior-render-pixel-comparison.json",
+      "sha256": "c033b7e47a08620c50ebfbf489d4eaabeb179cfb7b20fe65c7323df7257c3afc"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/warning-source-diagnosis.json",
+      "sha256": "3255b7c2bf467883b77e416666282b51d81bb59a4ca5082b5c578765ac87603a"
+    }
+  ],
+  "fresh_inspected_visuals": [
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/fresh-properties-original-crops.png",
+      "sha256": "2f00014f8ace2a2dbde6c3da3609781df767070dcd4ad9b3458b75c8f536e48c"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/fresh-help-original-crops.png",
+      "sha256": "8bf2fcc8ee42b6b5b687f7ec3ac12c3a1b42e5143243cc1f42a0c63d201971e1"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/fresh-popup-original-crops.png",
+      "sha256": "bd980c02ff39b34bc49ad65c2e662f186c8ec33c3aa33dc34dc84dd98e42c7c0"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/SV-022-independent-render.png",
+      "sha256": "18728e6cc71f471c124b683da4fd9fbb300d40ec7aaa640c1fa0e4eacc88c89c"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/SV-029-independent-render.png",
+      "sha256": "da588b8955f7b31ee33680f34bb588e0acbfa73dc917578752fce4e6a7244e09"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/SV-040-independent-render.png",
+      "sha256": "2dc08f7708f8ccba4dc6550c30ecebdb22af584d1584ccca271d0a5254d2a322"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run06-v2/SV-009-independent-render.png",
+      "sha256": "e7cdd9e5ae7d78d3d4137462f198e5915a14bfe9dc9b975e11b3a175db7c8f11"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native/observed/SV-022/built/desktop.original.png",
+      "sha256": "9029295f53c3b603f2f2c0994740df3533b05d838277625ed9bee2ac84fb5e78"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native/observed/SV-029/built/desktop.original.png",
+      "sha256": "79d7255e64b6c38807aab52624d940d3954ffcd7b1c5f137e1df985f533d6d7d"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native/observed/SV-040/built/desktop.original.png",
+      "sha256": "2a843513839a4511d7886267073c296a0f9f545953d167d08a1c215867123265"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native/observed/SV-009/built/desktop.original.png",
+      "sha256": "9e4003a71c94b476774edbfc5d6d6c455197996d9607c6fcb4f1bc104d43a4fa"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43419233297-v2/originals/pgfplots-native/observed/formula/formula-axis0-ytick-undo/desktop.original.png",
+      "sha256": "20de3f6081a6168a9ed82409717f68f68b912d5d63e40f6e0992340e75fbda40"
+    }
+  ],
+  "scope_limits": [
+    "All26 bounded operations and8actual builds attained and reviewed; three strict warnings still block fullV2nativeacceptance.",
+    "Clean build gates apply only to formula/external-tables/SV-001/SV-022/SV-040. SV-003/SV-029/SV-009 remain strictFAIL despite intact visual output.",
+    "No aggregateSC3/AT4 or physicalWin10/macOS acceptance is inferred. AT4 has a separate independent review.",
+    "No source/corpus/production edits, newCI/polls/downloads, gate reruns, Cargo work, TeX installation, source repair or reviewer compilation performed."
+  ]
+}

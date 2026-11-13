@@ -1,0 +1,9 @@
+test_actual_origin_ignores_decoration_relative_fields (test_qa_n5_viewport.ViewportGuard.test_actual_origin_ignores_decoration_relative_fields) ... ok
+test_clipped_old_full_screen_client_is_rejected (test_qa_n5_viewport.ViewportGuard.test_clipped_old_full_screen_client_is_rejected) ... ok
+test_missing_duplicate_or_relative_only_observations_are_rejected (test_qa_n5_viewport.ViewportGuard.test_missing_duplicate_or_relative_only_observations_are_rejected) ... ok
+test_negative_origin_and_undersized_client_fail (test_qa_n5_viewport.ViewportGuard.test_negative_origin_and_undersized_client_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-11-13T05:16:27.026327+00:00",
+  "source_head_sha": "b646c4d46d331a281c1fe51d6bcc79c436ffdf35",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "app_path": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-app",
+  "app_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "cli_path": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-cli",
+  "cli_sha256": "66b778ef3078907798606f416b5fee2257f99f504da3a9de9081f087cf6ad37f",
+  "cargo_lock_sha256": "aa5de536d803b4fc2cd25588d4a9fd8804d8ce8d972d7e7870d61e37283f2884",
+  "build_command": "cargo build --locked -p tikzarium-app -p tikzarium-cli --bin tikzarium-app --bin tikzarium-cli",
+  "production_binary": true,
+  "rustc_version": "rustc 1.91.0 (f8297e351 2025-10-28)\nbinary: rustc\ncommit-hash: f8297e351a40c1439a467bbbb6879088047f50b3\ncommit-date: 2025-10-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.91.0\nLLVM version: 21.1.2\n",
+  "environment": "GITHUB_HOSTED_UBUNTU_24_04_XVFB_1366_768",
+  "physical_win10": "NOT_RUN",
+  "run_url": "https://github.com/i-shutov/tikzarium/actions/runs/43370706180"
+}

@@ -15,14 +15,22 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{ExtensionStatus, primitives::Evidence};
 
+mod build_resources;
 mod build_save_dialog;
 mod font_proof;
 mod pdf_navigation;
 mod preview_image;
+mod project_scope;
+mod scientific_inspector;
+mod scientific_resource_view;
+mod source_editing;
 mod source_editor;
 mod source_fonts;
 mod source_highlight;
 mod source_navigation;
+mod source_sections;
+#[cfg(test)]
+mod source_workspace_tests;
 mod studio_ui;
 mod tex_discovery;
 mod tikz_authoring;
@@ -35,11 +43,15 @@ use ui_state::{
     editor_command_from_events, line_start_char_index, preview_is_stale, scaled_zoom,
 };
 
+use build_resources::BuildResources;
 use font_proof::{FontProofResult, spawn_font_proof};
 use pdf_navigation::{
     PageCountReceiver, PageRenderReceiver, can_navigate, spawn_page_count, spawn_page_render,
 };
 use preview_image::{PreviewLodReceiver, decode_preview_png, spawn_preview_lod};
+use project_scope::checked_project_root;
+use scientific_inspector::ScientificInspector;
+use scientific_resource_view::ScientificResourceView;
 use source_fonts::scan_explicit_font_hints;
 use studio_ui::{StudioDock, StudioGroup, StudioIcon};
 use ui_theme::{STORAGE_KEY, UiPreferences, UiTheme};
@@ -323,6 +335,7 @@ fn show_source_text_edit(
     )
 }
 
+#[cfg(test)]
 fn show_source_text_edit_cached(
     ui: &mut egui::Ui,
     source: &mut String,
@@ -377,6 +390,7 @@ fn show_source_text_edit_cached(
 
 /// The vertical viewport owns both gutter and source. Only the code child
 /// scrolls horizontally, so physical line numbers remain visible in no-wrap.
+#[cfg(test)]
 fn show_source_with_gutter(
     ui: &mut egui::Ui,
     source: &mut String,
@@ -455,6 +469,133 @@ fn show_source_with_gutter(
         );
     }
     (output, gutter, editor_clip)
+}
+
+#[derive(Clone, Copy)]
+struct SourceViewStyle {
+    soft_wrap: bool,
+    theme: UiTheme,
+    font_size: f32,
+    focus_owner: bool,
+}
+
+/// Render a view onto the original string. Gutter and code share vertical
+/// geometry, while only the code can scroll horizontally. All external
+/// navigation remains in the coordinates of the full document.
+fn show_source_region(
+    ui: &mut egui::Ui,
+    source: &mut String,
+    region: &mut source_editing::Region,
+    editor: &mut source_editor::SourceEditor,
+    cache: &mut source_highlight::SourceHighlightCache,
+    style: SourceViewStyle,
+) -> egui::text_edit::TextEditOutput {
+    editor.refresh(source);
+    let target = editor.navigation_target();
+    let prior_caret = editor.caret;
+    let background = ui.painter().add(egui::Shape::Noop);
+    let mut gutter = egui::Rect::NOTHING;
+    let mut clip = ui.clip_rect();
+    let mut buffer = source_editing::SectionBuffer {
+        source,
+        bytes: region.bytes.clone(),
+    };
+    let output = ui
+        .horizontal_top(|ui| {
+            let digits = editor.line_count().to_string().len();
+            gutter = ui
+                .allocate_exact_size(
+                    egui::vec2(14.0 + digits as f32 * 8.0, 1.0),
+                    egui::Sense::hover(),
+                )
+                .0;
+            let mut render = |ui: &mut egui::Ui| {
+                clip = ui
+                    .clip_rect()
+                    .intersect(egui::Rect::from_min_max(ui.cursor().min, ui.max_rect().max));
+                let font = egui::FontId::monospace(style.font_size.clamp(12.0, 24.0));
+                let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, width: f32| {
+                    cache.galley(
+                        ui,
+                        text.as_str(),
+                        font.clone(),
+                        source_highlight::palette(
+                            style.theme,
+                            ui.visuals().widgets.inactive.text_color(),
+                        ),
+                        if style.soft_wrap {
+                            width
+                        } else {
+                            f32::INFINITY
+                        },
+                    )
+                };
+                let mut output = egui::TextEdit::multiline(&mut buffer)
+                    .id(egui::Id::new(region.id))
+                    .background_color(egui::Color32::TRANSPARENT)
+                    .code_editor()
+                    .font(font.clone())
+                    .desired_width(ui.available_width().max(80.0))
+                    .desired_rows(1)
+                    .layouter(&mut layouter)
+                    .show(ui);
+                let count = buffer.source[buffer.bytes.clone()].chars().count();
+                editor.finish_region_interaction(
+                    ui,
+                    &mut output,
+                    buffer.source,
+                    region.first_character,
+                    count,
+                    style.focus_owner,
+                );
+                // Only the shared, revision-checked full-document history can
+                // undo text. Hidden views must never resurrect stale substrings.
+                output.state.clear_undoer();
+                output.state.clone().store(ui.ctx(), output.response.id);
+                output
+            };
+            if style.soft_wrap {
+                render(ui)
+            } else {
+                let result = egui::ScrollArea::horizontal()
+                    .id_salt((region.id, "horizontal"))
+                    .auto_shrink([false, true])
+                    .show(ui, render);
+                clip = result.inner_rect.intersect(ui.clip_rect());
+                result.inner
+            }
+        })
+        .inner;
+    region.bytes = buffer.bytes;
+    gutter.max.y = output.response.rect.bottom();
+    editor.paint_region(
+        ui,
+        &output,
+        (gutter, clip, background),
+        region.first_character,
+        region.first_line,
+    );
+    let end = region.first_character + output.galley.text().chars().count();
+    if let Some(character) = target.filter(|c| *c >= region.first_character && *c <= end) {
+        ui.scroll_to_rect(
+            source_caret_target(
+                &output.galley,
+                output.galley_pos,
+                character - region.first_character,
+            ),
+            Some(egui::Align::Center),
+        );
+    } else if output.response.has_focus() && editor.caret != prior_caret {
+        ui.scroll_to_rect(
+            source_caret_target(
+                &output.galley,
+                output.galley_pos,
+                editor.caret.saturating_sub(region.first_character),
+            ),
+            None,
+        );
+    }
+    output
 }
 
 /// A floating geometry palette should never cover the canvas while the user
@@ -765,6 +906,11 @@ struct TikzariumApp {
     preview_lod_texture: Option<egui::TextureHandle>,
     preview_lod_rx: Option<PreviewLodReceiver>,
     pdf: Option<Vec<u8>>,
+    build_resources: BuildResources,
+    /// Explicit root for this open document; None means its source directory.
+    project_root: Option<PathBuf>,
+    /// Editable project-root draft for the current document.
+    project_root_draft: String,
     built_source: Option<String>,
     built_path: Option<PathBuf>,
     building_source: Option<String>,
@@ -800,11 +946,21 @@ struct TikzariumApp {
     studio_palette_anchor: egui::Pos2,
     studio_extension_filter: String,
     authoring: tikz_authoring::Session,
+    scientific: ScientificInspector,
+    scientific_resources: ScientificResourceView,
     highlight_generated_line: bool,
     // A source patch or document replacement must not leave native TextEdit
     // history that could restore commands or bytes from a previous file.
     reset_source_editor_undo_history: bool,
     source_editor: source_editor::SourceEditor,
+    source_history: source_editing::SourceHistory,
+    source_input: source_editing::SourceInputQueue,
+    source_document_input_fence: bool,
+    source_preamble_open: bool,
+    source_full_view: bool,
+    source_split_active: bool,
+    source_active_region: &'static str,
+    preamble_highlight: source_highlight::SourceHighlightCache,
     font_proof_rx: Option<Receiver<Result<FontProofResult, String>>>,
     font_proof_status: String,
     font_proof_report: String,
@@ -815,6 +971,8 @@ struct TikzariumApp {
 // egui 0.33 defaults to CloseOnClick, including clicks inside the menu.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum StudioFileAction {
+    OpenDialog,
+    Save,
     OpenPath,
     SaveAs,
     OpenPicker,
@@ -852,6 +1010,21 @@ fn show_studio_file_menu(
                 .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
         )
         .ui(ui, |ui| {
+            if ui
+                .add_enabled(ready, egui::Button::new("Открыть…    Ctrl+O"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::OpenDialog);
+                ui.close();
+            }
+            if ui
+                .add_enabled(ready, egui::Button::new("Сохранить    Ctrl+S"))
+                .clicked()
+            {
+                result.action = Some(StudioFileAction::Save);
+                ui.close();
+            }
+            ui.separator();
             ui.label("TeX-проект:");
             let path_edit = ui.add(
                 egui::TextEdit::singleline(file_field)
@@ -921,11 +1094,19 @@ impl TikzariumApp {
             .storage
             .and_then(|storage| eframe::get_value::<UiPreferences>(storage, STORAGE_KEY))
             .unwrap_or_default();
-        prefs.theme.apply(&cc.egui_ctx, prefs.compact);
-        // Do not spawn external tools in eframe's native window constructor.
+        let discovery = Some(tex_discovery::start(cc.egui_ctx.clone()));
+        Self::with_preferences(&cc.egui_ctx, prefs, discovery)
+    }
+
+    fn with_preferences(
+        ctx: &egui::Context,
+        prefs: UiPreferences,
+        tex_discovery_rx: Option<Receiver<Result<tex_discovery::Snapshot, String>>>,
+    ) -> Self {
+        prefs.theme.apply(ctx, prefs.compact);
+        // Detection runs in a bounded worker, never in the editor's paint path.
         let initial = tex_discovery::Snapshot::unknown();
         let tex = initial.tex;
-        let tex_discovery_rx = Some(tex_discovery::start(cc.egui_ctx.clone()));
         let tex_privilege_notice = match tikzarium_core::external_document_privilege_notice() {
             Ok(Some(warning)) => Some(warning.to_owned()),
             Ok(None) => None,
@@ -955,6 +1136,9 @@ impl TikzariumApp {
             preview_lod_texture: None,
             preview_lod_rx: None,
             pdf: None,
+            build_resources: BuildResources::default(),
+            project_root: None,
+            project_root_draft: String::new(),
             built_source: None,
             built_path: None,
             building_source: None,
@@ -994,9 +1178,19 @@ impl TikzariumApp {
                 state.reset(QUICKSTART);
                 state
             },
+            scientific: ScientificInspector::default(),
+            scientific_resources: ScientificResourceView::default(),
             highlight_generated_line: false,
             reset_source_editor_undo_history: false,
             source_editor: source_editor::SourceEditor::default(),
+            source_history: source_editing::SourceHistory::default(),
+            source_input: source_editing::SourceInputQueue::default(),
+            source_document_input_fence: false,
+            source_preamble_open: false,
+            source_full_view: false,
+            source_split_active: false,
+            source_active_region: source_editing::BODY_ID,
+            preamble_highlight: source_highlight::SourceHighlightCache::default(),
             font_proof_rx: None,
             font_proof_status: "Not tested".into(),
             font_proof_report: String::new(),
@@ -1137,7 +1331,22 @@ impl TikzariumApp {
                 self.file_field = path.display().to_string();
                 self.document = document;
                 self.authoring.reset(&self.document.source);
+                self.source_history.reset(self.authoring.source_revision());
+                self.source_input = source_editing::SourceInputQueue::default();
+                self.source_document_input_fence = true;
+                self.scientific = ScientificInspector::default();
+                self.scientific_resources = ScientificResourceView::default();
+                self.build_resources = BuildResources::default();
+                self.project_root = None;
+                self.project_root_draft = path
+                    .parent()
+                    .map(|parent| parent.display().to_string())
+                    .unwrap_or_default();
                 self.source_caret = None;
+                self.source_preamble_open = false;
+                self.source_full_view = false;
+                self.source_split_active = false;
+                self.source_active_region = source_editing::BODY_ID;
                 // A stable egui TextEdit widget ID otherwise retains the old
                 // document's native Ctrl/Cmd+Z history across Open/Reopen.
                 self.reset_source_editor_undo_history = true;
@@ -1265,9 +1474,73 @@ impl TikzariumApp {
         }
     }
 
+    fn select_project_root(&mut self) {
+        if self.receiver.is_some() {
+            return;
+        }
+        let Some(source) = self.document.path.as_deref() else {
+            self.status = "Сначала сохраните или откройте исходный файл.".into();
+            return;
+        };
+        let start = self
+            .project_root
+            .as_deref()
+            .or_else(|| source.parent())
+            .unwrap_or_else(|| Path::new("."));
+        let Some(root) = rfd::FileDialog::new()
+            .set_title("Папка проекта с исходником и ресурсами")
+            .set_directory(start)
+            .pick_folder()
+        else {
+            self.status = "Выбор отменён. Путь папки проекта можно ввести вручную.".into();
+            return;
+        };
+        self.apply_project_root(&root);
+    }
+
+    fn apply_project_root(&mut self, root: &Path) {
+        if self.receiver.is_some() {
+            return;
+        }
+        let Some(source) = self.document.path.as_deref() else {
+            self.status = "Сначала сохраните или откройте исходный файл.".into();
+            return;
+        };
+        if root.as_os_str().is_empty() {
+            self.status = "Укажите путь к папке проекта.".into();
+            return;
+        }
+        match checked_project_root(source, root) {
+            Ok(root) if self.project_root.as_ref() != Some(&root) => {
+                self.project_root_draft = root.display().to_string();
+                self.project_root = Some(root);
+                self.build_resources = BuildResources::default();
+                self.status =
+                    "Папка проекта выбрана; соберите PDF для проверки входных файлов.".into();
+            }
+            Ok(root) => {
+                self.project_root_draft = root.display().to_string();
+                self.status = "Папка проекта уже выбрана.".into();
+            }
+            Err(error) => self.status = error,
+        }
+    }
+
+    fn reset_project_root_to_source(&mut self) {
+        self.project_root = None;
+        self.project_root_draft = self
+            .document
+            .path
+            .as_deref()
+            .and_then(Path::parent)
+            .map(|parent| parent.display().to_string())
+            .unwrap_or_default();
+        self.build_resources = BuildResources::default();
+        self.status = "Используется папка исходника; соберите PDF заново.".into();
+    }
+
     fn export_pdf_picker(&mut self) {
-        if self.preview_stale() || self.pdf.is_none() {
-            self.status = "Сначала соберите актуальный PDF с внешним XeLaTeX".into();
+        if !self.check_current_export() {
             return;
         }
         let filename = self
@@ -1293,6 +1566,10 @@ impl TikzariumApp {
             self.status = "Для экспорта выберите имя файла с расширением .pdf".into();
             return;
         }
+        // Dependencies can change while the native dialog is open.
+        if !self.check_current_export() {
+            return;
+        }
         match write_new_pdf_without_overwrite(&path, self.pdf.as_deref().expect("checked above")) {
             Ok(()) => self.status = format!("Экспортирован PDF {}", path.display()),
             Err(error) => {
@@ -1305,15 +1582,40 @@ impl TikzariumApp {
     }
 
     fn preview_stale(&self) -> bool {
-        preview_is_stale(
-            self.pdf.is_some(),
-            self.last_build_failed,
-            self.receiver.is_some(),
-            self.built_source.as_deref(),
-            &self.document.source,
-            self.built_path.as_deref(),
-            self.document.path.as_deref(),
-        )
+        (self.pdf.is_some() && !self.build_resources.is_current())
+            || preview_is_stale(
+                self.pdf.is_some(),
+                self.last_build_failed,
+                self.receiver.is_some(),
+                self.built_source.as_deref(),
+                &self.document.source,
+                self.built_path.as_deref(),
+                self.document.path.as_deref(),
+            )
+    }
+
+    /// Explicit freshness check at both export entry points. Normal frame
+    /// rendering reads the cached result, never hashes dependencies.
+    fn check_current_export(&mut self) -> bool {
+        if self.pdf.is_none() {
+            self.status = "Сначала соберите PDF с внешним XeLaTeX".into();
+            return false;
+        }
+        if !self
+            .build_resources
+            .recheck(self.document.path.as_deref(), &self.document.source)
+        {
+            self.status = format!(
+                "Экспорт недоступен: {} Соберите PDF заново.",
+                self.build_resources.report()
+            );
+            return false;
+        }
+        if self.preview_stale() {
+            self.status = "PDF устарел: соберите текущий исходник перед экспортом".into();
+            return false;
+        }
+        true
     }
 
     fn open_document_dialog(&mut self) {
@@ -1366,7 +1668,10 @@ impl TikzariumApp {
             source: source.clone(),
             xelatex,
             pdf_renderer: self.tex.pdf_renderer.clone(),
-            options: BuildOptions::default(),
+            options: BuildOptions {
+                project_root: self.project_root.clone(),
+                ..BuildOptions::default()
+            },
         };
         let (tx, rx) = mpsc::channel();
         let service = BuildService::new();
@@ -1400,6 +1705,41 @@ impl TikzariumApp {
             let build_path = self.building_path.take();
             match result {
                 Ok(artifact) => {
+                    let mut completed_resources = BuildResources::default();
+                    completed_resources.capture(
+                        artifact.project_dependencies,
+                        build_path.as_deref(),
+                        build_source.as_deref().unwrap_or_default(),
+                    );
+                    if !completed_resources.is_current() {
+                        // The engine may succeed after reading inputs that changed
+                        // during its run. Such an output must not replace last-good.
+                        self.last_build_failed = true;
+                        self.status = format!("PDF не принят: {}", completed_resources.report());
+                        self.log = format!(
+                            "{}\nBuild input verification: {}",
+                            artifact.log,
+                            completed_resources.verification_details()
+                        );
+                        self.diagnostics = artifact.diagnostics;
+                        self.diagnostics.push(BuildDiagnostic {
+                            severity: Severity::Error,
+                            message: self.status.clone(),
+                            source: None,
+                            line: None,
+                        });
+                        self.bottom_view = BottomView::Issues;
+                        self.preview_status = if self.pdf.is_some() {
+                            "Показан предыдущий PDF; новая сборка не прошла проверку входных файлов.".into()
+                        } else {
+                            "PDF не принят: входные файлы не подтверждены.".into()
+                        };
+                        if self.pdf.is_none() {
+                            self.build_resources = completed_resources;
+                        }
+                        return;
+                    }
+                    self.build_resources = completed_resources;
                     self.preview_epoch = self.preview_epoch.wrapping_add(1);
                     self.page_index = 1;
                     self.page_count = None;
@@ -1611,8 +1951,7 @@ impl TikzariumApp {
     }
 
     fn export(&mut self) {
-        if self.preview_stale() {
-            self.status = "PDF is stale: rebuild the current file before exporting".into();
+        if !self.check_current_export() {
             return;
         }
         let Some(pdf) = &self.pdf else {
@@ -1678,173 +2017,452 @@ impl TikzariumApp {
             ctx.request_repaint_after(Duration::from_millis(100));
         }
     }
+    /// Transfer confirmed authored inverses into the bounded ledger shared
+    /// with typing. Idle Inspector/guide frames do not clone the source.
+    fn record_authored_source_change(&mut self, previous_revision: u64) {
+        let revision = self.authoring.source_revision();
+        if revision == previous_revision {
+            return;
+        }
+        let transactions = self.authoring.take_source_transactions();
+        let count = u64::try_from(transactions.len()).ok();
+        if count.and_then(|count| previous_revision.checked_add(count)) != Some(revision) {
+            // A revision change without matching confirmed source patches is
+            // external to this transaction chain; never retain stale inverses.
+            self.source_history.reset(revision);
+            self.status = "История исходника сброшена: неподтверждённая цепочка ревизий".into();
+        } else {
+            let mut previous = previous_revision;
+            for inverse in transactions {
+                let next = inverse.source_revision;
+                if let Err(error) = self.source_history.record_inverse(inverse, previous) {
+                    self.source_history.reset(revision);
+                    self.status = error.into();
+                    break;
+                }
+                previous = next;
+            }
+        }
+        fence_source_editor_undo_on_revision_change(
+            previous_revision,
+            &self.authoring,
+            &mut self.reset_source_editor_undo_history,
+        );
+    }
+
+    fn show_shared_inspector_actions(&mut self, ui: &mut egui::Ui) {
+        let revision = self.authoring.source_revision();
+        let available = self
+            .source_history
+            .available(source_editing::HistoryAction::Undo, revision);
+        let (line, undo) = tikz_canvas::show_inspector_action_bar_shared(
+            ui,
+            &mut self.authoring,
+            &mut self.document.source,
+            available,
+        );
+        self.record_authored_source_change(revision);
+        if let Some(line) = line {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
+        if undo {
+            self.source_history_action(ui.ctx(), source_editing::HistoryAction::Undo);
+        }
+    }
+
+    /// Source fields dispatch in raw_input_hook. Other fields retain their own
+    /// local Undo; canvas/toolbar focus dispatches the same source ledger here.
+    fn handle_shared_history_shortcuts(&mut self, ctx: &egui::Context) {
+        let guide_capture = self.authoring.guide_pointer_armed
+            || self.authoring.drag_start.is_some()
+            || self.authoring.alt_selection_capture;
+        if ctx.wants_keyboard_input() && !guide_capture {
+            return;
+        }
+        let actions = ctx.input_mut(|input| {
+            let mut actions = Vec::new();
+            input.events.retain(|event| {
+                let action = source_editing::history_action(event);
+                if let Some(action) = action {
+                    actions.push(action);
+                    false
+                } else {
+                    true
+                }
+            });
+            input.consume_key(egui::Modifiers::COMMAND, egui::Key::Z);
+            input.consume_key(
+                egui::Modifiers::COMMAND.plus(egui::Modifiers::SHIFT),
+                egui::Key::Z,
+            );
+            input.consume_key(egui::Modifiers::COMMAND, egui::Key::Y);
+            actions
+        });
+        for action in actions {
+            self.source_history_action(ctx, action);
+        }
+    }
+
+    fn source_history_action(
+        &mut self,
+        ctx: &egui::Context,
+        action: source_editing::HistoryAction,
+    ) {
+        if self.modal_active() {
+            return;
+        }
+        let revision = self.authoring.source_revision();
+        // A shared Undo also cancels an in-flight guide gesture. Session::sync
+        // invalidates derived handles; no old visual inverse is replayed.
+        if self.authoring.guide_pointer_armed
+            || self.authoring.drag_start.is_some()
+            || self.authoring.alt_selection_capture
+            || ctx.input(|input| input.pointer.primary_down())
+        {
+            self.authoring.cancelled_pointer_capture = true;
+            self.authoring.guide_pointer_armed = false;
+            self.authoring.drag_start = None;
+            self.authoring.alt_selection_capture = false;
+        }
+        match self
+            .source_history
+            .apply(action, &mut self.document.source, revision)
+        {
+            Ok(Some(caret)) => {
+                self.reset_source_editor_undo_history = false;
+                self.jump_to_line = None;
+                self.highlight_generated_line = false;
+                self.authoring
+                    .note_manual_source_edit(&self.document.source);
+                self.source_editor.refresh(&self.document.source);
+                self.source_editor.selection = Some(caret..caret);
+                self.source_editor.focus_editor = true;
+                self.source_caret = None;
+                source_editing::clear_native_histories(ctx);
+            }
+            Ok(None) => {}
+            Err(error) => self.source_editor.error(error),
+        }
+    }
+
     fn show_source_editor(&mut self, ui: &mut egui::Ui) {
+        if self.source_document_input_fence {
+            // Open can finish after egui has derived this frame's raw events.
+            // Those events belong to the previous document, as does the queue.
+            ui.input_mut(|input| input.events.clear());
+            self.source_document_input_fence = false;
+        }
         if self.modal_active() {
             ui.disable();
         }
-        ui.horizontal(|ui| {
-            ui.strong("Исходник .tex");
-            if self.document.dirty() {
-                ui.colored_label(ui.visuals().warn_fg_color, "Изменён")
-                    .on_hover_text("Несохранённые правки");
-            }
-            ui.with_layout(
-                egui::Layout::right_to_left(egui::Align::Center),
-                |ui| {
-                    ui.checkbox(&mut self.prefs.source_soft_wrap, "Перенос")
-                        .on_hover_text(
-                            "Переносить длинные строки только на экране. Не меняет TeX, CRLF и PDF. Выключите для горизонтальной прокрутки.",
-                        );
-                    ui.separator();
-                    if ui
-                        .add_enabled(
-                            self.prefs.source_font_size < 24.0,
-                            egui::Button::new("A+"),
-                        )
-                        .on_hover_text("Увеличить шрифт кода (не влияет на TeX и PDF)")
-                        .clicked()
-                    {
-                        self.prefs.source_font_size =
-                            (self.prefs.source_font_size + 1.0).min(24.0);
-                    }
-                    ui.label(format!("{:.0} pt", self.prefs.source_font_size));
-                    if ui
-                        .add_enabled(
-                            self.prefs.source_font_size > 12.0,
-                            egui::Button::new("A−"),
-                        )
-                        .on_hover_text("Уменьшить шрифт кода")
-                        .clicked()
-                    {
-                        self.prefs.source_font_size =
-                            (self.prefs.source_font_size - 1.0).max(12.0);
-                    }
-                },
-            );
-        });
-        let basename = self
-            .document
-            .path
-            .as_deref()
-            .and_then(Path::file_name)
-            .and_then(|name| name.to_str())
-            .unwrap_or("figure.tex · новый документ");
-        let path_description = self.document.path.as_ref().map_or_else(
-            || "Новый TeX-документ — сохраните его явно".to_owned(),
-            |path| path.display().to_string(),
-        );
-        ui.add(egui::Label::new(basename).truncate())
-            .on_hover_text(path_description);
         if self.reset_source_editor_undo_history {
             self.source_editor.document_changed();
+            source_editing::clear_native_histories(ui.ctx());
+            self.reset_source_editor_undo_history = false;
         }
+        self.source_editor.refresh(&self.document.source);
+        ui.horizontal(|ui| {
+            let basename = self
+                .document
+                .path
+                .as_deref()
+                .and_then(Path::file_name)
+                .and_then(|name| name.to_str())
+                .unwrap_or("figure.tex");
+            let path = self.document.path.as_ref().map_or_else(
+                || "Новый TeX-документ".to_owned(),
+                |path| path.display().to_string(),
+            );
+            ui.add(egui::Label::new(egui::RichText::new(basename).strong()).truncate())
+                .on_hover_text(path);
+            if self.document.dirty() {
+                let (rect, response) =
+                    ui.allocate_exact_size(egui::vec2(9.0, 12.0), egui::Sense::hover());
+                ui.painter()
+                    .circle_filled(rect.center(), 3.0, ui.visuals().warn_fg_color);
+                response.on_hover_text("Несохранённые изменения");
+            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let settings = studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Settings,
+                    true,
+                    false,
+                    26.0,
+                    "Настройки исходника",
+                    "Перенос, размер кода и вид документа",
+                );
+                egui::Popup::menu(&settings)
+                    .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+                    .show(|ui| {
+                        ui.checkbox(&mut self.prefs.source_soft_wrap, "Перенос длинных строк");
+                        ui.horizontal(|ui| {
+                            ui.label("Размер кода:");
+                            ui.add(
+                                egui::DragValue::new(&mut self.prefs.source_font_size)
+                                    .range(12.0..=24.0)
+                                    .suffix(" pt"),
+                            );
+                        });
+                        if ui
+                            .checkbox(&mut self.source_full_view, "Весь исходник одним полем")
+                            .changed()
+                        {
+                            self.source_editor.selection =
+                                Some(self.source_editor.caret..self.source_editor.caret);
+                        }
+                        ui.separator();
+                        if ui.button("Найти · Ctrl+F").clicked() {
+                            self.source_editor.open_find();
+                            ui.close();
+                        }
+                        if ui.button("К строке · Ctrl+G").clicked() {
+                            self.source_editor.open_goto();
+                            ui.close();
+                        }
+                    });
+                ui.small(self.source_editor.cursor_label())
+                    .on_hover_text("Строка : столбец в полном .tex");
+            });
+        });
+        let previous_source = self.document.source.clone();
+        let previous_revision = self.authoring.source_revision();
         self.source_editor
-            .toolbar(ui, &self.document.source, self.authoring.source_revision());
-        let replaced = if let Some(preview) = self.source_editor.apply.take() {
-            if self.reset_source_editor_undo_history {
-                self.source_editor
-                    .error("Редактор сменил документ: повторите предпросмотр замены");
-                false
+            .toolbar(ui, &self.document.source, previous_revision);
+        if let Some(preview) = self.source_editor.apply.take() {
+            match preview.apply(&mut self.document.source, previous_revision) {
+                Ok(changed) => self.source_editor.focus_editor |= changed,
+                Err(error) => self.source_editor.error(error),
+            }
+        }
+        self.source_editor.refresh(&self.document.source);
+        if let Some(line) = self.jump_to_line.take() {
+            if let Some(position) = line_start_char_index(&self.document.source, line) {
+                let count = if self.highlight_generated_line {
+                    self.document
+                        .source
+                        .lines()
+                        .nth(line.saturating_sub(1))
+                        .map(|line| line.trim_end_matches('\r').chars().count())
+                        .unwrap_or(0)
+                } else {
+                    0
+                };
+                self.source_editor.selection = Some(position..position + count);
+                self.highlight_generated_line = false;
             } else {
-                match source_editor::apply_replacement(
-                    ui.ctx(),
-                    &mut self.document.source,
-                    self.authoring.source_revision(),
-                    &preview,
-                ) {
-                    Ok(changed) => {
-                        self.source_editor.focus_editor |= changed;
-                        changed
-                    }
-                    Err(error) => {
-                        self.source_editor.error(error);
-                        false
+                self.status = format!("Строки {line} нет в этом документе");
+            }
+        }
+        let mut sections = source_sections::analyze_source(&self.document.source);
+        // A literal search selection can cross the fold. Present the complete
+        // source so the whole selection remains visible and editable.
+        if let (Some(boundary), Some(selection)) =
+            (sections.boundary_char_offset, &self.source_editor.selection)
+            && selection.start < boundary
+            && selection.end > boundary
+        {
+            self.source_full_view = true;
+        }
+        let split =
+            sections.kind == source_sections::SectionKind::Document && !self.source_full_view;
+        if split != self.source_split_active {
+            if source_editing::source_has_focus(ui.ctx()) {
+                self.source_editor
+                    .selection
+                    .get_or_insert(self.source_editor.caret..self.source_editor.caret);
+                self.source_editor.focus_editor = true;
+            }
+            self.source_active_region = if split {
+                if sections
+                    .boundary_char_offset
+                    .is_some_and(|start| self.source_editor.caret < start)
+                {
+                    source_editing::PREAMBLE_ID
+                } else {
+                    source_editing::BODY_ID
+                }
+            } else {
+                source_editing::WHOLE_ID
+            };
+            self.source_split_active = split;
+            source_editing::clear_native_histories(ui.ctx());
+        }
+        let mut active_caret = None;
+        let mut source_had_focus = false;
+        let mut body_highlight = std::mem::take(&mut self.source_editor.highlight);
+        if split {
+            if sections.boundary_char_offset.is_some_and(|boundary| {
+                self.source_editor
+                    .navigation_target()
+                    .is_some_and(|target| target < boundary)
+            }) {
+                self.source_preamble_open = true;
+            }
+            let prior_open = self.source_preamble_open;
+            ui.horizontal(|ui| {
+                let label = format!("Преамбула  ·  1–{}", sections.first_body_line - 1);
+                let icon = if self.source_preamble_open {
+                    StudioIcon::ChevronDown
+                } else {
+                    StudioIcon::ChevronRight
+                };
+                if studio_ui::command_button(
+                    ui,
+                    icon,
+                    true,
+                    &label,
+                    "Пакеты, шрифты и настройки документа. Сворачивание не меняет файл.",
+                )
+                .clicked()
+                {
+                    self.source_preamble_open = !self.source_preamble_open;
+                }
+            });
+            if prior_open
+                && !self.source_preamble_open
+                && self.source_active_region == source_editing::PREAMBLE_ID
+            {
+                self.source_active_region = source_editing::BODY_ID;
+                let boundary = sections.boundary_char_offset.unwrap_or(0);
+                self.source_editor.selection = Some(boundary..boundary);
+                self.source_editor.focus_editor = true;
+            }
+            if self.source_preamble_open {
+                let mut region = source_editing::Region {
+                    id: source_editing::PREAMBLE_ID,
+                    bytes: sections.preamble_range.clone(),
+                    first_character: 0,
+                    first_line: 1,
+                };
+                let style = SourceViewStyle {
+                    soft_wrap: self.prefs.source_soft_wrap,
+                    theme: self.prefs.theme,
+                    font_size: self.prefs.source_font_size,
+                    focus_owner: self.source_active_region == region.id,
+                };
+                let output = egui::ScrollArea::vertical()
+                    .id_salt("source-preamble-vertical")
+                    .max_height((ui.available_height() * 0.30).clamp(70.0, 180.0))
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        show_source_region(
+                            ui,
+                            &mut self.document.source,
+                            &mut region,
+                            &mut self.source_editor,
+                            &mut self.preamble_highlight,
+                            style,
+                        )
+                    })
+                    .inner;
+                dismiss_studio_palette_on_source_click(&output.response, &mut self.studio_group);
+                if output.response.has_focus() {
+                    source_had_focus = true;
+                    self.source_active_region = region.id;
+                    active_caret = output
+                        .state
+                        .cursor
+                        .char_range()
+                        .filter(|r| r.is_empty())
+                        .map(|r| region.first_character + r.primary.index);
+                }
+                // Preamble edits can change its size or remove the delimiter.
+                // Never reuse a stale body byte range in the same frame.
+                sections = source_sections::analyze_source(&self.document.source);
+                if output.response.has_focus()
+                    && let Some(cursor) = output.state.cursor.char_range()
+                {
+                    let range = cursor.as_sorted_char_range();
+                    let boundary = sections.boundary_char_offset;
+                    if sections.kind != source_sections::SectionKind::Document
+                        || boundary.is_some_and(|start| cursor.primary.index >= start)
+                    {
+                        self.source_active_region =
+                            if sections.kind == source_sections::SectionKind::Document {
+                                source_editing::BODY_ID
+                            } else {
+                                source_editing::WHOLE_ID
+                            };
+                        if boundary.is_some_and(|start| range.start < start && range.end > start) {
+                            self.source_full_view = true;
+                            self.source_active_region = source_editing::WHOLE_ID;
+                        }
+                        self.source_editor.selection = Some(range);
+                        self.source_editor.focus_editor = true;
                     }
                 }
             }
+            ui.separator();
+        } else if sections.kind == source_sections::SectionKind::Unsplit && !self.source_full_view {
+            ui.small("Весь исходник · граница преамбулы неоднозначна")
+                .on_hover_text("Для такого TeX сохранён единый редактор: автоматическое разделение могло бы скрыть неверные строки.");
+        }
+        let mut region = if split
+            && !self.source_full_view
+            && sections.kind == source_sections::SectionKind::Document
+        {
+            source_editing::Region {
+                id: source_editing::BODY_ID,
+                bytes: sections.body_range.clone(),
+                first_character: sections.boundary_char_offset.unwrap_or(0),
+                first_line: sections.first_body_line,
+            }
         } else {
-            false
+            source_editing::Region::whole(&self.document.source)
         };
-        self.source_editor.refresh(&self.document.source);
-        ui.separator();
-        egui::ScrollArea::vertical()
+        let style = SourceViewStyle {
+            soft_wrap: self.prefs.source_soft_wrap,
+            theme: self.prefs.theme,
+            font_size: self.prefs.source_font_size,
+            focus_owner: self.source_active_region == region.id,
+        };
+        let output = egui::ScrollArea::vertical()
+            .id_salt((region.id, "vertical"))
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                let (mut output, _, _) = show_source_with_gutter(
+                show_source_region(
                     ui,
                     &mut self.document.source,
-                    &mut self.reset_source_editor_undo_history,
-                    self.prefs.source_soft_wrap,
-                    self.prefs.theme,
-                    self.prefs.source_font_size,
+                    &mut region,
                     &mut self.source_editor,
-                );
-                if replaced {
-                    output.response.mark_changed();
-                }
-                // Both the desktop and UNIT_EVENT frames handle the same
-                // TextEdit change signal before visual Undo can be offered.
-                tikz_canvas::observe_source_text_edit(
-                    &output.response,
-                    &mut self.authoring,
-                    &self.document.source,
-                );
-                // A source click is an explicit return to editing. Keep the
-                // floating palette out of the canvas/source work area; it can
-                // be reopened from the icon rail at any time.
-                dismiss_studio_palette_on_source_click(&output.response, &mut self.studio_group);
-                if output.response.has_focus() {
-                    self.source_caret = output.state.cursor.char_range().and_then(|range| {
-                        (range.primary.index == range.secondary.index)
-                            .then_some((range.primary.index, self.authoring.source_revision()))
-                    });
-                }
-                if let Some(line) = self.jump_to_line.take() {
-                    if let Some(position) = line_start_char_index(&self.document.source, line) {
-                        use egui::text::{CCursor, CCursorRange};
-                        output.state.cursor.set_char_range(Some(
-                            if self.highlight_generated_line {
-                                let count = self
-                                    .document
-                                    .source
-                                    .lines()
-                                    .nth(line.saturating_sub(1))
-                                    .map(|text| text.trim_end_matches('\r').chars().count())
-                                    .unwrap_or(0);
-                                CCursorRange::two(
-                                    CCursor::new(position),
-                                    CCursor::new(position + count),
-                                )
-                            } else {
-                                CCursorRange::one(CCursor::new(position))
-                            },
-                        ));
-                        self.highlight_generated_line = false;
-                        self.source_editor.external_jump(
-                            output
-                                .state
-                                .cursor
-                                .char_range()
-                                .map_or(position, |range| range.primary.index),
-                            position,
-                        );
-                        output.state.store(ui.ctx(), output.response.id);
-                        ui.ctx().request_repaint();
-                        // Scroll/highlight without stealing keyboard focus.
-                        // A new guide gesture must own Ctrl/Cmd+Z until its
-                        // mouse-up; users click the source to edit text.
-                        // The galley, not physical line count * font height,
-                        // owns TextEdit's geometry (wrapping, padding, DPI,
-                        // unicode and font layout). Scroll to the actual cursor.
-                        ui.scroll_to_rect(
-                            source_caret_target(&output.galley, output.galley_pos, position),
-                            Some(egui::Align::Center),
-                        );
-                    } else {
-                        self.status = format!("Строки {line} нет в этом документе");
-                    }
-                }
-            });
+                    &mut body_highlight,
+                    style,
+                )
+            })
+            .inner;
+        dismiss_studio_palette_on_source_click(&output.response, &mut self.studio_group);
+        if output.response.has_focus() {
+            source_had_focus = true;
+            self.source_active_region = region.id;
+            active_caret = output
+                .state
+                .cursor
+                .char_range()
+                .filter(|r| r.is_empty())
+                .map(|r| region.first_character + r.primary.index);
+        }
+        self.source_editor.highlight = body_highlight;
+        if previous_source != self.document.source {
+            let mut response = output.response.clone();
+            response.mark_changed();
+            tikz_canvas::observe_source_text_edit(
+                &response,
+                &mut self.authoring,
+                &self.document.source,
+            );
+            self.source_history.record(
+                &previous_source,
+                &self.document.source,
+                previous_revision,
+                self.authoring.source_revision(),
+            );
+            self.source_caret = None;
+        }
+        if source_had_focus {
+            self.source_caret = active_caret.map(|caret| (caret, self.authoring.source_revision()));
+        }
     }
 
     fn primitive_capabilities(&self) -> tikz_canvas::Capabilities {
@@ -1887,6 +2505,14 @@ impl TikzariumApp {
             self.jump_to_line = Some(line);
             self.highlight_generated_line = true;
         }
+        ui.separator();
+        if let Some(line) = self
+            .scientific
+            .show(ui, &mut self.authoring, &mut self.document.source)
+        {
+            self.jump_to_line = Some(line);
+            self.highlight_generated_line = true;
+        }
         if self.show_packages {
             ui.separator();
             ui.collapsing("Library inventory · from C registry", |ui| {
@@ -1899,80 +2525,54 @@ impl TikzariumApp {
                 }
             });
         }
-        fence_source_editor_undo_on_revision_change(
-            previous_revision,
-            &self.authoring,
-            &mut self.reset_source_editor_undo_history,
-        );
+        self.record_authored_source_change(previous_revision);
     }
 
-    /// The main toolbar is four clear vector icons, not a long wall of
-    /// textual action buttons. Infrequent commands live in two menus.
+    fn show_studio_view_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        if ui
+            .checkbox(&mut self.prefs.studio_tool_rail, "Инструменты TikZ")
+            .changed()
+            && !self.prefs.studio_tool_rail
+        {
+            self.studio_group = None;
+        }
+        ui.checkbox(&mut self.prefs.studio_inspector_open, "Инспектор");
+        ui.checkbox(&mut self.prefs.studio_console_open, "Диагностика");
+        ui.separator();
+        ui.checkbox(
+            &mut self.prefs.source_soft_wrap,
+            "Перенос длинных строк кода",
+        );
+        ui.checkbox(&mut self.source_full_view, "Весь исходник одним полем");
+        ui.separator();
+        self.prefs.draw_toolbar(ui, ctx);
+        if ui.button("Шрифты рисунка…").clicked() {
+            self.prefs.show_font_lab = true;
+            ui.close();
+        }
+        if ui.button("Классический режим").clicked() {
+            self.prefs.studio_mode = false;
+            ui.close();
+        }
+    }
+
+    /// Conventional menu first; frequent commands stay adjacent in a compact
+    /// 32-point toolbar. Source, figure and Inspector remain stable work areas.
     fn show_studio_toolbar(&mut self, ctx: &egui::Context) {
+        use source_editing::HistoryAction::{Redo, Undo};
         let ready = self.receiver.is_none() && !self.modal_active();
         egui::TopBottomPanel::top("b42-studio-toolbar").show(ctx, |ui| {
             if self.modal_active() {
                 ui.disable();
             }
-            ui.horizontal(|ui| {
-                ui.strong(egui::RichText::new("TikZarium").size(20.0));
-                ui.separator();
-                if studio_ui::icon_button(ui, StudioIcon::Open, false, 34.0, "Открыть TeX · Ctrl+O")
-                    .clicked()
-                    && ready
-                {
-                    self.open_document_dialog();
-                }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Save,
-                    false,
-                    34.0,
-                    "Сохранить исходник · Ctrl+S",
-                )
-                .clicked()
-                    && ready
-                {
-                    self.save();
-                }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Build,
-                    self.receiver.is_some(),
-                    34.0,
-                    "Собрать точный PDF через внешний XeLaTeX · Ctrl+Enter",
-                )
-                .clicked()
-                    && ready
-                {
-                    self.build();
-                }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Export,
-                    false,
-                    34.0,
-                    "Экспорт PDF. Только актуальный результат XeLaTeX.",
-                )
-                .clicked()
-                    && self.pdf.is_some()
-                    && !self.preview_stale()
-                {
-                    self.export();
-                }
-                if self.receiver.is_some()
-                    && ui
-                        .small_button("■")
-                        .on_hover_text("Отменить сборку")
-                        .clicked()
-                    && let Some(cancel) = &self.cancellation
-                {
-                    cancel.cancel();
-                }
-                ui.separator();
+            egui::MenuBar::new().ui(ui, |ui| {
                 match show_studio_file_menu(ui, &mut self.file_field, ready).action {
                     Some(StudioFileAction::OpenPath) => {
-                        self.open_path(PathBuf::from(self.file_field.trim()));
+                        self.open_path(PathBuf::from(self.file_field.trim()))
+                    }
+                    Some(StudioFileAction::OpenDialog) => self.open_document_dialog(),
+                    Some(StudioFileAction::Save) => {
+                        self.save();
                     }
                     Some(StudioFileAction::SaveAs) => {
                         self.save_as();
@@ -1984,59 +2584,205 @@ impl TikzariumApp {
                     Some(StudioFileAction::ExportPicker) => self.export_pdf_picker(),
                     None => {}
                 }
-                ui.menu_button("Вид", |ui| {
+                ui.menu_button("Правка", |ui| {
+                    let undo = self
+                        .source_history
+                        .available(Undo, self.authoring.source_revision());
                     if ui
-                        .checkbox(&mut self.prefs.studio_tool_rail, "Группы инструментов")
-                        .changed()
-                        && !self.prefs.studio_tool_rail
+                        .add_enabled(undo, egui::Button::new("Отменить    Ctrl+Z"))
+                        .clicked()
                     {
-                        // A hidden rail must not leave a floating tool palette.
-                        self.studio_group = None;
-                    }
-                    ui.checkbox(&mut self.prefs.studio_inspector_open, "Инспектор");
-                    ui.checkbox(&mut self.prefs.studio_console_open, "Диагностика");
-                    ui.separator();
-                    self.prefs.draw_toolbar(ui, ctx);
-                    if ui.button("Классический режим").clicked() {
-                        self.prefs.studio_mode = false;
+                        self.source_history_action(ctx, Undo);
                         ui.close();
                     }
-                    if ui.button("Шрифты рисунка").clicked() {
-                        self.prefs.show_font_lab = true;
+                    if ui
+                        .add_enabled(
+                            self.source_history
+                                .available(Redo, self.authoring.source_revision()),
+                            egui::Button::new("Повторить    Ctrl+Shift+Z"),
+                        )
+                        .clicked()
+                    {
+                        self.source_history_action(ctx, Redo);
+                        ui.close();
+                    }
+                    ui.separator();
+                    if ui.button("Найти / заменить    Ctrl+F").clicked() {
+                        self.source_editor.open_find();
+                        ui.close();
+                    }
+                    if ui.button("Перейти к строке    Ctrl+G").clicked() {
+                        self.source_editor.open_goto();
                         ui.close();
                     }
                 });
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Help,
-                    self.prefs.studio_dock == StudioDock::Help && self.prefs.studio_inspector_open,
-                    32.0,
-                    "Контекстная справка F1 из общего TikZ-каталога",
-                )
-                .clicked()
-                {
-                    studio_ui::toggle_studio_help_button(
-                        &mut self.authoring,
-                        &mut self.prefs.studio_dock,
-                        &mut self.prefs.studio_inspector_open,
-                    );
-                }
-                if studio_ui::icon_button(
-                    ui,
-                    StudioIcon::Console,
-                    self.prefs.studio_console_open,
-                    32.0,
-                    "Показать или скрыть диагностику и журнал XeLaTeX",
-                )
-                .clicked()
-                {
-                    self.prefs.studio_console_open = !self.prefs.studio_console_open;
-                }
+                ui.menu_button("Вид", |ui| self.show_studio_view_menu(ui, ctx));
+                ui.menu_button("Сборка", |ui| {
+                    if ui
+                        .add_enabled(ready, egui::Button::new("Собрать PDF    Ctrl+Enter"))
+                        .clicked()
+                    {
+                        self.build();
+                        ui.close();
+                    }
+                    if ui
+                        .add_enabled(
+                            ready && self.pdf.is_some() && !self.preview_stale(),
+                            egui::Button::new("Экспорт PDF"),
+                        )
+                        .clicked()
+                    {
+                        self.export();
+                        ui.close();
+                    }
+                    if ui
+                        .add_enabled(
+                            self.receiver.is_some(),
+                            egui::Button::new("Остановить сборку"),
+                        )
+                        .clicked()
+                    {
+                        if let Some(cancel) = &self.cancellation {
+                            cancel.cancel();
+                        }
+                        ui.close();
+                    }
+                    ui.separator();
+                    if ui
+                        .add_enabled(ready, egui::Button::new("Проверить окружение TeX"))
+                        .clicked()
+                    {
+                        self.refresh_tex(ctx);
+                        ui.close();
+                    }
+                });
+                ui.menu_button("Справка", |ui| {
+                    if ui.button("Контекстная справка    F1").clicked() {
+                        studio_ui::toggle_studio_help_button(
+                            &mut self.authoring,
+                            &mut self.prefs.studio_dock,
+                            &mut self.prefs.studio_inspector_open,
+                        );
+                        ui.close();
+                    }
+                    ui.small("Точный PDF собирает установленный XeLaTeX.");
+                });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.weak("TikZarium Studio");
+                });
             });
             ui.horizontal(|ui| {
+                let side = studio_ui::ICON_BUTTON_SIDE;
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Open,
+                    ready,
+                    false,
+                    side,
+                    "Открыть",
+                    "Открыть TeX · Ctrl+O",
+                )
+                .clicked()
+                {
+                    self.open_document_dialog();
+                }
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Save,
+                    ready,
+                    false,
+                    side,
+                    "Сохранить",
+                    "Сохранить исходник · Ctrl+S",
+                )
+                .clicked()
+                {
+                    self.save();
+                }
+                ui.separator();
+                let undo = self
+                    .source_history
+                    .available(Undo, self.authoring.source_revision());
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Undo,
+                    undo,
+                    false,
+                    side,
+                    "Отменить",
+                    "Отменить изменение исходника · Ctrl+Z",
+                )
+                .clicked()
+                {
+                    self.source_history_action(ctx, Undo);
+                }
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Redo,
+                    self.source_history
+                        .available(Redo, self.authoring.source_revision()),
+                    false,
+                    side,
+                    "Повторить",
+                    "Повторить изменение исходника · Ctrl+Shift+Z / Ctrl+Y",
+                )
+                .clicked()
+                {
+                    self.source_history_action(ctx, Redo);
+                }
+                ui.separator();
+                if studio_ui::command_button(
+                    ui,
+                    StudioIcon::Build,
+                    ready,
+                    "Собрать",
+                    "Сохранить и собрать точный PDF · Ctrl+Enter",
+                )
+                .clicked()
+                {
+                    self.build();
+                }
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Export,
+                    ready && self.pdf.is_some() && !self.preview_stale(),
+                    false,
+                    side,
+                    "Экспорт PDF",
+                    "Экспорт актуального PDF",
+                )
+                .clicked()
+                {
+                    self.export();
+                }
+                if self.receiver.is_some()
+                    && ui
+                        .small_button("■")
+                        .on_hover_text("Остановить сборку")
+                        .clicked()
+                    && let Some(cancel) = &self.cancellation
+                {
+                    cancel.cancel();
+                }
+                ui.separator();
+                if studio_ui::icon_button_enabled(
+                    ui,
+                    StudioIcon::Search,
+                    true,
+                    self.source_editor.find_open,
+                    side,
+                    "Найти",
+                    "Поиск и замена по всему исходнику · Ctrl+F",
+                )
+                .clicked()
+                {
+                    self.source_editor.open_find();
+                }
                 let prior_focus = self.pdf_focus_in_split;
-                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз");
-                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF");
+                ui.selectable_value(&mut self.pdf_focus_in_split, false, "Эскиз")
+                    .on_hover_text("Направляющая для создания объектов TikZ");
+                ui.selectable_value(&mut self.pdf_focus_in_split, true, "PDF")
+                    .on_hover_text("Точный результат внешнего XeLaTeX");
                 if self.pdf_focus_in_split && !prior_focus {
                     self.fit_page_active = true;
                     self.authoring.cancelled_pointer_capture |=
@@ -2045,25 +2791,64 @@ impl TikzariumApp {
                     self.authoring.drag_start = None;
                     self.authoring.alt_selection_capture = false;
                 }
-                ui.separator();
-                let filename = self
-                    .document
-                    .path
-                    .as_ref()
-                    .map_or_else(|| "Новый .tex".to_owned(), |p| p.display().to_string());
-                ui.add(egui::Label::new(filename).truncate());
-                if self.document.dirty() {
-                    ui.colored_label(ui.visuals().warn_fg_color, "● Изменено");
-                }
                 if self.preview_stale() {
                     ui.colored_label(ui.visuals().warn_fg_color, "PDF устарел");
                 }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if studio_ui::icon_button_enabled(
+                        ui,
+                        StudioIcon::Help,
+                        true,
+                        self.prefs.studio_dock == StudioDock::Help
+                            && self.prefs.studio_inspector_open,
+                        side,
+                        "Справка",
+                        "Контекстная справка · F1",
+                    )
+                    .clicked()
+                    {
+                        studio_ui::toggle_studio_help_button(
+                            &mut self.authoring,
+                            &mut self.prefs.studio_dock,
+                            &mut self.prefs.studio_inspector_open,
+                        );
+                    }
+                    if studio_ui::icon_button_enabled(
+                        ui,
+                        StudioIcon::Console,
+                        true,
+                        self.prefs.studio_console_open,
+                        side,
+                        "Диагностика",
+                        "Показать или скрыть журнал XeLaTeX",
+                    )
+                    .clicked()
+                    {
+                        self.prefs.studio_console_open = !self.prefs.studio_console_open;
+                    }
+                    if studio_ui::icon_button_enabled(
+                        ui,
+                        StudioIcon::Inspector,
+                        true,
+                        self.prefs.studio_inspector_open,
+                        side,
+                        "Инспектор",
+                        "Показать или скрыть параметры рисунка",
+                    )
+                    .clicked()
+                    {
+                        self.prefs.studio_inspector_open = !self.prefs.studio_inspector_open;
+                    }
+                });
             });
             if let Some(feedback) = visible_build_feedback(&self.status) {
-                ui.colored_label(
-                    ui.visuals().warn_fg_color,
-                    egui::RichText::new(feedback).strong(),
-                );
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(feedback).color(ui.visuals().warn_fg_color),
+                    )
+                    .truncate(),
+                )
+                .on_hover_text(feedback);
             }
         });
     }
@@ -2077,21 +2862,13 @@ impl TikzariumApp {
             }
         });
         ui.separator();
-        if self.authoring.active.is_some() || self.authoring.undo_available() {
-            let prior = self.authoring.source_revision();
-            if let Some(line) = tikz_canvas::show_inspector_action_bar(
-                ui,
-                &mut self.authoring,
-                &mut self.document.source,
-            ) {
-                self.jump_to_line = Some(line);
-                self.highlight_generated_line = true;
-            }
-            fence_source_editor_undo_on_revision_change(
-                prior,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+        if self.authoring.active.is_some()
+            || self.source_history.available(
+                source_editing::HistoryAction::Undo,
+                self.authoring.source_revision(),
+            )
+        {
+            self.show_shared_inspector_actions(ui);
             ui.separator();
         }
         egui::ScrollArea::vertical()
@@ -2099,15 +2876,12 @@ impl TikzariumApp {
             .show(ui, |ui| match self.prefs.studio_dock {
                 StudioDock::Properties => {
                     if self.authoring.active.is_none() {
-                        ui.heading("Выберите инструмент");
-                        ui.label("Нажмите на группу иконок слева, затем выберите команду TikZ.");
-                        ui.small("Параметры и примеры появятся здесь из единого каталога.");
-                        ui.separator();
-                        ui.small("Исходный .tex остаётся редактируемым. Точный результат — внешний XeLaTeX.");
+                        ui.strong("Параметры рисунка");
+                        ui.small("Выберите объект на эскизе или команду PGFPlots ниже.");
                     } else {
-                        let prior = self.authoring.source_revision();
+                                        let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();
-                        if let Some(line) = tikz_canvas::show_inspector(
+                        if let Some(line) = tikz_canvas::show_inspector_studio(
                             ui,
                             &mut self.authoring,
                             &mut self.document.source,
@@ -2116,17 +2890,80 @@ impl TikzariumApp {
                             self.jump_to_line = Some(line);
                             self.highlight_generated_line = true;
                         }
-                        fence_source_editor_undo_on_revision_change(
-                            prior,
-                            &self.authoring,
-                            &mut self.reset_source_editor_undo_history,
-                        );
+                        self.record_authored_source_change(prior);
                     }
+                    ui.separator();
+                                let prior = self.authoring.source_revision();
+                    if let Some(line) =
+                        self.scientific
+                            .show(ui, &mut self.authoring, &mut self.document.source)
+                    {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = true;
+                    }
+                    self.record_authored_source_change(prior);
                 }
                 StudioDock::Libraries => {
+                    ui.heading("Ресурсы проекта");
+                    ui.small("Папка проекта для открытого документа:");
+                    ui.label(
+                        self.project_root
+                            .as_deref()
+                            .map(|path| path.display().to_string())
+                            .unwrap_or_else(|| "Каталог исходного файла (по умолчанию)".into()),
+                    );
+                    let root_controls_enabled =
+                        self.document.path.is_some() && self.receiver.is_none();
+                    let response = ui.add_enabled(
+                        root_controls_enabled,
+                        egui::TextEdit::singleline(&mut self.project_root_draft)
+                            .hint_text("Путь к папке проекта")
+                            .desired_width(f32::INFINITY),
+                    );
+                    let mut apply_root = root_controls_enabled
+                        && response.lost_focus()
+                        && ui.input(|input| input.key_pressed(egui::Key::Enter));
+                    ui.horizontal_wrapped(|ui| {
+                        if ui
+                            .add_enabled(root_controls_enabled, egui::Button::new("Применить"))
+                            .clicked()
+                        {
+                            apply_root = true;
+                        }
+                        if ui.add_enabled(
+                            self.document.path.is_some() && self.receiver.is_none(),
+                            egui::Button::new("Выбрать папку проекта…"),
+                        ).clicked() {
+                            self.select_project_root();
+                        }
+                        if ui.add_enabled(
+                            self.project_root.is_some() && self.receiver.is_none(),
+                            egui::Button::new("Папка исходника"),
+                        ).clicked() {
+                            self.reset_project_root_to_source();
+                        }
+                    });
+                    if apply_root {
+                        let draft = PathBuf::from(self.project_root_draft.clone());
+                        self.apply_project_root(&draft);
+                    }
+                    ui.small("Для ресурсов в ../data выберите общую папку. Относительные пути TeX по-прежнему считаются от папки исходного файла.");
+                    ui.separator();
+                    if let Some(line) = self.scientific_resources.show(
+                        ui, &self.document.source, self.authoring.source_revision(),
+                    ) {
+                        self.jump_to_line = Some(line);
+                        self.highlight_generated_line = false;
+                    }
+                    if ui.add_enabled(self.pdf.is_some() && self.receiver.is_none(), egui::Button::new("Проверить файлы сборки")).clicked() {
+                        self.build_resources.recheck(self.document.path.as_deref(), &self.document.source);
+                        self.status = self.build_resources.report().to_owned();
+                    }
+                    self.build_resources.show(ui);
+                    ui.separator();
                     ui.heading("Библиотеки проекта");
                     ui.small("Подключение — показанная обратимая правка преамбулы; не установка.");
-                    let prior = self.authoring.source_revision();
+                                let prior = self.authoring.source_revision();
                     if let Some(line) = tikz_libraries::show_library_panel(
                         ui,
                         &mut self.authoring,
@@ -2137,11 +2974,7 @@ impl TikzariumApp {
                         self.jump_to_line = Some(line);
                         self.highlight_generated_line = true;
                     }
-                    fence_source_editor_undo_on_revision_change(
-                        prior,
-                        &self.authoring,
-                        &mut self.reset_source_editor_undo_history,
-                    );
+                    self.record_authored_source_change(prior);
                     ui.collapsing("Реестр доступности пакетов", |ui| {
                         for item in &self.package_statuses {
                             ui.strong(&item.manifest.display_name);
@@ -2159,6 +2992,10 @@ impl TikzariumApp {
                     });
                 }
                 StudioDock::Help => {
+                    let scientific_help_shown = self.scientific.show_selected_help(ui, self.authoring.source_revision());
+                    if scientific_help_shown {
+                        ui.separator();
+                    }
                     // Avoid a second generic "choose a tool" help card after a
                     // successful caret lookup; the user's source is the context.
                     let mut source_parameter_help_shown = false;
@@ -2173,7 +3010,7 @@ impl TikzariumApp {
                                 ui.separator();
                             }
                         }
-                        let prior = self.authoring.source_revision();
+                                        let prior = self.authoring.source_revision();
                         if let Some(line) = tikz_libraries::show_source_caret_completion(
                             ui, &mut self.authoring, &mut self.document.source,
                             caret, revision, self.tex.xelatex.is_some(),
@@ -2183,13 +3020,11 @@ impl TikzariumApp {
                             self.highlight_generated_line = true;
                             self.source_caret = None;
                         }
-                        fence_source_editor_undo_on_revision_change(
-                            prior, &self.authoring, &mut self.reset_source_editor_undo_history,
-                        );
+                        self.record_authored_source_change(prior);
                         ui.separator();
                     }
                     tikz_libraries::show_help_search(ui, &mut self.help_query);
-                    if !source_parameter_help_shown {
+                    if !source_parameter_help_shown && !scientific_help_shown {
                         ui.separator();
                         studio_ui::show_context_help(ui, &self.authoring);
                     }
@@ -2205,21 +3040,18 @@ impl TikzariumApp {
         if self.prefs.studio_mode && !self.pdf_focus_in_split {
             let prior = self.authoring.source_revision();
             let caps = self.primitive_capabilities();
-            if let Some(line) = tikz_canvas::show_guide_studio(
+            if let Some(line) = tikz_canvas::show_guide_shared(
                 ui,
                 &mut self.authoring,
                 &mut self.document.source,
                 caps,
+                true,
             ) {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
                 ui.ctx().request_repaint();
             }
-            fence_source_editor_undo_on_revision_change(
-                prior,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+            self.record_authored_source_change(prior);
             ui.separator();
             ui.small("Интерактивный эскиз TikZ. Точная геометрия и шрифты — во вкладке PDF после XeLaTeX.");
             return;
@@ -2314,16 +3146,13 @@ impl TikzariumApp {
         if self.workspace == WorkspaceMode::Split && !self.pdf_focus_in_split {
             let caps = self.primitive_capabilities();
             let previous_revision = self.authoring.source_revision();
-            let inserted = if self.prefs.studio_mode {
-                tikz_canvas::show_guide_studio(
-                    ui,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                    caps,
-                )
-            } else {
-                tikz_canvas::show_guide(ui, &mut self.authoring, &mut self.document.source, caps)
-            };
+            let inserted = tikz_canvas::show_guide_shared(
+                ui,
+                &mut self.authoring,
+                &mut self.document.source,
+                caps,
+                self.prefs.studio_mode,
+            );
             if let Some(line) = inserted {
                 self.jump_to_line = Some(line);
                 self.highlight_generated_line = true;
@@ -2332,11 +3161,7 @@ impl TikzariumApp {
                 // and highlighted without requiring another mouse interaction.
                 ui.ctx().request_repaint();
             }
-            fence_source_editor_undo_on_revision_change(
-                previous_revision,
-                &self.authoring,
-                &mut self.reset_source_editor_undo_history,
-            );
+            self.record_authored_source_change(previous_revision);
         } else if self.workspace == WorkspaceMode::Split {
             ui.small("Точный PDF занимает центральную область. Код и свойства остаются видимыми; для нового жеста выберите «Рисовать TikZ».");
         } else {
@@ -2699,6 +3524,16 @@ fn show_source_parameter_help(
 }
 
 impl eframe::App for TikzariumApp {
+    fn raw_input_hook(&mut self, ctx: &egui::Context, raw: &mut egui::RawInput) {
+        let allowed = !self.modal_active()
+            && !self.authoring.guide_pointer_armed
+            && self.authoring.drag_start.is_none()
+            && !self.authoring.alt_selection_capture;
+        for action in self.source_input.prepare(ctx, raw, allowed) {
+            self.source_history_action(ctx, action);
+        }
+    }
+
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, STORAGE_KEY, &self.prefs);
     }
@@ -2731,26 +3566,18 @@ impl eframe::App for TikzariumApp {
         // Pending dirty-Open decisions own the keyboard: do not change source
         // through a global help/visual Undo shortcut behind the modal.
         if !self.modal_active() {
-            let had_help = self.authoring.help;
-            tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
             if self.prefs.studio_mode {
-                studio_ui::route_studio_help_toggle(
-                    had_help,
-                    self.authoring.help,
+                studio_ui::handle_studio_help_shortcut(
+                    ctx,
+                    &mut self.authoring,
                     &mut self.prefs.studio_dock,
                     &mut self.prefs.studio_inspector_open,
                 );
+            } else {
+                tikz_canvas::handle_help_shortcut(ctx, &mut self.authoring);
             }
-            if self.workspace == WorkspaceMode::Split
-                && let Some(line) = tikz_canvas::handle_visual_undo_shortcut(
-                    ctx,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                )
-            {
-                self.jump_to_line = Some(line);
-                self.highlight_generated_line = true;
-                self.reset_source_editor_undo_history = true;
+            if self.workspace == WorkspaceMode::Split {
+                self.handle_shared_history_shortcuts(ctx);
             }
         }
         // Read modifiers from EACH key-down event. A real, short X11 Ctrl+O
@@ -2890,23 +3717,10 @@ impl eframe::App for TikzariumApp {
         }
         if !self.prefs.studio_mode && self.workspace == WorkspaceMode::Split {
             show_split_inspector_panel(ctx, split_layout, |ui| {
-                let previous_revision = self.authoring.source_revision();
                 if self.modal_active() {
                     ui.disable();
                 }
-                if let Some(line) = tikz_canvas::show_inspector_action_bar(
-                    ui,
-                    &mut self.authoring,
-                    &mut self.document.source,
-                ) {
-                    self.jump_to_line = Some(line);
-                    self.highlight_generated_line = true;
-                }
-                fence_source_editor_undo_on_revision_change(
-                    previous_revision,
-                    &self.authoring,
-                    &mut self.reset_source_editor_undo_history,
-                );
+                self.show_shared_inspector_actions(ui);
                 ui.separator();
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
@@ -2990,31 +3804,13 @@ impl eframe::App for TikzariumApp {
                         });
                 });
         }
-        if self.prefs.studio_mode
-            && self.workspace == WorkspaceMode::Split
-            && self.prefs.studio_tool_rail
-        {
-            egui::SidePanel::left("b42-tool-groups")
-                .resizable(false)
-                .exact_width(
-                    studio_ui::StudioLayout::for_width(ctx.available_rect().width())
-                        .tool_rail_width,
-                )
-                .show(ctx, |ui| {
-                    if self.modal_active() {
-                        ui.disable();
-                    }
-                    if let Some(anchor) = studio_ui::show_group_rail(
-                        ui,
-                        &mut self.studio_group,
-                        studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
-                    ) {
-                        self.studio_palette_anchor = anchor;
-                    }
-                });
-        }
+        let rail_width = if self.prefs.studio_mode && self.prefs.studio_tool_rail {
+            studio_ui::StudioLayout::for_width(ctx.available_rect().width()).tool_rail_width
+        } else {
+            0.0
+        };
         let source_layout = if self.prefs.studio_mode {
-            split_layout.reserving_center(ctx.available_rect().width())
+            split_layout.reserving_center(ctx.available_rect().width() - rail_width)
         } else {
             split_layout
         };
@@ -3025,6 +3821,46 @@ impl eframe::App for TikzariumApp {
         } else {
             None
         };
+        let mut actual_rail_rect = None;
+        // Keep drawing tools immediately beside the canvas. The source editor
+        // is no longer a travel barrier between a tool and its drawing target.
+        if self.prefs.studio_mode
+            && self.workspace == WorkspaceMode::Split
+            && self.prefs.studio_tool_rail
+        {
+            // UX2: six reviewed C tools are selectable in ONE direct click.
+            // The only floating palette in Studio is the extensions catalogue.
+            let rail_response = egui::SidePanel::left("b42-tool-groups")
+                .resizable(false)
+                .exact_width(
+                    studio_ui::StudioLayout::for_width(ctx.available_rect().width())
+                        .tool_rail_width,
+                )
+                .show(ctx, |ui| {
+                    if self.modal_active() {
+                        ui.disable();
+                    }
+                    studio_ui::show_direct_tool_rail(
+                        ui,
+                        self.authoring.active,
+                        &mut self.studio_group,
+                        studio_ui::StudioLayout::for_width(ctx.available_rect().width()).narrow,
+                    )
+                });
+            actual_rail_rect = Some(rail_response.response.rect);
+            let rail_action = rail_response.inner;
+            if let Some(tool) = rail_action.selected_tool {
+                studio_ui::activate_studio_tool(
+                    &mut self.authoring,
+                    tool,
+                    &mut self.prefs.studio_dock,
+                    &mut self.prefs.studio_inspector_open,
+                );
+            }
+            if let Some(anchor) = rail_action.extension_anchor {
+                self.studio_palette_anchor = anchor;
+            }
+        }
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.modal_active() {
                 ui.disable();
@@ -3044,7 +3880,11 @@ impl eframe::App for TikzariumApp {
             studio_ui::show_palette(
                 ctx,
                 &mut self.studio_group,
-                studio_ui::palette_anchor_at_source_edge(source_rect, self.studio_palette_anchor),
+                studio_ui::palette_anchor_at_source_edge(
+                    source_rect,
+                    actual_rail_rect,
+                    self.studio_palette_anchor,
+                ),
                 &mut self.authoring,
                 studio_ui::PaletteData {
                     source: &self.document.source,
@@ -3108,6 +3948,10 @@ impl eframe::App for TikzariumApp {
             }
         }
         self.pending_build_ui(ctx);
+        // An Open completed after the editor (or in Canvas-only mode) has no
+        // remaining source widgets this frame. Never carry its raw-event
+        // fence into a later frame and discard fresh native input there.
+        self.source_document_input_fence = false;
     }
 }
 

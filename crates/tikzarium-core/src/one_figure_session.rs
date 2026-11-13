@@ -9,6 +9,10 @@ use std::{
 };
 
 const MAX_UNDO_SNAPSHOTS: usize = 64;
+/// An explicit *byte* budget prevents 64 full-size user sources from being
+/// retained simultaneously. A single document larger than this budget may
+/// still keep one undo step; no edits or source bytes are silently discarded.
+const MAX_UNDO_HISTORY_BYTES: usize = 32 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FigurePreviewState {
@@ -130,7 +134,19 @@ impl OneFigureSession {
             .revision
             .checked_add(1)
             .ok_or(FigureSessionError::CounterExhausted)?;
-        if self.undo_source.len() == MAX_UNDO_SNAPSHOTS {
+        // Preserve the newest inverse transaction, but bound retained history
+        // by BOTH count and total source bytes. The oldest history is evicted
+        // before adding this snapshot. Never truncate or reserialize TeX.
+        let incoming_bytes = self.document.source.len();
+        while self.undo_source.len() >= MAX_UNDO_SNAPSHOTS
+            || (!self.undo_source.is_empty()
+                && self
+                    .undo_source
+                    .iter()
+                    .fold(0usize, |bytes, source| bytes.saturating_add(source.len()))
+                    .saturating_add(incoming_bytes)
+                    > MAX_UNDO_HISTORY_BYTES)
+        {
             self.undo_source.remove(0);
         }
         self.undo_source.push(self.document.source.clone());
@@ -203,6 +219,7 @@ impl OneFigureSession {
         let verified_source = self.document.path.as_deref().is_some_and(|path| {
             !self.document.dirty()
                 && dependencies.recorder_complete()
+                && dependencies.build_inputs_verified()
                 && dependencies.is_project_fresh()
                 && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
         });
@@ -254,6 +271,7 @@ impl OneFigureSession {
         let verified_source = self.document.path.as_deref().is_some_and(|path| {
             !self.document.dirty()
                 && dependencies.recorder_complete()
+                && dependencies.build_inputs_verified()
                 && dependencies.is_project_fresh()
                 && dependencies.matches_author_source_bytes(path, self.document.source.as_bytes())
         });
@@ -323,6 +341,7 @@ impl OneFigureSession {
         if pdf.source_path != self.document.path
             || pdf.source_sha256 != hash(self.document.source.as_bytes())
             || !pdf.dependencies.is_project_fresh()
+            || !pdf.dependencies.build_inputs_verified()
             || pdf.path.as_ref().is_some_and(|path| {
                 fs::read(path).ok().map(|bytes| hash(&bytes)) != Some(pdf.path_sha256)
             })
@@ -351,4 +370,52 @@ impl OneFigureSession {
 
 fn hash(bytes: &[u8]) -> [u8; 32] {
     Sha256::digest(bytes).into()
+}
+
+#[cfg(test)]
+mod byte_budget_tests {
+    use super::*;
+
+    #[test]
+    fn many_megabyte_scientific_sources_have_bounded_undo_history() {
+        let initial = "x".repeat(1024 * 1024);
+        let mut session = OneFigureSession::new(Document::scratch(&initial));
+        for index in 0..42u8 {
+            let mut replacement = initial.clone().into_bytes();
+            replacement[0] = b'A' + index % 26;
+            replacement[1] = b'a' + index / 26;
+            session
+                .replace_source(session.revision(), String::from_utf8(replacement).unwrap())
+                .unwrap();
+            let retained = session
+                .undo_source
+                .iter()
+                .fold(0usize, |sum, value| sum.saturating_add(value.len()));
+            assert!(
+                retained <= MAX_UNDO_HISTORY_BYTES,
+                "more than the configured scientific Undo memory budget"
+            );
+            assert!(session.undo_source.len() <= MAX_UNDO_SNAPSHOTS);
+        }
+        assert_eq!(session.undo_source.len(), 32);
+        let mut undone = 0;
+        while session.undo(session.revision()).unwrap() {
+            undone += 1;
+        }
+        assert_eq!(
+            undone, 32,
+            "only the most recent byte-budgeted history is reversible"
+        );
+        assert!(session.document().source.len() == initial.len());
+    }
+
+    #[test]
+    fn unicode_crlf_and_unknown_macro_remain_byte_exact_in_inverse_snapshot() {
+        let original = "% Кириллица\r\n\\unknown{Θ—ж}\r\n".to_owned();
+        let mut session = OneFigureSession::new(Document::scratch(&original));
+        let changed = format!("{}% add\r\n", original);
+        assert!(session.replace_source(0, changed).unwrap());
+        assert!(session.undo(1).unwrap());
+        assert_eq!(session.document().source.as_bytes(), original.as_bytes());
+    }
 }

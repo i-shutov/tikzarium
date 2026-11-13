@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""I61: real B42 Studio X11 group-click -> six native TikZ gestures -> saved TeX/PDF.
+"""I61: real UX2 Studio X11 direct-click -> six native gestures -> saved TeX/PDF.
 
+Compact production candidate; no prior scientific screenshot accepts this suite.
 Never infer PASS from a screenshot alone; this script requires actual process
 events and bytes that the running GUI persisted. Independent manual inspection
 of screenshots/PDF remains mandatory. Linux/Xvfb != physical Win10 or Mac ARM.
@@ -13,31 +14,186 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import time
 
-from qa_n1_desktop import FIXTURE, original_preserved, owners
+from qa_n1_desktop import (FIXTURE, original_preserved, owners,
+                           x11_button1_mask, x11_button1_pressed)
 
-# Candidate click coordinates are tied to the exact app/src Git tree and
-# previously inspected B42 bootstrap screenshots, not a general GUI contract.
-# Original N5 I61 41937982066 PNG: geometry popup X=500..762;
-# icon centers are 532/585/639/693, not old 599/653/707/761.
-# This source-tree lease deliberately requires renewed visual QA after UI changes.
-# UX1 renewal: original native 1180x680 client screenshots and source review
-# are in insights/2026-11-11_UX1_IMPLEMENTATION_RU.md. Only the source editor
-# layout changed: its first content row is now y=200 in client pixels. The
-# initial source focus point below moves inside that reviewed content region.
-# Existing rail/palette/dock coordinates still require the unchanged 1366x768
-# hosted probe and independent original-artifact review; local UX1 is not W3.
-APP_TREE = "5ea9f8ce7dc6c1374e1eb3bbe951e9a9b0e684a9"
+# Compact production coordinates derived from app layout and the independently
+# reviewed CP05 native original (43370706180). Candidate until THIS full run's
+# originals are reviewed: CP05 scientific acceptance does not accept I61.
+APP_TREE = "7d35e7b8064a651084fef931a827ac46b3448c6a"
+CLIENT = (1180, 680)
+SCREEN = (1366, 768)
+POINTS = {
+    "file_menu": (23, 15), "file_path": (143, 135),
+    "source_settings": (405, 80), "source_full_source": (490, 174),
+    "source": (200, 230), "save": (61, 49), "open": (24, 49),
+    "build": (224, 49), "export": (291, 49),
+    "guide": (381, 49), "pdf": (439, 49), "undo": (109, 49),
+    # Current fixed-width Help dock wraps the Inspector's Apply control to a
+    # second row and pushes Position fields down. From retained 1366x768
+    # originals, Node X center is root≈(1051,507), Apply center≈(1000,171);
+    # subtract the observed client origin (1,20) for xdotool window coords.
+    "properties": (960, 81), "node_x": (1050, 487), "apply": (999, 151),
+}
 BUTTONS = [
-    ("line", (30, 150), (532, 169), (646, 350), (750, 377)),
-    ("rectangle", (30, 150), (585, 169), (681, 425), (765, 477)),
-    ("circle", (30, 150), (639, 169), (810, 351), (840, 351)),
-    ("cubic", (30, 150), (693, 169), (777, 470), (902, 460)),
-    ("arrow", (30, 199), (532, 216), (615, 535), (743, 552)),
-    ("node", (30, 248), (532, 266), (850, 550), (851, 550)),
+    # CP05 observed direct rail x448, six 30px icons with 4px row spacing.
+    # Leave Node selected for the Inspector draft/Apply/Undo proof.
+    ("line", (448, 113), (550, 275), (650, 300)),
+    ("rectangle", (448, 181), (580, 350), (665, 400)),
+    ("circle", (448, 215), (740, 275), (770, 275)),
+    ("cubic", (448, 283), (700, 410), (825, 400)),
+    ("arrow", (448, 147), (530, 485), (660, 500)),
+    ("node", (448, 249), (790, 500), (791, 500)),
 ]
+NATIVE = None
+
+
+def parse_client_geometry(output: str) -> dict:
+    """Only xwininfo's absolute CLIENT origin; WM frame coordinates are unsafe."""
+    labels = {"X": "Absolute upper-left X", "Y": "Absolute upper-left Y",
+              "WIDTH": "Width", "HEIGHT": "Height"}
+    parsed = {}
+    for name, label in labels.items():
+        match = re.search(r"^\s*" + re.escape(label) + r":\s*(-?\d+)\s*$", output, re.MULTILINE)
+        if match is None:
+            raise RuntimeError("Missing true xwininfo client geometry: " + label)
+        parsed[name] = int(match.group(1))
+    if (parsed["WIDTH"], parsed["HEIGHT"]) != CLIENT:
+        raise RuntimeError("Client geometry differs from reviewed compact coordinates")
+    if (parsed["X"] < 0 or parsed["Y"] < 0 or parsed["X"] + CLIENT[0] > SCREEN[0]
+            or parsed["Y"] + CLIENT[1] > SCREEN[1]):
+        raise RuntimeError("Production client is clipped by the hosted desktop")
+    return parsed
+
+
+class NativeSession:
+    """Real production PID/window input with an append-only action/evidence log."""
+    def __init__(self, process, window, out, app, report):
+        self.process, self.window, self.out = process, window, out
+        self.report = report
+        self.serial = 0
+        self.log = (out / "native-actions.log").open("w", encoding="utf-8", buffering=1)
+        self.snapshots = out / "source-states"
+        self.snapshots.mkdir()
+        observed = Path(f"/proc/{process.pid}/exe").resolve(strict=True)
+        expected = app.resolve(strict=True)
+        if expected.name == "launch.sh":
+            expected = expected.with_name("tikzarium-app").resolve(strict=True)
+        proc_executable_sha = sha(Path(f"/proc/{process.pid}/exe"))
+        if observed != expected or proc_executable_sha != sha(expected):
+            raise RuntimeError("Owned process executable differs from expected production ELF")
+        report.update({"running_executable_path": str(observed),
+                       "running_executable_sha256": proc_executable_sha, "running_pid": process.pid})
+        absolute = run("xwininfo", "-id", window)
+        (out / "owned-window-xwininfo.txt").write_text(absolute + "\n", encoding="utf-8")
+        self.geometry = parse_client_geometry(absolute)
+        report.update({"window_geometry": self.geometry, "window_geometry_source": "XWININFO_ABSOLUTE_CLIENT",
+                       "client_size": CLIENT, "screen_size": SCREEN, "coordinates": POINTS,
+                       "coordinate_scope": "CANDIDATE_COMPACT_REQUIRES_CURRENT_ORIGINAL_IMAGE_REVIEW"})
+        self.focus()
+        report["window_title"] = run("xdotool", "getwindowname", window)
+        self.event("owned_production_window", geometry=self.geometry, executable_sha256=proc_executable_sha)
+
+    def event(self, kind, **fields):
+        self.log.write(json.dumps({"time_monotonic": time.monotonic(), "event": kind,
+                                  "pid": self.process.pid, "window_id": self.window, **fields}, ensure_ascii=False) + "\n")
+
+    def focus(self):
+        if self.process.poll() is not None:
+            raise RuntimeError("Production app exited before native sequence completed")
+        if run("xdotool", "getwindowpid", self.window) != str(self.process.pid):
+            raise RuntimeError("X11 window no longer belongs to production PID")
+        run("xdotool", "windowactivate", "--sync", self.window)
+        if run("xdotool", "getactivewindow") != self.window:
+            raise RuntimeError("Production app is not the active X11 client")
+
+    def move(self, x, y):
+        if not (0 <= x < CLIENT[0] and 0 <= y < CLIENT[1]):
+            raise RuntimeError("Pointer candidate lies outside production client")
+        self.focus()
+        run("xdotool", "mousemove", "--window", self.window, str(x), str(y))
+        actual = dict(line.split("=", 1) for line in run("xdotool", "getmouselocation", "--shell").splitlines() if "=" in line)
+        root = (int(actual["X"]), int(actual["Y"]))
+        self.event("pointer_position", client_xy=(x, y), actual_root_xy=root)
+        if root != (self.geometry["X"] + x, self.geometry["Y"] + y):
+            raise RuntimeError("Actual server pointer differs from true client origin plus candidate")
+
+    def retain_sources(self, label):
+        self.serial += 1
+        for path in sorted(self.out.glob("*.tex")):
+            target = self.snapshots / f"{self.serial:03d}-{label}-{path.name}"
+            target.write_bytes(path.read_bytes())
+            self.event("original_gui_source_state", file=str(target.relative_to(self.out)), sha256=sha(target))
+
+
+def enable_full_source(window: str, out: Path, label: str) -> None:
+    # Every native Open resets this option. Always toggle after that load;
+    # actual editor clipboard equality below proves the whole document is live.
+    click(window, *POINTS["source_settings"])
+    screenshot(out, label + "-source-settings")
+    click(window, *POINTS["source_full_source"])
+    key("Escape")
+
+
+def copy_focused(expected: bytes, out: Path, label: str) -> bytes:
+    sentinel = out / (label + "-sentinel.txt")
+    sentinel.write_bytes(b"I61_NATIVE_CLIPBOARD_SENTINEL_NOT_A_FIELD")
+    subprocess.run(["xclip", "-selection", "clipboard", "-i", str(sentinel)],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8, check=True)
+    key("ctrl+a")
+    key("ctrl+c")
+    result = subprocess.run(["xclip", "-selection", "clipboard", "-o"],
+                            capture_output=True, timeout=8, check=True).stdout
+    (out / (label + "-clipboard.txt")).write_bytes(result)
+    if NATIVE:
+        NATIVE.event("actual_focused_clipboard", label=label, matches=result == expected,
+                     sha256=hashlib.sha256(result).hexdigest())
+    if result != expected:
+        raise RuntimeError(label + ": actual focused field/editor bytes differ from expected")
+    return result
+
+
+def draft_node_x(window: str, out: Path, node: dict, new_x: bytes) -> None:
+    # Original native run 43386874361 settled at a wider Inspector than the
+    # initial UNIT_EVENT probe: Apply shares Undo's row, and old y484 hit Y.
+    # Prove the original X value from the selected source owner BEFORE typing;
+    # the subsequent proposed-value copy alone cannot distinguish X from Y.
+    click(window, *POINTS["node_x"])
+    copy_focused(node["values"]["x"].encode("utf-8"), out, "28a-focused-original-node-x")
+    key("ctrl+a")
+    paste(new_x, out / "clipboard-inspector-node-x.txt")
+    copy_focused(new_x, out, "28b-focused-node-x")
+
+
+def verify_editor(window: str, out: Path, expected: bytes, label: str) -> None:
+    click(window, *POINTS["source"])
+    copy_focused(expected, out, label)
+
+
+def expected_node_x_patch(before: bytes, new_x: str) -> bytes:
+    """Byte-minimal current v2 Node patch, preserving all other native bytes."""
+    items = owners(before)
+    if len(items) != 6 or items[-1]["tool"] != "node":
+        raise RuntimeError("Expected uniquely selected Node #6")
+    old_x = items[-1]["values"]["x"]
+    if old_x == new_x:
+        raise RuntimeError("Inspector candidate must change the Node x literal")
+    lines = before.splitlines(keepends=True)
+    hits = [index for index, line in enumerate(lines) if b' % tikzarium:n1:[2,6,"node",' in line]
+    if len(hits) != 1:
+        raise RuntimeError("Expected exactly one current Node #6 source owner")
+    index = hits[0]
+    line = lines[index]
+    native = ("\\node at (" + old_x + ",").encode()
+    meta = ('"x":"' + old_x + '"').encode()
+    if line.count(native) != 1 or line.count(meta) != 1:
+        raise RuntimeError("Node x native command and metadata must each occur once")
+    lines[index] = line.replace(native, ("\\node at (" + new_x + ",").encode(), 1).replace(meta, ('"x":"' + new_x + '"').encode(), 1)
+    return b"".join(lines)
 
 
 def sha(path: Path) -> str:
@@ -98,36 +254,61 @@ def paste(contents: bytes, path: Path) -> None:
 
 
 def screenshot(out: Path, label: str) -> None:
+    if NATIVE:
+        NATIVE.retain_sources(label)
     filename = out / (label + ".png")
     run("import", "-window", "root", str(filename), timeout=35)
     if filename.stat().st_size < 5000:
         raise RuntimeError(f"Empty X11 screenshot: {label}")
+    if NATIVE and run("identify", "-format", "%w %h", str(filename)) != "1366 768":
+        raise RuntimeError("Original screenshot differs from declared 1366x768 scope")
 
 
 def click(window: str, x: int, y: int) -> None:
-    # Reviewed screenshots show ROOT pixels. xdotool --window instead uses
-    # client-relative coordinates and double-counts the 20px WM titlebar.
-    run("xdotool", "mousemove", "--sync", str(x), str(y), "click", "1")
-    time.sleep(0.20)
+    if NATIVE is None or window != NATIVE.window:
+        raise RuntimeError("Native click requires the owned production session")
+    NATIVE.move(x, y)
+    NATIVE.event("x11_click", client_xy=(x, y))
+    run("xdotool", "click", "1")
+    time.sleep(0.28)
+    if (x, y) == POINTS["save"]:
+        NATIVE.retain_sources("gui-save")
 
 
 def key(value: str) -> None:
-    run("xdotool", "key", "--clearmodifiers", value)
-    time.sleep(0.18)
+    if NATIVE:
+        NATIVE.focus()
+        NATIVE.event("x11_key", chord=value)
+    run("xdotool", "key", "--clearmodifiers", "--delay", "90", value)
+    time.sleep(0.20)
 
 
 def gesture(window: str, start: tuple[int, int], end: tuple[int, int]) -> None:
-    run("xdotool", "mousemove", "--sync", str(start[0]), str(start[1]),
-        "mousedown", "1")
-    time.sleep(0.15)
-    run("xdotool", "mousemove", "--sync", str(end[0]), str(end[1]))
-    time.sleep(0.15)
-    run("xdotool", "mouseup", "1")
+    if NATIVE is None or window != NATIVE.window:
+        raise RuntimeError("Native gesture requires the owned production session")
+    NATIVE.move(*start)
+    NATIVE.event("x11_gesture_begin", start=start, end=end)
+    run("xdotool", "mousedown", "1")
+    try:
+        time.sleep(0.20)
+        for phase, point in (("pressed", start), ("moved", end)):
+            if phase == "moved":
+                NATIVE.move(*point)
+                time.sleep(0.20)
+            mask = x11_button1_mask()
+            NATIVE.event("actual_server_primary_button", phase=phase, mask=mask)
+            if not x11_button1_pressed(mask):
+                raise RuntimeError("X11 server did not retain primary button during native gesture")
+    finally:
+        run("xdotool", "mouseup", "1")
     time.sleep(0.35)
-
+    NATIVE.event("x11_gesture_end")
 
 
 def held_f1() -> None:
+    if NATIVE:
+        NATIVE.focus()
+        NATIVE.event("x11_held_f1")
     # An instantaneous key tap may miss egui's next input frame.
     run("xdotool", "keydown", "F1")
     time.sleep(0.34)
@@ -137,8 +318,10 @@ def held_f1() -> None:
 
 def dock_signature(out: Path, label: str) -> str:
     # Compare the right-hand actual Studio tab bar, not its changing canvas.
+    origin = NATIVE.geometry if NATIVE else {"X": 1, "Y": 20}
+    region = f"252x29+{origin['X'] + 921}+{origin['Y'] + 67}"
     return run("convert", str(out / (label + ".png")), "-crop",
-               "330x42+1025+94", "+repage", "-format", "%#", "info:")
+               region, "+repage", "-format", "%#", "info:")
 
 
 def modal_region_change(before: Path, after: Path) -> float:
@@ -149,12 +332,14 @@ def modal_region_change(before: Path, after: Path) -> float:
     """
     return float(run(
         "convert", str(before), str(after), "-compose", "difference",
-        "-composite", "-crop", "520x280+420+230", "+repage",
+        "-composite", "-crop", "520x280+440+200", "+repage",
         "-colorspace", "Gray", "-format", "%[fx:mean]", "info:",
     ))
 
 
 def main() -> int:
+    global NATIVE
+    NATIVE = None
     arg = argparse.ArgumentParser(description=__doc__)
     arg.add_argument("--app", required=True, type=Path)
     arg.add_argument("--out", required=True, type=Path)
@@ -163,8 +348,15 @@ def main() -> int:
     if out.exists() and any(out.iterdir()):
         arg.error("I61 requires an empty evidence directory")
     out.mkdir(parents=True, exist_ok=True)
-    if os.environ.get("TIKZARIUM_APP_TREE_SHA") != APP_TREE:
-        arg.error("B42 app/source tree changed: re-review screenshot coordinates first")
+    root = Path(__file__).resolve().parents[1]
+    actual_tree = run("git", "-C", str(root), "rev-parse", "HEAD:crates/tikzarium-app/src")
+    actual_head = run("git", "-C", str(root), "rev-parse", "HEAD")
+    if os.environ.get("TIKZARIUM_SOURCE_SHA") != actual_head:
+        arg.error("Source SHA must equal actual checked-out HEAD")
+    if run("git", "-C", str(root), "status", "--porcelain", "--", "crates", "extensions", "Cargo.toml", "Cargo.lock"):
+        arg.error("Production source differs from committed candidate")
+    if os.environ.get("TIKZARIUM_APP_TREE_SHA") != APP_TREE or actual_tree != APP_TREE:
+        arg.error("Compact app/source tree changed: re-review actual layout before renewing candidate")
     # The real app's default file field is "figure.tex" (reviewed screenshot).
     # Use an isolated GUI process working directory instead of an unproved
     # popup path TextEdit click. The app must write this .tex via its Save icon.
@@ -197,6 +389,7 @@ def main() -> int:
             "XDG_CACHE_HOME": str(out / "cache"),
             "LIBGL_ALWAYS_SOFTWARE": "1",
             "WINIT_UNIX_BACKEND": "x11",
+            "WINIT_X11_SCALE_FACTOR": "1.0",
         })
         env.pop("WAYLAND_DISPLAY", None)
         process = subprocess.Popen([str(args.app.resolve(strict=True))],
@@ -211,27 +404,36 @@ def main() -> int:
                  "--name", "TikZarium"],
                 capture_output=True, timeout=5, check=False)
             if match.returncode == 0 and match.stdout.strip():
-                found = match.stdout.decode().splitlines()[-1]
+                windows = match.stdout.decode("ascii", "strict").splitlines()
+                if len(windows) != 1:
+                    raise RuntimeError("Ambiguous visible production-PID windows")
+                found = windows[0]
                 break
             time.sleep(0.25)
         if not found:
             raise RuntimeError("No real visible Studio process window")
-        run("xdotool", "windowmove", found, "0", "0")
-        run("xdotool", "windowsize", "--sync", found, "1366", "768")
+        if run("xdotool", "getdisplaygeometry") != "1366 768":
+            raise RuntimeError("I61 compact driver requires the reviewed 1366x768 desktop")
+        run("xdotool", "windowsize", "--sync", found, str(CLIENT[0]), str(CLIENT[1]))
+        run("xdotool", "windowmove", "--sync", found, "0", "0")
         run("xdotool", "windowactivate", "--sync", found)
         time.sleep(1.6)
+        NATIVE = NativeSession(process, found, out, args.app, report)
         report["window_id"] = found
         report["app_sha256"] = sha(args.app)
         screenshot(out, "01-real-studio")
 
-        # Real File-popup screenshot confirms "figure.tex" as app default.
+        # Candidate file-popup location requires original image review; it confirms "figure.tex" as app default.
         # GUI starts in out/, so clicking real Save writes out/figure.tex.
         # Popup's editable custom path is separately NOT_RUN.
-        click(found, 321, 40)
+        click(found, *POINTS["file_menu"])
         screenshot(out, "02-file-menu-default-path")
-        click(found, 130, 260)  # UX1: below the new navigation toolbar/gutter.
+        key("Escape")
+        enable_full_source(found, out, "03-initial")
+        click(found, *POINTS["source"])
         key("ctrl+a")
         paste(fixture, out / "clipboard-source.txt")
+        verify_editor(found, out, fixture, "04-fixture-editor")
         screenshot(out, "04-source-pasted")
 
         # W3 regression: click the real Build triangle on an UNSAVED
@@ -243,7 +445,7 @@ def main() -> int:
         before_modal = out / "04a-before-scratch-build.png"
         modal_seen = False
         for attempt in range(1, 6):
-            click(found, 219, 39)
+            click(found, *POINTS["build"])
             time.sleep(0.65)
             screenshot(out, f"04b-scratch-build-attempt-{attempt}")
             modal_image = out / f"04b-scratch-build-attempt-{attempt}.png"
@@ -273,7 +475,7 @@ def main() -> int:
             "modal_visual_change": modal_region_change(before_modal, modal_image),
         })
 
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(source.is_file, "Studio toolbar Save did not create default figure.tex in isolated cwd")
         if source.read_bytes() != fixture:
             raise RuntimeError("Real GUI Save altered opaque Unicode source")
@@ -282,30 +484,29 @@ def main() -> int:
         report["steps"].append({"case": "paste_and_save", "sha256": sha(source)})
         screenshot(out, "05-source-saved")
 
-        for index, (tool, group, tool_button, start, end) in enumerate(BUTTONS, 1):
+        for index, (tool, tool_button, start, end) in enumerate(BUTTONS, 1):
             before = source.read_bytes()
             count = len(owners(before))
-            click(found, *group)
-            screenshot(out, f"{index:02d}-{tool}-group-popup")
+            screenshot(out, f"{index:02d}-{tool}-rail-before")
             click(found, *tool_button)
             screenshot(out, f"{index:02d}-{tool}-selected")
             gesture(found, start, end)
             screenshot(out, f"{index:02d}-{tool}-pointer")
             # Save is the actual Studio toolbar button, no synthetic file edits.
-            click(found, 177, 39)
+            click(found, *POINTS["save"])
             time.sleep(0.5)
             after = source.read_bytes()
             authored = owners(after)
             if len(authored) != count + 1 or authored[-1]["tool"] != tool:
                 raise RuntimeError(
-                    f"{tool}: real group/tool/pointer did not persist a new "
+                    f"{tool}: real one-click rail/pointer did not persist a new "
                     f"native owned command (before={count}, after={authored})")
             if not original_preserved(fixture, after):
                 raise RuntimeError(f"{tool}: source bytes outside C command changed")
             if tool == "cubic" and b".. controls " not in after:
                 raise RuntimeError("Cubic did not produce native TikZ Bezier")
             report["steps"].append({
-                "case": "real_group_and_pointer_" + tool,
+                "case": "real_direct_rail_and_pointer_" + tool,
                 "source_sha256": sha(source),
                 "owner_count": len(authored),
                 "owner_id": authored[-1]["id"],
@@ -319,17 +520,23 @@ def main() -> int:
         screenshot(out, "21-f1-closed")
         report["f1_keystrokes"] = "SENT_REAL_X11_VISUAL_REVIEW_REQUIRED"
         report["final_source_sha256"] = sha(source)
-        click(found, 219, 39)  # Real Studio Build icon, external XeLaTeX.
+        click(found, *POINTS["build"])  # Real Studio Build icon, external XeLaTeX.
         pdf = source.with_suffix(".pdf")
         # The app may retain the build PDF in memory until Export; Build success
         # alone must not be interpreted as a persisted generated file.
         time.sleep(3.0)
         screenshot(out, "22-build-status")
-        click(found, 73, 77)  # Studio PDF tab, code pane still visible.
+        click(found, *POINTS["pdf"])  # Studio PDF tab, code pane still visible.
         time.sleep(1.5)
         screenshot(out, "23-pdf-view-before-export")
-        click(found, 259, 39)  # Real export action.
-        wait(pdf.is_file, "Studio Export did not write a real XeLaTeX PDF", 20)
+        deadline = time.monotonic() + 180
+        while time.monotonic() < deadline and not pdf.is_file():
+            click(found, *POINTS["export"])
+            if sha(source) != report["final_source_sha256"]:
+                raise RuntimeError("Source changed during GUI Build/Export")
+            time.sleep(1.0)
+        if not pdf.is_file():
+            raise RuntimeError("Studio Export did not write a real XeLaTeX PDF")
         if sha(source) != report["final_source_sha256"]:
             raise RuntimeError("Saved source changed during PDF export")
         metadata = run("pdfinfo", str(pdf))
@@ -349,13 +556,33 @@ def main() -> int:
         report["real_xelatex_pdf"] = "PASS_EXTERNAL_XELATEX_PDF_CYRILLIC_AND_ALL_FONTS_EMBEDDED"
         report["pdf_sha256"] = sha(pdf)
         screenshot(out, "25-pdf-exported")
+        # Copy the real GUI build log: PDF existence alone does not name the
+        # external engine that this production process actually launched.
+        click(found, 1118, 48)
+        screenshot(out, "25a-build-console")
+        click(found, 158, 520)
+        screenshot(out, "25b-raw-build-log")
+        sentinel = out / "build-log-sentinel.txt"
+        sentinel.write_bytes(b"I61_BUILD_LOG_CLIPBOARD_SENTINEL")
+        subprocess.run(["xclip", "-selection", "clipboard", "-i", str(sentinel)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8, check=True)
+        click(found, 246, 520)
+        gui_log = subprocess.run(["xclip", "-selection", "clipboard", "-o"],
+                                 capture_output=True, timeout=8, check=True).stdout
+        (out / "gui-xelatex.log").write_bytes(gui_log)
+        if b"XeTeX" not in gui_log or b"Output written on" not in gui_log:
+            raise RuntimeError("Actual GUI log does not prove successful external XeLaTeX output")
+        if re.search(rb"missing character|missing glyph|undefined control sequence|fatal error", gui_log, re.IGNORECASE):
+            raise RuntimeError("Actual GUI XeLaTeX log contains a missing-glyph or compilation error")
+        report["gui_xelatex_log_sha256"] = sha(out / "gui-xelatex.log")
+        click(found, 1118, 48)  # Restore the full-height guide for later gestures.
 
         # I62: real desktop assertions follow the already-proven six gestures
         # and PDF. Source bytes and screenshots must be independently reviewed.
-        click(found, 28, 77)  # Return to the guide from the PDF viewport.
-        click(found, 1091, 109)  # Real Properties tab after N5 resize.
-        click(found, 402, 39)  # Help toolbar ON.
-        click(found, 402, 39)  # Help toolbar OFF; deterministic initial state.
+        click(found, *POINTS["guide"])  # Return to the guide from the PDF viewport.
+        click(found, *POINTS["properties"])  # CP05 compact Properties tab candidate.
+        held_f1()  # UIX2 layout moved the toolbar; use the real stable Help shortcut.
+        held_f1()  # Return to Properties before the next independent F1 check.
         screenshot(out, "26-properties-before-f1")
         properties = dock_signature(out, "26-properties-before-f1")
         held_f1()
@@ -375,76 +602,64 @@ def main() -> int:
         if len(before_items) != 6 or before_items[-1]["tool"] != "node":
             raise RuntimeError("Inspector Apply requires selected native Node #6")
         screenshot(out, "28a-inspector-before-draft")
-        click(found, 1080, 560)  # Actual selected Node x TextEdit in Properties dock.
-        key("ctrl+a")
-        paste(b"10.50cm", out / "clipboard-inspector-node-x.txt")
+        draft_node_x(found, out, before_items[-1], b"10.50cm")
+        expected_apply = expected_node_x_patch(inspector_before, "10.50cm")
         screenshot(out, "28b-inspector-draft-only")
-        click(found, 177, 39)  # GUI Save must NOT apply an inspector draft.
+        click(found, *POINTS["save"])  # GUI Save must NOT apply an inspector draft.
         if source.read_bytes() != inspector_before:
             raise RuntimeError("Inspector draft unexpectedly changed saved source")
-        click(found, 1235, 157)  # Actual pinned 'Применить параметры' control.
+        click(found, *POINTS["apply"])  # Compact candidate pinned Apply; exact source patch remains mandatory.
         screenshot(out, "28c-inspector-applied")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: source.read_bytes() != inspector_before,
              "Real pinned Inspector Apply did not persist a source patch")
         inspector_applied = source.read_bytes()
-        before_lines = inspector_before.splitlines(keepends=True)
-        after_lines = inspector_applied.splitlines(keepends=True)
-        if len(before_lines) != len(after_lines):
-            raise RuntimeError("Inspector Apply changed source line count")
-        altered = [i for i, (left, right) in enumerate(zip(before_lines, after_lines))
-                   if left != right]
-        if (
-            len(altered) != 1
-            or b"\\node at (10.50cm,5.00cm)" not in after_lines[altered[0]]
-            or b'"x":"10.50cm"' not in after_lines[altered[0]]
-            or len(owners(inspector_applied)) != 6
-            or not original_preserved(fixture, inspector_applied)
-        ):
-            raise RuntimeError("Inspector Apply did not make a minimal C-owned Node x patch")
+        if inspector_applied != expected_apply:
+            raise RuntimeError("Inspector Apply changed bytes beyond exact native/metadata Node x literals")
+        altered = [i for i, (left, right) in enumerate(zip(
+            inspector_before.splitlines(keepends=True), inspector_applied.splitlines(keepends=True))) if left != right]
         report["steps"].append({
             "case": "real_pinned_inspector_node_x_apply_minimal_source_patch",
             "before_sha256": hashlib.sha256(inspector_before).hexdigest(),
             "after_sha256": sha(source),
             "changed_line_number": altered[0] + 1,
         })
-        click(found, 1085, 157)  # Same real inspector's visual Undo.
+        click(found, *POINTS["undo"])  # Common source-history toolbar Undo.
         screenshot(out, "28d-inspector-apply-undo")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: source.read_bytes() == inspector_before,
              "Visual Undo after pinned Inspector Apply failed byte-exact source restore")
         report["inspector_apply"] = "PASS_REAL_X11_C_CATALOGUE_NODE_X_APPLY_AND_UNDO"
 
-        # TextEdit Ctrl+Z and Session visual inverse-patch Undo are different.
+        # Both source Ctrl+Z and the visible common Undo use the shared ledger.
         six_bytes = source.read_bytes()
         manual = b"% I62_NATIVE_UNDO_MARKER"
-        click(found, 180, 380)
+        click(found, *POINTS["source"])
         key("ctrl+End")
         paste(manual, out / "clipboard-manual-undo.txt")
         screenshot(out, "29-manual-source-edited")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: manual in source.read_bytes(), "Real manual GUI edit was not persisted")
         if source.read_bytes() != six_bytes + manual:
             raise RuntimeError("Manual edit rewrote unrelated source bytes")
-        click(found, 180, 380)
+        click(found, *POINTS["source"])
         key("ctrl+End")
         key("ctrl+z")
         screenshot(out, "30-native-ctrl-z")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: source.read_bytes() == six_bytes,
              "Native Ctrl+Z failed to restore exactly six-tool source")
         report["native_text_undo"] = "PASS_REAL_X11_SAVED_SOURCE_BYTES"
 
-        click(found, 30, 150)  # Geometry group.
-        click(found, 532, 169)  # Native shared-C line.
-        gesture(found, (845, 400), (948, 421))
-        click(found, 177, 39)
+        click(found, 448, 113)  # UX2: direct C-owned Line, no group popup.
+        gesture(found, (700, 325), (820, 350))
+        click(found, *POINTS["save"])
         wait(lambda: len(owners(source.read_bytes())) == 7,
              "Seventh actual GUI gesture did not persist a native command")
         screenshot(out, "31-seven-before-visual-undo")
-        click(found, 1085, 157)  # Visible inspector visual Undo.
+        click(found, *POINTS["undo"])  # Common source-history toolbar Undo.
         screenshot(out, "32-visual-undo-click")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: source.read_bytes() == six_bytes,
              "Visual inverse-patch Undo failed to restore six-tool source")
         report["visual_undo"] = "PASS_REAL_X11_INVERSE_SOURCE_BYTES"
@@ -463,23 +678,26 @@ def main() -> int:
             "\\end{document}\r\n"
         ).encode("utf-8")
         secondary.write_bytes(secondary_input)
-        click(found, 321, 40)
+        click(found, *POINTS["file_menu"])
         time.sleep(0.45)
         screenshot(out, "33-file-menu-before-open")
-        click(found, 440, 93)  # Exact root-pixel point inside File TextEdit.
+        click(found, *POINTS["file_path"])  # CP05 compact client File TextEdit candidate.
         screenshot(out, "33a-file-path-focused")
         key("ctrl+a")
         screenshot(out, "33b-file-path-selected")
         paste(b"second-crlf.tex", out / "clipboard-open-path.txt")
         screenshot(out, "34-second-path-entered")
-        click(found, 351, 124)  # Actual GUI 'Открыть путь'.
+        key("Escape")
+        key("ctrl+o")  # Real Open command uses the typed File path.
         time.sleep(0.75)
+        enable_full_source(found, out, "35-second")
+        verify_editor(found, out, secondary_input, "35-second-opened-editor")
         screenshot(out, "35-second-opened")
         append = b"% I62_GUI_SECOND_SAVED"
-        click(found, 177, 380)
+        click(found, *POINTS["source"])
         key("ctrl+End")
         paste(append, out / "clipboard-second-edit.txt")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: append in secondary.read_bytes(),
              "Real second-file GUI Open/Edit/Save did not persist")
         if secondary.read_bytes() != secondary_input + append:
@@ -499,41 +717,28 @@ def main() -> int:
         run("xdotool", "windowactivate", "--sync", found)
         key("ctrl+o")
         time.sleep(0.65)
+        enable_full_source(found, out, "37-reopened")
         screenshot(out, "37-second-reopened")
-        click(found, 177, 380)
-        key("ctrl+a")
-        key("ctrl+c")
-        observed = run("xclip", "-selection", "clipboard", "-o")
-        (out / "clipboard-after-ctrl-o.txt").write_text(observed, encoding="utf-8")
-        if external.decode("utf-8") in observed:
+        expected_reopen = secondary_input + append + external
+        try:
+            verify_editor(found, out, expected_reopen, "clipboard-after-ctrl-o")
             report["keyboard_reopen"] = "PASS_REAL_X11_CTRL_O_RELOAD"
-        else:
+        except RuntimeError:
             report["keyboard_reopen"] = "FAIL_REAL_X11_CTRL_O_SOURCE_NOT_RELOADED"
-            # Continue the same substantial source/F1 vertical via the real
-            # visible Open toolbar icon. This is an independently testable GUI
-            # action, NOT a workaround that turns a keyboard FAIL into PASS.
+            # Retain the failed keyboard originals. A separate visible toolbar
+            # recovery can exercise later cases, but final acceptance stays FAIL.
             screenshot(out, "37a-ctrl-o-missed-source")
-            click(found, 135, 39)
+            click(found, *POINTS["open"])
             time.sleep(0.75)
+            enable_full_source(found, out, "37b-toolbar-reopened")
             screenshot(out, "37b-open-toolbar-recovery")
-            click(found, 177, 380)
-            key("ctrl+a")
-            key("ctrl+c")
-            recovered = run("xclip", "-selection", "clipboard", "-o")
-            (out / "clipboard-after-toolbar-open.txt").write_text(
-                recovered, encoding="utf-8"
-            )
-            if external.decode("utf-8") not in recovered:
-                raise RuntimeError(
-                    "Both Ctrl+O and real toolbar Open failed to reload "
-                    "externally updated source in visible TextEdit"
-                )
+            verify_editor(found, out, expected_reopen, "clipboard-after-toolbar-open")
             report["toolbar_reopen"] = "PASS_REAL_X11_VISIBLE_OPEN_SOURCE_RELOAD"
         after_reopen = b"% I62_AFTER_GUI_REOPEN"
-        click(found, 177, 380)
+        click(found, *POINTS["source"])
         key("ctrl+End")
         paste(after_reopen, out / "clipboard-reopen-edit.txt")
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         wait(lambda: after_reopen in secondary.read_bytes(),
              "Reopened GUI document cannot be edited and saved")
         if secondary.read_bytes() != secondary_input + append + external + after_reopen:
@@ -542,22 +747,27 @@ def main() -> int:
 
         # Real dirty Open -> Cancel: never discard the original unsaved edit.
         pending = b"% I62_DIRTY_CANCEL_SURVIVES"
-        click(found, 177, 380)
+        click(found, *POINTS["source"])
         key("ctrl+End")
         paste(pending, out / "clipboard-dirty-source.txt")
         screenshot(out, "38-dirty-source")
-        click(found, 321, 40)
+        click(found, *POINTS["file_menu"])
         time.sleep(0.44)
-        click(found, 440, 93)
+        click(found, *POINTS["file_path"])
         key("ctrl+a")
         paste(b"figure.tex", out / "clipboard-first-path.txt")
-        click(found, 351, 124)
+        key("Escape")
+        key("ctrl+o")
         time.sleep(0.55)
         screenshot(out, "39-pending-dirty-open")
+        if modal_region_change(out / "38-dirty-source.png", out / "39-pending-dirty-open.png") <= 0.015:
+            raise RuntimeError("Dirty Open did not visibly show the central pending-decision modal")
         key("Escape")
         time.sleep(0.40)
         screenshot(out, "40-dirty-open-cancelled")
-        click(found, 177, 39)
+        if modal_region_change(out / "39-pending-dirty-open.png", out / "40-dirty-open-cancelled.png") <= 0.015:
+            raise RuntimeError("Escape did not visibly dismiss the dirty-Open modal")
+        click(found, *POINTS["save"])
         wait(lambda: pending in secondary.read_bytes(),
              "Dirty Open Cancel discarded unsaved source")
         if secondary.read_bytes() != secondary_input + append + external + after_reopen + pending:
@@ -585,16 +795,19 @@ def main() -> int:
             "\\end{document}\r\n"
         ).encode("utf-8")
         n3_file.write_bytes(n3_input)
-        click(found, 321, 40)  # Existing real File menu.
+        click(found, *POINTS["file_menu"])  # Existing real File menu.
         time.sleep(0.36)
-        click(found, 440, 93)
+        click(found, *POINTS["file_path"])
         key("ctrl+a")
         paste(b"n3-source-parameter-crlf.tex", out / "clipboard-n3-file-path.txt")
-        click(found, 351, 124)
+        key("Escape")
+        key("ctrl+o")
         time.sleep(0.65)
+        enable_full_source(found, out, "41-n3")
+        verify_editor(found, out, n3_input, "41-n3-opened-editor")
         screenshot(out, "41-n3-real-file-opened")
-        click(found, 1055, 109)  # Properties dock before F1 transition.
-        click(found, 177, 380)  # Real permanently editable code pane.
+        click(found, *POINTS["properties"])  # Properties dock before F1 transition.
+        click(found, *POINTS["source"])  # Real permanently editable code pane.
         key("ctrl+Home")
         for _ in range(4):  # Fifth physical source line is the C circle.
             key("Down")
@@ -609,7 +822,7 @@ def main() -> int:
         if dock_after == dock_before:
             raise RuntimeError("N3 actual F1 did not switch the visible Help dock")
         # Read-only F1 may not modify the on-disk or in-editor source.
-        click(found, 177, 39)
+        click(found, *POINTS["save"])
         if n3_file.read_bytes() != n3_input:
             raise RuntimeError("N3 source caret help changed CRLF/opaque input")
         if source.read_bytes() != six_bytes:
@@ -628,8 +841,15 @@ def main() -> int:
                 "remaining real N3/F1 tests, but exact-head acceptance is FAIL"
             )
         report["status"] = "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW"
+        report["native_acceptance"] = "REQUIRES_INDEPENDENT_CURRENT_ORIGINAL_REVIEW"
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
+        if NATIVE:
+            NATIVE.retain_sources("failure")
+        try:
+            screenshot(out, "failure-original-desktop")
+        except Exception as capture_error:
+            report["failure_capture_error"] = str(capture_error)
     finally:
         if process:
             process.terminate()
@@ -639,8 +859,10 @@ def main() -> int:
                 process.kill()
                 process.wait(timeout=5)
         app_log.close()
+        if NATIVE:
+            NATIVE.log.close()
         report["files"] = {
-            file.name: sha(file) for file in sorted(out.iterdir())
+            str(file.relative_to(out)): sha(file) for file in sorted(out.rglob("*"))
             if file.is_file() and file.name != "report.json"
         }
         (out / "report.json").write_text(

@@ -33,6 +33,20 @@ pub struct SourceEditor {
 }
 
 impl SourceEditor {
+    pub fn open_find(&mut self) {
+        self.find_open = true;
+        self.goto_open = false;
+        self.focus_find = true;
+    }
+    pub fn open_goto(&mut self) {
+        self.goto_open = true;
+        self.find_open = false;
+        self.focus_goto = true;
+    }
+    pub fn cursor_label(&self) -> String {
+        let (line, column) = self.line_column(self.caret);
+        format!("{line}:{column}")
+    }
     pub fn shortcuts(&mut self, ui: &egui::Ui) {
         if !ui.is_enabled() {
             return;
@@ -112,20 +126,6 @@ impl SourceEditor {
     pub fn toolbar(&mut self, ui: &mut egui::Ui, source: &str, revision: u64) {
         self.shortcuts(ui);
         self.refresh(source);
-        let (line, column) = self.line_column(self.caret);
-        ui.label(format!("Строка {line}, столбец {column}"));
-        ui.horizontal(|ui| {
-            if ui.small_button("Найти · Ctrl+F").clicked() {
-                self.find_open = true;
-                self.goto_open = false;
-                self.focus_find = true;
-            }
-            if ui.small_button("Строка · Ctrl+G").clicked() {
-                self.goto_open = true;
-                self.find_open = false;
-                self.focus_goto = true;
-            }
-        });
         self.refresh(source);
         if self.find_open {
             ui.horizontal_wrapped(|ui| {
@@ -298,42 +298,74 @@ impl SourceEditor {
         self.finish_interaction(ui, output, source);
         self.paint(ui, output, gutter, editor_clip, background);
     }
+    #[cfg(test)]
     pub fn finish_interaction(
         &mut self,
         ui: &egui::Ui,
         output: &mut egui::text_edit::TextEditOutput,
         source: &str,
     ) {
+        self.finish_region_interaction(ui, output, source, 0, source.chars().count(), true);
+    }
+
+    /// Translate a local TextEdit cursor into the single document's scalar
+    /// coordinates. Search, F1 and diagnostics always use global coordinates.
+    pub fn finish_region_interaction(
+        &mut self,
+        ui: &egui::Ui,
+        output: &mut egui::text_edit::TextEditOutput,
+        source: &str,
+        first: usize,
+        count: usize,
+        focus_owner: bool,
+    ) {
         // Native input can invalidate all cached byte ranges before painting.
         self.refresh(source);
-        if let Some(range) = self.selection.take() {
+        let end = first + count;
+        let navigation_pending = self.navigation_target().is_some();
+        let owns_end = output.response.id != egui::Id::new(crate::source_editing::PREAMBLE_ID);
+        let owns_character = |character: usize| {
+            character >= first
+                && (character < end || owns_end && end == self.char_count && character == end)
+        };
+        let routed_selection = self
+            .selection
+            .as_ref()
+            .is_some_and(|r| owns_character(r.start) && r.end <= end);
+        if routed_selection && let Some(range) = self.selection.take() {
             output
                 .state
                 .cursor
                 .set_char_range(Some(egui::text::CCursorRange::two(
-                    egui::text::CCursor::new(range.start),
-                    egui::text::CCursor::new(range.end),
+                    egui::text::CCursor::new(range.start - first),
+                    egui::text::CCursor::new(range.end - first),
                 )));
             output.state.clone().store(ui.ctx(), output.response.id);
             self.scroll_target = Some(range.start);
         }
-        if let Some(character) = self.scroll_target.take() {
+        if self.scroll_target.is_some_and(owns_character)
+            && let Some(character) = self.scroll_target.take()
+        {
             // This runs inside the horizontal code viewport, so navigation
             // reveals a no-wrap match without moving the fixed gutter.
             ui.scroll_to_rect(
-                crate::source_caret_target(&output.galley, output.galley_pos, character),
+                crate::source_caret_target(&output.galley, output.galley_pos, character - first),
                 Some(egui::Align::Center),
             );
             ui.ctx().request_repaint();
         }
-        if std::mem::take(&mut self.focus_editor) {
+        if self.focus_editor && (routed_selection || focus_owner && !navigation_pending) {
+            self.focus_editor = false;
             output.response.request_focus();
         }
-        self.caret = output
-            .state
-            .cursor
-            .char_range()
-            .map_or(0, |r| r.primary.index);
+        if output.response.has_focus() || routed_selection || first == 0 && focus_owner {
+            self.caret = first
+                + output
+                    .state
+                    .cursor
+                    .char_range()
+                    .map_or(0, |r| r.primary.index);
+        }
     }
     pub fn navigation_target(&self) -> Option<usize> {
         self.selection
@@ -341,6 +373,7 @@ impl SourceEditor {
             .map(|range| range.start)
             .or(self.scroll_target)
     }
+    #[cfg(test)]
     pub fn external_jump(&mut self, caret: usize, scroll_target: usize) {
         self.caret = caret;
         self.scroll_target = Some(scroll_target);
@@ -371,6 +404,7 @@ impl SourceEditor {
             character - self.lines.get(line).map_or(0, |line| line.character) + 1,
         )
     }
+    #[cfg(test)]
     pub fn paint(
         &self,
         ui: &egui::Ui,
@@ -382,7 +416,7 @@ impl SourceEditor {
         paint_navigation(
             ui,
             output,
-            &self.lines,
+            (&self.lines, 1),
             gutter,
             editor_clip,
             background,
@@ -393,6 +427,52 @@ impl SourceEditor {
             },
         );
     }
+
+    pub fn paint_region(
+        &self,
+        ui: &egui::Ui,
+        output: &egui::text_edit::TextEditOutput,
+        geometry: (egui::Rect, egui::Rect, egui::layers::ShapeIdx),
+        first_character: usize,
+        first_line: usize,
+    ) {
+        let count = output.galley.text().chars().count();
+        let last = first_character + count;
+        let lines: Vec<_> = self
+            .lines
+            .iter()
+            .filter(|line| {
+                line.character >= first_character
+                    && (line.character < last
+                        || output.response.id != egui::Id::new(crate::source_editing::PREAMBLE_ID)
+                            && line.character == last)
+            })
+            .map(|line| navigation::PhysicalLine {
+                character: line.character - first_character,
+            })
+            .collect();
+        let matches: Vec<_> = if self.find_open {
+            self.char_matches
+                .iter()
+                .filter(|range| range.start < last && range.end > first_character)
+                .map(|range| {
+                    range.start.max(first_character) - first_character
+                        ..range.end.min(last) - first_character
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        paint_navigation(
+            ui,
+            output,
+            (&lines, first_line),
+            geometry.0,
+            geometry.1,
+            geometry.2,
+            &matches,
+        );
+    }
 }
 
 /// Paint using the actual galley row geometry. Every physical line has exactly
@@ -400,12 +480,13 @@ impl SourceEditor {
 fn paint_navigation(
     ui: &egui::Ui,
     output: &egui::text_edit::TextEditOutput,
-    lines: &[navigation::PhysicalLine],
+    line_context: (&[navigation::PhysicalLine], usize),
     gutter: egui::Rect,
     editor_clip: egui::Rect,
     background: egui::layers::ShapeIdx,
     matches: &[Range<usize>],
 ) {
+    let (lines, first_line) = line_context;
     let cursor = output
         .state
         .cursor
@@ -450,7 +531,7 @@ fn paint_navigation(
                     .text(
                         egui::pos2(gutter.right() - 5.0, top),
                         egui::Align2::RIGHT_TOP,
-                        format!("{}", physical + 1),
+                        format!("{}", physical + first_line),
                         egui::FontId::monospace(12.0),
                         color,
                     );
@@ -500,6 +581,7 @@ fn paint_navigation(
 
 /// Register both sides as explicit native undo points. The replacement is one
 /// action, regardless of its number of matches, and cannot merge with typing.
+#[cfg(test)]
 pub fn apply_replacement(
     ctx: &egui::Context,
     source: &mut String,

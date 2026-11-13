@@ -1,0 +1,70 @@
+{
+  "created_utc": "2026-11-13T11:41:09.637658+00:00",
+  "base_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "app_tree_unchanged": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "production_and_workflows_unchanged": true,
+  "gates": [
+    {
+      "gate": "popup",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "qa_pgfplots_vertical_test.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 31,
+      "elapsed_seconds": 0.421,
+      "log_sha256": "a34b34ed7ccd4efc2c46d6e10f87ace6219a203dc11a130d67d6bf5aa565d1a5"
+    },
+    {
+      "gate": "at4",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "qa_at4_*_test.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 26,
+      "elapsed_seconds": 1.868,
+      "log_sha256": "7b56cddde3a01c764027bde17877665173cfc25ae80d5010fc23c77d15bb18e2"
+    },
+    {
+      "gate": "compact",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_qa_compact*.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 34,
+      "elapsed_seconds": 0.106,
+      "log_sha256": "8b8a1b8fb5c2588b0c8ff42e24b3bd352ddf52644b328ee25997090475d414a0"
+    }
+  ],
+  "tests_passed": 91,
+  "tests_failed": 0,
+  "tested_qa_file_sha256": {
+    "scripts/qa_pgfplots_vertical_x11.py": "eda73d5385092e627042b52d27e9b0adaf116b6b77e3ec40fd8bee23977eae93",
+    "scripts/qa_pgfplots_vertical_test.py": "3e528c0d3c70b2d9f177ac89e2f4a2cc8f019b24f1203527f9f3008d73050225"
+  },
+  "native_acceptance": "PENDING_NEW_RUN; strict-warning cases remain FAIL",
+  "previous_production_gates": "586RustPASS/0failed/4ignored +fmt/strictClippy/build atidenticalproduction; notrerunforQA-onlycandidate"
+}

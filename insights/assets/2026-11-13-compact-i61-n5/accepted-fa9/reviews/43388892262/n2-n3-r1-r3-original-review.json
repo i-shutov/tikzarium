@@ -1,0 +1,268 @@
+{
+  "review_kind": "EXACT_FA9_PACKAGED_N2_N3_R1_R3_ORIGINAL_REVIEW",
+  "reviewer_task": "/root/n2_compact_driver_1113b",
+  "status": "PASS_SCOPED_HOSTED_PACKAGED_N2_N3_R1_R3_ORIGINALS_REVIEWED",
+  "run_id": 43388892262,
+  "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "scope": "HOSTED_GUI_LINUX_XVFB_OPENBOX_GTK_PORTAL_1366x768_CLIENT1180x680",
+  "previous_candidate_pass_transferred": false,
+  "original_evidence_unchanged": true,
+  "file_hashes_verified": {
+    "n2": 73,
+    "r1": 19,
+    "r3": 61
+  },
+  "package_hashes": {
+    "launch.sh": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+    "tikzarium-app": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb"
+  },
+  "package_provenance": {
+    "app_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+    "cli_sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+    "external_xelatex_gui_pdf": "NOT_RUN",
+    "linux_packaged_desktop": "NOT_RUN",
+    "linux_wayland": "NOT_RUN",
+    "notarization": "NOT_RUN",
+    "original_ci_run": "https://github.com/i-shutov/tikzarium/actions/runs/43388892262",
+    "packaging": "local_offline_header_and_hash_verified",
+    "physical_mac_m1": "NOT_RUN",
+    "physical_mac_m4": "NOT_RUN",
+    "physical_windows10": "NOT_RUN",
+    "platform": "linux-x86_64",
+    "schema_version": 1,
+    "signed_installer": "NOT_RUN",
+    "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+    "tex_or_fonts_bundled": false
+  },
+  "images_viewed_directly": {
+    "n2": {
+      "07a-arrows-meta-five-statuses.png": "422ed0432ae32b397ab39e2138fdc5d58cfeeca52686140bb009099e68c757da",
+      "10-connect-saved.png": "9a5883aaced8cf412f92c88364eb3b819963a1647880dee41c4420a7907c202e",
+      "11-after-disconnect.png": "7531dabb834a5824de24a0ce981031498a386e666881db51bea2443792f6e2f8",
+      "12-undo-restored-source.png": "e81b0732207037c1ba8514a7230b541bfd2000360beb6b2cc6ca43fb7cb7fba9",
+      "13-reopened-external-change.png": "09a312db8ad50402bfe8e3da6c661010e72b6bd565972adba71966be6b768805",
+      "17a-n3-real-caret-before-brace.png": "790e6e3a53deb6c3d72a3e2168e24f92788300f4f54b6f0abcfe0f132b14016a",
+      "19-n3-caret-complete-target.png": "fc542288c8243bc7574a6238f954d94810f7407cb9de06c4b02f6ff3f0f2d46a",
+      "20-n3-complete-click.png": "56b7b070e69f1f49a5151cc1c980678202cec56de6de5a41d03f2bf45c930c14",
+      "23-n3-visual-undo.png": "15207dea3ff9dba776b67390eb1970e357b33a26019c1c39071db012b08c2cf6",
+      "n2-build-actual-raw-xelatex.png": "9b12e6b5dbb15abf2dc0ee170e2e0e2026a66773959904d5f47746dfa042c953",
+      "n3-build-actual-raw-xelatex.png": "bfd2e4e34d5f995186eb5e1e91a193c9b2963ccd59920c10440fab77b22b8749",
+      "16-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb",
+      "n3-rendered-pdf.png": "4eb95dfef8006d61bef52d88a5d38454670beeb8ae0425a7b80041c28e1151cb"
+    },
+    "r1": {
+      "03-native-close-confirmation.png": "33a4f2039fadd6dea017f3763bbf5d1385750e17d7be760cfa2d87997a72e055",
+      "04-cancel-keeps-source.png": "0e637d05ca7dee0881e293e047f1e829398f49cd0ea472e5882e2871762f8139",
+      "05-keyboard-close-confirmation.png": "33a4f2039fadd6dea017f3763bbf5d1385750e17d7be760cfa2d87997a72e055",
+      "06-saved-before-clean-close.png": "7ee793a326dc6cd62c952ebcd25bb0298fba8dd9e4fb648d8d425516a3a7766f"
+    },
+    "r3": {
+      "02-real-open-picker.png": "06367112459c281bd31230d59415849107b1e50f39a0cf65e125b864f289e27e",
+      "03-native-open-loaded-source.png": "9598924a158ebf8c509b0f9e409ad27d0a46e932eb11b9bf3719da54be04b490",
+      "04-real-cancel-picker.png": "9e660ce19098e3ffb2db5b89a0c5f07eaf24dfe9263511ece1fe3ae4f026fb14",
+      "05-real-save-picker.png": "fa0a1a2a39f4cc3a206814c9da6b1b2d200c56528d3d19c64c68f1e34cb369a0",
+      "06-native-save-completed.png": "da60ff9a985da0879588746b154e0a9cada8685fcf57f8602cc99a75e218339e",
+      "r3-build-actual-raw-xelatex.png": "2e18ca33b38aa27c417909e845842fcd59ce44ffbd129900525de9882d50606f",
+      "08-real-native-pdf-export-picker.png": "950ff15a2e23e822b77a9cfa59c91bcf20185038e28ffc1f595cf43cc80d2b9e",
+      "09-native-pdf-export-completed.png": "f25869aac993a392d97396fe74f05151aee8d28cfb7623b123d2b94d37c1cb69",
+      "native-pdf-render.png": "ba57cbbd089aae7ea67160900321f866ab69d7b9915a542b8fb5b9ad3db6c68f"
+    }
+  },
+  "observed_running_processes": {
+    "n2": {
+      "pid": 7418,
+      "window_id": "6291459",
+      "observed_proc_exe": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+      "observed_proc_exe_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb"
+    },
+    "r1": {
+      "pid": 8334,
+      "window_id": "6291459",
+      "observed_proc_exe": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+      "observed_proc_exe_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb"
+    },
+    "r3": {
+      "pid": 8566,
+      "window_id": "8388611",
+      "observed_proc_exe": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+      "observed_proc_exe_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb"
+    }
+  },
+  "n2_n3": {
+    "status": "PASS_HOSTED_GUI",
+    "five_axes": {
+      "installed": "CONFIRMED",
+      "project-loaded": "ABSENT",
+      "engine-target": "CONFIRMED",
+      "tool-implemented": "CONFIRMED",
+      "help": "CONFIRMED"
+    },
+    "source_states": {
+      "initial-open-observed.txt": {
+        "bytes": 295,
+        "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+        "crlf": 11
+      },
+      "connected-source.tex": {
+        "bytes": 325,
+        "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+        "crlf": 12
+      },
+      "disconnect-saved.tex": {
+        "bytes": 295,
+        "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+        "crlf": 11
+      },
+      "undo-disconnect-saved.tex": {
+        "bytes": 325,
+        "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+        "crlf": 12
+      },
+      "external-reopened-observed.txt": {
+        "bytes": 334,
+        "sha256": "bdde1d7dc8412aa5bbc2e183ecdf3dc5582996428f71da68663fed763ac1d596",
+        "crlf": 12
+      },
+      "reopen-edit-saved.tex": {
+        "bytes": 360,
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "crlf": 12
+      },
+      "n3-prefix-saved.tex": {
+        "bytes": 353,
+        "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+        "crlf": 12
+      },
+      "n3-complete-saved.tex": {
+        "bytes": 360,
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "crlf": 12
+      },
+      "n3-undo-saved.tex": {
+        "bytes": 353,
+        "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+        "crlf": 12
+      },
+      "original-n2-built-source.tex": {
+        "bytes": 360,
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "crlf": 12
+      },
+      "original-n3-built-source.tex": {
+        "bytes": 360,
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "crlf": 12
+      }
+    },
+    "caret_literal": "arro",
+    "byte_exact_connect_disconnect_undo": true,
+    "byte_exact_external_reload_append_save": true,
+    "byte_exact_prefix_complete_undo": true,
+    "pdf_originals": {
+      "n2": {
+        "originals": {
+          "pdf": "original-n2-before-completion.pdf",
+          "pdf_sha256": "82952c21f7a1db666d23d38d289d293805a4bc2fe094c758cd9cc0aab956e164",
+          "source": "original-n2-built-source.tex",
+          "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+          "gui_xelatex_log": "n2-build-gui-xelatex.log",
+          "gui_xelatex_log_sha256": "97fde4c6a9096a268d5ef2a1d3ebe6523fcd94aa3b0c023678fe9f3744d156c2"
+        },
+        "pdf": {
+          "sha256": "82952c21f7a1db666d23d38d289d293805a4bc2fe094c758cd9cc0aab956e164",
+          "pages": 1,
+          "embedded_fonts": 1,
+          "font": "DejaVuSerif",
+          "text": "Фигура"
+        },
+        "actual_gui_log": {
+          "sha256": "97fde4c6a9096a268d5ef2a1d3ebe6523fcd94aa3b0c023678fe9f3744d156c2",
+          "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 07:57"
+        }
+      },
+      "n3": {
+        "originals": {
+          "pdf": "original-n3-completed.pdf",
+          "pdf_sha256": "54c09558f36bf47ba7f19f97e6569c84c76a324253297dc5784f92c6fcbbbf33",
+          "source": "original-n3-built-source.tex",
+          "source_sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+          "gui_xelatex_log": "n3-build-gui-xelatex.log",
+          "gui_xelatex_log_sha256": "144a42a63a693fce0c679b4568385b33e3b1b4111295eee8089c2a1b105e57be"
+        },
+        "pdf": {
+          "sha256": "54c09558f36bf47ba7f19f97e6569c84c76a324253297dc5784f92c6fcbbbf33",
+          "pages": 1,
+          "embedded_fonts": 1,
+          "font": "DejaVuSerif",
+          "text": "Фигура"
+        },
+        "actual_gui_log": {
+          "sha256": "144a42a63a693fce0c679b4568385b33e3b1b4111295eee8089c2a1b105e57be",
+          "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 07:58"
+        }
+      }
+    },
+    "stale_pdf_label_after_final_undo_visually_confirmed": true
+  },
+  "r1": {
+    "status": "PASS_HOSTED_GUI",
+    "source_bytes": 486,
+    "source_sha256": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4",
+    "both_cancel_observations_byte_exact": true,
+    "save_byte_exact": true,
+    "clean_close_exit_code": 0,
+    "actual_wm_and_alt_f4_modals_visually_confirmed": true
+  },
+  "r3": {
+    "status": "PASS_HOSTED_GUI_NATIVE_PORTAL",
+    "distinct_actual_dialogs": {
+      "open": {
+        "original_file": "open-dialog-window.txt",
+        "window": "0x00400007",
+        "pid": "8557"
+      },
+      "cancel": {
+        "original_file": "cancel-dialog-window.txt",
+        "window": "0x0040083f",
+        "pid": "8557"
+      },
+      "save": {
+        "original_file": "save-dialog-window.txt",
+        "window": "0x00400b26",
+        "pid": "8557"
+      },
+      "export": {
+        "original_file": "export-dialog-window.txt",
+        "window": "0x00400edf",
+        "pid": "8557"
+      }
+    },
+    "original_source_bytes": 221,
+    "original_source_crlf": 9,
+    "original_source_sha256": "ab60d6576023517364fbd17732b81be7a049ca2a3d82f65b6a3c6fdc55d7a8bc",
+    "native_saved_source_bytes": 243,
+    "native_saved_source_sha256": "dceeea4720f3371268f3eaa95fae9e6a3216e3f7cf751a36643607cd8274a4f2",
+    "sole_source_addition": "%R3-Native-Save-Canary",
+    "cancel_open_editor_byte_exact": true,
+    "native_export_equals_gui_built_pdf": true,
+    "native_pdf": {
+      "sha256": "57042144eb7add9f4b60a602a9e0f27c035ded420597f89d14a5e35ff8f78b49",
+      "pages": 1,
+      "embedded_fonts": 1,
+      "font": "DejaVuSerif",
+      "text": "Фигура R3-Picker-Canary"
+    },
+    "actual_gui_raw_log": {
+      "sha256": "8741fc4ffca2ba257201c4e9a5e96f6741dd56a3c38324195999bc338c1b92c1",
+      "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 07:58"
+    }
+  },
+  "not_accepted": [
+    "physical Windows10/Linux/macOS",
+    "IME",
+    "physical DPI",
+    "overall Scientific Studio",
+    "merge/stable/release GO"
+  ]
+}

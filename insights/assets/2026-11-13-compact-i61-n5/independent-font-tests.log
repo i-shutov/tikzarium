@@ -1,0 +1,9 @@
+test_all_embedded_including_two_word_type (test_qa_i61_studio_fonts.AuditFonts.test_all_embedded_including_two_word_type) ... ok
+test_empty_inventory_fails (test_qa_i61_studio_fonts.AuditFonts.test_empty_inventory_fails) ... ok
+test_malformed_row_fails (test_qa_i61_studio_fonts.AuditFonts.test_malformed_row_fails) ... ok
+test_single_nonembedded_font_fails (test_qa_i61_studio_fonts.AuditFonts.test_single_nonembedded_font_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK

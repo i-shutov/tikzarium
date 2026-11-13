@@ -5,6 +5,10 @@ use std::{collections::BTreeMap, ops::Range, sync::LazyLock};
 use tikzarium_extensions::primitives::{Catalog, Evidence, SourcePatch, ToolSpec};
 use tikzarium_extensions::project_disconnect::{self, DisconnectDecision, DisconnectPlan};
 use tikzarium_extensions::project_imports::{self, ImportDecision, ImportKind, ImportPlan};
+use tikzarium_extensions::scientific_scan::{
+    LiteralEditRequest, RecognizedInstance, SourceView, plan_literal_key_edit,
+    scan_scientific_source,
+};
 use tikzarium_extensions::source_assist;
 
 static CATALOG: LazyLock<Catalog> = LazyLock::new(|| {
@@ -529,7 +533,7 @@ impl Session {
     pub fn note_manual_source_edit(&mut self, source: &str) {
         match self.sync(source) {
             Ok(true) => {
-                self.status = "Код изменён вручную: старые визуальные Undo отменены; выберите команду повторно".into();
+                self.status = "Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.".into();
             }
             Err(error) => self.status = error,
             Ok(false) => {}
@@ -549,6 +553,11 @@ impl Session {
     }
     pub fn undo_available(&self) -> bool {
         !self.undo.is_empty()
+    }
+    /// The production shell transfers these exact inverses to its bounded
+    /// shared source ledger. Standalone Session users retain the usual Undo.
+    pub(crate) fn take_source_transactions(&mut self) -> Vec<SourcePatch> {
+        std::mem::take(&mut self.undo)
     }
     fn patch(
         &mut self,
@@ -632,6 +641,63 @@ impl Session {
         self.guide_pointer_armed = false;
         self.drag_start = None;
         self.status = format!("C/N3: имя {name} дополнено; Undo доступен, пакеты не установлены");
+        Ok(line)
+    }
+
+    /// Explicit user-triggered scan only. Never run this on each egui frame.
+    /// It shares the exact current visual-source revision with ordinary Undo.
+    pub fn scientific_candidates(
+        &mut self,
+        source: &str,
+    ) -> Result<Vec<RecognizedInstance>, String> {
+        self.sync(source)?;
+        scan_scientific_source(SourceView {
+            text: source,
+            revision: self.revision,
+        })
+        .map_err(|error| error.to_string())
+    }
+
+    /// Same transactional Undo and source authority as the six native tools;
+    /// unsupported TeX/macro input is refused by the specialized C adapter.
+    pub fn apply_scientific_literal(
+        &mut self,
+        source: &mut String,
+        selected: &RecognizedInstance,
+        key: &str,
+        expected_old: &str,
+        replacement: &str,
+    ) -> Result<usize, String> {
+        if self.sync(source)? {
+            return Err("После ручной правки перечитайте текущие TikZ-команды".into());
+        }
+        let plan = plan_literal_key_edit(LiteralEditRequest {
+            view: SourceView {
+                text: source,
+                revision: self.revision,
+            },
+            instance: selected,
+            key,
+            expected_old,
+            replacement,
+        })
+        .map_err(|error| error.to_string())?;
+        let line = source
+            .get(..plan.range.start)
+            .map(|before| before.bytes().filter(|byte| *byte == b'\n').count() + 1)
+            .unwrap_or(1);
+        let inverse = plan
+            .apply(source, &mut self.revision)
+            .map_err(|error| error.to_string())?;
+        self.observed_source.clone_from(source);
+        self.undo.push(inverse);
+        self.selected = None;
+        self.cancelled_pointer_capture |=
+            self.guide_pointer_armed || self.drag_start.is_some() || self.alt_selection_capture;
+        self.guide_pointer_armed = false;
+        self.drag_start = None;
+        self.alt_selection_capture = false;
+        self.status = format!("SC2: точечная правка {key}, сохранившая чужой TeX; Undo доступен");
         Ok(line)
     }
 
@@ -1257,5 +1323,49 @@ mod tests {
         let mut draft = Draft::for_tool(Tool::Circle);
         draft.values.insert("radius".into(), "-1cm".into());
         assert!(command(Tool::Circle, &draft).is_err());
+    }
+    #[test]
+    fn scientific_sv001_inspector_transaction_uses_the_existing_single_undo_stack() {
+        const ORIGINAL: &str = include_str!(
+            "../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex"
+        );
+        let mut source = ORIGINAL.to_owned();
+        let mut session = Session::default();
+        session.reset(&source);
+        let candidates = session.scientific_candidates(&source).unwrap();
+        let axis = candidates
+            .iter()
+            .find(|item| item.kind == tikzarium_extensions::scientific_scan::ScientificKind::Axis)
+            .unwrap();
+        let original_value = tikzarium_extensions::scientific_scan::literal_key_value(
+            SourceView {
+                text: &source,
+                revision: session.source_revision(),
+            },
+            axis,
+            "samples",
+        )
+        .unwrap();
+        assert_eq!(original_value, "150");
+        let line = session
+            .apply_scientific_literal(&mut source, axis, "samples", &original_value, "180")
+            .unwrap();
+        assert!(line > 10);
+        assert!(session.undo_available());
+        assert!(source.contains("samples=180"));
+        assert!(source.contains(r"\pgfplotsset{compat=1.17}"));
+        session.undo(&mut source).unwrap();
+        assert_eq!(source.as_bytes(), ORIGINAL.as_bytes());
+        assert!(!session.undo_available());
+        // A manual TextEdit change must invalidate even a previously valid
+        // axis fingerprint; no stale Inspector action may overwrite it.
+        source.push_str("% ручной комментарий\r\n");
+        let expected = source.clone();
+        assert!(
+            session
+                .apply_scientific_literal(&mut source, axis, "samples", "150", "180")
+                .is_err()
+        );
+        assert_eq!(source, expected);
     }
 }

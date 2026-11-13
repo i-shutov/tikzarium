@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "verification": {
+    "schema_version": 1,
+    "recorded_utc": "2026-11-12T08:19:04.774668+00:00",
+    "pull_request": "https://github.com/i-shutov/tikzarium/pull/189",
+    "tested_local_commit": "a434d2669d21124944a581197a6214a4782ad9c0",
+    "published_code_commit": "1784a48246cbdfd260fb80ce4731c7f165ad52c5",
+    "identical_git_tree": "3bb17ee38e0f77d6d06a125d4076c70f1f707bf1",
+    "component_git_objects": {
+      "crates/tikzarium-app": "70c5dcc38edae2c5801b6ea4d285a5b2956032be",
+      "crates/tikzarium-core": "699cf6fae0dd38501c4c05a72b12c4f26da1569c",
+      "crates/tikzarium-cli": "0154eaa9d66abc131f4514e2a02e8208ece7b68e",
+      "crates/tikzarium-extensions": "78c9ce1fd001f8d6ccb85077025d579fcb6279a4",
+      "Cargo.lock": "85d03f9b0d855c9c092c37a8e486ccfee65c658a"
+    },
+    "checks": {
+      "workspace_tests": {
+        "passed": 512,
+        "failed": 0,
+        "ignored": 4,
+        "suites": 27
+      },
+      "rustfmt": "PASS",
+      "clippy_warnings_denied": "PASS",
+      "app_cli_build": "PASS",
+      "headless_api": {
+        "status": "UNIT_EVENT_PASS",
+        "operations": 20
+      },
+      "headless_matrix": {
+        "status": "UNIT_EVENT_PASS",
+        "requests": 53,
+        "actions": 26,
+        "expected_rejections": 13
+      },
+      "explicit_sc3_exports": {
+        "passed": 2
+      },
+      "sc3_cli_pdfs": {
+        "axis": "PASS",
+        "style": "PASS"
+      },
+      "f14_cli_pdf": {
+        "status": "PASS",
+        "source_commit": "a86579770e49ffd48d321f5f9811436dedf36cc4"
+      },
+      "native_gui": "BLOCKED_NOT_RUN",
+      "physical_windows10": "NOT_RUN",
+      "ime_dpi_g3": "NOT_ACCEPTED",
+      "release_go": false
+    },
+    "limitations": [
+      "Resource snapshot is project-local and captured after compilation; concurrent build-time resource mutation is not certified.",
+      "External inputs are unverified; parent and symlink escapes remain fail-closed.",
+      "F14 .dat names are source declarations; CLI stdout reports a dependency count, not per-file recorder proof.",
+      "Design atlas is a mockup, not a native application screenshot.",
+      "Historical/platform results do not transfer to this candidate."
+    ],
+    "native_desktop_observed_error": "failed to start Node runtime: No such file or directory (os error 2)",
+    "atlas": {
+      "path": "design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf",
+      "pages": 14,
+      "bytes": 151252,
+      "sha256": "5e22464b51e87c1b3b30925a14711bf62e7204b023e1e0235c5427a98497bf83"
+    },
+    "agents": [
+      {
+        "task": "/root/scientific_next",
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      {
+        "task": "/root/atlas_design",
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      {
+        "task": "/root/recover_checkpoint",
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      }
+    ]
+  },
+  "archive": {
+    "filename": "evidence.zip",
+    "size_bytes": 200235,
+    "sha256": "bd6855c145f73825fd7b7f88ecc4511c73bcdf13ead0588c361e0fc0d83abc50"
+  },
+  "entries": [
+    {
+      "filename": "ak-f14-3-xelatex.log",
+      "size_bytes": 9232,
+      "sha256": "cc9dc40628b0cabe1f57f9059f0f4c310e084fd0388d81ccf888ac56008abdd5"
+    },
+    {
+      "filename": "cli-ak-f14-3-verification.md",
+      "size_bytes": 1685,
+      "sha256": "24682502428335c72535861d7df363ba7edbc8ebd96f0116d4c8dd55192637df"
+    },
+    {
+      "filename": "cli-ak-f14-3.exit-code",
+      "size_bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "filename": "cli-ak-f14-3.log",
+      "size_bytes": 33177,
+      "sha256": "5df91b044cdf3bb9d14cd4210928228876aa6be205d76c7252f33d63e8382172"
+    },
+    {
+      "filename": "cli-ak-f14-3.pdf",
+      "size_bytes": 19858,
+      "sha256": "ce0fec99946ba3d3276fd1990bae77ff98e1266c4507189e08738d4789342759"
+    },
+    {
+      "filename": "cli-ak-f14-3.png",
+      "size_bytes": 20497,
+      "sha256": "8725777e0d5f3b6089c3b675b5c549c5f9cd590ab7d1e190e0c64cd6c4d540cd"
+    },
+    {
+      "filename": "cli-ak-f14-3.stdout.log",
+      "size_bytes": 130,
+      "sha256": "e239c10f3a54334ee31cbbae36946a078ccd5812f0eca8b7387acae129aaee37"
+    },
+    {
+      "filename": "final-build.log",
+      "size_bytes": 164,
+      "sha256": "c0b86ddba885fad3a12f20c8f254b03f699e7320ce7ba2cb2b0b3de779245d85"
+    },
+    {
+      "filename": "final-clippy.log",
+      "size_bytes": 386,
+      "sha256": "5cf25f7c761efde016590c85b9062e0860d17e11d343e52d8bfd8bc286db82bc"
+    },
+    {
+      "filename": "final-workspace-tests.log",
+      "size_bytes": 51957,
+      "sha256": "70b9bbaf9cc8ae19b87af47e5aef8f61c5508e67842eae55f44581b19d3055c7"
+    },
+    {
+      "filename": "github-job-131058409575.log",
+      "size_bytes": 30443,
+      "sha256": "f3acc24d38d6019c5fc864054a83b462d1c0a8685dbe15597c0d0e1a18380245"
+    },
+    {
+      "filename": "github-job-131058410625.log",
+      "size_bytes": 18704,
+      "sha256": "6af697d61ede5e868e8f661aa81530cb6f845ff9ad9da4a31cf48cc04812e10d"
+    },
+    {
+      "filename": "hosted-ci-blockers.md",
+      "size_bytes": 1859,
+      "sha256": "3cbec2558e33c18ea69da5ba003b9ae99a935da3ea8d5e59d51ef2d8dc18d8d7"
+    },
+    {
+      "filename": "hosted-ci-snapshot.json",
+      "size_bytes": 6090,
+      "sha256": "6e842398363dde4d80aa0d0b94378ce990be175b3da9012d882cc5bd561203aa"
+    },
+    {
+      "filename": "original-ak-f14-3.pdf",
+      "size_bytes": 19857,
+      "sha256": "cce4e3ee6d2b40da61a87d35f258658ace33f12cdad3143e021e5e0f064c14f3"
+    },
+    {
+      "filename": "original-sv001.pdf",
+      "size_bytes": 10194,
+      "sha256": "8543788266101963a5907e1dd824c8b8d9847eb61810cf3cdb22fc095e5ece9b"
+    },
+    {
+      "filename": "qa-control-api.json",
+      "size_bytes": 489,
+      "sha256": "14006936ce424ac172ca9c43409e4363f59377dadcb4ebce1c682003cc805dfa"
+    },
+    {
+      "filename": "qa-control-api.log",
+      "size_bytes": 461,
+      "sha256": "391fb8fec7947f57a74e95a5c3af45b6d57a68f5570c8245b4fb62e449cbdf5c"
+    },
+    {
+      "filename": "qa-control-matrix.json",
+      "size_bytes": 1306,
+      "sha256": "4fc775908135ce2b365ab589ea0277166f4fe3b292bfe992f26cdb24b9f29b45"
+    },
+    {
+      "filename": "qa-control-matrix.log",
+      "size_bytes": 1206,
+      "sha256": "0ca600950abf52f60b03ca0acd254fdf8fc136ee202cf43a415d0f9b1b285338"
+    },
+    {
+      "filename": "qa-env.sh",
+      "size_bytes": 1465,
+      "sha256": "1cbc0ec2919ed951b56d75a6595f715a2192686aceea0c7573559cb89880b684"
+    },
+    {
+      "filename": "qa-package-manifest.tsv",
+      "size_bytes": 2330,
+      "sha256": "13fa3be169f53e84368f80623bab3e2b8958443ea60bf565f9dcaebb316bf75a"
+    },
+    {
+      "filename": "qa-stix2-font-manifest.txt",
+      "size_bytes": 432,
+      "sha256": "c1d10dd37d03f7d0ee5e68dd2d418212ef48879849e46fc75f6833f5fb064be9"
+    },
+    {
+      "filename": "sc3-axis-edited.log",
+      "size_bytes": 34114,
+      "sha256": "dbefbed851221450bd5c2c403484a4b067f7e8235f9c31c82b51e7f3df3f17fd"
+    },
+    {
+      "filename": "sc3-axis-edited.pdf",
+      "size_bytes": 10161,
+      "sha256": "ccfa67dd6a9750f2b573fe8a095bb6ca189b8282ec47d89c748361ced119b193"
+    },
+    {
+      "filename": "sc3-axis-edited.png",
+      "size_bytes": 18492,
+      "sha256": "e0e84f34ccaf752d5154a957795201b7b6f1a57c4182be19b918fb9e343a1e6d"
+    },
+    {
+      "filename": "sc3-axis-edited.stdout.log",
+      "size_bytes": 133,
+      "sha256": "9dd44be430be37fba9960a461f097cb1c7c84c9fc3b658c79806e398e0bea205"
+    },
+    {
+      "filename": "sc3-axis-source.tex",
+      "size_bytes": 2243,
+      "sha256": "43d473b71f96e9e9133c5e13928e4bdb2504a442c9938107ded65afeb75492b5"
+    },
+    {
+      "filename": "sc3-source-export.log",
+      "size_bytes": 4327,
+      "sha256": "67f7cb53e6af8cc662f0dfd681dda11b169b5e66a659c2f56b3df9c9ca6c53aa"
+    },
+    {
+      "filename": "sc3-style-edited.log",
+      "size_bytes": 34114,
+      "sha256": "8cf1b90ba981c22d416eed38526bc864891b0b015d2a4b0b283ad95b7208b768"
+    },
+    {
+      "filename": "sc3-style-edited.pdf",
+      "size_bytes": 21797,
+      "sha256": "e2a23b14f7cbb2d06f733fc9474d4d96feaab96aba9176d52691b78d9a880503"
+    },
+    {
+      "filename": "sc3-style-edited.png",
+      "size_bytes": 22883,
+      "sha256": "1e6850bfd3ceb8bd796376d88d403f95a4e46a9eb536053449a7b7162eafdfd7"
+    },
+    {
+      "filename": "sc3-style-edited.stdout.log",
+      "size_bytes": 134,
+      "sha256": "8a1c48376abb828021a5b4cc289fb8a44aaa4dec9d868885d8944b789c687bcf"
+    },
+    {
+      "filename": "sc3-style-source.tex",
+      "size_bytes": 2240,
+      "sha256": "2d4f141bd5546286846f43e5e8e16fac0160936e7cd3d85d9962ab3db9674786"
+    },
+    {
+      "filename": "sv001-xelatex.log",
+      "size_bytes": 15470,
+      "sha256": "d745154d6cc6f6a4695af0e0bb02e6283fc5d9eefaeb8d0d70b3bfec4e979292"
+    },
+    {
+      "filename": "tex-fixtures-verification.md",
+      "size_bytes": 3184,
+      "sha256": "6e5e60eee7a1f00caed1b6c85dbb6152dd724aeb6ebea577edcd42fe4bd4b434"
+    },
+    {
+      "filename": "verification.json",
+      "size_bytes": 2752,
+      "sha256": "df306a5670aaccd5e66d4870517c6c51bdba3b12e1e7e6a757e53b5b9b8de1bf"
+    }
+  ]
+}

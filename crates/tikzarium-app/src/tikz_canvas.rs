@@ -226,6 +226,7 @@ fn hit_authored_anchor(source: &str, rect: Rect, pos: Pos2) -> Result<Option<u64
     }
 }
 
+#[cfg(test)]
 fn show_guide_frame_with_palette(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -239,13 +240,34 @@ fn show_guide_frame_with_palette(
 /// Both workspaces use EXACTLY the same gesture processing and source patching.
 /// Studio moves the existing C-owned palette into a persistent tool rail; it
 /// does not replace the native TikZ drawing handler or TeX with a Rust solver.
+#[allow(dead_code)] // Also used by the independent QA-control binary.
 pub(crate) fn show_guide_frame_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    palette_rects: Option<&mut [Rect; 6]>,
+    legacy_palette: bool,
+) -> (Option<usize>, Rect) {
+    show_guide_frame_inner(
+        ui,
+        session,
+        source,
+        caps,
+        palette_rects,
+        legacy_palette,
+        false,
+    )
+}
+
+fn show_guide_frame_inner(
     ui: &mut egui::Ui,
     session: &mut Session,
     source: &mut String,
     caps: Capabilities,
     mut palette_rects: Option<&mut [Rect; 6]>,
     legacy_palette: bool,
+    shared_history: bool,
 ) -> (Option<usize>, Rect) {
     if legacy_palette {
         ui.horizontal_wrapped(|ui| {
@@ -453,7 +475,14 @@ pub(crate) fn show_guide_frame_mode(
     let fallback_undo_line =
         if undo_key && held_guide && !escape && !pointer_lost && !session.cancelled_pointer_capture
         {
-            let line = handle_visual_undo_shortcut(ui.ctx(), session, source);
+            let line = if shared_history {
+                // The app dispatches its unified ledger before this guide.
+                // A newly captured press still cancels here without replaying
+                // the Session-only inverse stack a second time.
+                None
+            } else {
+                handle_visual_undo_shortcut(ui.ctx(), session, source)
+            };
             session.drag_start = None;
             session.cancelled_pointer_capture = true;
             line
@@ -577,6 +606,7 @@ pub(crate) fn show_guide_frame_mode(
     (None, rect)
 }
 
+#[cfg(test)]
 fn show_guide_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -588,6 +618,7 @@ fn show_guide_frame(
 
 /// The production handler and UNIT_EVENT egui frames run the same Response
 /// processing. The guide is provisional; neither path decodes a PDF.
+#[cfg(test)]
 pub fn show_guide(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -599,6 +630,7 @@ pub fn show_guide(
 
 /// B42 studio guide: real egui pointer gestures and revision-checked C source
 /// patches are preserved; only the duplicate row of tool buttons is removed.
+#[cfg(test)]
 pub fn show_guide_studio(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -606,6 +638,17 @@ pub fn show_guide_studio(
     caps: Capabilities,
 ) -> Option<usize> {
     show_guide_frame_mode(ui, session, source, caps, None, false).0
+}
+
+/// Production shell guide: native gestures share the app's source history.
+pub fn show_guide_shared(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    studio: bool,
+) -> Option<usize> {
+    show_guide_frame_inner(ui, session, source, caps, None, !studio, true).0
 }
 
 pub fn handle_help_shortcut(ctx: &egui::Context, session: &mut Session) {
@@ -685,6 +728,7 @@ pub fn observe_source_text_edit(response: &egui::Response, session: &mut Session
 
 /// Always visible above the independently scrollable inspector. The shared
 /// Session inverse patch is the only source authority; no TeX is reconstructed.
+#[allow(dead_code)] // Also used by the independent QA-control binary.
 pub(crate) fn show_inspector_action_bar_frame(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -693,18 +737,56 @@ pub(crate) fn show_inspector_action_bar_frame(
     help_rect: Option<&mut Rect>,
     apply_rect: Option<&mut Rect>,
 ) -> Option<usize> {
+    show_inspector_action_bar_inner(
+        ui, session, source, undo_rect, help_rect, apply_rect, None, &mut false,
+    )
+}
+
+pub fn show_inspector_action_bar_shared(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    undo_available: bool,
+) -> (Option<usize>, bool) {
+    let mut undo = false;
+    let line = show_inspector_action_bar_inner(
+        ui,
+        session,
+        source,
+        None,
+        None,
+        None,
+        Some(undo_available),
+        &mut undo,
+    );
+    (line, undo)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn show_inspector_action_bar_inner(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    undo_rect: Option<&mut Rect>,
+    help_rect: Option<&mut Rect>,
+    apply_rect: Option<&mut Rect>,
+    shared_undo: Option<bool>,
+    undo_requested: &mut bool,
+) -> Option<usize> {
     let mut jump = None;
     ui.horizontal_wrapped(|ui| {
         let button = ui
             .add_enabled(
-                session.undo_available(),
-                egui::Button::new("↶ Отменить правку"),
+                shared_undo.unwrap_or_else(|| session.undo_available()),
+                egui::Button::new("Отменить правку"),
             )
-            .on_hover_text("Undo TikZ/source-правки; Ctrl/Cmd+Z вне текстовых полей. В редакторе Ctrl/Cmd+Z остаётся текстовым Undo.");
+            .on_hover_text("Отменить изменение исходника. Текст и подтверждённые правки используют общую историю.");
         if let Some(rect) = undo_rect {
             *rect = button.rect;
         }
-        if button.clicked() {
+        if button.clicked() && shared_undo.is_some() {
+            *undo_requested = true;
+        } else if button.clicked() {
             match session.undo_and_focus_line(source) {
                 Ok(line) => jump = Some(line),
                 Err(error) => session.status = error,
@@ -754,6 +836,7 @@ pub(crate) fn show_inspector_action_bar_frame(
     jump
 }
 
+#[cfg(test)]
 pub fn show_inspector_action_bar(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -820,6 +903,79 @@ fn parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -
     control_rect
 }
 
+/// Compact Scientific Studio only: labels come from stable catalogue IDs.
+/// Unknown future properties still show their literal native identifier.
+fn studio_parameter_label(id: &str) -> &str {
+    match id {
+        "start_x" => "Начало X",
+        "start_y" => "Начало Y",
+        "end_x" => "Конец X",
+        "end_y" => "Конец Y",
+        "center_x" => "Центр X",
+        "center_y" => "Центр Y",
+        "control1_x" => "Упр. 1 X",
+        "control1_y" => "Упр. 1 Y",
+        "control2_x" => "Упр. 2 X",
+        "control2_y" => "Упр. 2 Y",
+        "x" => "Положение X",
+        "y" => "Положение Y",
+        "radius" => "Радиус",
+        "tip" => "Наконечник",
+        "mode" => "Режим",
+        "content" => "Текст / формула",
+        _ => id,
+    }
+}
+
+fn studio_parameter_group(id: &str) -> &'static str {
+    match id {
+        "start_x" | "start_y" => "Начальная точка",
+        "end_x" | "end_y" => "Конечная точка",
+        "center_x" | "center_y" => "Центр",
+        "control1_x" | "control1_y" => "Управляющая точка 1",
+        "control2_x" | "control2_y" => "Управляющая точка 2",
+        "x" | "y" => "Положение",
+        _ => "Параметры",
+    }
+}
+
+/// Native two-column property rows: a stable label, one real editable widget
+/// and the complete C-owned help in a tooltip instead of repeated paragraphs.
+/// This edits the draft only; only the pinned Apply may patch the user TeX.
+fn studio_parameter_control(ui: &mut egui::Ui, p: &ParameterSpec, value: &mut String) -> Rect {
+    let help = parameter_help(p);
+    let mut control = Rect::NOTHING;
+    ui.horizontal(|ui| {
+        ui.add_sized(
+            [84.0, ui.spacing().interact_size.y],
+            egui::Label::new(studio_parameter_label(&p.id)).truncate(),
+        )
+        .on_hover_text(&help);
+        if p.kind == "choice" {
+            control = egui::ComboBox::from_id_salt(("studio-parameter", &p.id))
+                .width(ui.available_width().max(75.0))
+                .selected_text(value.as_str())
+                .show_ui(ui, |ui| {
+                    for candidate in &p.allowed_values {
+                        ui.selectable_value(value, candidate.clone(), candidate);
+                    }
+                })
+                .response
+                .on_hover_text(&help)
+                .rect;
+        } else {
+            control = ui
+                .add_sized(
+                    [ui.available_width().max(75.0), ui.spacing().interact_size.y],
+                    egui::TextEdit::singleline(value),
+                )
+                .on_hover_text(&help)
+                .rect;
+        }
+    });
+    control
+}
+
 /// A property is *pending* only if its selected marker is still unique,
 /// byte-validated against the C generator and different from the source.
 /// An opaque/manual command can never be enabled by this convenience action.
@@ -868,9 +1024,40 @@ pub fn show_inspector(
     source: &mut String,
     caps: Capabilities,
 ) -> Option<usize> {
+    show_inspector_mode(ui, session, source, caps, false)
+}
+
+/// The Studio uses the same C-owned source/Undo semantics as the classic
+/// Inspector but keeps only one pinned Apply and one contextual F1 dock.
+pub fn show_inspector_studio(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+) -> Option<usize> {
+    show_inspector_mode(ui, session, source, caps, true)
+}
+
+fn show_inspector_mode(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    source: &mut String,
+    caps: Capabilities,
+    studio: bool,
+) -> Option<usize> {
     let mut jump = None;
-    ui.heading("TikZ · параметры и справка");
-    ui.small("Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.");
+    if studio {
+        ui.horizontal(|ui| {
+            ui.strong("Научный Inspector");
+            ui.small("TikZ");
+        });
+        ui.small("Изменение источника — только после «Применить параметры».");
+    } else {
+        ui.heading("TikZ · параметры и справка");
+        ui.small(
+            "Один каталог: палитра → свойства → команда → F1. Неизвестный TeX не переписывается.",
+        );
+    }
     ui.collapsing("Техническая готовность TikZ / XeLaTeX", |ui| {
         ui.small(format!(
             "Установлен tikz.sty={} · явно подключён={} · внешний XeLaTeX={} · GUI-инструмент=реализован · справка=доступна",
@@ -910,8 +1097,13 @@ pub fn show_inspector(
     if let Some(tool) = session.active {
         let info = tikz_authoring::spec(tool);
         ui.separator();
-        ui.strong(&info.title_ru);
-        ui.label(&info.help_ru);
+        if studio {
+            ui.label(egui::RichText::new(&info.title_ru).strong())
+                .on_hover_text(&info.help_ru);
+        } else {
+            ui.strong(&info.title_ru);
+            ui.label(&info.help_ru);
+        }
         let import_state = tikz_authoring::requirements_status(source, tool);
         let loaded = import_state == tikzarium_extensions::primitives::Evidence::Confirmed;
         ui.small(format!(
@@ -947,7 +1139,18 @@ pub fn show_inspector(
                 }
             });
         }
+        let mut previous_group = "";
         for parameter in &info.parameter {
+            if studio {
+                let group = studio_parameter_group(&parameter.id);
+                if group != previous_group {
+                    if !previous_group.is_empty() {
+                        ui.add_space(5.0);
+                    }
+                    ui.label(egui::RichText::new(group).strong().size(12.0));
+                    previous_group = group;
+                }
+            }
             let value = session
                 .draft
                 .values
@@ -960,14 +1163,24 @@ pub fn show_inspector(
                     }
                 });
             ui.push_id((&info.id, &parameter.id), |ui| {
-                parameter_control(ui, parameter, value)
+                if studio {
+                    studio_parameter_control(ui, parameter, value)
+                } else {
+                    parameter_control(ui, parameter, value)
+                }
             });
         }
         ui.separator();
         match tikz_authoring::command(tool, &session.draft) {
             Ok(code) => {
-                ui.label("Команда из общего каталога:");
-                ui.code(code);
+                if studio {
+                    ui.collapsing("Исходный TikZ · предпросмотр", |ui| {
+                        ui.code(code);
+                    });
+                } else {
+                    ui.label("Команда из общего каталога:");
+                    ui.code(code);
+                }
             }
             Err(error) => {
                 ui.colored_label(ui.visuals().error_fg_color, error);
@@ -983,12 +1196,15 @@ pub fn show_inspector(
             } else {
                 ui.small("Параметры совпадают с исходником; новой правки нет.");
             }
-            if ui
-                .add_enabled(
-                    pending,
-                    egui::Button::new("Применить параметры · изменить только эту команду"),
-                )
-                .clicked()
+            // Scientific Studio already has ONE pinned Apply above the
+            // scrolling Inspector. Preserve the old button in classic mode.
+            if !studio
+                && ui
+                    .add_enabled(
+                        pending,
+                        egui::Button::new("Применить параметры · изменить только эту команду"),
+                    )
+                    .clicked()
             {
                 match session.apply_parameters(source) {
                     Ok(line) => jump = Some(line),
@@ -1028,7 +1244,9 @@ pub fn show_inspector(
                 }
             }
         }
-        if ui
+        if studio {
+            ui.small("F1 · полная справка и параметры во вкладке «Справка».");
+        } else if ui
             .button(if session.help {
                 "Скрыть подробную справку · F1"
             } else {
@@ -1038,7 +1256,7 @@ pub fn show_inspector(
         {
             session.help = !session.help;
         }
-        if session.help {
+        if session.help && !studio {
             ui.separator();
             ui.strong("Контекстная справка");
             ui.code(&info.syntax);
@@ -1067,6 +1285,57 @@ pub fn show_inspector(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scientific_studio_compact_labels_preserve_authoritative_source() {
+        assert_eq!(studio_parameter_label("start_x"), "Начало X");
+        assert_eq!(studio_parameter_label("end_y"), "Конец Y");
+        assert_eq!(studio_parameter_label("center_x"), "Центр X");
+        assert_eq!(studio_parameter_label("control2_y"), "Упр. 2 Y");
+        assert_eq!(studio_parameter_label("content"), "Текст / формула");
+        assert_eq!(
+            studio_parameter_label("unrecognized_param"),
+            "unrecognized_param"
+        );
+        assert_eq!(studio_parameter_group("start_x"), "Начальная точка");
+        assert_eq!(studio_parameter_group("start_y"), "Начальная точка");
+        assert_eq!(studio_parameter_group("end_x"), "Конечная точка");
+
+        // A frame which merely displays the scientific property draft must
+        // not patch TeX, alter CRLF, or produce a source Undo transaction.
+        let source_bytes = "% неизменный комментарий\r\n\\mystery{Ж}\r\n".to_owned();
+        let mut source = source_bytes.clone();
+        let mut session = Session::default();
+        session.reset(&source);
+        session.select_tool(Tool::Line);
+        let ctx = egui::Context::default();
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(680.0, 540.0))),
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    assert!(
+                        show_inspector_studio(
+                            ui,
+                            &mut session,
+                            &mut source,
+                            Capabilities {
+                                installed: true,
+                                loaded: Evidence::Confirmed,
+                                engine_compatible: true,
+                                implemented: true,
+                            },
+                        )
+                        .is_none()
+                    );
+                });
+            },
+        );
+        assert_eq!(source.as_bytes(), source_bytes.as_bytes());
+        assert!(!session.undo_available());
+    }
 
     // B41: real egui pointer/keyboard event frames, not fabricated UI flags.
     // The pinned Apply sits above a long scrollable inspector and must commit

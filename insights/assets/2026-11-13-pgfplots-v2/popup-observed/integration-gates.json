@@ -1,0 +1,84 @@
+{
+  "base_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "patch_sha256": "0eef67bd5ca6c383eb4c4cb848d07246e5f2086024129143e31aec12f50c7dcb",
+  "app_tree_unchanged": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "production_and_workflows_unchanged": true,
+  "previous_production_gates": "586 Rust PASS/0 failed/4 ignored; fmt/Clippy/build PASS at identical production source81; not rerun for QA-only diff",
+  "protected_functions_ast_identical": [
+    "field_copy",
+    "stage",
+    "exercise",
+    "build",
+    "select_operation",
+    "run_case"
+  ],
+  "tests_passed": 85,
+  "tests_failed": 0,
+  "gates": [
+    {
+      "gate": "popup",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "qa_pgfplots_vertical_test.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 25,
+      "elapsed_seconds": 0.353,
+      "log_sha256": "c91a9fd4bfc252c4f2b697bbd1b8442feca92fc5a32e244ef208f4cabc3f878b"
+    },
+    {
+      "gate": "at4",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "qa_at4_*_test.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 26,
+      "elapsed_seconds": 1.867,
+      "log_sha256": "504ede4dfc15eb62dbfc466adb5f7f7d52aa9ccbe3fef93ac795f6124e2c317c"
+    },
+    {
+      "gate": "compact",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_qa_compact*.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "test_count": 34,
+      "elapsed_seconds": 0.13,
+      "log_sha256": "d6eda14ca1ebb267e4e5301d2207c6ca04f28c8bdaed644fd81617a2dbcd156b"
+    }
+  ],
+  "tested_qa_file_sha256": {
+    "scripts/qa_pgfplots_vertical_x11.py": "fe58a4ace99942b7b12e9f88e681baad9ee7ca44b329e6eb41473e885ba05d9a",
+    "scripts/qa_pgfplots_vertical_test.py": "cb3727d408cb123a161d4d2cbb6f543a77e3262dbb1392ab72060eb144571f5b",
+    "scripts/fixtures/pgfplots-v2/run04-popup-probes.json": "eafa318acf5e6407597568af4058c40c629adf78247d5cf3375dd80546e011e3"
+  },
+  "native_acceptance": "PENDING_NEW_PGF_RERUN; run04 scoped results retained separately",
+  "subagent_configured_models": {
+    "pgf_qa_review": "gpt-6.1-sol high",
+    "at4_scientific_cases": "gpt-6-luna high",
+    "checkpoint_recovery": "gpt-6-luna high"
+  }
+}

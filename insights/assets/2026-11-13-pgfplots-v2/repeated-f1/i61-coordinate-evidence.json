@@ -1,0 +1,39 @@
+{
+  "status": "OBSERVED_COORDINATE_CORRECTION_NATIVE_RETEST_REQUIRED",
+  "old_cp06_original_png": "/workspace/scratch/24342458ee84/workers/i61-coordinate-review/28a-inspector-before-draft.png",
+  "old_png_sha256": "9f3179ff9ef3709d975c9b46fc76d79bcb500bab8791b039cdc48339d43bf6db",
+  "run03_original_png": "/workspace/scratch/24342458ee84/validation/attempts/43408533757/originals/i61-evidence/28a-inspector-before-draft.png",
+  "run03_png_sha256": "c7d70e89e147347a957c4ff55619b433096a633cb9064a2efd2799592e799608",
+  "observed_client_origin": [
+    1,
+    20
+  ],
+  "old_client_points": {
+    "node_x": [
+      1050,
+      457
+    ],
+    "apply": [
+      1080,
+      121
+    ]
+  },
+  "current_observed_client_points": {
+    "node_x": [
+      1050,
+      487
+    ],
+    "apply": [
+      999,
+      151
+    ]
+  },
+  "focused_original_readback": "I61_NATIVE_CLIPBOARD_SENTINEL_NOT_A_FIELD",
+  "expected_original": "10.25cm",
+  "saved_six_tool_source_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+  "old_target_guard_stopped_before_paste_apply": true,
+  "source_guard_and_full_scenario": "UNCHANGED",
+  "verification": "Root and independent recovery reviewer inspected original PNGs; current points remain candidates until complete hosted replay",
+  "independent_reviewer": "/root/checkpoint_recovery (gpt-6-luna)",
+  "constant_mirroring_test_not_added": true
+}

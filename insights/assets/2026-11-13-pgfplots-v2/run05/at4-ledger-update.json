@@ -1,0 +1,26 @@
+{
+  "created_utc": "2026-11-13T11:48:12.190968+00:00",
+  "source_acceptance": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "derived_ledger": "roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv",
+  "ids": [
+    "09",
+    "48",
+    "49",
+    "50",
+    "55",
+    "56",
+    "58",
+    "61"
+  ],
+  "before_sha256": "ea2bfc28af405a17bcd7241c798212cd0a54843a0417c2d0bd674e875701050d",
+  "after_sha256": "6a2822c983421a8176f6d55b33c99d58f01be22f9bd4f0c9c254e740227ac85f",
+  "rows": 88,
+  "changed_rows": 8,
+  "changed_columns": [
+    "implementation_status",
+    "gui_adapter_status"
+  ],
+  "all_other_row_fields_and_bytes_preserved": true,
+  "original_catalogue_and17_sources_changed": false,
+  "scope": "Partial bounded hosted source/PDF vertical; no aggregate S3/S4/AT4/SCI142 claim"
+}

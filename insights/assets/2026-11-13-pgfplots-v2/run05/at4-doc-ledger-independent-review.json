@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "review": "Run05 AT4 documentation and ledger independent audit",
+  "review_scope": "Read-only review of current uncommitted documentation/roadmap/derived-ledger diff and referenced Run05 AT4 audit, correction note, ledger manifest and root visual cross-check. No repository edits, tests, commits or uploads.",
+  "candidate": {
+    "published_head": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+    "published_head_tree": "08d229e9acfb8e08c32b0d6a8bd0d2a61677fa3c",
+    "reviewed_native_source": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "reviewed_source_tree": "f88fb5caeb62062c1893c5a4cf8eb95c1de36a77",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "source24_at4_artifact_sha256": "9e182b53da0392215fe76e3c55b24e9712be29d0be952c36ac3ff946c5e51085"
+  },
+  "result": "CLEAR_FOR_BOUNDED_DOCUMENTATION_AND_LEDGER_SCOPE; no full S3/S4, aggregate AT4/SCI142 or physical-platform acceptance is claimed.",
+  "tracked_diff_paths": [
+    "docs/RESUME.md",
+    "insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md",
+    "plans/2026-11-11_SCI_1_0_EXECUTION.md",
+    "roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv",
+    "roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md"
+  ],
+  "uncommitted_scope": "Only docs/RESUME.md, insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md, plans/2026-11-11_SCI_1_0_EXECUTION.md, the derived 88-case CSV, and roadmap/AI_TIKZ_SKILLS_2026-11-10_SUPPORT_ROADMAP.md are tracked as modified. Added Run05 audit JSONs are under the insights evidence directory. No production sources or workflow files are changed by this uncommitted diff.",
+  "ledger_check": {
+    "baseline_sha256": "ea2bfc28af405a17bcd7241c798212cd0a54843a0417c2d0bd674e875701050d",
+    "current_sha256": "6a2822c983421a8176f6d55b33c99d58f01be22f9bd4f0c9c254e740227ac85f",
+    "row_count_excluding_header": 88,
+    "field_count": 10,
+    "headers": [
+      "id",
+      "group",
+      "stem",
+      "tex_path",
+      "packages",
+      "libraries",
+      "engine",
+      "catalogue_check",
+      "implementation_status",
+      "gui_adapter_status"
+    ],
+    "exact_changed_ids": [
+      "09",
+      "48",
+      "49",
+      "50",
+      "55",
+      "56",
+      "58",
+      "61"
+    ],
+    "expected_changed_ids": [
+      "09",
+      "48",
+      "49",
+      "50",
+      "55",
+      "56",
+      "58",
+      "61"
+    ],
+    "exactly_two_changed_fields_per_selected_row": [
+      "implementation_status",
+      "gui_adapter_status"
+    ],
+    "new_status_values": [
+      "PARTIAL_NATIVE_LITERAL_VERIFIED",
+      "BOUNDED_HOSTED_GUI_VERIFIED"
+    ],
+    "all_other_rows_fields_and_bytes_exact": true,
+    "baseline_lf_lines": 89,
+    "current_lf_lines": 89,
+    "baseline_crlf_lines": 0,
+    "current_crlf_lines": 0,
+    "raw_current_equals_exact_eight_line_status_only_transform": true,
+    "ledger_update_sha256": "bcc6aa77a157ac10f7723d62b05d95a62f62da4355fe063e905b6dc7daf28f91",
+    "ledger_update_claims_match_recheck": true
+  },
+  "original_intake_integrity": {
+    "manifest_entries": 17,
+    "17_source_failures": [],
+    "catalogue_matches_original_intake": true,
+    "catalogue_sha256": "4a94885064027806d4c9df7220216a160a923a4346671973365e59aa3cee94a5",
+    "repository_examples_paths_unchanged_in_current_diff": true,
+    "production_source_or_workflow_diff_from_source24": true
+  },
+  "at4_report_binding": {
+    "audit_path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run05/at4-audit.json",
+    "audit_sha256": "2c001b6a1c7f8050786d6c82459340a975f6ae356f9a581f7b8be93a5b709df5",
+    "audit_expected_sha256": "2c001b6a1c7f8050786d6c82459340a975f6ae356f9a581f7b8be93a5b709df5",
+    "correction_path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run05/at4-audit-correction.json",
+    "correction_sha256": "c757e8aabfd27dfa7b184d0d998720a942a23a7eb1a7d608e781c90e27d2c35e",
+    "correction_expected_sha256": "c757e8aabfd27dfa7b184d0d998720a942a23a7eb1a7d608e781c90e27d2c35e",
+    "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "run_id": 43415761917,
+    "case_ids": [
+      "09",
+      "48",
+      "49",
+      "50",
+      "55",
+      "56",
+      "58",
+      "61"
+    ],
+    "case_count": 8,
+    "operations_observed": 8,
+    "stage_records": 56,
+    "unique_stage_screenshot_paths": 56,
+    "stage_source_editor_image_or_manifest_mismatches": [],
+    "pdf_binding_mismatches": [],
+    "assessment": "PASS_BOUNDED_EIGHT_CASE_HOSTED_GUI_AT4_VERTICAL; AGGREGATE_SC3_AT4_NOT_VERIFIED",
+    "suite_scope": "HOSTED_GUI_AT4_ORIGINALS_BOUNDED_VERTICAL",
+    "aggregate_sc3_at4": "NOT_VERIFIED",
+    "physical_win10": "NOT_RUN",
+    "physical_mac_arm": "NOT_RUN",
+    "correction_scope": "The eight current rendered-PDF images were reviewed. In addition, all eight exact opened and operation-specific first-applied stage screenshots were viewed; those screenshots establish source and edit state, not scientific PDF rendering. For five cases the first-applied screenshot is byte-identical to its final-applied screenshot, as hashes show.",
+    "correction_prevents_visual_overclaim": "No claim that all 56 stage screenshots were visually inspected. All 56 stage source/editor/image hashes were integrity-checked; the exact opened and first-applied images across all eight cases plus all eight rendered PDFs were directly viewed.",
+    "root_crosscheck_sha256": "f5dd94b0df7cb05d89e34d6381826db0766ea0ce36ebe933a4772af4ea840939",
+    "root_crosscheck_scope": "Three scientific critical cases only; supplements full agent audit, not aggregate acceptance",
+    "root_crosscheck_ids": [
+      "AT4-55",
+      "AT4-56",
+      "AT4-58"
+    ],
+    "limitations": "Only eight original examples and one exact literal property operation per example. Eight current PDFs and source/edit stages were audited; 56 stage hashes were checked; direct screenshot review was limited to exact opened and operation-specific first-applied stage images plus the rendered PDFs. No claim that every one of 56 screenshots was visually inspected, no aggregate AT4/S3/S4/SCI142 or physical acceptance."
+  },
+  "documentation_consistency": {
+    "full_source24_referenced": true,
+    "short_source24_references_are_consistent": "24f7ae4c shorthand occurs alongside or is contextually anchored to full Run05 source identity.",
+    "latest_report_and_correction_links_resolve": true,
+    "ledger_status_is_explicitly_partial_and_bounded": true,
+    "resume_and_execution_plan_limit_scope": "Both qualify AT4 as bounded hosted scope and explicitly preserve the V2 FAIL/strict nullfont gate. The support roadmap says these ledger values are partial and not full S3/S4 or whole AT4.",
+    "run06_separation": "This diff reports Run05 source24 facts only and does not upgrade or merge a later Run06 candidate."
+  },
+  "findings": [],
+  "no_changes_made": true
+}

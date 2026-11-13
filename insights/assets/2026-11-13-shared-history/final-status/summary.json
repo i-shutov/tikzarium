@@ -1,0 +1,16 @@
+{
+  "suites": 27,
+  "passed": 566,
+  "failed": 0,
+  "ignored": 4,
+  "rust": "1.91.0",
+  "fmt": "PASS",
+  "clippy": "PASS",
+  "app_cli_build": "PASS",
+  "binary_sha256": {
+    "tikzarium-app": "f80b07e00d24f83d750493b0d3c91098a2cf3e9d1f968f41ef68ffdbe938eb67",
+    "tikzarium-cli": "e6699cc9399f63ebf5ad595bb4c43be3625073622aa90d58acd82a1c11f153c7"
+  },
+  "production_status_change": "Truthful source reselect guidance; shared Undo semantics unchanged",
+  "source_test_file_restored": true
+}

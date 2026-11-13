@@ -1,5 +1,6 @@
 # B42 six native GUI gestures, persisted source, external XeLaTeX PDF.
-# Exact B42 source-tree lease is fail-closed. Current Linux/X11 probe includes real Open/Undo/F1; Inspector Apply and physical OS remain NOT_RUN until independently accepted.
+# Compact-layout candidate lease is fail-closed. Every full scenario and its
+# original screenshots/source/PDF must pass before independent hosted acceptance.
 name: I61 B42 real Studio icon-to-native-source/PDF (independent D QA)
 on:
   push:
@@ -10,6 +11,7 @@ on:
       - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_n1_desktop.py'
       - 'scripts/tests/test_qa_i61_studio_fonts.py'
+      - 'scripts/tests/test_qa_compact*.py'
       - 'crates/**'
       - 'extensions/primitives/catalog-v1.toml'
       - 'Cargo.toml'
@@ -22,6 +24,7 @@ on:
       - 'scripts/qa_n2_studio_x11.py'
       - 'scripts/qa_n1_desktop.py'
       - 'scripts/tests/test_qa_i61_studio_fonts.py'
+      - 'scripts/tests/test_qa_compact*.py'
       - 'crates/**'
       - 'extensions/primitives/catalog-v1.toml'
       - 'Cargo.toml'
@@ -38,21 +41,38 @@ jobs:
     timeout-minutes: 45
     env:
       CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      LIBGL_ALWAYS_SOFTWARE: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.91.0'
-      - name: Exact B42 app source-tree lease (fail closed before GUI)
+      - name: Reviewed compact app source-tree candidate lease (fail closed before GUI)
         run: |
-          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '5ea9f8ce7dc6c1374e1eb3bbe951e9a9b0e684a9'
+          test "$(git rev-parse HEAD)" = '${{ github.event.pull_request.head.sha || github.sha }}'
+          test "$(git rev-parse HEAD:crates/tikzarium-app/src)" = '7d35e7b8064a651084fef931a827ac46b3448c6a'
           # Catch disagreement between workflow and Python QA before heavy TeX install.
           grep -Fqx "APP_TREE = \"$(git rev-parse HEAD:crates/tikzarium-app/src)\"" scripts/qa_i61_b42_studio_x11.py
           echo "TIKZARIUM_APP_TREE_SHA=$(git rev-parse HEAD:crates/tikzarium-app/src)" >> "$GITHUB_ENV"
           echo "TIKZARIUM_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           git diff --exit-code -- Cargo.lock
+      - name: Restore locked Cargo dependencies and production build products
+        id: cargo-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-i61-compact-rust191-${{ hashFiles('Cargo.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-i61-compact-rust191-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-sci-compact-rust191-${{ hashFiles('Cargo.lock') }}-
       - name: Font-audit offline contract tests (NOT GUI)
         run: python3 -m unittest discover -s scripts/tests -p test_qa_i61_studio_fonts.py -v
       - name: Hosted Linux/X11 and external TeX Live XeLaTeX prerequisites
@@ -64,26 +84,44 @@ jobs:
           fi
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
-            xvfb xauth openbox xdotool xclip imagemagick libgl1-mesa-dri libglx-mesa0 \
+            xvfb xauth x11-utils openbox wmctrl xdotool xclip imagemagick python3-pil libgl1-mesa-dri libglx-mesa0 \
             libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libxi-dev \
             libxcursor-dev libxrandr-dev libudev-dev \
-            texlive-xetex texlive-latex-extra texlive-pictures poppler-utils fonts-dejavu-core
+            texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended poppler-utils fonts-dejavu-core fonts-sil-charis
           xelatex --version | head -n 2
           command -v pdffonts
+      - name: Compact input, exact clipboard and executable identity contracts (not GUI)
+        run: python3 -m unittest discover -s scripts/tests -p 'test_qa_compact*.py' -v
       - name: Compile locked production egui binary, no QA stub
+        id: production-build
         run: |
           cargo build --locked -p tikzarium-app --bin tikzarium-app
-          git diff --exit-code -- Cargo.lock
+          test -z "$(git status --porcelain -- crates extensions Cargo.toml Cargo.lock)"
+          mkdir -p "$RUNNER_TEMP/i61-build"
+          { git rev-parse HEAD HEAD:crates/tikzarium-app/src; rustc -vV; sha256sum target/debug/tikzarium-app Cargo.lock; } > "$RUNNER_TEMP/i61-build/provenance.txt"
+      - name: Save verified build before native assertions
+        if: steps.cargo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
       - name: Real group icon, all six pointers, source Save and XeLaTeX PDF
         run: |
           mkdir -p "$RUNNER_TEMP/i61-runtime"
           chmod 700 "$RUNNER_TEMP/i61-runtime"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/i61-runtime"
-          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' \
             bash -c 'openbox --sm-disable >/tmp/i61-openbox.log 2>&1 & python3 scripts/qa_i61_b42_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/i61-evidence"'
       - name: Real N2 Studio Library Connect/Undo/Save/Open and XeLaTeX PDF
+        # Independent evidence is still useful if I61 calibration fails; the
+        # failed I61 step keeps the job red and cannot be hidden by N2 success.
+        if: always() && steps.production-build.outcome == 'success'
         run: |
-          xvfb-run -a -s '-screen 0 1440x900x24 +extension GLX +render -noreset' \
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' \
             bash -c 'openbox --sm-disable >/tmp/n2-openbox.log 2>&1 & python3 scripts/qa_n2_studio_x11.py --app "$GITHUB_WORKSPACE/target/debug/tikzarium-app" --out "$RUNNER_TEMP/n2-evidence"'
       - name: Upload actual GUI screenshots, saved source, PDF, log and SHA ledger
         if: always()
@@ -93,4 +131,5 @@ jobs:
           path: |
             ${{ runner.temp }}/i61-evidence/
             ${{ runner.temp }}/n2-evidence/
+            ${{ runner.temp }}/i61-build/
           if-no-files-found: warn

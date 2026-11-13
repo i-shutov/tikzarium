@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_READ_ONLY_SOURCE_INTEGRATION_REVIEW",
+  "verdict": "CLEAR_WITH_NATIVE_RETEST_REQUIRED",
+  "scope": "Narrow Studio F1 state synchronization correction, reviewed against worker base and matching two-file patch. No source edits or tests were run by this reviewer.",
+  "base_commit": "73667007ecc5b6a66b3a178c486700be98bd1aa3",
+  "patch_path": "/workspace/scratch/24342458ee84/reviews/repeated_f1/studio-visible-help-f1.patch",
+  "patch_sha256": "df9f4826c502e7461a03f8c4b880e1acdb7beae001fa6ec4f77f5936d50b4652",
+  "patch_matches_worker_binary_diff_sha256": "df9f4826c502e7461a03f8c4b880e1acdb7beae001fa6ec4f77f5936d50b4652",
+  "patch_hash_match_verified": true,
+  "changed_files": [
+    {
+      "path": "crates/tikzarium-app/src/main.rs",
+      "sha256": "18e324aa906a7b298b3c5df95d8b7249140b23b8dbeeeb47172c8c83e3fd3f3b"
+    },
+    {
+      "path": "crates/tikzarium-app/src/studio_ui.rs",
+      "sha256": "9fe38619cba43e7ab2338754337acab4f9ade4983c4862325bb25de8a498b349"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1-1",
+      "result": "PASS",
+      "detail": "The Studio-only shortcut helper derives Session.help from the visible state (`inspector_open && dock == Help`) before invoking the existing F1 key toggle and route. This removes stale Session.help left behind when a user manually selects Properties or Libraries."
+    },
+    {
+      "id": "F1-2",
+      "result": "PASS",
+      "detail": "The main update call remains behind the existing `!modal_active()` guard. Studio mode uses the new canonical helper; non-Studio/legacy mode retains the original tikz_canvas::handle_help_shortcut handler."
+    },
+    {
+      "id": "F1-3",
+      "result": "PASS",
+      "detail": "Regression uses egui selectable_value tabs and actual pointer moved/button press+release events, followed by explicit F1 key down and key up events. It covers Help→Properties→F1 and Help→Libraries→F1, and asserts visible dock/open state."
+    },
+    {
+      "id": "F1-4",
+      "result": "PASS",
+      "detail": "Regression seeds an actual reversible scientific-literal source edit, verifies source bytes/revision and undo availability remain unchanged through tab clicks/F1, then verifies Undo restores exact original CRLF/Unicode/opaque source."
+    },
+    {
+      "id": "F1-5",
+      "result": "PASS",
+      "detail": "Separate regression starts with remembered Help while inspector is hidden, verifies F1 reopens Help and subsequent F1 closes to Properties, without source revision or undo mutation."
+    },
+    {
+      "id": "F1-6",
+      "result": "PASS",
+      "detail": "The baseline regression log records both new cases failing before the helper: pointer-tab F1 did not reopen Help, and hidden remembered Help did not reopen the inspector. Final worker log records both cases passing."
+    },
+    {
+      "id": "F1-7",
+      "result": "PASS",
+      "detail": "Patch is exactly two files: main.rs shortcut callsite and studio_ui.rs helper/tests. No catalogue, source patch, Undo implementation, native QA coordinates, or acceptance gates are changed."
+    }
+  ],
+  "evidence": {
+    "baseline_failure_log": "/workspace/scratch/24342458ee84/reviews/repeated_f1/baseline-state-regression.log",
+    "final_app_test_log": "/workspace/scratch/24342458ee84/reviews/repeated_f1/app-final-tests.log",
+    "reported_final_app_test_totals": {
+      "passed": 323,
+      "failed": 0,
+      "ignored": 1,
+      "source": "Worker app-final-tests.log: 18 + 222 + 83 passed; 1 existing ignored."
+    },
+    "native_original_run_diagnostic": "/workspace/scratch/24342458ee84/reviews/repeated_f1/native-diagnosis.json",
+    "native_failure_context": "Previous native run03 genuinely showed the second F1 left Properties/domain selected after manual tab selection. This patch has not itself been validated in a new native GUI run."
+  },
+  "limitations": [
+    "Review confirms the code path and worker regression coverage only. It does not confer HOSTED_GUI or NATIVE_PLATFORM acceptance. Repeat the original native operation after integration before accepting the fix.",
+    "Final worker test totals are recorded from the supplied log; this reviewer did not rerun tests."
+  ]
+}

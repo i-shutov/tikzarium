@@ -1,0 +1,58 @@
+[
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-11-13T05:09:20.506075+00:00",
+    "seconds": 0.689,
+    "exit_code": 0
+  },
+  {
+    "name": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace"
+    ],
+    "started_utc": "2026-11-13T05:09:21.195432+00:00",
+    "seconds": 8.466,
+    "exit_code": 0
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-11-13T05:09:29.661861+00:00",
+    "seconds": 2.868,
+    "exit_code": 0
+  },
+  {
+    "name": "build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "tikzarium-app",
+      "-p",
+      "tikzarium-cli"
+    ],
+    "started_utc": "2026-11-13T05:09:32.530605+00:00",
+    "seconds": 1.564,
+    "exit_code": 0
+  }
+]

@@ -1,0 +1,13 @@
+test_cli_rejects_modified_upstream_bytes_before_archive (test_package_n5_preview.N5Packaging.test_cli_rejects_modified_upstream_bytes_before_archive) ... ok
+test_invalid_archive_target_fails (test_package_n5_preview.N5Packaging.test_invalid_archive_target_fails) ... ok
+test_linux_launcher_preserves_project_cwd_and_unicode_args (test_package_n5_preview.N5Packaging.test_linux_launcher_preserves_project_cwd_and_unicode_args)
+Execute the shipped shell script: output must follow the user, not the bundle. ... ok
+test_linux_portable_is_reproducible_executable_and_no_bundled_tex (test_package_n5_preview.N5Packaging.test_linux_portable_is_reproducible_executable_and_no_bundled_tex) ... ok
+test_mac_app_and_windows_portable_are_honest_and_integrity_locked (test_package_n5_preview.N5Packaging.test_mac_app_and_windows_portable_are_honest_and_integrity_locked) ... ok
+test_windows_gui_and_cli_pe_subsystem_gate (test_package_n5_preview.N5Packaging.test_windows_gui_and_cli_pe_subsystem_gate) ... ok
+test_wrong_architecture_and_truncated_inputs_fail_closed (test_package_n5_preview.N5Packaging.test_wrong_architecture_and_truncated_inputs_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.105s
+
+OK

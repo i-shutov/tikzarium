@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "tested_source_head": "b646c4d46d331a281c1fe51d6bcc79c436ffdf35",
+  "tested_app_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "run_id": 43370706180,
+  "original_artifact_id": 14012741716,
+  "original_zip_sha256": "21148d1d3e755221da67fad1bbd5fd163dacd5136c8a97f6c1aa8a397a44ea2b",
+  "scope": "SCOPED_HOSTED_GUI_REVIEWED_NOT_PHYSICAL_WINDOWS10_OR_FULL_ST_SCI_ACCEPTANCE",
+  "manifest_excludes_itself": true,
+  "entries": [
+    {
+      "path": "insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md",
+      "bytes": 15750,
+      "git_blob_sha1": "c9fc07e086c21ad5cac43c276be316f8bc703451",
+      "sha256": "28aed78e2165fe78b8542ade0a8aac35b54aeee4eb37b2b04dc69b84ccf49606"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/applied-source-original.tex",
+      "bytes": 2455,
+      "git_blob_sha1": "e353484d4e357f8c1e0b12156deb2067a3b0ba00",
+      "sha256": "0da2421d3185430e8280c87919eb11849cc22d88452e189639d36787298cce3e"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/audit-report-original.json",
+      "bytes": 20655,
+      "git_blob_sha1": "5c6db88d900760c17feb7cde1518b6ec28d09d08",
+      "sha256": "19698d651ffdfd71347a951804373edb2a6836e492297de468fabdfc2618c61d"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/build-provenance-original.json",
+      "bytes": 1172,
+      "git_blob_sha1": "723d06c4b62bc0f1924c3dfb75bdd30a2f0a08df",
+      "sha256": "8d9bfc3e7e07958b2d7da32ffad9f1ba0b300d4ba8798d18f472fd635776905d"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/built-source-original.tex",
+      "bytes": 2421,
+      "git_blob_sha1": "e25e0ef224518e33a42ef52bf30ab735bda7f936",
+      "sha256": "978ccbef1c5b61156f129d52a3ca47b0d4cff23f45c3b46cafdca2a1139c9bab"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/compact-pgfplots-original.pdf",
+      "bytes": 10189,
+      "git_blob_sha1": "8804c87f4f033092df8994acf56b228fc6415a48",
+      "sha256": "c4aaa313afba9233240f07976345bd275abe3210c67f546429ec611f47deb81b"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/driver-report-original.json",
+      "bytes": 3103,
+      "git_blob_sha1": "e797fc0fd8f12e15ef081bb948f052bc35ec2984",
+      "sha256": "40c4b41b7dcffeffbb759f56a97ea731080ecf629e3049798fe3cfcb404eeb3d"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/engine-version-original.txt",
+      "bytes": 819,
+      "git_blob_sha1": "9cbe0df7f15c7d47fab5455d3f49165eb9c766cc",
+      "sha256": "c6da8d8ca1c1e52fc2633d1723bd2ec638501594e45166d2508b354f66e98471"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/exact-head-runs-final.json",
+      "bytes": 249414,
+      "git_blob_sha1": "9bd4d2d356416b7258e4cfbbeed5c1614849576b",
+      "sha256": "03883ac88b97b7a8def46ca501a7321768b056729ea82d985a13e605a49d3236"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/exact-pdf-original.png",
+      "bytes": 9044,
+      "git_blob_sha1": "143ce11fc704d33f47d650c067c6e45800a8ae28",
+      "sha256": "b4ef792ca1c4b3bc5340bab04ccf1125a3a1d8a81ac58fb9b98a2315aecaf4e8"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/focused-draft-original.txt",
+      "bytes": 3,
+      "git_blob_sha1": "c663e4d093b2a397637e836bfae88ca26365cc33",
+      "sha256": "8e612bd1f5d132a339575b8dafb7842c64614e56bcf3d5ab65a0bc4b34329407"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/gui-pdf-original.png",
+      "bytes": 236024,
+      "git_blob_sha1": "30b87596618616461138ff42ba8239c27e6f44f7",
+      "sha256": "181fbd6e1c8f42d932bbba45e035bfcc1036df64ea2a31ee8c4a5f8bf2180d87"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/gui-xelatex-original.log",
+      "bytes": 34572,
+      "git_blob_sha1": "3fe80dbdbf2160d21673bcada961cd05ba7b70db",
+      "sha256": "1959f31610e11bb8849f3cc07f36169f2be1fd9171154277803456236ff220eb"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/independent-original-review.md",
+      "bytes": 5067,
+      "git_blob_sha1": "ea6738eae3b27499df882aafcff9d23529018b28",
+      "sha256": "455d265074e834cbad9c633b1f559fce9dab1f33c47884a78834f8aa3c1f585a"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/native-actions-original.log",
+      "bytes": 31976,
+      "git_blob_sha1": "31b3d4faead8b52ad80ce59396861d65854e2d98",
+      "sha256": "0c709553e7e87c4fd3b33659cade4193de8f25d395910f9f2576245a92517f93"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/pdffonts-original.txt",
+      "bytes": 564,
+      "git_blob_sha1": "18588bbccdf8ccb6d157473a95c739e39c4e843f",
+      "sha256": "df8362597a6809fbec527d03f20e115a38d722c62280007d36cad98cfdc24f60"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/pdfinfo-original.txt",
+      "bytes": 438,
+      "git_blob_sha1": "bbeb3e8935de6d094b10d04425368328e5b9973f",
+      "sha256": "db79163f176bfeb51a1482ada34de9ca103a75100e821dbe222f37162bc36450"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/pdftotext-original.txt",
+      "bytes": 53,
+      "git_blob_sha1": "a883b901c88ade62113e52c95d72c2745b204e99",
+      "sha256": "c66e19b3a599d7dace7d012d43f0648962d5f9396d4d98b5e599a459aec0aa08"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/root-independent-review.json",
+      "bytes": 3624,
+      "git_blob_sha1": "ec0dc4c5b98c4271b9fd2a3d773f97c6e9a546dd",
+      "sha256": "0fdfb802b616f972f50873c157e621dbda55d96a2a32129221ae19db27eb17b5"
+    },
+    {
+      "path": "insights/assets/2026-11-13-hosted-scientific/typed-source-original.tex",
+      "bytes": 2455,
+      "git_blob_sha1": "95633f18edcaa6611e9bd65b9d6a7ddab1f44553",
+      "sha256": "497a2417d43d72aa0d79de5201f2e4775243f0fc0ef5683cb637558dacebfce2"
+    }
+  ]
+}

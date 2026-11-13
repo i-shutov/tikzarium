@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_READ_ONLY_QA_PATCH_REVIEW",
+  "verdict": "CLEAR_FOR_QA_INTEGRATION_NATIVE_RERUN_REQUIRED",
+  "base_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "patch_path": "/workspace/scratch/24342458ee84/reviews/popup_observed/observed-pgf-property-popup.patch",
+  "patch_sha256": "0eef67bd5ca6c383eb4c4cb848d07246e5f2086024129143e31aec12f50c7dcb",
+  "files_in_patch": [
+    "scripts/qa_pgfplots_vertical_x11.py",
+    "scripts/qa_pgfplots_vertical_test.py",
+    "scripts/fixtures/pgfplots-v2/run04-popup-probes.json"
+  ],
+  "production_scope": "QA-only. No Rust/production source, catalogue, source-edit operation, undo, build, or acceptance status changes.",
+  "root_apply_check": "PASS (read-only git apply --check at base commit; no patch application performed by reviewer).",
+  "observations": [
+    {
+      "result": "PASS",
+      "detail": "The actual AT4-48 screenshot retains three visible list rows in a 96 px padding strip, i.e. an 86 px viewport. This is a short viewport for the existing 15-entry axis-property inventory, not evidence of a three-property catalogue. Code accepts 3- and 15-entry inventories with an observed 86..200 px viewport and rejects out-of-scope geometry."
+    },
+    {
+      "result": "PASS",
+      "detail": "The three derived RGB probe records are correctly labeled DERIVED_RGB_PROBES_NOT_ORIGINAL_DESKTOP. I independently checked each referenced screenshot SHA256 and re-extracted every retained vertical pixel column and the header row at the declared [1,20] client origin; all match the original screenshots byte for byte."
+    },
+    {
+      "result": "PASS",
+      "detail": "Running the new observation function against retained original screenshots yields V2 reset: 200 px viewport, thumb y373..463, offset interval [0,1.115], safe target y563; V2 scrolled: thumb y409..499, interval [79.865,81.395] containing the observed 80 px movement, safe target y485; AT4 short initial popup: viewport86, count15, missing hover scrollbar, and target None until actual scroll is observed."
+    },
+    {
+      "result": "PASS",
+      "detail": "Scroll planning intersects the row interior across the full inferred offset interval and viewport. It resets and verifies the top boundary before positioning, uses an observed thumb drag rather than a close-on-click track click, then re-observes before any final option click. Missing, split, mismatched, wrong-length, impossible, or stale thumb evidence refuses. The historical wrong V2 coordinate526 is explicitly rejected; observed safe target is approximately485."
+    },
+    {
+      "result": "PASS",
+      "detail": "Drag input first verifies the active production PID/window through owned_focus and client-origin pointer coordinates, proves primary-button-down with the reused XQueryPointer helper before and after motion, exceeds click threshold, and attempts mouseup in finally even when mousedown or held-button proof fails."
+    },
+    {
+      "result": "PASS",
+      "detail": "I independently compared AST for Driver.field_copy, Driver.stage, Driver.exercise, Driver.build, Driver.select_operation, and Driver.run_case with base 81f8accc; all are byte-structurally identical. Existing exact clipboard/source guards and stage/build acceptance logic remain intact."
+    },
+    {
+      "result": "PASS",
+      "detail": "The replacement tests add fail-closed checks for hidden/missing scrollbars, split/mismatched/wrong-size thumbs, invalid offsets, stale post-drag position, unsafe interval intersections, sub-threshold drag, failed button-held proof, and injected mousedown failure; each failure case checks no final row click or an attempted mouseup as appropriate."
+    }
+  ],
+  "derived_probe_records": [
+    {
+      "suite": "v2",
+      "source_file": "raw/152-formula-property-menu-reset-top.png",
+      "source_original_sha256": "96054df21a4afec03aa73042462ff7e2422056e1bc9ade6d690a3fa0d53dd1eb",
+      "origin": [
+        1,
+        20
+      ],
+      "count": 15,
+      "index": 6,
+      "strip_top": 368,
+      "strip_height": 210,
+      "right_client_x": 1170,
+      "header_row_client_y": 369
+    },
+    {
+      "suite": "v2",
+      "source_file": "raw/153-formula-property-menu-scrolled-target.png",
+      "source_original_sha256": "a6dfc90258268507131b509dd210514161cd20aa3b6ed75a1b8160806192dd8f",
+      "origin": [
+        1,
+        20
+      ],
+      "count": 15,
+      "index": 6,
+      "strip_top": 368,
+      "strip_height": 210,
+      "right_client_x": 1170,
+      "header_row_client_y": 369
+    },
+    {
+      "suite": "at4",
+      "source_file": "raw/078-AT4-48-property-menu.png",
+      "source_original_sha256": "838d67098948335cad33a96785eae11d27ed1cca95a69352c05b710ca070b83a",
+      "origin": [
+        1,
+        20
+      ],
+      "count": 15,
+      "index": 10,
+      "strip_top": 368,
+      "strip_height": 96,
+      "right_client_x": 1170,
+      "header_row_client_y": 369
+    }
+  ],
+  "observed_evidence": {
+    "fixture_sha256": "eafa318acf5e6407597568af4058c40c629adf78247d5cf3375dd80546e011e3",
+    "popup_test_log": "/workspace/scratch/24342458ee84/reviews/popup_observed/popup-final-tests.log",
+    "existing_at4_test_log": "/workspace/scratch/24342458ee84/reviews/popup_observed/at4-existing-tests.log",
+    "worker_reported_results": {
+      "popup_contracts_passed": 25,
+      "at4_contracts_passed": 26,
+      "failed": 0,
+      "skipped": 0,
+      "total_passed": 51
+    },
+    "diagnosis": "/workspace/scratch/24342458ee84/reviews/popup_observed/diagnosis.json",
+    "implementation_report": "/workspace/scratch/24342458ee84/reviews/popup_observed/implementation-report.json",
+    "test_execution": "Worker logs inspected; this reviewer did not rerun the suites."
+  },
+  "limitations": [
+    "This review accepts the QA navigation correction for integration only. The observed thumb drag and AT4 short-viewport path have not yet been exercised in a fresh native run; a disposable hosted rerun with original image/source review remains mandatory.",
+    "The upstream native run04 remains FAIL at AT4-48. No case or aggregate status is advanced by this patch."
+  ]
+}

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Real N2 Studio library Connect/Disconnect/Undo/Save/Open/XeLaTeX GUI acceptance.
+"""Real compact Studio N2/N3 libraries/caret/F1/Save/Open/XeLaTeX proof.
 
-No headless Session or synthetic source writes may satisfy a GUI proof.
-Capture originals + SHA on FAIL, including positioning/calibration failures.
+Only native production-window input can satisfy this scenario. Original desktop,
+clipboard and saved-source evidence survives failure. Hosted X11 is not physical
+Windows, macOS, Linux, IME or DPI acceptance; original review remains mandatory.
 """
 from __future__ import annotations
 
@@ -12,13 +13,34 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import time
 
-from qa_i61_b42_studio_x11 import (
-    APP_TREE, audit_embedded_fonts, click, dock_signature, held_f1, key, paste, run, screenshot, sha, wait,
-)
+from qa_i61_b42_studio_x11 import audit_embedded_fonts, run, screenshot, sha, wait
 
+APP_TREE = "7d35e7b8064a651084fef931a827ac46b3448c6a"
+CLIENT = (1180, 680)
+SCREEN = (1366, 768)
+# main.rs studio_file_menu/show_source_editor/show_studio_inspector. File path,
+# source settings and tabs agree with CP05 run43370706180 originals. Library and
+# completion points are bounded compact candidates, never an acceptance result.
+# Full-source checkbox y174 follows original run43385517101 settings PNG
+# (root y194 minus observed client-origin y20); y150 is the font-size row.
+# Connect follows original run43386874361 image08 after13nativewheel ticks:
+# root button y430..456 minus client-origin20 gives center clienty423.
+# Disconnect420 is a settled306px bottom-layout UNIT candidate calibrated
+# against that native Connect original; actual Disconnect original is required.
+POINTS = {
+    "file_menu": (23, 15), "file_path": (143, 135),
+    "source_settings": (405, 80), "source_full": (490, 174),
+    "source": (200, 230), "dirty_discard": (505, 407),
+    "libraries": (1030, 81), "properties": (960, 81),
+    "library_panel": (1034, 543), "library_entry": (1024, 605),
+    "library_connect": (1036, 423), "library_disconnect": (1014, 420),
+    "complete": (989, 476), "undo": (109, 49),
+    "export": (291, 49), "pdf": (439, 49),
+}
 FIXTURE = (
     "\\documentclass{standalone}\r\n"
     "\\usepackage{tikz}\r\n"
@@ -35,382 +57,498 @@ FIXTURE = (
 IMPORT = b"\\usetikzlibrary{arrows.meta}\r\n"
 
 
-def launch(app: Path, out: Path, app_log):
-    env = os.environ.copy()
-    env.update({
-        "XDG_CONFIG_HOME": str(out / "config"),
-        "XDG_DATA_HOME": str(out / "data"),
-        "XDG_CACHE_HOME": str(out / "cache"),
-        "LIBGL_ALWAYS_SOFTWARE": "1",
-        "WINIT_UNIX_BACKEND": "x11",
-    })
-    env.pop("WAYLAND_DISPLAY", None)
-    proc = subprocess.Popen([str(app.resolve(strict=True))], cwd=out,
-                            env=env, stdout=app_log, stderr=app_log)
-    until = time.monotonic() + 45
-    window = None
-    while time.monotonic() < until:
-        if proc.poll() is not None:
-            raise RuntimeError(f"Rust/egui Studio exited early: {proc.returncode}")
-        found = subprocess.run(
-            ["xdotool", "search", "--onlyvisible", "--pid", str(proc.pid),
-             "--name", "TikZarium"], capture_output=True, timeout=5, check=False)
-        if found.returncode == 0 and found.stdout.strip():
-            window = found.stdout.decode().splitlines()[-1]
-            break
-        time.sleep(0.25)
-    if not window:
-        proc.terminate()
-        raise RuntimeError("No visible native TikZarium Studio window")
-    run("xdotool", "windowmove", window, "0", "0")
-    run("xdotool", "windowsize", "--sync", window, "1366", "768")
-    run("xdotool", "windowactivate", "--sync", window)
-    time.sleep(1.5)
-    return proc, window
+def parse_geometry(output: str) -> dict[str, int]:
+    labels = {"X": "Absolute upper-left X", "Y": "Absolute upper-left Y",
+              "WIDTH": "Width", "HEIGHT": "Height"}
+    result = {}
+    for key, label in labels.items():
+        match = re.search(r"^\s*" + re.escape(label) + r":\s*(-?\d+)\s*$", output, re.MULTILINE)
+        if match is None:
+            raise RuntimeError("Cannot parse absolute X11 client geometry: " + label)
+        result[key] = int(match.group(1))
+    if (result["WIDTH"], result["HEIGHT"]) != CLIENT:
+        raise RuntimeError("Unexpected compact client size")
+    if (result["X"] < 0 or result["Y"] < 0 or result["X"] + CLIENT[0] > SCREEN[0]
+            or result["Y"] + CLIENT[1] > SCREEN[1]):
+        raise RuntimeError("Production client is clipped by hosted desktop")
+    return result
+
+
+def validate_xelatex_log(observed: bytes) -> None:
+    """Accept only the actual successful GUI raw engine output, never a sentinel."""
+    if b"XeTeX" not in observed or b"Output written on" not in observed:
+        raise RuntimeError("Actual GUI raw log lacks successful XeLaTeX engine/output proof")
+    if b"missing character:" in observed.lower() or re.search(rb"(?m)^!", observed):
+        raise RuntimeError("Actual GUI XeLaTeX log reports missing glyphs or TeX errors")
+
+
+def expected_elf(launcher: Path) -> Path:
+    """Portable launch.sh must exec its adjacent production ELF, never QA control."""
+    return (launcher.parent / "tikzarium-app" if launcher.name == "launch.sh" else launcher).resolve(strict=True)
+
+
+class Native:
+    """Native input/evidence shared by the three bounded N5 GUI scenarios."""
+    def __init__(self, app: Path, out: Path, report: dict):
+        self.app = app.resolve(strict=True)
+        self.out = out
+        self.report = report
+        self.process = None
+        self.window = None
+        self.geometry = None
+        self.serial = 0
+        self.actions = (out / "native-actions.jsonl").open("w", encoding="utf-8", buffering=1)
+        self.log = (out / "app.log").open("wb")
+
+    def event(self, kind: str, **fields) -> None:
+        self.actions.write(json.dumps({"monotonic": time.monotonic(), "event": kind,
+                                       "pid": self.process.pid if self.process else None,
+                                       "window": self.window, **fields}, ensure_ascii=False) + "\n")
+
+    def alive(self):
+        if self.process is None or self.process.poll() is not None:
+            raise RuntimeError("Production process exited during native scenario")
+
+    def focus(self, window=None):
+        self.alive()
+        target = window or self.window
+        if target == self.window and run("xdotool", "getwindowpid", target) != str(self.process.pid):
+            raise RuntimeError("Native app window no longer belongs to launched PID")
+        run("xdotool", "windowactivate", "--sync", target)
+        if int(run("xdotool", "getactivewindow"), 0) != int(target, 0):
+            raise RuntimeError("Requested native window did not acquire focus")
+        self.event("confirmed_focus", target=target)
+
+    def start(self, cwd: Path, *, preserve_config=False):
+        if os.environ.get("TIKZARIUM_APP_TREE_SHA") != APP_TREE:
+            raise RuntimeError("Native compact source-tree lease differs from production tree")
+        if run("xdotool", "getdisplaygeometry") != "1366 768":
+            raise RuntimeError("Native compact drivers require actual 1366x768 desktop")
+        def openbox_ready():
+            observed = subprocess.run(["wmctrl", "-m"], capture_output=True, timeout=5, check=False)
+            return observed.returncode == 0 and observed.stdout.startswith(b"Name: Openbox")
+        wait(openbox_ready, "Openbox not ready", 12)
+        env = os.environ.copy()
+        env.update({"XDG_DATA_HOME": str(self.out / "data"), "XDG_CACHE_HOME": str(self.out / "cache"),
+                    "LIBGL_ALWAYS_SOFTWARE": "1", "WINIT_UNIX_BACKEND": "x11",
+                    "WINIT_X11_SCALE_FACTOR": "1.0"})
+        if not preserve_config:
+            env["XDG_CONFIG_HOME"] = str(self.out / "config")
+        env.pop("WAYLAND_DISPLAY", None)
+        self.process = subprocess.Popen([str(self.app)], cwd=cwd, env=env, stdout=self.log, stderr=self.log)
+        def found():
+            self.alive()
+            result = subprocess.run(["xdotool", "search", "--onlyvisible", "--pid", str(self.process.pid),
+                                     "--name", "TikZarium"], capture_output=True, timeout=5, check=False)
+            matches = result.stdout.decode("ascii", "strict").split() if result.returncode == 0 else []
+            if len(matches) > 1:
+                raise RuntimeError("Ambiguous visible production-PID windows")
+            self.window = matches[0] if matches else None
+            return bool(self.window)
+        wait(found, "No visible production-PID native window", 45)
+        elf = expected_elf(self.app)
+        proc_exe = Path(f"/proc/{self.process.pid}/exe")
+        observed = proc_exe.resolve(strict=True)
+        observed_hash = sha(proc_exe)
+        if elf.name != "tikzarium-app" or observed != elf or observed_hash != sha(elf):
+            raise RuntimeError("Observed production PID executable differs from exact intended ELF")
+        self.report.update({"pid": self.process.pid, "window_id": self.window,
+                            "app_sha256": sha(self.app), "app_elf_path": str(elf),
+                            "app_elf_sha256": sha(elf), "observed_proc_exe": str(observed),
+                            "observed_proc_exe_sha256": observed_hash})
+        run("xdotool", "windowsize", "--sync", self.window, str(CLIENT[0]), str(CLIENT[1]))
+        run("xdotool", "windowmove", "--sync", self.window, "0", "0")
+        self.focus()
+        time.sleep(1.5)
+        geometry = run("xwininfo", "-id", self.window)
+        (self.out / "owned-window-xwininfo.txt").write_text(geometry + "\n", encoding="utf-8")
+        self.geometry = parse_geometry(geometry)
+        self.report.update({"client_geometry": self.geometry, "screen_size": SCREEN,
+                            "coordinate_scope": "COMPACT_CLIENT_CANDIDATES_REQUIRE_ORIGINAL_REVIEW"})
+        self.event("owned_production_window", report=self.report)
+
+    def point(self, x: int, y: int):
+        self.focus()
+        if not (0 <= x < CLIENT[0] and 0 <= y < CLIENT[1]):
+            raise RuntimeError("Pointer target outside reviewed compact client")
+        run("xdotool", "mousemove", "--window", self.window, str(x), str(y))
+        location = run("xdotool", "getmouselocation", "--shell")
+        pointer = dict(line.split("=", 1) for line in location.splitlines() if "=" in line)
+        actual = (int(pointer["X"]), int(pointer["Y"]))
+        self.event("actual_pointer", client_xy=(x, y), root_xy=actual, raw_pointer=pointer)
+        if actual != (self.geometry["X"] + x, self.geometry["Y"] + y):
+            raise RuntimeError("Pointer differs from actual absolute client origin plus target")
+
+    def click(self, x: int, y: int):
+        self.point(x, y)
+        run("xdotool", "click", "1")
+        time.sleep(0.28)
+
+    def key(self, chord: str, *, window=None):
+        self.focus(window)
+        self.event("native_key", chord=chord, target=window or self.window)
+        run("xdotool", "key", "--clearmodifiers", "--delay", "90", chord)
+        time.sleep(0.20)
+
+    def clipboard(self, data: bytes, label: str):
+        self.serial += 1
+        path = self.out / f"clipboard-input-{self.serial:03d}-{label}.txt"
+        path.write_bytes(data)
+        subprocess.run(["xclip", "-selection", "clipboard", "-i", str(path)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8, check=True)
+        self.event("clipboard_input", file=path.name, sha256=sha(path))
+
+    def paste(self, data: bytes, label: str):
+        self.clipboard(data, label)
+        self.key("ctrl+v")
+
+    def copy(self, label: str, *, focus_source=True) -> bytes:
+        sentinel = b"__NATIVE_COPY_SENTINEL__" + label.encode("utf-8")
+        self.clipboard(sentinel, "copy-sentinel")
+        if focus_source:
+            self.click(*POINTS["source"])
+            self.key("ctrl+a")
+        self.key("ctrl+c")
+        copied = subprocess.run(["xclip", "-selection", "clipboard", "-o"], capture_output=True,
+                                timeout=8, check=True).stdout
+        path = self.out / (label + "-observed.txt")
+        path.write_bytes(copied)
+        self.event("actual_clipboard_readback", file=path.name, sha256=sha(path))
+        if copied == sentinel:
+            raise RuntimeError("Native Copy did not replace fresh clipboard sentinel")
+        return copied
+
+    def full_source(self):
+        # load_path resets source_full_view=false on EVERY Open. Never issue
+        # Ctrl+A/Copy or prefix navigation against only the folded body field.
+        self.click(*POINTS["source_settings"])
+        screenshot(self.out, f"full-source-settings-{self.serial:03d}")
+        self.click(*POINTS["source_full"])
+        self.key("Escape")
+
+    def dock_signature(self, label: str):
+        return run("convert", str(self.out / (label + ".png")), "-crop",
+                   f"252x29+{self.geometry['X'] + 921}+{self.geometry['Y'] + 67}",
+                   "+repage", "-format", "%#", "info:")
+
+    def capture_xelatex_log(self, label: str, source: Path, expected: bytes) -> Path:
+        """Copy the real production Console/Raw-log UI, preserving failed originals."""
+        if source.read_bytes() != expected:
+            raise RuntimeError("Source differs from the revision whose GUI log is being captured")
+        self.click(1118, 48)  # Actual compact Console toggle.
+        screenshot(self.out, label + "-actual-console")
+        self.click(158, 520)  # Actual Raw log tab.
+        screenshot(self.out, label + "-actual-raw-xelatex")
+        sentinel = b"__ACTUAL_GUI_XELATEX_LOG_SENTINEL__" + label.encode("utf-8")
+        self.clipboard(sentinel, label + "-log-sentinel")
+        self.click(246, 520)  # Product's Copy log action; no CLI compiler/log fallback.
+        observed = subprocess.run(["xclip", "-selection", "clipboard", "-o"],
+                                  capture_output=True, timeout=8, check=True).stdout
+        path = self.out / (label + "-gui-xelatex.log")
+        path.write_bytes(observed)
+        self.event("actual_gui_raw_log_clipboard", file=path.name, sha256=sha(path))
+        screenshot(self.out, label + "-actual-log-copied")
+        # Close before validation, restoring the reviewed compact geometry even
+        # when an actual failed raw log must subsequently stop the scenario.
+        self.click(1118, 48)
+        screenshot(self.out, label + "-console-closed")
+        validate_xelatex_log(observed)
+        if source.read_bytes() != expected:
+            raise RuntimeError("GUI raw log capture changed the built source revision")
+        return path
+
+    def fail(self, error):
+        self.report["error"] = f"{type(error).__name__}: {error}"
+        self.event("failure", error=self.report["error"])
+        try:
+            screenshot(self.out, "failure-original-desktop")
+        except Exception as capture_error:
+            self.report["failure_capture_error"] = str(capture_error)
+
+    def stop(self):
+        if self.process and self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=5)
+        self.log.close()
+        self.actions.close()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--coordinates", type=Path, help="Explicit app-tree-bound compact candidate points")
     args = parser.parse_args()
     out = args.out.resolve()
     if out.exists() and any(out.iterdir()):
         parser.error("N2 evidence directory must be empty")
     out.mkdir(parents=True, exist_ok=True)
     if os.environ.get("TIKZARIUM_APP_TREE_SHA") != APP_TREE:
-        parser.error("N2 source-tree lease must match independent I61")
+        parser.error("N2 compact source-tree lease must match actual production tree")
+    points = POINTS.copy()
+    if args.coordinates:
+        override = json.loads(args.coordinates.read_text(encoding="utf-8"))
+        if override.get("app_tree_sha") != APP_TREE:
+            parser.error("N2 coordinate override must name exact production tree")
+        for name, point in override["points"].items():
+            if name not in points or len(point) != 2 or any(type(x) is not int for x in point):
+                parser.error("Invalid compact point override: " + name)
+            if not (0 <= point[0] < CLIENT[0] and 0 <= point[1] < CLIENT[1]):
+                parser.error("Compact point override outside client: " + name)
+            points[name] = tuple(point)
+        (out / "coordinate-input.json").write_bytes(args.coordinates.read_bytes())
     source = out / "n2-crlf.tex"
-    source.write_bytes(FIXTURE)
+    source.write_bytes(FIXTURE)  # Original test input, before the native GUI starts.
     report = {
-        "schema_version": 1, "kind": "N2_N3_REAL_STUDIO_SOURCE_LIBRARIES",
-        "status": "FAIL", "host": platform.platform(),
-        "source_head_sha": os.environ.get("TIKZARIUM_SOURCE_SHA", "UNKNOWN"),
-        "app_tree_sha": APP_TREE, "real_gui": "NOT_RUN",
-        "library_panel": "NOT_RUN", "library_entry": "NOT_RUN",
-        "library_connect": "NOT_RUN", "library_disconnect": "NOT_RUN",
-        "library_undo": "NOT_RUN", "gui_reopen": "NOT_RUN",
-        "gui_save_open": "NOT_RUN",
-        "xelatex_pdf": "NOT_RUN", "manual_artifact_review": "NOT_RUN",
-        "five_statuses": "MANUAL_SCREENSHOT_REVIEW_REQUIRED",
-        "n3_caret_target": "NOT_RUN",
+        "schema_version": 1, "kind": "N2_N3_REAL_STUDIO_SOURCE_LIBRARIES", "status": "FAIL",
+        "host": platform.platform(), "source_head_sha": os.environ.get("TIKZARIUM_SOURCE_SHA", "UNKNOWN"),
+        "app_tree_sha": APP_TREE, "real_gui": "NOT_RUN", "coordinates": points,
+        "library_panel": "NOT_RUN", "library_entry": "NOT_RUN", "library_connect": "NOT_RUN",
+        "library_disconnect": "NOT_RUN", "library_undo": "NOT_RUN", "gui_reopen": "NOT_RUN",
+        "gui_save_open": "NOT_RUN", "xelatex_pdf": "NOT_RUN", "manual_artifact_review": "NOT_RUN",
+        "five_statuses": "MANUAL_SCREENSHOT_REVIEW_REQUIRED", "n3_caret_target": "NOT_RUN",
         "physical_windows10_miktex": "NOT_RUN", "physical_mac_arm": "NOT_RUN",
     }
-    process = None
-    app_log = (out / "app.log").open("wb")
+    native = Native(args.app, out, report)
+    def click(name):
+        native.click(*points[name])
+    def save_expected(expected, detail):
+        native.key("ctrl+s")
+        wait(lambda: source.read_bytes() == expected, detail)
+        (out / (detail + "-saved.tex")).write_bytes(source.read_bytes())
+    def navigate_import(count):
+        click("source")
+        native.key("ctrl+Home")
+        for _ in range(4):
+            native.key("Down")
+        native.key("Home")
+        for _ in range(count):
+            native.key("Right")
+    def build_export(pdf, *, previous_mtime=None):
+        native.key("ctrl+Return")
+        screenshot(out, "build-started-" + str(native.serial))
+        until = time.monotonic() + 180
+        while time.monotonic() < until:
+            native.alive()
+            click("export")
+            if pdf.is_file() and (previous_mtime is None or pdf.stat().st_mtime_ns != previous_mtime):
+                return
+            time.sleep(1)
+        raise RuntimeError("Actual GUI XeLaTeX/current PDF export timed out")
     try:
-        process, window = launch(args.app, out, app_log)
+        native.start(out)
         report["real_gui"] = "HOSTED_LINUX_X11_WINDOW_OPENED"
-        report["app_sha256"] = sha(args.app)
-        report["window_id"] = window
         screenshot(out, "01-studio-initial")
-        # Open an independently prepared existing CRLF+opaque source in actual GUI.
-        click(window, 321, 40)
+        click("file_menu")
         screenshot(out, "02-file-popup")
-        click(window, 440, 93)
-        key("ctrl+a")
-        paste(b"n2-crlf.tex", out / "clipboard-open.txt")
+        click("file_path")
+        native.key("ctrl+a")
+        native.paste(str(source).encode("utf-8"), "native-open-path")
         screenshot(out, "03-open-target")
-        click(window, 351, 124)
-        time.sleep(0.5)
-        screenshot(out, "04-scratch-dirty-open-modal")
-        # A new scratch buffer is deliberately DIRTY. Opening another file
-        # triggers the correct product confirmation; this QA driver must
-        # explicitly click the genuine "Отбросить и открыть" button.
-        # B42 I64 already accepted this modal; never treat it as a bug.
-        click(window, 601, 478)
+        native.key("Escape")
+        native.key("ctrl+o")
         time.sleep(0.6)
+        screenshot(out, "04-scratch-dirty-open-modal")
+        click("dirty_discard")
+        time.sleep(0.6)
+        native.full_source()
+        if native.copy("initial-open") != FIXTURE or source.read_bytes() != FIXTURE:
+            raise RuntimeError("Actual native Open/full-source readback differs from original CRLF input")
         screenshot(out, "04a-after-gui-open-confirmed")
-        if sha(out / "04-scratch-dirty-open-modal.png") == sha(
-            out / "04a-after-gui-open-confirmed.png"
-        ):
-            raise RuntimeError("N2 initial dirty-scratch Open modal was not dismissed")
-        if source.read_bytes() != FIXTURE:
-            raise RuntimeError("Open modified initial CRLF fixture")
+        report["initial_open_source_proof"] = "FRESH_SENTINEL_BYTE_EXACT_FULL_EDITOR_COPY"
 
-        # Right-hand Libraries dock: coordinate lease from accepted B42 image.
-        click(window, 1190, 109)
+        click("libraries")
         screenshot(out, "05-libraries-tab")
-        if sha(out / "05-libraries-tab.png") == sha(out / "04a-after-gui-open-confirmed.png"):
-            raise RuntimeError("Real Libraries tab click did not change the Studio dock")
-        click(window, 1200, 203)
+        click("library_panel")
         screenshot(out, "06-libraries-catalogue")
         report["library_panel"] = "REAL_X11_CATALOGUE_SCREENSHOT_RECORDED"
-        # The original 41544280356 screenshot puts the first arrows.meta
-        # HEADER at y≈286. The former (1165,244) clicked explanatory text,
-        # so no library action had ever been exercised.
-        click(window, 1150, 286)
+        click("library_entry")
         screenshot(out, "07-arrows-meta-help")
-        # Compare only the entry/details area, excluding title/hover. A
-        # mistaken explanatory-text click must fail BEFORE Connect is tried.
-        def detail_sig(name):
-            return run(
-                "convert", str(out / (name + ".png")), "-crop",
-                "300x440+1060+280", "+repage", "-format", "%#", "info:",
-            )
-        if detail_sig("06-libraries-catalogue") == detail_sig("07-arrows-meta-help"):
-            raise RuntimeError(
-                "N2 arrows.meta entry did not expand in actual Studio; "
-                "recalibrate from original screenshots before Connect"
-            )
         report["library_entry"] = "HOSTED_X11_EXPANDED_DETAILS_MANUAL_REVIEW_REQUIRED"
         report["five_statuses"] = "EXPANDED_ENTRY_SCREENSHOT_REVIEW_REQUIRED"
-        # Scroll only the right dock, keeping the editable source visible.
-        run("xdotool", "mousemove", "--sync", "1250", "540")
-        for _ in range(3):
+        # Fixed bounded dock-only scroll; hosted originals must confirm action
+        # geometry before the exact byte guard can establish a transaction.
+        native.point(1100, 500)
+        for _ in range(4):
             run("xdotool", "click", "5")
-        time.sleep(0.45)
+        native.event("dock_scroll", ticks=4, reason="record-independent-five-library-statuses-first-view")
+        time.sleep(0.65)
+        screenshot(out, "07a-arrows-meta-five-statuses")
+        for _ in range(4):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=4, total_ticks=8, reason="record-independent-five-library-statuses-second-view")
+        time.sleep(0.65)
+        screenshot(out, "07b-arrows-meta-five-statuses")
+        for _ in range(5):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=5, total_ticks=13, reason="reveal-real-library-connect")
+        time.sleep(0.65)
         screenshot(out, "08-connect-button-target")
-
-        # Original run 41556652239 screenshot 08: actual Connect button
-        # spans x1105..1341, y549..577. Old (1212,635) expanded the
-        # following positioning row rather than clicking the C SourcePatch.
-        click(window, 1212, 563)
+        click("library_connect")
         screenshot(out, "09-after-connect")
-        click(window, 177, 39)  # GUI Save, not direct disk patch.
-        wait(lambda: IMPORT in source.read_bytes(),
-             "N2 real Studio Connect button did not persist a library source patch")
+        native.key("ctrl+s")
+        wait(lambda: IMPORT in source.read_bytes(), "N2 native Connect produced no source patch")
         connected = source.read_bytes()
         if connected.count(IMPORT) != 1 or connected.replace(IMPORT, b"", 1) != FIXTURE:
-            raise RuntimeError("Library Connect changed unrelated CRLF/opaque source bytes")
+            raise RuntimeError("Library Connect changed unrelated CRLF/opaque bytes")
+        (out / "connected-source.tex").write_bytes(connected)
         report["library_connect"] = "PASS_REAL_X11_C_CATALOGUE_SOURCE_PATCH"
-        report["connected_source_sha256"] = sha(source)
         screenshot(out, "10-connect-saved")
-
-        # The real source patch reveals a new shared Undo/status action bar.
-        # Artifact 13195353061 screenshot 10a pins actual Disconnect at
-        # x1105..1298, y644..676; the earlier y563 hit preview text.
-        # This is a coordinate re-lease, not a production SourcePatch defect.
+        native.point(1100, 500)
+        for _ in range(6):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=6, expected_points=240, reason="reveal-disconnect-after-shared-history-row")
+        time.sleep(0.65)
         screenshot(out, "10a-before-disconnect")
-        click(window, 1200, 660)
+        click("library_disconnect")
         screenshot(out, "11-after-disconnect")
-        click(window, 177, 39)
-        wait(lambda: source.read_bytes() == FIXTURE,
-             "N2 real Studio Disconnect did not exactly restore source")
+        save_expected(FIXTURE, "disconnect")
         report["library_disconnect"] = "PASS_REAL_X11_INVERSE_SOURCE_BYTES"
-        click(window, 1052, 109)  # Properties dock.
-        click(window, 1085, 157)  # Visual transaction Undo, not TextEdit Ctrl+Z.
-        click(window, 177, 39)
-        wait(lambda: source.read_bytes() == connected,
-             "N2 visual Undo of library disconnect did not restore source")
+        click("undo")
+        save_expected(connected, "undo-disconnect")
         report["library_undo"] = "PASS_REAL_X11_VISUAL_UNDO"
         screenshot(out, "12-undo-restored-source")
 
-        # Independently modify disk before Ctrl+O, then use GUI Save.
+        # Deliberate independent on-disk test mutation; it cannot satisfy Open:
+        # fresh full-editor readback AND a later GUI append/Save are required.
         external = connected.replace(b"% N2 ", b"% N2 EXTERNAL ", 1)
         if external == connected:
-            raise RuntimeError("No external fixture marker")
+            raise RuntimeError("Missing independent external fixture marker")
         source.write_bytes(external)
-        # Postmerge run 41560989884: Ctrl+O sometimes left the OLD source
-        # visible. Drive genuine Studio File -> Open path, already accepted
-        # in the initial fixture Open, rather than assume shortcut delivery.
-        run("xdotool", "windowactivate", "--sync", window)
-        click(window, 321, 40)
-        screenshot(out, "12b-file-reopen-menu")
-        click(window, 351, 124)
-        time.sleep(0.8)
+        native.key("ctrl+o")
+        time.sleep(0.7)
+        native.full_source()
+        if native.copy("external-reopened") != external:
+            raise RuntimeError("Native Open did not replace actual full editor with external revision")
         screenshot(out, "13-reopened-external-change")
-        # Must prove the source TEXT changed on screen before typing into it.
-        # A tooltip, cursor blink or modal alone is not positive reload proof.
-        def crop_source(label: str) -> Path:
-            path = out / (label + "-source-crop.png")
-            run("convert", str(out / (label + ".png")),
-                "-crop", "540x520+0+115", "+repage", str(path))
-            return path
-        before = crop_source("12-undo-restored-source")
-        after = crop_source("13-reopened-external-change")
-        compare = subprocess.run(
-            ["compare", "-metric", "AE", "-fuzz", "5%",
-             str(before), str(after), "null:"],
-            capture_output=True, text=True, check=False, timeout=20,
-        )
-        if compare.returncode not in (0, 1):
-            raise RuntimeError("Cannot audit GUI source-region image delta: "
-                               + compare.stderr[-500:])
-        try:
-            changed_pixels = int(compare.stderr.strip().split()[0])
-        except (ValueError, IndexError) as error:
-            raise RuntimeError("Invalid ImageMagick source delta metric") from error
-        report["reopen_source_changed_pixels"] = changed_pixels
-        if changed_pixels < 350:
-            raise RuntimeError(
-                "N2 File/Open did not visibly reload the EXTERNAL TeX revision "
-                "(source delta <350 pixels): never edit/save a stale buffer"
-            )
-        report["gui_reopen"] = "HOSTED_X11_SOURCE_CHANGED_MANUAL_REVIEW_REQUIRED"
-        # External disk equality alone is tautological. Append through REAL
-        # source TextEdit and require both original external and new GUI bytes.
         reopened_append = b"% N2_GUI_AFTER_REAL_REOPEN"
-        click(window, 177, 380)
-        key("ctrl+End")
-        paste(reopened_append, out / "clipboard-reopen-edit.txt")
+        click("source")
+        native.key("ctrl+End")
+        native.paste(reopened_append, "reopen-edit")
         screenshot(out, "13a-gui-edited-reopened-source")
-        click(window, 177, 39)
+        save_expected(external + reopened_append, "reopen-edit")
         screenshot(out, "13b-after-gui-save")
-        wait(lambda: reopened_append in source.read_bytes(),
-             "N2 GUI re-opened source could not be edited and saved")
-        if source.read_bytes() != external + reopened_append:
-            raise RuntimeError(
-                "N2 GUI Ctrl+O did not reload the external CRLF revision "
-                "or Save altered unrelated user bytes"
-            )
         report["gui_reopen"] = "PASS_REAL_X11_EXTERNAL_RELOAD_AND_GUI_SAVE"
         report["gui_save_open"] = "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE"
-
-        click(window, 219, 39)  # Actual external XeLaTeX Build.
-        time.sleep(3)
-        screenshot(out, "14-build-status")
-        click(window, 73, 77)  # Exact PDF tab, editable source still visible.
-        time.sleep(1.2)
-        screenshot(out, "15-exact-pdf-tab")
-        click(window, 259, 39)  # GUI PDF Export.
         pdf = source.with_suffix(".pdf")
-        wait(pdf.is_file, "N2 real Studio external XeLaTeX did not export PDF", 20)
+        if pdf.exists():
+            raise RuntimeError("PDF unexpectedly existed before native build")
+        build_export(pdf)
+        click("pdf")
+        screenshot(out, "15-exact-pdf-tab")
         info = run("pdfinfo", str(pdf))
-        if "Pages:           1" not in info:
-            raise RuntimeError("N2 XeLaTeX PDF not one page")
-        if "Фигура" not in run("pdftotext", "-enc", "UTF-8", str(pdf), "-"):
-            raise RuntimeError("N2 PDF Cyrillic opaque macro missing")
+        if "Pages:           1" not in info or "Фигура" not in run("pdftotext", "-enc", "UTF-8", str(pdf), "-"):
+            raise RuntimeError("N2 actual PDF page/Unicode proof failed")
         fonts = run("pdffonts", str(pdf))
         if not any("DejaVu" in row for row in audit_embedded_fonts(fonts)):
-            raise RuntimeError("N2 PDF not embedded with DejaVu")
+            raise RuntimeError("N2 actual PDF lacks embedded DejaVu")
         (out / "pdffonts.txt").write_text(fonts + "\n", encoding="utf-8")
         (out / "pdfinfo.txt").write_text(info + "\n", encoding="utf-8")
-        run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png",
-            "-r", "120", str(pdf), str(out / "16-rendered-pdf"))
+        run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "120", str(pdf), str(out / "16-rendered-pdf"))
         report["xelatex_pdf"] = "PASS_EXTERNAL_XELATEX_UNICODE_EMBEDDED_FONTS"
         report["pdf_sha256"] = sha(pdf)
-        # N3 exact-head source-caret integration: the same REAL Studio process,
-        # existing N2 CRLF/opaque document, native TextEdit and genuine F1.
-        # This is not a direct source mutation: only TextEdit may type the
-        # incomplete prefix; only the C-backed Help button may complete it.
+        # The subsequent N3 export updates the working PDF. Preserve both real
+        # engine outputs and their exact author-source revisions independently.
+        original_n2 = out / "original-n2-before-completion.pdf"
+        original_n2.write_bytes(pdf.read_bytes())
+        built_n2 = out / "original-n2-built-source.tex"
+        built_n2.write_bytes(source.read_bytes())
+        if built_n2.read_bytes() != external + reopened_append:
+            raise RuntimeError("N2 source changed during actual GUI Build/Export")
+        n2_log = native.capture_xelatex_log("n2-build", source, built_n2.read_bytes())
+        report["n2_build_originals"] = {
+            "pdf": original_n2.name, "pdf_sha256": sha(original_n2),
+            "source": built_n2.name, "source_sha256": sha(built_n2),
+            "gui_xelatex_log": n2_log.name, "gui_xelatex_log_sha256": sha(n2_log),
+        }
+        if sha(original_n2) != report["pdf_sha256"]:
+            raise RuntimeError("Preserved N2 original PDF differs from its audited hash")
+
         n3_full = source.read_bytes()
         if n3_full.count(IMPORT) != 1:
-            raise RuntimeError("N3 requires exactly one previously connected arrows.meta")
+            raise RuntimeError("N3 requires exactly one connected arrows.meta")
         n3_prefix = n3_full.replace(IMPORT, b"\\usetikzlibrary{arro}\r\n", 1)
-        click(window, 28, 77)  # Sketch; the source remains editable beside it.
-        click(window, 177, 380)  # Focus genuine source TextEdit.
-        key("ctrl+Home")
-        for _ in range(4):  # Literal import is the fifth source line.
-            key("Down")
-        # Original 4e6dc6 screenshot showed the old End/Left sequence
-        # selected "rrows.meta}" (extra 'a', missing brace). The following
-        # c97be058 full-line Shift+End selection normalized ONE CRLF to LF.
-        # Work in the *existing* line only: Home, 16 chars of literal
-        # command prefix, select exactly 11 chars of the library name.
-        # Source bytes (including the untouched CRLF) are authoritative.
-        key("Home")
-        for _ in range(len(r"\usetikzlibrary{")):
-            key("Right")
+        navigate_import(len(r"\usetikzlibrary{"))
         for _ in range(len("arrows.meta")):
-            key("shift+Right")
-        paste(b"arro", out / "clipboard-n3-prefix.txt")
+            native.key("shift+Right")
+        native.paste(b"arro", "n3-prefix")
         screenshot(out, "17-n3-prefix-in-source-editor")
-        click(window, 177, 39)  # GUI Save must preserve unrelated CRLF.
-        wait(lambda: source.read_bytes() == n3_prefix,
-             "N3 native TextEdit did not preserve the exact one-name CRLF patch")
+        save_expected(n3_prefix, "n3-prefix")
         report["n3_prefix_native_textedit"] = "PASS_REAL_X11_ONE_NAME_CRLF"
-        # Save moves focus off TextEdit. UX1 adds a navigation toolbar:
-        # original run 42981807388 shows old y=239 selecting 'tand' from
-        # the first line, while the import is now at y=295. Reuse the native
-        # navigation already byte-verified for the prefix patch above instead
-        # of assuming a pixel row. Keep the real clipboard caret proof below.
-        click(window, 177, 380)
-        key("ctrl+Home")
-        for _ in range(4):  # Literal import remains the fifth source line.
-            key("Down")
-        key("Home")
-        for _ in range(len(r"\usetikzlibrary{arro")):
-            key("Right")
-        # Select the preceding real four characters inside native TextEdit.
-        # A clipboard sentinel prevents falsely accepting stale X11 content.
+        navigate_import(len(r"\usetikzlibrary{arro"))
         for _ in range(len("arro")):
-            key("shift+Left")
-        sentinel = out / "clipboard-n3-caret-sentinel.txt"
-        sentinel.write_bytes(b"__not_a_real_TikZ_library__")
-        subprocess.run(
-            ["xclip", "-selection", "clipboard", "-i", str(sentinel)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            timeout=8, check=True,
-        )
-        key("ctrl+c")
-        selected = run("xclip", "-selection", "clipboard", "-o")
-        (out / "clipboard-n3-caret-observed.txt").write_text(
-            selected, encoding="utf-8"
-        )
-        if selected != "arro":
-            raise RuntimeError(
-                f"N3 real source caret is not on library prefix: selected={selected!r}"
-            )
+            native.key("shift+Left")
+        if native.copy("n3-caret", focus_source=False) != b"arro":
+            raise RuntimeError("Actual source caret selection is not literal arro")
         report["n3_caret_target"] = "PASS_REAL_X11_SELECTED_LITERAL_ARRO"
-        key("Right")  # Collapse selection at right boundary, immediately before '}'.
+        native.key("Right")
         screenshot(out, "17a-n3-real-caret-before-brace")
-        held_f1()
+        native.focus()
+        run("xdotool", "keydown", "F1")
+        time.sleep(0.34)
+        run("xdotool", "keyup", "F1")
+        time.sleep(0.48)
         screenshot(out, "18-n3-caret-f1")
-        if dock_signature(out, "17-n3-prefix-in-source-editor") == \
-                dock_signature(out, "18-n3-caret-f1"):
-            raise RuntimeError("N3 source-caret F1 did not change Studio dock")
+        if native.dock_signature("17a-n3-real-caret-before-brace") == native.dock_signature("18-n3-caret-f1"):
+            raise RuntimeError("N3 actual source F1 did not change dock tab")
         report["n3_caret_f1"] = "REAL_X11_HELP_SCREENSHOT_MANUAL_REVIEW_REQUIRED"
-        # The native TextEdit caret was byte-verified on 'arro' above.
-        # This Complete-button coordinate comes from an earlier layout;
-        # source-exact Save below fails closed if the UI has moved it.
+        native.point(1100, 500)
+        for _ in range(13):
+            run("xdotool", "click", "5")
+        native.event("dock_scroll", ticks=13, expected_points=520, reason="native-help-completion-to-bounded-bottom")
+        time.sleep(0.65)
         screenshot(out, "19-n3-caret-complete-target")
-        click(window, 1178, 562)  # Real "Завершить имя: arrows.meta".
+        click("complete")
         screenshot(out, "20-n3-complete-click")
-        click(window, 177, 39)
-        wait(lambda: source.read_bytes() == n3_full,
-             "N3 REAL F1 Complete did not patch only 'arro' -> 'arrows.meta'")
+        save_expected(n3_full, "n3-complete")
         if b"\n" in n3_full.replace(b"\r\n", b""):
             raise RuntimeError("N3 completed source lost CRLF")
         report["n3_caret_complete"] = "PASS_REAL_X11_C_SOURCEPATCH_MINIMAL_BYTES"
-
-        # The completed code, not the incomplete prefix, must be compiled
-        # through the actual GUI button, exported and font/glyph audited.
         old_pdf_mtime = pdf.stat().st_mtime_ns
-        click(window, 219, 39)
-        time.sleep(3.0)
-        screenshot(out, "21-n3-real-build")
-        click(window, 73, 77)
-        click(window, 259, 39)
-        wait(lambda: pdf.is_file() and pdf.stat().st_mtime_ns != old_pdf_mtime,
-             "N3 GUI Build/Export did not refresh the external XeLaTeX PDF", 25)
+        build_export(pdf, previous_mtime=old_pdf_mtime)
+        click("pdf")
+        screenshot(out, "22-n3-completed-exact-pdf")
         if "Фигура" not in run("pdftotext", "-enc", "UTF-8", str(pdf), "-"):
-            raise RuntimeError("N3 actual PDF lacks opaque Cyrillic macro text")
+            raise RuntimeError("N3 actual PDF lacks opaque Cyrillic macro")
         n3_fonts = run("pdffonts", str(pdf))
         if not any("DejaVu" in row for row in audit_embedded_fonts(n3_fonts)):
-            raise RuntimeError("N3 actual XeLaTeX PDF lacks embedded DejaVu font")
+            raise RuntimeError("N3 actual PDF lacks embedded DejaVu")
         (out / "n3-pdffonts.txt").write_text(n3_fonts + "\n", encoding="utf-8")
-        screenshot(out, "22-n3-completed-exact-pdf")
+        run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "120", str(pdf), str(out / "n3-rendered-pdf"))
         report["n3_xelatex_pdf"] = "PASS_REAL_GUI_EXTERNAL_XELATEX_CYRILLIC_FONTS"
         report["n3_pdf_sha256"] = sha(pdf)
-
-        # Visual inverse transaction restores the user's typed prefix exactly;
-        # it must never revert the independent original macro or CRLF.
-        click(window, 1085, 157)
+        original_n3 = out / "original-n3-completed.pdf"
+        original_n3.write_bytes(pdf.read_bytes())
+        built_n3 = out / "original-n3-built-source.tex"
+        built_n3.write_bytes(source.read_bytes())
+        if built_n3.read_bytes() != n3_full:
+            raise RuntimeError("N3 source changed during actual GUI Build/Export")
+        n3_log = native.capture_xelatex_log("n3-build", source, n3_full)
+        report["n3_build_originals"] = {
+            "pdf": original_n3.name, "pdf_sha256": sha(original_n3),
+            "source": built_n3.name, "source_sha256": sha(built_n3),
+            "gui_xelatex_log": n3_log.name, "gui_xelatex_log_sha256": sha(n3_log),
+        }
+        if sha(original_n3) != report["n3_pdf_sha256"]:
+            raise RuntimeError("Preserved N3 original PDF differs from its audited hash")
+        click("undo")
         screenshot(out, "23-n3-visual-undo")
-        click(window, 177, 39)
-        wait(lambda: source.read_bytes() == n3_prefix,
-             "N3 visible inverse C SourcePatch Undo did not restore exact prefix")
+        save_expected(n3_prefix, "n3-undo")
         report["n3_visual_undo"] = "PASS_REAL_X11_BYTE_EXACT_INVERSE"
         report["real_gui"] = "PASS_AUTOMATED_MANUAL_ARTIFACT_REVIEW_REQUIRED"
         report["status"] = "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW"
     except Exception as exc:
-        report["error"] = f"{type(exc).__name__}: {exc}"
+        native.fail(exc)
+        if source.exists():
+            (out / "failure-live-source.tex").write_bytes(source.read_bytes())
     finally:
-        if process:
-            process.terminate()
-            try:
-                process.wait(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
-        app_log.close()
-        report["files"] = {
-            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(out.iterdir()) if p.is_file() and p.name != "report.json"
-        }
-        (out / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        native.stop()
+        report["files"] = {p.name: sha(p) for p in sorted(out.iterdir()) if p.is_file() and p.name != "report.json"}
+        (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))
     return 0 if report["status"].startswith("PASS_AUTOMATED") else 1
 

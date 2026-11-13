@@ -1,0 +1,350 @@
+{
+  "source_head": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "checks": [
+    {
+      "check": "i61-evidence provenance",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "i61-evidence reported file SHA ledger",
+      "pass": true,
+      "detail": 214
+    },
+    {
+      "check": "n2-evidence provenance",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "n2-evidence reported file SHA ledger",
+      "pass": true,
+      "detail": 73
+    },
+    {
+      "check": "six final hash",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "initial full editor fixture",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "native line",
+      "pass": true,
+      "detail": {
+        "snapshot": "014-01-line-saved-figure.tex",
+        "sha256": "42b9503d970ae06d6bde1a1a32aac77158b59166f60a66f35e31d88c7ea16091",
+        "owners": 1
+      }
+    },
+    {
+      "check": "native rectangle",
+      "pass": true,
+      "detail": {
+        "snapshot": "019-02-rectangle-saved-figure.tex",
+        "sha256": "72d2c8d51d9661321c12d8ec26969e42be3ea1595db1152479294c8c7712c120",
+        "owners": 2
+      }
+    },
+    {
+      "check": "native circle",
+      "pass": true,
+      "detail": {
+        "snapshot": "024-03-circle-saved-figure.tex",
+        "sha256": "00866e3c3cdd8ae146b240df2e5a20abcb7e84ccbf9192c73069e8da0f6e2317",
+        "owners": 3
+      }
+    },
+    {
+      "check": "native cubic",
+      "pass": true,
+      "detail": {
+        "snapshot": "029-04-cubic-saved-figure.tex",
+        "sha256": "90244997f85c214ccc225155fab4664968146ae3deb60b0a4be22e01879556d4",
+        "owners": 4
+      }
+    },
+    {
+      "check": "native arrow",
+      "pass": true,
+      "detail": {
+        "snapshot": "034-05-arrow-saved-figure.tex",
+        "sha256": "3ff3b75d7ca7667e70b67c85b4d2915f46583fa111268ae77caedaccd1814e7a",
+        "owners": 5
+      }
+    },
+    {
+      "check": "native node",
+      "pass": true,
+      "detail": {
+        "snapshot": "039-06-node-saved-figure.tex",
+        "sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+        "owners": 6
+      }
+    },
+    {
+      "check": "focused original X",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "focused proposed X",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "applied exact one-line native+metadata X",
+      "pass": true,
+      "detail": "be3ab4f52d634b4d531fab9e05ab80c1b6285056b6162e158e02031956a17bf1"
+    },
+    {
+      "check": "draft Save preserves six",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "Apply saved then shared Undo exact",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "native CtrlZ saved exact",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "seventh gesture shared Undo exact",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "manual saved source",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "seventh actual source",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "CtrlZ and visual Undo final six",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "second initial GUI Open",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "CtrlO fresh editor external revision",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "second final CRLF/opaque/pending edit",
+      "pass": true,
+      "detail": {
+        "sha256": "66ef34ea45807a77ea3fefe82fd22a797f056f0cc84d9e9a200522d9ec4f1de0",
+        "CRLF": 9
+      }
+    },
+    {
+      "check": "source parameter F1 original readback and unchanged",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "native pointer held observations",
+      "pass": true,
+      "detail": 14
+    },
+    {
+      "check": "N2/N3 initial-open-observed.txt",
+      "pass": true,
+      "detail": {
+        "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+        "bytes": 295,
+        "CRLF": 11
+      }
+    },
+    {
+      "check": "N2/N3 connected-source.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+        "bytes": 325,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 disconnect-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "93176845b84e0b54d27ecac930239465b76a1e579eb64a5dc33f731885e6d66f",
+        "bytes": 295,
+        "CRLF": 11
+      }
+    },
+    {
+      "check": "N2/N3 undo-disconnect-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "b37f0c1a5046138576cb0333e6d1e4a2fc112ca186997729cd2413799a36861d",
+        "bytes": 325,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 external-reopened-observed.txt",
+      "pass": true,
+      "detail": {
+        "sha256": "bdde1d7dc8412aa5bbc2e183ecdf3dc5582996428f71da68663fed763ac1d596",
+        "bytes": 334,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 reopen-edit-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "bytes": 360,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 n3-prefix-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+        "bytes": 353,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 n3-caret-observed.txt",
+      "pass": true,
+      "detail": {
+        "sha256": "4ae479aff51f64c95f81fd0e69c4b81d7d791f1bcd850391c8ddddc28ff878dc",
+        "bytes": 4,
+        "CRLF": 0
+      }
+    },
+    {
+      "check": "N2/N3 n3-complete-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "bytes": 360,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 n3-undo-saved.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+        "bytes": 353,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 n2-crlf.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "fca4a80477c951c7e3a45ad004833ac50e6dcf211ddda3db9754c0e9586d21b4",
+        "bytes": 353,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 original-n2-built-source.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "bytes": 360,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "N2/N3 original-n3-built-source.tex",
+      "pass": true,
+      "detail": {
+        "sha256": "4e569142deb25df3b55c3a2b813cb833ea30904cc0d524a89e4489b570b7a868",
+        "bytes": 360,
+        "CRLF": 12
+      }
+    },
+    {
+      "check": "i61-evidence/figure.pdf current PDF/font/text",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "i61-evidence/gui-xelatex.log GUI XeTeX actual log",
+      "pass": true,
+      "detail": {
+        "sha256": "b5b916161813e087d75a13d3064649a581b9f86a34596a9adfe2f58583008135",
+        "bytes": 22160
+      }
+    },
+    {
+      "check": "n2-evidence/original-n2-before-completion.pdf current PDF/font/text",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "n2-evidence/n2-build-gui-xelatex.log GUI XeTeX actual log",
+      "pass": true,
+      "detail": {
+        "sha256": "4a4e563d7a2479f4088b912f8c640bb3c538fb28ad40c8d488b86e67c44aeb66",
+        "bytes": 22060
+      }
+    },
+    {
+      "check": "n2-evidence/original-n3-completed.pdf current PDF/font/text",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "check": "n2-evidence/n3-build-gui-xelatex.log GUI XeTeX actual log",
+      "pass": true,
+      "detail": {
+        "sha256": "7428f4e2f522f1783aa55533ce7c929ec729f86d61b3fa49fa509cd8baee05d2",
+        "bytes": 22060
+      }
+    }
+  ],
+  "pdfs": [
+    {
+      "pdf": "i61-evidence/figure.pdf",
+      "sha256": "8f6f051d2c17193868ceb867aee587db0c074965519a9d0c8cca513bc74a1145",
+      "info": "Creator:          XeTeX output 2026.11.13:0754\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 08:54:58 2026 CET\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       357.13 x 347.38 pts\nPage rot:        0\nFile size:       8544 bytes\nOptimized:       no\nPDF version:     1.5\n",
+      "fonts": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nDYWKTM+DejaVuSerif                   CID TrueType      Identity-H       yes yes yes      5  0\n",
+      "text": "A\n\nНе менять\n\n\f",
+      "independent_render": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/independent-i61-evidence-figure.png"
+    },
+    {
+      "pdf": "n2-evidence/original-n2-before-completion.pdf",
+      "sha256": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+      "info": "Creator:          XeTeX output 2026.11.13:0756\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 08:56:21 2026 CET\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       48.12 x 16.12 pts\nPage rot:        0\nFile size:       8096 bytes\nOptimized:       no\nPDF version:     1.5\n",
+      "fonts": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nDIROYA+DejaVuSerif                   CID TrueType      Identity-H       yes yes yes      5  0\n",
+      "text": "Фигура\n\n\f",
+      "independent_render": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/independent-n2-evidence-original-n2-before-completion.png"
+    },
+    {
+      "pdf": "n2-evidence/original-n3-completed.pdf",
+      "sha256": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+      "info": "Creator:          XeTeX output 2026.11.13:0756\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 08:56:56 2026 CET\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       48.12 x 16.12 pts\nPage rot:        0\nFile size:       8096 bytes\nOptimized:       no\nPDF version:     1.5\n",
+      "fonts": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nTWKVTX+DejaVuSerif                   CID TrueType      Identity-H       yes yes yes      5  0\n",
+      "text": "Фигура\n\n\f",
+      "independent_render": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/independent-n2-evidence-original-n3-completed.png"
+    }
+  ]
+}

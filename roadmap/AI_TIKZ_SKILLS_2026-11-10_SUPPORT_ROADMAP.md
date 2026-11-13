@@ -1,6 +1,12 @@
-# TikZarium — полная поддержка AI_TIKZ_SKILLS_2026-11-10 (после Windows 1.0)
+# TikZarium — полная поддержка AI_TIKZ_SKILLS_2026-11-10
 
-## Приоритет — сначала пригодный интерфейс Windows 1.0, затем предметные расширения
+## Актуальное решение владельца — Scientific Studio 1.0
+
+**Решение 11.11.2026 имеет приоритет:** [Scientific Studio 1.0 release scope](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) отменил прежнюю отсрочку SC/AT/PGFPlots после узкого Windows 1.0. Научная часть AI88 входит в текущий ST-SCI; [исполнительский план V2](../plans/2026-11-11_SCI_1_0_EXECUTION.md) связывает общий PGFPlots adapter, реальные corpus-операции, Undo и внешний PDF. Source-integrity, предметная проверка S0–S4 и физические платформенные требования сохраняются. Разработка остаётся в draft feature-ветке; это решение не является merge/stable/release GO.
+
+13.11.2026 [17 исходных TeX-примеров AT4 и полный оригинальный каталог](AI_TIKZ_SKILLS_2026-11-10/README.md) приняты с точными байтами и SHA256. [Блок CP07](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md) реализует bounded literal keys для addplot3. На exact source `24f7ae4cdb483b9097337c38aa0f932ad89e3f80` независимо принят ограниченный hosted Linux/X11 маршрут восьми исходных 09/48/49/50/55/56/58/61: одна точная literal-операция на случай, общий Undo, сохранение/реальное перечитывание, GUI XeLaTeX/current PDF и предметный просмотр. Проверены 56 source/editor/image состояний; [исправленный audit](../insights/assets/2026-11-13-pgfplots-v2/run05/at4-audit.json) и [точные привязки кадров](../insights/assets/2026-11-13-pgfplots-v2/run05/at4-audit-correction.json) сохраняют границы. В derived 88-case ledger только эти восемь строк получили `PARTIAL_NATIVE_LITERAL_VERIFIED` / `BOUNDED_HOSTED_GUI_VERIFIED`; это частичный набор свойств и действий, не полный S3/S4 или вся AT4. Groupplots59 и pgfplotstable60 остаются отдельными descriptor gaps. Intake/scanner evidence не закрывает native S3/S4. Последующие абзацы о post-1.0/freeze описывают историческое решение 10.11; его границы релиза заменены указанным нормативным scope, подробные функциональные требования ниже сохранены.
+
+## Исторический приоритет 10.11 — интерфейс Windows 1.0, затем расширения
 
 **Новый обязательный порядок по решению владельца (10.11.2026):** все находки [UIX-аудита](../insights/2026-11-10_CRITICAL_UX_AUDIT_RU.md) коммита `0f2a1f1` перенесены в [Windows 1.0 release gates](WINDOWS_1_0_UIX_OWNER_OVERRIDE_20261110_RU.md). Ранее предполагалось оценивать UX преимущественно в AT9, **теперь этот порядок неверен**.
 

@@ -1,0 +1,68 @@
+{
+  "source_sha": "1784a48246cbdfd260fb80ce4731c7f165ad52c5",
+  "upstream_artifact_id": 13927351150,
+  "upstream_zip_sha256": "54649abde3fff0a63c5dc7bb481cee47ad61ae7bd5242104717bb4e39c6b9a13",
+  "upstream_url": "https://github.com/i-shutov/tikzarium/actions/runs/43181526405/artifacts/13927351150",
+  "retained_subset": {
+    "file": "hosted-win32-1784-originals.zip",
+    "bytes": 649745,
+    "sha256": "8562acb8f69bf8841aa63272f1c2f5c788707febcc593174ebdba613fb9e4736"
+  },
+  "entries": [
+    {
+      "path": "hosted-windows-native-gui.json",
+      "sha256": "26f62174bf903c7f5143b37a3b057f088c7ff4beb34d7463453354b2a72b8dc4",
+      "bytes": 9161
+    },
+    {
+      "path": "independent-hosted-window-audit.json",
+      "sha256": "d89d5b82ef46f26e80e5bc4b38eb1ff2381fd7c28d741b4339a28c0cbe14aee0",
+      "bytes": 506
+    },
+    {
+      "path": "hosted-window/real-window-before-f1.png",
+      "sha256": "4491471f57a610cfd088ab70d3ab97b3e1f9e2bbb8ba1e499594459349f564a9",
+      "bytes": 187508
+    },
+    {
+      "path": "hosted-window/real-window-after-f1.png",
+      "sha256": "f134215c31a6bb1b3b6476224a54143244b7fb96410b3a40b65b59b47b11d059",
+      "bytes": 157392
+    },
+    {
+      "path": "slow-startup/hosted-windows-native-gui.json",
+      "sha256": "d8aba5fe5ddd45780f02a0366d6c91011cfa4ba69e689973e27d13f0288cd65d",
+      "bytes": 9161
+    },
+    {
+      "path": "slow-startup/slow-probe-log.txt",
+      "sha256": "0a35394d3d241fa2630578ba10fa0852eaa8cf7c16f834ed5485aa161cdc6b69",
+      "bytes": 179
+    },
+    {
+      "path": "slow-startup/hosted-window/real-window-before-f1.png",
+      "sha256": "6aab6271cca9f4aa77d12a8a1bd1893a5006918a346779f53af6c3198508959d",
+      "bytes": 187854
+    },
+    {
+      "path": "slow-startup/hosted-window/real-window-after-f1.png",
+      "sha256": "ac9db76afbbb4bba013222828f55dec0f5b289de75ebcf4887802b618f1c238a",
+      "bytes": 157735
+    }
+  ],
+  "visual_review": {
+    "scope": "HOSTED_WINDOWS_SERVER_2022_96DPI_STARTUP_AND_F1_ONLY",
+    "before": "Six direct tools, source, primary Build action and PGFPlots section visible; elevated-context warning visible.",
+    "after": "F1 visibly switches right dock to Russian help.",
+    "not_proven": [
+      "slow-probe overlap at before capture",
+      "six-tool gesture/source edit",
+      "save/open/native dialogs",
+      "GUI to XeLaTeX PDF",
+      "physical Windows10",
+      "IME",
+      "120/192 DPI",
+      "G3 input latency"
+    ]
+  }
+}

@@ -48,6 +48,92 @@ pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
             verified_tex_default: "UNKNOWN",
             manual_section: "UNKNOWN — конкретная редакция руководства не проверена",
         }),
+        "xmin" | "xmax" | "ymin" | "ymax" => {
+            let (name, effect, example) = match key {
+                "xmin" => ("xmin", "Левая граница оси x.", "xmin=0"),
+                "xmax" => ("xmax", "Правая граница оси x.", "xmax=1080"),
+                "ymin" => ("ymin", "Нижняя граница оси y.", "ymin=0"),
+                "ymax" => ("ymax", "Верхняя граница оси y.", "ymax=1.4"),
+                _ => unreachable!("axis-bound whitelist"),
+            };
+            Some(ScientificPropertyHelp {
+                key: name,
+                value_type: "Конечное десятичное число",
+                effect,
+                editor_limit: "Только явные десятичные литералы в axis; макросы, inf и выражения сохраняются без изменений.",
+                example,
+                package: "pgfplots",
+                verified_tex_default: "UNKNOWN",
+                manual_section: "UNKNOWN — редакция руководства PGFPlots не проверена",
+            })
+        }
+        "xtick distance" | "ytick distance" => {
+            let (description, example) = if key == "xtick distance" {
+                (
+                    "Шаг автоматически расставляемых делений оси x.",
+                    "xtick distance=1",
+                )
+            } else {
+                (
+                    "Шаг автоматически расставляемых делений оси y.",
+                    "ytick distance=0.5",
+                )
+            };
+            Some(ScientificPropertyHelp {
+                key: if key == "xtick distance" {
+                    "xtick distance"
+                } else {
+                    "ytick distance"
+                },
+                value_type: "Положительное конечное число",
+                effect: description,
+                editor_limit: "Только явный положительный литерал; отклоняются макросы и слишком плотные шаги.",
+                example,
+                package: "pgfplots",
+                verified_tex_default: "UNKNOWN",
+                manual_section: "PGFPlots 1.18.2 §4.15.1 (версия окружения ещё не подтверждена)",
+            })
+        }
+        "width" | "height" => Some(ScientificPropertyHelp {
+            key: if key == "width" { "width" } else { "height" },
+            value_type: "Число с явной размерностью",
+            effect: "Физический размер области графика, не масштабирование шрифтов подписей.",
+            editor_limit: "Остаётся неизменной исходная единица; поддерживаются pt, cm, mm, in, em, ex и множители \\textwidth/\\linewidth.",
+            example: "height=0.62\\textwidth",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "PGFPlots 1.18.2 §4.10 (версия окружения ещё не подтверждена)",
+        }),
+        "mark" => Some(ScientificPropertyHelp {
+            key: "mark",
+            value_type: "Метка точки из проверенного списка",
+            effect: "Изменяет вид маркеров ряда или явного стиля всех рядов.",
+            editor_limit: "Только none, *, +, x и простые метки с уже подключенной plotmarks; внешние произвольные макросы OPAQUE.",
+            example: "mark=none",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "PGFPlots 1.18.2 §4.7.1 (версия окружения ещё не подтверждена)",
+        }),
+        "xtick" | "ytick" => Some(ScientificPropertyHelp {
+            key: if key == "xtick" { "xtick" } else { "ytick" },
+            value_type: "Буквальный список числовых координат",
+            effect: "Задаёт явно выбранные координаты делений соответствующей оси.",
+            editor_limit: "Только {0,1,2} и подобные списки до 64 чисел; \\empty, data, макросы и выражения OPAQUE.",
+            example: "xtick={0,1,2}",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "PGFPlots 1.18.2 §4.15.1 (версия окружения ещё не подтверждена)",
+        }),
+        "xlabel" | "ylabel" => Some(ScientificPropertyHelp {
+            key: if key == "xlabel" { "xlabel" } else { "ylabel" },
+            value_type: "Литеральная подпись оси",
+            effect: "Только обычный текст, уже заключённый в фигурные скобки.",
+            editor_limit: "Не раскрывает TeX math, кириллические макросы, $...$, комментарии или вложенные группы; такие подписи остаются OPAQUE.",
+            example: "xlabel={Время}",
+            package: "pgfplots",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "UNKNOWN — точное руководство для текста/шрифтов не сверено",
+        }),
         _ => None,
     }
 }
@@ -374,7 +460,13 @@ pub fn scan_scientific_source(
         // Scope and catcode safety apply to the preamble too. Otherwise a
         // macro definition containing a literal tikzpicture could fabricate
         // an editable picture even though it was never executed.
-        if word == "catcode" || word == "csname" {
+        if matches!(
+            word,
+            "catcode" | "csname" | "newenvironment" | "renewenvironment" | "string" | "detokenize"
+        ) {
+            // These controls can turn apparent picture/axis commands into
+            // definition bodies or printed text. Until their source-editing
+            // grammar is supported, never grant ownership of those spans.
             return Err(ScanRefusal::UnsupportedTeXControl);
         }
         if word == "verb" || word == "lstinline" {
@@ -496,6 +588,22 @@ pub fn scan_scientific_source(
             _ => continue,
         };
         let mut after = next;
+        // TeX control words contain letters only: `command_at` leaves the
+        // PGFPlots 3D suffix in `\addplot3` before its optional `+` and `[]`.
+        // Reuse the same plot-owned literal keys; never consume a numeric
+        // prefix of an unreviewed spelling such as `\addplot30`/`\addplot3x`.
+        if kind == ScientificKind::AddPlot && b.get(after) == Some(&b'3') {
+            after += 1;
+            let suffix_end = after + usize::from(b.get(after) == Some(&b'+'));
+            if !b.get(suffix_end).is_some_and(|byte| {
+                byte.is_ascii_whitespace() || matches!(byte, b'[' | b'{' | b'(' | b'%')
+            }) {
+                // The rejected command still owns its balanced options/body.
+                // Do not expose nested draw/axis/plot tokens as active source.
+                i = command_semicolon(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
+                continue;
+            }
+        }
         if kind == ScientificKind::AddPlot && b.get(after) == Some(&b'+') {
             after += 1;
         }
@@ -563,9 +671,45 @@ fn components(text: &str, content: Range<usize>) -> Result<Vec<Range<usize>>, Ed
     Ok(parts)
 }
 
+/// Ignore only trivia surrounding one option token. Interior comments remain
+/// in the range: joining their separated bytes could invent literal ownership.
+fn option_token_range(text: &str, range: Range<usize>) -> Result<Range<usize>, EditRefusal> {
+    let b = text.as_bytes();
+    let start = whitespace_and_comments(text, range.start).min(range.end);
+    let mut i = start;
+    let mut end = start;
+    while i < range.end {
+        match b[i] {
+            byte if byte.is_ascii_whitespace() => i += 1,
+            b'%' => {
+                while i < range.end && b[i] != b'\n' {
+                    i += 1;
+                }
+            }
+            b'\\' => {
+                i += if i + 1 < range.end { 2 } else { 1 };
+                end = i;
+            }
+            b'{' | b'[' => {
+                i = group_at(text, i).ok_or(EditRefusal::Opaque)?.next;
+                if i > range.end {
+                    return Err(EditRefusal::Opaque);
+                }
+                end = i;
+            }
+            _ => {
+                i += 1;
+                end = i;
+            }
+        }
+    }
+    Ok(start..end)
+}
+
 fn locate_key(
     text: &str,
     content: Range<usize>,
+    owner: ScientificKind,
     wanted: &str,
     depth: usize,
     hits: &mut Vec<Range<usize>>,
@@ -580,6 +724,11 @@ fn locate_key(
         while p < segment.end {
             match b[p] {
                 b'\\' => p += if p + 1 < segment.end { 2 } else { 1 },
+                b'%' => {
+                    while p < segment.end && b[p] != b'\n' {
+                        p += 1;
+                    }
+                }
                 b'{' | b'[' => {
                     p = group_at(text, p).ok_or(EditRefusal::Opaque)?.next;
                 }
@@ -590,24 +739,116 @@ fn locate_key(
                 _ => p += 1,
             }
         }
+        let key = option_token_range(text, segment.start..equals.unwrap_or(segment.end))?;
+        let actual_key = text.get(key).ok_or(EditRefusal::Opaque)?;
+        // TeX removes comments before pgfkeys sees the key. A comment inside
+        // a token can therefore hide an effective duplicate of `wanted`.
+        // Refuse rather than ignoring the entry and editing another value.
+        if actual_key.contains('%') {
+            return Err(EditRefusal::Opaque);
+        }
+        // A pgfkeys path switch changes the owner of following bare keys.
+        // Refuse this list, including naked controls without '=', rather than
+        // assuming a later key or namespace reset belongs to this axis/plot.
+        if actual_key == ".cd" || actual_key.ends_with("/.cd") {
+            return Err(EditRefusal::Opaque);
+        }
         let Some(eq) = equals else {
             continue;
         };
-        let key = trimmed(text, segment.start..eq);
-        let value = trimmed(text, eq + 1..segment.end);
-        let actual_key = text.get(key).ok_or(EditRefusal::Opaque)?;
+        let value = option_token_range(text, eq + 1..segment.end)?;
         if actual_key == wanted {
             hits.push(value);
             continue;
         }
-        if actual_key.ends_with("style") && text.as_bytes().get(value.start) == Some(&b'{') {
+        // Only these axis-owned plot styles have the reviewed plot-property
+        // meaning. A legend/node/custom style can contain the same key with
+        // a different owner; descending into it would silently edit another
+        // object. Do not recurse further into styles nested inside a plot.
+        if owner == ScientificKind::Axis
+            && depth == 0
+            && matches!(wanted, "samples" | "domain" | "mark")
+            && matches!(
+                actual_key,
+                "every axis plot/.style"
+                    | "every axis plot/.append style"
+                    | "every axis plot post/.style"
+                    | "every axis plot post/.append style"
+            )
+            && text.as_bytes().get(value.start) == Some(&b'{')
+        {
             let nested = group_at(text, value.start).ok_or(EditRefusal::Opaque)?;
             if nested.next == value.end {
-                locate_key(text, nested.inside, wanted, depth + 1, hits)?;
+                locate_key(text, nested.inside, owner, wanted, depth + 1, hits)?;
             }
         }
     }
     Ok(())
+}
+
+fn finite_decimal_literal(value: &str) -> bool {
+    // Reject macro syntax, comma decimal, arbitrary math and huge numbers.
+    !value.is_empty()
+        && value.len() <= 32
+        && value
+            .bytes()
+            .all(|ch| ch.is_ascii_digit() || matches!(ch, b'.' | b'-' | b'+'))
+        && value.parse::<f64>().is_ok_and(f64::is_finite)
+}
+
+fn positive_scalar(value: &str, max: f64) -> bool {
+    finite_decimal_literal(value)
+        && value
+            .parse::<f64>()
+            .is_ok_and(|number| number > 0.0 && number <= max)
+}
+
+fn dimension_parts(value: &str) -> Option<(&str, &'static str)> {
+    // This is NOT a TeX dimension parser. Unknown units are OPAQUE.
+    for suffix in [
+        r"\textwidth",
+        r"\linewidth",
+        r"\columnwidth",
+        "cm",
+        "mm",
+        "pt",
+        "in",
+        "em",
+        "ex",
+    ] {
+        if let Some(scalar) = value.strip_suffix(suffix) {
+            let relative = suffix.starts_with('\\');
+            if positive_scalar(scalar, if relative { 10.0 } else { 50.0 }) {
+                return Some((scalar, suffix));
+            }
+        }
+    }
+    None
+}
+
+fn literal_numeric_ticks(value: &str) -> bool {
+    let Some(inner) = value.strip_prefix('{').and_then(|s| s.strip_suffix('}')) else {
+        return false;
+    };
+    let mut count = 0;
+    for part in inner.split(',') {
+        count += 1;
+        if count > 64 || !finite_decimal_literal(part.trim()) {
+            return false;
+        }
+    }
+    count > 0
+}
+
+fn plain_braced_label(value: &str) -> bool {
+    let Some(inner) = value.strip_prefix('{').and_then(|s| s.strip_suffix('}')) else {
+        return false;
+    };
+    !inner.is_empty()
+        && inner.chars().count() <= 96
+        && inner.chars().all(|ch| {
+            ch.is_alphanumeric() || matches!(ch, ' ' | '-' | '.' | ',' | ':' | '(' | ')' | '\'')
+        })
 }
 
 fn literal_is_safe(key: &str, value: &str) -> bool {
@@ -616,20 +857,51 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
             value.bytes().all(|ch| ch.is_ascii_digit())
                 && value.parse::<u32>().is_ok_and(|n| (2..=4096).contains(&n))
         }
-        "domain" => {
-            let Some((a, b)) = value.split_once(':') else {
-                return false;
-            };
-            let decimal = |s: &str| {
-                !s.is_empty()
-                    && s.bytes()
-                        .all(|ch| ch.is_ascii_digit() || ch == b'.' || ch == b'-' || ch == b'+')
-                    && s.parse::<f64>().is_ok_and(f64::is_finite)
-            };
-            decimal(a) && decimal(b)
+        "domain" => value
+            .split_once(':')
+            .is_some_and(|(a, b)| finite_decimal_literal(a) && finite_decimal_literal(b)),
+        "xmin" | "xmax" | "ymin" | "ymax" => finite_decimal_literal(value),
+        "xtick distance" | "ytick distance" => positive_scalar(value, 1_000_000.0),
+        "width" | "height" => dimension_parts(value).is_some(),
+        "xtick" | "ytick" => literal_numeric_ticks(value),
+        "mark" => matches!(value, "none" | "*" | "+" | "x"),
+        "xlabel" | "ylabel" => plain_braced_label(value),
+        _ => false,
+    }
+}
+
+fn allowed_property(kind: ScientificKind, key: &str) -> bool {
+    match key {
+        "samples" | "domain" | "mark" => {
+            matches!(kind, ScientificKind::Axis | ScientificKind::AddPlot)
+        }
+        "xmin" | "xmax" | "ymin" | "ymax" | "xtick" | "ytick" | "xtick distance"
+        | "ytick distance" | "width" | "height" | "xlabel" | "ylabel" => {
+            kind == ScientificKind::Axis
         }
         _ => false,
     }
+}
+
+fn additional_edit_guards(key: &str, old: &str, new: &str) -> bool {
+    if matches!(key, "width" | "height") {
+        let Some((_, old_unit)) = dimension_parts(old) else {
+            return false;
+        };
+        return dimension_parts(new).is_some_and(|(_, new_unit)| new_unit == old_unit);
+    }
+    if matches!(key, "xtick distance" | "ytick distance") {
+        let Ok(a) = old.parse::<f64>() else {
+            return false;
+        };
+        let Ok(b) = new.parse::<f64>() else {
+            return false;
+        };
+        // A bounded change prevents accidental millions of ticks when a
+        // user enters a very small spacing in a large existing diagram.
+        return a > 0.0 && (a / 2.0..=a * 2.0).contains(&b);
+    }
+    true
 }
 
 /// A stable source+revision are mandatory even for read-only Inspector values.
@@ -641,6 +913,16 @@ fn literal_key_range(
     if view.revision != instance.revision || fingerprint(view.text) != instance.source_sha256 {
         return Err(EditRefusal::SourceConflict);
     }
+    // Public descriptor fields are useful for UI navigation but are not an
+    // editing capability. Re-establish their ownership against the bounded
+    // source scan before trusting a caller-supplied range or kind.
+    if !scan_scientific_source(view)
+        .map_err(|_| EditRefusal::SourceConflict)?
+        .iter()
+        .any(|recognized| recognized == instance)
+    {
+        return Err(EditRefusal::SourceConflict);
+    }
     if instance.confidence != RecognitionConfidence::Lexical
         || !matches!(
             instance.kind,
@@ -649,7 +931,7 @@ fn literal_key_range(
     {
         return Err(EditRefusal::Opaque);
     }
-    if key != "samples" && key != "domain" {
+    if !allowed_property(instance.kind, key) {
         return Err(EditRefusal::UnsupportedKey);
     }
     let options = instance.option_range.clone().ok_or(EditRefusal::Opaque)?;
@@ -660,7 +942,7 @@ fn literal_key_range(
         return Err(EditRefusal::SourceConflict);
     }
     let mut hits = Vec::new();
-    locate_key(view.text, options, key, 0, &mut hits)?;
+    locate_key(view.text, options, instance.kind, key, 0, &mut hits)?;
     if hits.len() != 1 {
         return Err(if hits.is_empty() {
             EditRefusal::Opaque
@@ -701,13 +983,55 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
     if previous == request.replacement
         || !literal_is_safe(request.key, previous)
         || !literal_is_safe(request.key, request.replacement)
+        || !additional_edit_guards(request.key, previous, request.replacement)
     {
         return Err(EditRefusal::InvalidLiteral);
     }
+
+    // Existing SC2/SC3 property ranges are stable, already independently
+    // accepted contracts. Only newly added keys use a shorter UTF-8 patch.
+    if matches!(
+        request.key,
+        "samples" | "domain" | "xmin" | "xmax" | "ymin" | "ymax"
+    ) {
+        return Ok(SourcePatch {
+            range,
+            expected_old: previous.to_owned(),
+            replacement: request.replacement.to_owned(),
+            source_revision: request.instance.source_target().revision,
+        });
+    }
+
+    // Shortest valid UTF-8 difference for new keys. Preserve dimension units
+    // and outer braces without writing unrelated TeX bytes.
+    let mut prefix = 0;
+    for (old, new) in previous.chars().zip(request.replacement.chars()) {
+        if old != new {
+            break;
+        }
+        prefix += old.len_utf8();
+    }
+    let mut old_end = previous.len();
+    let mut new_end = request.replacement.len();
+    while old_end > prefix && new_end > prefix {
+        let old = previous[..old_end]
+            .chars()
+            .next_back()
+            .expect("suffix char");
+        let new = request.replacement[..new_end]
+            .chars()
+            .next_back()
+            .expect("suffix char");
+        if old != new {
+            break;
+        }
+        old_end -= old.len_utf8();
+        new_end -= new.len_utf8();
+    }
     Ok(SourcePatch {
-        range,
-        expected_old: previous.to_owned(),
-        replacement: request.replacement.to_owned(),
+        range: range.start + prefix..range.start + old_end,
+        expected_old: previous[prefix..old_end].to_owned(),
+        replacement: request.replacement[prefix..new_end].to_owned(),
         source_revision: request.instance.source_target().revision,
     })
 }

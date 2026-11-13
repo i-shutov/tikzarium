@@ -1,0 +1,182 @@
+{
+  "source_commit": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+  "scope": "Actual completed GitHub Actions results; independent GUI reviews retained separately",
+  "runs": [
+    {
+      "id": 43419233225,
+      "name": "XeLaTeX figure fonts and glyph integrity",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233225",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:43:49Z"
+    },
+    {
+      "id": 43419232987,
+      "name": "Scientific compact Studio mixed Undo (hosted GUI, not physical Win10)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232987",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:45:15Z"
+    },
+    {
+      "id": 43419233041,
+      "name": "N1 actual app state to TikZ to XeLaTeX",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233041",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:45:41Z"
+    },
+    {
+      "id": 43419233058,
+      "name": "Windows owner Administrator regression and original PDF acceptance",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233058",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:45:44Z"
+    },
+    {
+      "id": 43419232967,
+      "name": "SCI142 scientific Inspector / source-owning widgets",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232967",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:46:19Z"
+    },
+    {
+      "id": 43419232952,
+      "name": "D QA matrix - Rust and XeLaTeX",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232952",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:46:51Z"
+    },
+    {
+      "id": 43419232965,
+      "name": "Hosted Windows native egui HWND and F1 (not W2 or W3)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232965",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:47:55Z"
+    },
+    {
+      "id": 43419233054,
+      "name": "D06 distinct MiKTeX Windows Server XeLaTeX proof",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233054",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:47:10Z"
+    },
+    {
+      "id": 43419233046,
+      "name": "I61 B42 real Studio icon-to-native-source/PDF (independent D QA)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233046",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:47:13Z"
+    },
+    {
+      "id": 43419233113,
+      "name": "N5 Linux x86_64 portable release and packaged X11 launch",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233113",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:48:36Z"
+    },
+    {
+      "id": 43419233191,
+      "name": "TikZarium CI",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233191",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:50:58Z"
+    },
+    {
+      "id": 43419232988,
+      "name": "Personal Windows Cargo and MiKTeX repair",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232988",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:44:11Z"
+    },
+    {
+      "id": 43419233133,
+      "name": "Scientific-142 L0 immutable corpus and negative SHA QA (not GUI)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233133",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:45:10Z"
+    },
+    {
+      "id": 43419232982,
+      "name": "B42 real Studio icon palettes screenshot audit (bootstrap only)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419232982",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:44:49Z"
+    },
+    {
+      "id": 43419233297,
+      "name": "PGFPlots V2 and original AT4 native verticals (hosted X11, independent review required)",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "failure",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419233297",
+      "created_at": "2026-11-13T11:42:44Z",
+      "updated_at": "2026-11-13T11:55:30Z"
+    },
+    {
+      "id": 43419225641,
+      "name": "TikZarium CI",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "html_url": "https://github.com/i-shutov/tikzarium/actions/runs/43419225641",
+      "created_at": "2026-11-13T11:42:41Z",
+      "updated_at": "2026-11-13T11:50:05Z"
+    }
+  ]
+}
