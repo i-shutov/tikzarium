@@ -6,7 +6,11 @@ use serde_json::{Value, json};
 use tikzarium_extensions::manual_anchors::{ManualAnchorCatalog, split_atomic_preamble};
 use tikzarium_extensions::project_imports;
 
-fn handle_manual_api(catalog: &ManualAnchorCatalog, source: &str, req: &Value) -> Result<Value, String> {
+fn handle_manual_api(
+    catalog: &ManualAnchorCatalog,
+    source: &str,
+    req: &Value,
+) -> Result<Value, String> {
     let op = req
         .get("op")
         .and_then(Value::as_str)
@@ -59,7 +63,8 @@ fn egui_manual_bbox_overlay_and_api_leave_crlf_source_untouched() {
     assert_eq!(resolved["matched"], true);
     assert_eq!(resolved["document"]["filename"], "pgfplots.pdf");
 
-    let passport = handle_manual_api(&catalog, source, &json!({ "op": "preamble.inspect" })).unwrap();
+    let passport =
+        handle_manual_api(&catalog, source, &json!({ "op": "preamble.inspect" })).unwrap();
     assert_eq!(passport["class_declared"], true);
     assert_eq!(passport["crlf"], true);
 
@@ -76,10 +81,8 @@ fn egui_manual_bbox_overlay_and_api_leave_crlf_source_untouched() {
         },
         |ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
-                let page_rect = egui::Rect::from_min_size(
-                    ui.min_rect().min,
-                    egui::vec2(420.0, 594.0),
-                );
+                let page_rect =
+                    egui::Rect::from_min_size(ui.min_rect().min, egui::vec2(420.0, 594.0));
                 let [x0, y0, x1, y1] = anchor.bbox;
                 let target = egui::Rect::from_min_max(
                     egui::pos2(
