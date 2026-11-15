@@ -1,0 +1,50 @@
+# Манифест однократной предсборочной разметки PDF-мануалов TikZarium
+# Важно (AGENTS.md п.5): сами PDF-файлы НЕ коммитятся пачкой в Git — скрипт индексирует локальный TeX Live (kpsewhich)
+# и сохраняет компактный реестр прямых точек (страница + NamedDest + нормализованный прямоугольник [0..1]).
+
+[[documents]]
+id = "pgfmanual"
+filename = "pgfmanual.pdf"
+
+  [[documents.targets]]
+  id = "pgf.env.tikzpicture"
+  section = "§12.2.1"
+  fallback_page = 132
+  probe_phrase = "\\begin{tikzpicture}"
+  tokens = ["tikzpicture", "\\tikzpicture"]
+
+  [[documents.targets]]
+  id = "pgf.draw.line"
+  section = "§14.1"
+  fallback_page = 153
+  probe_phrase = "Path"
+  tokens = ["\\draw", "--", "cycle"]
+
+  [[documents.targets]]
+  id = "pgf.lib.arrows.meta"
+  section = "§16.1 & §16.5"
+  fallback_page = 201
+  probe_phrase = "arrows.meta"
+  tokens = ["arrows.meta", "Stealth", "Latex", "->"]
+
+[[documents]]
+id = "pgfplots"
+filename = "pgfplots.pdf"
+
+  [[documents.targets]]
+  id = "ext.pgfplots.axis"
+  section = "§4.3"
+  fallback_page = 49
+  probe_phrase = "\\addplot"
+  tokens = ["pgfplots", "axis", "\\addplot", "\\addplot3"]
+
+[[documents]]
+id = "circuitikz"
+filename = "circuitikzmanual.pdf"
+
+  [[documents.targets]]
+  id = "ext.circuitikz.bipoles"
+  section = "§3.1 & §4.2"
+  fallback_page = 36
+  probe_phrase = "circuitikz"
+  tokens = ["circuitikz", "R=", "C=", "L="]

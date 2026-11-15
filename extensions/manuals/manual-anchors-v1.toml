@@ -1,0 +1,360 @@
+schema_version = 1
+
+[[documents]]
+id = "pgfmanual"
+filename = "pgfmanual.pdf"
+texdoc_key = "pgfmanual"
+version = "3.1.12"
+total_pages = 1322
+
+[[documents]]
+id = "pgfplots"
+filename = "pgfplots.pdf"
+texdoc_key = "pgfplots"
+version = "1.18.1"
+total_pages = 596
+
+[[documents]]
+id = "circuitikz"
+filename = "circuitikzmanual.pdf"
+texdoc_key = "circuitikz"
+version = "1.6.8"
+total_pages = 312
+
+[[documents]]
+id = "tikz-cd"
+filename = "tikz-cd-doc.pdf"
+texdoc_key = "tikz-cd"
+version = "1.0"
+total_pages = 18
+
+[[documents]]
+id = "chemfig"
+filename = "chemfig-en.pdf"
+texdoc_key = "chemfig"
+version = "1.66"
+total_pages = 82
+
+[[documents]]
+id = "tikz-3dplot"
+filename = "tikz-3dplot_documentation.pdf"
+texdoc_key = "tikz-3dplot"
+version = "0.70"
+total_pages = 35
+
+[[documents]]
+id = "forest"
+filename = "forest-doc.pdf"
+texdoc_key = "forest"
+version = "2.1.5"
+total_pages = 108
+
+[[documents]]
+id = "pgfgantt"
+filename = "pgfgantt.pdf"
+texdoc_key = "pgfgantt"
+version = "5.0"
+total_pages = 57
+
+[[documents]]
+id = "quantikz"
+filename = "quantikz.pdf"
+texdoc_key = "quantikz"
+version = "1.0.1"
+total_pages = 25
+
+[[documents]]
+id = "tkz-euclide"
+filename = "tkz-euclide.pdf"
+texdoc_key = "tkz-euclide"
+version = "5.10c"
+total_pages = 304
+
+[[documents]]
+id = "tikz-timing"
+filename = "tikz-timing.pdf"
+texdoc_key = "tikz-timing"
+version = "0.7f"
+total_pages = 48
+
+[[documents]]
+id = "tikz-optics"
+filename = "tikz-optics.pdf"
+texdoc_key = "tikz-optics"
+version = "0.2.3"
+total_pages = 42
+
+[[anchors]]
+id = "pgf.env.tikzpicture"
+doc_id = "pgfmanual"
+section = "§12.2.1"
+page = 128
+named_dest = "section.12.2.1"
+bbox = [0.09, 0.21, 0.91, 0.44]
+title_ru = "Окружение рисунка \\begin{tikzpicture}[…]"
+declaration = "\\begin{tikzpicture}[<animations spec>][<options>] <environment contents> \\end{tikzpicture}"
+matched_tokens = ["tikzpicture", "\\tikz"]
+
+[[anchors]]
+id = "pgf.draw.line"
+doc_id = "pgfmanual"
+section = "§14.1"
+page = 162
+named_dest = "section.14.1"
+bbox = [0.09, 0.24, 0.91, 0.48]
+title_ru = "Прямолинейный сегмент пути \\draw (A) -- (B) и замыкание -- cycle"
+declaration = "\\path ... -- <coordinate or cycle> ...;"
+matched_tokens = ["\\draw", "--", "cycle", "\\path", "\\fill", "\\filldraw", "\\clip"]
+
+[[anchors]]
+id = "pgf.draw.rectangle"
+doc_id = "pgfmanual"
+section = "§14.4"
+page = 165
+named_dest = "section.14.4"
+bbox = [0.09, 0.18, 0.91, 0.42]
+title_ru = "Прямоугольник rectangle и координатная сетка grid"
+declaration = "\\path ... (<corner_1>) rectangle (<corner_2>) ...;"
+matched_tokens = ["rectangle", "grid", "rounded corners"]
+
+[[anchors]]
+id = "pgf.draw.circle"
+doc_id = "pgfmanual"
+section = "§14.6"
+page = 167
+named_dest = "section.14.6"
+bbox = [0.09, 0.27, 0.91, 0.52]
+title_ru = "Окружность circle [radius=R] и эллипс [x radius, y radius]"
+declaration = "\\path ... circle [radius=<dimension>, x radius=<rx>, y radius=<ry>, rotate=<deg>];"
+matched_tokens = ["circle", "ellipse", "radius", "arc"]
+
+[[anchors]]
+id = "pgf.draw.bezier"
+doc_id = "pgfmanual"
+section = "§14.3"
+page = 164
+named_dest = "section.14.3"
+bbox = [0.09, 0.19, 0.91, 0.45]
+title_ru = "Кубическая кривая Безье .. controls (C1) and (C2) .. (B)"
+declaration = "\\path ... (<p0>) .. controls (<c1>) and (<c2>) .. (<p3>);"
+matched_tokens = ["controls", ".."]
+
+[[anchors]]
+id = "pgf.lib.arrows.meta"
+doc_id = "pgfmanual"
+section = "§16.1"
+page = 201
+named_dest = "section.16.1"
+bbox = [0.09, 0.25, 0.91, 0.54]
+title_ru = "Наконечники стрелок и библиотека arrows.meta (-{Stealth}, |<->|)"
+declaration = "\\usetikzlibrary{arrows.meta}   \\draw[-{Stealth[length=3mm, width=2mm]}] ...;"
+matched_tokens = ["arrows.meta", "Stealth", "Latex", "->", "<->", "|<->|"]
+
+[[anchors]]
+id = "pgf.nodes.anchors"
+doc_id = "pgfmanual"
+section = "§17.2"
+page = 229
+named_dest = "section.17.2"
+bbox = [0.09, 0.22, 0.91, 0.51]
+title_ru = "Узлы \\node, именованные якоря (.north, .east) и подписи"
+declaration = "\\node[<options>] (<name>) at (<coordinate>) {<text or $math$>};"
+matched_tokens = ["\\node", "anchor", "inner sep", "minimum width", "minimum height"]
+
+[[anchors]]
+id = "pgf.coords.calc"
+doc_id = "pgfmanual"
+section = "§13.5"
+page = 148
+named_dest = "section.13.5"
+bbox = [0.09, 0.3, 0.91, 0.57]
+title_ru = "Координатная алгебра ($...$), проекции и библиотека calc"
+declaration = "\\usetikzlibrary{calc}   ($(A)!<factor>!<angle>:(B)$)   ($(A)!(P)!(B)$)"
+matched_tokens = ["calc", "\\coordinate", "coordinate"]
+
+[[anchors]]
+id = "pgf.styles.tikzset"
+doc_id = "pgfmanual"
+section = "§12.4"
+page = 133
+named_dest = "section.12.4"
+bbox = [0.09, 0.16, 0.91, 0.43]
+title_ru = "Стили \\tikzset{name/.style={…}}, области \\begin{scope} и слои"
+declaration = "\\tikzset{<style name>/.style={<key list>}}   \\begin{scope}[<local options>] ... \\end{scope}"
+matched_tokens = ["\\tikzset", "scope", "\\pgfdeclarelayer", "\\pgfsetlayers"]
+
+[[anchors]]
+id = "pgf.foreach"
+doc_id = "pgfmanual"
+section = "§88"
+page = 979
+named_dest = "section.88"
+bbox = [0.09, 0.2, 0.91, 0.47]
+title_ru = "Параметрические циклы и решётки \\foreach \\x [evaluate=…] in {…}"
+declaration = "\\foreach <variables> [<options>] in {<list with ...>} {<commands>}"
+matched_tokens = ["\\foreach", "foreach"]
+
+[[anchors]]
+id = "pgf.lib.positioning"
+doc_id = "pgfmanual"
+section = "§17.5.3"
+page = 241
+named_dest = "section.17.5.3"
+bbox = [0.09, 0.26, 0.91, 0.5]
+title_ru = "Относительное размещение узлов right=1.2cm of A (positioning)"
+declaration = "\\usetikzlibrary{positioning}   \\node[right=<dist> of <node>.<anchor>] ...;"
+matched_tokens = ["positioning"]
+
+[[anchors]]
+id = "pgf.lib.patterns.decorations"
+doc_id = "pgfmanual"
+section = "§62 & §50"
+page = 726
+named_dest = "section.62"
+bbox = [0.09, 0.19, 0.91, 0.45]
+title_ru = "Штриховки ГОСТ (patterns) и декорации путей (decorations.*)"
+declaration = "\\usetikzlibrary{patterns, decorations.pathreplacing, decorations.pathmorphing}"
+matched_tokens = ["patterns", "decorations.pathreplacing", "decorations.pathmorphing", "decorations.markings", "decorate", "pattern"]
+
+[[anchors]]
+id = "pgf.lib.angles.spy"
+doc_id = "pgfmanual"
+section = "§41 & §73"
+page = 558
+named_dest = "section.41"
+bbox = [0.09, 0.23, 0.91, 0.49]
+title_ru = "Угловые дуги pic {angle=A--O--B} и выносная лупа spy (×M)"
+declaration = "\\usetikzlibrary{angles, quotes, spy}   \\pic[\"$\\alpha$\", draw, angle radius=8mm] {angle = A--O--B};"
+matched_tokens = ["angles", "quotes", "spy", "intersections", "backgrounds", "fit", "shapes.geometric", "\\pic"]
+
+[[anchors]]
+id = "pgf.lib.automata.petri"
+doc_id = "pgfmanual"
+section = "§43 & §63"
+page = 571
+named_dest = "section.43"
+bbox = [0.09, 0.21, 0.91, 0.48]
+title_ru = "Штатные библиотеки КА (automata), сетей Петри, chains и L-систем"
+declaration = "\\usetikzlibrary{automata, petri, chains, lindenmayersystems}"
+matched_tokens = ["automata", "petri", "chains", "mindmap", "lindenmayersystems", "\\pgfdeclarelindenmayersystem"]
+
+[[anchors]]
+id = "ext.pgfplots.axis"
+doc_id = "pgfplots"
+section = "§4.3 & §4.6"
+page = 54
+named_dest = "section.4.3"
+bbox = [0.08, 0.18, 0.92, 0.5]
+title_ru = "PGFPlots: научные оси axis, кривые \\addplot, 3D \\addplot3 и коридоры fillbetween"
+declaration = "\\pgfplotsset{compat=1.18}   \\begin{axis}[xlabel={...}, ylabel={...}, grid=both] \\addplot[...] ...; \\end{axis}"
+matched_tokens = ["pgfplots", "\\pgfplotsset", "\\usepgfplotslibrary", "axis", "semilogxaxis", "semilogyaxis", "loglogaxis", "polaraxis", "groupplot", "\\addplot", "\\addplot3", "\\legend", "\\addlegendentry", "fillbetween"]
+
+[[anchors]]
+id = "ext.circuitikz.bipoles"
+doc_id = "circuitikz"
+section = "§3.1 & §4.2"
+page = 38
+named_dest = "section.3.1"
+bbox = [0.08, 0.22, 0.92, 0.51]
+title_ru = "CircuiTikZ: двухполюсники ГОСТ/IEC, источники, диоды и каскады ОУ"
+declaration = "\\usepackage[european, straightvoltages]{circuitikz}   \\draw (0,0) to[R=$R_1$, l=\\qty{4.7}{\\kilo\\ohm}, *-*] (3,0);"
+matched_tokens = ["circuitikz", "siunitx", "\\qty", "\\unit", "\\SI"]
+
+[[anchors]]
+id = "ext.tikzcd.arrows"
+doc_id = "tikz-cd"
+section = "§1.2 & §2.1"
+page = 3
+named_dest = "section.1.2"
+bbox = [0.1, 0.25, 0.9, 0.54]
+title_ru = "tikz-cd: коммутативные диаграммы, морфизмы \\arrow[rd, dashed] и 2-клетки"
+declaration = "\\begin{tikzcd}[row sep=large, column sep=large] A \\arrow[r, \"f\"] \\arrow[d, \"g\"'] & B \\\\ C & D \\end{tikzcd}"
+matched_tokens = ["tikz-cd", "tikzcd", "\\arrow", "\\ar"]
+
+[[anchors]]
+id = "ext.chemfig.molecules"
+doc_id = "chemfig"
+section = "§3 & §12"
+page = 14
+named_dest = "section.3"
+bbox = [0.09, 0.2, 0.91, 0.49]
+title_ru = "chemfig + mhchem: скелетные формулы, циклы *6(-=-=-=) и механизмы реакций"
+declaration = "\\chemfig{A-[:<angle>,<len_factor>]B(=[::90]O)-*6(-=-=-=)}   \\schemestart ... \\arrow{->[\\ce{H2SO4}]} ... \\schemestop"
+matched_tokens = ["chemfig", "mhchem", "\\chemfig", "\\schemestart", "\\schemestop", "\\ce"]
+
+[[anchors]]
+id = "ext.tdplot.coords"
+doc_id = "tikz-3dplot"
+section = "§2.1 & §3.2"
+page = 7
+named_dest = "section.2.1"
+bbox = [0.09, 0.23, 0.91, 0.51]
+title_ru = "tikz-3dplot: углы обзора (θ, φ), 3D-векторы и экваториальные дуги"
+declaration = "\\tdplotsetmaincoords{<theta_deg>}{<phi_deg>}   \\begin{tikzpicture}[tdplot_main_coords] ... \\end{tikzpicture}"
+matched_tokens = ["tikz-3dplot", "\\tdplotsetmaincoords", "\\tdplotsetrotatedcoords", "\\tdplotdrawarc", "tdplot_main_coords"]
+
+[[anchors]]
+id = "ext.forest.trees"
+doc_id = "forest"
+section = "§2.1 & §3.4"
+page = 8
+named_dest = "section.2.1"
+bbox = [0.09, 0.19, 0.91, 0.47]
+title_ru = "forest: компактные деревья разбора (AST), таксономии и деревья решений"
+declaration = "\\begin{forest} for tree={draw, rounded corners, grow'=0, l sep=8mm, s sep=4mm} [Root [Child 1] [Child 2]] \\end{forest}"
+matched_tokens = ["forest"]
+
+[[anchors]]
+id = "ext.pgfgantt.chart"
+doc_id = "pgfgantt"
+section = "§2.2 & §2.7"
+page = 11
+named_dest = "section.2.2"
+bbox = [0.09, 0.24, 0.91, 0.52]
+title_ru = "pgfgantt: календарные графики НИОКР, этапы, вехи и зависимости"
+declaration = "\\begin{ganttchart}[vgrid, hgrid]{<start_slot>}{<end_slot>} \\gantttitle{...}{...} \\\\ \\ganttbar{Task}{1}{4} \\end{ganttchart}"
+matched_tokens = ["pgfgantt", "ganttchart", "\\gantttitle", "\\gantttitlelist", "\\ganttbar", "\\ganttgroup", "\\ganttmilestone", "\\ganttlink"]
+
+[[anchors]]
+id = "ext.quantikz.gates"
+doc_id = "quantikz"
+section = "§2 & §4"
+page = 4
+named_dest = "section.2"
+bbox = [0.09, 0.21, 0.91, 0.5]
+title_ru = "quantikz / tikz-feynman: квантовые регистры, CNOT и КЭД-диаграммы"
+declaration = "\\begin{quantikz} \\lstick{$\\ket{0}$} & \\gate{H} & \\ctrl{1} & \\meter{} \\\\ \\lstick{$\\ket{0}$} & \\qw & \\targ{} & \\qw \\end{quantikz}"
+matched_tokens = ["quantikz", "tikz-feynman", "feynman", "\\lstick", "\\rstick", "\\gate", "\\ctrl", "\\targ", "\\meter", "\\qw", "\\vertex", "\\diagram"]
+
+[[anchors]]
+id = "ext.euclide.constructions"
+doc_id = "tkz-euclide"
+section = "§6 & §14"
+page = 42
+named_dest = "section.6"
+bbox = [0.09, 0.22, 0.91, 0.51]
+title_ru = "tkz-euclide / tikz-network: евклидовы построения циркулем и сетевые графы"
+declaration = "\\tkzDefPoint(0,0){A}  \\tkzDefCircle[circum](A,B,C) \\tkzGetPoint{O}  \\tkzDrawPolygon(A,B,C)"
+matched_tokens = ["tkz-euclide", "tikz-network", "\\tkzDefPoint", "\\tkzDefCircle", "\\tkzGetPoint", "\\tkzDrawPolygon", "\\tkzDrawCircle", "\\tkzDrawPoints", "\\tkzDrawSegments", "\\tkzLabelPoints", "\\Vertex", "\\Edge"]
+
+[[anchors]]
+id = "ext.timing.waveforms"
+doc_id = "tikz-timing"
+section = "§2.1 & §3.3"
+page = 9
+named_dest = "section.2.1"
+bbox = [0.09, 0.2, 0.91, 0.49]
+title_ru = "tikz-timing: временные диаграммы сигналов ПЛИС, SPI, I²C и ШИМ"
+declaration = "\\begin{tikztimingtable} SCLK & 2L 8{C} 2L \\\\ MOSI & 2Z 4D{0xA5} 4D{0x3C} 2Z \\end{tikztimingtable}"
+matched_tokens = ["tikz-timing", "tikztimingtable", "\\tikztiming", "\\extracode"]
+
+[[anchors]]
+id = "ext.optics.bench"
+doc_id = "tikz-optics"
+section = "§2.2 & §3.4"
+page = 11
+named_dest = "section.2.2"
+bbox = [0.09, 0.22, 0.91, 0.52]
+title_ru = "tikz-optics + stanli: линзы, зеркала, светоделители и расчётные балки"
+declaration = "\\begin{tikzpicture}[use optics] \\node[lens, object height=2cm] (L1) at (2cm,0) {}; \\draw[put arrow={at=0.5}] (0,0.4cm) -- (L1.lens north); \\end{tikzpicture}"
+matched_tokens = ["tikz-optics", "stanli", "use optics", "\\beam", "\\support", "\\lineload"]
