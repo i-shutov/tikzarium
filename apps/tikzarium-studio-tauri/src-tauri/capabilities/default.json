@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Минимальные привилегии главного окна TikZarium Studio (Tauri v2 Capabilities ACL)",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:default",
+    "dialog:allow-open",
+    "dialog:allow-save"
+  ]
+}

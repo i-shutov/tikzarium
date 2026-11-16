@@ -6,6 +6,7 @@
 
 pub mod evidence;
 pub mod help_search;
+pub mod manual_anchors;
 pub mod primitive_edit;
 pub mod primitives;
 pub mod project_disconnect;
