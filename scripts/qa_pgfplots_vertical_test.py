@@ -359,7 +359,7 @@ class PopupProbeImage:
         result = PopupProbeImage(self.record)
         viewport = self.record["strip_height"] - 10
         top = self.record["strip_top"] + 5
-        content = 15 * 30 - 4
+        content = self.record["count"] * 30 - 4
         handle = max(viewport * viewport / content, 12)
         ideal = top + offset / (content - viewport) * (viewport - handle)
         for x in (self.record["right_client_x"] - 7, self.record["right_client_x"] - 6):
@@ -367,6 +367,53 @@ class PopupProbeImage:
             for y in range(math.ceil(ideal) + inset, math.floor(ideal + handle) - inset):
                 result.columns[x][y] = (146, 156, 169)
         return result
+
+
+class ActualCp08SingleToSeriesPopupRegression(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        fixture = qa.read_json(qa.FIXTURES / "cp08-single-to-series-popup-probes.json")
+        if (fixture["kind"] != "DERIVED_RGB_PROBES_NOT_ORIGINAL_DESKTOP"
+                or fixture["run_id"] != 44033024834
+                or fixture["artifact_id"] != 14306388099
+                or fixture["source_head_sha"] != "a245c8b501b805b4295e4416b0654785b5a8aa8f"):
+            raise AssertionError("CP08 failed-run probe provenance must remain explicit")
+        cls.table, cls.series = map(PopupProbeImage, fixture["records"])
+
+    def test_original_table_menu_has_exact_single_choice_without_scroll(self):
+        plan = observe_property_popup(self.table, self.table.origin, 0, 1)
+        self.assertEqual((plan["strip_height"], plan["viewport_height"], plan["maximum_scroll"]), (36, 26, 0))
+        self.assertEqual(plan["target_client_y"], 386)
+
+    def test_original_series_menu_after_table_requires_observed_scrollbar(self):
+        plan = observe_property_popup(self.series, self.series.origin, 0, 3, allow_hidden_scrollbar=True)
+        self.assertEqual((plan["strip_height"], plan["viewport_height"], plan["content_height"],
+                          plan["maximum_scroll"]), (74, 64, 86, 22))
+        self.assertFalse(plan["scrollbar_observed"])
+        self.assertIsNone(plan["target_client_y"])
+        with self.assertRaisesRegex(RuntimeError, "bounded scrollbar thumb"):
+            observe_property_popup(self.series, self.series.origin, 0, 3)
+
+    def test_geometry_below_egui_minimum_and_expanded_single_choice_refuse(self):
+        for count, height in ((3, 73), (15, 73), (1, 74)):
+            with self.subTest(count=count, height=height), self.assertRaisesRegex(RuntimeError, "popup height"):
+                property_menu_plan(0, count, 368, height)
+
+    def test_short_series_click_stays_inside_row_for_entire_observed_scroll_interval(self):
+        # UNIT_EVENT synthetic thumb endpoint probes, never native screenshots.
+        for index, offset in ((0, 0), (1, 13), (2, 22)):
+            for inset in (0, 1):
+                image = self.series.with_synthetic_thumb(offset, inset=inset)
+                plan = observe_property_popup(image, image.origin, index, 3)
+                target = plan["target_client_y"]
+                self.assertIsNotNone(target)
+                low, high = plan["observed_scroll_interval"]
+                self.assertLessEqual(low, offset + 1e-9)
+                self.assertGreaterEqual(high, offset - 1e-9)
+                for possible_offset in (low, offset, high):
+                    row_start = plan["viewport_top"] + index * 30 - possible_offset
+                    self.assertGreaterEqual(target, row_start + 2)
+                    self.assertLessEqual(target, row_start + 24)
 
 
 class ActualRunFourPopupRegression(unittest.TestCase):

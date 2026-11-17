@@ -91,11 +91,14 @@ def property_menu_plan(index: int, count: int, strip_top: int, strip_height: int
                        scroll_interval: tuple[float, float] = (0, 0)) -> dict:
     if count not in (1, 3, 15) or not 0 <= index < count:
         raise ValueError("Property menu choice outside approved1/3/15 inventory")
-    # combo_height is a maximum, not the observed viewport: egui can retain
-    # a shorter popup after the same ComboBox previously showed three choices.
+    # combo_height is a maximum, not the observed viewport. egui0.33.3's
+    # ScrollArea defaults to min_scrolled_height64, then auto-shrinks to the
+    # actual content. A shared ComboBox can retain that64px viewport after a
+    # single-choice table menu (CP08 original AT4-61 PNG), or86px after three
+    # choices (run04). The actual scrollbar still has to establish the offset.
     content = count * MENU_ROW - 4
     viewport = strip_height - 10
-    if not min(content, 3 * MENU_ROW - 4) <= viewport <= min(content, 200):
+    if not min(content, 64) <= viewport <= min(content, 200):
         raise RuntimeError("Actual popup height differs from scoped compact menu geometry")
     maximum = content - viewport
     low, high = scroll_interval

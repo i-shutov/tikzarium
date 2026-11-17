@@ -41,6 +41,22 @@ OTHER_WARNING_RE = re.compile(
     re.IGNORECASE,
 )
 FATAL_RE = re.compile(r"^!|Emergency stop|Fatal error occurred|I can't find the format file", re.MULTILINE)
+ENVIRONMENT_NOTICE_PATTERNS = {
+    "shell_escape_disabled": re.compile(
+        r"^Package shellesc Warning: Shell escape disabled on input line \d+\.$"),
+    "inputenc_ignored_utf8": re.compile(
+        r"^Package inputenc Warning: inputenc package ignored with utf8 based engines\.$"),
+}
+EXPECTED_FONT_INVENTORY = {
+    "SV-003-clean": {"CMSY10", "CMMI10", "CMR7", "CMR10", "CMMI7"},
+    "SV-029-clean": {"CMMI10", "CMR7", "CMR10"},
+    "SV-009-clean": {"CMR10", "CMMI10", "CharisSIL-Italic", "CMR7", "CMMI7"},
+}
+DERIVATIVE_CORPUS_IDS = {
+    "SV-003-clean": "SV-003",
+    "SV-029-clean": "SV-029",
+    "SV-009-clean": "SV-009",
+}
 
 
 def sha256(data: bytes) -> str:
@@ -62,18 +78,29 @@ def classify_diagnostics(log_text: str, variant: str) -> dict[str, Any]:
         raise ValueError("variant must be original or clean")
     lines = log_text.splitlines()
     target_lines = extract_expected_warning_lines(log_text)
+    environment_notices: dict[str, list[str]] = {}
+    classified_notice_lines: set[str] = set()
+    for notice, pattern in ENVIRONMENT_NOTICE_PATTERNS.items():
+        found = [line.strip() for line in lines if pattern.fullmatch(line.strip())]
+        environment_notices[notice] = found
+        classified_notice_lines.update(found)
     other_warnings = [line.strip() for line in lines
-                      if OTHER_WARNING_RE.search(line) and not WARNING_RE.search(line)]
+                      if OTHER_WARNING_RE.search(line) and not WARNING_RE.search(line)
+                      and line.strip() not in classified_notice_lines]
     fatal_lines = [line.strip() for line in lines if FATAL_RE.search(line)]
     target_count_ok = len(target_lines) == (2 if variant == "original" else 0)
+    environment_notice_counts_ok = all(len(found) <= 1 for found in environment_notices.values())
     return {
         "target_warning_count": len(target_lines),
         "target_warning_lines": target_lines,
         "target_warning_count_expected": 2 if variant == "original" else 0,
         "target_warning_count_ok": target_count_ok,
         "other_warning_lines": other_warnings,
+        "environment_notices": environment_notices,
+        "environment_notice_counts_ok": environment_notice_counts_ok,
         "fatal_lines": fatal_lines,
-        "acceptable": target_count_ok and not other_warnings and not fatal_lines,
+        "acceptable": target_count_ok and environment_notice_counts_ok
+        and not other_warnings and not fatal_lines,
     }
 
 
@@ -125,8 +152,12 @@ def xelatex_argv(binary: str, output_dir: Path, source_path: Path) -> list[str]:
             "-output-directory", str(output_dir), str(source_path)]
 
 
-def assess_pair(original: dict[str, Any], clean: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+def assess_pair(original: dict[str, Any], clean: dict[str, Any], *,
+                fixture_name: str) -> tuple[str, dict[str, Any]]:
     """Assess retained result records without assuming optional files exist."""
+    if (fixture_name not in DERIVATIVE_CORPUS_IDS
+            or fixture_name not in EXPECTED_FONT_INVENTORY):
+        raise ValueError(f"Unknown clean-isolation fixture: {fixture_name}")
     def record(run: dict[str, Any], key: str) -> dict[str, Any]:
         value = run.get(key)
         return value if isinstance(value, dict) else {}
@@ -139,12 +170,19 @@ def assess_pair(original: dict[str, Any], clean: dict[str, Any]) -> tuple[str, d
     clean_render = record(clean, "render")
     page_comparison = compare_pdf_pages(original.get("pages"), clean.get("pages"),
                                         original_render, clean_render)
-    same_fonts = (_canonical_fonts(original_fonts.get("text", ""))
-                  == _canonical_fonts(clean_fonts.get("text", "")))
+    original_font_rows = _canonical_fonts(original_fonts.get("text", ""))
+    clean_font_rows = _canonical_fonts(clean_fonts.get("text", ""))
+    same_fonts = original_font_rows == clean_font_rows
+    expected_font_names = EXPECTED_FONT_INVENTORY[fixture_name]
+    original_font_names = [row[0] for row in original_font_rows]
+    clean_font_names = [row[0] for row in clean_font_rows]
+    exact_font_inventory = (sorted(original_font_names) == sorted(expected_font_names)
+                            and sorted(clean_font_names) == sorted(expected_font_names))
     same_text = bool(original_text.get("sha256") and
                      original_text.get("sha256") == clean_text.get("sha256"))
-    original_has_charis = "charis" in original_fonts.get("text", "").casefold()
-    clean_has_charis = "charis" in clean_fonts.get("text", "").casefold()
+    requires_charis = DERIVATIVE_CORPUS_IDS[fixture_name] == "SV-009"
+    original_has_charis = "CharisSIL-Italic" in original_font_names
+    clean_has_charis = "CharisSIL-Italic" in clean_font_names
     audits = (record(original, "font_audit"), record(clean, "font_audit"))
     pages_ok = original.get("pages") == 1 and clean.get("pages") == 1
     process_keys = ("pdfinfo", "pdffonts", "pdftotext")
@@ -157,16 +195,35 @@ def assess_pair(original: dict[str, Any], clean: dict[str, Any]) -> tuple[str, d
                     and record(run, "log_diagnostics").get("acceptable")
                     for run in (original, clean))
     embedded_ok = all(audit.get("all_embedded") for audit in audits)
+    original_notice_inventory = {key: len(lines) for key, lines in
+                                 original.get("log_diagnostics", {}).get("environment_notices", {}).items()}
+    clean_notice_inventory = {key: len(lines) for key, lines in
+                              clean.get("log_diagnostics", {}).get("environment_notices", {}).items()}
+    notices_equal = original_notice_inventory == clean_notice_inventory
+    diagnostics_ok = all(run.get("log_diagnostics", {}).get("acceptable")
+                         for run in (original, clean))
     render_ok = page_comparison["render_equal_byte_for_byte"]
     details = {**page_comparison, "same_fonts": same_fonts,
                "same_extracted_text": same_text,
                "original_has_charis": original_has_charis,
                "clean_has_charis": clean_has_charis,
+               "requires_charis": requires_charis,
+               "corpus_id": DERIVATIVE_CORPUS_IDS[fixture_name],
+               "expected_font_names": sorted(expected_font_names),
+               "original_font_names": sorted(original_font_names),
+               "clean_font_names": sorted(clean_font_names),
+               "exact_font_inventory": exact_font_inventory,
+               "environment_notices_equal": notices_equal,
+               "original_environment_notice_inventory": original_notice_inventory,
+               "clean_environment_notice_inventory": clean_notice_inventory,
+               "diagnostics_acceptable": diagnostics_ok,
                "all_fonts_embedded": embedded_ok,
                "both_builds_and_bindings_valid": builds_ok,
                "all_pdf_tools_succeeded": process_ok}
     passed = (pages_ok and process_ok and builds_ok and embedded_ok and render_ok
-              and same_fonts and same_text and original_has_charis and clean_has_charis)
+              and same_fonts and same_text and exact_font_inventory and diagnostics_ok
+              and notices_equal
+              and (not requires_charis or (original_has_charis and clean_has_charis)))
     return ("PASS" if passed else "FAIL"), details
 
 
@@ -321,13 +378,15 @@ def _png_dimensions(path: Path) -> tuple[int, int] | None:
     return struct.unpack(">II", data[16:24])
 
 
-def _canonical_fonts(text: str) -> list[str]:
+def _canonical_fonts(text: str) -> list[tuple[str, ...]]:
     rows = []
     for line in text.splitlines():
         parts = line.split()
         # pdffonts rows are: name type encoding emb sub uni object generation.
         if len(parts) >= 8 and parts[-2].isdigit() and parts[-1].isdigit():
-            rows.append(" ".join(parts[:-2]))
+            columns = parts[:-2]
+            columns[0] = re.sub(r"^[A-Z]{6}\+", "", columns[0])
+            rows.append(tuple(columns))
     return rows
 
 
@@ -534,7 +593,8 @@ def run_isolation(output_dir: Path = DEFAULT_OUTPUT, timeout_s: int = 180,
                                            ["Charis SIL not verified as the exact installed family"])
                                         + ([] if not format_missing else ["XeLaTeX format unavailable"]))
         elif original.get("status") != "BLOCKED" and clean.get("status") != "BLOCKED":
-            pair["status"], pair["comparison"] = assess_pair(original, clean)
+            pair["status"], pair["comparison"] = assess_pair(
+                original, clean, fixture_name=name)
         else:
             pair["status"] = "BLOCKED"
         fixture_records.append(pair)

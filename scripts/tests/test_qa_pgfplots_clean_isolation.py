@@ -67,7 +67,8 @@ class CleanIsolationEvidenceTests(unittest.TestCase):
         self.assertEqual(argv[-1], "/tmp/input.tex")
 
     def test_missing_postbuild_artifacts_fail_cleanly_instead_of_crashing(self) -> None:
-        status, comparison = isolation.assess_pair({"status": "FAIL"}, {"status": "FAIL"})
+        status, comparison = isolation.assess_pair(
+            {"status": "FAIL"}, {"status": "FAIL"}, fixture_name="SV-003-clean")
         self.assertEqual(status, "FAIL")
         self.assertFalse(comparison["render_equal_byte_for_byte"])
         self.assertFalse(comparison["all_fonts_embedded"])
@@ -148,6 +149,119 @@ class CleanIsolationEvidenceTests(unittest.TestCase):
                       + (1500).to_bytes(4, "big") + (1000).to_bytes(4, "big") + b"\x08\x02\x00\x00\x00")
             path.write_bytes(header)
             self.assertEqual(isolation._png_dimensions(path), (1500, 1000))
+
+    @staticmethod
+    def _font_table(names: list[str], prefix: str = "", object_offset: int = 0) -> str:
+        rows = ["name type encoding emb sub uni object ID",
+                "--------------------------------------------"]
+        for index, name in enumerate(names):
+            rows.append(f"{prefix}{name} CID TrueType Identity-H yes yes yes {index + object_offset} 0")
+        return "\n".join(rows) + "\n"
+
+    @staticmethod
+    def _synthetic_run(font_text: str, diagnostics: dict | None = None) -> dict:
+        digest = "a" * 64
+        good_tool = {"exit_code": 0, "timed_out": False, "text": ""}
+        render = {"exit_code": 0, "timed_out": False, "sha256": digest,
+                  "width": 900, "height": 1200}
+        diag = diagnostics or {"acceptable": True,
+                               "environment_notices": {
+                                   "shell_escape_disabled": [],
+                                   "inputenc_ignored_utf8": []}}
+        return {"pages": 1, "pdffonts": {**good_tool, "text": font_text},
+                "pdftotext": {**good_tool, "sha256": digest},
+                "pdfinfo": good_tool, "render": render,
+                "font_audit": isolation.audit_embedded_fonts(font_text),
+                "xelatex_exit_code": 0, "xelatex_timed_out": False,
+                "input_binding": {"source_bound": True},
+                "source_integrity": {"ok": True}, "log_diagnostics": diag}
+
+    def test_canonical_font_rows_strip_only_six_uppercase_subset_prefix_and_object_ids(self) -> None:
+        a = self._font_table(["CMR10"], "ABCDEF+", 3)
+        b = self._font_table(["CMR10"], "UVWXYZ+", 92)
+        self.assertEqual(isolation._canonical_fonts(a), isolation._canonical_fonts(b))
+        unstripped = isolation._canonical_fonts(self._font_table(["CMR10"], "abcdef+"))
+        self.assertEqual(unstripped[0][0], "abcdef+CMR10")
+        different_font = self._font_table(["CMR11"], "UVWXYZ+")
+        self.assertNotEqual(isolation._canonical_fonts(a), isolation._canonical_fonts(different_font))
+        for old, new in (("CID TrueType", "Type 1C"), ("Identity-H", "WinAnsi"),
+                         ("yes yes yes", "no yes yes"),
+                         ("yes yes yes", "yes no yes"),
+                         ("yes yes yes", "yes yes no")):
+            different = self._font_table(["CMR10"], "UVWXYZ+").replace(old, new)
+            self.assertNotEqual(isolation._canonical_fonts(a),
+                                isolation._canonical_fonts(different), (old, new))
+
+    def test_exact_fixture_font_inventories_and_charis_requirement(self) -> None:
+        for fixture in ("SV-003-clean", "SV-029-clean"):
+            names = sorted(isolation.EXPECTED_FONT_INVENTORY[fixture])
+            original = self._synthetic_run(self._font_table(names, "ABCDEF+", 1))
+            clean = self._synthetic_run(self._font_table(names, "UVWXYZ+", 30))
+            _, details = isolation.assess_pair(original, clean, fixture_name=fixture)
+            self.assertTrue(details["exact_font_inventory"])
+            self.assertFalse(details["requires_charis"])
+            # Charis is not a universal requirement and an unexpected Charis row fails inventory.
+            with_charis = names + ["CharisSIL-Italic"]
+            extra = self._synthetic_run(self._font_table(with_charis))
+            status, details = isolation.assess_pair(extra, extra, fixture_name=fixture)
+            self.assertEqual(status, "FAIL")
+            self.assertFalse(details["exact_font_inventory"])
+
+        names = sorted(isolation.EXPECTED_FONT_INVENTORY["SV-009-clean"])
+        valid = self._synthetic_run(self._font_table(names))
+        status, details = isolation.assess_pair(valid, valid, fixture_name="SV-009-clean")
+        self.assertTrue(details["requires_charis"])
+        self.assertTrue(details["original_has_charis"])
+        self.assertEqual(status, "PASS")
+        no_charis = self._synthetic_run(self._font_table([n for n in names if n != "CharisSIL-Italic"]))
+        status, details = isolation.assess_pair(no_charis, no_charis, fixture_name="SV-009-clean")
+        self.assertFalse(details["exact_font_inventory"])
+        self.assertEqual(status, "FAIL")
+
+    def test_unknown_fixture_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Unknown clean-isolation fixture"):
+            isolation.assess_pair({}, {}, fixture_name="SV-999-clean")
+        with self.assertRaisesRegex(ValueError, "Unknown clean-isolation fixture"):
+            isolation.assess_pair({}, {}, fixture_name="SV-003")
+
+    def test_assess_pair_accepts_every_real_derivative_spec_key(self) -> None:
+        derivatives = isolation.derivatives
+        self.assertEqual(set(isolation.DERIVATIVE_CORPUS_IDS), set(derivatives.SPECS))
+        for name, spec in derivatives.SPECS.items():
+            self.assertEqual(isolation.DERIVATIVE_CORPUS_IDS[name], spec.corpus_id)
+            names = sorted(isolation.EXPECTED_FONT_INVENTORY[name])
+            run = self._synthetic_run(self._font_table(names))
+            status, details = isolation.assess_pair(run, run, fixture_name=name)
+            self.assertEqual(status, "PASS", name)
+            self.assertEqual(details["corpus_id"], spec.corpus_id)
+
+    def test_two_environment_notices_are_separately_classified_and_bounded(self) -> None:
+        shell = "Package shellesc Warning: Shell escape disabled on input line 73."
+        inputenc = "Package inputenc Warning: inputenc package ignored with utf8 based engines."
+        original_warning = 'Missing character: There is no ; ("3B) in font nullfont!'
+        log = "\n".join([original_warning, original_warning, shell, inputenc])
+        result = isolation.classify_diagnostics(log, "original")
+        self.assertTrue(result["acceptable"])
+        self.assertEqual(len(result["environment_notices"]["shell_escape_disabled"]), 1)
+        self.assertEqual(len(result["environment_notices"]["inputenc_ignored_utf8"]), 1)
+        self.assertFalse(isolation.classify_diagnostics(log + "\n" + shell,
+                                                        "original")["acceptable"])
+        novel = isolation.classify_diagnostics(log + "\nLaTeX Warning: novel warning.", "original")
+        self.assertFalse(novel["acceptable"])
+
+        names = sorted(isolation.EXPECTED_FONT_INVENTORY["SV-003-clean"])
+        orig_diag = isolation.classify_diagnostics(log, "original")
+        clean_diag = isolation.classify_diagnostics(shell + "\n" + inputenc, "clean")
+        orig = self._synthetic_run(self._font_table(names), orig_diag)
+        clean = self._synthetic_run(self._font_table(names), clean_diag)
+        status, details = isolation.assess_pair(orig, clean, fixture_name="SV-003-clean")
+        self.assertEqual(status, "PASS")
+        self.assertTrue(details["environment_notices_equal"])
+        clean_without_one = self._synthetic_run(
+            self._font_table(names), isolation.classify_diagnostics(inputenc, "clean"))
+        status, details = isolation.assess_pair(orig, clean_without_one, fixture_name="SV-003-clean")
+        self.assertEqual(status, "FAIL")
+        self.assertFalse(details["environment_notices_equal"])
 
 
 if __name__ == "__main__":

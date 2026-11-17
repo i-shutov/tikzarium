@@ -111,7 +111,7 @@ jobs:
             xvfb xauth x11-utils openbox xdotool xclip wmctrl imagemagick python3-pil \
             libgl1-mesa-dri libglx-mesa0 libxkbcommon-dev libxkbcommon-x11-dev \
             libx11-dev libxi-dev libxcursor-dev libxrandr-dev libudev-dev \
-            texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended \
+            texlive-xetex texlive-latex-extra texlive-pictures texlive-fonts-recommended texlive-lang-cyrillic \
             fonts-dejavu-core fonts-sil-charis poppler-utils
           { uname -a; rustc -vV; cargo --version; xelatex --version; } > "$RUNNER_TEMP/pgfplots-native-logs/environment.txt"
           kpsewhich pgfplots.sty
