@@ -134,6 +134,16 @@ pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
             verified_tex_default: "UNKNOWN",
             manual_section: "UNKNOWN — точное руководство для текста/шрифтов не сверено",
         }),
+        "columns" => Some(ScientificPropertyHelp {
+            key: "columns",
+            value_type: "Перестановка существующего списка имён столбцов",
+            effect: "Порядок вывода столбцов только выбранной команды \\pgfplotstabletypeset; данные и формулы создания столбцов не меняются.",
+            editor_limit: "Только уже записанный columns={...}: 1–32 уникальных простых ASCII-имени; перестановка того же набора. Макросы, индексы и неоднозначные локальные ключи отклоняются. Неизвестные внешние команды/окружения блокируют правку. Глобальные стили сохраняются без вычисления их влияния; результат проверяется сборкой.",
+            example: "columns={x,model,y}",
+            package: "pgfplotstable",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "PGFPlotstable §2.2 Selecting Columns and their Appearance Styles; /pgfplots/table/columns (CTAN pgfplotstable.pdf; версия установленного пакета не подтверждена)",
+        }),
         _ => None,
     }
 }
@@ -145,6 +155,12 @@ const MAX_GROUP_DEPTH: usize = 64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScientificKind {
     Axis,
+    /// Explicit groupplot options, not a whole-axis visual adapter.
+    GroupPlot,
+    /// One explicit subplot option group within a recognized groupplot.
+    NextGroupPlot,
+    /// One table typesetting command, with only existing columns reorder.
+    TableTypeset,
     AddPlot,
     Draw,
     Path,
@@ -171,7 +187,7 @@ pub struct RecognizedInstance {
     pub range: Range<usize>,
     /// Byte range excluding the outer [] of the literal option group.
     pub option_range: Option<Range<usize>>,
-    /// Index of the parent axis in the returned instance collection.
+    /// Index of the parent axis/subplot (or groupplot for NextGroupPlot).
     pub parent_axis: Option<usize>,
     pub confidence: RecognitionConfidence,
     pub revision: u64,
@@ -197,7 +213,7 @@ pub enum ScanRefusal {
     SourceTooLarge,
     #[error("too many recognized TikZ constructs")]
     TooManyInstances,
-    #[error("opaque TeX catcode / csname control inside a picture")]
+    #[error("opaque or unreviewed TeX control/context in scientific source")]
     UnsupportedTeXControl,
     #[error("unbalanced or unsupported TikZ source grouping")]
     UnbalancedSource,
@@ -329,6 +345,36 @@ fn trailing_options(text: &str, from: usize) -> Result<(Option<Range<usize>>, us
     Ok((Some(group.inside), group.next))
 }
 
+/// Only a braced argument or one literal control word. Its contents are
+/// source-owned and skipped, never scanned for apparently active commands.
+fn table_argument_end(text: &str, from: usize) -> Result<usize, ScanRefusal> {
+    let p = whitespace_and_comments(text, from);
+    match text.as_bytes().get(p) {
+        Some(b'{') => group_at(text, p)
+            .map(|group| group.next)
+            .ok_or(ScanRefusal::UnbalancedSource),
+        Some(b'\\') => {
+            let (word, end) = command_at(text, p);
+            if word.is_empty()
+                || !text
+                    .as_bytes()
+                    .get(end)
+                    .is_none_or(|byte| byte.is_ascii_whitespace() || matches!(byte, b'%' | b'\\'))
+            {
+                return Err(ScanRefusal::UnsupportedTeXControl);
+            }
+            Ok(end)
+        }
+        _ => Err(ScanRefusal::UnsupportedTeXControl),
+    }
+}
+
+fn supported_option_suffix(text: &str, from: usize) -> bool {
+    text.as_bytes()
+        .get(from)
+        .is_none_or(|byte| byte.is_ascii_whitespace() || matches!(byte, b'[' | b'{' | b'%' | b'\\'))
+}
+
 fn command_semicolon(text: &str, from: usize) -> Option<usize> {
     let b = text.as_bytes();
     let mut stack: Vec<u8> = Vec::new();
@@ -415,6 +461,72 @@ fn skip_newcommand_body(text: &str, from: usize) -> Option<usize> {
     Some(group_at(text, i)?.next)
 }
 
+fn redefines_scoped_command(text: &str, from: usize) -> bool {
+    let mut p = whitespace_and_comments(text, from);
+    if text.as_bytes().get(p) == Some(&b'*') {
+        p = whitespace_and_comments(text, p + 1);
+    }
+    if text.as_bytes().get(p) == Some(&b'{') {
+        let Some(group) = group_at(text, p) else {
+            return false;
+        };
+        p = whitespace_and_comments(text, group.inside.start);
+    }
+    if text.as_bytes().get(p) != Some(&b'\\') {
+        return false;
+    }
+    matches!(
+        command_at(text, p).0,
+        "groupplot" | "endgroupplot" | "nextgroupplot" | "pgfplotstabletypeset"
+    )
+}
+
+/// Closed lexical invocation vocabulary for the two new corpus scenarios.
+/// An unknown command may consume even an unbraced following control token.
+/// Its arity/expansion is not guessed. Bodies/options consumed by the existing
+/// handlers below are not independently treated as top-level invocations.
+fn reviewed_scoped_invocation(word: &str) -> bool {
+    matches!(
+        word,
+        "documentclass"
+            | "usepackage"
+            | "usetikzlibrary"
+            | "usepgfplotslibrary"
+            | "begin"
+            | "end"
+            | "verb"
+            | "lstinline"
+            | "def"
+            | "gdef"
+            | "edef"
+            | "xdef"
+            | "newcommand"
+            | "renewcommand"
+            | "providecommand"
+            | "DeclareRobustCommand"
+            | "tikzset"
+            | "pgfplotsset"
+            | "pgfplotstableset"
+            | "pgfkeys"
+            | "pgfmathsetmacro"
+            | "pgfmathdeclarefunction"
+            | "foreach"
+            | "pgfplotstableread"
+            | "pgfplotstablecreatecol"
+            | "pgfplotstabletypeset"
+            | "nextgroupplot"
+            | "addplot"
+            | "draw"
+            | "path"
+            | "fill"
+            | "clip"
+            | "node"
+            | "coordinate"
+            | "pic"
+            | "dimline"
+    )
+}
+
 fn add(
     out: &mut Vec<RecognizedInstance>,
     instance: RecognizedInstance,
@@ -427,9 +539,11 @@ fn add(
     Ok(index)
 }
 
-/// Only recognizes commands literally in one TikZ picture. Bodies of
-/// \def/\foreach are skipped to avoid claiming one edit represents one
-/// invocation of an opaque macro or repeated draw command.
+/// Recognizes literal TikZ picture commands and an explicit table typesetting
+/// command outside a picture for the bounded existing-corpus columns reorder.
+/// New groupplot/table descriptors require the closed invocation vocabulary;
+/// unknown top-level commands/contexts remain source-only. Bodies of
+/// \def/\foreach are skipped, without macro expansion or execution claims.
 pub fn scan_scientific_source(
     view: SourceView<'_>,
 ) -> Result<Vec<RecognizedInstance>, ScanRefusal> {
@@ -443,6 +557,14 @@ pub fn scan_scientific_source(
     let mut i = 0;
     let mut picture_depth = 0usize;
     let mut axis_stack: Vec<usize> = Vec::new();
+    // Unconsumed arguments of unknown commands do not establish ownership
+    // for the new scoped adapters. Existing axis scanning keeps its contract.
+    let mut unowned_groups: Vec<u8> = Vec::new();
+    let mut scoped_control_is_opaque = false;
+    let mut scoped_grouping_is_opaque = false;
+    // Group options and each explicit nextgroupplot retain separate owners.
+    // Nested groupplots/axis environments are outside this bounded grammar.
+    let mut groupplot: Option<(usize, Option<usize>)> = None;
     while i < b.len() {
         if b[i] == b'%' {
             while i < b.len() && b[i] != b'\n' {
@@ -451,12 +573,42 @@ pub fn scan_scientific_source(
             continue;
         }
         if b[i] != b'\\' {
+            match b[i] {
+                b'{' | b'[' => {
+                    if unowned_groups.len() >= MAX_GROUP_DEPTH {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
+                    unowned_groups.push(if b[i] == b'{' { b'}' } else { b']' });
+                }
+                b'}' | b']' => {
+                    if unowned_groups.last() == Some(&b[i]) {
+                        unowned_groups.pop();
+                    } else {
+                        scoped_grouping_is_opaque = true;
+                    }
+                }
+                _ => {}
+            }
             i += 1;
             continue;
         }
         let start = i;
         let (word, next) = command_at(text, i);
         i = next;
+        if unowned_groups.is_empty() && !reviewed_scoped_invocation(word) {
+            scoped_control_is_opaque = true;
+        }
+        // These token controls/conditionals can make a literal occurrence a
+        // definition operand or inactive token. No expansion/interpreter is
+        // attempted. Only the newly scoped descriptors lose editability;
+        // approved Axis/AddPlot recognition retains its existing contract.
+        if matches!(
+            word,
+            "let" | "futurelet" | "noexpand" | "expandafter" | "unless" | "else" | "or" | "fi"
+        ) || word.starts_with("if")
+        {
+            scoped_control_is_opaque = true;
+        }
         // Scope and catcode safety apply to the preamble too. Otherwise a
         // macro definition containing a literal tikzpicture could fabricate
         // an editable picture even though it was never executed.
@@ -482,6 +634,7 @@ pub fn scan_scientific_source(
             continue;
         }
         if matches!(word, "def" | "gdef" | "edef" | "xdef") {
+            scoped_control_is_opaque |= redefines_scoped_command(text, next);
             i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
@@ -489,12 +642,13 @@ pub fn scan_scientific_source(
             word,
             "newcommand" | "renewcommand" | "providecommand" | "DeclareRobustCommand"
         ) {
+            scoped_control_is_opaque |= redefines_scoped_command(text, next);
             i = skip_newcommand_body(text, next).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
         if matches!(
             word,
-            "tikzset" | "pgfplotsset" | "pgfkeys" | "pgfmathsetmacro"
+            "tikzset" | "pgfplotsset" | "pgfplotstableset" | "pgfkeys" | "pgfmathsetmacro"
         ) {
             i = skip_macro_body(text, next, 1).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
@@ -507,27 +661,87 @@ pub fn scan_scientific_source(
             i = skip_macro_body(text, next, 2).ok_or(ScanRefusal::UnbalancedSource)?;
             continue;
         }
+        if matches!(word, "pgfplotstableread" | "pgfplotstablecreatecol") {
+            if !supported_option_suffix(text, next) {
+                return Err(ScanRefusal::UnsupportedTeXControl);
+            }
+            let (_, after_options) = trailing_options(text, next)?;
+            let after_argument = table_argument_end(text, after_options)?;
+            i = table_argument_end(text, after_argument)?;
+            continue;
+        }
+        if word == "pgfplotstabletypeset" {
+            if !unowned_groups.is_empty() {
+                i = trailing_options(text, next)?.1;
+                continue;
+            }
+            if !supported_option_suffix(text, next) {
+                return Err(ScanRefusal::UnsupportedTeXControl);
+            }
+            let (options, after_options) = trailing_options(text, next)?;
+            let finish = table_argument_end(text, after_options)?;
+            add(
+                &mut out,
+                RecognizedInstance {
+                    kind: ScientificKind::TableTypeset,
+                    range: start..finish,
+                    option_range: options,
+                    parent_axis: None,
+                    confidence: RecognitionConfidence::Lexical,
+                    revision: view.revision,
+                    source_sha256: sha,
+                },
+            )?;
+            i = finish;
+            continue;
+        }
         if (word == "begin" || word == "end")
             && let Some((env, end)) = environment_at(text, next)
         {
+            if unowned_groups.is_empty()
+                && !matches!(
+                    env,
+                    "document"
+                        | "tikzpicture"
+                        | "axis"
+                        | "groupplot"
+                        | "verbatim"
+                        | "lstlisting"
+                        | "minted"
+                )
+            {
+                scoped_control_is_opaque = true;
+            }
             match (word, env) {
                 ("begin", "tikzpicture") => {
+                    if groupplot.is_some() {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
                     picture_depth += 1;
                     i = end;
                     continue;
                 }
                 ("end", "tikzpicture") => {
+                    if groupplot.is_some() {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
                     picture_depth = picture_depth.saturating_sub(1);
                     axis_stack.clear();
                     i = end;
                     continue;
                 }
                 ("end", "axis") if picture_depth > 0 => {
+                    if groupplot.is_some() {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
                     axis_stack.pop();
                     i = end;
                     continue;
                 }
                 ("begin", "axis") if picture_depth > 0 => {
+                    if groupplot.is_some() {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
                     let (options, finish) = trailing_options(text, end)?;
                     let index = add(
                         &mut out,
@@ -545,6 +759,37 @@ pub fn scan_scientific_source(
                     i = finish;
                     continue;
                 }
+                ("begin", "groupplot") if picture_depth > 0 && unowned_groups.is_empty() => {
+                    if groupplot.is_some() || !axis_stack.is_empty() || picture_depth != 1 {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
+                    if !supported_option_suffix(text, end) {
+                        return Err(ScanRefusal::UnsupportedTeXControl);
+                    }
+                    let (options, finish) = trailing_options(text, end)?;
+                    let index = add(
+                        &mut out,
+                        RecognizedInstance {
+                            kind: ScientificKind::GroupPlot,
+                            range: start..finish,
+                            option_range: options,
+                            parent_axis: None,
+                            confidence: RecognitionConfidence::Lexical,
+                            revision: view.revision,
+                            source_sha256: sha,
+                        },
+                    )?;
+                    groupplot = Some((index, None));
+                    i = finish;
+                    continue;
+                }
+                ("end", "groupplot") if picture_depth > 0 && unowned_groups.is_empty() => {
+                    if groupplot.take().is_none() {
+                        return Err(ScanRefusal::UnbalancedSource);
+                    }
+                    i = end;
+                    continue;
+                }
                 ("begin", "verbatim" | "lstlisting" | "minted") => {
                     let closing = format!("\\end{{{env}}}");
                     let rest = text.get(end..).ok_or(ScanRefusal::UnbalancedSource)?;
@@ -558,6 +803,43 @@ pub fn scan_scientific_source(
         if picture_depth == 0 {
             continue;
         }
+        if word == "nextgroupplot" {
+            if !unowned_groups.is_empty() {
+                i = trailing_options(text, next)?.1;
+                continue;
+            }
+            let Some((group, _)) = groupplot else {
+                return Err(ScanRefusal::UnbalancedSource);
+            };
+            if !supported_option_suffix(text, next) {
+                return Err(ScanRefusal::UnsupportedTeXControl);
+            }
+            let (options, finish) = trailing_options(text, next)?;
+            let index = add(
+                &mut out,
+                RecognizedInstance {
+                    kind: ScientificKind::NextGroupPlot,
+                    range: start..finish,
+                    option_range: options,
+                    parent_axis: Some(group),
+                    confidence: RecognitionConfidence::Lexical,
+                    revision: view.revision,
+                    source_sha256: sha,
+                },
+            )?;
+            groupplot = Some((group, Some(index)));
+            i = finish;
+            continue;
+        }
+        let parent_axis = axis_stack.last().copied().or_else(|| {
+            unowned_groups
+                .is_empty()
+                .then(|| groupplot.and_then(|(_, current)| current))
+                .flatten()
+        });
+        if word == "addplot" && groupplot.is_some() && parent_axis.is_none() {
+            return Err(ScanRefusal::UnbalancedSource);
+        }
         if word == "foreach" {
             let finish = skip_macro_body(text, next, 2).ok_or(ScanRefusal::UnbalancedSource)?;
             add(
@@ -566,7 +848,7 @@ pub fn scan_scientific_source(
                     kind: ScientificKind::ForeachOpaque,
                     range: start..finish,
                     option_range: None,
-                    parent_axis: axis_stack.last().copied(),
+                    parent_axis,
                     confidence: RecognitionConfidence::Opaque,
                     revision: view.revision,
                     source_sha256: sha,
@@ -576,7 +858,7 @@ pub fn scan_scientific_source(
             continue;
         }
         let kind = match word {
-            "addplot" if !axis_stack.is_empty() => ScientificKind::AddPlot,
+            "addplot" if parent_axis.is_some() => ScientificKind::AddPlot,
             "draw" => ScientificKind::Draw,
             "path" => ScientificKind::Path,
             "fill" => ScientificKind::Fill,
@@ -615,7 +897,7 @@ pub fn scan_scientific_source(
                 kind,
                 range: start..finish,
                 option_range: options,
-                parent_axis: axis_stack.last().copied(),
+                parent_axis,
                 confidence: RecognitionConfidence::Lexical,
                 revision: view.revision,
                 source_sha256: sha,
@@ -623,7 +905,22 @@ pub fn scan_scientific_source(
         )?;
         i = finish;
     }
-    if picture_depth != 0 || !axis_stack.is_empty() {
+    let has_scoped_descriptor = out.iter().any(|item| {
+        matches!(
+            item.kind,
+            ScientificKind::GroupPlot
+                | ScientificKind::NextGroupPlot
+                | ScientificKind::TableTypeset
+        )
+    });
+    if scoped_control_is_opaque && has_scoped_descriptor {
+        return Err(ScanRefusal::UnsupportedTeXControl);
+    }
+    if picture_depth != 0
+        || !axis_stack.is_empty()
+        || groupplot.is_some()
+        || (has_scoped_descriptor && (!unowned_groups.is_empty() || scoped_grouping_is_opaque))
+    {
         return Err(ScanRefusal::UnbalancedSource);
     }
     Ok(out)
@@ -753,6 +1050,19 @@ fn locate_key(
         if actual_key == ".cd" || actual_key.ends_with("/.cd") {
             return Err(EditRefusal::Opaque);
         }
+        if owner == ScientificKind::TableTypeset {
+            // Do not confuse qualified aliases/handlers with the one direct
+            // columns value, or permit a namespace control to change it.
+            if actual_key.contains('\\')
+                || actual_key.starts_with('/')
+                || actual_key.starts_with('.')
+                || actual_key.ends_with("/.search also")
+                || (depth > 0 && actual_key == "columns")
+                || (actual_key.starts_with("columns/") && !table_column_style_key(actual_key))
+            {
+                return Err(EditRefusal::Opaque);
+            }
+        }
         let Some(eq) = equals else {
             continue;
         };
@@ -761,12 +1071,24 @@ fn locate_key(
             hits.push(value);
             continue;
         }
+        if owner == ScientificKind::TableTypeset
+            && (actual_key.ends_with("/.style") || actual_key.ends_with("/.append style"))
+            && text.as_bytes().get(value.start) == Some(&b'{')
+        {
+            let nested = group_at(text, value.start).ok_or(EditRefusal::Opaque)?;
+            if nested.next != value.end {
+                return Err(EditRefusal::Opaque);
+            }
+            locate_key(text, nested.inside, owner, wanted, depth + 1, hits)?;
+        }
         // Only these axis-owned plot styles have the reviewed plot-property
         // meaning. A legend/node/custom style can contain the same key with
         // a different owner; descending into it would silently edit another
         // object. Do not recurse further into styles nested inside a plot.
-        if owner == ScientificKind::Axis
-            && depth == 0
+        if matches!(
+            owner,
+            ScientificKind::Axis | ScientificKind::GroupPlot | ScientificKind::NextGroupPlot
+        ) && depth == 0
             && matches!(wanted, "samples" | "domain" | "mark")
             && matches!(
                 actual_key,
@@ -851,6 +1173,47 @@ fn plain_braced_label(value: &str) -> bool {
         })
 }
 
+fn simple_column_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 32
+        && name.as_bytes()[0].is_ascii_alphabetic()
+        && name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+}
+
+fn table_column_style_key(key: &str) -> bool {
+    let parts = key.split('/').collect::<Vec<_>>();
+    matches!(parts.as_slice(), ["columns", name, ".style" | ".append style"] if simple_column_name(name))
+}
+
+/// Closed value domain: existing, unique, explicitly named columns only.
+/// It does not resolve data, aliases, TeX macros, indices or generated ranges.
+struct Columns<'a> {
+    names: Vec<&'a str>,
+}
+
+impl<'a> Columns<'a> {
+    fn parse(value: &'a str) -> Option<Self> {
+        let inner = value.strip_prefix('{')?.strip_suffix('}')?;
+        let mut names = Vec::new();
+        for part in inner.split(',') {
+            let name = part.trim_matches(|ch: char| ch.is_ascii_whitespace());
+            if names.len() >= 32 || !simple_column_name(name) || names.contains(&name) {
+                return None;
+            }
+            names.push(name);
+        }
+        Some(Self { names })
+    }
+
+    fn same_columns(mut self, mut other: Self) -> bool {
+        self.names.sort_unstable();
+        other.names.sort_unstable();
+        self.names == other.names
+    }
+}
+
 fn literal_is_safe(key: &str, value: &str) -> bool {
     match key {
         "samples" => {
@@ -866,6 +1229,7 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
         "xtick" | "ytick" => literal_numeric_ticks(value),
         "mark" => matches!(value, "none" | "*" | "+" | "x"),
         "xlabel" | "ylabel" => plain_braced_label(value),
+        "columns" => Columns::parse(value).is_some(),
         _ => false,
     }
 }
@@ -873,17 +1237,32 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
 fn allowed_property(kind: ScientificKind, key: &str) -> bool {
     match key {
         "samples" | "domain" | "mark" => {
-            matches!(kind, ScientificKind::Axis | ScientificKind::AddPlot)
+            matches!(
+                kind,
+                ScientificKind::Axis
+                    | ScientificKind::GroupPlot
+                    | ScientificKind::NextGroupPlot
+                    | ScientificKind::AddPlot
+            )
         }
         "xmin" | "xmax" | "ymin" | "ymax" | "xtick" | "ytick" | "xtick distance"
         | "ytick distance" | "width" | "height" | "xlabel" | "ylabel" => {
-            kind == ScientificKind::Axis
+            matches!(
+                kind,
+                ScientificKind::Axis | ScientificKind::GroupPlot | ScientificKind::NextGroupPlot
+            )
         }
+        "columns" => kind == ScientificKind::TableTypeset,
         _ => false,
     }
 }
 
 fn additional_edit_guards(key: &str, old: &str, new: &str) -> bool {
+    if key == "columns" {
+        return Columns::parse(old)
+            .zip(Columns::parse(new))
+            .is_some_and(|(old_columns, new_columns)| old_columns.same_columns(new_columns));
+    }
     if matches!(key, "width" | "height") {
         let Some((_, old_unit)) = dimension_parts(old) else {
             return false;
@@ -926,7 +1305,11 @@ fn literal_key_range(
     if instance.confidence != RecognitionConfidence::Lexical
         || !matches!(
             instance.kind,
-            ScientificKind::Axis | ScientificKind::AddPlot
+            ScientificKind::Axis
+                | ScientificKind::GroupPlot
+                | ScientificKind::NextGroupPlot
+                | ScientificKind::TableTypeset
+                | ScientificKind::AddPlot
         )
     {
         return Err(EditRefusal::Opaque);
@@ -1034,4 +1417,387 @@ pub fn plan_literal_key_edit(request: LiteralEditRequest<'_>) -> Result<SourcePa
         replacement: request.replacement[prefix..new_end].to_owned(),
         source_revision: request.instance.source_target().revision,
     })
+}
+
+#[cfg(test)]
+mod scoped_descriptor_tests {
+    use super::*;
+
+    const GROUP: &str =
+        include_str!("../../../roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/group-plots.tex");
+    const TABLE: &str = include_str!(
+        "../../../roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/table-derived-column.tex"
+    );
+
+    fn view(text: &str) -> SourceView<'_> {
+        SourceView { text, revision: 19 }
+    }
+
+    fn edit(
+        text: &str,
+        instance: &RecognizedInstance,
+        key: &str,
+        old: &str,
+        new: &str,
+    ) -> Result<SourcePatch, EditRefusal> {
+        plan_literal_key_edit(LiteralEditRequest {
+            view: view(text),
+            instance,
+            key,
+            expected_old: old,
+            replacement: new,
+        })
+    }
+
+    #[test]
+    fn original_groupplot_has_separate_scoped_owners_and_one_byte_width_patch() {
+        let instances = scan_scientific_source(view(GROUP)).unwrap();
+        assert_eq!(
+            instances.iter().map(|item| item.kind).collect::<Vec<_>>(),
+            [
+                ScientificKind::GroupPlot,
+                ScientificKind::NextGroupPlot,
+                ScientificKind::AddPlot,
+                ScientificKind::NextGroupPlot,
+                ScientificKind::AddPlot,
+            ]
+        );
+        assert_eq!(instances[1].parent_axis, Some(0));
+        assert_eq!(instances[2].parent_axis, Some(1));
+        assert_eq!(instances[3].parent_axis, Some(0));
+        assert_eq!(instances[4].parent_axis, Some(3));
+        assert_eq!(
+            literal_key_value(view(GROUP), &instances[0], "width").unwrap(),
+            "6cm"
+        );
+        assert_eq!(
+            literal_key_value(view(GROUP), &instances[1], "width"),
+            Err(EditRefusal::Opaque)
+        );
+        let patch = edit(GROUP, &instances[0], "width", "6cm", "7cm").unwrap();
+        assert_eq!(patch.expected_old, "6");
+        assert_eq!(patch.replacement, "7");
+        let mut source = GROUP.to_owned();
+        let mut revision = 19;
+        let inverse = patch.apply(&mut source, &mut revision).unwrap();
+        assert_eq!(source, GROUP.replacen("width=6cm", "width=7cm", 1));
+        assert!(source.contains("group size=2 by 1,horizontal sep=14mm"));
+        assert!(source.contains("{sin(deg(x))}"));
+        assert!(source.contains("{cos(deg(x))}"));
+        assert!(source.contains("\r\n"));
+        inverse.apply(&mut source, &mut revision).unwrap();
+        assert_eq!(source.as_bytes(), GROUP.as_bytes());
+        assert_eq!(
+            edit(GROUP, &instances[0], "width", "6cm", "7mm").unwrap_err(),
+            EditRefusal::InvalidLiteral
+        );
+        assert_eq!(
+            edit(GROUP, &instances[0], "columns", "{x,y}", "{y,x}").unwrap_err(),
+            EditRefusal::UnsupportedKey
+        );
+    }
+
+    #[test]
+    fn nextgroupplot_literal_belongs_only_to_that_subplot() {
+        let source = "\\begin{tikzpicture}\\begin{groupplot}[width=6cm]\\nextgroupplot[width=4cm]\\addplot[domain=0:1]{x};\\nextgroupplot[width=5cm]\\addplot{x^2};\\end{groupplot}\\end{tikzpicture}";
+        let instances = scan_scientific_source(view(source)).unwrap();
+        let patch = edit(source, &instances[1], "width", "4cm", "3cm").unwrap();
+        let mut changed = source.to_owned();
+        patch.apply(&mut changed, &mut 19).unwrap();
+        assert_eq!(changed, source.replacen("width=4cm", "width=3cm", 1));
+        assert_eq!(
+            literal_key_value(view(source), &instances[3], "width").unwrap(),
+            "5cm"
+        );
+    }
+
+    #[test]
+    fn original_table_reorder_preserves_data_expression_unknown_bytes_and_inverse() {
+        let source = format!("% сохраняется Ω\r\n{TABLE}% unknown \\opaque{{🦀}}\r\n");
+        let instances = scan_scientific_source(view(&source)).unwrap();
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].kind, ScientificKind::TableTypeset);
+        assert_eq!(instances[0].parent_axis, None);
+        assert_eq!(
+            literal_key_value(view(&source), &instances[0], "columns").unwrap(),
+            "{x,y,model}"
+        );
+        let patch = edit(
+            &source,
+            &instances[0],
+            "columns",
+            "{x,y,model}",
+            "{x,model,y}",
+        )
+        .unwrap();
+        let mut changed = source.clone();
+        let mut revision = 19;
+        let inverse = patch.apply(&mut changed, &mut revision).unwrap();
+        assert_eq!(
+            changed,
+            source.replacen("columns={x,y,model}", "columns={x,model,y}", 1)
+        );
+        assert!(changed.contains(r"create col/expr={\thisrow{x}^2}"));
+        assert!(changed.contains(r"{x y\\1 1.1\\2 3.9\\3 9.2\\4 15.8\\}"));
+        inverse.apply(&mut changed, &mut revision).unwrap();
+        assert_eq!(changed.as_bytes(), source.as_bytes());
+        assert_eq!(
+            edit(&source, &instances[0], "width", "6cm", "7cm").unwrap_err(),
+            EditRefusal::UnsupportedKey
+        );
+        let help = scientific_property_help("columns").unwrap();
+        assert_eq!(help.package, "pgfplotstable");
+        assert_eq!(help.verified_tex_default, "UNKNOWN");
+        assert!(help.effect.contains("\\pgfplotstabletypeset"));
+    }
+
+    #[test]
+    fn columns_domain_allows_only_bounded_unique_simple_names_and_same_set() {
+        let instance = scan_scientific_source(view(TABLE)).unwrap().remove(0);
+        for replacement in [
+            "{x,y}",
+            "{x,y,model,z}",
+            "{x,y,y}",
+            "{x,y,other}",
+            "{x,\\model,y}",
+            "{x,[index]1,y}",
+            "{x,{model},y}",
+            "{x,mod/el,y}",
+            "{x,model/.style,y}",
+            "{x,model% hidden\n,y}",
+            "{x,модель,y}",
+            "{}",
+        ] {
+            assert_eq!(
+                edit(TABLE, &instance, "columns", "{x,y,model}", replacement).unwrap_err(),
+                EditRefusal::InvalidLiteral,
+                "{replacement}"
+            );
+        }
+        let bounded = format!(
+            "{{{}}}",
+            (0..32)
+                .map(|i| format!("c{i}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        assert!(Columns::parse(&bounded).is_some());
+        let excessive = bounded.replace('}', ",c32}");
+        assert!(Columns::parse(&excessive).is_none());
+        assert!(Columns::parse("{x,x}").is_none());
+        assert!(Columns::parse("{a_long_column_name_over_32_characters}").is_none());
+        assert!(edit(TABLE, &instance, "columns", "{x,model,y}", "{y,model,x}").is_err());
+    }
+
+    #[test]
+    fn columns_reject_ambiguous_namespace_handlers_duplicates_and_macro_names() {
+        for options in [
+            "columns={x,y},columns={y,x}",
+            "columns={x,y},/pgfplots/table/columns={y,x}",
+            "/pgfplots/table/.cd,columns={x,y}",
+            "columns={x,y},.cd",
+            "columns={x,y},columns/.add={}{,z}",
+            "columns={x,y},columns/.style={}",
+            "columns={x,y},\\switch",
+            "columns={x,y},.search also={/other}",
+            "columns={x,x}",
+            "columns={x,\\model}",
+            "columns={x,y},col% hidden\numns={y,x}",
+            "columns={x,y},columns/x/.append style={columns={y,x}}",
+            "columns={x,y},every head row/.style={/pgfplots/table/.cd,columns={y,x}}",
+            "columns={x,y},columns/x/.style={\\pgfkeys{/pgfplots/table/columns={y,x}}}",
+        ] {
+            let source = format!("\\pgfplotstabletypeset[{options}]\\datatable\r\n");
+            let instance = scan_scientific_source(view(&source)).unwrap().remove(0);
+            assert!(
+                literal_key_value(view(&source), &instance, "columns").is_err(),
+                "{options}"
+            );
+        }
+    }
+
+    #[test]
+    fn scoped_commands_ignore_macro_bodies_comments_verbatim_and_table_arguments() {
+        let fake = r"\pgfplotstabletypeset[columns={x,y}]\fake";
+        let source = format!(
+            "% {fake}\n\\newcommand{{\\fake}}[1]{{\\newcommand{{\\inner}}{{{fake}}}}}\n\\def\\other{{{fake}}}\n\\begin{{verbatim}}{fake}\\end{{verbatim}}\n\\pgfplotstableread{{{fake}}}\\data\n\\pgfplotstablecreatecol[create col/expr={{{fake}}}]{{model}}\\data\n{TABLE}"
+        );
+        let instances = scan_scientific_source(view(&source)).unwrap();
+        assert_eq!(instances.len(), 1);
+        assert_eq!(instances[0].kind, ScientificKind::TableTypeset);
+        for source in [
+            r"\newcommand{\fake}{\begin{tikzpicture}\begin{groupplot}[width=6cm]\nextgroupplot[width=4cm]\end{groupplot}\end{tikzpicture}}",
+            r"\def\fake{\begin{tikzpicture}\begin{groupplot}[width=6cm]\nextgroupplot[width=4cm]\end{groupplot}\end{tikzpicture}}",
+        ] {
+            assert!(scan_scientific_source(view(source)).unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn scoped_descriptors_do_not_claim_unknown_braced_or_optional_arguments() {
+        let table = r"\pgfplotstabletypeset[columns={x,y}]\data";
+        let group = r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\nextgroupplot[width=4cm]\end{groupplot}\end{tikzpicture}";
+        for command in ["input", "unreviewed"] {
+            for hidden in [table, group] {
+                for source in [
+                    format!("\\{command}{{{hidden}}}"),
+                    format!("\\{command}[{hidden}]"),
+                ] {
+                    let instances = scan_scientific_source(view(&source)).unwrap();
+                    assert!(
+                        instances.iter().all(|item| !matches!(
+                            item.kind,
+                            ScientificKind::GroupPlot
+                                | ScientificKind::NextGroupPlot
+                                | ScientificKind::TableTypeset
+                        )),
+                        "{source}"
+                    );
+                }
+            }
+        }
+        let source = format!("\\unreviewed{{{table}}}\r\n{TABLE}");
+        assert_eq!(
+            scan_scientific_source(view(&source)),
+            Err(ScanRefusal::UnsupportedTeXControl)
+        );
+    }
+
+    #[test]
+    fn unknown_top_level_invocations_cannot_consume_new_scoped_commands() {
+        let table = r"\pgfplotstabletypeset[columns={x,y}]\data";
+        for source in [
+            format!(r"\unreviewed{table}"),
+            format!(r"\textbf{table}"),
+            format!(r"\#{table}"),
+            format!(r"\newcommand{{\custom}}[1]{{#1}}\custom{table}"),
+            format!(r"{table}\unreviewed"),
+            format!(r"\begin{{unknown}}{table}\end{{unknown}}"),
+            r"\begin{tikzpicture}\unreviewed\begin{groupplot}[width=6cm]\nextgroupplot[width=4cm]\end{groupplot}\end{tikzpicture}".to_owned(),
+            r"\newcommand{\custom}[1]{#1}\begin{tikzpicture}\custom\begin{groupplot}[width=6cm]\nextgroupplot[width=4cm]\end{groupplot}\end{tikzpicture}".to_owned(),
+        ] {
+            assert_eq!(scan_scientific_source(view(&source)), Err(ScanRefusal::UnsupportedTeXControl), "{source}");
+        }
+        // The vocabulary closes only the new adapters, preserving the old
+        // source-scanner contract for existing axis fixtures.
+        let source =
+            r"\unreviewed\begin{tikzpicture}\begin{axis}[width=6cm]\end{axis}\end{tikzpicture}";
+        let found = scan_scientific_source(view(source)).unwrap();
+        assert!(edit(source, &found[0], "width", "6cm", "7cm").is_ok());
+    }
+
+    #[test]
+    fn scoped_commands_reject_unsupported_suffixes_nesting_and_unbalanced_groups() {
+        for source in [
+            r"\pgfplotstabletypeset*[columns={x,y}]\data",
+            r"\pgfplotstabletypeset3[columns={x,y}]\data",
+            r"\pgfplotstabletypeset[columns={x,y}]\data2",
+            r"\begin{tikzpicture}\begin{groupplot}*[width=6cm]\end{groupplot}\end{tikzpicture}",
+            r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\nextgroupplot3[width=4cm]\end{groupplot}\end{tikzpicture}",
+            r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\begin{groupplot}[width=5cm]\end{groupplot}\end{groupplot}\end{tikzpicture}",
+            r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\begin{axis}[width=5cm]\end{axis}\end{groupplot}\end{tikzpicture}",
+            r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\end{axis}\end{groupplot}\end{tikzpicture}",
+            r"\begin{tikzpicture}\begin{groupplot}[width=6cm]\end{tikzpicture}",
+            r"\begin{tikzpicture}\nextgroupplot[width=4cm]\end{tikzpicture}",
+        ] {
+            assert!(scan_scientific_source(view(source)).is_err(), "{source}");
+        }
+    }
+
+    #[test]
+    fn scoped_token_controls_inactive_branches_and_reserved_redefinitions_fail_closed() {
+        let table = r"\pgfplotstabletypeset[columns={x,y}]\data";
+        // Actual false-ownership probes: alias RHS, unexpanded token and a
+        // redefined command must never grant a columns editing capability.
+        for source in [
+            format!(r"\let\fake{table}"),
+            format!(r"\noexpand{table}"),
+            format!(r"\renewcommand{{\pgfplotstabletypeset}}[1]{{}}{table}"),
+            format!(r"\futurelet\fake{table}"),
+            format!(r"\expandafter{table}"),
+            format!(r"\iffalse {table}\fi"),
+            format!(r"\iftrue {table}\else\fi"),
+            format!(r"{table}\let\pgfplotstabletypeset\custom"),
+            format!(r"{table}\def\pgfplotstabletypeset#1{{}}"),
+            format!(r"{table}\providecommand{{\pgfplotstabletypeset}}[1]{{}}"),
+        ] {
+            assert_eq!(
+                scan_scientific_source(view(&source)),
+                Err(ScanRefusal::UnsupportedTeXControl),
+                "{source}"
+            );
+        }
+        for definition in [
+            r"\renewcommand{\nextgroupplot}[1]{}",
+            r"\def\groupplot#1{}",
+            r"\gdef\endgroupplot{}",
+            r"\DeclareRobustCommand{\nextgroupplot}[1]{}",
+        ] {
+            let source = format!("{definition}\r\n{GROUP}");
+            assert_eq!(
+                scan_scientific_source(view(&source)),
+                Err(ScanRefusal::UnsupportedTeXControl),
+                "{definition}"
+            );
+        }
+        let unrelated = format!(r"\newcommand{{\custom}}[1]{{#1}}{TABLE}");
+        assert_eq!(scan_scientific_source(view(&unrelated)).unwrap().len(), 1);
+        for source in [
+            format!("}}{TABLE}"),
+            format!("[{TABLE}"),
+            format!("{TABLE}}}"),
+        ] {
+            assert!(
+                scan_scientific_source(view(&source))
+                    .map_or(true, |instances| instances.is_empty())
+            );
+        }
+    }
+
+    #[test]
+    fn new_scoped_refusals_do_not_change_existing_axis_literal_contract() {
+        let axis = r"\begin{tikzpicture}\begin{axis}[width=6cm]\addplot[domain=0:1]{x};\end{axis}\end{tikzpicture}";
+        for prefix in [
+            r"\let\custom\other ",
+            r"\noexpand ",
+            r"\expandafter ",
+            r"\iffalse ",
+            r"\renewcommand{\nextgroupplot}[1]{}",
+        ] {
+            let source = format!("{prefix}{axis}");
+            let found = scan_scientific_source(view(&source)).unwrap();
+            assert_eq!(found[0].kind, ScientificKind::Axis);
+            assert!(edit(&source, &found[0], "width", "6cm", "7cm").is_ok());
+        }
+    }
+
+    #[test]
+    fn table_reorder_keeps_revision_expected_literal_and_descriptor_ownership_checks() {
+        let instance = scan_scientific_source(view(TABLE)).unwrap().remove(0);
+        let mut stale = instance.clone();
+        stale.revision += 1;
+        assert_eq!(
+            edit(TABLE, &stale, "columns", "{x,y,model}", "{x,model,y}").unwrap_err(),
+            EditRefusal::SourceConflict
+        );
+        let changed = TABLE.replace("1.1", "1.2");
+        assert_eq!(
+            edit(&changed, &instance, "columns", "{x,y,model}", "{x,model,y}").unwrap_err(),
+            EditRefusal::SourceConflict
+        );
+        let mut forged = instance.clone();
+        forged.option_range = Some(0..1);
+        assert_eq!(
+            edit(TABLE, &forged, "columns", "{x,y,model}", "{x,model,y}").unwrap_err(),
+            EditRefusal::SourceConflict
+        );
+        assert_eq!(
+            edit(TABLE, &instance, "columns", "{y,x,model}", "{x,model,y}").unwrap_err(),
+            EditRefusal::SourceConflict
+        );
+        assert_eq!(
+            edit(TABLE, &instance, "columns", "{x,y,model}", "{x,y,model}").unwrap_err(),
+            EditRefusal::InvalidLiteral
+        );
+    }
 }

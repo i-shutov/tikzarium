@@ -24,6 +24,7 @@ enum LiteralProperty {
     XLabel,
     YLabel,
     Mark,
+    Columns,
 }
 
 impl LiteralProperty {
@@ -44,6 +45,7 @@ impl LiteralProperty {
             Self::XLabel => "xlabel",
             Self::YLabel => "ylabel",
             Self::Mark => "mark",
+            Self::Columns => "columns",
         }
     }
 
@@ -64,6 +66,7 @@ impl LiteralProperty {
             Self::XLabel => "Подпись оси x",
             Self::YLabel => "Подпись оси y",
             Self::Mark => "Маркер ряда",
+            Self::Columns => "Порядок столбцов",
         }
     }
 
@@ -91,8 +94,11 @@ impl LiteralProperty {
             LiteralProperty::Mark,
         ];
         match kind {
-            ScientificKind::Axis => AXIS,
+            ScientificKind::Axis | ScientificKind::GroupPlot | ScientificKind::NextGroupPlot => {
+                AXIS
+            }
             ScientificKind::AddPlot => ADDPLOT,
+            ScientificKind::TableTypeset => &[LiteralProperty::Columns],
             _ => &[],
         }
     }
@@ -125,15 +131,11 @@ impl ScientificInspector {
             Ok(instances) => {
                 let recognized = instances
                     .iter()
-                    .filter(|item| {
-                        matches!(item.kind, ScientificKind::Axis | ScientificKind::AddPlot)
-                    })
+                    .filter(|item| !LiteralProperty::choices(item.kind).is_empty())
                     .count();
                 self.candidates = instances
                     .into_iter()
-                    .filter(|item| {
-                        matches!(item.kind, ScientificKind::Axis | ScientificKind::AddPlot)
-                    })
+                    .filter(|item| !LiteralProperty::choices(item.kind).is_empty())
                     .take(64)
                     .map(|instance| {
                         let line = source.get(..instance.range.start).map_or(1, |prefix| {
@@ -142,6 +144,11 @@ impl ScientificInspector {
                         let kind = match instance.kind {
                             ScientificKind::Axis => "axis",
                             ScientificKind::AddPlot => "addplot",
+                            ScientificKind::GroupPlot => "groupplot (общие параметры)",
+                            ScientificKind::NextGroupPlot => "nextgroupplot (один подграфик)",
+                            ScientificKind::TableTypeset => {
+                                "pgfplotstabletypeset (порядок столбцов)"
+                            }
                             _ => "неизвестно",
                         };
                         Candidate {
@@ -151,7 +158,7 @@ impl ScientificInspector {
                     })
                     .collect();
                 self.feedback = format!(
-                    "Распознано {recognized} axis/addplot; доступны только проверенные литералы. {}",
+                    "Распознано {recognized} команд; доступны только проверенные литералы. {}",
                     if recognized > self.candidates.len() {
                         "Показаны первые 64, остальные — текстовый редактор."
                     } else {
@@ -212,7 +219,7 @@ impl ScientificInspector {
         source: &mut String,
     ) -> Result<usize, String> {
         self.discard_stale_candidates(session.source_revision());
-        let index = self.selected.ok_or("Сначала выберите axis/addplot")?;
+        let index = self.selected.ok_or("Сначала выберите исходную команду")?;
         let selected = self
             .candidates
             .get(index)
@@ -252,7 +259,12 @@ impl ScientificInspector {
         let Some(help) = scientific_property_help(self.property.key()) else {
             return false;
         };
-        ui.strong(format!("PGFPlots: {}", help.key));
+        let package_label = if help.package == "pgfplotstable" {
+            "PGFPlotstable"
+        } else {
+            "PGFPlots"
+        };
+        ui.strong(format!("{package_label}: {}", help.key));
         ui.label(format!("Тип: {}", help.value_type));
         ui.label(help.effect);
         ui.small(format!("Поддержка TikZarium: {}", help.editor_limit));
@@ -355,7 +367,7 @@ impl ScientificInspector {
             ui.small("Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.");
             })
             .header_response
-            .on_hover_text("Параметры оси и ряда PGFPlots. Неизвестные записи остаются без изменений.");
+            .on_hover_text("Явные параметры axis/groupplot/nextgroupplot/addplot и порядок столбцов pgfplotstabletypeset. Неизвестные записи остаются без изменений.");
         changed_line
     }
 }
@@ -368,6 +380,11 @@ mod tests {
         include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-001/figure.tex");
     const SAROV_REPEAT: &str =
         include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-003/figure.tex");
+    const GROUP: &str =
+        include_str!("../../../roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/group-plots.tex");
+    const TABLE: &str = include_str!(
+        "../../../roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/table-derived-column.tex"
+    );
 
     #[test]
     fn all_fifteen_properties_map_to_reviewed_keys_and_kind_specific_lists() {
@@ -411,6 +428,121 @@ mod tests {
             assert!(scientific_property_help(property.key()).is_some());
         }
         assert!(LiteralProperty::choices(ScientificKind::Draw).is_empty());
+        assert_eq!(LiteralProperty::choices(ScientificKind::GroupPlot), all);
+        assert_eq!(LiteralProperty::choices(ScientificKind::NextGroupPlot), all);
+        assert_eq!(
+            LiteralProperty::choices(ScientificKind::TableTypeset),
+            &[LiteralProperty::Columns]
+        );
+        assert_eq!(LiteralProperty::Columns.key(), "columns");
+    }
+
+    #[test]
+    fn original_groupplot_inspector_width_edit_and_shared_undo_preserve_source() {
+        let mut source = GROUP.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        assert_eq!(inspector.candidates.len(), 5);
+        assert_eq!(
+            inspector.candidates[0].instance.kind,
+            ScientificKind::GroupPlot
+        );
+        assert!(inspector.candidates[0].label.starts_with("groupplot ("));
+        assert!(inspector.candidates[1].label.starts_with("nextgroupplot ("));
+        inspector.selected = Some(0);
+        inspector.property = LiteralProperty::Width;
+        inspector.refresh_literal(&authoring, &source);
+        assert_eq!(inspector.original_value.as_deref(), Some("6cm"));
+        inspector.proposed_value = "7cm".into();
+        inspector
+            .apply_selected(&mut authoring, &mut source)
+            .unwrap();
+        assert_eq!(source, GROUP.replacen("width=6cm", "width=7cm", 1));
+        assert!(inspector.candidates.is_empty());
+        assert!(authoring.undo_available());
+        authoring.undo(&mut source).unwrap();
+        assert_eq!(source.as_bytes(), GROUP.as_bytes());
+        assert!(!authoring.undo_available());
+    }
+
+    #[test]
+    fn original_table_inspector_reorders_existing_columns_and_shared_undo_restores_bytes() {
+        let mut source = TABLE.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        assert_eq!(inspector.candidates.len(), 1);
+        assert_eq!(
+            inspector.candidates[0].instance.kind,
+            ScientificKind::TableTypeset
+        );
+        assert!(
+            inspector.candidates[0]
+                .label
+                .starts_with("pgfplotstabletypeset (")
+        );
+        inspector.selected = Some(0);
+        inspector.property = LiteralProperty::Columns;
+        inspector.refresh_literal(&authoring, &source);
+        assert_eq!(inspector.original_value.as_deref(), Some("{x,y,model}"));
+        inspector.proposed_value = "{x,model,y}".into();
+        inspector
+            .apply_selected(&mut authoring, &mut source)
+            .unwrap();
+        assert_eq!(
+            source,
+            TABLE.replacen("columns={x,y,model}", "columns={x,model,y}", 1)
+        );
+        assert!(source.contains(r"create col/expr={\thisrow{x}^2}"));
+        assert!(authoring.undo_available());
+        authoring.undo(&mut source).unwrap();
+        assert_eq!(source.as_bytes(), TABLE.as_bytes());
+        assert!(!authoring.undo_available());
+    }
+
+    #[test]
+    fn table_inspector_rejects_addition_without_source_or_history_mutation() {
+        let mut source = TABLE.to_owned();
+        let mut authoring = tikz_authoring::Session::default();
+        authoring.reset(&source);
+        let mut inspector = ScientificInspector::default();
+        inspector.scan(&mut authoring, &source);
+        inspector.selected = Some(0);
+        inspector.property = LiteralProperty::Columns;
+        inspector.refresh_literal(&authoring, &source);
+        let revision = authoring.source_revision();
+        inspector.proposed_value = "{x,y,model,other}".into();
+        assert!(
+            inspector
+                .apply_selected(&mut authoring, &mut source)
+                .is_err()
+        );
+        assert_eq!(source.as_bytes(), TABLE.as_bytes());
+        assert_eq!(authoring.source_revision(), revision);
+        assert!(!authoring.undo_available());
+        let ctx = egui::Context::default();
+        ctx.begin_pass(egui::RawInput::default());
+        egui::CentralPanel::default().show(&ctx, |ui| {
+            assert!(inspector.show_selected_help(ui, revision));
+        });
+        let _ = ctx.end_pass();
+        assert_eq!(source.as_bytes(), TABLE.as_bytes());
+        source.push_str("% ручная правка\r\n");
+        authoring.note_manual_source_edit(&source);
+        ctx.begin_pass(egui::RawInput::default());
+        egui::CentralPanel::default().show(&ctx, |ui| {
+            assert!(!inspector.show_selected_help(ui, authoring.source_revision()));
+        });
+        let _ = ctx.end_pass();
+        assert!(
+            inspector
+                .apply_selected(&mut authoring, &mut source)
+                .is_err()
+        );
+        assert_eq!(source, format!("{TABLE}% ручная правка\r\n"));
     }
 
     #[test]

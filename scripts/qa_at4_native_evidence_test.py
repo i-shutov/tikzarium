@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline contracts for eight exact AI88 AT4 originals; no GUI claim."""
+"""Offline contracts for ten exact AI88 AT4 originals; no GUI claim."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,7 +24,7 @@ class AT4InventoryContracts(unittest.TestCase):
         self.assertEqual(qa.operation_inventory("v2"), qa.OPERATIONS)
         self.assertEqual(qa.fixtures_for_suite("at4"), tuple(qa.AT4_CASES))
         self.assertEqual(qa.operation_inventory("at4"), qa.AT4_OPERATIONS)
-        self.assertEqual(len(qa.operation_inventory("at4")), 8)
+        self.assertEqual(len(qa.operation_inventory("at4")), 10)
         for call in (lambda: qa.fixtures_for_suite("all"),
                      lambda: qa.operation_inventory("custom"),
                      lambda: qa.suite_scope("v2+at4"),
@@ -43,7 +43,7 @@ class AT4InventoryContracts(unittest.TestCase):
             self.assertEqual(len(manifest["operations"]), 26)
             self.assertFalse(any(name.startswith("AT4-") for name in manifest["fixtures"]))
 
-    def test_eight_original_hashes_paths_and_scoped_operations_match_proposal(self):
+    def test_ten_original_hashes_paths_and_scoped_operations_match_proposal(self):
         expected = {
             "AT4-09": ("scientific-plot.tex", "samples", "161", "181", "addplot", 1),
             "AT4-48": ("error-bars.tex", "width", "10cm", "11cm", "axis", 0),
@@ -52,6 +52,8 @@ class AT4InventoryContracts(unittest.TestCase):
             "AT4-55": ("surface-gaussian.tex", "samples", "21", "25", "addplot", 1),
             "AT4-56": ("parametric-helix.tex", "samples", "181", "201", "addplot", 1),
             "AT4-58": ("discontinuous-function.tex", "width", "10cm", "11cm", "axis", 0),
+            "AT4-59": ("group-plots.tex", "width", "6cm", "7cm", "groupplot", 0),
+            "AT4-60": ("table-derived-column.tex", "columns", "{x,y,model}", "{x,model,y}", "tabletypeset", 0),
             "AT4-61": ("bode-magnitude.tex", "samples", "161", "201", "addplot", 1),
         }
         self.assertEqual(set(qa.AT4_CASES), set(expected))
@@ -89,6 +91,24 @@ class AT4InventoryContracts(unittest.TestCase):
                 self.assertEqual(original.count(old), 1)
                 self.assertIn(b"\\addplot3[", original)
                 self.assertEqual(qa.dependency_hashes(qa.AT4_EXAMPLES, fixture), {})
+
+    def test_groupplot_and_table_preserve_intake_crlf_raw_data_and_formulas(self):
+        intake = qa.read_json(qa.SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/AT4_SOURCE_INTAKE.json")
+        records = {record["case_id"]: record for record in intake["files"]}
+        expected = {"AT4-59": ("groupplot", "width", 10, (b"sin(deg(x))", b"cos(deg(x))", b"group size=2 by 1")),
+                    "AT4-60": ("tabletypeset", "columns", 0, (rb"\thisrow{x}^2", rb"x y\\1 1.1\\2 3.9\\3 9.2\\4 15.8\\"))}
+        for fixture, (kind, key, index, invariants) in expected.items():
+            with self.subTest(fixture=fixture):
+                raw = qa.fixture_bytes(fixture)
+                case = qa.AT4_CASES[fixture]
+                self.assertEqual((qa.digest(raw), len(raw)),
+                                 (records[case["case_id"]]["sha256"], records[case["case_id"]]["bytes"]))
+                self.assertNotIn(b"\n", raw.replace(b"\r\n", b""))
+                op, = qa.operations(fixture)
+                self.assertEqual((op.kind, op.key, op.command, op.property_index), (kind, key, 0, index))
+                for value in invariants:
+                    self.assertIn(value, raw)
+                    self.assertIn(value, op.patch(raw))
 
     def test_at4_sequence_has_one_apply_undo_and_final_inverse_per_original(self):
         for fixture in qa.fixtures_for_suite("at4"):
@@ -128,8 +148,8 @@ class AT4ManifestContracts(unittest.TestCase):
         manifest = qa.read_json(self.out / "manifest.json")
         self.assertEqual((manifest["suite"], manifest["scope"], manifest["fixtures"]),
                          ("at4", qa.suite_scope("at4"), list(qa.fixtures_for_suite("at4"))))
-        self.assertEqual(len(manifest["operations"]), 8)
-        self.assertEqual(manifest["fixture_origin"], "EIGHT_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS")
+        self.assertEqual(len(manifest["operations"]), 10)
+        self.assertEqual(manifest["fixture_origin"], "TEN_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS")
         self.assertEqual(manifest["independent_visual_review"], "REQUIRED")
         self.assertEqual(set(manifest["named_corpus_inputs"]), set(qa.fixtures_for_suite("at4")))
         for fixture, case in qa.AT4_CASES.items():
@@ -149,7 +169,7 @@ class AT4ManifestContracts(unittest.TestCase):
             self.complete_fixture(fixture)
         result = qa.validate_all(self.out, suite="at4")
         self.assertEqual(result["suite"], "at4")
-        self.assertEqual(result["operations_observed"], 8)
+        self.assertEqual(result["operations_observed"], 10)
         self.assertEqual(result["native_acceptance"], "REQUIRES_INDEPENDENT_REVIEW")
 
     def test_legacy_six_or_incomplete_3d_stages_cannot_certify_expanded_suite(self):
@@ -167,6 +187,18 @@ class AT4ManifestContracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Incomplete or extra stage inventory"):
             qa.validate_all(self.out, "at4")
 
+    def test_previous_eight_case_coverage_cannot_certify_groupplot_or_table(self):
+        for fixture in qa.fixtures_for_suite("at4"):
+            if fixture not in {"AT4-59", "AT4-60"}:
+                self.complete_fixture(fixture)
+        with self.assertRaisesRegex(ValueError, "Observed fixture inventory differs"):
+            qa.validate_all(self.out, "at4")
+        self.complete_fixture("AT4-59")
+        with self.assertRaisesRegex(ValueError, "Observed fixture inventory differs"):
+            qa.validate_all(self.out, "at4")
+        self.complete_fixture("AT4-60")
+        self.assertEqual(qa.validate_all(self.out, "at4")["operations_observed"], 10)
+
     def test_tampered_runtime_or_original_corpus_bytes_are_rejected(self):
         for relative_path, expected_error in (
                 ("inputs/AT4-09.tex", "Original fixture input changed"),
@@ -180,7 +212,7 @@ class AT4ManifestContracts(unittest.TestCase):
                     qa.validate_all(fresh, "at4")
 
     def test_tampered_canonical_original_fails_before_prepare(self):
-        for fixture in ("AT4-09", "AT4-55", "AT4-56"):
+        for fixture in ("AT4-09", "AT4-55", "AT4-56", "AT4-59", "AT4-60"):
             with self.subTest(fixture=fixture):
                 alternate = self.root / ("tampered-examples-" + fixture)
                 shutil.copytree(qa.AT4_EXAMPLES, alternate)

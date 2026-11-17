@@ -1,4 +1,4 @@
-"""Source-level AT4 semantic checks for eight original PGFPlots examples.
+"""Source-level AT4 semantic checks for selected original PGFPlots examples.
 
 Only Python stdlib is used. This module parses the actual TeX signatures and
 coordinates used by the selected corpus cases; it does not infer scientific
@@ -20,6 +20,8 @@ CASE_FILES = {
     "55": "surface-gaussian.tex",
     "56": "parametric-helix.tex",
     "58": "discontinuous-function.tex",
+    "59": "group-plots.tex",
+    "60": "table-derived-column.tex",
     "61": "bode-magnitude.tex",
 }
 
@@ -252,6 +254,126 @@ def _validate_58(text: str, catalogue_record: dict[str, Any] | None) -> list[str
     return ["source retains unbounded coords=jump and explicit (0,nan)", "finite coordinates are the six listed branch samples; original catalogue calls them a sparse 1/x sample", "VISUAL_CHECK=NOT_RUN: source inspection cannot establish that the PDF has no bridge segment"]
 
 
+def _validate_59(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    """Check the shared-axis two-panel analytic sine/cosine source contract."""
+    group = re.search(r"\\begin\{groupplot\}\s*\[(.*?)\](.*?)\\end\{groupplot\}", text, re.S)
+    _require(group is not None, "expected one literal groupplot environment")
+    _require(len(re.findall(r"\\begin\{groupplot\}", text)) == 1
+             and len(re.findall(r"\\end\{groupplot\}", text)) == 1,
+             "expected exactly one groupplot environment")
+    options, body = group.group(1), group.group(2)
+    normalized_group_options = re.sub(r"\s+", "", options)
+    group_prefix = "groupstyle={groupsize=2by1,horizontalsep=14mm},width="
+    group_suffix = ",height=5cm,xlabel={$t$},grid=major"
+    group_width = normalized_group_options[len(group_prefix):-len(group_suffix)] \
+        if normalized_group_options.startswith(group_prefix) and normalized_group_options.endswith(group_suffix) else ""
+    _require(group_width in {"6cm", "7cm"},
+             "groupplot options changed beyond the single allowed width 6cm→7cm edit")
+
+    # The corpus invokes PGFPlots once with only compat=1.18. An additional
+    # trig format setting changes how sin(deg(x)) is interpreted, so reject
+    # such overrides anywhere in the source, including pgfkeys/tikz styles.
+    _require(re.search(r"(?i)\btrig\s+format(?:\s+plots)?\s*(?:/|=)", text) is None,
+             "PGF trigonometric format override changes the sine/cosine semantics")
+    pgfplots_settings = re.findall(r"\\pgfplotsset\s*\{([^{}]*)\}", text)
+    _require(len(pgfplots_settings) == 1 and re.sub(r"\s+", "", pgfplots_settings[0]) == "compat=1.18",
+             "PGFPlots global options changed beyond original compat=1.18")
+
+    panels = re.findall(r"\\nextgroupplot\s*\[([^\]]*)\]", body)
+    _require(len(panels) == 2, f"expected exactly two ordered group panels, found {len(panels)}")
+    panel_bodies = re.split(r"\\nextgroupplot\s*\[[^\]]*\]", body)[1:]
+    _require(len(panel_bodies) == 2, "could not isolate both panel bodies")
+    _require(all(len(_addplots(panel_body)) == 1 for panel_body in panel_bodies),
+             "each group panel must contain exactly one analytic curve")
+    labels = [re.search(r"(?:^|,)\s*ylabel\s*=\s*\{\$([^$]+)\$\}", panel) for panel in panels]
+    _require(all(label is not None for label in labels), "each panel must retain a literal math ylabel")
+    label_values = [label.group(1) for label in labels if label is not None]
+    _require(label_values == [r"\sin t", r"\cos t"], f"panel formula labels or order changed: {label_values!r}")
+    _require([re.sub(r"\s+", "", panel) for panel in panels]
+             == [r"ylabel={$\sint$}", r"ylabel={$\cost$}"],
+             "subplot options changed beyond the original ordered sine/cosine labels")
+
+    plots = _addplots(text)
+    _require(len(plots) == 2, f"expected exactly two analytic curves, found {len(plots)} addplots")
+    expected = [(r"\sin t", "sin(deg(x))"), (r"\cos t", "cos(deg(x))")]
+    for index, ((label, expression), (options, body, _)) in enumerate(zip(expected, plots, strict=True)):
+        _require(label_values[index] == label, f"curve {index + 1} label/formula ordering changed")
+        expected_options = ("blue" if index == 0 else "red") + ",domain=0:6.28,samples=101"
+        _require(re.sub(r"\s+", "", options) == expected_options,
+                 f"curve {index + 1} addplot options changed beyond original color/domain/sampling")
+        _require(re.sub(r"\s+", "", body) == "{" + expression + "}",
+                 f"curve {index + 1} analytic formula changed: {body!r}")
+    _require(not re.search(r"measurement|experimental|observed|empirical|измерен|эксперимент", text, re.I),
+             "analytic panels must not be described as measured or experimental data")
+
+    # PGFPlots' degree-based sin/cos are explicitly fed radians via deg(x).
+    # These probes characterize the formula and its pi/2 phase relation; they
+    # do not claim sampled or measured observations.
+    probes = [0.0, math.pi / 2, math.pi, 3 * math.pi / 2, 2 * math.pi]
+    sine = [math.sin(x) for x in probes]
+    cosine = [math.cos(x) for x in probes]
+    _require(all(math.isclose(c, math.sin(x + math.pi / 2), rel_tol=0, abs_tol=1e-15)
+                 for x, c in zip(probes, cosine, strict=True)), "sine/cosine phase relation is not pi/2 at characteristic probes")
+    _require(all(math.isclose(a, b, rel_tol=0, abs_tol=1e-15)
+                 for a, b in zip(sine, [0, 1, 0, -1, 0], strict=True))
+             and all(math.isclose(a, b, rel_tol=0, abs_tol=1e-15) for a, b in zip(cosine, [1, 0, -1, 0, 1], strict=True)),
+             "sine/cosine characteristic values changed")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("stem") == "group-plots", "catalogue AT4-59 stem changed")
+        _require(catalogue_record.get("description") == "Две оси построены groupplots с общей разметкой.",
+                 "original catalogue groupplot description changed")
+        _require(catalogue_record.get("check") == "Одинаковые диапазоны и размеры осей; фазовый сдвиг π/2.",
+                 "original catalogue equal-ranges/sizes and phase-shift criterion changed")
+    return ["two ordered analytic panels retain sin(t), cos(t), shared t axis, domain 0:6.28 and 101 samples",
+            "group style remains 2 by 1 with 14mm separation; width is original 6cm or proposed 7cm",
+            "characteristic sine/cosine values and pi/2 phase relation checked mathematically; no measured-data claim"]
+
+
+def _validate_60(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    """Check raw rows, the derived x² column and the two allowed display orders."""
+    reads = re.findall(r"\\pgfplotstableread\s*\[row\s+sep=\\\\\]\s*\{([^{}]*)\}\s*\\datatable", text, re.S)
+    _require(len(reads) == 1, f"expected one literal inline pgfplotstable source, found {len(reads)}")
+    raw = reads[0].strip()
+    _require(raw == r"x y\\1 1.1\\2 3.9\\3 9.2\\4 15.8\\",
+             f"inline raw x/y rows changed: {raw!r}")
+    row_values = [(1, 1.1), (2, 3.9), (3, 9.2), (4, 15.8)]
+    _require([x * x for x, _ in row_values] == [1, 4, 9, 16], "derived model x² values no longer equal 1,4,9,16")
+
+    create = re.findall(r"\\pgfplotstablecreatecol\s*\[([^\]]*)\]\s*\{([^{}]*)\}\s*\\datatable", text, re.S)
+    _require(len(create) == 1, f"expected one derived table column, found {len(create)}")
+    create_options, column_name = create[0]
+    _require(re.sub(r"\s+", "", create_options) == r"createcol/expr={\thisrow{x}^2}"
+             and column_name == "model", "derived model column must remain the x² expression named model")
+    typeset = re.findall(r"\\pgfplotstabletypeset\s*\[([^\]]*)\]\s*\\datatable", text, re.S)
+    _require(len(typeset) == 1, f"expected one table typeset command, found {len(typeset)}")
+    columns = re.findall(r"(?:^|,)\s*columns\s*=\s*\{([^{}]*)\}", typeset[0])
+    _require(len(columns) == 1, "expected one explicit displayed-column order")
+    displayed = [column.strip() for column in columns[0].split(",")]
+    _require(len(displayed) == 3 and len(set(displayed)) == 3 and set(displayed) == {"x", "y", "model"},
+             f"displayed columns must be unique x, y, model exactly once: {displayed!r}")
+    _require(displayed in (["x", "y", "model"], ["x", "model", "y"]),
+             f"displayed columns must retain original or proposed order: {displayed!r}")
+
+    # Source-level exact checks for the mathematical headers and booktabs
+    # formatting are intentionally literal so a reorder cannot rewrite them.
+    _require(text.count(r"\usepackage{booktabs}") == 1, "booktabs package source changed or was duplicated")
+    fixed_typeset_options = (
+        r"columns/x/.style={column name=$x$},columns/y/.style={column name=$y$},"
+        r"columns/model/.style={column name=$x^2$},every head row/.style={before row=\toprule,after row=\midrule},"
+        r"every last row/.style={after row=\bottomrule}"
+    )
+    _require(typeset[0] == "columns={" + ",".join(displayed) + "}," + fixed_typeset_options,
+             "table typeset options changed outside the displayed-column order; math headers/booktabs must remain exact")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("stem") == "table-derived-column", "catalogue AT4-60 stem changed")
+        _require(catalogue_record.get("description") == "pgfplotstable вычисляет x² и выводит таблицу с единой точностью.",
+                 "original catalogue derived-column description changed")
+        _require(catalogue_record.get("check") == "Расчётный столбец содержит 1,4,9,16; y обозначает синтетические данные.",
+                 "original catalogue derived-values/synthetic-y criterion changed")
+    return ["inline raw x/y rows retained exactly; model is literal thisrow{x}^2 with values 1,4,9,16",
+            f"three unique displayed columns use allowed order {','.join(displayed)}; math headers and booktabs source retained"]
+
+
 def _validate_61(text: str) -> list[str]:
     axis = _axis(text)
     _require(_option_value(axis, "xmode") == "log", "Bode frequency axis must remain logarithmic")
@@ -278,12 +400,14 @@ def validate_case(case_id: str, source: bytes | str, catalogue_record: dict[str,
     if case_id not in CASE_FILES:
         raise ValueError(f"unsupported AT4 case id {case_id!r}")
     text = _text(source)
-    validators = {"09": _validate_09, "49": _validate_49, "61": _validate_61}
+    validators = {"09": _validate_09, "49": _validate_49, "59": _validate_59, "60": _validate_60, "61": _validate_61}
     if case_id == "48":
         assertions = _validate_48(text, catalogue_record)
     elif case_id in {"50", "55", "56", "58"}:
         assertions = {"50": _validate_50, "55": _validate_55, "56": _validate_56,
                       "58": _validate_58}[case_id](text, catalogue_record)
+    elif case_id in {"59", "60"}:
+        assertions = validators[case_id](text, catalogue_record)
     else:
         assertions = validators[case_id](text)
     return {
@@ -302,6 +426,8 @@ def validate_case(case_id: str, source: bytes | str, catalogue_record: dict[str,
             "55": "Analytic source/probe checks are not rendered surface or grid-convergence proof; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case.",
             "56": "Default degree-based analytic probes are not rendered winding/pitch evidence; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case.",
             "58": "The no-bridge claim needs PDF inspection; a NaN token and jump option alone are not visual evidence.",
+            "59": "Formula and phase probes establish source-level analytic semantics only; panel alignment, labels, clipping and rendered phase remain PDF/native-GUI review items.",
+            "60": "Raw y values are synthetic as stated by the original catalogue; source checks do not establish rendered table alignment or typography.",
             "61": "The high-frequency slope is computed from the stated mathematical transfer function, not experimental data or rendered samples.",
         }[case_id],
     }
@@ -316,9 +442,9 @@ def load_catalogue_record(catalogue_path: Path, case_id: str) -> dict[str, Any]:
 
 
 def validate_directory(source_root: Path) -> list[dict[str, Any]]:
-    """Validate eight exact files under a caller-selected repository root."""
+    """Validate selected exact files under a caller-selected repository root."""
     examples = source_root / "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples"
     catalogue = source_root / "roadmap/AI_TIKZ_SKILLS_2026-11-10/catalogue.original.json"
     return [validate_case(case_id, (examples / filename).read_bytes(),
-                          load_catalogue_record(catalogue, case_id) if case_id in {"48", "50", "55", "56", "58"} else None)
+                          load_catalogue_record(catalogue, case_id) if case_id in {"48", "50", "55", "56", "58", "59", "60"} else None)
             for case_id, filename in CASE_FILES.items()]

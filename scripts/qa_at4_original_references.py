@@ -22,7 +22,7 @@ from qa_i61_b42_studio_x11 import audit_embedded_fonts
 from qa_n2_studio_x11 import validate_xelatex_log
 from qa_pgfplots_vertical_x11 import recorder_inputs
 
-FIXTURES = ("AT4-09", "AT4-48", "AT4-49", "AT4-50", "AT4-55", "AT4-56", "AT4-58", "AT4-61")
+FIXTURES = ("AT4-09", "AT4-48", "AT4-49", "AT4-50", "AT4-55", "AT4-56", "AT4-58", "AT4-59", "AT4-60", "AT4-61")
 
 
 def capture(argv: list[str], directory: Path, filename: str, timeout: float) -> bytes:
@@ -65,7 +65,7 @@ def main() -> int:
         report["source_commit"] = capture(["git", "-C", str(evidence.SOURCE_ROOT), "rev-parse", "HEAD"],
             out, "source-commit.original.txt", 10).decode("utf-8", "strict").strip()
         if evidence.fixtures_for_suite("at4") != FIXTURES:
-            raise RuntimeError("Reference fixture inventory differs from exact eight originals")
+            raise RuntimeError("Reference fixture inventory differs from exact ten originals")
         intake = evidence.read_json(evidence.SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/AT4_SOURCE_INTAKE.json")
         catalogue = evidence.SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/catalogue.original.json"
         if evidence.sha(catalogue) != intake["catalogue"]["sha256"]:

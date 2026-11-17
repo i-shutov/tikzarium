@@ -71,6 +71,32 @@ class OperationContracts(unittest.TestCase):
             self.assertIn(b"{Charis SIL}", original)
         self.assertEqual([name for name, _ in qa.expected_sequence("SV-040")], ["opened", "reopened", "built"])
 
+    def test_clean_suite_is_separate_and_shared_operations_are_not_duplicated(self):
+        self.assertEqual(qa.fixtures_for_suite("v2-clean"),
+            ("formula", "external-tables", "SV-001", "SV-003-clean", "SV-022",
+             "SV-029-clean", "SV-040", "SV-009-clean"))
+        self.assertNotEqual(qa.suite_scope("v2-clean"), qa.suite_scope("v2"))
+        self.assertEqual(len(qa.operation_inventory("v2-clean")), 26)
+        self.assertEqual(len(qa.operations("formula")), 18)
+        for original, derivative in qa.CLEAN_REPLACEMENTS.items():
+            op, = qa.operations(derivative)
+            original_op, = qa.operations(original)
+            self.assertEqual(replace(op, fixture=original), original_op)
+            raw = qa.fixture_bytes(derivative)
+            self.assertNotEqual(raw, qa.fixture_bytes(original))
+            self.assertEqual(qa.original_fixture_bytes(derivative), qa.fixture_bytes(original))
+            self.assertIn(b"{Charis SIL}", raw)
+            self.assertEqual(len(qa.fixture_bytes(original)) - len(raw), 2)
+            self.assertEqual(op.patch(raw).replace((op.key + "=" + op.after).encode(),
+                                                  (op.key + "=" + op.before).encode(), 1), raw)
+
+    def test_kind_specific_property_inventories_preserve_axis_and_series_order(self):
+        self.assertEqual(qa.PROPERTY_KEYS["groupplot"], qa.AXIS_KEYS)
+        self.assertEqual(qa.PROPERTY_KEYS["nextgroupplot"], qa.AXIS_KEYS)
+        self.assertEqual(qa.PROPERTY_KEYS["tabletypeset"], ("columns",))
+        with self.assertRaises(KeyError):
+            replace(qa.OPERATIONS[0], kind="unknown").property_index
+
 
 @unittest.skipIf(Image is None, "Already installed Pillow required for original screenshot contracts")
 class OriginalEvidenceContracts(unittest.TestCase):
@@ -164,6 +190,68 @@ class OriginalEvidenceContracts(unittest.TestCase):
             qa.validate_all(self.out)
 
 
+@unittest.skipIf(Image is None, "Pillow required for retained screenshot contracts")
+class CleanDerivativeEvidenceContracts(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.out = self.root / "evidence"
+        qa.prepare(self.out, "v2-clean")
+        self.png = self.root / "unit-event.png"
+        Image.new("RGB", qa.SCREEN, (20, 25, 30)).save(self.png)
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def test_complete_derivative_stages_require_separate_original_attribution(self):
+        manifest = qa.read_json(self.out / "manifest.json")
+        for fixture in qa.fixtures_for_suite("v2-clean"):
+            live = self.out / "live" / fixture / (fixture + ".tex")
+            editor = self.root / "editor.txt"
+            for stage, raw in qa.expected_sequence(fixture):
+                live.write_bytes(raw)
+                editor.write_bytes(raw)
+                qa.record(self.out, fixture, stage, live, editor, self.png,
+                          action="UNIT_EVENT synthetic retained observation; no GUI acceptance")
+        result = qa.validate_all(self.out, "v2-clean")
+        self.assertEqual(result["operations_observed"], 26)
+        self.assertEqual(result["native_acceptance"], "REQUIRES_INDEPENDENT_REVIEW")
+        for fixture in qa.CLEAN_REPLACEMENTS.values():
+            entry = manifest["named_corpus_inputs"][fixture]
+            self.assertIs(entry["runtime_source_identical_to_original"], False)
+            self.assertEqual(entry["derivative"]["corpus_status"], "NOT_ORIGINAL_CORPUS")
+            self.assertNotEqual(entry["original_sha256"], entry["runtime_sha256"])
+        with self.assertRaisesRegex(ValueError, "Manifest suite"):
+            qa.validate_all(self.out, "v2")
+
+    def test_original_copy_cannot_be_replaced_by_clean_bytes_or_relabelled(self):
+        fixture = "SV-003-clean"
+        original = self.out / "inputs" / (fixture + ".original-corpus.tex")
+        original.write_bytes(qa.fixture_bytes(fixture))
+        with self.assertRaisesRegex(ValueError, "Original named corpus changed"):
+            qa.validate_all(self.out, "v2-clean")
+        original.write_bytes(qa.original_fixture_bytes(fixture))
+        path = self.out / "manifest.json"
+        manifest = qa.read_json(path)
+        manifest["named_corpus_inputs"][fixture]["runtime_source_identical_to_original"] = True
+        qa.write_json(path, manifest)
+        with self.assertRaisesRegex(ValueError, "Original named corpus changed"):
+            qa.validate_all(self.out, "v2-clean")
+
+    def test_derivative_origin_and_acceptance_boundary_cannot_be_relabelled(self):
+        path = self.out / "manifest.json"
+        original = qa.read_json(path)
+        for key, value in (("fixture_origin", "EIGHT_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS"),
+                           ("synthetic_optical_scope", "NOT_APPLICABLE_NO_SYNTHETIC_AT4_INPUTS"),
+                           ("aggregate_sc3_at4", "PASS"), ("physical_win10", "PASS"),
+                           ("physical_mac_arm", "PASS"), ("independent_visual_review", "PASS"),
+                           ("schema_version", 2), ("screen", [1920, 1080]), ("client", [1366, 768])):
+            with self.subTest(key=key):
+                qa.write_json(path, {**original, key: value})
+                with self.assertRaisesRegex(ValueError, "Manifest provenance or acceptance boundary differs"):
+                    qa.validate_all(self.out, "v2-clean")
+
+
 class EngineRecorderContracts(unittest.TestCase):
     def test_pwd_and_input_paths_are_resolved_from_actual_records(self):
         self.assertEqual(recorder_inputs(b"PWD /tmp/project\nINPUT ./figure.tex\nINPUT /tmp/shared/a.dat\n", Path("/wrong")),
@@ -195,6 +283,18 @@ class EngineRecorderContracts(unittest.TestCase):
 
 
 class ActualRunOnePopupRegression(unittest.TestCase):
+    def test_single_table_property_geometry_is_bounded_without_scroll(self):
+        # UNIT_EVENT proposed geometry; an actual original screenshot must still
+        # establish these dimensions before any native click is accepted.
+        plan = property_menu_plan(0, 1, 380, 36)
+        self.assertEqual((plan["viewport_height"], plan["maximum_scroll"]), (26, 0))
+        self.assertEqual(plan["target_client_y"], 398)
+        with self.assertRaisesRegex(RuntimeError, "popup height"):
+            property_menu_plan(0, 1, 380, 96)
+        for count in (0, 2, 4, 14, 16):
+            with self.assertRaisesRegex(ValueError, "outside approved"):
+                property_menu_plan(0, count, 380, 36)
+
     def test_actual_run01_popup_strip_bounds_and_observed_first_row(self):
         raw = (qa.FIXTURES / "run01-candidate-popup-strip.rgb").read_bytes()
         metadata = qa.read_json(qa.FIXTURES / "run01-candidate-popup-strip.json")
@@ -483,6 +583,15 @@ class StrictWarningCollectionContracts(unittest.TestCase):
                 run_suite(fake, "v2")
         self.assertEqual(fake.report["status"], "FAIL_STRICT_XELATEX_WARNING_GATE")
         self.assertEqual(len(fake.report["strict_warning_failures"]), 1)
+
+    def test_derivative_warning_cannot_be_treated_as_an_expected_original_warning(self):
+        fake = self.driver({"SV-003-clean": StrictXeLaTeXWarningError("unexpected derivative warning")})
+        with self.validation() as validate:
+            run_suite(fake, "v2-clean")
+        validate.assert_called_once_with(fake.out, suite="v2-clean")
+        self.assertEqual(fake.report["status"], "FAIL_STRICT_XELATEX_WARNING_GATE")
+        self.assertEqual(fake.report["native_acceptance"], "NOT_ACCEPTED_STRICT_XELATEX_WARNINGS")
+        self.assertEqual([item["fixture"] for item in fake.report["strict_warning_failures"]], ["SV-003-clean"])
 
 
 if __name__ == "__main__":

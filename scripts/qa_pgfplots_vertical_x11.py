@@ -89,13 +89,13 @@ def popup_strip_bounds(pixels: list[tuple[int, int, int]]) -> tuple[int, int]:
 
 def property_menu_plan(index: int, count: int, strip_top: int, strip_height: int,
                        scroll_interval: tuple[float, float] = (0, 0)) -> dict:
-    if count not in (3, 15) or not 0 <= index < count:
-        raise ValueError("Property menu choice outside approved3/15 inventory")
+    if count not in (1, 3, 15) or not 0 <= index < count:
+        raise ValueError("Property menu choice outside approved1/3/15 inventory")
     # combo_height is a maximum, not the observed viewport: egui can retain
     # a shorter popup after the same ComboBox previously showed three choices.
     content = count * MENU_ROW - 4
     viewport = strip_height - 10
-    if not 3 * MENU_ROW - 4 <= viewport <= min(content, 200):
+    if not min(content, 3 * MENU_ROW - 4) <= viewport <= min(content, 200):
         raise RuntimeError("Actual popup height differs from scoped compact menu geometry")
     maximum = content - viewport
     low, high = scroll_interval
@@ -119,7 +119,7 @@ def observe_property_popup(pixels, origin: tuple[int, int], index: int, count: i
                            *, allow_hidden_scrollbar=False) -> dict:
     """Exact padding/scrollbar probes on an original screenshot; no OCR.
 
-    Scope stays Midnight/scale1/1180x680, closed 3/15 inventories. Scrollbar
+    Scope stays Midnight/scale1/1180x680, closed 1/3/15 inventories. Scrollbar
     mapping follows egui0.33.3's content/viewport geometry, never wheel ticks.
     """
     if pixels.size != evidence.SCREEN:
@@ -309,7 +309,7 @@ class Driver(common.Driver):
                        "physical_mac_arm": "NOT_RUN", "independent_visual_review": "REQUIRED",
                        "operation_count": len(evidence.operation_inventory(args.suite)),
                        "builds": {}, **provenance}
-        if args.suite == "v2":
+        if args.suite in ("v2", "v2-clean"):
             self.report["sv040"] = "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR"
         self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals")
 
@@ -475,7 +475,7 @@ class Driver(common.Driver):
         self.screenshot(operation.name + "-scanned")
         self.combo_index("candidate", operation.command)
         self.combo_index("property", operation.property_index,
-                         count=len(evidence.AXIS_KEYS if operation.kind == "axis" else evidence.ADDPLOT_KEYS))
+                         count=len(evidence.PROPERTY_KEYS[operation.kind]))
         self.click("draft")
         self.field_copy(operation.name + "-original", operation.before.encode())
         before = self.screenshot(operation.name + "-before-f1")
@@ -630,7 +630,7 @@ def main() -> int:
     parser.add_argument("--source-root", type=Path, default=evidence.SOURCE_ROOT)
     parser.add_argument("--build-provenance", type=Path, required=True)
     parser.add_argument("--coordinates", type=Path)
-    parser.add_argument("--suite", choices=("v2", "at4"), default="v2")
+    parser.add_argument("--suite", choices=evidence.SUITES, default="v2")
     parser.add_argument("--build-timeout", type=float, default=180)
     args = parser.parse_args()
     driver = None

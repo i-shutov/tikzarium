@@ -43,7 +43,6 @@ class At4SourceInvariantTests(unittest.TestCase):
         return data
 
     def proposed(self, case_id):
-        plan = self.case_plan[case_id]
         data = self.original(case_id)
         operation, = evidence.operations("AT4-" + case_id)
         old = (operation.key + "=" + operation.before).encode("ascii")
@@ -54,7 +53,7 @@ class At4SourceInvariantTests(unittest.TestCase):
         return derivative
 
     def validate(self, case_id, source):
-        record = qa.load_catalogue_record(self.catalogue, case_id) if case_id in {"48", "50", "55", "56", "58"} else None
+        record = qa.load_catalogue_record(self.catalogue, case_id) if case_id in {"48", "50", "55", "56", "58", "59", "60"} else None
         return qa.validate_case(case_id, source, record)
 
     def test_originals_and_proposed_derivatives_pass_source_checks(self):
@@ -198,6 +197,72 @@ class At4SourceInvariantTests(unittest.TestCase):
             self.validate("61", original.replace("1+x^2", "1+x^4"))
         with self.assertRaises(qa.InvariantViolation):
             self.validate("61", original.replace("domain=.01:100", "domain=.01:1000"))
+
+    def test_59_rejects_formula_range_label_order_panel_and_data_claim_changes(self):
+        original = self.original("59").decode()
+        for old, new in (
+                ("sin(deg(x))", "cos(deg(x))"),
+                ("cos(deg(x))", "cos(x)"),
+                ("domain=0:6.28", "domain=0:6.3"),
+                ("samples=101", "samples=100"),
+                (r"ylabel={$\sin t$}", r"ylabel={$\cos t$}"),
+                ("width=6cm", "width=8cm")):
+            with self.subTest(old=old, new=new):
+                self.assertIn(old, original)
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("59", original.replace(old, new, 1))
+        swapped = original.replace("{sin(deg(x))};", "{__TEMP__};", 1).replace("{cos(deg(x))};", "{sin(deg(x))};", 1).replace("{__TEMP__};", "{cos(deg(x))};", 1)
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("59", swapped)
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("59", original.replace(r"\begin{tikzpicture}", r"\begin{tikzpicture}% measured experimental data"))
+
+    def test_59_rejects_trig_overrides_and_group_or_subplot_option_overrides(self):
+        original = self.original("59").decode()
+        mutations = (
+            (r"\pgfplotsset{compat=1.18}", r"\pgfplotsset{compat=1.18,trig format plots=rad}"),
+            (r"\begin{document}", r"\pgfkeys{/pgf/trig format=rad}" + "\n" + r"\begin{document}"),
+            ("width=6cm", "width=6cm,width=2cm"),
+            (r"\nextgroupplot[ylabel={$\cos t$}]",
+             r"\nextgroupplot[ylabel={$\cos t$},width=2cm]"),
+            ("samples=101", "samples=101,samples=99"),
+            ("blue,domain=0:6.28,samples=101", "blue,/pgfplots/trig format plots=rad,domain=0:6.28,samples=101"),
+        )
+        for old, new in mutations:
+            with self.subTest(old=old):
+                self.assertIn(old, original)
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("59", original.replace(old, new, 1))
+
+    def test_59_rejects_catalogue_reinterpretation(self):
+        original = self.original("59")
+        record = qa.load_catalogue_record(self.catalogue, "59")
+        for field, wrong in (("description", "Measured experimental data in two panels."),
+                             ("check", "Measured amplitudes are statistically significant.")):
+            with self.subTest(field=field):
+                with self.assertRaises(qa.InvariantViolation):
+                    qa.validate_case("59", original, dict(record, **{field: wrong}))
+
+    def test_60_rejects_formula_raw_data_duplicate_or_unapproved_columns_order(self):
+        original = self.original("60").decode()
+        for old, new in (
+                (r"\thisrow{x}^2", r"\thisrow{x}^3"),
+                (r"2 3.9", r"2 4.0"),
+                ("columns={x,y,model}", "columns={x,model,model}"),
+                ("columns={x,y,model}", "columns={y,x,model}"),
+                ("column name=$x^2$", "column name=$x^3$"),
+                (r"\toprule", r"\midrule")):
+            with self.subTest(old=old, new=new):
+                self.assertIn(old, original)
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("60", original.replace(old, new, 1))
+
+    def test_60_accepts_only_original_or_proposed_unique_column_order(self):
+        original = self.original("60").decode()
+        reordered = original.replace("columns={x,y,model}", "columns={x,model,y}", 1)
+        for source in (original, reordered):
+            with self.subTest(order="proposed" if source == reordered else "original"):
+                self.assertEqual(self.validate("60", source)["source_checks"], "PASS_SOURCE_SEMANTICS_ONLY")
 
 
 if __name__ == "__main__":
