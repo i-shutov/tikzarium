@@ -1,0 +1,162 @@
+name: Tauri source-build foundation import and qualification
+
+on:
+  push:
+    branches: [integration/tauri-source-build-20261117]
+    paths: ['.github/workflows/tauri-source-build-import.yml']
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: tauri-source-build-import
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/integration/tauri-source-build-20261117'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      source_sha: ${{ steps.import.outputs.source_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt
+      - name: Verify and apply audited source delta; import exact lockfiles
+        id: import
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tauri-import"
+          python3 - <<'PY'
+          import hashlib, io, json, lzma, os, pathlib, subprocess, urllib.request, urllib.error, urllib.parse, zipfile
+          root = pathlib.Path.cwd()
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          base = 'fb0fc39abab68e47ec4dadd0e2b198a7dfcb4002'
+          assert git('rev-parse', 'HEAD') == os.environ['GITHUB_SHA']
+          assert git('merge-base', base, 'HEAD') == base
+          assert git('hash-object', 'apps/tikzarium-studio-tauri/src/App.tsx') == '45fec9e4e53d583c7c1353fc432adb0c577f34d2'
+          allowed = set('''AGENTS.md
+          README.md
+          apps/tikzarium-studio-tauri/README.md
+          apps/tikzarium-studio-tauri/index.html
+          apps/tikzarium-studio-tauri/src-tauri/Cargo.toml
+          apps/tikzarium-studio-tauri/src-tauri/src/commands.rs
+          apps/tikzarium-studio-tauri/src-tauri/src/patch_engine.rs
+          apps/tikzarium-studio-tauri/src-tauri/tauri.conf.json
+          apps/tikzarium-studio-tauri/src/App.tsx
+          apps/tikzarium-studio-tauri/src/domain/nativeBuildGate.test.ts
+          apps/tikzarium-studio-tauri/src/domain/nativeBuildGate.ts
+          apps/tikzarium-studio-tauri/src/domain/sourceContract.test.ts
+          apps/tikzarium-studio-tauri/src/domain/sourceDigest.ts
+          apps/tikzarium-studio-tauri/src/domain/sourcePatchEngine.ts
+          apps/tikzarium-studio-tauri/src/domain/tauriNativeBridge.ts
+          apps/tikzarium-studio-tauri/tests/source-patch-contract-v1.json
+          docs/ARCHITECTURE.md
+          docs/PRODUCT_SPEC.md
+          docs/ROADMAP.md
+          insights/2026-11-17_TAURI_SOURCE_BUILD_CONTRACTS_RU.md
+          insights/assets/2026-11-17-tauri/baseline-defects.json
+          plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md
+          scripts/qa_tauri_startup.py'''.splitlines())
+          parts = [pathlib.Path(f'scripts/maintenance/tauri-foundation.patch.xz.part{i:02}') for i in range(1, 5)]
+          packed = b''.join(p.read_bytes() for p in parts)
+          patch_sha = hashlib.sha256(packed).hexdigest()
+          assert patch_sha == 'fc8988992203fefe4e026a7e60dc92850f27bb1b0db133a92440f762b207246e'
+          patch = lzma.decompress(packed)
+          assert len(patch) == 108809
+          subprocess.run(['git', 'apply', '--check', '-'], input=patch, check=True)
+          subprocess.run(['git', 'apply', '--index', '-'], input=patch, check=True)
+          assert set(git('diff', '--cached', '--name-only').splitlines()) == allowed
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs): return None
+          def artifact_bytes(artifact_id, expected):
+              url = f'https://api.github.com/repos/i-shutov/tikzarium/actions/artifacts/{artifact_id}/zip'
+              request = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              try:
+                  response = urllib.request.build_opener(NoRedirect()).open(request, timeout=40)
+              except urllib.error.HTTPError as e:
+                  if e.code not in (301, 302, 303, 307, 308): raise
+                  location = e.headers['Location']
+                  assert urllib.parse.urlparse(location).scheme == 'https'
+                  # The GitHub token is NEVER forwarded to the artifact-storage host.
+                  response = urllib.request.urlopen(location, timeout=40)
+              with response: data = response.read(1_000_001)
+              assert len(data) <= 1_000_000 and hashlib.sha256(data).hexdigest() == expected
+              return data
+          locks = [
+              (14323220076, 'afa4c0bf8668af2c33f90d0215a703ae61d9a4f8dd81d41f45ab93b632b1a7ef', 'apps/tikzarium-studio-tauri/package-lock.json'),
+              (14321819111, 'cb9558a2e9b6b3fb440f5b741fa6ddde3ceb2592a03f4c66d85dfe7f10f3fd9a', 'apps/tikzarium-studio-tauri/src-tauri/Cargo.lock'),
+          ]
+          receipts = []
+          for artifact_id, sha, name in locks:
+              data = artifact_bytes(artifact_id, sha)
+              with zipfile.ZipFile(io.BytesIO(data)) as z:
+                  member = 'tikzarium/tikzarium/' + name
+                  assert len([n for n in z.namelist() if n == member]) == 1
+                  payload = z.read(member)
+              path = root / name
+              assert not path.exists(), 'Refuse to overwrite an existing lockfile'
+              path.write_bytes(payload)
+              allowed.add(name)
+              receipts.append({'artifact_id': artifact_id, 'artifact_sha256': sha, 'path': name, 'sha256': hashlib.sha256(payload).hexdigest()})
+          subprocess.run(['rustfmt', '--edition', '2024', '--config', 'skip_children=true',
+                          'apps/tikzarium-studio-tauri/src-tauri/src/commands.rs',
+                          'apps/tikzarium-studio-tauri/src-tauri/src/patch_engine.rs'], check=True)
+          for p in parts:
+              p.unlink(); allowed.add(str(p))
+          importer = '.github/workflows/tauri-source-build-import.yml'
+          pathlib.Path(importer).unlink(); allowed.add(importer)
+          receipt_path = 'insights/assets/2026-11-17-tauri/source-import.json'
+          receipt = {'schema_version': 1, 'status': 'SOURCE_IMPORTED_NOT_YET_QUALIFIED', 'base_sha': base,
+                     'importer_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
+                     'compressed_patch_sha256': patch_sha, 'lockfiles': receipts, 'subagents_launched': 0,
+                     'platform_acceptance': 'NOT_ESTABLISHED', 'source_commit': 'The commit containing this receipt'}
+          pathlib.Path(receipt_path).write_text(json.dumps(receipt, indent=2) + '\n')
+          allowed.add(receipt_path)
+          subprocess.run(['git', 'add', '-A'], check=True)
+          actual = set(git('diff', '--cached', '--name-only').splitlines())
+          assert actual <= allowed, sorted(actual - allowed)
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          branch = 'integration/tauri-source-build-20261117'
+          assert git('ls-remote', '--heads', 'origin', 'refs/heads/' + branch).split()[0] == os.environ['GITHUB_SHA'], 'Integration branch moved'
+          subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+          subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git', 'commit', '-m', 'fix(tauri): enforce exact source transactions and real save-before-build'], check=True)
+          source = git('rev-parse', 'HEAD')
+          subprocess.run(['git', 'push', 'origin', 'HEAD:refs/heads/' + branch], check=True)
+          assert git('ls-remote', '--heads', 'origin', 'refs/heads/' + branch).split()[0] == source
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f: f.write('source_sha=' + source + '\n')
+          receipt['published_source_sha'] = source
+          receipt['status'] = 'SOURCE_PUSHED_AWAITING_READ_ONLY_QUALIFICATION'
+          (pathlib.Path(os.environ['RUNNER_TEMP']) / 'tauri-import/source-import-report.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          PY
+      - name: Preserve import receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tauri-foundation-import-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tauri-import/
+          if-no-files-found: warn
+          retention-days: 14
+
+  qualify:
+    needs: apply
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tauri-primary.yml
+    with:
+      source_sha: ${{ needs.apply.outputs.source_sha }}

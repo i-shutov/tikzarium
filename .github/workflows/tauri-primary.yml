@@ -1,0 +1,189 @@
+name: Tauri primary - locked source and build contracts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/tikzarium-studio-tauri/**'
+      - '.github/workflows/tauri-primary.yml'
+      - 'scripts/qa_tauri_*'
+      - 'crates/tikzarium-core/**'
+      - 'crates/tikzarium-extensions/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/tikzarium-studio-tauri/**'
+      - '.github/workflows/tauri-primary.yml'
+      - 'scripts/qa_tauri_*'
+      - 'crates/tikzarium-core/**'
+      - 'crates/tikzarium-extensions/**'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Exact source commit to qualify, not an acceptance transfer
+        type: string
+        required: true
+
+permissions:
+  contents: read
+concurrency:
+  group: tauri-primary-${{ inputs.source_sha || github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+env:
+  TIKZARIUM_SOURCE_SHA: ${{ inputs.source_sha || github.event.pull_request.head.sha || github.sha }}
+  APP: apps/tikzarium-studio-tauri
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_BUILD_JOBS: '2'
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TIKZARIUM_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Exact checkout and locked dependencies
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          mkdir -p "$RUNNER_TEMP/tauri-frontend"
+          { git rev-parse HEAD; node --version; npm --version; sha256sum package-lock.json; } | tee "$RUNNER_TEMP/tauri-frontend/environment.log"
+          npm ci --no-audit --no-fund 2>&1 | tee "$RUNNER_TEMP/tauri-frontend/install.log"
+      - name: All frontend contracts, including shared Rust fixtures
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          set -euo pipefail
+          npm test 2>&1 | tee "$RUNNER_TEMP/tauri-frontend/tests.log"
+      - name: Typecheck entire application, not only test modules
+        if: success() || failure()
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          set -euo pipefail
+          npm run lint 2>&1 | tee "$RUNNER_TEMP/tauri-frontend/typecheck.log"
+      - name: Production bundle and immutable lock
+        if: success() || failure()
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          set -euo pipefail
+          npm run build 2>&1 | tee "$RUNNER_TEMP/tauri-frontend/build.log"
+          git diff --exit-code -- package-lock.json
+      - name: Preserve raw frontend results, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tauri-primary-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tauri-frontend/
+          retention-days: 14
+          if-no-files-found: error
+
+  native-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.TIKZARIUM_SOURCE_SHA }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.91.0'
+          components: rustfmt, clippy
+      - name: Cache compiled dependencies without replacing locked verification
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        id: rust-cache
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            apps/tikzarium-studio-tauri/src-tauri/target/
+          key: ${{ runner.os }}-tauri191-${{ hashFiles('apps/tikzarium-studio-tauri/src-tauri/Cargo.lock') }}-${{ env.TIKZARIUM_SOURCE_SHA }}
+          restore-keys: |
+            ${{ runner.os }}-tauri191-${{ hashFiles('apps/tikzarium-studio-tauri/src-tauri/Cargo.lock') }}-
+      - name: Disposable hosted dependencies, not owner workstation changes
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tauri-native"
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          { git rev-parse HEAD; rustc -vV; cargo --version; node --version; npm --version; } > "$RUNNER_TEMP/tauri-native/environment.log"
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev \
+            xvfb xauth x11-utils openbox xdotool wmctrl imagemagick python3-pil dbus-x11
+      - name: Build exact embedded frontend
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund > "$RUNNER_TEMP/tauri-native/npm-ci.log" 2>&1
+          npm run build 2>&1 | tee "$RUNNER_TEMP/tauri-native/frontend-build.log"
+      - name: Check Rust formatting
+        working-directory: apps/tikzarium-studio-tauri/src-tauri
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check 2>&1 | tee "$RUNNER_TEMP/tauri-native/rustfmt.log"
+      - name: Test actual Tauri Rust host and shared source corpus
+        if: success() || failure()
+        working-directory: apps/tikzarium-studio-tauri/src-tauri
+        run: |
+          set -euo pipefail
+          cargo test --locked 2>&1 | tee "$RUNNER_TEMP/tauri-native/tests.log"
+      - name: Strict all-target Clippy
+        if: success() || failure()
+        working-directory: apps/tikzarium-studio-tauri/src-tauri
+        run: |
+          set -euo pipefail
+          cargo clippy --locked --all-targets -- -D warnings 2>&1 | tee "$RUNNER_TEMP/tauri-native/clippy.log"
+      - name: Build standalone Tauri with embedded assets, no dev server
+        if: success() || failure()
+        id: binary
+        working-directory: apps/tikzarium-studio-tauri/src-tauri
+        run: |
+          set -euo pipefail
+          cargo build --locked --features tauri/custom-protocol --bin tikzarium-studio-tauri 2>&1 | tee "$RUNNER_TEMP/tauri-native/build.log"
+          git diff --exit-code -- Cargo.lock ../../../Cargo.lock
+          sha256sum target/debug/tikzarium-studio-tauri > "$RUNNER_TEMP/tauri-native/binary.sha256"
+      - name: Save build cache after a real successful binary build
+        if: steps.binary.outcome == 'success' && steps.rust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            apps/tikzarium-studio-tauri/src-tauri/target/
+          key: ${{ steps.rust-cache.outputs.cache-primary-key }}
+      - name: Observe actual Tauri startup on hosted X11
+        if: steps.binary.outcome == 'success'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+          GDK_BACKEND: x11
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tauri-xdg"
+          chmod 700 "$RUNNER_TEMP/tauri-xdg"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/tauri-xdg"
+          xvfb-run -a -s '-screen 0 1366x768x24 +extension GLX +render -noreset' dbus-run-session -- bash -euo pipefail -c '
+            openbox --sm-disable > "$RUNNER_TEMP/tauri-native/openbox.log" 2>&1 &
+            wm_pid=$!
+            trap "kill $wm_pid 2>/dev/null || true" EXIT
+            for i in $(seq 1 50); do wmctrl -m >/dev/null 2>&1 && break; sleep .1; done
+            python3 scripts/qa_tauri_startup.py \
+              --app "$GITHUB_WORKSPACE/apps/tikzarium-studio-tauri/src-tauri/target/debug/tikzarium-studio-tauri" \
+              --out "$RUNNER_TEMP/tauri-native/startup" --source-sha "$TIKZARIUM_SOURCE_SHA"
+          ' 2>&1 | tee "$RUNNER_TEMP/tauri-native/startup.log"
+      - name: Preserve original native logs and screenshot, including failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tauri-primary-native-linux-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tauri-native/
+          retention-days: 14
+          if-no-files-found: error
