@@ -26,10 +26,11 @@ class OperationContracts(unittest.TestCase):
         formula = qa.operations("formula")
         self.assertEqual(tuple(op.key for op in formula if op.kind == "axis"), qa.AXIS_KEYS)
         self.assertEqual(tuple(op.key for op in formula if op.kind == "addplot"), qa.ADDPLOT_KEYS)
-        self.assertEqual(len(qa.OPERATIONS), 26)
-        for name in qa.NAMED_SV[:-1]:
+        self.assertEqual(len(qa.OPERATIONS), 27)
+        for name in qa.NAMED_SV:
             self.assertEqual(len(qa.operations(name)), 1)
-        self.assertEqual(qa.operations("SV-040"), ())
+        self.assertEqual(qa.operations("SV-040"),
+                         (qa.Operation("SV-040", 0, "nativeplot", "samples", "50", "80"),))
 
     def test_every_patch_has_exact_inverse_and_preserves_all_unrelated_bytes(self):
         for operation in qa.OPERATIONS:
@@ -69,14 +70,18 @@ class OperationContracts(unittest.TestCase):
             original = qa.fixture_path(fixture).read_bytes()
             self.assertEqual(qa.fixture_bytes(fixture), original)
             self.assertIn(b"{Charis SIL}", original)
-        self.assertEqual([name for name, _ in qa.expected_sequence("SV-040")], ["opened", "reopened", "built"])
+        name = qa.operations("SV-040")[0].name
+        self.assertEqual([stage for stage, _ in qa.expected_sequence("SV-040")],
+                         ["opened", name + "-draft", name + "-applied", name + "-undo",
+                          "final-applied", "reopened", "built"])
+        self.assertEqual(qa.digest(qa.fixture_bytes("SV-040")), qa.NATIVE_PLOT_ORIGINAL_SHA256)
 
     def test_clean_suite_is_separate_and_shared_operations_are_not_duplicated(self):
         self.assertEqual(qa.fixtures_for_suite("v2-clean"),
             ("formula", "external-tables", "SV-001", "SV-003-clean", "SV-022",
              "SV-029-clean", "SV-040", "SV-009-clean"))
         self.assertNotEqual(qa.suite_scope("v2-clean"), qa.suite_scope("v2"))
-        self.assertEqual(len(qa.operation_inventory("v2-clean")), 26)
+        self.assertEqual(len(qa.operation_inventory("v2-clean")), 27)
         self.assertEqual(len(qa.operations("formula")), 18)
         for original, derivative in qa.CLEAN_REPLACEMENTS.items():
             op, = qa.operations(derivative)
@@ -94,8 +99,35 @@ class OperationContracts(unittest.TestCase):
         self.assertEqual(qa.PROPERTY_KEYS["groupplot"], qa.AXIS_KEYS)
         self.assertEqual(qa.PROPERTY_KEYS["nextgroupplot"], qa.AXIS_KEYS)
         self.assertEqual(qa.PROPERTY_KEYS["tabletypeset"], ("columns",))
+        self.assertEqual(qa.PROPERTY_KEYS["nativeplot"], ("samples",))
         with self.assertRaises(KeyError):
             replace(qa.OPERATIONS[0], kind="unknown").property_index
+
+    def test_cp09_inventory_keeps_all_original_at4_cases_and_exact_native_plot_scope(self):
+        self.assertEqual(qa.fixtures_for_suite("at4"),
+            ("AT4-09", "AT4-34", "AT4-35", "AT4-48", "AT4-49", "AT4-50",
+             "AT4-51", "AT4-52", "AT4-53", "AT4-54", "AT4-55", "AT4-56",
+             "AT4-57", "AT4-58", "AT4-59", "AT4-60", "AT4-61"))
+        self.assertEqual(sum(len(qa.expected_sequence(f)) for f in qa.fixtures_for_suite("at4")), 119)
+        self.assertEqual(sum(len(qa.expected_sequence(f)) for f in qa.fixtures_for_suite("v2")), 113)
+        for fixture, expected in (("AT4-34", ("samples", "301", "401")),
+                                  ("AT4-35", ("samples", "251", "301")),
+                                  ("AT4-57", ("height", "6cm", "7cm"))):
+            operation, = qa.operations(fixture)
+            self.assertEqual((operation.key, operation.before, operation.after), expected)
+        for op in qa.operation_inventory("at4"):
+            original = qa.fixture_bytes(op.fixture)
+            patched = op.patch(original)
+            self.assertEqual(patched.replace((op.key + "=" + op.after).encode(),
+                                            (op.key + "=" + op.before).encode(), 1), original)
+
+    def test_native_plot_original_hash_refuses_modified_corpus_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "figure.tex"
+            path.write_bytes(qa.fixture_bytes("SV-040").replace(b"samples=50", b"samples=51"))
+            with patch.object(qa, "fixture_path", return_value=path):
+                with self.assertRaisesRegex(ValueError, "native TikZ plot bytes/hash"):
+                    qa.fixture_bytes("SV-040")
 
 
 @unittest.skipIf(Image is None, "Already installed Pillow required for original screenshot contracts")
@@ -214,7 +246,7 @@ class CleanDerivativeEvidenceContracts(unittest.TestCase):
                 qa.record(self.out, fixture, stage, live, editor, self.png,
                           action="UNIT_EVENT synthetic retained observation; no GUI acceptance")
         result = qa.validate_all(self.out, "v2-clean")
-        self.assertEqual(result["operations_observed"], 26)
+        self.assertEqual(result["operations_observed"], 27)
         self.assertEqual(result["native_acceptance"], "REQUIRES_INDEPENDENT_REVIEW")
         for fixture in qa.CLEAN_REPLACEMENTS.values():
             entry = manifest["named_corpus_inputs"][fixture]
@@ -574,7 +606,7 @@ class StrictWarningCollectionContracts(unittest.TestCase):
 
     def validation(self):
         return patch("qa_pgfplots_vertical_x11.evidence.validate_all", return_value={
-            "status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED", "operations_observed": 26,
+            "status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED", "operations_observed": 27,
             "native_acceptance": "REQUIRES_INDEPENDENT_REVIEW"})
 
     def test_clean_suite_keeps_exact_order_and_validates_complete_inventory(self):

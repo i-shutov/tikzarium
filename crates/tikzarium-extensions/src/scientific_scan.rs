@@ -148,6 +148,27 @@ pub fn scientific_property_help(key: &str) -> Option<ScientificPropertyHelp> {
     }
 }
 
+/// Kind-specific help keeps native TikZ sampling separate from PGFPlots.
+#[must_use]
+pub fn scientific_property_help_for_kind(
+    kind: ScientificKind,
+    key: &str,
+) -> Option<ScientificPropertyHelp> {
+    if kind == ScientificKind::NativePlot {
+        return (key == "samples").then_some(ScientificPropertyHelp {
+            key: "samples",
+            value_type: "Целое число",
+            effect: "Число точек дискретизации вычисляемого графика native TikZ plot.",
+            editor_limit: "Только существующее samples=2…4096 в закрытой форме draw … plot[domain=…,samples=…] (\\x,{exp(-\\x*\\x)});. Формула, domain и стили не редактируются; полный AST TikZ не поддерживается.",
+            example: "samples=80",
+            package: "tikz (pgf)",
+            verified_tex_default: "UNKNOWN",
+            manual_section: "TikZ & PGF Manual, Plots of Functions, /tikz/samples: https://tikz.dev/tikz-plots#tikz/samples (версия установленного PGF не подтверждена; default UNKNOWN)",
+        });
+    }
+    scientific_property_help(key)
+}
+
 pub const MAX_SCIENTIFIC_SOURCE_BYTES: usize = 2 * 1024 * 1024;
 pub const MAX_SCIENTIFIC_INSTANCES: usize = 2048;
 const MAX_GROUP_DEPTH: usize = 64;
@@ -162,6 +183,8 @@ pub enum ScientificKind {
     /// One table typesetting command, with only existing columns reorder.
     TableTypeset,
     AddPlot,
+    /// Closed native `\draw ... plot[...] (\x,{exp(-\x*\x)});` owner.
+    NativePlot,
     Draw,
     Path,
     Fill,
@@ -525,6 +548,295 @@ fn reviewed_scoped_invocation(word: &str) -> bool {
             | "pic"
             | "dimline"
     )
+}
+
+/// Closed CP09 grammar, intentionally not a general native TikZ AST. The
+/// source expression is recognized, preserved and never evaluated in Rust.
+fn native_plot_options(text: &str, after_draw: usize, finish: usize) -> Option<Range<usize>> {
+    let (styles, after_styles) = trailing_options(text, after_draw).ok()?;
+    if let Some(styles) = styles {
+        let mut seen = Vec::new();
+        for part in text.get(styles)?.split(',') {
+            let style = part.trim();
+            if !matches!(style, "blue!50!black" | "smooth" | "thick") || seen.contains(&style) {
+                return None;
+            }
+            seen.push(style);
+        }
+    }
+    let plot_start = whitespace_and_comments(text, after_styles);
+    let rest = text.get(plot_start..finish)?;
+    if !rest.starts_with("plot") {
+        return None;
+    }
+    let open = whitespace_and_comments(text, plot_start + 4);
+    if text.as_bytes().get(open) != Some(&b'[') {
+        return None;
+    }
+    let options = group_at(text, open)?;
+    let mut keys = Vec::new();
+    for part in text.get(options.inside.clone())?.split(',') {
+        let (key, value) = part.split_once('=')?;
+        let (key, value) = (key.trim(), value.trim());
+        if !matches!(key, "domain" | "samples")
+            || keys.contains(&key)
+            || !literal_is_safe(key, value)
+        {
+            return None;
+        }
+        if key == "domain" {
+            let (a, b) = value.split_once(':')?;
+            if a.parse::<f64>().ok()? >= b.parse::<f64>().ok()? {
+                return None;
+            }
+        }
+        keys.push(key);
+    }
+    if keys.len() != 2 {
+        return None;
+    }
+    let expression: String = text
+        .get(options.next..finish)?
+        .chars()
+        .filter(|ch| !ch.is_ascii_whitespace())
+        .collect();
+    (expression == r"(\x,{exp(-\x*\x)});").then_some(options.inside)
+}
+
+/// No arity is guessed for unknown macros. Reviewed declarations consume
+/// exactly their own groups; path bodies own their labels, not later draws.
+/// This vocabulary deliberately covers the untouched SV-040 preamble only.
+fn native_plot_context_is_closed(text: &str) -> bool {
+    fn argument(text: &str, from: usize) -> Option<Group> {
+        let p = whitespace_and_comments(text, from);
+        (text.as_bytes().get(p) == Some(&b'{')).then(|| group_at(text, p))?
+    }
+    fn only_controls(text: &str, allowed: &[&str]) -> bool {
+        let mut i = 0;
+        while i < text.len() {
+            if text.as_bytes()[i] == b'%' {
+                i = whitespace_and_comments(text, i);
+            } else if text.as_bytes()[i] == b'\\' {
+                let (word, end) = command_at(text, i);
+                if !allowed.contains(&word) {
+                    return false;
+                }
+                i = end;
+            } else {
+                i += 1;
+            }
+        }
+        true
+    }
+    // TeX superscript escapes could synthesize controls before tokenization.
+    if text.contains("^^") {
+        return false;
+    }
+    let mut i = 0;
+    let mut environments = Vec::new();
+    while i < text.len() {
+        i = whitespace_and_comments(text, i);
+        if i == text.len() {
+            break;
+        }
+        if text.as_bytes()[i] != b'\\' {
+            return false;
+        }
+        let (word, next) = command_at(text, i);
+        i = next;
+        match word {
+            "documentclass" | "usepackage" if environments.is_empty() => {
+                let Ok((options, after)) = trailing_options(text, i) else {
+                    return false;
+                };
+                let Some(group) = argument(text, after) else {
+                    return false;
+                };
+                let value = text[group.inside.clone()].trim();
+                let options = options.map(|range| text[range].trim());
+                let known = if word == "documentclass" {
+                    value == "standalone" && options == Some("tikz,border=5pt")
+                } else {
+                    matches!(
+                        value,
+                        "inputenc"
+                            | "fontspec"
+                            | "polyglossia"
+                            | "graphicx"
+                            | "caption"
+                            | "subcaption"
+                            | "tikz"
+                            | "pgfplots"
+                            | "tikz-dimline"
+                    ) && (options.is_none() || (value == "inputenc" && options == Some("utf8")))
+                };
+                if !known || !only_controls(&text[next..group.next], &[]) {
+                    return false;
+                }
+                i = group.next;
+            }
+            "usetikzlibrary" | "usepgfplotslibrary" | "setdefaultlanguage"
+            | "setotherlanguages" | "pgfdeclarelayer" | "pgfsetlayers"
+                if environments.is_empty() =>
+            {
+                let Some(group) = argument(text, i) else {
+                    return false;
+                };
+                let value = text[group.inside.clone()].trim();
+                let known = match word {
+                    "usetikzlibrary" => matches!(
+                        value,
+                        "positioning"
+                            | "intersections"
+                            | "patterns"
+                            | "patterns.meta"
+                            | "arrows.meta"
+                            | "shapes.arrows"
+                            | "calc"
+                            | "quotes,angles"
+                            | "shapes.geometric"
+                            | "babel"
+                    ),
+                    "usepgfplotslibrary" => value == "fillbetween",
+                    "setdefaultlanguage" => value == "russian",
+                    "setotherlanguages" => value == "english",
+                    "pgfdeclarelayer" => matches!(value, "ft" | "bg"),
+                    "pgfsetlayers" => value == "bg,main,ft",
+                    _ => false,
+                };
+                if !known {
+                    return false;
+                }
+                i = group.next;
+            }
+            "newfontfamily" if environments.is_empty() => {
+                let name = whitespace_and_comments(text, i);
+                if text.as_bytes().get(name) != Some(&b'\\') {
+                    return false;
+                }
+                let (name, end) = command_at(text, name);
+                if name != "cyrillicfont" {
+                    return false;
+                }
+                let Ok((_, after)) = trailing_options(text, end) else {
+                    return false;
+                };
+                let Some(group) = argument(text, after) else {
+                    return false;
+                };
+                if !only_controls(&text[end..group.next], &[]) {
+                    return false;
+                }
+                i = group.next;
+            }
+            "tikzset" if environments.is_empty() => {
+                let Some(group) = argument(text, i) else {
+                    return false;
+                };
+                let value = text[group.inside.clone()].trim();
+                let Some(body) = value.strip_prefix("add reference/.style=") else {
+                    return false;
+                };
+                let Some(style) = group_at(body, 0) else {
+                    return false;
+                };
+                if style.next != body.len() || !only_controls(body, &["pgflinewidth"]) {
+                    return false;
+                }
+                i = group.next;
+            }
+            "pgfplotsset" if environments.is_empty() => {
+                let Some(group) = argument(text, i) else {
+                    return false;
+                };
+                if text[group.inside.clone()].trim() != "compat=1.17" {
+                    return false;
+                }
+                i = group.next;
+            }
+            "pgfmathdeclarefunction" if environments.is_empty() => {
+                let Some(name) = argument(text, i) else {
+                    return false;
+                };
+                let Some(arity) = argument(text, name.next) else {
+                    return false;
+                };
+                let Some(body) = argument(text, arity.next) else {
+                    return false;
+                };
+                if &text[name.inside] != "gauss"
+                    || &text[arity.inside] != "3"
+                    || !only_controls(&text[body.inside.clone()], &["pgfmathparse"])
+                {
+                    return false;
+                }
+                // A numeric expression argument cannot contain executable TeX.
+                let body_text = text[body.inside.clone()].trim();
+                let Some(expression) = body_text.strip_prefix(r"\pgfmathparse") else {
+                    return false;
+                };
+                let Some(expression_group) = group_at(expression, 0) else {
+                    return false;
+                };
+                if expression_group.next != expression.len()
+                    || !expression[expression_group.inside]
+                        .bytes()
+                        .all(|ch| ch.is_ascii_alphanumeric() || b"#_+-*/^()., ".contains(&ch))
+                {
+                    return false;
+                }
+                i = body.next;
+            }
+            "begin" | "end" => {
+                let Some((env, end)) = environment_at(text, i) else {
+                    return false;
+                };
+                if !matches!(env, "document" | "tikzpicture") {
+                    return false;
+                }
+                if word == "begin" {
+                    if (env == "document" && !environments.is_empty())
+                        || (env == "tikzpicture" && environments.contains(&"tikzpicture"))
+                    {
+                        return false;
+                    }
+                    environments.push(env);
+                    let Ok((options, after)) = trailing_options(text, end) else {
+                        return false;
+                    };
+                    if let Some(options) = options
+                        && (env != "tikzpicture" || text[options].trim() != "scale=2")
+                    {
+                        return false;
+                    }
+                    i = after.max(end);
+                } else {
+                    if environments.pop() != Some(env) {
+                        return false;
+                    }
+                    i = end;
+                }
+            }
+            "draw" if environments.last() == Some(&"tikzpicture") => {
+                let Some(finish) = command_semicolon(text, i) else {
+                    return false;
+                };
+                // Only a validated native expression establishes the meaning
+                // of \x. A neighboring path cannot borrow that capability.
+                let allowed: &[&str] = if native_plot_options(text, i, finish).is_some() {
+                    &["x"]
+                } else {
+                    &[]
+                };
+                if !only_controls(&text[i..finish], allowed) {
+                    return false;
+                }
+                i = finish;
+            }
+            _ => return false,
+        }
+    }
+    environments.is_empty()
 }
 
 fn add(
@@ -891,6 +1203,15 @@ pub fn scan_scientific_source(
         }
         let (options, _) = trailing_options(text, after)?;
         let finish = command_semicolon(text, after).ok_or(ScanRefusal::UnbalancedSource)?;
+        let native_options = (kind == ScientificKind::Draw
+            && picture_depth == 1
+            && parent_axis.is_none()
+            && unowned_groups.is_empty())
+        .then(|| native_plot_options(text, after, finish))
+        .flatten();
+        let (kind, options) = native_options.map_or((kind, options), |options| {
+            (ScientificKind::NativePlot, Some(options))
+        });
         add(
             &mut out,
             RecognizedInstance {
@@ -922,6 +1243,13 @@ pub fn scan_scientific_source(
         || (has_scoped_descriptor && (!unowned_groups.is_empty() || scoped_grouping_is_opaque))
     {
         return Err(ScanRefusal::UnbalancedSource);
+    }
+    if out
+        .iter()
+        .any(|item| item.kind == ScientificKind::NativePlot)
+        && !native_plot_context_is_closed(text)
+    {
+        return Err(ScanRefusal::UnsupportedTeXControl);
     }
     Ok(out)
 }
@@ -1235,6 +1563,9 @@ fn literal_is_safe(key: &str, value: &str) -> bool {
 }
 
 fn allowed_property(kind: ScientificKind, key: &str) -> bool {
+    if kind == ScientificKind::NativePlot {
+        return key == "samples";
+    }
     match key {
         "samples" | "domain" | "mark" => {
             matches!(
@@ -1310,6 +1641,7 @@ fn literal_key_range(
                 | ScientificKind::NextGroupPlot
                 | ScientificKind::TableTypeset
                 | ScientificKind::AddPlot
+                | ScientificKind::NativePlot
         )
     {
         return Err(EditRefusal::Opaque);
@@ -1799,5 +2131,260 @@ mod scoped_descriptor_tests {
             edit(TABLE, &instance, "columns", "{x,y,model}", "{x,y,model}").unwrap_err(),
             EditRefusal::InvalidLiteral
         );
+    }
+}
+
+#[cfg(test)]
+mod native_plot_tests {
+    use super::*;
+
+    const ORIGINAL: &str =
+        include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-040/figure.tex");
+    const PLOT: &str =
+        r"\draw[blue!50!black,smooth,thick] plot[domain=-1.6:1.6,samples=50] (\x,{exp(-\x*\x)});";
+
+    fn source(plot: &str) -> String {
+        format!("\\begin{{tikzpicture}}\n{plot}\n\\end{{tikzpicture}}\n")
+    }
+
+    fn view(text: &str) -> SourceView<'_> {
+        SourceView { text, revision: 17 }
+    }
+
+    fn native(text: &str) -> RecognizedInstance {
+        scan_scientific_source(view(text))
+            .unwrap()
+            .into_iter()
+            .find(|item| item.kind == ScientificKind::NativePlot)
+            .unwrap()
+    }
+
+    fn patch(text: &str, instance: &RecognizedInstance) -> Result<SourcePatch, EditRefusal> {
+        plan_literal_key_edit(LiteralEditRequest {
+            view: view(text),
+            instance,
+            key: "samples",
+            expected_old: "50",
+            replacement: "80",
+        })
+    }
+
+    #[test]
+    fn native_plot_original_sv040_owns_plot_options_only_and_preserves_every_other_byte() {
+        let instance = native(ORIGINAL);
+        assert_eq!(&ORIGINAL[instance.range.clone()], PLOT);
+        assert_eq!(
+            &ORIGINAL[instance.option_range.clone().unwrap()],
+            "domain=-1.6:1.6,samples=50"
+        );
+        assert_eq!(
+            literal_key_value(view(ORIGINAL), &instance, "samples").unwrap(),
+            "50"
+        );
+        assert_eq!(
+            literal_key_value(view(ORIGINAL), &instance, "domain"),
+            Err(EditRefusal::UnsupportedKey)
+        );
+        let change = patch(ORIGINAL, &instance).unwrap();
+        assert_eq!(&ORIGINAL[change.range.clone()], "50");
+        assert_eq!(change.expected_old, "50");
+        assert_eq!(change.replacement, "80");
+        let mut changed = ORIGINAL.to_owned();
+        let mut revision = 17;
+        let inverse = change.apply(&mut changed, &mut revision).unwrap();
+        assert_eq!(changed, ORIGINAL.replacen("samples=50", "samples=80", 1));
+        inverse.apply(&mut changed, &mut revision).unwrap();
+        assert_eq!(changed.as_bytes(), ORIGINAL.as_bytes());
+        let help =
+            scientific_property_help_for_kind(ScientificKind::NativePlot, "samples").unwrap();
+        assert_eq!(help.package, "tikz (pgf)");
+        assert_eq!(help.verified_tex_default, "UNKNOWN");
+        assert!(
+            help.manual_section
+                .contains("https://tikz.dev/tikz-plots#tikz/samples")
+        );
+        assert!(scientific_property_help_for_kind(ScientificKind::NativePlot, "domain").is_none());
+    }
+
+    #[test]
+    fn native_plot_narrow_grammar_rejects_other_owners_sources_and_ambiguous_keys() {
+        for plot in [
+            PLOT.replace("samples=50", "samples=50,samples=80"),
+            PLOT.replace("samples=50", "samples=50,/tikz/samples=80"),
+            PLOT.replace("samples=50", "samples=50,samples at={0,1}"),
+            PLOT.replace("samples=50", "samples=50,/.cd"),
+            PLOT.replace("domain=-1.6:1.6", "domain=1.6:-1.6"),
+            PLOT.replace("samples=50", r"samples=\count"),
+            PLOT.replace("plot[", "plot coordinates["),
+            PLOT.replace(r"(\x,{exp(-\x*\x)})", "coordinates {(0,0)}"),
+            PLOT.replace(r"(\x,{exp(-\x*\x)})", "file {data.dat}"),
+            PLOT.replace(r"(\x,{exp(-\x*\x)})", "function {exp(-x*x)}"),
+            PLOT.replace(r"(\x,{exp(-\x*\x)})", "table {data.dat}"),
+            PLOT.replace("plot[", "plotx["),
+            PLOT.replace(r"\x*\x", r"\unknown"),
+            PLOT.replace(
+                "smooth,thick",
+                "smooth,thick,execute at begin plot={danger}",
+            ),
+            PLOT.replace("smooth,thick", "smooth,smooth"),
+            PLOT.replace(");", ") -- (0,0);"),
+            format!("\\draw (0,0) -- (1,1) {}", &PLOT[5..]),
+            format!("\\path {}", &PLOT[5..]),
+        ] {
+            let text = source(&plot);
+            let items = scan_scientific_source(view(&text)).unwrap();
+            assert!(
+                items
+                    .iter()
+                    .all(|item| item.kind != ScientificKind::NativePlot),
+                "{plot}"
+            );
+        }
+        for plot in [
+            PLOT.trim_end_matches(';').to_owned(),
+            PLOT.replace("samples=50]", "samples=50"),
+        ] {
+            let text = source(&plot);
+            assert!(scan_scientific_source(view(&text)).is_err());
+        }
+    }
+
+    #[test]
+    fn native_plot_unknown_macros_controls_and_unowned_groups_fail_closed() {
+        for prefix in [
+            r"\unknown",
+            r"\usepackage{unknown}",
+            r"\usetikzlibrary{unknown}",
+            r"^^5cunknown",
+            r"\unknown{argument}",
+            r"\unknown[argument]",
+            r"\let\draw\other",
+            r"\futurelet\x",
+            r"\noexpand",
+            r"\expandafter",
+            r"\iffalse",
+            r"\ifnum1=0",
+            r"\def\draw#1{#1}",
+            r"\newcommand{\wrapper}[1]{#1}",
+            r"\newenvironment{wrapper}{}{}",
+            r"\catcode`\@=11",
+            r"\begin{unknown}",
+        ] {
+            let text = format!("{prefix}\n{}", source(PLOT));
+            assert!(scan_scientific_source(view(&text)).is_err(), "{prefix}");
+        }
+        for text in [
+            source(&format!("{{{PLOT}}}")),
+            format!("\\unknown{{{}}}", source(PLOT)),
+            source(&format!("\\foreach \\i in {{1,2}} {{{PLOT}}}")),
+            source(&format!("\\draw \\unknown; {PLOT}")),
+            format!("{}\\unknown", source(PLOT)),
+            format!("{}{{", source(PLOT)),
+            source(&format!("{PLOT}\n\\draw \\unknown;")),
+        ] {
+            assert!(
+                scan_scientific_source(view(&text)).is_err()
+                    || scan_scientific_source(view(&text))
+                        .unwrap()
+                        .iter()
+                        .all(|item| item.kind != ScientificKind::NativePlot),
+                "{text}"
+            );
+        }
+    }
+
+    #[test]
+    fn native_plot_variable_is_not_an_owned_control_in_neighboring_paths() {
+        for neighbor in [r"\draw \x;", r"\draw (\x,0) -- (1,0);"] {
+            for plots in [format!("{neighbor}\n{PLOT}"), format!("{PLOT}\n{neighbor}")] {
+                let text = source(&plots);
+                assert_eq!(
+                    scan_scientific_source(view(&text)),
+                    Err(ScanRefusal::UnsupportedTeXControl),
+                    "{plots}"
+                );
+            }
+        }
+        let text = source(&format!("{PLOT}\n{PLOT}"));
+        let items = scan_scientific_source(view(&text)).unwrap();
+        assert_eq!(items.len(), 2);
+        assert!(
+            items
+                .iter()
+                .all(|item| item.kind == ScientificKind::NativePlot)
+        );
+    }
+
+    #[test]
+    fn native_plot_stale_revision_hash_forged_kind_range_and_expected_bytes_are_rejected() {
+        let text = source(PLOT);
+        let instance = native(&text);
+        let changed = text.replace("blue", "cyan");
+        assert_eq!(patch(&changed, &instance), Err(EditRefusal::SourceConflict));
+        let mut forged = instance.clone();
+        forged.revision += 1;
+        assert_eq!(patch(&text, &forged), Err(EditRefusal::SourceConflict));
+        let mut forged = instance.clone();
+        forged.option_range = Some(instance.range.clone());
+        assert_eq!(patch(&text, &forged), Err(EditRefusal::SourceConflict));
+        let mut forged = instance.clone();
+        forged.kind = ScientificKind::AddPlot;
+        assert_eq!(patch(&text, &forged), Err(EditRefusal::SourceConflict));
+        let mut forged = instance.clone();
+        forged.range.start += 1;
+        assert_eq!(patch(&text, &forged), Err(EditRefusal::SourceConflict));
+        assert_eq!(
+            plan_literal_key_edit(LiteralEditRequest {
+                view: view(&text),
+                instance: &instance,
+                key: "samples",
+                expected_old: "49",
+                replacement: "80",
+            }),
+            Err(EditRefusal::SourceConflict)
+        );
+        for replacement in ["0", "1", "4097", "80.0", r"\count", "50"] {
+            assert_eq!(
+                plan_literal_key_edit(LiteralEditRequest {
+                    view: view(&text),
+                    instance: &instance,
+                    key: "samples",
+                    expected_old: "50",
+                    replacement,
+                }),
+                Err(EditRefusal::InvalidLiteral)
+            );
+        }
+    }
+
+    #[test]
+    fn native_plot_unicode_crlf_nearby_draws_keep_separate_exact_owners() {
+        let text = format!(
+            "% Кириллица и α\r\n{}",
+            source(&format!(
+                "\\draw (0,0) node {{Число 50}};\n{PLOT}\n{}\n\\draw (0,0) -- (2,0);",
+                PLOT.replace("samples=50", "samples=60")
+            ))
+            .replace('\n', "\r\n")
+        );
+        let items = scan_scientific_source(view(&text)).unwrap();
+        assert_eq!(
+            items.iter().map(|item| item.kind).collect::<Vec<_>>(),
+            [
+                ScientificKind::Draw,
+                ScientificKind::NativePlot,
+                ScientificKind::NativePlot,
+                ScientificKind::Draw,
+            ]
+        );
+        let mut changed = text.clone();
+        patch(&text, &items[1])
+            .unwrap()
+            .apply(&mut changed, &mut 17)
+            .unwrap();
+        assert_eq!(changed, text.replacen("samples=50", "samples=80", 1));
+        let mut wrong = items[1].clone();
+        wrong.option_range = items[2].option_range.clone();
+        assert_eq!(patch(&text, &wrong), Err(EditRefusal::SourceConflict));
     }
 }

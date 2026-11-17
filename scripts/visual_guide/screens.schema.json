@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tikzarium.local/visual-guide/screens.schema.json",
+  "title": "TikZarium Visual Guide manifest",
+  "type": "object",
+  "required": ["schema_version", "title", "screens"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "title": {"type": "string"},
+    "build_label": {"type": "string"},
+    "environment_summary": {"type": "string"},
+    "screens": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "required": ["id", "chapter", "title", "source_set", "path", "active_file", "caption", "observed", "limitation"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+          "chapter": {"type": "string"},
+          "title": {"type": "string"},
+          "source_set": {"enum": ["at4", "v2-clean", "compact", "i61"]},
+          "path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+\\.png$"},
+          "active_file": {"type": "string"},
+          "caption": {"type": "string"},
+          "observed": {"type": "string"},
+          "limitation": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

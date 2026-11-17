@@ -737,7 +737,7 @@ fn mixed_type_comment(ctx: &egui::Context, app: &mut TikzariumApp, text: &str) {
 
 fn mixed_apply_samples(ctx: &egui::Context, app: &mut TikzariumApp) {
     let original = app.document.source.clone();
-    mixed_click_text(ctx, app, "Распознать оси и ряды");
+    mixed_click_text(ctx, app, "Распознать команды");
     mixed_click_text(ctx, app, "Выберите исходную команду");
     let line = original[..original.find("\\begin{axis}").unwrap()]
         .bytes()

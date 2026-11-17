@@ -3,7 +3,8 @@
 use crate::tikz_authoring;
 use eframe::egui;
 use tikzarium_extensions::scientific_scan::{
-    RecognizedInstance, ScientificKind, SourceView, literal_key_value, scientific_property_help,
+    RecognizedInstance, ScientificKind, SourceView, literal_key_value,
+    scientific_property_help_for_kind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -98,6 +99,7 @@ impl LiteralProperty {
                 AXIS
             }
             ScientificKind::AddPlot => ADDPLOT,
+            ScientificKind::NativePlot => &[LiteralProperty::Samples],
             ScientificKind::TableTypeset => &[LiteralProperty::Columns],
             _ => &[],
         }
@@ -144,6 +146,7 @@ impl ScientificInspector {
                         let kind = match instance.kind {
                             ScientificKind::Axis => "axis",
                             ScientificKind::AddPlot => "addplot",
+                            ScientificKind::NativePlot => "TikZ plot (samples)",
                             ScientificKind::GroupPlot => "groupplot (общие параметры)",
                             ScientificKind::NextGroupPlot => "nextgroupplot (один подграфик)",
                             ScientificKind::TableTypeset => {
@@ -256,11 +259,18 @@ impl ScientificInspector {
         {
             return false;
         }
-        let Some(help) = scientific_property_help(self.property.key()) else {
+        let Some(candidate) = self.selected.and_then(|index| self.candidates.get(index)) else {
+            return false;
+        };
+        let Some(help) =
+            scientific_property_help_for_kind(candidate.instance.kind, self.property.key())
+        else {
             return false;
         };
         let package_label = if help.package == "pgfplotstable" {
             "PGFPlotstable"
+        } else if help.package == "tikz (pgf)" {
+            "TikZ plot"
         } else {
             "PGFPlots"
         };
@@ -286,11 +296,11 @@ impl ScientificInspector {
     ) -> Option<usize> {
         let mut changed_line = None;
         self.discard_stale_candidates(session.source_revision());
-        egui::CollapsingHeader::new("График PGFPlots")
+        egui::CollapsingHeader::new("Научный график")
             .default_open(true)
             .show(ui, |ui| {
             ui.small("Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.");
-            if ui.button("Распознать оси и ряды").clicked() {
+            if ui.button("Распознать команды").clicked() {
                 self.scan(session, source);
             }
             if !self.candidates.is_empty() {
@@ -367,7 +377,7 @@ impl ScientificInspector {
             ui.small("Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.");
             })
             .header_response
-            .on_hover_text("Явные параметры axis/groupplot/nextgroupplot/addplot и порядок столбцов pgfplotstabletypeset. Неизвестные записи остаются без изменений.");
+            .on_hover_text("Явные параметры axis/groupplot/nextgroupplot/addplot, samples native TikZ plot и порядок столбцов pgfplotstabletypeset. Неизвестные записи остаются без изменений.");
         changed_line
     }
 }
@@ -425,7 +435,9 @@ mod tests {
         );
         for property in all {
             assert!(!property.label().is_empty());
-            assert!(scientific_property_help(property.key()).is_some());
+            assert!(
+                scientific_property_help_for_kind(ScientificKind::Axis, property.key()).is_some()
+            );
         }
         assert!(LiteralProperty::choices(ScientificKind::Draw).is_empty());
         assert_eq!(LiteralProperty::choices(ScientificKind::GroupPlot), all);
@@ -435,6 +447,94 @@ mod tests {
             &[LiteralProperty::Columns]
         );
         assert_eq!(LiteralProperty::Columns.key(), "columns");
+    }
+
+    const NATIVE: &str =
+        include_str!("../../../roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-040/figure.tex");
+
+    #[test]
+    fn native_plot_inspector_samples_apply_f1_shared_undo_preserve_original_and_crlf() {
+        for original in [
+            NATIVE.to_owned(),
+            format!("% Кириллица α\r\n{}", NATIVE.replace('\n', "\r\n")),
+        ] {
+            let mut source = original.clone();
+            let mut authoring = tikz_authoring::Session::default();
+            authoring.reset(&source);
+            let mut inspector = ScientificInspector::default();
+            inspector.scan(&mut authoring, &source);
+            assert_eq!(inspector.candidates.len(), 1);
+            assert_eq!(
+                inspector.candidates[0].instance.kind,
+                ScientificKind::NativePlot
+            );
+            assert!(
+                inspector.candidates[0]
+                    .label
+                    .starts_with("TikZ plot (samples)")
+            );
+            assert_eq!(
+                LiteralProperty::choices(ScientificKind::NativePlot),
+                &[LiteralProperty::Samples]
+            );
+            inspector.selected = Some(0);
+            inspector.refresh_literal(&authoring, &source);
+            assert_eq!(inspector.original_value.as_deref(), Some("50"));
+            let revision = authoring.source_revision();
+            let ctx = egui::Context::default();
+            ctx.begin_pass(egui::RawInput::default());
+            egui::CentralPanel::default().show(&ctx, |ui| {
+                assert!(inspector.show_selected_help(ui, revision));
+            });
+            let _ = ctx.end_pass();
+            assert_eq!(source, original);
+            assert_eq!(authoring.source_revision(), revision);
+            inspector.proposed_value = "80".into();
+            inspector
+                .apply_selected(&mut authoring, &mut source)
+                .unwrap();
+            assert_eq!(source, original.replacen("samples=50", "samples=80", 1));
+            assert!(inspector.candidates.is_empty());
+            assert!(authoring.undo_available());
+            authoring.undo(&mut source).unwrap();
+            assert_eq!(source.as_bytes(), original.as_bytes());
+            assert!(!authoring.undo_available());
+        }
+    }
+
+    #[test]
+    fn native_plot_inspector_rejects_bad_literal_stale_hash_revision_and_wrong_property() {
+        for mode in 0..5 {
+            let mut source = NATIVE.to_owned();
+            let mut authoring = tikz_authoring::Session::default();
+            authoring.reset(&source);
+            let mut inspector = ScientificInspector::default();
+            inspector.scan(&mut authoring, &source);
+            inspector.selected = Some(0);
+            inspector.refresh_literal(&authoring, &source);
+            inspector.proposed_value = "80".into();
+            match mode {
+                0 => inspector.proposed_value = "4097".into(),
+                1 => {
+                    source.push_str("% ручная правка\n");
+                    authoring.note_manual_source_edit(&source);
+                }
+                2 => source = source.replace("blue", "cyan"),
+                3 => inspector.property = LiteralProperty::Domain,
+                _ => inspector.original_value = Some("49".into()),
+            }
+            let before = source.clone();
+            let revision = authoring.source_revision();
+            assert!(
+                inspector
+                    .apply_selected(&mut authoring, &mut source)
+                    .is_err()
+            );
+            assert_eq!(source.as_bytes(), before.as_bytes());
+            // Session detects the previously unreported manual edit in mode 2.
+            assert_eq!(authoring.source_revision(), revision + u64::from(mode == 2));
+            assert!(!authoring.undo_available());
+        }
     }
 
     #[test]

@@ -2877,7 +2877,7 @@ impl TikzariumApp {
                 StudioDock::Properties => {
                     if self.authoring.active.is_none() {
                         ui.strong("Параметры рисунка");
-                        ui.small("Выберите объект на эскизе или команду PGFPlots ниже.");
+                        ui.small("Выберите объект на эскизе или команду научного графика ниже.");
                     } else {
                                         let prior = self.authoring.source_revision();
                         let caps = self.primitive_capabilities();

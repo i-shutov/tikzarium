@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline contracts for ten exact AI88 AT4 originals; no GUI claim."""
+"""Offline contracts for seventeen exact AI88 AT4 originals; no GUI claim."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,14 +17,14 @@ except ImportError:
 
 
 class AT4InventoryContracts(unittest.TestCase):
-    def test_suite_selection_is_closed_and_v2_default_remains_26_operations(self):
+    def test_suite_selection_is_closed_and_v2_default_has_27_operations(self):
         self.assertEqual(qa.fixtures_for_suite(), qa.fixtures_for_suite("v2"))
         self.assertEqual(len(qa.fixtures_for_suite("v2")), 8)
-        self.assertEqual(len(qa.operation_inventory("v2")), 26)
+        self.assertEqual(len(qa.operation_inventory("v2")), 27)
         self.assertEqual(qa.operation_inventory("v2"), qa.OPERATIONS)
         self.assertEqual(qa.fixtures_for_suite("at4"), tuple(qa.AT4_CASES))
         self.assertEqual(qa.operation_inventory("at4"), qa.AT4_OPERATIONS)
-        self.assertEqual(len(qa.operation_inventory("at4")), 10)
+        self.assertEqual(len(qa.operation_inventory("at4")), 17)
         for call in (lambda: qa.fixtures_for_suite("all"),
                      lambda: qa.operation_inventory("custom"),
                      lambda: qa.suite_scope("v2+at4"),
@@ -40,17 +40,24 @@ class AT4InventoryContracts(unittest.TestCase):
             self.assertEqual(manifest["suite"], "v2")
             self.assertEqual(manifest["scope"], qa.suite_scope())
             self.assertEqual(manifest["fixtures"], list(qa.fixtures_for_suite("v2")))
-            self.assertEqual(len(manifest["operations"]), 26)
+            self.assertEqual(len(manifest["operations"]), 27)
             self.assertFalse(any(name.startswith("AT4-") for name in manifest["fixtures"]))
 
-    def test_ten_original_hashes_paths_and_scoped_operations_match_proposal(self):
+    def test_seventeen_original_hashes_paths_and_scoped_operations_match_proposal(self):
         expected = {
             "AT4-09": ("scientific-plot.tex", "samples", "161", "181", "addplot", 1),
+            "AT4-34": ("diffraction-sinc.tex", "samples", "301", "401", "addplot", 1),
+            "AT4-35": ("damped-oscillation.tex", "samples", "251", "301", "addplot", 1),
             "AT4-48": ("error-bars.tex", "width", "10cm", "11cm", "axis", 0),
             "AT4-49": ("loglog-convergence.tex", "width", "10cm", "11cm", "axis", 0),
             "AT4-50": ("confidence-band.tex", "width", "10cm", "11cm", "axis", 0),
+            "AT4-51": ("grouped-bars.tex", "width", "10cm", "11cm", "axis", 0),
+            "AT4-52": ("histogram.tex", "width", "10cm", "11cm", "axis", 0),
+            "AT4-53": ("boxplot.tex", "width", "10cm", "11cm", "axis", 0),
+            "AT4-54": ("heatmap.tex", "width", "10cm", "11cm", "axis", 0),
             "AT4-55": ("surface-gaussian.tex", "samples", "21", "25", "addplot", 1),
             "AT4-56": ("parametric-helix.tex", "samples", "181", "201", "addplot", 1),
+            "AT4-57": ("vector-field.tex", "height", "6cm", "7cm", "axis", 0),
             "AT4-58": ("discontinuous-function.tex", "width", "10cm", "11cm", "axis", 0),
             "AT4-59": ("group-plots.tex", "width", "6cm", "7cm", "groupplot", 0),
             "AT4-60": ("table-derived-column.tex", "columns", "{x,y,model}", "{x,model,y}", "tabletypeset", 0),
@@ -148,8 +155,8 @@ class AT4ManifestContracts(unittest.TestCase):
         manifest = qa.read_json(self.out / "manifest.json")
         self.assertEqual((manifest["suite"], manifest["scope"], manifest["fixtures"]),
                          ("at4", qa.suite_scope("at4"), list(qa.fixtures_for_suite("at4"))))
-        self.assertEqual(len(manifest["operations"]), 10)
-        self.assertEqual(manifest["fixture_origin"], "TEN_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS")
+        self.assertEqual(len(manifest["operations"]), 17)
+        self.assertEqual(manifest["fixture_origin"], "SEVENTEEN_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS")
         self.assertEqual(manifest["independent_visual_review"], "REQUIRED")
         self.assertEqual(set(manifest["named_corpus_inputs"]), set(qa.fixtures_for_suite("at4")))
         for fixture, case in qa.AT4_CASES.items():
@@ -169,7 +176,7 @@ class AT4ManifestContracts(unittest.TestCase):
             self.complete_fixture(fixture)
         result = qa.validate_all(self.out, suite="at4")
         self.assertEqual(result["suite"], "at4")
-        self.assertEqual(result["operations_observed"], 10)
+        self.assertEqual(result["operations_observed"], 17)
         self.assertEqual(result["native_acceptance"], "REQUIRES_INDEPENDENT_REVIEW")
 
     def test_legacy_six_or_incomplete_3d_stages_cannot_certify_expanded_suite(self):
@@ -197,7 +204,18 @@ class AT4ManifestContracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Observed fixture inventory differs"):
             qa.validate_all(self.out, "at4")
         self.complete_fixture("AT4-60")
-        self.assertEqual(qa.validate_all(self.out, "at4")["operations_observed"], 10)
+        self.assertEqual(qa.validate_all(self.out, "at4")["operations_observed"], 17)
+
+    def test_cp08_ten_cases_cannot_certify_the_seven_new_cp09_originals(self):
+        new_cases = {"AT4-34", "AT4-35", "AT4-51", "AT4-52", "AT4-53", "AT4-54", "AT4-57"}
+        for fixture in qa.fixtures_for_suite("at4"):
+            if fixture not in new_cases:
+                self.complete_fixture(fixture)
+        with self.assertRaisesRegex(ValueError, "Observed fixture inventory differs"):
+            qa.validate_all(self.out, "at4")
+        for fixture in sorted(new_cases):
+            self.complete_fixture(fixture)
+        self.assertEqual(qa.validate_all(self.out, "at4")["operations_observed"], 17)
 
     def test_tampered_runtime_or_original_corpus_bytes_are_rejected(self):
         for relative_path, expected_error in (

@@ -22,6 +22,7 @@ import time
 
 import qa_pgfplots_vertical_evidence as evidence
 import qa_at4_scientific_invariants as at4_science
+import qa_native_plot_scientific_invariants as native_plot_science
 import qa_sci_compact_x11 as common
 from qa_i61_b42_studio_x11 import audit_embedded_fonts, x11_button1_mask, x11_button1_pressed
 from qa_n2_studio_x11 import expected_elf, validate_xelatex_log
@@ -313,7 +314,7 @@ class Driver(common.Driver):
                        "operation_count": len(evidence.operation_inventory(args.suite)),
                        "builds": {}, **provenance}
         if args.suite in ("v2", "v2-clean"):
-            self.report["sv040"] = "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR"
+            self.report["sv040"] = "BOUNDED_NATIVE_TIKZ_GAUSSIAN_SAMPLES_APPLY_UNDO_REVIEW_REQUIRED"
         self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals")
 
     def start(self):
@@ -573,6 +574,11 @@ class Driver(common.Driver):
             catalogue = evidence.SOURCE_ROOT / "roadmap/AI_TIKZ_SKILLS_2026-11-10/catalogue.original.json"
             source_check = at4_science.validate_case(case_id, self.source.read_bytes(),
                 at4_science.load_catalogue_record(catalogue, case_id))
+            source_check["compiled_source_sha256"] = evidence.digest(expected)
+            evidence.write_json(self.raw / (self.fixture + "-scientific-source-check.json"), source_check)
+            build_summary["source_semantics"] = source_check
+        elif self.fixture == "SV-040":
+            source_check = native_plot_science.validate_source(self.source.read_bytes())
             source_check["compiled_source_sha256"] = evidence.digest(expected)
             evidence.write_json(self.raw / (self.fixture + "-scientific-source-check.json"), source_check)
             build_summary["source_semantics"] = source_check

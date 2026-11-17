@@ -44,6 +44,14 @@ class At4SourceInvariantTests(unittest.TestCase):
 
     def proposed(self, case_id):
         data = self.original(case_id)
+        if case_id == "34":
+            return data.replace(b"samples=301", b"samples=401", 1)
+        if case_id == "35":
+            return data.replace(b"samples=251", b"samples=301", 1)
+        if case_id in {"51", "52", "53", "54", "57"}:
+            key = b"height=6cm" if case_id == "57" else b"width=10cm"
+            replacement = b"height=7cm" if case_id == "57" else b"width=11cm"
+            return data.replace(key, replacement, 1)
         operation, = evidence.operations("AT4-" + case_id)
         old = (operation.key + "=" + operation.before).encode("ascii")
         new = (operation.key + "=" + operation.after).encode("ascii")
@@ -52,8 +60,10 @@ class At4SourceInvariantTests(unittest.TestCase):
         self.assertEqual(derivative.replace(new, old, 1), data)
         return derivative
 
-    def validate(self, case_id, source):
-        record = qa.load_catalogue_record(self.catalogue, case_id) if case_id in {"48", "50", "55", "56", "58", "59", "60"} else None
+    def validate(self, case_id, source, record_override=None):
+        record = qa.load_catalogue_record(self.catalogue, case_id) if case_id in {"34", "35", "48", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60"} else None
+        if record_override is not None:
+            record = record_override
         return qa.validate_case(case_id, source, record)
 
     def test_originals_and_proposed_derivatives_pass_source_checks(self):
@@ -263,6 +273,105 @@ class At4SourceInvariantTests(unittest.TestCase):
         for source in (original, reordered):
             with self.subTest(order="proposed" if source == reordered else "original"):
                 self.assertEqual(self.validate("60", source)["source_checks"], "PASS_SOURCE_SEMANTICS_ONLY")
+
+    def test_new_at4_cases_accept_only_bounded_scientific_operations(self):
+        for case_id in ("34", "35", "51", "52", "53", "54", "57"):
+            with self.subTest(case_id=case_id, variant="original"):
+                self.assertEqual(self.validate(case_id, self.original(case_id))["source_checks"], "PASS_SOURCE_SEMANTICS_ONLY")
+            with self.subTest(case_id=case_id, variant="proposed"):
+                self.assertEqual(self.validate(case_id, self.proposed(case_id))["source_checks"], "PASS_SOURCE_SEMANTICS_ONLY")
+        histogram = self.validate("52", self.original("52"))
+        self.assertEqual(histogram["measurements"]["equal_width_bin_counts"], [2, 3, 4, 2, 1])
+        self.assertEqual(histogram["measurements"]["frequency_total"], 12)
+        self.assertIn("not explicitly specified", histogram["measurements"]["normalization"])
+
+    def test_new_case_parsers_ignore_tex_comments_and_reject_commented_out_plots(self):
+        for case_id in ("34", "35", "51", "52", "53", "54", "57"):
+            original = self.original(case_id).decode()
+            lines = original.splitlines(keepends=True)
+            index = next(i for i, line in enumerate(lines) if r"\addplot" in line)
+            lines[index] = "% " + lines[index]
+            with self.subTest(case_id=case_id):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate(case_id, "".join(lines))
+
+    def test_34_rejects_formula_guard_domain_trig_and_extra_plot_mutations(self):
+        original = self.original("34").decode()
+        for old, new in (("abs(x)<0.0001", "abs(x)<0.001"), ("sin(deg(x))", "sin(x)"),
+                         ("domain=-12:12", "domain=-10:12"), ("samples=301", "samples=302"),
+                         ("ymin=0", "ymin=-1")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("34", original.replace(old, new, 1))
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("34", original.replace(r"\end{axis}", r"\addplot coordinates {(0,1)};\end{axis}"))
+
+    def test_35_rejects_damping_phase_domain_envelope_and_nonfirst_sample_mutations(self):
+        original = self.original("35").decode()
+        for old, new in (("exp(-.22*x)", "exp(-.2*x)"), ("cos(deg(3*x))", "cos(3*x)"),
+                         ("domain=0:10", "domain=0:9"), ("samples=251", "samples=252"),
+                         ("{-exp(-.22*x)}", "{-exp(-.21*x)}")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("35", original.replace(old, new, 1))
+        # The proposal is limited to the analytic series and cannot add a sample option to either envelope.
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("35", original.replace("gray,dashed,domain=0:10", "gray,dashed,domain=0:10,samples=301", 1))
+        self.assert_extra_plot_rejected("35", original)
+
+    def test_51_rejects_baseline_values_categories_or_added_plot(self):
+        original = self.original("51").decode()
+        for old, new in (("ymin=0", "ymin=-1"), ("(A,3)", "(A,0)"),
+                         ("symbolic x coords={A,B,C}", "symbolic x coords={A,B,D}"),
+                         (r"\legend{Series 1,Series 2}", r"\legend{Measured,Series 2}")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("51", original.replace(old, new, 1))
+
+    def test_52_rejects_sample_count_bins_domain_or_options_overlay(self):
+        original = self.original("52").decode()
+        for old, new in (("data min=0", "data min=.1"), ("bins=5", "bins=4"),
+                         ("\\4.4", ""), ("ymin=0", "ymin=-1"),
+                         ("hist={", "hist={cumulative,"),
+                         (r"\usepgfplotslibrary{statistics}", "")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("52", original.replace(old, new, 1))
+        self.assert_extra_plot_rejected("52", original)
+
+    def test_53_rejects_prepared_order_and_unqualified_real_data_claims(self):
+        original = self.original("53").decode()
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("53", original.replace("median=3", "median=5", 1))
+        record = qa.load_catalogue_record(self.catalogue, "53")
+        with self.assertRaises(qa.InvariantViolation):
+            self.validate("53", original, dict(record, check="Quartiles were inferred from measured observations."))
+        self.assert_extra_plot_rejected("53", original)
+
+    def test_54_rejects_meta_position_value_grid_or_color_semantics_mutations(self):
+        original = self.original("54").decode()
+        for old, new in (("(1,1)[5]", "(1,1)[1]"), ("(2,2)[2]", "(2,3)[2]"),
+                         ("point meta=explicit", "point meta=none"), ("mesh/cols=3", "mesh/cols=2")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("54", original.replace(old, new, 1))
+        self.assert_extra_plot_rejected("54", original)
+
+    def test_57_rejects_field_components_grid_origin_and_axis_shape_mutations(self):
+        original = self.original("57").decode()
+        for old, new in (("u=-y,v=x", "u=y,v=x"), ("0 -1", "0 -2"),
+                         ("(0,0)", "(1,0)"), ("axis equal image", "axis equal")):
+            with self.subTest(old=old):
+                with self.assertRaises(qa.InvariantViolation):
+                    self.validate("57", original.replace(old, new, 1))
+        self.assert_extra_plot_rejected("57", original)
+
+    def assert_extra_plot_rejected(self, case_id, original):
+        overlay = r"\addplot coordinates {(0,100)(1,100)};"
+        mutation = original.replace(r"\end{axis}", overlay + r"\end{axis}")
+        with self.subTest(case_id=case_id, mutation="unbracketed extra plot"):
+            with self.assertRaises(qa.InvariantViolation):
+                self.validate(case_id, mutation)
 
 
 if __name__ == "__main__":

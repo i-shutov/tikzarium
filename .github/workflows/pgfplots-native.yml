@@ -1,7 +1,7 @@
 name: PGFPlots originals, attributed derivatives and AT4 native verticals (hosted X11)
 
 # Synthetic 18-property matrix, named SC3-04 SV cases and external table/error
-# bars compatibility. SV-040 is build/preservation-only. Full SC3/AT4 and physical
+# bars compatibility and the bounded SV-040 native TikZ samples edit. Full SC3/AT4 and physical
 # Windows/macOS acceptance remain separate; originals require visual review.
 on:
   pull_request:
@@ -12,6 +12,9 @@ on:
       - 'scripts/qa_pgfplots_clean*'
       - 'scripts/tests/test_qa_pgfplots_clean*'
       - 'scripts/qa_at4_*'
+      - 'scripts/qa_native_plot_*'
+      - 'scripts/visual_guide/**'
+      - 'scripts/qa_visual_guide_*'
       - 'roadmap/AI_TIKZ_SKILLS_2026-11-10/**'
       - 'scripts/fixtures/pgfplots-v2/**'
       - 'scripts/qa_sci_compact*'
@@ -30,6 +33,9 @@ on:
       - 'scripts/qa_pgfplots_clean*'
       - 'scripts/tests/test_qa_pgfplots_clean*'
       - 'scripts/qa_at4_*'
+      - 'scripts/qa_native_plot_*'
+      - 'scripts/visual_guide/**'
+      - 'scripts/qa_visual_guide_*'
       - 'roadmap/AI_TIKZ_SKILLS_2026-11-10/**'
       - 'scripts/fixtures/pgfplots-v2/**'
       - 'scripts/qa_sci_compact*'
@@ -130,6 +136,7 @@ jobs:
           cargo fmt --all -- --check
           python3 -m unittest discover -s scripts -p qa_pgfplots_vertical_test.py -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/artifact-contract-tests.log"
           python3 -m unittest discover -s scripts -p 'qa_at4_*_test.py' -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/at4-contract-tests.log"
+          python3 -m unittest discover -s scripts -p 'qa_native_plot_*_test.py' -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/native-plot-contract-tests.log"
           python3 -m unittest discover -s scripts/tests -p 'test_qa_pgfplots_clean*.py' -v 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/clean-derivative-contract-tests.log"
           python3 scripts/qa_pgfplots_clean_derivatives.py --verify
           cargo test --locked -p tikzarium-app --bin tikzarium-app scientific_inspector::tests -- --nocapture 2>&1 | tee "$RUNNER_TEMP/pgfplots-native-logs/inspector-contract-tests.log"
@@ -230,4 +237,119 @@ jobs:
             !${{ runner.temp }}/pgfplots-native/**/*.otf
             !${{ runner.temp }}/pgfplots-native/**/*.exe
           if-no-files-found: warn
+          retention-days: 14
+
+  scientific-visual-guide:
+    name: Visual Guide from current native interfaces
+    needs: pgfplots-bounded-hosted-gui
+    # Original warning failures remain failures. The guide consumes only the
+    # separately successful AT4/clean jobs and same-source shell evidence.
+    if: always() && !cancelled()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      TIKZARIUM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out the exact documented application source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify source and guide input contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_SOURCE_SHA"
+          mkdir -p "$RUNNER_TEMP/scientific-visual-guide/logs"
+          python3 -m unittest discover -s scripts -p 'qa_visual_guide_*_test.py' -v 2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/input-contract-tests.log"
+      - name: Fetch original screenshots bound to successful same-source producers
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/qa_visual_guide_inputs.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --source-sha "$TIKZARIUM_SOURCE_SHA" \
+            --pgf-run-id "$GITHUB_RUN_ID" \
+            --out "$RUNNER_TEMP/scientific-visual-guide-inputs" \
+            2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/input-provenance.log"
+      - name: Install disposable hosted XeLaTeX and explicit guide fonts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            texlive-xetex texlive-latex-extra texlive-lang-cyrillic fonts-dejavu-core poppler-utils
+          test "$(fc-match -f '%{family}' 'DejaVu Sans')" = 'DejaVu Sans'
+          test "$(fc-match -f '%{family}' 'DejaVu Sans Mono')" = 'DejaVu Sans Mono'
+          xelatex --version > "$RUNNER_TEMP/scientific-visual-guide/logs/xelatex-version.txt"
+          fc-match -v 'DejaVu Sans' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-sans.txt"
+          fc-match -v 'DejaVu Sans Mono' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-mono.txt"
+      - name: Generate portable source with unchanged original PNG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/visual_guide/build_guide.py \
+            --evidence-root "$RUNNER_TEMP/scientific-visual-guide-inputs" \
+            --evidence-index evidence-index.json \
+            --source-sha "$TIKZARIUM_SOURCE_SHA" \
+            --run-url "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --output-dir "$RUNNER_TEMP/scientific-visual-guide" \
+            2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/generate.log"
+          mkdir -p "$RUNNER_TEMP/scientific-visual-guide/source"
+          cp scripts/visual_guide/* "$RUNNER_TEMP/scientific-visual-guide/source/"
+          cp "$RUNNER_TEMP/scientific-visual-guide-inputs/evidence-index.json" "$RUNNER_TEMP/scientific-visual-guide/source/"
+      - name: Compile the guide and render every page for independent review
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/scientific-visual-guide"
+          xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder guide.tex > logs/xelatex-pass1.txt 2>&1
+          xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder guide.tex > logs/xelatex-pass2.txt 2>&1
+          if grep -E 'Missing character:|Overfull \\[hv]box|LaTeX Font Warning:.*undefined' guide.log; then
+            exit 1
+          fi
+          pdfinfo guide.pdf > logs/pdfinfo.txt
+          pdffonts guide.pdf > logs/pdffonts.txt
+          pdftotext -layout guide.pdf logs/guide-text.txt
+          mkdir -p rendered
+          pdftoppm -r 120 -png guide.pdf rendered/page
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path.cwd()
+          manifest = json.loads((root / 'resolved_manifest.json').read_text())
+          pages = sorted(root.glob('rendered/page-*.png'))
+          assert len(pages) == len(manifest['screens']) + 3, 'Guide page count differs from the designed cover/navigation/workflow plus one page per original screen'
+          font_rows = (root / 'logs/pdffonts.txt').read_text().splitlines()[2:]
+          assert font_rows, 'No embedded guide fonts'
+          for row in font_rows:
+              fields = row.split()
+              assert len(fields) >= 8 and fields[-5] == 'yes', 'A guide font is not embedded'
+          pdf = root / 'guide.pdf'
+          receipt = {'schema_version': 1, 'status': 'COMPILED_REQUIRES_INDEPENDENT_PAGE_REVIEW',
+                     'source_head_sha': manifest['build']['source_sha'],
+                     'pdf_sha256': hashlib.sha256(pdf.read_bytes()).hexdigest(),
+                     'pdf_bytes': pdf.stat().st_size, 'rendered_page_count': len(pages),
+                     'original_screen_count': len(manifest['screens']),
+                     'fonts_explicit': ['DejaVu Sans', 'DejaVu Sans Mono'],
+                     'native_platform_acceptance': 'NOT_ESTABLISHED_BY_THIS_GUIDE',
+                     'files': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                               for p in sorted(root.rglob('*')) if p.is_file()}}
+          (root / 'guide-build-report.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - name: Preserve the guide, original PNGs, portable source and all build logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scientific-visual-guide-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scientific-visual-guide/
+          if-no-files-found: error
           retention-days: 14

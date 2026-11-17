@@ -2,7 +2,21 @@
 
 Дата: 11.11.2026. Нормативный scope: [RELEASE_SCOPE](../docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). После принятия этой версии **не выпускать старый узкий TikZ-only продукт под v1.0.0**. Очередь ST-SCI → ST-UML → ST-BPMN → ST-ENG → ST-CHEMBIO → ST-ANIM → ST-OTHER → ST-DATA сохраняется.
 
-## Активный блок 13.11.2026 — CP07 PGFPlots V2 и исходные AT4
+## Активный блок 17.11.2026 — CP09 / SCI-04 и Visual Guide
+
+**База CP08:** source `2c5f9b8a1fb98a8764462ba0759fd5d5569a437c`, draft PR #189. Свежие original V2 26 операций / 109 состояний / 8 PDF сохраняют strict FAIL для SV-003/029/009; отдельный clean-набор 26/109/8 и AT4 10/70/10 независимо проверены в bounded hosted scope. Три пары original/clean изолированы удалением ровно двух закреплённых байтов `;`, исходный корпус не изменён. Первая попытка `a245c8b` и её ошибки сохранены. Это не aggregate SC3/AT4 или release GO.
+
+**Текущий исполняемый объём CP09:** закрытый native TikZ Gaussian `plot` на SV-040, существующее `samples=50` → `80` с source ownership, F1 и общим Undo; AT4-34/35 (`samples=301` → `401`, первый ряд `251` → `301`); AT4-51–54 (ширина `10cm` → `11cm`); AT4-57 (высота `6cm` → `7cm` при неизменных формулах и данных). Итоговый запланированный native inventory — V2 и v2-clean по 27 операций / 113 состояний / 8 PDF, AT4 17 операций / 119 состояний / 17 PDF плюс отдельные 17 эталонных PDF. Это перечень проверок, а не приёмка до фактического прогона.
+
+**Предметные критерии:** sinc-limit/нули и неизменный ternary guard; затухающая косинусоида и обе огибающие; нулевой baseline и исходные значения столбцов; 12 наблюдений гистограммы и derived frequencies `[2,3,4,2,1]` с отдельной оговоркой о неявной нормировке; prepared boxplot без выдуманного метода квартилей; 3×3 point-meta mapping; восемь ортогональных радиусу векторов и отдельная точка в начале; Gaussian peak/half-height и сохранение приближённых авторских guides ±0.83. Source, GUI, внешний reference и независимый просмотр PDF являются отдельными свидетельствами.
+
+**Visual Guide по запросу владельца:** использовать актуальные материалы оформления из предоставленной Drive-папки, реальные original PNG текущего приложения, полные источники и manifest; экран связывать с source SHA, run, host, geometry и producer hash. Никаких концептуальных замен Windows/macOS кадров Linux-изображениями. Компактная вёрстка A4 landscape, практические шаги меню/исходник/Inspector/F1/Undo/Save/Open/Build/PDF; эргономические числа только из фактической трассы, с отделением QA overhead от пользовательского сценария. XeLaTeX PDF и исходный комплект проходят визуальную проверку всех страниц. Копии оригиналов и custom skills не добавлять в Git массово; воспроизводимый генератор и ограниченный manifest хранить с кодом.
+
+**Текущая native-кандидатура:** reviewed app tree `b5759efbf0c200f3497e99d43ea8de4a110f1f85` включает NativePlot и точные русские названия раздела/распознавания. Toolbar, палитра, поля шести native primitives и механизм N5 viewport не изменены. I61/N5 сохраняют fail-closed source/binary/geometry gates и требуют свежего полного прогона всех прежних сценариев; обновлённый lease сам по себе ничего не принимает. Научные координаты дополнительно сверяются с текущими оригинальными кадрами.
+
+**Завершение блока:** единая публикация code/tests/plan, свежие exact-source GUI runs, независимые проверки, отдельные записи неуспешных originals, Visual Guide и контрольная точка CP09. Фактические SHA/run IDs/статусы фиксируются в текущем блоке PR #189 и checkpoint; результаты предыдущих коммитов не переносятся на новый бинарник. Physical Win10/Server real IME/96-120-192 DPI, macOS ARM, G3/document/build gates и full scientific corpus остаются обязательными. Далее SC3/SC4–SC6; общая scientific runtime подтверждается до Asymptote, затем Typst/CeTZ. Слияния/stable/release GO нет. Разделы ниже — сохранённая история.
+
+## История 13.11.2026 — CP07 PGFPlots V2 и исходные AT4
 
 **Итог Run06 / CP07:** [source-bound report](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md), исполняемый source `ee35ec96`: V2 **26/26 transactions, 109 states, 8 builds**, но strict FAIL для SV-003/029/009; пять сборок чистые. Все8 AT4 bounded hosted vertical независимо приняты наee35; I61/N2/N3/N5/R1/R2/R3/R5/mixed Undo имеют отдельную source24 приёмку. CIee35:15 SUCCESS/1FAIL. CP07 содержит18 original attempts и отдельные финальный documentary/native identities; broad S3/S4/SC3/AT4/SCI142 приёмка не объявлена.
 

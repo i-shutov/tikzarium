@@ -28,11 +28,13 @@ AXIS_KEYS = ("samples", "domain", "xmin", "xmax", "ymin", "ymax", "xtick distanc
              "ytick distance", "xtick", "ytick", "width", "height", "xlabel", "ylabel", "mark")
 ADDPLOT_KEYS = ("samples", "domain", "mark")
 TABLE_KEYS = ("columns",)
+NATIVE_PLOT_KEYS = ("samples",)
 PROPERTY_KEYS = {"axis": AXIS_KEYS, "groupplot": AXIS_KEYS,
                  "nextgroupplot": AXIS_KEYS, "addplot": ADDPLOT_KEYS,
-                 "tabletypeset": TABLE_KEYS}
+                 "tabletypeset": TABLE_KEYS, "nativeplot": NATIVE_PLOT_KEYS}
 DEPENDENCIES = {"formula": (), "external-tables": ("measurements.dat", "reference.csv")}
 NAMED_SV = ("SV-001", "SV-003", "SV-009", "SV-022", "SV-029", "SV-040")
+NATIVE_PLOT_ORIGINAL_SHA256 = "a87af487a06729c3e0195f0d42ed25368338225bc9a033677e537228b4a1fc75"
 DEPENDENCIES.update({name: () for name in NAMED_SV})
 CLEAN_REPLACEMENTS = {spec.corpus_id: name for name, spec in clean_derivatives.SPECS.items()}
 DEPENDENCIES.update({name: () for name in CLEAN_REPLACEMENTS.values()})
@@ -43,6 +45,12 @@ AT4_CASES = {
     "AT4-09": {"filename": "scientific-plot.tex", "case_id": "09",
         "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
         "kind": "addplot", "command": 1, "key": "samples", "before": "161", "after": "181"},
+    "AT4-34": {"filename": "diffraction-sinc.tex", "case_id": "34",
+        "sha256": "017b225eb8559bd003ce27910cf99c56d7d917d5f070ea6f4b87ab588fe1c44f",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "301", "after": "401"},
+    "AT4-35": {"filename": "damped-oscillation.tex", "case_id": "35",
+        "sha256": "bf575c457aeede1925d55e3b59efd326e9d9c8c90f93e5a1498ed1fbf0393678",
+        "kind": "addplot", "command": 1, "key": "samples", "before": "251", "after": "301"},
     "AT4-48": {"filename": "error-bars.tex", "case_id": "48",
         "sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
         "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
@@ -52,12 +60,27 @@ AT4_CASES = {
     "AT4-50": {"filename": "confidence-band.tex", "case_id": "50",
         "sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
         "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-51": {"filename": "grouped-bars.tex", "case_id": "51",
+        "sha256": "04dd4427041379cb150c61cbcbdee26c3ba970e29c01ab9390c0604e91245809",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-52": {"filename": "histogram.tex", "case_id": "52",
+        "sha256": "1ca7769d550f831bd57b5317e53e8e182ba750a2590b4622e2d93e6eb5718690",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-53": {"filename": "boxplot.tex", "case_id": "53",
+        "sha256": "6ce19327921d87f4c2ab31482dcae9cd58bbb2c72e09cf0c1e66975d523aa1ee",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
+    "AT4-54": {"filename": "heatmap.tex", "case_id": "54",
+        "sha256": "5b1df730d4c440906caf760ac36bf6440280e98233f07480ca0a8d55dcf87758",
+        "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
     "AT4-55": {"filename": "surface-gaussian.tex", "case_id": "55",
         "sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
         "kind": "addplot", "command": 1, "key": "samples", "before": "21", "after": "25"},
     "AT4-56": {"filename": "parametric-helix.tex", "case_id": "56",
         "sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
         "kind": "addplot", "command": 1, "key": "samples", "before": "181", "after": "201"},
+    "AT4-57": {"filename": "vector-field.tex", "case_id": "57",
+        "sha256": "725d9b0901aa2a0313a2a17bfffd699f515469b821f525c930b5939ab3bd0684",
+        "kind": "axis", "command": 0, "key": "height", "before": "6cm", "after": "7cm"},
     "AT4-58": {"filename": "discontinuous-function.tex", "case_id": "58",
         "sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
         "kind": "axis", "command": 0, "key": "width", "before": "10cm", "after": "11cm"},
@@ -109,7 +132,7 @@ def suite_metadata(suite: str) -> dict:
             "fixture_origin": {
                 "v2": "TWO_SYNTHETIC_CASES_PLUS_SIX_BYTE_IDENTICAL_NAMED_CORPUS_INPUTS",
                 "v2-clean": "TWO_SYNTHETIC_PLUS_THREE_ORIGINAL_PLUS_THREE_ATTRIBUTED_DERIVATIVES",
-                "at4": "TEN_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS"}[suite],
+                "at4": "SEVENTEEN_EXACT_ORIGINAL_AI88_AT4_CORPUS_INPUTS"}[suite],
             "synthetic_optical_scope": (
                 "18 Inspector source transactions; explicit tick lists override tick distances; only final revision PDF is built"
                 if suite != "at4" else "NOT_APPLICABLE_NO_SYNTHETIC_AT4_INPUTS"),
@@ -138,6 +161,8 @@ def fixture_bytes(fixture: str) -> bytes:
     contents = fixture_path(fixture).read_bytes()
     if fixture in AT4_CASES and digest(contents) != AT4_CASES[fixture]["sha256"]:
         raise ValueError("Original AI88 AT4 case bytes/hash mismatch: " + fixture)
+    if fixture == "SV-040" and digest(contents) != NATIVE_PLOT_ORIGINAL_SHA256:
+        raise ValueError("Original native TikZ plot bytes/hash mismatch: " + fixture)
     return contents
 
 
@@ -200,6 +225,7 @@ OPERATIONS = tuple(Operation("formula", 0, "axis", key, before, after) for key, 
     Operation("SV-009", 1, "addplot", "domain", "0:1.5", "0:1.4"),
     Operation("SV-022", 0, "axis", "width", r"0.6\textwidth", r"0.7\textwidth"),
     Operation("SV-029", 0, "axis", "height", r"0.3\textwidth", r"0.4\textwidth"),
+    Operation("SV-040", 0, "nativeplot", "samples", "50", "80"),
 )
 
 AT4_OPERATIONS = tuple(Operation(fixture, values["command"], values["kind"], values["key"],
@@ -284,7 +310,7 @@ def _original_manifest_entry(fixture: str) -> dict:
             "original_sha256": sha(fixture_path(fixture)),
             "runtime_sha256": digest(fixture_bytes(fixture)),
             "derivative": "NONE; original source and typography byte-identical",
-            "operation_scope": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR" if fixture == "SV-040" else "NAMED_LITERAL_APPLY_UNDO"}
+            "operation_scope": "BOUNDED_NATIVE_TIKZ_GAUSSIAN_SAMPLES_APPLY_UNDO" if fixture == "SV-040" else "NAMED_LITERAL_APPLY_UNDO"}
 
 
 def prepare(out: Path, suite: str = "v2") -> dict:

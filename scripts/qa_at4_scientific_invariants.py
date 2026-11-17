@@ -14,11 +14,18 @@ from typing import Any
 
 CASE_FILES = {
     "09": "scientific-plot.tex",
+    "34": "diffraction-sinc.tex",
+    "35": "damped-oscillation.tex",
     "48": "error-bars.tex",
     "49": "loglog-convergence.tex",
     "50": "confidence-band.tex",
+    "51": "grouped-bars.tex",
+    "52": "histogram.tex",
+    "53": "boxplot.tex",
+    "54": "heatmap.tex",
     "55": "surface-gaussian.tex",
     "56": "parametric-helix.tex",
+    "57": "vector-field.tex",
     "58": "discontinuous-function.tex",
     "59": "group-plots.tex",
     "60": "table-derived-column.tex",
@@ -41,6 +48,24 @@ def _text(source: bytes | str) -> str:
         except UnicodeDecodeError as error:
             raise InvariantViolation(f"source is not valid UTF-8: {error}") from error
     return source
+
+
+def _without_tex_comments(text: str) -> str:
+    """Remove TeX comments, honoring escaped percent signs, before parsing commands."""
+    cleaned = []
+    for line in text.splitlines(keepends=True):
+        for index, char in enumerate(line):
+            if char == "%":
+                backslashes = 0
+                cursor = index - 1
+                while cursor >= 0 and line[cursor] == "\\":
+                    backslashes += 1
+                    cursor -= 1
+                if backslashes % 2 == 0:
+                    line = line[:index]
+                    break
+        cleaned.append(line)
+    return "".join(cleaned)
 
 
 def _axis(text: str) -> str:
@@ -395,12 +420,213 @@ def _validate_61(text: str) -> list[str]:
     return ["formula parsed as −10 log10(1+ω²)", "original domain .01:100 retained and log x-axis verified", f"analytic series samples is {samples} (original 161 or proposed 201)", "magnitude at ωRC=1 is −3.0102999566 dB", f"computed 1000→10000 high-frequency slope is {slope:.8f} dB/decade, approaching −20", "numeric asymptote check is mathematical model analysis, not a rendered-data measurement"]
 
 
+def _one_width_axis(text: str, expected: str) -> str:
+    """Require exact axis options, allowing only the proposed 10→11cm width."""
+    axis = _axis(text)
+    _require(len(re.findall(r"(?:^|,)\s*width\s*=", axis)) == 1, "axis width must occur exactly once")
+    normalized = re.sub(r"(^|,)width=(?:10|11)cm(?=,|$)", r"\1width=WIDTHcm", axis)
+    _require(normalized == expected.replace("width=10cm", "width=WIDTHcm"),
+             f"axis options changed outside the bounded width 10cm→11cm proposal: {axis!r}")
+    _require(_option_value(axis, "width") in {"10cm", "11cm"}, "axis width must be original 10cm or proposed 11cm")
+    return axis
+
+
+def _one_height_axis(text: str, expected: str) -> str:
+    axis = _axis(text)
+    _require(len(re.findall(r"(?:^|,)\s*height\s*=", axis)) == 1, "axis height must occur exactly once")
+    normalized = re.sub(r"(^|,)height=(?:6|7)cm(?=,|$)", r"\1height=HEIGHTcm", axis)
+    _require(normalized == expected.replace("height=6cm", "height=HEIGHTcm"),
+             f"axis options changed outside the bounded height 6cm→7cm proposal: {axis!r}")
+    _require(_option_value(axis, "height") in {"6cm", "7cm"}, "axis height must be original 6cm or proposed 7cm")
+    return axis
+
+
+def _validate_34(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _require(_axis(text) == "width=10cm,height=6cm,grid=major,xlabel={$u$},ylabel={$I/I_0$},ymin=0,ymax=1.1",
+             "diffraction axis labels, range or geometry changed")
+    plots = _addplots(text)
+    _require(len(plots) == 1 and len(re.findall(r"\\addplot\b", text)) == 1, "diffraction must retain exactly one analytic intensity plot")
+    options, body, _ = plots[0]
+    _require(re.sub(r"\s+", "", body) == "{abs(x)<0.0001?1:(sin(deg(x))/x)^2}", "diffraction formula or literal near-zero guard changed")
+    _require(options in {"blue,thick,domain=-12:12,samples=301", "blue,thick,domain=-12:12,samples=401"},
+             f"diffraction options changed beyond samples 301→401: {options!r}")
+    intensity = lambda u: 1.0 if abs(u) < .0001 else (math.sin(u) / u) ** 2
+    _require(intensity(0) == 1.0, "guarded central limit must be I(0)/I₀=1")
+    zeros = [abs(intensity(n * math.pi)) for n in range(1, 5)]
+    _require(max(zeros) < 1e-30, "nonzero nπ sinc zeros failed analytic probes")
+    _require(intensity(12) < .01 and intensity(-12) == intensity(12), "far-field endpoints must be small and symmetric")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Однощелевая модель с явно обработанным пределом при нуле.", "catalogue diffraction interpretation changed")
+        _require(catalogue_record.get("check") == "I(0)=I₀; нули при u=nπ, n≠0; дальняя зона.", "catalogue diffraction criteria changed")
+    return ["guarded sinc-squared formula, domain −12:12 and default degree conversion sin(deg(x)) preserved",
+            "analytic limit I(0)/I₀=1, nonzero nπ zeros (n=1..4), symmetry and small far-field endpoints checked",
+            "only sample density 301→401 is permitted; sampled zero placement and PDF resolution remain visual-review items"]
+
+
+def _validate_35(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _require(_axis(text) == "width=10cm,height=6cm,grid=major,xlabel={$t$},ylabel={$x(t)$}", "damped-oscillation axis labels or geometry changed")
+    plots = _addplots(text)
+    _require(len(plots) == 3 and len(re.findall(r"\\addplot\b", text)) == 3, "signal and both damping envelopes must remain the only three plots")
+    formulas = ["{exp(-.22*x)*cos(deg(3*x))}", "{exp(-.22*x)}", "{-exp(-.22*x)}"]
+    options = ["blue,thick,domain=0:10,samples=251", "gray,dashed,domain=0:10", "gray,dashed,domain=0:10"]
+    actual = [(o, re.sub(r"\s+", "", b)) for o, b, _ in plots]
+    accepted = list(zip(options, formulas))
+    accepted_proposal = [(options[0].replace("251", "301"), formulas[0]), *accepted[1:]]
+    _require(actual in (accepted, accepted_proposal), "damped signal/envelopes, domains, order or sample proposal changed")
+    max_ratio = max(abs(math.cos(3 * t)) for t in (i / 100 for i in range(1001)))
+    _require(max_ratio <= 1.0, "oscillation exceeds its exponential envelope")
+    _require(math.isclose(math.cos(math.radians(3 * 180 / math.pi)), math.cos(3), abs_tol=1e-15), "radian-to-degree phase probe failed")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Сигнал и огибающие получены из общей экспоненты затухания.", "catalogue damped-oscillation interpretation changed")
+        _require(catalogue_record.get("check") == "|x(t)|≤exp(-0.22t); частота в аргументе cos переведена из радиан.", "catalogue damping criteria changed")
+    return ["signal exp(−0.22t)cos(deg(3t)) and both shared exponential envelopes retained on 0:10",
+            f"dense mathematical probes confirm |x(t)|≤exp(−0.22t); maximum absolute cosine ratio {max_ratio:.12f}",
+            "degree-converted phase agrees with cos(3t) for radian-valued t; only first plot samples 251→301 is proposed"]
+
+
+def _validate_51(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _one_width_axis(text, "width=10cm,height=6cm,grid=major,ybar,bar width=10pt,symbolic x coords={A,B,C},xtick=data,ymin=0,ymax=8,legend style={at={(.5,1.02)},anchor=south,legend columns=2}")
+    bodies = re.findall(r"\\addplot\s+coordinates\s*(\{.*?\})\s*;", text, re.S)
+    expected = ["{(A,3)(B,5)(C,4)}", "{(A,4)(B,3)(C,6)}"]
+    _require(len(re.findall(r"\\addplot\b", text)) == 2 and [re.sub(r"\s+", "", b) for b in bodies] == expected, "grouped-bar categories or synthetic series values changed")
+    _require(r"\legend{Series 1,Series 2}" in text, "grouped-bar legend labels/order changed")
+    _require(all(v >= 0 for v in [3,5,4,4,3,6]), "bars must start at zero and have nonnegative values")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Две серии сравниваются на одинаковых категориях.", "catalogue grouped-bar description changed")
+        _require(catalogue_record.get("check") == "Столбцы начинаются с нуля; значения синтетические.", "catalogue synthetic-data / baseline criterion changed")
+    return ["two synthetic series retain categories A/B/C, exact values and zero y baseline", "bar values are nonnegative and legend order is retained", "axis width 10cm→11cm is the only proposed source edit"]
+
+
+def _validate_52(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _one_width_axis(text, "width=10cm,height=6cm,grid=major,ymin=0,xlabel={value},ylabel={count}")
+    plots = _addplots(text)
+    _require(len(plots) == 1 and len(re.findall(r"\\addplot\b", text)) == 1, "histogram must contain exactly one plot")
+    _require(r"\usepgfplotslibrary{statistics}" in text, "histogram statistics library dependency is missing")
+    options, body, _ = plots[0]
+    _require(options == "hist={bins=5,data min=0,data max=5}", f"histogram bin options changed: {options!r}")
+    prefix, suffix = r"table[row sep=\\,y index=0]{data", r"\\}"
+    _require(body.startswith(prefix) and body.endswith(suffix), "histogram must retain explicit embedded single-column observations")
+    raw = body[len(prefix):-len(suffix)].replace("\\\\", " ").split()
+    try:
+        values = [float(x) for x in raw]
+    except ValueError as error:
+        raise InvariantViolation(f"histogram contains a nonnumeric token: {error}") from error
+    expected = [.2,.5,1.1,1.2,1.6,2.2,2.3,2.5,2.7,3.1,3.8,4.4]
+    _require(values == expected, "histogram sample values/order changed")
+    _require(len(values) == 12 and all(0 <= v <= 5 for v in values), "histogram requires 12 observations in explicit [0,5] range")
+    _require(not any(v.is_integer() for v in values), "an observation lies on an integer bin boundary; bin-closure convention would need resolution")
+    counts = [sum(i <= v < i + 1 for v in values) for i in range(5)]
+    _require(counts == [2, 3, 4, 2, 1] and sum(counts) == 12, f"derived equal-bin counts changed: {counts!r}")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Бины вычислены статистической библиотекой из выборки.", "catalogue histogram description changed")
+        _require(catalogue_record.get("check") == "Сумма частот равна 12; интервалы и нормировка указаны явно.", "catalogue histogram count/bin criterion changed")
+    return [f"embedded sample has n={len(values)} and lies in explicit [0,5] data range", "statistics library is configured for five bins; frequencies are derived from observations, not asserted from source alone", "axis width 10cm→11cm is the only proposed source edit"]
+
+
+def _validate_53(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _one_width_axis(text, "width=10cm,height=6cm,grid=major,ytick={1},yticklabels={Sample},xlabel={value}")
+    plots = _addplots(text)
+    _require(len(plots) == 1 and len(re.findall(r"\\addplot\b", text)) == 1, "prepared boxplot must contain exactly one plot")
+    _require(r"\usepgfplotslibrary{statistics}" in text, "boxplot statistics library dependency is missing")
+    options, body, _ = plots[0]
+    _require(options == "boxplot prepared={lower whisker=1,lower quartile=2,median=3,upper quartile=4,upper whisker=6}" and re.sub(r"\s+", "", body) == "coordinates{}", "prepared summary or empty coordinate payload changed")
+    summary = [1,2,3,4,6]
+    _require(all(a <= b for a,b in zip(summary, summary[1:])), "prepared whiskers/quartiles/median are not ordered")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Квартили и границы усов заданы явно для учебной сводки.", "catalogue prepared-boxplot description changed")
+        _require(catalogue_record.get("check") == "1≤2≤3≤4≤6; способ вычисления квартилей и усов должен сопровождать реальные данные.", "catalogue quartile-method qualification changed")
+    return ["prepared lower whisker=1, Q1=2, median=3, Q3=4, upper whisker=6 are ordered", "summary is explicitly prepared for education; source has no raw data or quartile inference method", "axis width 10cm→11cm is the only proposed source edit"]
+
+
+def _validate_54(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _one_width_axis(text, "width=10cm,height=6cm,grid=major,view={0}{90},colorbar,mesh/cols=3,xlabel={$i$},ylabel={$j$}")
+    plots = _addplots(text)
+    _require(len(plots) == 1 and len(re.findall(r"\\addplot\b", text)) == 1, "heatmap must contain exactly one matrix plot")
+    options, body, _ = plots[0]
+    _require(options == "matrix plot*,point meta=explicit", "heatmap requires explicit point-meta colors")
+    expected_body = "coordinates{" + "".join(f"({x},{y})[{m}]" for x,y,m in [(0,0,1),(1,0,2),(2,0,3),(0,1,2),(1,1,5),(2,1,4),(0,2,3),(1,2,4),(2,2,2)]) + "}"
+    _require(re.sub(r"\s+", "", body) == expected_body, "heatmap body contains changed or additional coordinate/meta content")
+    coords = re.findall(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*\[\s*(\d+)\s*\]", body)
+    expected = [(0,0,1),(1,0,2),(2,0,3),(0,1,2),(1,1,5),(2,1,4),(0,2,3),(1,2,4),(2,2,2)]
+    parsed = [tuple(map(int,p)) for p in coords]
+    _require(parsed == expected and len(coords) == 9, f"heatmap coordinate/point-meta mapping changed: {parsed!r}")
+    _require(set((x,y) for x,y,_ in parsed) == {(x,y) for x in range(3) for y in range(3)}, "heatmap grid is not exactly 3×3")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Скалярное поле отображено цветом на регулярной сетке.", "catalogue heatmap description changed")
+        _require(catalogue_record.get("check") == "Сетка 3×3; значения цвета соответствуют point meta, а не положению точки.", "catalogue heatmap criterion changed")
+    return ["nine values map to exact 3×3 (x,y,point-meta) coordinate sequence", "explicit point meta supplies color values independently of coordinate position", "axis width 10cm→11cm is the only proposed source edit"]
+
+
+def _validate_57(text: str, catalogue_record: dict[str, Any] | None) -> list[str]:
+    _one_height_axis(text, "width=10cm,height=6cm,grid=major,axis equal image,xmin=-1.6,xmax=1.6,ymin=-1.6,ymax=1.6,xlabel={$x$},ylabel={$y$}")
+    plots = _addplots(text)
+    _require(len(plots) == 2 and len(re.findall(r"\\addplot\b", text)) == 2, "vector field and origin marker must remain the only two plots")
+    options, body, _ = plots[0]
+    _require(options == "teal,quiver={u=-y,v=x,scale arrows=.25},-Stealth", "quiver components/scale/arrow style changed")
+    prefix, suffix = r"table[row sep=\\]{x y", r"\\}"
+    _require(body.startswith(prefix) and body.endswith(suffix), "quiver source coordinate table missing")
+    row_text = body[len(prefix):-len(suffix)]
+    rows = [tuple(map(int,row.split())) for row in row_text.split("\\\\") if row.strip()]
+    expected = [(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]
+    _require(rows == expected, f"vector field source grid changed: {rows!r}")
+    for x,y in rows:
+        _require(x*(-y) + y*x == 0, f"field vector at ({x},{y}) is not orthogonal to radius")
+    _require(re.sub(r"\s+", "", plots[1][2]) == r"\addplot[onlymarks,mark=*,marksize=1pt]coordinates{(0,0)};", "explicit origin zero-vector marker changed")
+    if catalogue_record is not None:
+        _require(catalogue_record.get("description") == "Стрелки отображают поле (-y,x) на регулярной решётке.", "catalogue vector-field description changed")
+        _require(catalogue_record.get("check") == "Поле ортогонально радиусу; в начале вектор нулевой.", "catalogue vector-field criterion changed")
+    return ["components (−y,x) are orthogonal to radius at all eight nonorigin source grid points", "origin is excluded from arrow data; the separate marker locates the origin only, with no vector arrow plotted there", "axis height 6cm→7cm is the only proposed source edit"]
+
+
+def _measurements(case_id: str, text: str) -> dict[str, Any] | None:
+    """Expose checked quantities as structured data alongside the claims."""
+    if case_id == "34":
+        return {"formula": "(sin(u)/u)^2 with guarded value 1 at zero", "central_intensity_ratio": 1.0,
+                "analytic_nonzero_zeros": [f"{n}π" for n in range(1, 5)],
+                "floating_probe_residuals": [abs(math.sin(n*math.pi)/(n*math.pi))**2 for n in range(1, 5)],
+                "endpoint_intensity_ratio_at_abs_u_12": (math.sin(12)/12)**2}
+    if case_id == "35":
+        return {"decay_rate_per_time_unit": 0.22, "angular_frequency_per_time_unit": 3.0,
+                "envelope_upper_bound_ratio": 1.0, "phase_conversion": "cos(deg(3*x)) = cos(3*x radians)"}
+    if case_id == "51":
+        return {"categories": ["A", "B", "C"], "synthetic_series": [[3, 5, 4], [4, 3, 6]], "baseline": 0}
+    if case_id == "52":
+        plots = _addplots(text)
+        body = plots[0][1]
+        prefix, suffix = r"table[row sep=\\,y index=0]{data", r"\\}"
+        values = [float(v) for v in body[len(prefix):-len(suffix)].replace("\\\\", " ").split()]
+        counts = [sum(i <= v < i + 1 for v in values) for i in range(5)]
+        return {"observations": values, "n": len(values), "bins": 5, "data_range": [0, 5],
+                "equal_width_bin_counts": counts, "frequency_total": sum(counts),
+                "normalization": "not explicitly specified by source; counts are reported, not normalized"}
+    if case_id == "53":
+        return {"summary": {"lower_whisker": 1, "Q1": 2, "median": 3, "Q3": 4, "upper_whisker": 6},
+                "quartile_method": "not specified; values are prepared, not inferred from raw observations"}
+    if case_id == "54":
+        return {"grid_shape": [3, 3], "point_meta_by_xy": [{"x": x, "y": y, "point_meta": m}
+                for x,y,m in [(0,0,1),(1,0,2),(2,0,3),(0,1,2),(1,1,5),(2,1,4),(0,2,3),(1,2,4),(2,2,2)]]}
+    if case_id == "57":
+        return {"field": "V(x,y)=(-y,x)", "nonorigin_grid_points": 8,
+                "dot_products_with_radius": [0 for _ in range(8)], "origin_vector": [0, 0],
+                "origin_arrow_plotted": False}
+    return None
+
+
 def validate_case(case_id: str, source: bytes | str, catalogue_record: dict[str, Any] | None = None) -> dict[str, Any]:
     """Validate one case's source literals; returns claims and NOT_RUN visual status."""
     if case_id not in CASE_FILES:
         raise ValueError(f"unsupported AT4 case id {case_id!r}")
     text = _text(source)
-    validators = {"09": _validate_09, "49": _validate_49, "59": _validate_59, "60": _validate_60, "61": _validate_61}
+    if case_id in {"34", "35", "51", "52", "53", "54", "57"}:
+        text = _without_tex_comments(text)
+    validators = {"09": _validate_09, "34": lambda s: _validate_34(s, catalogue_record),
+                 "35": lambda s: _validate_35(s, catalogue_record), "49": _validate_49,
+                 "59": _validate_59, "60": _validate_60, "61": _validate_61,
+                 "51": lambda s: _validate_51(s, catalogue_record),
+                 "52": lambda s: _validate_52(s, catalogue_record),
+                 "53": lambda s: _validate_53(s, catalogue_record),
+                 "54": lambda s: _validate_54(s, catalogue_record),
+                 "57": lambda s: _validate_57(s, catalogue_record)}
     if case_id == "48":
         assertions = _validate_48(text, catalogue_record)
     elif case_id in {"50", "55", "56", "58"}:
@@ -408,23 +634,33 @@ def validate_case(case_id: str, source: bytes | str, catalogue_record: dict[str,
                       "58": _validate_58}[case_id](text, catalogue_record)
     elif case_id in {"59", "60"}:
         assertions = validators[case_id](text, catalogue_record)
+    elif case_id in {"34", "35", "51", "52", "53", "54", "57"}:
+        assertions = validators[case_id](text)
     else:
         assertions = validators[case_id](text)
     return {
         "case_id": case_id,
         "source_checks": "PASS_SOURCE_SEMANTICS_ONLY",
         "assertions": assertions,
+        "measurements": _measurements(case_id, text),
         "visual_check": "NOT_RUN",
         "pdf_check": "NOT_RUN",
         "native_gui_acceptance": "NOT_RUN",
         "independent_visual_review": "REQUIRED",
         "limits": {
             "09": "Analytic formula/model sampling checks do not validate physical experiment data or rendered appearance.",
+            "34": "Analytic sinc probes are not sampled-zero placement or rendered-resolution evidence; the original and proposed PDFs require independent review.",
+            "35": "The envelope and phase checks are mathematical source probes, not rendered amplitude, clipping or sampling evidence.",
             "48": "Error magnitudes are conditional; their statistical meaning must be supplied by the data source.",
             "49": "The five points are synthetic coordinates and do not establish an empirical convergence study.",
             "50": "The illustrated ±0.5 band is not a statistically estimated confidence interval.",
+            "51": "Bar values are synthetic; source checks do not validate rendered grouping, spacing or typography.",
+            "52": "The observations are embedded example data; source checks do not independently establish rendered bin-edge conventions or density/count normalization.",
+            "53": "Prepared summary values do not establish a quartile/whisker method for real observations.",
+            "54": "Point-meta mapping is checked from source; palette perception and rendered cell orientation require visual review.",
             "55": "Analytic source/probe checks are not rendered surface or grid-convergence proof; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case.",
             "56": "Default degree-based analytic probes are not rendered winding/pitch evidence; original and changed-density PDFs need independent review. No z-axis/view editing is implemented by this case.",
+            "57": "Source orthogonality checks do not establish rendered arrow direction, scale or visual legibility.",
             "58": "The no-bridge claim needs PDF inspection; a NaN token and jump option alone are not visual evidence.",
             "59": "Formula and phase probes establish source-level analytic semantics only; panel alignment, labels, clipping and rendered phase remain PDF/native-GUI review items.",
             "60": "Raw y values are synthetic as stated by the original catalogue; source checks do not establish rendered table alignment or typography.",
@@ -446,5 +682,5 @@ def validate_directory(source_root: Path) -> list[dict[str, Any]]:
     examples = source_root / "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples"
     catalogue = source_root / "roadmap/AI_TIKZ_SKILLS_2026-11-10/catalogue.original.json"
     return [validate_case(case_id, (examples / filename).read_bytes(),
-                          load_catalogue_record(catalogue, case_id) if case_id in {"48", "50", "55", "56", "58", "59", "60"} else None)
+                          load_catalogue_record(catalogue, case_id) if case_id in {"34", "35", "48", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60"} else None)
             for case_id, filename in CASE_FILES.items()]

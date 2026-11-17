@@ -22,9 +22,11 @@ from qa_n1_desktop import (FIXTURE, original_preserved, owners,
                            x11_button1_mask, x11_button1_pressed)
 
 # Compact production coordinates derived from app layout and the independently
-# reviewed CP05 native original (43370706180). Candidate until THIS full run's
-# originals are reviewed: CP05 scientific acceptance does not accept I61.
-APP_TREE = "a71dc1205213ded99b81174b568a445cd756f49d"
+# reviewed CP05 native original (43370706180), retained by the full CP08 run.
+# CP09 changes scientific labels and adds one bounded NativePlot property;
+# toolbar/palette/native primitive controls are unchanged. This remains only
+# a candidate until THIS full six-tool/save/reopen/Undo/F1/PDF run is reviewed.
+APP_TREE = "b5759efbf0c200f3497e99d43ea8de4a110f1f85"
 CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 POINTS = {
