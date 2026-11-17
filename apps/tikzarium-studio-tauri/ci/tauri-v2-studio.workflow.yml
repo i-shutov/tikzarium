@@ -1,0 +1,53 @@
+name: Tauri v2 Studio Desktop Matrix
+
+on:
+  push:
+    branches:
+      - feat/tauri-v2-studio
+  pull_request:
+    paths:
+      - 'apps/tikzarium-studio-tauri/**'
+      - 'crates/tikzarium-core/**'
+      - 'crates/tikzarium-extensions/**'
+  workflow_dispatch:
+
+jobs:
+  tauri-check-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install WebKitGTK dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91.0
+
+      - name: Frontend unit tests & production Vite bundle
+        working-directory: apps/tikzarium-studio-tauri
+        run: |
+          npm install
+          npm test
+          npm run lint
+          npm run build
+
+      - name: Rust Tauri v2 unit tests & binary check
+        working-directory: apps/tikzarium-studio-tauri/src-tauri
+        run: |
+          cargo test
+          cargo check --bins

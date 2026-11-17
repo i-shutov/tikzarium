@@ -1,0 +1,148 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Exact 4 native UI themes from crates/tikzarium-app/src/ui_theme.rs.
+   Application chrome NEVER alters figure source or PDF colors. */
+:root,
+[data-tikz-theme="light"] {
+  --tz-panel: rgb(243, 247, 251);
+  --tz-window: rgb(255, 255, 255);
+  --tz-inset: rgb(237, 244, 249);
+  --tz-button: rgb(251, 253, 255);
+  --tz-hover: rgb(228, 241, 249);
+  --tz-active: rgb(204, 225, 242);
+  --tz-outline: rgb(199, 215, 226);
+  --tz-text: rgb(26, 42, 60);
+  --tz-muted: rgb(82, 102, 122);
+  --tz-accent: rgb(37, 103, 162);
+  --tz-link: rgb(32, 95, 157);
+  --tz-syn-cmd: rgb(15, 98, 178);
+  --tz-syn-env: rgb(118, 56, 165);
+  --tz-syn-opt: rgb(18, 118, 92);
+  --tz-syn-num: rgb(168, 85, 12);
+  --tz-syn-math: rgb(158, 42, 91);
+  --tz-syn-comment: rgb(100, 116, 139);
+  --tz-syn-meta: rgb(142, 158, 175);
+  --tz-line-active: rgba(37, 103, 162, 0.08);
+}
+
+[data-tikz-theme="paper"] {
+  --tz-panel: rgb(247, 245, 239);
+  --tz-window: rgb(255, 253, 248);
+  --tz-inset: rgb(239, 236, 226);
+  --tz-button: rgb(253, 252, 247);
+  --tz-hover: rgb(226, 239, 235);
+  --tz-active: rgb(195, 224, 214);
+  --tz-outline: rgb(202, 210, 204);
+  --tz-text: rgb(37, 56, 75);
+  --tz-muted: rgb(91, 108, 118);
+  --tz-accent: rgb(32, 100, 112);
+  --tz-link: rgb(31, 109, 125);
+  --tz-syn-cmd: rgb(21, 94, 117);
+  --tz-syn-env: rgb(114, 62, 138);
+  --tz-syn-opt: rgb(28, 112, 78);
+  --tz-syn-num: rgb(154, 78, 18);
+  --tz-syn-math: rgb(146, 48, 76);
+  --tz-syn-comment: rgb(107, 118, 114);
+  --tz-syn-meta: rgb(150, 158, 152);
+  --tz-line-active: rgba(32, 100, 112, 0.08);
+}
+
+[data-tikz-theme="dark"] {
+  --tz-panel: rgb(24, 33, 46);
+  --tz-window: rgb(30, 42, 58);
+  --tz-inset: rgb(17, 26, 38);
+  --tz-button: rgb(35, 49, 66);
+  --tz-hover: rgb(46, 67, 85);
+  --tz-active: rgb(40, 84, 112);
+  --tz-outline: rgb(70, 93, 118);
+  --tz-text: rgb(229, 236, 245);
+  --tz-muted: rgb(152, 171, 192);
+  --tz-accent: rgb(56, 139, 201);
+  --tz-link: rgb(130, 199, 239);
+  --tz-syn-cmd: rgb(125, 200, 248);
+  --tz-syn-env: rgb(196, 167, 245);
+  --tz-syn-opt: rgb(118, 214, 178);
+  --tz-syn-num: rgb(246, 189, 116);
+  --tz-syn-math: rgb(244, 156, 188);
+  --tz-syn-comment: rgb(128, 148, 170);
+  --tz-syn-meta: rgb(96, 116, 138);
+  --tz-line-active: rgba(125, 199, 239, 0.09);
+}
+
+[data-tikz-theme="midnight"] {
+  --tz-panel: rgb(19, 26, 39);
+  --tz-window: rgb(26, 36, 53);
+  --tz-inset: rgb(12, 19, 31);
+  --tz-button: rgb(31, 44, 63);
+  --tz-hover: rgb(39, 60, 83);
+  --tz-active: rgb(36, 78, 115);
+  --tz-outline: rgb(61, 82, 108);
+  --tz-text: rgb(230, 240, 251);
+  --tz-muted: rgb(148, 168, 192);
+  --tz-accent: rgb(56, 132, 204);
+  --tz-link: rgb(125, 191, 239);
+  --tz-syn-cmd: rgb(122, 198, 250);
+  --tz-syn-env: rgb(198, 170, 248);
+  --tz-syn-opt: rgb(114, 216, 180);
+  --tz-syn-num: rgb(248, 191, 119);
+  --tz-syn-math: rgb(245, 158, 192);
+  --tz-syn-comment: rgb(124, 145, 168);
+  --tz-syn-meta: rgb(90, 111, 135);
+  --tz-line-active: rgba(125, 191, 239, 0.09);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background-color: var(--tz-panel);
+  color: var(--tz-text);
+  font-family: var(--font-sans);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom subtle scrollbars for dense code and inspector panes */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tz-inset);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tz-outline);
+  border-radius: 4px;
+}
+
+/* Accessible keyboard focus ring across all 4 UI themes (WCAG AA) */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--tz-accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
