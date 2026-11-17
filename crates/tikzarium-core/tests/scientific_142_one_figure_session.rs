@@ -22,7 +22,11 @@ fn source_and_data() -> (tempfile::TempDir, PathBuf, PathBuf) {
 }
 
 fn snapshot(root: &Path, source: &Path, data: &Path) -> ProjectDependencySnapshot {
-    ProjectDependencySnapshot::capture(root, source, &[data.to_path_buf()], true).unwrap()
+    let baseline = tikzarium_core::ProjectBuildBaseline::capture(root).unwrap();
+    let mut snapshot =
+        ProjectDependencySnapshot::capture(root, source, &[data.to_path_buf()], true).unwrap();
+    baseline.validate_and_mark(&mut snapshot);
+    snapshot
 }
 
 #[test]

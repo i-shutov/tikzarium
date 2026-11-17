@@ -1,0 +1,17 @@
+Creator:          XeTeX output 2026.11.13:0517
+Producer:        xdvipdfmx (20220710)
+CreationDate:    Fri Nov 13 05:17:09 2026 UTC
+Custom Metadata: no
+Metadata Stream: no
+Tagged:          no
+UserProperties:  no
+Suspects:        no
+Form:            none
+JavaScript:      no
+Pages:           1
+Encrypted:       no
+Page size:       335.61 x 212.66 pts
+Page rot:        0
+File size:       10189 bytes
+Optimized:       no
+PDF version:     1.5

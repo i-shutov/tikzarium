@@ -1,0 +1,117 @@
+{
+  "reviewer": "root independent original artifact review",
+  "created_utc": "2026-11-13T11:35:00.190321+00:00",
+  "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+  "app_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+  "run_id": 43415761846,
+  "artifact_id": 14030944942,
+  "artifact_sha256": "6ad8c6176d1f10ce161f051ba56d6d29975a9e1e374945728f5340bbba28d08b",
+  "status": "PASS_SCOPED_HOSTED_GUI_MIXED_UNDO",
+  "environment": "Linux X11/Xvfb 1366x768; client1180x680; Midnight",
+  "integrity": {
+    "github_size_digest": "PASS",
+    "zip_crc": "PASS",
+    "audit_report_files_sha256": 99,
+    "source_stages_exact": 8,
+    "opened_and_reopened_clipboard": "BYTE_IDENTICAL_ORIGINAL",
+    "live_export_pdf": "BYTE_IDENTICAL",
+    "fresh_exact_stage_checks": {
+      "opened": "original",
+      "typed": "typed",
+      "draft": "typed",
+      "applied": "applied",
+      "undo-inspector": "typed",
+      "undo-typing": "original",
+      "reopened": "original",
+      "built": "original"
+    }
+  },
+  "source_checks": [
+    "Original CRLF derivative preserved",
+    "Typed source exactly original plus Unicode marker",
+    "Draft151 leaves savedsource equal typed150",
+    "Apply exactly unique samples150 to151 replacement, no other byte edits",
+    "Common Undo restores typed150; second common Undo restores entire original",
+    "Native reopened editor clipboard and savedsource equal original"
+  ],
+  "visual_review": {
+    "raw/021-draft.png": "151 focused draft, source150, Unicode EOF marker preserved",
+    "raw/022-applied.png": "Source151 visible and exact scoped patch status",
+    "raw/023-undo-inspector.png": "Source150 restored",
+    "raw/024-undo-typing.png": "Freshly inspected: source150 and EOF65 empty; Unicode typing marker absent after second Undo.",
+    "raw/031-exact-pdf-view-exported.png": "Actual GUI PDF tab with current exported Gaussian curve and exact PDF status",
+    "export/exact-pdf.png": "One red smooth symmetric Gaussian curve, negative x ticks, visible Greek beta/tau and superscript1/2, no clipping or replacement glyphs at supplied120dpi",
+    "raw/035-built.png": "Freshly inspected: actual one-page red Gaussian PDF, source150 and raw current XeTeX11:19 log visible; no apparent clipping.",
+    "raw/033-actual-raw-xelatex-log.png": "Freshly inspected: current GUI raw log tab and exported exact PDF remain visible; full copied log separately checked clean."
+  },
+  "pdf_checks": {
+    "sha256": "cf164423e0b4b1fa5315241ca626186a6d9d0a7f1417d725ac26e716549ef4c9",
+    "pages": 1,
+    "embedded_fonts": 4,
+    "gui_xelatex_log_exact_copy": true,
+    "missing_character_nullfont_fatal_tex_error": "NONE",
+    "output_line": "Output written on /tmp/.tmpOqVtqE/out/compact-pgfplots.pdf (1 page).",
+    "source_log_name": "compact-pgfplots.tex"
+  },
+  "process": {
+    "launched_pid": 5004,
+    "owned_window": "6291459",
+    "absolute_client_origin": [
+      1,
+      20
+    ],
+    "build_provenance_exact_source": "PASS",
+    "provenance_limit": "Compact driver records launched production executable path/hash, PID and owned window; unlike PGF V2 report, does not independently retain /proc/exe hash or FLS input capture."
+  },
+  "limitations": [
+    "Named SV-001 derivative mixed history only",
+    "No new physical Win10/Mac/IME/DPI/G3 acceptance",
+    "Not aggregate SCI142/SC3/AT4 acceptance",
+    "No merge/stable/release GO"
+  ],
+  "comparison_to_reviewed_run04": {
+    "review_path": "/workspace/scratch/24342458ee84/reviews/run04-compact-mixed-undo-audit.json",
+    "review_sha256": "c2e8a01947d08fb7c3f149e81c8f7eb48c70b24320382e93deaa9d009b26f49c",
+    "same_source_stage_bytes": 8,
+    "same_png_bytes": [
+      "export/exact-pdf.png",
+      "observed/applied/screenshot.original.png",
+      "observed/draft/screenshot.original.png",
+      "observed/opened/screenshot.original.png",
+      "observed/reopened/screenshot.original.png",
+      "observed/typed/screenshot.original.png",
+      "observed/undo-inspector/screenshot.original.png",
+      "raw/001-startup-production.png",
+      "raw/002-file-menu-before-native-path.png",
+      "raw/004-typed-native-filepath.png",
+      "raw/005-native-open-before-dirty-decision.png",
+      "raw/006-source-settings-before-full-source.png",
+      "raw/007-full-source-after-native-load.png",
+      "raw/010-opened.png",
+      "raw/012-typed.png",
+      "raw/013-before-scientific-scan.png",
+      "raw/014-scientific-scan-results.png",
+      "raw/015-scientific-command-options.png",
+      "raw/016-axis-samples-original.png",
+      "raw/020-focused-draft-readback.png",
+      "raw/021-draft.png",
+      "raw/022-applied.png",
+      "raw/023-undo-inspector.png",
+      "raw/025-source-settings-before-full-source.png",
+      "raw/026-full-source-after-native-load.png",
+      "raw/029-reopened.png",
+      "raw/030-gui-build-started.png",
+      "raw/031-exact-pdf-view-exported.png",
+      "raw/032-actual-build-console.png"
+    ],
+    "changed_png_bytes": [
+      "observed/built/screenshot.original.png",
+      "observed/undo-typing/screenshot.original.png",
+      "raw/024-undo-typing.png",
+      "raw/033-actual-raw-xelatex-log.png",
+      "raw/035-built.png"
+    ],
+    "visual_reuse_basis": "Exact PNG byte identity only; fresh source/ELF/process/log/PDF provenance independently rebound to run05."
+  }
+}

@@ -1,0 +1,1327 @@
+[
+  {
+    "id": "01",
+    "group": "Геометрия",
+    "title": "Описанная окружность",
+    "description": "Точки, треугольник, центр окружности и середина стороны. Центр вычисляется из вершин, а не задаётся вручную.",
+    "packages": [
+      "tkz-euclide"
+    ],
+    "libraries": [],
+    "stem": "euclidean-circumcircle",
+    "engine": "xelatex",
+    "check": "Расстояния OA, OB, OC равны; M — середина AB. Изменение вершины C должно пересчитывать центр O."
+  },
+  {
+    "id": "02",
+    "group": "Механика",
+    "title": "Движение тела",
+    "description": "Траектория и скорости порождены одной моделью; угол, скорость и ускорение — независимые параметры.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "projectile-model",
+    "engine": "xelatex",
+    "check": "Траектория и скорости используют одну модель без сопротивления воздуха; в вершине vy=0, в момент приземления y=0."
+  },
+  {
+    "id": "03",
+    "group": "Оптика",
+    "title": "Преломление на границе",
+    "description": "Два показателя преломления и угол падения задают луч по закону Снеллиуса; нормаль и отражение связаны с границей.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "angles",
+      "quotes"
+    ],
+    "stem": "refraction-interface",
+    "engine": "xelatex",
+    "check": "Проверить n1 sin θ1 = n2 sin θ2 и равенство углов падения и отражения; углы отсчитываются от нормали."
+  },
+  {
+    "id": "04",
+    "group": "Квантовая физика",
+    "title": "Энергетические переходы",
+    "description": "Уровни, состояния и стрелки переходов определены единой таблицей. Энергетический масштаб условный.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "calc"
+    ],
+    "stem": "energy-transitions",
+    "engine": "xelatex",
+    "check": "Поглощение направлено вверх, испускание вниз; энергия фотона равна разности уровней. Масштаб условный."
+  },
+  {
+    "id": "05",
+    "group": "Электротехника",
+    "title": "RC-фильтр",
+    "description": "Источник, резистор, конденсатор и выход представлены типизированными компонентами с общими узлами.",
+    "packages": [
+      "circuitikz"
+    ],
+    "libraries": [],
+    "stem": "rc-circuit",
+    "engine": "xelatex",
+    "check": "Выход снят с конденсатора; для идеального RC-фильтра H(s)=1/(1+sRC). Проверить общий узел земли."
+  },
+  {
+    "id": "06",
+    "group": "Химия",
+    "title": "Структурная формула",
+    "description": "Атомные группы и связи задают топологию молекулы. Это 2D-нотация, а не пространственная модель.",
+    "packages": [
+      "chemfig"
+    ],
+    "libraries": [],
+    "stem": "chemical-structure",
+    "engine": "xelatex",
+    "check": "Структура этанола содержит два атома углерода, один кислород и шесть атомов водорода; валентности согласованы."
+  },
+  {
+    "id": "07",
+    "group": "Графы и иерархии",
+    "title": "Дерево модели",
+    "description": "Иерархия задаётся вложенной структурой; положение вершин вычисляется из дерева.",
+    "packages": [
+      "forest"
+    ],
+    "libraries": [],
+    "stem": "tree-forest",
+    "engine": "xelatex",
+    "check": "Семь узлов и шесть связей; каждая вершина, кроме корня, имеет ровно одного родителя."
+  },
+  {
+    "id": "08",
+    "group": "Пространство",
+    "title": "Вектор и проекция",
+    "description": "3D-базис, вектор и его проекция заданы пространственными объектами при указанной камере.",
+    "packages": [
+      "tikz-3dplot"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "three-dimensional-frame",
+    "engine": "xelatex",
+    "check": "Проекция Pxy сохраняет x,y точки P и имеет z=0; все координаты заданы в общем пространственном базисе."
+  },
+  {
+    "id": "09",
+    "group": "Научные данные",
+    "title": "Спектральный профиль",
+    "description": "Оси, модельная функция и точки получены из общего закона. Точки синтетические, не измерения.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [],
+    "stem": "scientific-plot",
+    "engine": "xelatex",
+    "check": "Профиль 1/(1+Δ²) чётный, максимум равен 1 при Δ=0. Точки получены из той же модели, это не измерения."
+  },
+  {
+    "id": "10",
+    "group": "Квантовые вычисления",
+    "title": "Двухкубитная схема",
+    "description": "Провода, вентиль H и управляемое X определяют последовательность операций; изображение не является симуляцией.",
+    "packages": [
+      "quantikz"
+    ],
+    "libraries": [
+      "quantikz2"
+    ],
+    "stem": "quantum-circuit",
+    "engine": "xelatex",
+    "check": "Вентиль H на первом кубите и CNOT 1→2 переводят |00〉 в состояние (|00〉+|11〉)/√2."
+  },
+  {
+    "id": "11",
+    "group": "Геометрия",
+    "title": "Вписанная окружность",
+    "description": "Центр и точка касания построены из трёх вершин треугольника.",
+    "packages": [
+      "tkz-euclide"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "triangle-incircle",
+    "engine": "xelatex",
+    "check": "Расстояния I до трёх сторон равны; T принадлежит AB."
+  },
+  {
+    "id": "12",
+    "group": "Геометрия",
+    "title": "Высоты и ортоцентр",
+    "description": "Основания высот вычисляются проекциями на противоположные стороны.",
+    "packages": [
+      "tkz-euclide"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "triangle-altitudes",
+    "engine": "xelatex",
+    "check": "Высоты перпендикулярны сторонам и пересекаются в H."
+  },
+  {
+    "id": "13",
+    "group": "Геометрия",
+    "title": "Пересечения прямой и окружности",
+    "description": "Именованные пути возвращают обе точки пересечения.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "intersections"
+    ],
+    "stem": "line-circle-intersections",
+    "engine": "xelatex",
+    "check": "Обе точки удовлетворяют x²+y²=4 и y=0.8; не зависеть от порядка возврата."
+  },
+  {
+    "id": "14",
+    "group": "Геометрия",
+    "title": "Проекция и скалярное произведение",
+    "description": "Основание перпендикуляра связано с прямой через calc.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "calc",
+      "angles",
+      "quotes"
+    ],
+    "stem": "projection-calc",
+    "engine": "xelatex",
+    "check": "(P-H)·(B-A)=0; H лежит на AB."
+  },
+  {
+    "id": "15",
+    "group": "Геометрия",
+    "title": "Аффинное преобразование",
+    "description": "Один многоугольник показан до и после поворота и изменения масштаба.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "affine-transform",
+    "engine": "xelatex",
+    "check": "Вершины получены одной матрицей; прямые остаются прямыми."
+  },
+  {
+    "id": "16",
+    "group": "Геометрия",
+    "title": "Полярная кривая",
+    "description": "Роза r=2 cos(3θ); полярная параметризация без таблицы независимых точек.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "polar-rose",
+    "engine": "xelatex",
+    "check": "Три лепестка; углы PGF Math задаются в градусах."
+  },
+  {
+    "id": "17",
+    "group": "Алгоритмы и структуры",
+    "title": "Блок-схема алгоритма",
+    "description": "Типы узлов выражают ввод, решение, обработку и завершение.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "positioning",
+      "shapes.geometric"
+    ],
+    "stem": "flowchart",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "18",
+    "group": "Графы и иерархии",
+    "title": "Конечный автомат",
+    "description": "Состояния, начальное состояние, допускающее состояние и переходы.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "automata",
+      "positioning"
+    ],
+    "stem": "finite-automaton",
+    "engine": "xelatex",
+    "check": "Автомат принимает двоичные слова, заканчивающиеся на 1; у каждого состояния два перехода."
+  },
+  {
+    "id": "19",
+    "group": "Графы и иерархии",
+    "title": "Сеть Петри",
+    "description": "Места, переход и начальная маркировка заданы разными типами узлов.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "petri",
+      "positioning"
+    ],
+    "stem": "petri-net",
+    "engine": "xelatex",
+    "check": "После одного срабатывания маркировка (2,0) становится (1,1)."
+  },
+  {
+    "id": "20",
+    "group": "Графы и иерархии",
+    "title": "Граф как список связей",
+    "description": "Библиотека graphs отделяет перечисление рёбер от оформления узлов.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "graphs"
+    ],
+    "stem": "graph-cycle",
+    "engine": "xelatex",
+    "check": "Четыре вершины и пять ориентированных рёбер."
+  },
+  {
+    "id": "21",
+    "group": "Математические структуры",
+    "title": "Коммутативный квадрат",
+    "description": "Объекты и морфизмы оформлены через tikz-cd.",
+    "packages": [
+      "tikz-cd"
+    ],
+    "libraries": [],
+    "stem": "commutative-square",
+    "engine": "xelatex",
+    "check": "Коммутативность означает h∘f=k∘g и требует отдельного обоснования."
+  },
+  {
+    "id": "22",
+    "group": "Математические структуры",
+    "title": "Точная последовательность",
+    "description": "Линейная последовательность морфизмов с нулевыми объектами.",
+    "packages": [
+      "tikz-cd"
+    ],
+    "libraries": [],
+    "stem": "exact-sequence",
+    "engine": "xelatex",
+    "check": "Проверить ker(p)=im(i); тип стрелки сам по себе этого не доказывает."
+  },
+  {
+    "id": "23",
+    "group": "Графы и иерархии",
+    "title": "Синтаксическое дерево",
+    "description": "Вложенная структура выражения (a+b)×c хранит порядок операций.",
+    "packages": [
+      "forest"
+    ],
+    "libraries": [],
+    "stem": "syntax-tree",
+    "engine": "xelatex",
+    "check": "Пять узлов, четыре ребра; дерево соответствует (a+b)×c."
+  },
+  {
+    "id": "24",
+    "group": "Алгоритмы и структуры",
+    "title": "Карта понятий",
+    "description": "Радиальные ветви группируют методы визуализации.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "mindmap"
+    ],
+    "stem": "mind-map",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "25",
+    "group": "Алгоритмы и структуры",
+    "title": "Матрица и поток данных",
+    "description": "Матрица узлов и fit-группа выделяют вычислительный этап.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "matrix",
+      "fit"
+    ],
+    "stem": "matrix-dataflow",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "26",
+    "group": "Типографика и оформление",
+    "title": "Слои, рамка и выноска",
+    "description": "Фон отделён от объектов; callout указывает на семантическую цель.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "backgrounds",
+      "fit",
+      "positioning",
+      "shapes.callouts"
+    ],
+    "stem": "layered-annotations",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "27",
+    "group": "Типографика и оформление",
+    "title": "Штриховки и отсечение",
+    "description": "Пересечение областей получено clip, а не белой маской.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "patterns"
+    ],
+    "stem": "patterns-clipping",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "28",
+    "group": "Типографика и оформление",
+    "title": "Скобки и связанные размеры",
+    "description": "Размер вычисляется из параметра ширины; brace аннотирует интервал.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "decorations.pathreplacing"
+    ],
+    "stem": "brace-dimensions",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "29",
+    "group": "Механика",
+    "title": "Пружина и масса",
+    "description": "Пружина соединяет опору с anchor тела; x обозначает обобщённую координату.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "decorations.pathmorphing"
+    ],
+    "stem": "spring-mass",
+    "engine": "xelatex",
+    "check": "Для линейной пружины F=-kx; схема не задаёт решение уравнения движения."
+  },
+  {
+    "id": "30",
+    "group": "Механика",
+    "title": "Маятник",
+    "description": "Положение груза вычисляется из длины и угла отклонения.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "pendulum",
+    "engine": "xelatex",
+    "check": "Длина OM=L; сила тяжести направлена вертикально вниз."
+  },
+  {
+    "id": "31",
+    "group": "Механика",
+    "title": "Наклонная плоскость и силы",
+    "description": "Блок и базис сил повёрнуты на общий угол; тяжесть остаётся вертикальной.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "inclined-plane",
+    "engine": "xelatex",
+    "check": "Для равновесия N=mg cos α и сила трения направлена против возможного скольжения."
+  },
+  {
+    "id": "32",
+    "group": "Оптика",
+    "title": "Тонкая собирающая линза",
+    "description": "Два главных луча и положение изображения вычислены по формуле линзы.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "thin-lens",
+    "engine": "xelatex",
+    "check": "1/f=1/u+1/v; увеличение -v/u; параксиальное приближение."
+  },
+  {
+    "id": "33",
+    "group": "Оптика",
+    "title": "Оптическая скамья",
+    "description": "Линза и зеркало используют типизированные формы tikz-optics.",
+    "packages": [
+      "tikz",
+      "tikz-optics"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "optics"
+    ],
+    "stem": "optics-components",
+    "engine": "xelatex",
+    "check": "Формы компонентов не выполняют трассировку; путь луча проверяется отдельно."
+  },
+  {
+    "id": "34",
+    "group": "Научные данные",
+    "title": "Оптика: дифракционный профиль",
+    "description": "Однощелевая модель с явно обработанным пределом при нуле.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "diffraction-sinc",
+    "engine": "xelatex",
+    "check": "I(0)=I₀; нули при u=nπ, n≠0; дальняя зона."
+  },
+  {
+    "id": "35",
+    "group": "Научные данные",
+    "title": "Затухающие колебания",
+    "description": "Сигнал и огибающие получены из общей экспоненты затухания.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "damped-oscillation",
+    "engine": "xelatex",
+    "check": "|x(t)|≤exp(-0.22t); частота в аргументе cos переведена из радиан."
+  },
+  {
+    "id": "36",
+    "group": "Оптика",
+    "title": "Волновые фронты",
+    "description": "Радиусы фронтов возрастают на одинаковую длину волны.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "wavefronts",
+    "engine": "xelatex",
+    "check": "В однородной изотропной среде луч нормален фронтам."
+  },
+  {
+    "id": "37",
+    "group": "Электротехника",
+    "title": "Последовательная RLC-цепь",
+    "description": "Компоненты соединены в один контур с синусоидальным источником.",
+    "packages": [
+      "circuitikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "rlc-series",
+    "engine": "xelatex",
+    "check": "Все элементы имеют один ток; Z=R+jωL+1/(jωC)."
+  },
+  {
+    "id": "38",
+    "group": "Электротехника",
+    "title": "Операционный усилитель",
+    "description": "Неинвертирующий усилитель с обратной связью через делитель.",
+    "packages": [
+      "circuitikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "opamp-feedback",
+    "engine": "xelatex",
+    "check": "В идеальном линейном режиме коэффициент 1+Rf/Rg; проверить полярность входов."
+  },
+  {
+    "id": "39",
+    "group": "Электротехника",
+    "title": "Диодный выпрямитель",
+    "description": "Диод, нагрузка и выходные узлы образуют полуволновой выпрямитель.",
+    "packages": [
+      "circuitikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "diode-rectifier",
+    "engine": "xelatex",
+    "check": "Положительная полуволна проходит при указанном направлении диода; падение напряжения зависит от модели."
+  },
+  {
+    "id": "40",
+    "group": "Электротехника",
+    "title": "Логические элементы",
+    "description": "AND и NOT соединены через именованные порты.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "shapes.gates.logic.US",
+      "positioning"
+    ],
+    "stem": "logic-gates",
+    "engine": "xelatex",
+    "check": "Результат соответствует NAND; таблица истинности 00/01/10→1, 11→0."
+  },
+  {
+    "id": "41",
+    "group": "Электротехника",
+    "title": "Обозначения IEC",
+    "description": "Базовая библиотека circuits.ee.IEC как альтернативный язык компонентов.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "circuits.ee.IEC"
+    ],
+    "stem": "iec-circuit",
+    "engine": "xelatex",
+    "check": "Проверить топологию, подписи и масштаб; сборка не заменяет предметную проверку."
+  },
+  {
+    "id": "42",
+    "group": "Инженерные схемы",
+    "title": "Контур регулирования",
+    "description": "Сумматор, регулятор, объект и обратная связь соединены по портам.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "positioning"
+    ],
+    "stem": "feedback-control",
+    "engine": "xelatex",
+    "check": "При отрицательной единичной обратной связи T=CG/(1+CG)."
+  },
+  {
+    "id": "43",
+    "group": "Химия",
+    "title": "Ароматическое кольцо",
+    "description": "Шестичленное кольцо и чередование связей заданы chemfig.",
+    "packages": [
+      "chemfig"
+    ],
+    "libraries": [],
+    "stem": "benzene",
+    "engine": "xelatex",
+    "check": "Шесть атомов углерода; изображена кекулевская форма бензола."
+  },
+  {
+    "id": "44",
+    "group": "Химия",
+    "title": "Схема реакции",
+    "description": "Структурные формулы соединены реакционной стрелкой.",
+    "packages": [
+      "chemfig"
+    ],
+    "libraries": [],
+    "stem": "reaction-scheme",
+    "engine": "xelatex",
+    "check": "Показана схема окисления этанола; реагент и баланс не определены этой сокращённой записью."
+  },
+  {
+    "id": "45",
+    "group": "Химия",
+    "title": "Баланс реакции и ионы",
+    "description": "mhchem типографически различает коэффициенты, индексы и заряды.",
+    "packages": [
+      "tikz",
+      "mhchem"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "balanced-reaction",
+    "engine": "xelatex",
+    "check": "Первое уравнение сохраняет H и O; второе сохраняет суммарный заряд."
+  },
+  {
+    "id": "46",
+    "group": "Квантовые вычисления",
+    "title": "Подготовка и измерение",
+    "description": "H, фазовый вентиль и измерение действуют на одном проводе.",
+    "packages": [
+      "tikz",
+      "quantikz"
+    ],
+    "libraries": [
+      "quantikz2"
+    ],
+    "stem": "quantum-measurement",
+    "engine": "xelatex",
+    "check": "Фаза после H не меняет вероятности измерения в Z-базисе: P(0)=P(1)=1/2."
+  },
+  {
+    "id": "47",
+    "group": "Квантовые вычисления",
+    "title": "SWAP через три CNOT",
+    "description": "Порядок управляющего и целевого проводов задан явно.",
+    "packages": [
+      "tikz",
+      "quantikz"
+    ],
+    "libraries": [
+      "quantikz2"
+    ],
+    "stem": "quantum-swap",
+    "engine": "xelatex",
+    "check": "Для четырёх базисных входов цепь меняет |ab〉 на |ba〉."
+  },
+  {
+    "id": "48",
+    "group": "Научные данные",
+    "title": "Погрешности данных",
+    "description": "Синтетические точки с явно заданными симметричными ошибками.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "error-bars",
+    "engine": "xelatex",
+    "check": "Показаны условные ошибки; их статистический смысл должен задаваться источником данных."
+  },
+  {
+    "id": "49",
+    "group": "Научные данные",
+    "title": "Логарифмические оси",
+    "description": "Степенной закон ошибки на двух логарифмических осях.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "loglog-convergence",
+    "engine": "xelatex",
+    "check": "Все координаты положительны; наклон соответствует E=h²."
+  },
+  {
+    "id": "50",
+    "group": "Научные данные",
+    "title": "Полоса неопределённости",
+    "description": "fillbetween соединяет ранее определённые верхнюю и нижнюю границы.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "confidence-band",
+    "engine": "xelatex",
+    "check": "Полоса здесь условная ±0.5, не статистически оцененный доверительный интервал."
+  },
+  {
+    "id": "51",
+    "group": "Научные данные",
+    "title": "Группированные столбцы",
+    "description": "Две серии сравниваются на одинаковых категориях.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "grouped-bars",
+    "engine": "xelatex",
+    "check": "Столбцы начинаются с нуля; значения синтетические."
+  },
+  {
+    "id": "52",
+    "group": "Научные данные",
+    "title": "Гистограмма",
+    "description": "Бины вычислены статистической библиотекой из выборки.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "histogram",
+    "engine": "xelatex",
+    "check": "Сумма частот равна 12; интервалы и нормировка указаны явно."
+  },
+  {
+    "id": "53",
+    "group": "Научные данные",
+    "title": "Диаграмма размаха",
+    "description": "Квартили и границы усов заданы явно для учебной сводки.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "boxplot",
+    "engine": "xelatex",
+    "check": "1≤2≤3≤4≤6; способ вычисления квартилей и усов должен сопровождать реальные данные."
+  },
+  {
+    "id": "54",
+    "group": "Научные данные",
+    "title": "Тепловая карта",
+    "description": "Скалярное поле отображено цветом на регулярной сетке.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "heatmap",
+    "engine": "xelatex",
+    "check": "Сетка 3×3; значения цвета соответствуют point meta, а не положению точки."
+  },
+  {
+    "id": "55",
+    "group": "Научные данные",
+    "title": "Трёхмерная поверхность",
+    "description": "Гладкая поверхность z=exp(-x²-y²) с фиксированной камерой.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "surface-gaussian",
+    "engine": "xelatex",
+    "check": "Максимум 1 в начале координат; оценить зависимость от шага сетки."
+  },
+  {
+    "id": "56",
+    "group": "Научные данные",
+    "title": "Пространственная кривая",
+    "description": "Все три координаты спирали зависят от общего параметра.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "parametric-helix",
+    "engine": "xelatex",
+    "check": "x²+y²=1; за два оборота z меняется от 0 до 2."
+  },
+  {
+    "id": "57",
+    "group": "Научные данные",
+    "title": "Векторное поле",
+    "description": "Стрелки отображают поле (-y,x) на регулярной решётке.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "vector-field",
+    "engine": "xelatex",
+    "check": "Поле ортогонально радиусу; в начале вектор нулевой."
+  },
+  {
+    "id": "58",
+    "group": "Научные данные",
+    "title": "Разрыв функции",
+    "description": "Разрыв представлен NaN, соединение через него запрещено.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "discontinuous-function",
+    "engine": "xelatex",
+    "check": "Между ветвями отсутствует соединяющий отрезок; точки лишь редкая выборка 1/x."
+  },
+  {
+    "id": "59",
+    "group": "Научные данные",
+    "title": "Согласованные панели",
+    "description": "Две оси построены groupplots с общей разметкой.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "group-plots",
+    "engine": "xelatex",
+    "check": "Одинаковые диапазоны и размеры осей; фазовый сдвиг π/2."
+  },
+  {
+    "id": "60",
+    "group": "Научные данные",
+    "title": "Таблица и вычисляемый столбец",
+    "description": "pgfplotstable вычисляет x² и выводит таблицу с единой точностью.",
+    "packages": [
+      "pgfplotstable",
+      "booktabs"
+    ],
+    "libraries": [],
+    "stem": "table-derived-column",
+    "engine": "xelatex",
+    "check": "Расчётный столбец содержит 1,4,9,16; y обозначает синтетические данные."
+  },
+  {
+    "id": "61",
+    "group": "Научные данные",
+    "title": "Амплитудная характеристика RC",
+    "description": "Частотная характеристика первого порядка без Gnuplot.",
+    "packages": [
+      "pgfplots"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "bode-magnitude",
+    "engine": "xelatex",
+    "check": "В точке ωRC=1 уровень -3.0103 dB; высокочастотный наклон -20 dB/декаду."
+  },
+  {
+    "id": "62",
+    "group": "Пространство",
+    "title": "Куб и скрытые рёбра",
+    "description": "Вершины заданы в 3D; видимые рёбра выбраны для фиксированной камеры.",
+    "packages": [
+      "tikz",
+      "tikz-3dplot"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "cube-hidden-edges",
+    "engine": "xelatex",
+    "check": "12 рёбер; скрытие задано вручную и требует пересмотра при смене камеры."
+  },
+  {
+    "id": "63",
+    "group": "Пространство",
+    "title": "Сферические координаты",
+    "description": "Вектор и его проекция связаны радиусом и двумя углами.",
+    "packages": [
+      "tikz",
+      "tikz-3dplot"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "spherical-coordinates",
+    "engine": "xelatex",
+    "check": "Длина вектора равна 3; полярный угол отсчитывается от +z."
+  },
+  {
+    "id": "64",
+    "group": "Математические структуры",
+    "title": "Таблица знаков и вариаций",
+    "description": "Знаки производной и монотонность функции x² заданы явно.",
+    "packages": [
+      "tkz-tab"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "variation-table",
+    "engine": "xelatex",
+    "check": "Для f=x² производная 2x меняет знак с минуса на плюс в нуле."
+  },
+  {
+    "id": "65",
+    "group": "Геометрия",
+    "title": "Объектная геометрия Lua",
+    "description": "tkz-elements вычисляет середину отрезка как свойство объекта line.",
+    "packages": [
+      "tkz-euclide",
+      "tkz-elements"
+    ],
+    "libraries": [],
+    "stem": "lua-midpoint",
+    "engine": "lualatex",
+    "check": "AM=MB; M=(2.5,1). Вычисление выполняет Lua, а не экранная раскладка."
+  },
+  {
+    "id": "66",
+    "group": "Графы и иерархии",
+    "title": "Взвешенная сеть",
+    "description": "Вершины и рёбра tikz-network содержат веса и подписи.",
+    "packages": [
+      "tikz-network"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "network-weighted",
+    "engine": "xelatex",
+    "check": "Три вершины, три ребра; веса 2,3,4 не означают евклидовы длины."
+  },
+  {
+    "id": "67",
+    "group": "Графы и иерархии",
+    "title": "Граф с именованными вершинами",
+    "description": "tkz-graph задаёт структуру через Vertex и Edge.",
+    "packages": [
+      "tkz-graph"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "tkz-graph-triangle",
+    "engine": "xelatex",
+    "check": "Это цикл C₃: степень каждой вершины равна двум."
+  },
+  {
+    "id": "68",
+    "group": "Графы и иерархии",
+    "title": "Автоматическая раскладка графа",
+    "description": "Lua graphdrawing размещает ориентированный ациклический граф по слоям.",
+    "packages": [
+      "tikz"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "graphs",
+      "graphdrawing"
+    ],
+    "stem": "lua-graph-layout",
+    "engine": "lualatex",
+    "check": "Пять вершин, пять рёбер; изменение раскладки не меняет адреса связей."
+  },
+  {
+    "id": "69",
+    "group": "Механика",
+    "title": "Предметные формы tikzphysics",
+    "description": "Опора, блок и пружина используют формы и anchors предметной библиотеки.",
+    "packages": [
+      "tikzphysics"
+    ],
+    "libraries": [
+      "arrows.meta",
+      "calc"
+    ],
+    "stem": "physics-native-block",
+    "engine": "xelatex",
+    "check": "Контакт блока привязан к поверхности; пружина оканчивается на порте блока."
+  },
+  {
+    "id": "70",
+    "group": "Механика",
+    "title": "Физический эскиз physketch",
+    "description": "Стили поверхности, тела и силы унифицируют условные обозначения.",
+    "packages": [
+      "physketch"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "physketch-force",
+    "engine": "xelatex",
+    "check": "Сила приложена к телу; размер a относится к ширине, а не к перемещению."
+  },
+  {
+    "id": "71",
+    "group": "Оптика",
+    "title": "Формы линз simpleoptics",
+    "description": "Собирающая и рассеивающая линзы задаются параметрическими макросами.",
+    "packages": [
+      "simpleoptics"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "simpleoptics-lenses",
+    "engine": "xelatex",
+    "check": "Геометрия символов не заменяет расчёт лучей и толстолинзовую модель."
+  },
+  {
+    "id": "72",
+    "group": "Оптика",
+    "title": "Зеркальная линия задержки",
+    "description": "Зеркала optikz ориентированы относительно ломаного пути луча.",
+    "packages": [
+      "optikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "optikz-delay",
+    "engine": "xelatex",
+    "check": "Для каждого зеркала углы падения и отражения равны; оптический путь суммируется по сегментам."
+  },
+  {
+    "id": "73",
+    "group": "Оптика",
+    "title": "Линейчатый спектр водорода",
+    "description": "Спектральные линии берутся из справочных данных pgf-spectra; диапазон в нанометрах.",
+    "packages": [
+      "pgf-spectra"
+    ],
+    "libraries": [],
+    "stem": "hydrogen-spectrum",
+    "engine": "xelatex",
+    "check": "Это данные пакета, не собственный эксперимент; проверить источник базы и спектральный диапазон."
+  },
+  {
+    "id": "74",
+    "group": "Оптика",
+    "title": "Интерференционные полосы",
+    "description": "pgf-interference строит распределение для регулярной двухщелевой структуры.",
+    "packages": [
+      "pgf-interference"
+    ],
+    "libraries": [],
+    "stem": "double-slit-pattern",
+    "engine": "xelatex",
+    "check": "Монохроматическое приближение; параметры щелей и расстояния по умолчанию описаны в manual."
+  },
+  {
+    "id": "75",
+    "group": "Квантовая физика",
+    "title": "Диаграмма взаимодействия",
+    "description": "Фермионные и фотонная линии заданы типами tikz-feynman; раскладка явная.",
+    "packages": [
+      "tikz-feynman"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "feynman-scattering",
+    "engine": "xelatex",
+    "check": "Проверить направления фермионных стрелок и сохранение заряда в вершинах; амплитуда не вычисляется."
+  },
+  {
+    "id": "76",
+    "group": "Квантовая физика",
+    "title": "Ручная диаграмма Фейнмана",
+    "description": "tikz-feynhand типизирует вершины и пропагаторы без автоматической раскладки.",
+    "packages": [
+      "tikz-feynhand"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "feynhand-vertex",
+    "engine": "xelatex",
+    "check": "Это локальная вершина с направленными линиями, не утверждение о допустимости свободного распада электрона."
+  },
+  {
+    "id": "77",
+    "group": "Квантовые вычисления",
+    "title": "Блоховская сфера",
+    "description": "Единичный вектор задаёт чистое состояние кубита.",
+    "packages": [
+      "blochsphere"
+    ],
+    "libraries": [],
+    "stem": "bloch-state",
+    "engine": "xelatex",
+    "check": "Полюс +z обозначает |0〉; вектор чистого состояния имеет единичную норму."
+  },
+  {
+    "id": "78",
+    "group": "Электротехника",
+    "title": "Временная диаграмма",
+    "description": "Тактовый сигнал, разрешение и шина данных имеют общую временную шкалу.",
+    "packages": [
+      "tikz-timing"
+    ],
+    "libraries": [],
+    "stem": "timing-bus",
+    "engine": "xelatex",
+    "check": "Каждая строка длится 16 единиц; окна данных согласованы с EN."
+  },
+  {
+    "id": "79",
+    "group": "Инженерные схемы",
+    "title": "Усилия в стержневом элементе",
+    "description": "structmech показывает осевую силу и концевые моменты как связанные обозначения.",
+    "packages": [
+      "structmech"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "structmech-forces",
+    "engine": "xelatex",
+    "check": "Знаковую конвенцию и ориентацию локального базиса фиксировать до расчёта."
+  },
+  {
+    "id": "80",
+    "group": "Инженерные схемы",
+    "title": "Балка на двух опорах",
+    "description": "stanli разделяет точки, стержень, опоры и нагрузку.",
+    "packages": [
+      "stanli"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "stanli-beam",
+    "engine": "xelatex",
+    "check": "При центральной нагрузке вертикальные реакции P/2; горизонтальная реакция равна нулю."
+  },
+  {
+    "id": "81",
+    "group": "Инженерные схемы",
+    "title": "Кинематическая цепь",
+    "description": "Звенья kinematikz соединены через конечные anchors предыдущего звена.",
+    "packages": [
+      "kinematikz"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "kinematic-chain",
+    "engine": "xelatex",
+    "check": "Соседние звенья имеют общий шарнир; символы не задают динамику механизма."
+  },
+  {
+    "id": "82",
+    "group": "Инженерные схемы",
+    "title": "Размерные линии",
+    "description": "tikz-dimline связывает аннотацию с границами прямоугольной детали.",
+    "packages": [
+      "tikz",
+      "tikz-dimline"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "engineering-dimline",
+    "engine": "xelatex",
+    "check": "Текст L,h связан с параметрами W,H; соответствие стандарту оформления проверяется отдельно."
+  },
+  {
+    "id": "83",
+    "group": "Технологические процессы",
+    "title": "Насос и трубопровод",
+    "description": "chempid использует именованные порты условного обозначения насоса.",
+    "packages": [
+      "chempid"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "pid-pump",
+    "engine": "xelatex",
+    "check": "Проверить входной и выходной порты, направление потока и принятые P&ID-обозначения."
+  },
+  {
+    "id": "84",
+    "group": "Технологические процессы",
+    "title": "Резервуар и насос",
+    "description": "chemplants соединяет технологические аппараты через anchors pics.",
+    "packages": [
+      "chemplants"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "chemical-plant",
+    "engine": "xelatex",
+    "check": "Поток идёт от нижнего штуцера резервуара к входу насоса; масштаб схематический."
+  },
+  {
+    "id": "85",
+    "group": "Химия",
+    "title": "Молекулярные орбитали H₂",
+    "description": "Атомные орбитали и связывающая пара заданы modiagram.",
+    "packages": [
+      "modiagram"
+    ],
+    "libraries": [],
+    "stem": "hydrogen-orbitals",
+    "engine": "xelatex",
+    "check": "Два электрона на связывающей орбитали; порядок связи (2-0)/2=1, энергии условные."
+  },
+  {
+    "id": "86",
+    "group": "Пространство",
+    "title": "Lua-поверхность с обработкой видимости",
+    "description": "lua-tikz3dtools создаёт треугольную сетку сферы и выполняет пространственное упорядочение.",
+    "packages": [
+      "lua-tikz3dtools"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "lua-surface",
+    "engine": "lualatex",
+    "check": "Радиус сферы 2; проверить видимость и влияние числа сегментов на аппроксимацию."
+  },
+  {
+    "id": "87",
+    "group": "Планирование и коммуникация",
+    "title": "Диаграмма Ганта",
+    "description": "Задачи, длительности и зависимости представлены pgfgantt.",
+    "packages": [
+      "pgfgantt"
+    ],
+    "libraries": [],
+    "stem": "gantt-project",
+    "engine": "xelatex",
+    "check": "Рендер начинается после модели; review после рендера; интервалы включают оба конца."
+  },
+  {
+    "id": "88",
+    "group": "Планирование и коммуникация",
+    "title": "Состав и доли",
+    "description": "pgf-pie преобразует доли в углы секторов.",
+    "packages": [
+      "pgf-pie"
+    ],
+    "libraries": [
+      "arrows.meta"
+    ],
+    "stem": "pie-composition",
+    "engine": "xelatex",
+    "check": "Сумма долей 100%; для точного сравнения близких значений предпочтительны столбцы."
+  }
+]

@@ -1,0 +1,103 @@
+% TikZarium CP09 Visual Guide — XeLaTeX page template
+% All interface images are included from a generated evidence manifest.
+\documentclass[10pt,a4paper,landscape]{article}
+\usepackage[margin=8mm,headheight=13pt,headsep=3mm,footskip=4mm,includeheadfoot]{geometry}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\setmainfont{DejaVu Sans}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase]
+\usepackage{xcolor}
+\definecolor{Ink}{HTML}{263238}
+\definecolor{Muted}{HTML}{65747A}
+\definecolor{Teal}{HTML}{007C83}
+\definecolor{Line}{HTML}{D5DEE0}
+\definecolor{Panel}{HTML}{F3F7F7}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=Teal,urlcolor=Teal,pdftitle={TikZarium — визуальный гид по реальному интерфейсу CP09},pdfauthor={TikZarium}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlist[itemize]{leftmargin=1.2em,itemsep=1pt,topsep=2pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily\color{Muted}TikZarium · CP09 · интерфейс и рабочий процесс}
+\fancyhead[R]{\small\sffamily\color{Muted}Основано на наблюдаемых экранах}
+\fancyfoot[L]{\small\color{Muted}CP09 · оригинальный полноэкранный PNG сохранён в assets.}
+\fancyfoot[R]{\small\sffamily\color{Muted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\newcommand{\guideTitle}[1]{{\Large\sffamily\bfseries\color{Ink}#1}\par\vspace{3pt}\color{Teal}\rule{\linewidth}{1.1pt}\color{Ink}\vspace{5pt}}
+\newcommand{\sectionTitle}[1]{{\LARGE\sffamily\bfseries\color{Ink}#1}\par\vspace{4pt}}
+\newcommand{\eyebrow}[1]{{\small\sffamily\bfseries\color{Teal}\MakeUppercase{#1}}\par\vspace{2pt}}
+\newcommand{\meta}[1]{{\footnotesize\sffamily\color{Muted}\raggedright\emergencystretch=8pt #1\par}}
+\newcommand{\callout}[2]{\colorbox{Panel}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textcolor{Teal}{\sffamily\bfseries #1}\hspace{0.5em}#2}}}
+\newcommand{\screenImage}[2][]{\begin{center}\includegraphics[width=\linewidth,height=0.73\textheight,keepaspectratio,#1]{\detokenize{#2}}\end{center}}
+\begin{document}
+\thispagestyle{empty}
+\vspace*{9mm}
+{\sffamily\bfseries\color{Teal}\large TIKZARIUM · CP09 · VISUAL GUIDE}\par
+\vspace{8mm}
+{\sffamily\bfseries\color{Ink}\fontsize{30}{35}\selectfont Реальный интерфейс\par}
+{\sffamily\bfseries\color{Ink}\fontsize{30}{35}\selectfont и путь от исходника до графика\par}
+\vspace{6mm}
+{\large\color{Muted}Практический гид по наблюдаемым экранам, действиям редактора и границам подтверждённого поведения.}\par
+\vspace{10mm}
+\callout{Как читать кадры}{Полноэкранный PNG включён в пакет без изменения пикселей. Подпись объясняет действие, видимый результат и его конкретную границу.}\par
+\vfill
+\begin{tabular}{@{}p{0.23\linewidth}p{0.69\linewidth}@{}}
+\toprule
+\textcolor{Teal}{\sffamily\bfseries Сборка} & \GuideBuild \\
+\textcolor{Teal}{\sffamily\bfseries Исходный commit} & \GuideCommit \\
+\textcolor{Teal}{\sffamily\bfseries Основное окружение} & \GuideEnvironment \\
+\textcolor{Teal}{\sffamily\bfseries Текущий run} & \GuideRun \\
+\bottomrule
+\end{tabular}
+\vspace{8mm}
+\newpage
+\sectionTitle{Содержание и рамка наблюдений}
+\begin{minipage}[t]{0.54\linewidth}
+\eyebrow{Навигация}
+\GuideContents
+\end{minipage}\hfill
+\begin{minipage}[t]{0.40\linewidth}
+\eyebrow{Что подтверждает экран}
+Кадр показывает конкретный интерфейсный шаг в CP09. Полный source SHA, artifact ID/SHA и producer report связываются в \texttt{resolved\_manifest.json}.
+
+\eyebrow{Границы операции}
+Подписи относятся к видимому экрану и указанной операции. Они не доказывают поддержку другого источника, пакета или математического случая.
+
+\eyebrow{Честность платформы}
+ОС и размеры экрана берутся из producer report каждого capture. Linux/Xvfb не означает проверку Windows 10 или macOS.
+\end{minipage}
+\newpage
+\sectionTitle{Практический маршрут и эргономика}
+\begin{minipage}[t]{0.48\linewidth}
+\eyebrow{Короткий сценарий}
+\begin{enumerate}[leftmargin=1.3em,itemsep=4pt]
+  \item Проверьте имя активного файла и видимый диапазон исходника.
+  \item Выберите объект и сверьте его строку, параметр и исходный литерал.
+  \item Введите значение как черновик; до Apply проверьте его ещё раз.
+  \item После Apply проверьте текстовый патч и результат новой сборки.
+  \item Если правка нежелательна, отмените её и сверяйте восстановление с исходным файлом.
+  \item Сохраните, закройте и откройте документ заново; затем проверьте PDF и журнал.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\linewidth}
+\eyebrow{Эргономика: что видно и что остаётся гипотезой}
+Инспектор и редактор находятся рядом, поэтому перед изменением удобно читать источник и свойство в одном поле зрения. Видимая строка и имя активного файла снижают риск редактировать не тот документ. F1 открывает контекстную справку в зафиксированной сцене.
+
+Клавиатурная палитра и сочетания клавиш не включены в рекомендации, если они не показаны в кадре или журнале.
+
+\GuideReplayErgo
+\end{minipage}
+\newpage
+% Generated screen pages follow.
+\GuidePages
+\end{document}

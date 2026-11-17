@@ -16,6 +16,11 @@
 
 ## Current user workflow
 
+Scientific files using sibling resources such as `../data` can select an explicit
+project root in **Libraries → Project resources**, or pass `--project-root` to
+the CLI. [Project input verification guide (RU)](docs/PROJECT_INPUT_VERIFICATION_RU.md)
+describes the pre/post-build checks, export refusals and their limits.
+
 - Draw **line, arrow, rectangle, circle, text/math node, cubic Bézier** with real pointer gestures.
 - Keep **editable ordinary TikZ/TeX source visible beside the canvas**, with undo, save/open and minimal revision-checked patches. Unknown macros, comments and unrelated source remain authoritative.
 - Use compact grouped icon palettes, Properties/Libraries and **Russian contextual F1** from one C catalogue. Package-installed, project-loaded, engine-compatible, tool-implemented and help-available are **five independent statuses**.

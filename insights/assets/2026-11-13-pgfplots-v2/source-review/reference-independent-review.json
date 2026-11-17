@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "review": "READ_ONLY_SCRIPT_REVIEW",
+  "script_path": "/workspace/scratch/24342458ee84/workers/at4_addplot3/scripts/qa_at4_original_references.py",
+  "script_sha256": "dcc89bc8ac4deb289084d93aa01e82b445c98362fcb7420e7b5ed3206627cbab",
+  "overall": "NO_BLOCKERS",
+  "scope": "Review of reference capture script only; no TeX execution and no PDF visual review.",
+  "findings": [
+    {
+      "severity": "PASS",
+      "area": "canonical inputs and preservation",
+      "details": "The script fixes the exact eight-case inventory; evidence.fixture_bytes enforces each hard-coded original SHA256 before copy. It copies bytes into a fresh per-case output directory, records the copied-source hash, checks it again immediately before compile, and compares copied and canonical source hashes after each case. I independently verified all eight current source hashes match both the evidence constants and corresponding AT4_SOURCE_INTAKE.json entries."
+    },
+    {
+      "severity": "PASS",
+      "area": "bounded direct compilation",
+      "details": "xelatex is selected with shutil.which and its returned path is invoked directly in argv (no shell=True); argv includes -no-shell-escape, -halt-on-error, -file-line-error, and -recorder. Timeout is constrained to 1..600 seconds; timeout kills the process group and retains the console file. The script explicitly documents that no-shell-escape is not an OS sandbox."
+    },
+    {
+      "severity": "PASS",
+      "area": "engine and output provenance",
+      "details": "Report captures git HEAD, executable path from PATH, executable SHA256, actual xelatex --version output, full compiler argv per case, copied/canonical source hashes, catalogue hash, recorder proof for the copied source, and hashes of retained outputs. The symlink spelling returned by shutil.which is retained for invocation; hashing follows it to executable bytes."
+    },
+    {
+      "severity": "PASS",
+      "area": "strict font and glyph checks",
+      "details": "Both console output and original.log pass validate_xelatex_log (rejects missing-character and TeX error lines); console output separately rejects nullfont. pdffonts is audited for embedded fonts, pdfinfo enforces one page, and a rendered PNG is required."
+    },
+    {
+      "severity": "PASS",
+      "area": "acceptance labeling",
+      "details": "Scope and successful statuses say EXTERNAL_REFERENCE_ONLY; overall and per-case native_gui_acceptance remain NOT_RUN, and visual_review remains REQUIRED. Nothing in this report can be interpreted as native GUI acceptance."
+    },
+    {
+      "severity": "NON_BLOCKING_NOTE",
+      "area": "intake cross-reference",
+      "details": "The script verifies the intake catalogue hash but does not programmatically cross-check each evidence fixture SHA/path against that case's files[] entry. Current values were independently confirmed identical for all eight cases; adding this cross-check would make future intake drift fail explicitly."
+    }
+  ],
+  "checks_performed": [
+    "Read-only source inspection",
+    "In-memory Python syntax parse",
+    "Independent SHA comparison for all eight canonical sources"
+  ],
+  "not_performed": [
+    "XeLaTeX/TeX execution",
+    "PDF visual inspection",
+    "native GUI run",
+    "workflow execution"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "tikzarium.independent_final_integration_review.v1",
+  "reviewed_at": "2026-11-13",
+  "root_head": "0d33710e4b20dbb8bdef6b2e5fe377e840bd20b9",
+  "decision": "CLEAR_SOURCE_INTEGRATION_REVIEW_PENDING_ROOT_GATES_AND_NATIVE_ACCEPTANCE",
+  "scope": "Read-only check of applied eight-original AT4 integration plus SV-009-last strict-log handling.",
+  "patches": {
+    "at4_eight_originals": {
+      "path": "/workspace/scratch/24342458ee84/reviews/at4_addplot3/at4-addplot3-eight-originals.patch",
+      "sha256": "6e7a5accce54c635b0e62691f7a5a881767dca7efe42ab7cc199f19c47e4a38a",
+      "result": "Applied integration inspected; no source mismatch found."
+    },
+    "sv009_last": {
+      "path": "/workspace/scratch/24342458ee84/workers/sv009-last.patch",
+      "sha256": "abc04404b891fab54772e50e388ce620b060ab9075230617cd31989e963a3403",
+      "result": "Current evidence inventory and driver handling inspected."
+    }
+  },
+  "at4_source_and_operation_review": {
+    "all_eight_original_hashes_match_live_sources": true,
+    "sha256_by_fixture": {
+      "AT4-09": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "AT4-48": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+      "AT4-49": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+      "AT4-50": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+      "AT4-55": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "AT4-56": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "AT4-58": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+      "AT4-61": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758"
+    },
+    "previous_six_operations_unchanged": true,
+    "previous_six_operations": {
+      "AT4-09": "AddPlot candidate 1, samples 161→181",
+      "AT4-48": "Axis candidate 0, width 10cm→11cm",
+      "AT4-49": "Axis candidate 0, width 10cm→11cm",
+      "AT4-50": "Axis candidate 0, width 10cm→11cm",
+      "AT4-58": "Axis candidate 0, width 10cm→11cm",
+      "AT4-61": "AddPlot candidate 1, samples 161→201; original domain .01:100 retained"
+    },
+    "added_3d_operations": {
+      "AT4-55": "AddPlot candidate 1, samples 21→25; exact exp(-x^2-y^2), surf, both -2:2 domains and view={45}{30} checked; only samples is edited.",
+      "AT4-56": "AddPlot candidate 1, samples 181→201; exact (cos(x),sin(x),x/360), domain 0:720, samples y=0 and view={50}{25} checked; only samples is edited."
+    },
+    "3d_source_checks": "55 checks analytic Gaussian formula, positive/reflection-symmetric source model and central maximum 1. 56 checks common parameter, PGF degree trig semantics/no override, two turns, unit radius and z 0→2. The source validators require exactly one analytic addplot3 and reject fabricated measurement series/legend, altered formula/domain/view/density, duplicate keys/namespaces and catalogue reinterpretation.",
+    "ownership": "GUI operation candidate index 1 targets the sole AddPlot after axis candidate 0; only existing samples property index 0 is edited. No new 3D property, z/view editing, or general 3D semantic adapter is claimed.",
+    "visual_or_native_claims": "None. Source validator sets visual_check, pdf_check and native_gui_acceptance to NOT_RUN and independent_visual_review to REQUIRED; report/manifest retain review-required status."
+  },
+  "v2_and_sv009_review": {
+    "v2_fixture_set_unchanged": true,
+    "v2_fixture_order": ["formula", "external-tables", "SV-001", "SV-003", "SV-022", "SV-029", "SV-040", "SV-009"],
+    "sv009_last": true,
+    "v2_operation_inventory_unchanged": true,
+    "v2_operation_count": 26,
+    "evidence_test_guards_v2_inventory": "qa_at4_native_evidence_test.py asserts default suite equals v2, 8 fixtures, 26 operations equal OPERATIONS, and default manifest excludes AT4 fixtures.",
+    "strict_warning_diagnostics_before_failure": "build() records actual GUI log, current PDF info/fonts/text/render, engine recorder proof, and AT4 source semantics where applicable; it writes a per-build strict_xelatex_warning_gate=FAIL and details before validate_xelatex_log or explicit strict-warning raise.",
+    "failure_cannot_be_overwritten_by_pass": "A strict log failure raises from build, exits the fixture loop before validate_all can return PASS, and enters capture_failure which sets top-level status=FAIL. Finally only stops, hashes files, and writes report; it does not set PASS. SV-009-last lets preceding V2 fixture diagnostics complete while the overall V2 run remains failed if SV-009 retains the strict glyph warning.",
+    "code_evidence": {
+      "fixture_order_and_v2_inventory": "scripts/qa_pgfplots_vertical_evidence.py:69-80",
+      "strict_log_diagnostics_and_failure": "scripts/qa_pgfplots_vertical_x11.py:395-444",
+      "main_loop_failure_path": "scripts/qa_pgfplots_vertical_x11.py:506-528",
+      "failure_capture_status": "scripts/qa_sci_compact_x11.py:489-496"
+    }
+  },
+  "acceptance_boundaries": {
+    "root_python_rust_gates": "Root-owned rerun; not run by this reviewer.",
+    "full_v2_native": "Must run with current driver; strict SV-009 glyph warning remains FAIL after diagnostics.",
+    "full_at4_native": "Must run for all eight originals with fresh GUI/source/clipboard/build/PDF evidence and independent visual review.",
+    "old_native_acceptance_transfer": "NOT_ALLOWED",
+    "reviewer_modified_root_files": false
+  },
+  "reviewer_notes": "I independently computed all eight current source SHA256 values and inspected the operation map, source validators, inventory test, and strict-warning control flow. I did not run tests, TeX, GUI, or edit the root checkout."
+}

@@ -1,0 +1,152 @@
+   Compiling tikzarium-app v1.0.0-rc.1 (/workspace/scratch/bd022a30f859/recovered/source/crates/tikzarium-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.82s
+     Running unittests src/main.rs (target/debug/deps/tikzarium_app-ad254da7be96314f)
+
+running 1 test
+FRAME after-typed toolbar_bottom=66.0 interact_height=26.0
+FRAME after-typed inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT after-typed {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT after-typed {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT after-typed {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT after-typed {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT after-typed {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT after-typed {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT after-typed {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT after-typed {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT after-typed {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT after-typed {"center":[1049.875,159.0],"height":42.0,"max":[1171.75,180.0],"min":[928.0,138.0],"rows":3,"text":"Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.","visible_max":[1171.75,180.0],"visible_min":[928.0,138.0]}
+RECT after-typed {"center":[992.5625,202.0],"height":16.0,"max":[1057.125,210.0],"min":[928.0,194.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,210.0],"visible_min":[928.0,194.0]}
+RECT after-typed {"center":[1042.375,228.0],"height":28.0,"max":[1156.75,242.0],"min":[928.0,214.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,242.0],"visible_min":[928.0,214.0]}
+RECT after-typed {"center":[995.78125,269.0],"height":15.0,"max":[1045.5625,276.5],"min":[946.0,261.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,276.5],"visible_min":[946.0,261.5]}
+RECT after-typed {"center":[1049.375,314.0],"height":56.0,"max":[1152.75,342.0],"min":[946.0,286.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,342.0],"visible_min":[946.0,286.0]}
+RECT after-typed {"center":[1018.265625,359.0],"height":15.0,"max":[1086.53125,366.5],"min":[950.0,351.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,366.5],"visible_min":[950.0,351.5]}
+RECT after-typed {"center":[1056.375,404.0],"height":56.0,"max":[1166.75,432.0],"min":[946.0,376.0],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,432.0],"visible_min":[946.0,376.0]}
+CLICK Распознать оси и ряды x=1018.3 y=359.0
+FRAME after-scan toolbar_bottom=66.0 interact_height=26.0
+FRAME after-scan inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT after-scan {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT after-scan {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT after-scan {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT after-scan {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT after-scan {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT after-scan {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT after-scan {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT after-scan {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT after-scan {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT after-scan {"center":[1049.875,159.0],"height":42.0,"max":[1171.75,180.0],"min":[928.0,138.0],"rows":3,"text":"Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.","visible_max":[1171.75,180.0],"visible_min":[928.0,138.0]}
+RECT after-scan {"center":[992.5625,202.0],"height":16.0,"max":[1057.125,210.0],"min":[928.0,194.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,210.0],"visible_min":[928.0,194.0]}
+RECT after-scan {"center":[1042.375,228.0],"height":28.0,"max":[1156.75,242.0],"min":[928.0,214.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,242.0],"visible_min":[928.0,214.0]}
+RECT after-scan {"center":[995.78125,269.0],"height":15.0,"max":[1045.5625,276.5],"min":[946.0,261.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,276.5],"visible_min":[946.0,261.5]}
+RECT after-scan {"center":[1049.375,314.0],"height":56.0,"max":[1152.75,342.0],"min":[946.0,286.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,342.0],"visible_min":[946.0,286.0]}
+RECT after-scan {"center":[1018.265625,359.0],"height":15.0,"max":[1086.53125,366.5],"min":[950.0,351.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,366.5],"visible_min":[950.0,351.5]}
+RECT after-scan {"center":[1038.078125,389.0],"height":15.0,"max":[1126.15625,396.5],"min":[950.0,381.5],"rows":1,"text":"Выберите исходную команду","visible_max":[1126.15625,396.5],"visible_min":[950.0,381.5]}
+RECT after-scan {"center":[977.578125,414.0],"height":16.0,"max":[1009.15625,422.0],"min":[946.0,406.0],"rows":1,"text":"Параметр","visible_max":[1009.15625,422.0],"visible_min":[946.0,406.0]}
+RECT after-scan {"center":[986.28125,439.0],"height":15.0,"max":[1022.5625,446.5],"min":[950.0,431.5],"rows":1,"text":"Число точек","visible_max":[1022.5625,446.5],"visible_min":[950.0,431.5]}
+RECT after-scan {"center":[1057.375,477.0],"height":42.0,"max":[1168.75,498.0],"min":[946.0,456.0],"rows":3,"text":"Распознано 2 axis/addplot; доступны только проверенные литералы. Другие конструкции остаются исходным TeX.","visible_max":[1168.75,498.0],"visible_min":[946.0,456.0]}
+RECT after-scan {"center":[1056.375,530.0],"height":56.0,"max":[1166.75,558.0],"min":[946.0,502.0],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,558.0],"visible_min":[946.0,502.0]}
+CLICK Выберите исходную команду x=1038.1 y=389.0
+FRAME combo-open toolbar_bottom=66.0 interact_height=26.0
+FRAME combo-open inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT combo-open {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT combo-open {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT combo-open {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT combo-open {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT combo-open {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT combo-open {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT combo-open {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT combo-open {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT combo-open {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT combo-open {"center":[1049.875,159.0],"height":42.0,"max":[1171.75,180.0],"min":[928.0,138.0],"rows":3,"text":"Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.","visible_max":[1171.75,180.0],"visible_min":[928.0,138.0]}
+RECT combo-open {"center":[992.5625,202.0],"height":16.0,"max":[1057.125,210.0],"min":[928.0,194.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,210.0],"visible_min":[928.0,194.0]}
+RECT combo-open {"center":[1042.375,228.0],"height":28.0,"max":[1156.75,242.0],"min":[928.0,214.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,242.0],"visible_min":[928.0,214.0]}
+RECT combo-open {"center":[995.78125,269.0],"height":15.0,"max":[1045.5625,276.5],"min":[946.0,261.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,276.5],"visible_min":[946.0,261.5]}
+RECT combo-open {"center":[1049.375,314.0],"height":56.0,"max":[1152.75,342.0],"min":[946.0,286.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,342.0],"visible_min":[946.0,286.0]}
+RECT combo-open {"center":[1018.265625,359.0],"height":15.0,"max":[1086.53125,366.5],"min":[950.0,351.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,366.5],"visible_min":[950.0,351.5]}
+RECT combo-open {"center":[1038.078125,389.0],"height":15.0,"max":[1126.15625,396.5],"min":[950.0,381.5],"rows":1,"text":"Выберите исходную команду","visible_max":[1126.15625,396.5],"visible_min":[950.0,381.5]}
+RECT combo-open {"center":[977.578125,414.0],"height":16.0,"max":[1009.15625,422.0],"min":[946.0,406.0],"rows":1,"text":"Параметр","visible_max":[1009.15625,422.0],"visible_min":[946.0,406.0]}
+RECT combo-open {"center":[986.28125,439.0],"height":15.0,"max":[1022.5625,446.5],"min":[950.0,431.5],"rows":1,"text":"Число точек","visible_max":[1022.5625,446.5],"visible_min":[950.0,431.5]}
+RECT combo-open {"center":[1057.375,477.0],"height":42.0,"max":[1168.75,498.0],"min":[946.0,456.0],"rows":3,"text":"Распознано 2 axis/addplot; доступны только проверенные литералы. Другие конструкции остаются исходным TeX.","visible_max":[1168.75,498.0],"visible_min":[946.0,456.0]}
+RECT combo-open {"center":[1056.375,530.0],"height":56.0,"max":[1166.75,558.0],"min":[946.0,502.0],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,558.0],"visible_min":[946.0,502.0]}
+RECT combo-open {"center":[1001.171875,422.0],"height":15.0,"max":[1045.34375,429.5],"min":[957.0,414.5],"rows":1,"text":"axis · строка 45","visible_max":[1045.34375,429.5],"visible_min":[957.0,414.5]}
+RECT combo-open {"center":[1012.671875,452.0],"height":15.0,"max":[1068.34375,459.5],"min":[957.0,444.5],"rows":1,"text":"addplot · строка 61","visible_max":[1068.34375,459.5],"visible_min":[957.0,444.5]}
+CLICK axis · строка 45 x=1001.2 y=422.0
+FRAME axis-selected-150 toolbar_bottom=66.0 interact_height=26.0
+FRAME axis-selected-150 inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT axis-selected-150 {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT axis-selected-150 {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT axis-selected-150 {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT axis-selected-150 {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT axis-selected-150 {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT axis-selected-150 {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT axis-selected-150 {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT axis-selected-150 {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT axis-selected-150 {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT axis-selected-150 {"center":[1049.875,159.0],"height":42.0,"max":[1171.75,180.0],"min":[928.0,138.0],"rows":3,"text":"Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.","visible_max":[1171.75,180.0],"visible_min":[928.0,138.0]}
+RECT axis-selected-150 {"center":[992.5625,202.0],"height":16.0,"max":[1057.125,210.0],"min":[928.0,194.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,210.0],"visible_min":[928.0,194.0]}
+RECT axis-selected-150 {"center":[1042.375,228.0],"height":28.0,"max":[1156.75,242.0],"min":[928.0,214.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,242.0],"visible_min":[928.0,214.0]}
+RECT axis-selected-150 {"center":[995.78125,269.0],"height":15.0,"max":[1045.5625,276.5],"min":[946.0,261.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,276.5],"visible_min":[946.0,261.5]}
+RECT axis-selected-150 {"center":[1049.375,314.0],"height":56.0,"max":[1152.75,342.0],"min":[946.0,286.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,342.0],"visible_min":[946.0,286.0]}
+RECT axis-selected-150 {"center":[1018.265625,359.0],"height":15.0,"max":[1086.53125,366.5],"min":[950.0,351.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,366.5],"visible_min":[950.0,351.5]}
+RECT axis-selected-150 {"center":[994.171875,389.0],"height":15.0,"max":[1038.34375,396.5],"min":[950.0,381.5],"rows":1,"text":"axis · строка 45","visible_max":[1038.34375,396.5],"visible_min":[950.0,381.5]}
+RECT axis-selected-150 {"center":[977.578125,414.0],"height":16.0,"max":[1009.15625,422.0],"min":[946.0,406.0],"rows":1,"text":"Параметр","visible_max":[1009.15625,422.0],"visible_min":[946.0,406.0]}
+RECT axis-selected-150 {"center":[986.28125,439.0],"height":15.0,"max":[1022.5625,446.5],"min":[950.0,431.5],"rows":1,"text":"Число точек","visible_max":[1022.5625,446.5],"visible_min":[950.0,431.5]}
+RECT axis-selected-150 {"center":[996.390625,463.0],"height":14.0,"max":[1046.78125,470.0],"min":[946.0,456.0],"rows":1,"text":"Из исходника: 150","visible_max":[1046.78125,470.0],"visible_min":[946.0,456.0]}
+RECT axis-selected-150 {"center":[1000.171875,487.0],"height":15.0,"max":[1036.34375,494.5],"min":[964.0,479.5],"rows":1,"text":"Справка · F1","visible_max":[1036.34375,494.5],"visible_min":[964.0,479.5]}
+RECT axis-selected-150 {"center":[961.453125,514.0],"height":16.0,"max":[972.90625,522.0],"min":[950.0,506.0],"rows":1,"text":"150","visible_max":[972.90625,522.0],"visible_min":[950.0,506.0]}
+RECT axis-selected-150 {"center":[983.828125,541.125],"height":15.0,"max":[1017.65625,548.625],"min":[950.0,533.625],"rows":1,"text":"Применить","visible_max":[1017.65625,548.625],"visible_min":[950.0,533.625]}
+RECT axis-selected-150 {"center":[1044.375,572.125],"height":28.0,"max":[1142.75,586.125],"min":[946.0,558.125],"rows":2,"text":"Литерал принадлежит конкретной команде; можно править точечно","visible_max":[1142.75,586.125],"visible_min":[946.0,558.125]}
+RECT axis-selected-150 {"center":[1056.375,618.125],"height":56.0,"max":[1166.75,646.125],"min":[946.0,590.125],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,646.125],"visible_min":[946.0,590.125]}
+CLICK 150 x=961.5 y=514.0
+FRAME axis-draft-151 toolbar_bottom=66.0 interact_height=26.0
+FRAME axis-draft-151 inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT axis-draft-151 {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT axis-draft-151 {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT axis-draft-151 {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT axis-draft-151 {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT axis-draft-151 {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT axis-draft-151 {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT axis-draft-151 {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT axis-draft-151 {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT axis-draft-151 {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT axis-draft-151 {"center":[1049.875,159.0],"height":42.0,"max":[1171.75,180.0],"min":[928.0,138.0],"rows":3,"text":"Код изменён вручную. Выберите объект на эскизе или заново распознайте оси и ряды PGFPlots.","visible_max":[1171.75,180.0],"visible_min":[928.0,138.0]}
+RECT axis-draft-151 {"center":[992.5625,202.0],"height":16.0,"max":[1057.125,210.0],"min":[928.0,194.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,210.0],"visible_min":[928.0,194.0]}
+RECT axis-draft-151 {"center":[1042.375,228.0],"height":28.0,"max":[1156.75,242.0],"min":[928.0,214.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,242.0],"visible_min":[928.0,214.0]}
+RECT axis-draft-151 {"center":[995.78125,269.0],"height":15.0,"max":[1045.5625,276.5],"min":[946.0,261.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,276.5],"visible_min":[946.0,261.5]}
+RECT axis-draft-151 {"center":[1049.375,314.0],"height":56.0,"max":[1152.75,342.0],"min":[946.0,286.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,342.0],"visible_min":[946.0,286.0]}
+RECT axis-draft-151 {"center":[1018.265625,359.0],"height":15.0,"max":[1086.53125,366.5],"min":[950.0,351.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,366.5],"visible_min":[950.0,351.5]}
+RECT axis-draft-151 {"center":[994.171875,389.0],"height":15.0,"max":[1038.34375,396.5],"min":[950.0,381.5],"rows":1,"text":"axis · строка 45","visible_max":[1038.34375,396.5],"visible_min":[950.0,381.5]}
+RECT axis-draft-151 {"center":[977.578125,414.0],"height":16.0,"max":[1009.15625,422.0],"min":[946.0,406.0],"rows":1,"text":"Параметр","visible_max":[1009.15625,422.0],"visible_min":[946.0,406.0]}
+RECT axis-draft-151 {"center":[986.28125,439.0],"height":15.0,"max":[1022.5625,446.5],"min":[950.0,431.5],"rows":1,"text":"Число точек","visible_max":[1022.5625,446.5],"visible_min":[950.0,431.5]}
+RECT axis-draft-151 {"center":[996.390625,463.0],"height":14.0,"max":[1046.78125,470.0],"min":[946.0,456.0],"rows":1,"text":"Из исходника: 150","visible_max":[1046.78125,470.0],"visible_min":[946.0,456.0]}
+RECT axis-draft-151 {"center":[1000.171875,487.0],"height":15.0,"max":[1036.34375,494.5],"min":[964.0,479.5],"rows":1,"text":"Справка · F1","visible_max":[1036.34375,494.5],"visible_min":[964.0,479.5]}
+RECT axis-draft-151 {"center":[961.453125,514.0],"height":16.0,"max":[972.90625,522.0],"min":[950.0,506.0],"rows":1,"text":"151","visible_max":[972.90625,522.0],"visible_min":[950.0,506.0]}
+RECT axis-draft-151 {"center":[983.828125,541.125],"height":15.0,"max":[1017.65625,548.625],"min":[950.0,533.625],"rows":1,"text":"Применить","visible_max":[1017.65625,548.625],"visible_min":[950.0,533.625]}
+RECT axis-draft-151 {"center":[1044.375,572.125],"height":28.0,"max":[1142.75,586.125],"min":[946.0,558.125],"rows":2,"text":"Литерал принадлежит конкретной команде; можно править точечно","visible_max":[1142.75,586.125],"visible_min":[946.0,558.125]}
+RECT axis-draft-151 {"center":[1056.375,618.125],"height":56.0,"max":[1166.75,646.125],"min":[946.0,590.125],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,646.125],"visible_min":[946.0,590.125]}
+CLICK Применить x=983.8 y=541.1
+FRAME console-raw-log toolbar_bottom=66.0 interact_height=26.0
+FRAME console-raw-log inspector=[[920.0 66.0] - [1180.0 650.0]]
+RECT console-raw-log {"center":[1224.078125,15.0],"height":16.0,"max":[1276.15625,23.0],"min":[1172.0,7.0],"rows":1,"text":"TikZarium Studio","visible_max":[1180.0,23.0],"visible_min":[1172.0,7.0]}
+RECT console-raw-log {"center":[1156.0,48.0],"height":15.0,"max":[1156.0,55.5],"min":[1156.0,40.5],"rows":1,"text":"","visible_max":[1156.0,55.5],"visible_min":[1156.0,40.5]}
+RECT console-raw-log {"center":[1156.0,48.0],"height":17.0,"max":[1158.828125,56.5],"min":[1153.171875,39.5],"rows":1,"text":"?","visible_max":[1158.828125,56.5],"visible_min":[1153.171875,39.5]}
+RECT console-raw-log {"center":[1119.0,48.0],"height":15.0,"max":[1119.0,55.5],"min":[1119.0,40.5],"rows":1,"text":"","visible_max":[1119.0,55.5],"visible_min":[1119.0,40.5]}
+RECT console-raw-log {"center":[1082.0,48.0],"height":15.0,"max":[1082.0,55.5],"min":[1082.0,40.5],"rows":1,"text":"","visible_max":[1082.0,55.5],"visible_min":[1082.0,40.5]}
+RECT console-raw-log {"center":[959.8125,81.0],"height":15.0,"max":[987.625,88.5],"min":[932.0,73.5],"rows":1,"text":"Свойства","visible_max":[987.625,88.5],"visible_min":[932.0,73.5]}
+RECT console-raw-log {"center":[1036.953125,81.0],"height":15.0,"max":[1073.28125,88.5],"min":[1000.625,73.5],"rows":1,"text":"Библиотеки","visible_max":[1073.28125,88.5],"visible_min":[1000.625,73.5]}
+RECT console-raw-log {"center":[1111.09375,81.0],"height":15.0,"max":[1135.90625,88.5],"min":[1086.28125,73.5],"rows":1,"text":"Справка","visible_max":[1135.90625,88.5],"visible_min":[1086.28125,73.5]}
+RECT console-raw-log {"center":[984.078125,121.0],"height":15.0,"max":[1036.15625,128.5],"min":[932.0,113.5],"rows":1,"text":"Отменить правку","visible_max":[1036.15625,128.5],"visible_min":[932.0,113.5]}
+RECT console-raw-log {"center":[1040.0,152.0],"height":28.0,"max":[1152.0,166.0],"min":[928.0,138.0],"rows":2,"text":"SC2: точечная правка samples, сохранившая чужой TeX; Undo доступен","visible_max":[1152.0,166.0],"visible_min":[928.0,138.0]}
+RECT console-raw-log {"center":[992.5625,188.0],"height":16.0,"max":[1057.125,196.0],"min":[928.0,180.0],"rows":1,"text":"Параметры рисунка","visible_max":[1057.125,196.0],"visible_min":[928.0,180.0]}
+RECT console-raw-log {"center":[1042.375,214.0],"height":28.0,"max":[1156.75,228.0],"min":[928.0,200.0],"rows":2,"text":"Выберите объект на эскизе или команду PGFPlots ниже.","visible_max":[1156.75,228.0],"visible_min":[928.0,200.0]}
+RECT console-raw-log {"center":[995.78125,255.0],"height":15.0,"max":[1045.5625,262.5],"min":[946.0,247.5],"rows":1,"text":"График PGFPlots","visible_max":[1045.5625,262.5],"visible_min":[946.0,247.5]}
+RECT console-raw-log {"center":[1049.375,300.0],"height":56.0,"max":[1152.75,328.0],"min":[946.0,272.0],"rows":4,"text":"Показываются значения, явно записанные в исходнике. Макросы и значения TeX по умолчанию не подставляются.","visible_max":[1152.75,328.0],"visible_min":[946.0,272.0]}
+RECT console-raw-log {"center":[1018.265625,345.0],"height":15.0,"max":[1086.53125,352.5],"min":[950.0,337.5],"rows":1,"text":"Распознать оси и ряды","visible_max":[1086.53125,352.5],"visible_min":[950.0,337.5]}
+RECT console-raw-log {"center":[1043.375,376.0],"height":28.0,"max":[1140.75,390.0],"min":[946.0,362.0],"rows":2,"text":"Источник изменился. Распознайте команды заново.","visible_max":[1140.75,390.0],"visible_min":[946.0,362.0]}
+RECT console-raw-log {"center":[1056.375,422.0],"height":56.0,"max":[1166.75,450.0],"min":[946.0,394.0],"rows":4,"text":"Изменение затрагивает одно значение исходника и попадает в общий список отмены. Текст и формулы ряда остаются в файле без пересчёта.","visible_max":[1166.75,450.0],"visible_min":[946.0,394.0]}
+RECT console-raw-log {"center":[158.25,520.0],"height":15.0,"max":[207.46875,527.5],"min":[109.03125,512.5],"rows":1,"text":"Raw XeLaTeX log","visible_max":[207.46875,527.5],"visible_min":[109.03125,512.5]}
+RECT console-raw-log {"center":[245.6875,520.0],"height":15.0,"max":[270.90625,527.5],"min":[220.46875,512.5],"rows":1,"text":"Copy log","visible_max":[270.90625,527.5],"visible_min":[220.46875,512.5]}
+PROBE_SCOPE UNIT_EVENT_COORDINATE_PROPOSAL_ONLY; not native acceptance
+test source_workspace_tests::diagnostic_inspector_layout_1180_680_temporary_probe ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 220 filtered out; finished in 0.09s
+

@@ -1,0 +1,1013 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_READ_ONLY_AT4_RUN05_AUDIT",
+  "assessment": "PASS_BOUNDED_EIGHT_CASE_HOSTED_GUI_AT4_VERTICAL; AGGREGATE_SC3_AT4_NOT_VERIFIED",
+  "artifact": {
+    "run_id": 43415761917,
+    "zip_bytes": 67817479,
+    "zip_sha256": "9e182b53da0392215fe76e3c55b24e9712be29d0be952c36ac3ff946c5e51085",
+    "root_verified_crc_safe_entries_and_file_hashes": true,
+    "safe_entries": 1441,
+    "native_files_hash_verified": 1339,
+    "reference_files_hash_verified": 90
+  },
+  "runtime_identity": {
+    "source_head_sha": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "production_elf_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "observed_proc_exe_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "pid": 4997,
+    "window": "6291459",
+    "observed_proc_exe": "/home/runner/work/tikzarium/tikzarium/target/debug/tikzarium-app",
+    "identity_match": true
+  },
+  "suite": {
+    "scope": "HOSTED_GUI_AT4_ORIGINALS_BOUNDED_VERTICAL",
+    "automated_status": "PASS_AUTOMATED_ORIGINAL_REVIEW_REQUIRED",
+    "native_acceptance_field": "REQUIRES_INDEPENDENT_REVIEW",
+    "operation_count": 8,
+    "operations_observed": 8,
+    "physical_win10": "NOT_RUN",
+    "physical_mac_arm": "NOT_RUN",
+    "aggregate_sc3_at4": "NOT_VERIFIED",
+    "case_evidence": "For each of eight cases, the seven identified stage screenshots (opened, first draft, first apply, undo, final apply, reopened, built) were present. Source/editor captures and native action trace accompany the stages.",
+    "suite_log_warning_gate": "PASS for all eight; retained logs may include expected shell-escape-disabled and PGFPlots compatibility notifications."
+  },
+  "cases": {
+    "AT4-09": {
+      "operation": {
+        "property": "addplot samples",
+        "before": "161",
+        "after": "181",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "patched_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+      "recorder_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+      "reference_source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "literal response(x)=1/(1+x^2) verified",
+        "evenness and peak f(0)=1 checked numerically",
+        "continuous model samples is 161 or proposed 181; separate sampled-model series is exactly five points and labelled Model/Sampled model"
+      ],
+      "scientific_basis": "Even response f(x)=1/(1+x^2); f(0)=1 is the peak; symmetric positive decay. Five separate red points are labelled Sampled model, not measurements.",
+      "actual_render_review": "Reviewed rendered native/reference images: same symmetric unit-peak model and five red markers; 514x306; 66 changed pixels, max channel delta 30, mean absolute delta 0.00480.",
+      "build": {
+        "pdf_sha256": "658ad12e83b1b2a5e2887d42fb7aa432d9b50aa25c22586d7815d389156c9fe5",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1121\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:21:08 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       308.16 x 183.58 pts\nPage rot:        0\nFile size:       10913 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nZTVSQH+CMSY10                        Type 1C           Builtin          yes yes yes      5  0\nRZJXIL+CMR10                         Type 1C           Builtin          yes yes yes      6  0\nQAFEME+CMMI10                        Type 1C           Builtin          yes yes yes      7  0\nWOVLWV+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes      8  0",
+        "pdftotext": "Model\nSampled model\n\nNormalized intensity\n\n1\n\n0.5\n\n0\n−4\n\n−3\n\n−2\n\n−1\n0\n1\nDetuning ∆\n\n2\n\n3\n\n4"
+      },
+      "actual_case_screenshot_files": 31,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "fd78faf3583384edcc4f7feda0aef746c94bcfcf11eb0f03be92d89ed3745a11"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/opened",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/opened/desktop.original.png",
+          "screenshot_sha256": "dfddbdc58f258afb1b5b81d3235579f6d02188c20b3126a869913e1d10848c4a",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-draft",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-draft/desktop.original.png",
+          "screenshot_sha256": "f507de106589721cbf7eb59ec1cb20133f1423ab284dd58a1155e3a25fe471be",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-applied",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-applied/desktop.original.png",
+          "screenshot_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-09-addplot1-samples-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-undo",
+          "source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "editor_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/AT4-09-addplot1-samples-undo/desktop.original.png",
+          "screenshot_sha256": "be4e3139b01acdbd1833e4dfff28adf98619bbdd56f94649b077eb9d6c847b57",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/final-applied",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/final-applied/desktop.original.png",
+          "screenshot_sha256": "97650d7917ee747db79cddcc29dcdbf5234ac385d27e2a6bf17e896158785d48",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/reopened",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/reopened/desktop.original.png",
+          "screenshot_sha256": "31a5b4ca3d391361e1250c73e0f1f56338504cccaea87b53f6c72460d6ddae51",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/built",
+          "source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "editor_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-09/built/desktop.original.png",
+          "screenshot_sha256": "18292f49d047d4f3eb5dc5b889a42af50a5a342ec0cdf4a4f4845f456b10a78b",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-48": {
+      "operation": {
+        "property": "axis width",
+        "before": "10cm",
+        "after": "11cm",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+      "patched_source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+      "recorder_source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+      "reference_source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "four exact point/error pairs verified; x-errors are zero and explicit y-errors are 0.3, 0.2, 0.4, 0.3",
+        "catalogue limits interpretation to conditional errors whose statistical meaning must come from the data source"
+      ],
+      "scientific_basis": "Four point/error-bar pairs preserved; x errors are zero and y errors are 0.3, 0.2, 0.4, 0.3. Their statistical meaning is not specified.",
+      "actual_render_review": "Reviewed actual native render: four blue points with vertical error bars. Width increase changes raster width; no claim about statistical interpretation.",
+      "build": {
+        "pdf_sha256": "ce6963a27fdaf788e8e9e7b80141b7baa8583970d7cdb23946a247c54ab6da9e",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1121\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:21:58 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       329.89 x 178.18 pts\nPage rot:        0\nFile size:       4991 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nARBDRX+CMR10                         Type 1C           Builtin          yes yes yes      5  0\nVWIBOE+CMMI10                        Type 1C           Builtin          yes yes yes      6  0",
+        "pdftotext": "5\n\ny\n\n4\n3\n2\n0.5\n\n1\n\n1.5\n\n2\n\n2.5\nx\n\n3\n\n3.5\n\n4\n\n4.5"
+      },
+      "actual_case_screenshot_files": 35,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "f3ebbc4a37f7e9abe3dcb9aee05382f1608488b81e65c28e634149f66c45a3dc"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/opened",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/opened/desktop.original.png",
+          "screenshot_sha256": "61915f7ec1f915f2662f93b7c38a4d449380411469bb882ad39ffc8c3a916be5",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-draft",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-draft/desktop.original.png",
+          "screenshot_sha256": "c3df4ac6311df66ea54c4116b83412bfe7bb83bd4ed2760bbdcff9e04b963a0f",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-applied",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-applied/desktop.original.png",
+          "screenshot_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-48-axis0-width-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-undo",
+          "source_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "editor_sha256": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/AT4-48-axis0-width-undo/desktop.original.png",
+          "screenshot_sha256": "f645e53634c8d0806c04920283adaa84920520f852cc166605506bfa2e283b44",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/final-applied",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/final-applied/desktop.original.png",
+          "screenshot_sha256": "27b0927280048667823830b11c1cbf0c8006d128e324e8dc01d694e4d56f6ae2",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/reopened",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/reopened/desktop.original.png",
+          "screenshot_sha256": "c7340eb6a65dbdb5ead4c17f9f82d8e0335f60000dafefbebad19f8e8dd32cda",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/built",
+          "source_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "editor_sha256": "a6e860c03cd35011aacf9c484e43fd029107a9a2865ed7d26db0ad94ab9f8114",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-48/built/desktop.original.png",
+          "screenshot_sha256": "b87338006c99012d67c585a03ff7ab831ab8ef8ca2cf05994d609a51b31753d3",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-49": {
+      "operation": {
+        "property": "axis width",
+        "before": "10cm",
+        "after": "11cm",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+      "patched_source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+      "recorder_source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+      "reference_source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "all five positive coordinate pairs satisfy E=h^2",
+        "endpoint log10(E) versus log10(h) slope computed as 2"
+      ],
+      "scientific_basis": "Five positive (h,E) points satisfy E=h^2; log10(E) versus log10(h) slope is 2. Synthetic relation, not empirical evidence.",
+      "actual_render_review": "Reviewed actual native render: five points lie on the log-log line; width increase changes raster width.",
+      "build": {
+        "pdf_sha256": "082ccf0b01c75d0ffbf81da1f199ed1c0db3e1790e376388e8e1c365d07b1ec0",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1122\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:22:49 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       339.83 x 182.5 pts\nPage rot:        0\nFile size:       7021 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nWCGWIQ+CMR10                         Type 1C           Builtin          yes yes yes      5  0\nVGBNLI+CMSY7                         Type 1C           Builtin          yes yes yes      6  0\nNWIFXC+CMR7                          Type 1C           Builtin          yes yes yes      7  0\nPYRRWK+CMMI10                        Type 1C           Builtin          yes yes yes      8  0",
+        "pdftotext": "E(h)\n\n10−2\n\n10−3\n\n10−4\n10−2\n\n10−1\nh"
+      },
+      "actual_case_screenshot_files": 35,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "98515ad847f6b8d406032af97f1bba0dc4dd8fa02c7c90c3da2338fe2ba9a594"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/opened",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/opened/desktop.original.png",
+          "screenshot_sha256": "d9d1be746a76876dd0385424eef659b4739b2f90e4d48958112fe088702f8a09",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-draft",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-draft/desktop.original.png",
+          "screenshot_sha256": "409e66539224ecafce5e40b4ee80cce0621d24ee0582bd50d08eb727cad7af50",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-applied",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-applied/desktop.original.png",
+          "screenshot_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-49-axis0-width-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-undo",
+          "source_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "editor_sha256": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/AT4-49-axis0-width-undo/desktop.original.png",
+          "screenshot_sha256": "966ec1b09864c3c15aae40eb6d73ea7c021d46947e5a37263e9a3ee4cec6a1e2",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/final-applied",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/final-applied/desktop.original.png",
+          "screenshot_sha256": "90a8406c9240d237a6a9a5ca5674cee6a6e766fe94fdac0b52b356963db44d1e",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/reopened",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/reopened/desktop.original.png",
+          "screenshot_sha256": "f5de9f956f611a44105333e408055fad76fed7b7e5666f11a3496528b4e2716f",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/built",
+          "source_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "editor_sha256": "5878ef9686dfaf4cd89822170579f6b96caabde3f3b738abe7f3d46ec7ee537f",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-49/built/desktop.original.png",
+          "screenshot_sha256": "a7f25b888c5d92bf5e7b5bc475d94ce5be489310d5888143dcc6d3e51d42bb80",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-50": {
+      "operation": {
+        "property": "axis width",
+        "before": "10cm",
+        "after": "11cm",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+      "patched_source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+      "recorder_source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+      "reference_source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "upper/lower literal paths both span 0:5 and fillbetween binds those names",
+        "upper−lower separation evaluated as exactly 1 at four x probes",
+        "catalogue limits this to conditional ±0.5, not an estimated confidence interval"
+      ],
+      "scientific_basis": "fillbetween binds the named upper/lower paths; separation is exactly 1 over x=0..5. Conditional ±0.5 band, not a confidence interval.",
+      "actual_render_review": "Reviewed actual native render: curve and filled band remain visible; width increase changes raster width.",
+      "build": {
+        "pdf_sha256": "53c99f90ab05a5c0914d9700433f24258fabbf0b41acb225454fde2a5d920925",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1123\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:23:40 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       320.41 x 178.18 pts\nPage rot:        0\nFile size:       4841 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nJEOAIY+CMR10                         Type 1C           Builtin          yes yes yes      5  0\nWJVHON+CMMI10                        Type 1C           Builtin          yes yes yes      6  0",
+        "pdftotext": "y\n\n4\n\n2\n\n0\n0\n\n1\n\n2\n\n3\nx\n\n4\n\n5"
+      },
+      "actual_case_screenshot_files": 35,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "dccb1df7826f57dfaa5a8a0edf88542d59f221ff76b7e9e4c110ad1cff50a5d6"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/opened",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/opened/desktop.original.png",
+          "screenshot_sha256": "a4ce6e3875b5bff295df253e9f4c6bd01eb80f7666d220aff6aef872db5a9339",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-draft",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-draft/desktop.original.png",
+          "screenshot_sha256": "22c54ea380c7152eaf9684dfa9d847c76d88b98a672f95ecb62a9b9f233f691e",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-applied",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-applied/desktop.original.png",
+          "screenshot_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-50-axis0-width-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-undo",
+          "source_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "editor_sha256": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/AT4-50-axis0-width-undo/desktop.original.png",
+          "screenshot_sha256": "39ae7936d0b61098eafd3c5014841a0575a8254494cff860702567023489566c",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/final-applied",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/final-applied/desktop.original.png",
+          "screenshot_sha256": "73fa6207e8e71520f88396d2c49d76892005bb308a4605ee3b14ce7e9fb0d365",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/reopened",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/reopened/desktop.original.png",
+          "screenshot_sha256": "836085f17c326246016cef6a7a6eccb975c6c25f67befbe73357cf5997666547",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/built",
+          "source_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "editor_sha256": "96b1f1768d7de6f10cd66c58a60cf86fc8101aa6c936bf19e140c265b9bbbd8e",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-50/built/desktop.original.png",
+          "screenshot_sha256": "0541ca667f8c6c3779e1a0cb7c436d99de7de53b9c55635de7011cce4bbe7619",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-55": {
+      "operation": {
+        "property": "addplot samples",
+        "before": "21",
+        "after": "25",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "patched_source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+      "recorder_source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+      "reference_source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "literal analytic z=exp(-x^2-y^2), not measurements or fitted data",
+        "original square domain [-2,2] x [-2,2] and view={45}{30} retained",
+        "mathematical model is positive, reflection-symmetric and maximal at z(0,0)=1; numeric probes agree",
+        "only samples density 21→25 is scoped (observed source literal 25); PDF surface/grid comparison remains REQUIRED",
+        "original catalogue formula, central maximum and grid-dependence criterion verified"
+      ],
+      "scientific_basis": "Analytic z=exp(-x^2-y^2), positive and symmetric with central maximum z(0,0)=1; square domain [-2,2]^2 and view {45}{30} retained. No measurements/fitting claim.",
+      "actual_render_review": "Reviewed actual 3D PDF raster against reference: centered Gaussian peak and square domain preserved; 21→25 mesh visibly denser with expected surface/grid differences. Native 515x284; 23,222 changed pixels, max 235, mean abs delta 2.177.",
+      "build": {
+        "pdf_sha256": "c707887a2640fe588b465a849c165b37d13e728d144ea988b36821e03e939958",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1124\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:24:27 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       308.92 x 169.92 pts\nPage rot:        0\nFile size:       18088 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nBJGNAH+CMSY10                        Type 1C           Builtin          yes yes yes      5  0\nYFZZUZ+CMR10                         Type 1C           Builtin          yes yes yes      6  0\nOMAPCN+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+        "pdftotext": "z\n\n1\n0.5\n0\n−2\n\n−1\n\n0\nx\n\n1\n\n2 −2\n\n−1\n\n1\n\n0\ny\n\n2"
+      },
+      "actual_case_screenshot_files": 31,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "fcb6ae8889cab755b86fc957fbfe867efbfdeae610ce2731febbef5178ae07b5"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/opened",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/opened/desktop.original.png",
+          "screenshot_sha256": "a8d430e11d6cb3f4a85b4dd7f87fae7fdc2166cb2c5e74f5b05489ec4382045b",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-draft",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-draft/desktop.original.png",
+          "screenshot_sha256": "c9305feb80c8373525bd0312179084b4b86bb8acd709bdf508a28652d7f326e3",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-applied",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-applied/desktop.original.png",
+          "screenshot_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-55-addplot1-samples-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-undo",
+          "source_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "editor_sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/AT4-55-addplot1-samples-undo/desktop.original.png",
+          "screenshot_sha256": "9c2c9f7297a71ca78cf372a4cd88e7dea26b744d7fbe8d63b27c3cd70750a309",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/final-applied",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/final-applied/desktop.original.png",
+          "screenshot_sha256": "82583f0120105fafa0b9f2d75aeb7ecc5c9b9a9b2181d0fa4d1370c0f17da0f1",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/reopened",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/reopened/desktop.original.png",
+          "screenshot_sha256": "282543e727bc8c852304af15f5d3d54647205039c33d8aec528d984c81be55b6",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/built",
+          "source_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "editor_sha256": "3c608e900a49d84676b442e7e2fd4172432241edbab4de67a7ed8d4871401cd4",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-55/built/desktop.original.png",
+          "screenshot_sha256": "17ca825ec5f27b653c9b7c13716ab8e84b2352273dd9bdc7850d962005356a09",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-56": {
+      "operation": {
+        "property": "addplot samples",
+        "before": "181",
+        "after": "201",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "patched_source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+      "recorder_source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+      "reference_source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "literal common-parameter (cos(t),sin(t),t/360) with default PGF degree semantics and no trig override",
+        "domain 0:720 is two turns; unit radius x²+y²=1 and z 0→2 checked on the stated mathematical model",
+        "samples y=0 and view={50}{25} retained; no manufactured measurement series",
+        "only samples density 181→201 is scoped (observed source literal 201); rendered winding/pitch review remains REQUIRED",
+        "original catalogue common-parameter, unit-radius and two-turn z-range criteria verified"
+      ],
+      "scientific_basis": "Common-parameter helix (cos(t),sin(t),t/360), PGF degree semantics, t=0..720: two turns, unit radius, z=0..2. No measurement series.",
+      "actual_render_review": "Reviewed actual 3D PDF raster against reference: two turns, unit-radius helix and z-range 0..2 visually retained. Density change only; 1,810 changed pixels, max 127, mean abs delta 0.2099.",
+      "build": {
+        "pdf_sha256": "c4d2127881cdee6f572a869bc1f6627996595deca7a8082bc01f57ac68f1c45d",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1125\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:25:13 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       301.29 x 174.96 pts\nPage rot:        0\nFile size:       8105 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nBYWWTE+CMSY10                        Type 1C           Builtin          yes yes yes      5  0\nYDOVMR+CMR10                         Type 1C           Builtin          yes yes yes      6  0\nFKPKYM+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+        "pdftotext": "z\n\n2\n1\n0\n−1\n\n−0.5\n\n0\nx\n\n0.5\n\n1 −1\n\n−0.5\n\n0.5\n\n0\ny\n\n1"
+      },
+      "actual_case_screenshot_files": 31,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "997e68ab1cc620159ae494cbae4244198da1a546065dfbab5139a9647b0ae42d"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/opened",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/opened/desktop.original.png",
+          "screenshot_sha256": "cbc2a50945cd2a17f789782a7dcf86f65bfc4ec05546142072bf3e06a83883e2",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-draft",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-draft/desktop.original.png",
+          "screenshot_sha256": "c438fc0c6eb05c043c4108def3350ca3e4dd8fd29dec12ec0d8f3eb25d35043a",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-applied",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-applied/desktop.original.png",
+          "screenshot_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-56-addplot1-samples-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-undo",
+          "source_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "editor_sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/AT4-56-addplot1-samples-undo/desktop.original.png",
+          "screenshot_sha256": "6c9b95fe6bc218effe798d7413dbce9fb9c928fd99a15581e903d8d89dd0f133",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/final-applied",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/final-applied/desktop.original.png",
+          "screenshot_sha256": "d4c8e5913bd8ba12350aae578fbe7843cec2592debb94477a48840feb36051c0",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/reopened",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/reopened/desktop.original.png",
+          "screenshot_sha256": "998701006337fb1cd0163747e32106edf2711682500936ee84c1db84e28d3302",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/built",
+          "source_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "editor_sha256": "3e63520e8b0901481c781e503bdbea8f2ad778753b7bb1f05202d3a3bfd79016",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-56/built/desktop.original.png",
+          "screenshot_sha256": "fa8a9711a63d21e3ae84c1d41fe729f5b2861a95da9dd761839cee5c2210b6d5",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-58": {
+      "operation": {
+        "property": "axis width",
+        "before": "10cm",
+        "after": "11cm",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+      "patched_source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+      "recorder_source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+      "reference_source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "source retains unbounded coords=jump and explicit (0,nan)",
+        "finite coordinates are the six listed branch samples; original catalogue calls them a sparse 1/x sample",
+        "VISUAL_CHECK=NOT_RUN: source inspection cannot establish that the PDF has no bridge segment"
+      ],
+      "scientific_basis": "Sparse 1/x branch samples with unbounded coords=jump and explicit (0,nan); gap handling must avoid bridging the discontinuity.",
+      "actual_render_review": "Reviewed actual native PDF raster: left/right branches visibly separated at x=0 with no connecting segment. Width increase changes raster width.",
+      "build": {
+        "pdf_sha256": "b857a5e6695ea4355a9e9e41f53182451fec4078b37629b26eb5f704293140e0",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1126\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:26:04 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       328.16 x 179.01 pts\nPage rot:        0\nFile size:       4990 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nPHGBTB+CMSY10                        Type 1C           Builtin          yes yes yes      5  0\nGGCNZH+CMR10                         Type 1C           Builtin          yes yes yes      6  0\nWKPWKQ+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+        "pdftotext": "y\n\n2\n\n0\n\n−2\n−2\n\n−1.5\n\n−1\n\n−0.5\n\n0\nx\n\n0.5\n\n1\n\n1.5\n\n2"
+      },
+      "actual_case_screenshot_files": 35,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "429f6dc4d0838741125285950d05a8044dbc8479deee49c4c6fc0cccde17f6c4"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/opened",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/opened/desktop.original.png",
+          "screenshot_sha256": "1a93e5a49aa30cfc0a56a2a868be831e2eee61a43c248e35af973b9bc36d32ba",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-draft",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-draft/desktop.original.png",
+          "screenshot_sha256": "00d6498e3999642c50cbb0f19accc1f66b0ced728ddd1a963d2942b31de93c0f",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-applied",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-applied/desktop.original.png",
+          "screenshot_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-58-axis0-width-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-undo",
+          "source_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "editor_sha256": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/AT4-58-axis0-width-undo/desktop.original.png",
+          "screenshot_sha256": "d09088b9e84c31040f90dd929afc8f4dd4ca6c03887c36a561aa9a948cef79bc",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/final-applied",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/final-applied/desktop.original.png",
+          "screenshot_sha256": "7d5530059aebeb455e6e4b544e8c62bd096c0462a70ecfd599494fb3f9908ecd",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/reopened",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/reopened/desktop.original.png",
+          "screenshot_sha256": "74d9559f41837e8c3bc2d4a190674c337ccf5b3064cbd1da83269bc69648a184",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/built",
+          "source_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "editor_sha256": "a91f7cd1227a0c7ef603f0389e54e5fc712b5ef9674d8d699bb589d2c7604f2d",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-58/built/desktop.original.png",
+          "screenshot_sha256": "4d956998bda694a103b325b05deb24eb41a2daafcfb5ceaaa597e8d103c77e8b",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    },
+    "AT4-61": {
+      "operation": {
+        "property": "addplot samples",
+        "before": "161",
+        "after": "201",
+        "occurrences_in_original": 1,
+        "exact_one_literal_patch": true
+      },
+      "original_source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+      "patched_source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+      "recorder_source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+      "reference_source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+      "reference_source_matches_native_original": true,
+      "source_semantics_report": "PASS_SOURCE_SEMANTICS_ONLY",
+      "source_assertions": [
+        "formula parsed as −10 log10(1+ω²)",
+        "original domain .01:100 retained and log x-axis verified",
+        "analytic series samples is 201 (original 161 or proposed 201)",
+        "magnitude at ωRC=1 is −3.0102999566 dB",
+        "computed 1000→10000 high-frequency slope is -19.99999570 dB/decade, approaching −20",
+        "numeric asymptote check is mathematical model analysis, not a rendered-data measurement"
+      ],
+      "scientific_basis": "Bode magnitude −10log10(1+ω²), log x-domain .01..100 unchanged; at ω=1 value −3.0102999566dB; high-frequency slope approaches −20dB/decade. Model calculation, not measured data.",
+      "actual_render_review": "Reviewed actual native raster: low-frequency plateau near 0dB, corner near 1 at −3dB, high-frequency decay consistent with −20dB/decade. Same domain; sample count raised.",
+      "build": {
+        "pdf_sha256": "e270bf3b3fc5367310cf9547237aed7d79957ed29a4b492b1d6163c74e1d6536",
+        "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+        "recorder_source_matches_saved_patched_source": true,
+        "strict_xelatex_warning_gate": "PASS",
+        "status": "EVIDENCE_COLLECTED_REVIEW_REQUIRED",
+        "pdfinfo": "Creator:          XeTeX output 2026.11.13:1126\nProducer:        xdvipdfmx (20220710)\nCreationDate:    Fri Nov 13 11:26:51 2026 UTC\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       308.53 x 182.39 pts\nPage rot:        0\nFile size:       11598 bytes\nOptimized:       no\nPDF version:     1.5",
+        "pdffonts_summary": "name                                 type              encoding         emb sub uni object ID\n------------------------------------ ----------------- ---------------- --- --- --- ---------\nNFVMZO+CMR10                         Type 1C           Builtin          yes yes yes      5  0\nFPCRSP+CMSY7                         Type 1C           Builtin          yes yes yes      6  0\nHWGWJW+CMR7                          Type 1C           Builtin          yes yes yes      7  0\nLGBHRM+CMSY10                        Type 1C           Builtin          yes yes yes      8  0\nGNFQFZ+CMMI10                        Type 1C           Builtin          yes yes yes      9  0\nTJJVYR+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes     10  0",
+        "pdftotext": "20 log10 |H| / dB\n\n0\n\n−20\n\n−40\n10−2\n\n10−1\n\n100\nωRC\n\n101\n\n102"
+      },
+      "actual_case_screenshot_files": 31,
+      "reference": {
+        "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+        "native_compilation_claimed": false,
+        "reference_png_sha256": "84c6d480e6a4c9cbc9f61f17a63c9efb52ba24fbea3a9d49d97a901cdf5c2c4f"
+      },
+      "stage_evidence": [
+        {
+          "stage": "opened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/opened",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/opened/desktop.original.png",
+          "screenshot_sha256": "b091579b49039cb691ddfcd0401515f99614f416cbc498cbe82644f2a783fccd",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-draft",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-draft",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-draft/desktop.original.png",
+          "screenshot_sha256": "315c5862f60c0c76d4e0cbc072d91e2574a445db294dd0c041318c83f9bd85f8",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-applied",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-applied/desktop.original.png",
+          "screenshot_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "AT4-61-addplot1-samples-undo",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-undo",
+          "source_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "editor_sha256": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/AT4-61-addplot1-samples-undo/desktop.original.png",
+          "screenshot_sha256": "32e4b14fc04fd69e95eac0475f4c378e66b02d131ebe67a95138eca1f7eef6c0",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "final-applied",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/final-applied",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/final-applied/desktop.original.png",
+          "screenshot_sha256": "899b7c07643a1ea909438a2201f9c3de0e64ce48a6fef9551cfc9d6629c2a3a5",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "reopened",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/reopened",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/reopened/desktop.original.png",
+          "screenshot_sha256": "a2d09ff39e8014f67b77b92760041d2f9c1aa200ed30acca64caa7862e2ede5d",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        },
+        {
+          "stage": "built",
+          "directory": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/built",
+          "source_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "editor_sha256": "35eace83ba4cc6b03c7810c1a6404cc103ee0b26a7239dd9e1f7626d0adbeb25",
+          "screenshot": "validation/attempts/43415761917-at4/originals/pgfplots-native/observed/AT4-61/built/desktop.original.png",
+          "screenshot_sha256": "3ee595369345cd7354a2bdebe3f9765bb512f1ac5f1c29f8d920614e87baed81",
+          "source_bytes_match_expected_stage": true,
+          "editor_bytes_match_expected_stage": true,
+          "screenshot_hash_matches_stage_json": true
+        }
+      ]
+    }
+  },
+  "reference_integrity": {
+    "scope": "EXTERNAL_REFERENCE_ONLY",
+    "status": "PASS_EXTERNAL_REFERENCE_ONLY",
+    "original_sources_all_match_native_originals": true,
+    "source_and_120dpi_reference_pngs_byte_identical_to_prior_run03_review": true,
+    "reference_PDF_not_treated_as_native_GUI_evidence": true,
+    "reference_source_sha256_by_case": {
+      "AT4-09": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "AT4-48": "2bb042ba1b0a587570da4dd570bf75ed669a93c47e541d32dc63541c4af067fd",
+      "AT4-49": "ec6f48bab66efc90faa444c52fe71acde6a90db8084cd18dac73e36881e4accf",
+      "AT4-50": "a707bc592cdb70d8cdb55109e843d1fcc8a82292e2ec700b5480c9ba3edabc60",
+      "AT4-55": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "AT4-56": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "AT4-58": "6453529f14b8d1545af293f59ff5b6f1b1ea1d4e28d5bf8992ecd1af7b2033c1",
+      "AT4-61": "c4210c312f3825195409616a801091a1ecd7b37583310be7d9d87fb22a2f0758"
+    },
+    "reference_png_sha256_by_case": {
+      "AT4-09": "fd78faf3583384edcc4f7feda0aef746c94bcfcf11eb0f03be92d89ed3745a11",
+      "AT4-48": "f3ebbc4a37f7e9abe3dcb9aee05382f1608488b81e65c28e634149f66c45a3dc",
+      "AT4-49": "98515ad847f6b8d406032af97f1bba0dc4dd8fa02c7c90c3da2338fe2ba9a594",
+      "AT4-50": "dccb1df7826f57dfaa5a8a0edf88542d59f221ff76b7e9e4c110ad1cff50a5d6",
+      "AT4-55": "fcb6ae8889cab755b86fc957fbfe867efbfdeae610ce2731febbef5178ae07b5",
+      "AT4-56": "997e68ab1cc620159ae494cbae4244198da1a546065dfbab5139a9647b0ae42d",
+      "AT4-58": "429f6dc4d0838741125285950d05a8044dbc8479deee49c4c6fc0cccde17f6c4",
+      "AT4-61": "84c6d480e6a4c9cbc9f61f17a63c9efb52ba24fbea3a9d49d97a901cdf5c2c4f"
+    }
+  },
+  "limits": [
+    "Bounded to these eight original cases on this Linux hosted GUI, recorded app ELF and run artifact.",
+    "Does not establish physical Windows 10 or macOS/ARM behavior.",
+    "Source semantic checks are complementary evidence, not substitutes for rendered PDF inspection.",
+    "The external-reference build is EXTERNAL_REFERENCE_ONLY, not a native run.",
+    "Does not assert aggregate SC3/AT4 acceptance beyond this eight-case vertical."
+  ]
+}

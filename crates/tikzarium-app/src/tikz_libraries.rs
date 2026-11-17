@@ -19,7 +19,9 @@ fn evidence_label(value: Evidence) -> &'static str {
 }
 
 pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
-    egui::CollapsingHeader::new("Найти команду/параметр · единый C-каталог")
+    egui::CollapsingHeader::new("Поиск по справке")
+        // Retain the existing persisted expansion state when shortening the title.
+        .id_salt("Найти команду/параметр · единый C-каталог")
         .default_open(false)
         .show(ui, |ui| {
             ui.add(egui::TextEdit::singleline(query).hint_text("смещение и якоря"));
@@ -82,7 +84,9 @@ pub fn show_help_search(ui: &mut egui::Ui, query: &mut String) {
             if truncated {
                 ui.small("Показаны первые 12 результатов; уточните запрос.");
             }
-        });
+        })
+        .header_response
+        .on_hover_text("Найти команды TikZ и их параметры по названию или описанию.");
 }
 
 /// Source-caret contextual N3 Help from the SAME C catalogue as F1/Inspector.
@@ -319,6 +323,112 @@ mod tests {
                 .iter()
                 .any(|entry| entry.id() == "tikz.library.positioning")
         );
+    }
+
+    #[test]
+    fn compact_help_search_does_not_widen_dock_when_collapsed_or_opened() {
+        // UNIT_EVENT: real egui layout and pointer events, not native desktop QA.
+        // Include repeated frames: SidePanel stores content-driven expansion.
+        for width in [225.0_f32, 252.0, 260.0] {
+            let ctx = egui::Context::default();
+            ctx.set_theme(egui::Theme::Dark);
+            // This module also builds in qa-control, which has no theme module.
+            // Match the production compact widget geometry and body font.
+            ctx.style_mut(|style| {
+                style.spacing.item_spacing = egui::vec2(5.0, 4.0);
+                style.spacing.interact_size.y = 26.0;
+                style
+                    .text_styles
+                    .insert(egui::TextStyle::Body, egui::FontId::proportional(14.0));
+                style
+                    .text_styles
+                    .insert(egui::TextStyle::Button, egui::FontId::proportional(13.0));
+                style
+                    .text_styles
+                    .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
+                style
+                    .text_styles
+                    .insert(egui::TextStyle::Monospace, egui::FontId::monospace(14.0));
+            });
+            let mut query = String::new();
+            let mut time = 0.0;
+            let mut frame = |events: Vec<egui::Event>, query: &mut String| {
+                time += 0.1;
+                let mut panel_rect = egui::Rect::NOTHING;
+                let mut search_rect = egui::Rect::NOTHING;
+                let _ = ctx.run(
+                    egui::RawInput {
+                        screen_rect: Some(egui::Rect::from_min_size(
+                            egui::Pos2::ZERO,
+                            egui::vec2(1180.0, 680.0),
+                        )),
+                        time: Some(time),
+                        events,
+                        ..Default::default()
+                    },
+                    |ctx| {
+                        panel_rect = egui::SidePanel::right("compact-help-search-width")
+                            .resizable(false)
+                            .exact_width(width)
+                            .show(ctx, |ui| {
+                                egui::ScrollArea::vertical()
+                                    .auto_shrink([false, false])
+                                    .show(ui, |ui| {
+                                        show_help_search(ui, query);
+                                        search_rect = ui.min_rect();
+                                    });
+                            })
+                            .response
+                            .rect;
+                        egui::CentralPanel::default().show(ctx, |_ui| {});
+                    },
+                );
+                assert!(
+                    panel_rect.width() <= width + 0.5,
+                    "help search widened {width}px dock to {}px at {time}, query={query:?}, content={search_rect:?}",
+                    panel_rect.width(),
+                );
+                assert!(search_rect.width() <= width - 12.0 + 0.5);
+                (panel_rect, search_rect)
+            };
+            let mut collapsed = egui::Rect::NOTHING;
+            for _ in 0..4 {
+                collapsed = frame(vec![], &mut query).1;
+            }
+            let pos = egui::pos2(collapsed.left() + 30.0, collapsed.top() + 13.0);
+            for pressed in [true, false] {
+                frame(
+                    vec![
+                        egui::Event::PointerMoved(pos),
+                        egui::Event::PointerButton {
+                            pos,
+                            button: egui::PointerButton::Primary,
+                            pressed,
+                            modifiers: Default::default(),
+                        },
+                    ],
+                    &mut query,
+                );
+            }
+            let mut opened = egui::Rect::NOTHING;
+            for _ in 0..4 {
+                opened = frame(vec![], &mut query).1;
+            }
+            assert!(
+                opened.height() > collapsed.height() + 26.0,
+                "pointer must open the real search header"
+            );
+            query = "смещение и якоря".into();
+            for _ in 0..4 {
+                frame(vec![], &mut query);
+            }
+            assert_eq!(query, "смещение и якоря");
+            assert!(
+                help_search::search(tikz_authoring::catalog(), &query)
+                    .iter()
+                    .any(|entry| entry.id() == "tikz.library.positioning")
+            );
+        }
     }
 
     #[test]

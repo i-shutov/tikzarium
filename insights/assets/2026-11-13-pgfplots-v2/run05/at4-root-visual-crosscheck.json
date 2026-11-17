@@ -1,0 +1,23 @@
+{
+  "reviewer": "root targeted independent visual cross-check",
+  "created_utc": "2026-11-13T11:45:21.903613+00:00",
+  "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "scope": "Three scientific critical cases only; supplements full agent audit, not aggregate acceptance",
+  "images": {
+    "AT4-55": {
+      "file": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-55-rendered-pdf.png",
+      "sha256": "b0583df99c9c56323a1461b37f4cbb8e8a5a07ac9968bd6ef79acd3c6fcb5c77",
+      "observation": "Actual120dpi nativePDF visibly shows positive symmetric Gaussian surface, central maximum nearz1 and bounded mesh over[-2,2] axes; originalsource/formula/density change audited separately."
+    },
+    "AT4-56": {
+      "file": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-56-rendered-pdf.png",
+      "sha256": "8fc7f92c2825b0b8922ad1d6ae2075512966853222cd32adadd9cb252f9bf12d",
+      "observation": "Actual120dpi nativePDF visibly shows two continuous turns aroundzaxis fromz0to2, projected unit-radius bounds; exact trig degree formula and samples201 audited separately."
+    },
+    "AT4-58": {
+      "file": "validation/attempts/43415761917-at4/originals/pgfplots-native/raw/AT4-58-rendered-pdf.png",
+      "sha256": "b758b34a6b27d0ad6bd42614e6e572d04981266354c56a8afde4765b5eaf2836",
+      "observation": "Actual120dpi nativePDF visibly shows two disjoint sparse piecewise-linear branches from six finite points; no segment acrossx0. No claimof smooth analytic interpolation."
+    }
+  }
+}

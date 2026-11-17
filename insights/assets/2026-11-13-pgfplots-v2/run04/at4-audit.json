@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "review_type": "INDEPENDENT_READ_ONLY_AT4_RUN04_AUDIT",
+  "assessment": "AT4_09_BOUNDED_NATIVE_GUI_VERTICAL_AND_RENDER_REVIEWED; AT4_SUITE_FAIL",
+  "artifact": {
+    "run_id": 43410590342,
+    "artifact_id": 14029647177,
+    "bytes": 11687954,
+    "zip_sha256": "b9fc708fa53ecfdd253d3f0524ac5f7b8cbb4b2ac9258c729f779fd4fe2d51ed",
+    "github_digest_matches": true,
+    "zip_crc": "PASS",
+    "zip_entries": 330,
+    "verified_reference_file_hashes": 90,
+    "verified_native_file_hashes": 228
+  },
+  "runtime_identity": {
+    "production_elf_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "observed_elf_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "pid": 5270,
+    "window": "6291459",
+    "source_head_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a"
+  },
+  "suite_status": "FAIL",
+  "suite_failure": {
+    "stage": "AT4-48/opened",
+    "error": "RuntimeError: Actual popup height differs from scoped compact menu geometry",
+    "operation_count": 8,
+    "aggregate_sc3_at4": "NOT_VERIFIED",
+    "independent_visual_review_at_run_end": "REQUIRED",
+    "native_builds": [
+      "AT4-09"
+    ],
+    "failure_observation": "AT4-48 source/catalogue evidence has an approved 15-entry axis-property inventory, but the observed popup retains a short viewport (about 86 px) within a roughly 96 px strip, so three rows are visible and the menu is scrollable. The run failed because measured popup height differed from the harness scoped compact-menu geometry; the screenshot is not evidence that the property inventory has only three entries. No AT4-48 Apply/build occurred."
+  },
+  "at4_09": {
+    "case_assessment": "PASS_BOUNDED_NATIVE_GUI_OPERATION_SEQUENCE_BUILD_AND_VISUAL_REVIEW",
+    "native_scope": "Only AT4-09 completed this native run. This bounded case result does not override the full suite FAIL.",
+    "scientific_basis": {
+      "source_formula": "response(x)=1/(1+x^2)",
+      "formula_invariant": "Even function; f(0)=1 peak; values remain positive and decay symmetrically.",
+      "series": "A separate 5-point `only marks` series over [-2,2] uses response(x) and legend entry “Sampled model”; the continuous curve is “Model”.",
+      "claim_limit": "The source labels this a dimensionless model and explicitly says it is not experimental data. The plotted markers are model samples, not measurements."
+    },
+    "native_operation_evidence": {
+      "initial_property_field": "161",
+      "proposed_property_field": "181",
+      "single_field_change_exact": true,
+      "original_source_bytes": 683,
+      "applied_source_bytes": 683,
+      "original_source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "applied_and_built_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+      "first_draft_kept_source_original": true,
+      "first_apply_wrote_181": true,
+      "undo_restored_exact_original_bytes": true,
+      "repeat_f1_screenshot": "raw/042-AT4-09-addplot1-samples-selected-property-f1.png shows the visible Help tab selected after a real native F1 following Undo and property reselection.",
+      "second_apply_source_matches_final": true,
+      "unsaved_reopen_challenge": "Screenshot raw/053 shows the dirty-document decision after a deliberate unsaved challenge marker; automation explicitly chose discard and opened the saved file again.",
+      "reopened_and_built_source_match_applied": true,
+      "live_source_persisted_as_181": true,
+      "compiled_source_mode": "BUILD_SERVICE_DIRECT_SAVED_AUTHOR_SOURCE",
+      "recorder_captured_source_sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd",
+      "strict_xelatex_warning_gate": "PASS",
+      "warning_note": "The retained actual log includes the expected `Package shellesc Warning: Shell escape disabled` and PGFPlots compat notification; the run report strict warning gate is PASS. It records no fatal/error or unresolved references."
+    },
+    "render_review": {
+      "actual_native_pdf_sha256": "95323a20b90069eea7b60d83a36a08512f6f416b0f51c97ea7b0f12ff4d4bff1",
+      "actual_native_pdf_page_count": 1,
+      "actual_native_fonts_embedded": true,
+      "actual_fonts": [
+        "YZLUFI+CMSY10                        Type 1C           Builtin          yes yes yes      5  0",
+        "MDORPT+CMR10                         Type 1C           Builtin          yes yes yes      6  0",
+        "THQQMC+CMMI10                        Type 1C           Builtin          yes yes yes      7  0",
+        "GWNSKY+LMRoman10-Regular-Identity-H  CID Type 0C       Identity-H       yes yes yes      8  0"
+      ],
+      "pdf_text_contains_model_labels": true,
+      "actual_screenshot": "raw/060-AT4-09-current-pdf-view.png shows the PDF page in TikZarium; raw/064 is the built-state capture.",
+      "reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "reference_scope": "EXTERNAL_REFERENCE_ONLY",
+      "reference_source_sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0",
+      "reference_source_is_original_samples_161": true,
+      "native_png_pixels": {
+        "size": [
+          514,
+          306
+        ],
+        "sha256": "9692b5d93d97bd3799ced0ce781b75b57adfa741851b4e9ab084cf24032eb2da"
+      },
+      "reference_png_pixels": {
+        "size": [
+          514,
+          306
+        ],
+        "sha256": "fd78faf3583384edcc4f7feda0aef746c94bcfcf11eb0f03be92d89ed3745a11"
+      },
+      "actual_render_pixel_identical_to_reference_120dpi": false,
+      "visual_observation": "Native 181-sample render and the original 161-sample reference both show the symmetric bell-shaped model with a unit peak and five red samples. At 514×306, 66 pixels differ, with maximum per-channel difference 30; the change is confined to the plotted geometry and is visually imperceptible at the displayed scale. This is consistent with the denser curve sampling, although pixel comparison alone does not attribute cause.",
+      "run03_reference_comparison": {
+        "source_bytes_identical": true,
+        "reference_png_bytes_identical_to_run03": true,
+        "reference_pdf_bytes_differ_from_run03": true,
+        "note": "Original source and rendered PNG are byte-identical to run03. The reference PDF files have different SHA256 hashes; this audit records that byte difference without attributing its cause."
+      },
+      "pixel_diff_summary": {
+        "size_equal": true,
+        "changed_pixels": 66,
+        "total_pixels": 157284,
+        "max_abs_channel_difference": 30,
+        "mean_abs_channel_difference": 0.004802353280265846,
+        "changed_pixel_bbox": [
+          133,
+          43,
+          468,
+          221
+        ]
+      }
+    },
+    "evidence_files": {
+      "original_input": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/inputs/AT4-09.tex",
+        "bytes": 683,
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0"
+      },
+      "original_corpus_copy": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/inputs/AT4-09.original-corpus.tex",
+        "bytes": 683,
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0"
+      },
+      "applied_final_source": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/live/AT4-09/AT4-09.tex",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "built_author_source": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-built-source.original.tex",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "draft_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/025-AT4-09-AT4-09-addplot1-samples-draft-editor.txt",
+        "bytes": 683,
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0"
+      },
+      "first_apply_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/028-AT4-09-AT4-09-addplot1-samples-applied-editor.txt",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "undo_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/031-AT4-09-AT4-09-addplot1-samples-undo-editor.txt",
+        "bytes": 683,
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0"
+      },
+      "final_apply_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/048-AT4-09-final-applied-editor.txt",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "reopened_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/058-AT4-09-reopened-editor.txt",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "built_editor_capture": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/066-AT4-09-built-editor.txt",
+        "bytes": 683,
+        "sha256": "3aa54c7c50df39d8ef3383993ac91346c75e561d5fcec31a4e4640cfb00380fd"
+      },
+      "reference_source": {
+        "path": "validation/attempts/43410590342-at4/originals/at4-original-references/AT4-09/original.tex",
+        "bytes": 683,
+        "sha256": "78fa07f6e30aad101b4c9f20a33df40e93ccd3267ec5edb1a9a6ee0e25b142a0"
+      },
+      "native_pdf": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-current.original.pdf",
+        "bytes": 10911,
+        "sha256": "95323a20b90069eea7b60d83a36a08512f6f416b0f51c97ea7b0f12ff4d4bff1"
+      },
+      "native_rendered_pdf_png": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-rendered-pdf.png",
+        "bytes": 17377,
+        "sha256": "9692b5d93d97bd3799ced0ce781b75b57adfa741851b4e9ab084cf24032eb2da"
+      },
+      "reference_pdf": {
+        "path": "validation/attempts/43410590342-at4/originals/at4-original-references/AT4-09/original.pdf",
+        "bytes": 10608,
+        "sha256": "79d89c71bb9c34abc2ccb46bfd0e0793029e91aebb6119e2da79d30dde0719ef"
+      },
+      "reference_png": {
+        "path": "validation/attempts/43410590342-at4/originals/at4-original-references/AT4-09/original-120dpi.png",
+        "bytes": 17331,
+        "sha256": "fd78faf3583384edcc4f7feda0aef746c94bcfcf11eb0f03be92d89ed3745a11"
+      },
+      "native_pdfinfo": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-pdfinfo.txt",
+        "sha256": "9fc0845cf372a6fbee21964fae3a0b5cdd3709bc7bb7e257836f7daef3b31c07"
+      },
+      "native_pdffonts": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-pdffonts.txt",
+        "sha256": "9cd1851ca6cb2a5f818364ef65eb3c632d145de405ea1ff758a8495a3d0a019e"
+      },
+      "native_pdftotext": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-pdftotext.txt",
+        "sha256": "2b0a415edea4f6412f392a7d6f2d9bd003cc26ccd2aeb2bedba1e9e352df2f93"
+      },
+      "native_engine_log": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-actual-gui-xelatex.log",
+        "sha256": "b1f170156bf82a0344fc02f79ea73ef9269a96bb9b9af4d4892efd9706fdd857"
+      },
+      "native_scientific_check": {
+        "path": "validation/attempts/43410590342-at4/originals/pgfplots-native/raw/AT4-09-scientific-source-check.json",
+        "sha256": "5a080cfc673baf25784e8df443f0965160173df2f526fa3124b2939baa2ccde2"
+      }
+    }
+  },
+  "other_cases": {
+    "AT4-48": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-49": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-50": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-55": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-56": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-58": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    },
+    "AT4-61": {
+      "external_reference_status": "PASS_EXTERNAL_REFERENCE_ONLY",
+      "native_status": "NOT_RUN"
+    }
+  },
+  "overall_limit": "Run04 cannot be called full AT4 acceptance: it stopped at AT4-48 popup geometry after only AT4-09 native Apply/Undo/re-F1/re-Apply/reopen/build/export. The seven other native cases are NOT_RUN and aggregate SC3/AT4 remains NOT_VERIFIED. AT4-09 case-level evidence is limited to this Linux hosted GUI/ELF and the reviewed PDF at the recorded raster resolution."
+}

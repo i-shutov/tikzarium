@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "build.log",
+      "bytes": 183,
+      "sha256": "dd694cde14d41c3d8bb7794a6fe34a687c8b8508fd9a5aec950e61f54a551288"
+    },
+    {
+      "path": "clippy.log",
+      "bytes": 7564,
+      "sha256": "2afdeeaa3b2abb3ffba622a8d11932397ea6c56547ced8e70bd051d0b78e943e"
+    },
+    {
+      "path": "fmt.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "recovered-app-blobs.json",
+      "bytes": 4492,
+      "sha256": "acb0911cb97b4f4e60fe0978872e58fc0dbf375ef62da8f989fead2c98e5205b"
+    },
+    {
+      "path": "test-summary.json",
+      "bytes": 103,
+      "sha256": "16a03b3e3f1eba55c06012f75dfbb8c622b24cd6443bab508407354da7654da5"
+    },
+    {
+      "path": "tests.log",
+      "bytes": 73122,
+      "sha256": "136a07c335b158fa85755a5724266d5522c1714d993b1872c7885ff3b2b69bd8"
+    },
+    {
+      "path": "validation.json",
+      "bytes": 1963,
+      "sha256": "ff47d41d374082c2bd4258897c6daa829c985b94eae5494155288afaee41e0e9"
+    }
+  ]
+}

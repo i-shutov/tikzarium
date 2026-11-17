@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "reviewer": "independent I61/N5 auditor /root/i61_contract_audit_1113b",
+  "reviewed_utc": "2026-11-13T08:08:42.930139+00:00",
+  "status": "INDEPENDENTLY_ACCEPTED",
+  "scope": "HOSTED_LINUX_X11_FULL_I61_N2_N3_DEBUG_PRODUCTION_GUI",
+  "source_head_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "app_tree_sha": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "original_run_id": 43388892327,
+  "original_artifact_directory": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/original-artifact",
+  "byte_pdf_checks_passed": 46,
+  "byte_pdf_record": "independent-byte-pdf-audit.json",
+  "manual_original_review": {
+    "i61": {
+      "scratch_build": "04b actual «Сохранение перед сборкой», path field/Save-and-Build/Cancel; Escape and no file asserted by native driver, initial full editor clipboard matches exact fixture.",
+      "f1_two_state": "27 actual Help tab and node syntax/help;28 actual Properties tab and source owner#6.",
+      "inspector": "28c actual X10.50cm/Y3.25cm and matching native/metadata source; original-X fresh clipboard10.25cm, proposed10.50cm; Save-beforeApply snapshots unchanged; postApply and shared Undo exact persisted bytes.",
+      "dirty_open": "39 actual modal with Save-and-Open, Discard-and-Open, Cancel; second CRLF/opaque text survives Cancel and subsequent Save exact.",
+      "source_parameter": "43 actual «Параметр TikZ под курсором», «Окружность · radius», dimension, units, preset/example8mm and shared catalogue source; editor caret in circle[radius=8mm]; exact initial clipboard/file unchanged.",
+      "pdf": "Independent Poppler rerender visibly contains line, rectangle,circle,cubic,arrow,node A and preserved Не менять. All7source snapshots,owner IDs/commands,opaque original bytes and held-mask native events verified."
+    },
+    "n2_n3": {
+      "five_axes": "07a actual arrows.meta expanded catalogue and all five distinct axes: installed CONFIRMED, project-loaded ABSENT, engine-target CONFIRMED, tool-implemented CONFIRMED,help CONFIRMED.",
+      "disconnect": "Packaged10a actual «Отключить только это прямое подключение», exact CRLF before/after preview and source import; saved inverse and shared Undo byte-verified for both runs.",
+      "caret_help": "19 actual Help tab and «Завершить имя: arrows.meta», source literalarro, stale existing PDF explicitly labelled;23 actual shared Undo source back toarro.",
+      "pdf": "Independent first and second current PDF originals preserved separately, onepage, embedded DejaVu+ToUnicode, CyrillicФигура; both actual GUI XeTeX logs free of missing glyph/error lines. Independently rendered first/second pixels identical, as expected for pure preamble completion."
+    }
+  },
+  "original_reports_preserved": true,
+  "limits": {
+    "physical_linux": "NOT_RUN",
+    "physical_windows10_miktex": "NOT_RUN",
+    "physical_mac_arm": "NOT_RUN",
+    "native_wayland": "NOT_RUN",
+    "real_IME": "NOT_RUN",
+    "physical_DPI": "NOT_RUN",
+    "full_scientific_studio_v1_scope": "NOT_ACCEPTED",
+    "release_merge_stable_GO": false
+  },
+  "no_production_changes": "app/src fe405 unchanged; source_workspace_tests.rs restored SHA2563382d3db4d86f7550b22c382e13607b3b9ab912397509f35f4b238915911ebca; git production status clean",
+  "actual_running_elf_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15"
+}

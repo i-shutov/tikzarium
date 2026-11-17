@@ -1,0 +1,96 @@
+{
+  "manifest_kind": "PGFPLOTS_CLEAN_DERIVATIVES_V1",
+  "notice": "CLEAN_DERIVATIVES_ONLY; originals remain unchanged and authoritative",
+  "derivatives": [
+    {
+      "name": "SV-003-clean",
+      "corpus_id": "SV-003",
+      "original_path": "roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-003/figure.tex",
+      "original_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+      "derived_filename": "SV-003-clean.tex",
+      "derived_sha256": "9b4eaf105ddd65728885179a0a38a696ac4339732ddc7be71387e8643c8e171e",
+      "removed_bytes": [
+        {
+          "offset": 1628,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "20323b0a20207d0a5d0a20205c6465665c786f7b312e387d",
+          "context_after_hex": "0a20205c6465665c796e7b312e317d3b0a5c626567696e7b",
+          "definition_line_hex": "20205c6465665c786f7b312e387d3b0a"
+        },
+        {
+          "offset": 1644,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "5c786f7b312e387d3b0a20205c6465665c796e7b312e317d",
+          "context_after_hex": "0a5c626567696e7b617869737d5b65766572792061786973",
+          "definition_line_hex": "20205c6465665c796e7b312e317d3b0a"
+        }
+      ],
+      "byte_length_original": 2472,
+      "byte_length_derived": 2470,
+      "byte_difference_count": 2,
+      "corpus_status": "NOT_ORIGINAL_CORPUS"
+    },
+    {
+      "name": "SV-029-clean",
+      "corpus_id": "SV-029",
+      "original_path": "roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-029/figure.tex",
+      "original_sha256": "43e7efd9032830d95bc6e402ae941bc93af071a6eb4fd7ddedd4d02e318a4a43",
+      "derived_filename": "SV-029-clean.tex",
+      "derived_sha256": "01b3e6f437e87fc83860631ec12d93912f8385bf2ce0d1e6ee5d406d40ef0af9",
+      "removed_bytes": [
+        {
+          "offset": 1655,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "2031293b0a20207d0a5d0a20205c6465665c716c7b2d317d",
+          "context_after_hex": "0a20205c6465665c71727b317d3b0a5c626567696e7b6178",
+          "definition_line_hex": "20205c6465665c716c7b2d317d3b0a"
+        },
+        {
+          "offset": 1669,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "6465665c716c7b2d317d3b0a20205c6465665c71727b317d",
+          "context_after_hex": "0a5c626567696e7b617869737d5b65766572792061786973",
+          "definition_line_hex": "20205c6465665c71727b317d3b0a"
+        }
+      ],
+      "byte_length_original": 2468,
+      "byte_length_derived": 2466,
+      "byte_difference_count": 2,
+      "corpus_status": "NOT_ORIGINAL_CORPUS"
+    },
+    {
+      "name": "SV-009-clean",
+      "corpus_id": "SV-009",
+      "original_path": "roadmap/Tikzarium_Scientific_142_R4/fixtures/SR/SV-009/figure.tex",
+      "original_sha256": "5e6e3dfc2d2b44a74a0a3069e55a402900d2317580fd6991bf39c16648a86fac",
+      "derived_filename": "SV-009-clean.tex",
+      "derived_sha256": "1682defe9e8882e1c0cb59ff603e5d85e906c31e1b6ae5de2702f7676154ab25",
+      "removed_bytes": [
+        {
+          "offset": 1651,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "29293b0a20207d0a5d0a20205c6465665c786f7b302e367d",
+          "context_after_hex": "0a20205c6465665c796e7b312e317d3b0a5c626567696e7b",
+          "definition_line_hex": "20205c6465665c786f7b302e367d3b0a"
+        },
+        {
+          "offset": 1667,
+          "expected_bytes_hex": "3b",
+          "expected_bytes_ascii": ";",
+          "context_before_hex": "5c786f7b302e367d3b0a20205c6465665c796e7b312e317d",
+          "context_after_hex": "0a5c626567696e7b617869737d5b65766572792061786973",
+          "definition_line_hex": "20205c6465665c796e7b312e317d3b0a"
+        }
+      ],
+      "byte_length_original": 2587,
+      "byte_length_derived": 2585,
+      "byte_difference_count": 2,
+      "corpus_status": "NOT_ORIGINAL_CORPUS"
+    }
+  ]
+}

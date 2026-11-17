@@ -1,0 +1,51 @@
+{
+  "captured_at_utc": "2026-11-12T19:40:15.722363+00:00",
+  "repository": "i-shutov/tikzarium",
+  "base_commit": "eb9d415e796d9e84f14550f417c1ebfb272016b7",
+  "base_tree": "c4f8a38451dce105995d2bf9f0a92a7202448325",
+  "atlas_local_candidate_commit": "fe85cc604b5c32ff8ac1c5e09efd694b59a4b4a7",
+  "recovered_app_tree": "6c3208dc309a4c31ba36c4cf3ccda63b85083bd9",
+  "recovered_app_blobs": 25,
+  "source_code_changes_vs_published": 9,
+  "source_bytes_match_atlas_tree": true,
+  "workspace_tests": {
+    "suites": 27,
+    "passed": 562,
+    "failed": 0,
+    "ignored": 4,
+    "suite_statuses": [
+      "ok"
+    ]
+  },
+  "fmt": "PASS",
+  "strict_clippy": "PASS",
+  "app_cli_build": "PASS",
+  "git_diff_check": "PASS",
+  "rust_version": "rustc 1.91.0 (f8297e351 2025-10-28)",
+  "fresh_gui": "BLOCKED_DESKTOP_INPUT_FOCUS_BEFORE_APP_LAUNCH",
+  "windows_native": "NOT_RUN",
+  "old_native_evidence": "Original six-page atlas recovered; current GUI not revalidated. Atlas claims retain original candidate and binary; no new Win10/IME/DPI acceptance.",
+  "fresh_binary_sha256": {
+    "tikzarium-app": "ca10d604f64bc41f79a97a39c3c88f94b83903b1862c5fc8805a3c4b2b8a5f88",
+    "tikzarium-cli": "e6699cc9399f63ebf5ad595bb4c43be3625073622aa90d58acd82a1c11f153c7"
+  },
+  "atlas_sha256": "7d98a75f2185eed84edad7bc443e43e65b8d9c351bf88c32264a9c13f6483d17",
+  "atlas_git_blob": "51c62a92bfd5c3c4ae9024f836e8ca9a17816bf0",
+  "atlas_pages": 6,
+  "reviews": [
+    {
+      "task": "/root/section_editor",
+      "requested_model": "gpt-6.1-sol",
+      "status": "STATIC_REVIEW_NO_BLOCKING_DEFECTS",
+      "scope": "source sections, authoritative editing, history, offsets"
+    },
+    {
+      "task": "/root/compact_ui",
+      "requested_model": "gpt-6.1-sol",
+      "status": "STATIC_REVIEW_NO_BLOCKING_DEFECTS",
+      "scope": "menus, icons, sizing, actions and modal gates"
+    }
+  ],
+  "release": "NO_GO",
+  "ci": "Check new published head; earlier APP_TREE leases remain unchanged."
+}

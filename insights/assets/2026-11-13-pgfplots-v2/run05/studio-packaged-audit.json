@@ -1,0 +1,727 @@
+{
+  "schema_version": 1,
+  "review": "Run05 independent original artifact review",
+  "scope": "Read-only audit of exact Run05 original CI artifacts, GUI images, logs, source hashes and PDF outputs for source commit 24f7ae4cdb483b9097337c38aa0f932ad89e3f80. No source edits, application launches, TeX runs, or new tests were performed. Screenshots and PDFs were visually reviewed; only prior screenshot observations with exact matching bytes were reused.",
+  "candidate": {
+    "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "ordinary_originals": "/workspace/scratch/24342458ee84/validation/attempts/43415762408/originals",
+    "packaged_originals": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals",
+    "ordinary_artifact": {
+      "retrieved_utc": "2026-11-13T11:28:08.252349+00:00",
+      "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "artifact_id": 14032450404,
+      "run_id": 43415762408,
+      "sha256": "5dcf9a12c6d8d816d29ed82d0eb5139aa969e4c0bb4848b08258402e0e536ee9",
+      "size_bytes": 21678582,
+      "github_digest_matches": true,
+      "zip_crc": "PASS",
+      "safe_members": true,
+      "zip_entries": 303,
+      "reports": [
+        {
+          "path": "i61-evidence/report.json",
+          "status": "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW",
+          "files_sha256_verified": 214,
+          "error": null
+        },
+        {
+          "path": "n2-evidence/report.json",
+          "status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+          "files_sha256_verified": 73,
+          "error": null
+        }
+      ]
+    },
+    "packaged_artifact": {
+      "retrieved_utc": "2026-11-13T11:28:08.767199+00:00",
+      "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "artifact_id": 14032002115,
+      "run_id": 43415762002,
+      "sha256": "2c05f110db670992c621af151879f7efab0e570ecf19cb410ed5e5ec6781da47",
+      "size_bytes": 40202785,
+      "github_digest_matches": true,
+      "zip_crc": "PASS",
+      "safe_members": true,
+      "zip_entries": 507,
+      "reports": [
+        {
+          "path": "packaged-i61/report.json",
+          "status": "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW",
+          "files_sha256_verified": 214,
+          "error": null
+        },
+        {
+          "path": "packaged-n2/report.json",
+          "status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+          "files_sha256_verified": 73,
+          "error": null
+        },
+        {
+          "path": "packaged-r1-close/report.json",
+          "status": "PASS_HOSTED_X11_MANUAL_REVIEW_REQUIRED",
+          "files_sha256_verified": 0,
+          "error": null
+        },
+        {
+          "path": "packaged-r3-native/report.json",
+          "status": "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED",
+          "files_sha256_verified": 0,
+          "error": null
+        }
+      ]
+    }
+  },
+  "result": "SCOPED HOSTED X11 ACCEPTANCE SUPPORTED for reviewed I61, N2/N3, R1, R2, R3 and R5 package/reproducibility evidence at this exact source/app tree. Physical Linux desktop qualification remains unestablished; the RC metadata itself records release_go=false and scientific_studio_scope=NOT_ACCEPTED.",
+  "integrity": {
+    "report_file_hash_rechecks": {
+      "ordinary-i61": {
+        "report_inventory_count": 214,
+        "independent_rehash_failures": []
+      },
+      "ordinary-n2-n3": {
+        "report_inventory_count": 73,
+        "independent_rehash_failures": []
+      },
+      "packaged-i61": {
+        "report_inventory_count": 214,
+        "independent_rehash_failures": []
+      },
+      "packaged-n2-n3": {
+        "report_inventory_count": 73,
+        "independent_rehash_failures": []
+      }
+    },
+    "all_report_inventory_hashes_match": true,
+    "outer_archive_integrity": "Both downloaded original ZIPs have receipt-verified bytes/SHA, matching GitHub digest, CRC PASS and safe member inventory.",
+    "current_vs_run04_screenshot_comparison": {
+      "ordinary-i61": {
+        "exact_matching_pngs": 63,
+        "changed_matching_paths": [
+          "25b-raw-build-log.png",
+          "28d-inspector-apply-undo.png",
+          "23-pdf-view-before-export.png",
+          "22-build-status.png"
+        ],
+        "matched_pngs_reused_for_visual_history": [
+          "03-circle-pointer.png",
+          "02-rectangle-rail-before.png",
+          "34-second-path-entered.png",
+          "20-f1-help.png",
+          "04a-before-scratch-build.png",
+          "24-exact-pdf.png",
+          "01-line-selected.png",
+          "29-manual-source-edited.png",
+          "33a-file-path-focused.png",
+          "28c-inspector-applied.png",
+          "38-dirty-source.png",
+          "04-cubic-rail-before.png",
+          "02-rectangle-selected.png",
+          "01-line-rail-before.png",
+          "04-source-pasted.png",
+          "02-file-menu-default-path.png",
+          "05-arrow-saved.png",
+          "05-source-saved.png",
+          "02-rectangle-saved.png",
+          "25a-build-console.png",
+          "35-second-opened.png",
+          "35-second-source-settings.png",
+          "05-arrow-pointer.png",
+          "04-cubic-pointer.png",
+          "05-arrow-selected.png",
+          "33-file-menu-before-open.png",
+          "04b-scratch-build-attempt-1.png",
+          "06-node-pointer.png",
+          "06-node-selected.png",
+          "06-node-saved.png",
+          "28a-inspector-before-draft.png",
+          "06-node-rail-before.png",
+          "05-arrow-rail-before.png",
+          "01-line-saved.png",
+          "01-line-pointer.png",
+          "37-second-reopened.png",
+          "21-f1-closed.png",
+          "36-second-crlf-saved.png",
+          "28b-inspector-draft-only.png",
+          "26-properties-before-f1.png",
+          "41-n3-real-file-opened.png",
+          "03-circle-saved.png",
+          "03-circle-selected.png",
+          "32-visual-undo-click.png",
+          "01-real-studio.png",
+          "43-n3-f1-catalogue-radius.png",
+          "03-circle-rail-before.png",
+          "40-dirty-open-cancelled.png",
+          "04-cubic-selected.png",
+          "03-initial-source-settings.png",
+          "25-pdf-exported.png",
+          "37-reopened-source-settings.png",
+          "33b-file-path-selected.png",
+          "31-seven-before-visual-undo.png",
+          "28-f1-help-closed.png",
+          "04c-scratch-build-cancelled.png",
+          "39-pending-dirty-open.png",
+          "42-n3-caret-in-circle-radius.png",
+          "41-n3-source-settings.png",
+          "04-cubic-saved.png",
+          "27-f1-help-open.png",
+          "30-native-ctrl-z.png",
+          "02-rectangle-pointer.png"
+        ]
+      },
+      "ordinary-n2-n3": {
+        "exact_matching_pngs": 33,
+        "changed_matching_paths": [
+          "12-undo-restored-source.png",
+          "23-n3-visual-undo.png",
+          "n3-build-actual-raw-xelatex.png",
+          "19-n3-caret-complete-target.png",
+          "n3-build-actual-log-copied.png",
+          "n3-build-actual-console.png",
+          "n2-build-actual-log-copied.png",
+          "n2-build-actual-raw-xelatex.png"
+        ],
+        "matched_pngs_reused_for_visual_history": [
+          "build-started-7.png",
+          "15-exact-pdf-tab.png",
+          "build-started-4.png",
+          "17-n3-prefix-in-source-editor.png",
+          "n3-rendered-pdf.png",
+          "07b-arrows-meta-five-statuses.png",
+          "n2-build-console-closed.png",
+          "16-rendered-pdf.png",
+          "n3-build-console-closed.png",
+          "05-libraries-tab.png",
+          "11-after-disconnect.png",
+          "18-n3-caret-f1.png",
+          "06-libraries-catalogue.png",
+          "20-n3-complete-click.png",
+          "10-connect-saved.png",
+          "03-open-target.png",
+          "13a-gui-edited-reopened-source.png",
+          "07a-arrows-meta-five-statuses.png",
+          "13-reopened-external-change.png",
+          "09-after-connect.png",
+          "17a-n3-real-caret-before-brace.png",
+          "full-source-settings-002.png",
+          "n2-build-actual-console.png",
+          "02-file-popup.png",
+          "07-arrows-meta-help.png",
+          "04-scratch-dirty-open-modal.png",
+          "04a-after-gui-open-confirmed.png",
+          "22-n3-completed-exact-pdf.png",
+          "08-connect-button-target.png",
+          "13b-after-gui-save.png",
+          "full-source-settings-001.png",
+          "01-studio-initial.png",
+          "10a-before-disconnect.png"
+        ]
+      },
+      "packaged-i61": {
+        "exact_matching_pngs": 64,
+        "changed_matching_paths": [
+          "25b-raw-build-log.png",
+          "23-pdf-view-before-export.png",
+          "22-build-status.png"
+        ],
+        "matched_pngs_reused_for_visual_history": [
+          "03-circle-pointer.png",
+          "02-rectangle-rail-before.png",
+          "34-second-path-entered.png",
+          "20-f1-help.png",
+          "04a-before-scratch-build.png",
+          "24-exact-pdf.png",
+          "01-line-selected.png",
+          "29-manual-source-edited.png",
+          "33a-file-path-focused.png",
+          "28c-inspector-applied.png",
+          "38-dirty-source.png",
+          "04-cubic-rail-before.png",
+          "02-rectangle-selected.png",
+          "01-line-rail-before.png",
+          "04-source-pasted.png",
+          "02-file-menu-default-path.png",
+          "05-arrow-saved.png",
+          "05-source-saved.png",
+          "02-rectangle-saved.png",
+          "25a-build-console.png",
+          "35-second-opened.png",
+          "35-second-source-settings.png",
+          "05-arrow-pointer.png",
+          "04-cubic-pointer.png",
+          "05-arrow-selected.png",
+          "33-file-menu-before-open.png",
+          "04b-scratch-build-attempt-1.png",
+          "06-node-pointer.png",
+          "06-node-selected.png",
+          "06-node-saved.png",
+          "28a-inspector-before-draft.png",
+          "06-node-rail-before.png",
+          "05-arrow-rail-before.png",
+          "01-line-saved.png",
+          "01-line-pointer.png",
+          "37-second-reopened.png",
+          "21-f1-closed.png",
+          "36-second-crlf-saved.png",
+          "28b-inspector-draft-only.png",
+          "26-properties-before-f1.png",
+          "41-n3-real-file-opened.png",
+          "03-circle-saved.png",
+          "28d-inspector-apply-undo.png",
+          "03-circle-selected.png",
+          "32-visual-undo-click.png",
+          "01-real-studio.png",
+          "43-n3-f1-catalogue-radius.png",
+          "03-circle-rail-before.png",
+          "40-dirty-open-cancelled.png",
+          "04-cubic-selected.png",
+          "03-initial-source-settings.png",
+          "25-pdf-exported.png",
+          "37-reopened-source-settings.png",
+          "33b-file-path-selected.png",
+          "31-seven-before-visual-undo.png",
+          "28-f1-help-closed.png",
+          "04c-scratch-build-cancelled.png",
+          "39-pending-dirty-open.png",
+          "42-n3-caret-in-circle-radius.png",
+          "41-n3-source-settings.png",
+          "04-cubic-saved.png",
+          "27-f1-help-open.png",
+          "30-native-ctrl-z.png",
+          "02-rectangle-pointer.png"
+        ]
+      },
+      "packaged-n2-n3": {
+        "exact_matching_pngs": 34,
+        "changed_matching_paths": [
+          "23-n3-visual-undo.png",
+          "n3-build-actual-raw-xelatex.png",
+          "19-n3-caret-complete-target.png",
+          "n3-build-actual-log-copied.png",
+          "n3-build-actual-console.png",
+          "n2-build-actual-log-copied.png",
+          "n2-build-actual-raw-xelatex.png"
+        ],
+        "matched_pngs_reused_for_visual_history": [
+          "build-started-7.png",
+          "15-exact-pdf-tab.png",
+          "build-started-4.png",
+          "17-n3-prefix-in-source-editor.png",
+          "n3-rendered-pdf.png",
+          "07b-arrows-meta-five-statuses.png",
+          "n2-build-console-closed.png",
+          "16-rendered-pdf.png",
+          "12-undo-restored-source.png",
+          "n3-build-console-closed.png",
+          "05-libraries-tab.png",
+          "11-after-disconnect.png",
+          "18-n3-caret-f1.png",
+          "06-libraries-catalogue.png",
+          "20-n3-complete-click.png",
+          "10-connect-saved.png",
+          "03-open-target.png",
+          "13a-gui-edited-reopened-source.png",
+          "07a-arrows-meta-five-statuses.png",
+          "13-reopened-external-change.png",
+          "09-after-connect.png",
+          "17a-n3-real-caret-before-brace.png",
+          "full-source-settings-002.png",
+          "n2-build-actual-console.png",
+          "02-file-popup.png",
+          "07-arrows-meta-help.png",
+          "04-scratch-dirty-open-modal.png",
+          "04a-after-gui-open-confirmed.png",
+          "22-n3-completed-exact-pdf.png",
+          "08-connect-button-target.png",
+          "13b-after-gui-save.png",
+          "full-source-settings-001.png",
+          "01-studio-initial.png",
+          "10a-before-disconnect.png"
+        ]
+      }
+    }
+  },
+  "I61": {
+    "ordinary": {
+      "status": "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW",
+      "pid": 5142,
+      "window": "4194307",
+      "exe_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+      "screen": [
+        1366,
+        768
+      ],
+      "client_geometry": null,
+      "source_head": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "six_tool_source_stage_sha256": [
+        "42b9503d970ae06d6bde1a1a32aac77158b59166f60a66f35e31d88c7ea16091",
+        "72d2c8d51d9661321c12d8ec26969e42be3ea1595db1152479294c8c7712c120",
+        "00866e3c3cdd8ae146b240df2e5a20abcb7e84ccbf9192c73069e8da0f6e2317",
+        "90244997f85c214ccc225155fab4664968146ae3deb60b0a4be22e01879556d4",
+        "3ff3b75d7ca7667e70b67c85b4d2915f46583fa111268ae77caedaccd1814e7a",
+        "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90"
+      ],
+      "inspector_apply": {
+        "case": "real_pinned_inspector_node_x_apply_minimal_source_patch",
+        "before_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+        "after_sha256": "be3ab4f52d634b4d531fab9e05ab80c1b6285056b6162e158e02031956a17bf1",
+        "changed_line_number": 16
+      },
+      "final_source_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+      "gui_save": "PASS_REAL_X11_EXACT_BYTES",
+      "visual_undo": "PASS_REAL_X11_INVERSE_SOURCE_BYTES",
+      "native_text_undo": "PASS_REAL_X11_SAVED_SOURCE_BYTES",
+      "real_xelatex_pdf": "PASS_EXTERNAL_XELATEX_PDF_CYRILLIC_AND_ALL_FONTS_EMBEDDED",
+      "toolbar_reopen": "NOT_RUN"
+    },
+    "packaged": {
+      "status": "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW",
+      "pid": 5597,
+      "window": "6291459",
+      "exe_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+      "source_head": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "final_source_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+      "gui_save": "PASS_REAL_X11_EXACT_BYTES",
+      "visual_undo": "PASS_REAL_X11_INVERSE_SOURCE_BYTES",
+      "real_xelatex_pdf": "PASS_EXTERNAL_XELATEX_PDF_CYRILLIC_AND_ALL_FONTS_EMBEDDED",
+      "toolbar_reopen": "NOT_RUN"
+    },
+    "visual_review": [
+      "Packaged 22-build-status screenshot shows the six-item canvas, node A with X=10.25cm/Y=3.25cm and successful 1-page build status.",
+      "Packaged 23-PDF screenshot shows six drawing objects plus A and the Cyrillic “Не менять”.",
+      "Packaged 28d shows X=10.50cm after apply (orange modified marker); exact action/source timeline demonstrates draft clipboard 10.50, source transformation from acb3… to be3a…, then return/save to acb3…. Final saved source SHA is the original acb3….",
+      "The six tool screenshots and F1/help screenshots whose bytes match Run04 were reused; the run04 review confirms visible line, rectangle, circle, cubic, arrow and text-node actions, F1 contextual help, source/editor undo and return to Properties.",
+      "Report marks toolbar reopen NOT_RUN; no toolbar-reopen acceptance claimed."
+    ],
+    "clipboard_and_source": {
+      "original_node_x": "10.25cm",
+      "draft_node_x": "10.50cm",
+      "apply_before_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+      "apply_after_sha256": "be3ab4f52d634b4d531fab9e05ab80c1b6285056b6162e158e02031956a17bf1",
+      "returned_final_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+      "sentinel_retained_and_rejected": true
+    }
+  },
+  "N2_N3": {
+    "ordinary": {
+      "status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+      "pid": 6348,
+      "window": "6291459",
+      "exe_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+      "source_head": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "library_connect": "PASS_REAL_X11_C_CATALOGUE_SOURCE_PATCH",
+      "library_disconnect": "PASS_REAL_X11_INVERSE_SOURCE_BYTES",
+      "library_undo": "PASS_REAL_X11_VISUAL_UNDO",
+      "gui_save_open": "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE",
+      "xelatex_pdf": "PASS_EXTERNAL_XELATEX_UNICODE_EMBEDDED_FONTS",
+      "n3_xelatex_pdf": "PASS_REAL_GUI_EXTERNAL_XELATEX_CYRILLIC_FONTS"
+    },
+    "packaged": {
+      "status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+      "pid": 6791,
+      "window": "6291459",
+      "exe_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+      "source_head": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "library_connect": "PASS_REAL_X11_C_CATALOGUE_SOURCE_PATCH",
+      "library_disconnect": "PASS_REAL_X11_INVERSE_SOURCE_BYTES",
+      "library_undo": "PASS_REAL_X11_VISUAL_UNDO",
+      "gui_save_open": "PASS_REAL_X11_GUI_CRLF_OPEN_EDIT_SAVE",
+      "xelatex_pdf": "PASS_EXTERNAL_XELATEX_UNICODE_EMBEDDED_FONTS",
+      "n3_xelatex_pdf": "PASS_REAL_GUI_EXTERNAL_XELATEX_CYRILLIC_FONTS"
+    },
+    "manual_review": [
+      "Matched unchanged library/catalogue screenshots were re-used only after exact SHA comparison with Run04. Current N2 undo-restored-source image shows the CRLF source and disabled/disconnected package status after inverse change.",
+      "Current N3 F1 screenshot shows engine=CONFIRMED, tool=CONFIRMED, help=CONFIRMED; PGF 3.1.12 minimum remains UNKNOWN. It states exact source guidance, and specifically says this is name edit plus Undo, not package installation or PDF pass. N3 visual undo shows restoration and expected unsaved status.",
+      "The word in the help text is “tool”; no “cool” typo is present.",
+      "PDF binding is the N2 pre-completion original `original-n2-before-completion.pdf`; `n2-crlf.pdf` is the subsequent N3 completed artifact and is not treated as N2 evidence."
+    ]
+  },
+  "PDF_review": [
+    {
+      "role": "ordinary I61 XeLaTeX output",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762408/originals/i61-evidence/figure.pdf",
+      "sha256": "be322897b8454979c9ca8f28dfbb59b706555a81a837761f8668a0abbd3a1b1e",
+      "bytes": 8543,
+      "pages": 1,
+      "extracted_text": "A\n\nНе менять",
+      "expected_text_observed": false,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "ordinary N2 original before completion",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762408/originals/n2-evidence/original-n2-before-completion.pdf",
+      "sha256": "39994fb84fe513023ca3f8976d99d6bd87a4903177ce41277c459a1e63a73d4f",
+      "bytes": 8095,
+      "pages": 1,
+      "extracted_text": "Фигура",
+      "expected_text_observed": true,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "ordinary N3 completed output",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762408/originals/n2-evidence/original-n3-completed.pdf",
+      "sha256": "50e8b6cc51c931a366e85fc69909883cbfcf9789d1f768370e129410e1f008c8",
+      "bytes": 8096,
+      "pages": 1,
+      "extracted_text": "Фигура",
+      "expected_text_observed": true,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "packaged I61 XeLaTeX output",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals/packaged-i61/figure.pdf",
+      "sha256": "6b3f05af2cb508d326fac70c502e5c1437cc5b857960990759e04a93171a7686",
+      "bytes": 8546,
+      "pages": 1,
+      "extracted_text": "A\n\nНе менять",
+      "expected_text_observed": false,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "packaged N2 original before completion",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals/packaged-n2/original-n2-before-completion.pdf",
+      "sha256": "d4015e24d8cdf4e320dd50aad2a8668170b7a2f8efd56756c12f1cbfdcfc1647",
+      "bytes": 8095,
+      "pages": 1,
+      "extracted_text": "Фигура",
+      "expected_text_observed": true,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "packaged N3 completed output",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals/packaged-n2/original-n3-completed.pdf",
+      "sha256": "d42f9cb91e00ed87ec234abd9b38835194b282327fe13d4f8c70b9a5b8814660",
+      "bytes": 8095,
+      "pages": 1,
+      "extracted_text": "Фигура",
+      "expected_text_observed": true,
+      "embedded_dejavu_serif": true
+    },
+    {
+      "role": "packaged R3 native export",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals/packaged-r3-native/project/экспорт через XDG.pdf",
+      "sha256": "9455c28415d0934282a70f0453cc0042668cb1243c950e9c77ccbfe9c7a5b30b",
+      "bytes": 10106,
+      "pages": 1,
+      "extracted_text": "Фигура R3-Picker-Canary",
+      "expected_text_observed": true,
+      "embedded_dejavu_serif": true
+    }
+  ],
+  "R1": {
+    "status": "PASS_HOSTED_X11_MANUAL_REVIEW_REQUIRED",
+    "pid": 7681,
+    "window": "4194307",
+    "running_elf_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+    "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "exit_code": 0,
+    "source_file_sha256s": {
+      "source-before-close-observed.txt": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4",
+      "source-after-wm-cancel-observed.txt": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4",
+      "source-after-alt-f4-cancel-observed.txt": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4",
+      "figure.tex": "ca4618ee40cf6f932fadf657f358f8f7093c6cb1dfa43e5e127e94fea4e547e4"
+    },
+    "screen": [
+      1366,
+      768
+    ],
+    "client_geometry": {
+      "X": 1,
+      "Y": 20,
+      "WIDTH": 1180,
+      "HEIGHT": 680
+    },
+    "image_review": [
+      "Original screenshots show the unsaved-change modal with Save and Exit, Discard and Exit and Cancel controls; Escape/WM cancel returns to the intact editor/source, Alt+F4 also reopens a close confirmation, and after explicit save the source is clean."
+    ],
+    "decision": "PASS for hosted window-manager dirty-close interception, cancel/source-preservation and clean close. This is distinct from physical window-manager qualification."
+  },
+  "R2": {
+    "screenshots": [
+      {
+        "path": "r2-desktop/1366x768-scale-1_0/desktop.png",
+        "sha256": "1d1d7060c6aa85d75a2571000494233afc19205c02a5923d8283277afb51f6cf",
+        "bytes": 149402,
+        "image_dimensions": "1366x768"
+      },
+      {
+        "path": "r2-desktop/1920x1080-scale-1_25/desktop.png",
+        "sha256": "4877b50dcc92722991653dd4c00b0dc268c1729c75fe2d447e4c0c3612b7adab",
+        "bytes": 208829,
+        "image_dimensions": "1920x1080"
+      },
+      {
+        "path": "r2-desktop/1920x1080-scale-2_0/desktop.png",
+        "sha256": "498ec152fd00ae6c8ce3e6f6cda34e515e35bcac62a028567b63a1e54226e127",
+        "bytes": 342564,
+        "image_dimensions": "1920x1080"
+      }
+    ],
+    "image_review": "All three original desktop captures were inspected: 1366x768 at scale 1.0; 1920x1080 at scale 1.25; 1920x1080 at scale 2.0. They show the same 1180x680 client window and Studio layout with TeX configured state and no false build PASS. This supports only hosted geometry captures; no physical HiDPI/native-dialog acceptance."
+  },
+  "R3": {
+    "status": "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED",
+    "pid": 7937,
+    "window": "8388611",
+    "running_elf_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+    "source_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "screen": [
+      1366,
+      768
+    ],
+    "client_geometry": {
+      "X": 1,
+      "Y": 20,
+      "WIDTH": 1180,
+      "HEIGHT": 680
+    },
+    "steps": [
+      "genuine_portal_open_window_visible",
+      "native_open_selected_unicode_CRLF_source",
+      "portal_cancel_keeps_editable_source",
+      "native_save_unicode_new_file_no_overwrite",
+      "native_export_exact_xelatex_pdf_unicode_embedded_fonts"
+    ],
+    "pdf_sha256": "9455c28415d0934282a70f0453cc0042668cb1243c950e9c77ccbfe9c7a5b30b",
+    "pdf_path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/originals/packaged-r3-native/project/экспорт через XDG.pdf",
+    "exit_code": -15,
+    "exit_classification": "Harness cleanup termination, not application failure and not clean exit success: qa_r3_native_picker_x11.py finally calls Native.stop(); qa_n2_studio_x11.py Native.stop() sends process.terminate() to a still-live child before recording returncode. The driver returns 0 for PASS status. R1 separately records true clean exit_code 0 after saved close.",
+    "visual_review": [
+      "All original R3 screenshots 01–09 inspected: normal app before dialog; separate GTK chooser window for Open; loaded Unicode filename and source; separate chooser for Cancel; GTK Save dialog with Cyrillic filename; saved new file; one-page PDF view; GTK PDF export chooser; exported PDF displayed.",
+      "The actual file chooser windows and paths are consistent with the dedicated native GTK/portal report; exported PDF content matches the intended canary."
+    ]
+  },
+  "R5": {
+    "preview": {
+      "bytes": 6994227,
+      "sha256": "3062e654621895f905151b5730a3f38b0e89c3ca8bc1fce380178f9ebf527eb5",
+      "members": [
+        "MANIFEST.sha256",
+        "PROVENANCE.json",
+        "README_RU.md",
+        "launch.sh",
+        "qa/figure-crlf.tex",
+        "tikzarium-app",
+        "tikzarium-cli"
+      ],
+      "manifest": [
+        {
+          "path": "PROVENANCE.json",
+          "sha256": "4512e919036e23da2b5647fdac5b23144d060fc96b295376cf444cd12e11ae62",
+          "matches_member": true
+        },
+        {
+          "path": "README_RU.md",
+          "sha256": "6816d1d7e3ee510115fc0793cf594775e64efb5b372c15ce0766a6de97d8f489",
+          "matches_member": true
+        },
+        {
+          "path": "launch.sh",
+          "sha256": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+          "matches_member": true
+        },
+        {
+          "path": "qa/figure-crlf.tex",
+          "sha256": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d",
+          "matches_member": true
+        },
+        {
+          "path": "tikzarium-app",
+          "sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+          "matches_member": true
+        },
+        {
+          "path": "tikzarium-cli",
+          "sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+          "matches_member": true
+        }
+      ],
+      "inner_sha256": {
+        "tikzarium-app": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "tikzarium-cli": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+        "launch.sh": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+        "qa/figure-crlf.tex": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d"
+      }
+    },
+    "rc": {
+      "bytes": 6995089,
+      "sha256": "edeef05b097ef74408f16939264193113e18fde92986ca464e6f304d39613246",
+      "members": [
+        "MANIFEST.sha256",
+        "PROVENANCE.json",
+        "README_RU.md",
+        "launch.sh",
+        "qa/figure-crlf.tex",
+        "tikzarium-app",
+        "tikzarium-cli"
+      ],
+      "manifest": [
+        {
+          "path": "PROVENANCE.json",
+          "sha256": "01f5c04a0d7f5bbba6b0ac40d6e48f18e523731a4ca60eb12b8f624c7e6edc23",
+          "matches_member": true
+        },
+        {
+          "path": "README_RU.md",
+          "sha256": "0712b0fd1067ce89646e8075252b35ca700c59699003cd6f25536222923e9f9b",
+          "matches_member": true
+        },
+        {
+          "path": "launch.sh",
+          "sha256": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+          "matches_member": true
+        },
+        {
+          "path": "qa/figure-crlf.tex",
+          "sha256": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d",
+          "matches_member": true
+        },
+        {
+          "path": "tikzarium-app",
+          "sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+          "matches_member": true
+        },
+        {
+          "path": "tikzarium-cli",
+          "sha256": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+          "matches_member": true
+        }
+      ],
+      "inner_sha256": {
+        "tikzarium-app": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "tikzarium-cli": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+        "launch.sh": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+        "qa/figure-crlf.tex": "5fbdc09ad2456b4543908df995a17ba8368c5e5277962fa34b6c28a9c7ea763d"
+      }
+    },
+    "rc_attestation": {
+      "binary_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+      "physical_linux": "NOT_RUN",
+      "release_go": false,
+      "scientific_studio_scope": "NOT_ACCEPTED",
+      "source_sha": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+      "status": "PASS_RC_PACKAGE_HOSTED_NOT_PHYSICAL",
+      "version": "1.0.0-rc.1"
+    },
+    "build_provenance": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80\n7d35e7b8064a651084fef931a827ac46b3448c6a\nrustc 1.91.0 (f8297e351 2025-10-28)\nbinary: rustc\ncommit-hash: f8297e351a40c1439a467bbbb6879088047f50b3\ncommit-date: 2025-10-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.91.0\nLLVM version: 21.1.2\nf77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632  target/release/tikzarium-app\n8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384  target/release/tikzarium-cli\naa5de536d803b4fc2cd25588d4a9fd8804d8ce8d972d7e7870d61e37283f2884  Cargo.lock\n",
+    "hosted_reproducibility_log": {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415762002/original-job.log",
+      "step_lines": "1773–1832",
+      "evidence": "Workflow recreates RC tar from source24f and actual app/CLI ELF, checks manifests and preview app/CLI cmp, generates rc-second.tar.gz and executes cmp -s against RC archive; both SHA outputs are edeef05… and step succeeded under shell -e. Run URL omitted.",
+      "rc_tar_bytes_match_preview_app_cli_launcher_fixture": true
+    },
+    "scoping": "RC package is historical candidate. Its embedded provenance says release_go false, scientific_studio_scope NOT_ACCEPTED, physical Linux/X11 NOT_RUN, TeX/fonts not bundled."
+  },
+  "limitations": [
+    "No physical Linux desktop or physical HiDPI run was observed.",
+    "No Wayland or OS-level signed installer/notarization claims.",
+    "The harness report “manual review required” remains its original label; the independent scoped review above supplies image/PDF review for this run.",
+    "I61 toolbar reopen is NOT_RUN; N2 library entry details were reviewed only via the screenshots that exactly match earlier reviewed bytes; no new package installation path is claimed."
+  ]
+}

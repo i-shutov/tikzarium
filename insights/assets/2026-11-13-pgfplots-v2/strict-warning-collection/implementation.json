@@ -1,0 +1,12 @@
+{
+  "created_utc": "2026-11-13T11:36:37.542606+00:00",
+  "base_source": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "scope": "QA only; strict build warnings retained as per-case FAIL and aggregate FAIL; proceed independent cases only after complete diagnostics; other exceptions stop",
+  "production_change": false,
+  "tests": "31 PASS / 0 FAIL / 0 SKIP",
+  "patch_sha256": "02679b6f87021ff7fe7e2b7692d0e0119022bf16c8f7c1f2075ea3710a0e1fb2",
+  "files": {
+    "scripts/qa_pgfplots_vertical_x11.py": "eda73d5385092e627042b52d27e9b0adaf116b6b77e3ec40fd8bee23977eae93",
+    "scripts/qa_pgfplots_vertical_test.py": "3e528c0d3c70b2d9f177ac89e2f4a2cc8f019b24f1203527f9f3008d73050225"
+  }
+}

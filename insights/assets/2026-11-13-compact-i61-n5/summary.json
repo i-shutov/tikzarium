@@ -1,0 +1,157 @@
+{
+  "scope": "LOCAL_CONTRACTS_NOT_NATIVE_GUI",
+  "created_utc": "2026-11-13T07:17:30.724109+00:00",
+  "base_commit": "b1b67a5cbf41ed1c82250a1ff08e1738376f83ab",
+  "app_source_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "results": [
+    {
+      "name": "compact-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_qa_compact*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.142,
+      "log": "compact-contracts.log"
+    },
+    {
+      "name": "font-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_qa_i61_studio_fonts.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.09,
+      "log": "font-contracts.log"
+    },
+    {
+      "name": "viewport-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_qa_n5_viewport.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.054,
+      "log": "viewport-contracts.log"
+    },
+    {
+      "name": "rc-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_linux_release_candidate.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.099,
+      "log": "rc-contracts.log"
+    },
+    {
+      "name": "preview-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_package_n5_preview.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.191,
+      "log": "preview-contracts.log"
+    },
+    {
+      "name": "scientific-contracts",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "qa_sci_compact_native_test.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 0.704,
+      "log": "scientific-contracts.log"
+    },
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.562,
+      "log": "fmt.log"
+    },
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.005,
+      "log": "diff-check.log"
+    },
+    {
+      "name": "unchanged-production",
+      "command": [
+        "git",
+        "diff",
+        "--exit-code",
+        "--",
+        "crates",
+        "extensions",
+        "Cargo.toml",
+        "Cargo.lock"
+      ],
+      "exit_code": 0,
+      "seconds": 0.002,
+      "log": "unchanged-production.log"
+    },
+    {
+      "name": "workflow-yaml-bash-syntax",
+      "exit_code": 0
+    }
+  ],
+  "contract_total_pass": 68,
+  "compact_contract_total_pass": 30,
+  "followup": "Retain both N2/N3 original PDFs and per-build GUI logs; 30 compact contracts pass after followup."
+}

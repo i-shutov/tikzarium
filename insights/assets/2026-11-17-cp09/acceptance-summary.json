@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "checkpoint": "CP09",
+  "date_moscow": "2026-11-17",
+  "status": "BOUNDED_NATIVE_AND_SCIENTIFIC_REVIEW_COMPLETE_WITH_ORIGINAL_STRICT_FAILURES_PRESERVED",
+  "native_source_sha": "92a01f2a8d58718e4d1439b0343e9d0d03d6444d",
+  "native_root_tree": "b13ba7d867f887352aaa873696a05d7454d7d277",
+  "app_source_tree": "b5759efbf0c200f3497e99d43ea8de4a110f1f85",
+  "acceptance_transfer": "NONE_TO_LATER_DOCUMENTATION_COMMITS",
+  "local_validation": {
+    "rust": {
+      "passed": 609,
+      "failed": 0,
+      "ignored": 4
+    },
+    "format": "PASS",
+    "clippy_strict": "PASS",
+    "python": {
+      "suites": [
+        {
+          "log": "python-vertical-recovery.log",
+          "passed": 49,
+          "status": "PASS"
+        },
+        {
+          "log": "python-at4-final.log",
+          "passed": 43,
+          "status": "PASS"
+        },
+        {
+          "log": "python-native-plot.log",
+          "passed": 4,
+          "status": "PASS"
+        },
+        {
+          "log": "python-clean.log",
+          "passed": 26,
+          "status": "PASS"
+        },
+        {
+          "log": "python-compact.log",
+          "passed": 20,
+          "status": "PASS"
+        },
+        {
+          "log": "python-compact-shell-recovery.log",
+          "passed": 35,
+          "status": "PASS"
+        },
+        {
+          "log": "python-i61-fonts.log",
+          "passed": 4,
+          "status": "PASS"
+        },
+        {
+          "log": "python-n5-viewport.log",
+          "passed": 4,
+          "status": "PASS"
+        },
+        {
+          "log": "python-guide-inputs-recovery.log",
+          "passed": 11,
+          "status": "PASS"
+        }
+      ],
+      "total_passed": 196
+    },
+    "evidence_class": "UNIT_EVENT_NOT_NATIVE_GUI",
+    "initial_integration_findings": [
+      "Rust widget selector renamed to current Russian label; fixed without changing Undo/revision assertions",
+      "AT4 inventory expectations expanded to17; V2 to27; added rejection of CP08-only inventory"
+    ],
+    "prior_cp09_first_source_sha": "e87a898cf502af40e3d1c22911d1d3c43dc03437",
+    "recovery_scope": "QA leases, bounded recorder budgets/late failures, guide layout/closed crop; production app tree unchanged. Only affected Python suites rerun; original Rust609/fmt/clippy and unaffected Python validation retained on identical source.",
+    "app_tree_sha": "b5759efbf0c200f3497e99d43ea8de4a110f1f85"
+  },
+  "native_ci": {
+    "completed": 16,
+    "success": 15,
+    "failure": 1,
+    "pgf_run_id": 44052884286,
+    "pgf_jobs": [
+      {
+        "id": 133934814005,
+        "name": "PGFPlots native at4",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 133934814311,
+        "name": "PGFPlots native v2-clean",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 133934814393,
+        "name": "PGFPlots native v2",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 133943514599,
+        "name": "Visual Guide from current native interfaces",
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "other_runs": {
+      "i61": 44052884536,
+      "n5": 44052884627,
+      "compact": 44052884613
+    }
+  },
+  "native_scopes": {
+    "at4": {
+      "status": "PASS_BOUNDED_HOSTED_REVIEW",
+      "operations": 17,
+      "states": 119,
+      "gui_pdf_builds": 17,
+      "producer_files": 2717,
+      "ids": [
+        9,
+        34,
+        35,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61
+      ]
+    },
+    "v2_original": {
+      "status": "FAIL_STRICT_WARNING_GATE_CONFIRMED",
+      "operations": 27,
+      "states": 113,
+      "gui_pdf_builds": 8,
+      "producer_files": 2268,
+      "strict_failed_fixtures": [
+        "SV-003",
+        "SV-029",
+        "SV-009"
+      ]
+    },
+    "v2_clean": {
+      "status": "PASS_BOUNDED_HOSTED_REVIEW_ATTRIBUTED_DERIVATIVES",
+      "operations": 27,
+      "states": 113,
+      "gui_pdf_builds": 8,
+      "producer_files": 2242,
+      "coverage_overlap": "Same logical operations as V2 original, not additional27operations",
+      "change": "Only two semicolons removed from each of three attributed disposable inputs; corpus originals unchanged."
+    }
+  },
+  "corpus": {
+    "source_assets_verified": 235,
+    "tex": 161,
+    "dat": 74,
+    "additional_intake_metadata": 3,
+    "baseline": "2c5f9b8a1fb98a8764462ba0759fd5d5569a437c",
+    "source_assets_changed": 0
+  },
+  "visual_guide": {
+    "status": "PASS_ROOT_AND_INDEPENDENT_ALL_PAGE_REVIEW",
+    "generator_source_sha": "efe2e70845055e0fba9dfca7c511d1ca54f4d97d",
+    "evidence_source_sha": "92a01f2a8d58718e4d1439b0343e9d0d03d6444d",
+    "run_id": 44058148597,
+    "job_id": 133952713251,
+    "artifact_id": 14317710386,
+    "artifact_zip_sha256": "a45797fd37b04d2ca549a1270ee154440687dd97fca2100148acb2d653f58640",
+    "pdf_sha256": "06d8831772669b5f70e1f99ac99735230c5c5997c957c7a1d8a47075d1be069a",
+    "pdf_bytes": 3172813,
+    "pages": 17,
+    "original_screens": 14,
+    "embedded_unicode_font_rows": 3,
+    "strict_warnings": 0,
+    "build_report_unchanged_status": "COMPILED_REQUIRES_INDEPENDENT_PAGE_REVIEW"
+  },
+  "reviews": [
+    {
+      "checkpoint_path": "validation/cp09/v2-recovery-independent-review.json",
+      "sha256": "c30bfa2ce4a4d4d8b9569b67f0d0817f99d244b9c96b139af606e0190ddb802f",
+      "bytes": 60545,
+      "reported_status": "RECOVERY_BOUNDED_REVIEW_COMPLETE_ORIGINAL_STRICT_FAIL_RETAINED"
+    },
+    {
+      "checkpoint_path": "validation/cp09/v2-recovery-final-review.json",
+      "sha256": "2ee72f7c52d3e9f041c4c20139ef3fa578ab765113b41ac6156bc64de8da9ff3",
+      "bytes": 28360,
+      "reported_status": "FAIL_STRICT_XELATEX_WARNING_GATE_CONFIRMED"
+    },
+    {
+      "checkpoint_path": "validation/cp09/v2-clean-recovery-final-review.json",
+      "sha256": "bc1e34cfae9828f615d00ec6ebba1e78de6f2e77ac7919a0acb7bee64b792ea0",
+      "bytes": 29499,
+      "reported_status": "PASS_INDEPENDENT_BOUNDED_HOSTED_GUI_REVIEW_ATTRIBUTED_CLEAN_INPUTS"
+    },
+    {
+      "checkpoint_path": "validation/cp09/v2-clean-isolation-recovery-review.json",
+      "sha256": "2b4c5b38d05ca6dc4e3cca718bd64cecad3c4d7316b599005bdaa71b24553988",
+      "bytes": 6933,
+      "reported_status": "PASS_BOUNDED_DIAGNOSTIC_ISOLATION_REVIEW"
+    },
+    {
+      "checkpoint_path": "validation/cp09/science/final-scientific-review.json",
+      "sha256": "9b8244fc0b5b3977c4b1176f38a8c90b1c2d3401c4b0e7ec7e21df3905844fab",
+      "bytes": 98995,
+      "reported_status": "BOUNDED_17_AT4_PLUS_SV040_REVIEW_COMPLETE_OTHER_CP09_AND_NORMATIVE_GATES_OPEN"
+    },
+    {
+      "checkpoint_path": "validation/cp09/native-regression-review/i61-compact-recovery-review.json",
+      "sha256": "9cb9c8a61156154130f7c596e62e57ff1cff3cd1c0e49d4145244a03074f208f",
+      "bytes": 15988,
+      "reported_status": "PASS_INDEPENDENT_BOUNDED_HOSTED_LINUX_REGRESSION_REVIEW"
+    },
+    {
+      "checkpoint_path": "validation/cp09/native-regression-review/n5-recovery-review.json",
+      "sha256": "6e1f47bce0326ae31bf583a2555f62955cf37e7af09feeded332b289319da872",
+      "bytes": 13513,
+      "reported_status": "BOUNDED_HOSTED_N5_ARTIFACT_AND_SELECTED_GUI_PDF_REVIEW_COMPLETE"
+    },
+    {
+      "checkpoint_path": "validation/cp09/final-source-audit.json",
+      "sha256": "212f0b58be47c1e5125b80bbc6df86ef50449e25875d2b04459dc188d0de08fc",
+      "bytes": 7805,
+      "reported_status": "PASS_READ_ONLY_SOURCE_INTEGRITY_WITH_CP10_PROPOSAL_BOUNDARY"
+    },
+    {
+      "checkpoint_path": "validation/cp09/visual-guide/final-root-review.json",
+      "sha256": "68482e315d2a456df498196fb757efc6674dd6823d87e1e95e21aef96b0000eb",
+      "bytes": 19262,
+      "reported_status": "PASS_ROOT_DOCUMENT_AND_ALL_PAGE_REVIEW"
+    },
+    {
+      "checkpoint_path": "validation/cp09/visual-guide/final-page-review.json",
+      "sha256": "68b83718c7e85edd32f5d333ad97ddf79dc8ba8ea028fe52ee1d47b65ecb9718",
+      "bytes": 8619,
+      "reported_status": "PASS_BOUNDED_GUIDE_LAYOUT_AND_SCREENSHOT_INTEGRITY"
+    },
+    {
+      "checkpoint_path": "validation/cp09/visual-guide/final-canonical-code-review.json",
+      "sha256": "dcd54937e13a9921ac4462169693400530a0015336cc0b6fa7cbf02903ecab8b",
+      "bytes": 11854,
+      "reported_status": "PASS_BOUNDED_CANONICAL_CODE_REVIEW_PDF_PROOF_PENDING"
+    }
+  ],
+  "next_work": "Continue SCI-04 remaining SC3 operations/evidence matrix thenSC4-SC6; CP10coordinates operation in checkpoint is a proposed unimplemented slice. Scientificruntime beforeAsymptote thenTypst/CeTZ.",
+  "open_gates": [
+    "Full SC3/AT4",
+    "Full SCI142/103 and AI88",
+    "SC4-SC6",
+    "Native G3 and document/build lifecycle",
+    "Physical Windows10/IME/DPI and macOS acceptance"
+  ],
+  "release_go": false,
+  "pr": 189,
+  "pr_draft": true,
+  "main_unchanged": "0a9831404687296a5467f89e77e873de8cdc5137"
+}

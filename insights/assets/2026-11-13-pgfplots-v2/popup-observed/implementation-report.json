@@ -1,0 +1,41 @@
+{
+  "task_id": "/root/pgf_qa_review",
+  "model_id": "Inherited parent model; exact identifier not exposed",
+  "base_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+  "status": "QA_ONLY_OFFLINE_VERIFIED_REQUIRES_INDEPENDENT_REVIEW_AND_NATIVE_RERUN",
+  "changed_files": [
+    "scripts/qa_pgfplots_vertical_x11.py",
+    "scripts/qa_pgfplots_vertical_test.py",
+    "scripts/fixtures/pgfplots-v2/run04-popup-probes.json"
+  ],
+  "patch": "/workspace/scratch/24342458ee84/reviews/popup_observed/observed-pgf-property-popup.patch",
+  "patch_sha256": "0eef67bd5ca6c383eb4c4cb848d07246e5f2086024129143e31aec12f50c7dcb",
+  "implementation": "Observe actual exact-color popup padding, viewport86..200 and source-grounded 3/15 content. Measure two scrollbar columns and infer bounded scroll interval from actual thumb endpoints, source handle geometry and raster/corner uncertainty. Pick only the intersection of row interior over the whole interval and viewport. If target is not safely visible, reset/prove top, drag observed thumb with owned-pointer/window checks, actual XQueryPointer button-held proof and finally mouseup, then re-observe before final entry click. No wheel-distance assumption, keyboard focus assumption, or production change.",
+  "tests": {
+    "popup_contracts": 25,
+    "existing_at4_contracts": 26,
+    "total_passed": 51,
+    "failed": 0,
+    "skipped": 0,
+    "logs": [
+      "/workspace/scratch/24342458ee84/reviews/popup_observed/popup-final-tests.log",
+      "/workspace/scratch/24342458ee84/reviews/popup_observed/at4-existing-tests.log"
+    ],
+    "source_draft_literal_f1_apply_undo_build_guards": "AST-identical to81 for field_copy/stage/exercise/build/select_operation/run_case",
+    "syntax": "PASS for two modified scripts",
+    "whitespace": "PASS",
+    "root_apply_check": "PASS without applying"
+  },
+  "meaningful_regressions": [
+    "Actual run04 reset/scrolled RGB probes independently imply scroll offset interval containing80 and safe xtick click near485 rather than wrong526",
+    "Actual short axis viewport remains15-choice inventory with86px viewport; missing scrollbar refuses until observed",
+    "All15 row targets at both viewport sizes cover entire inferred offset interval, normal raster rounding and extra rounded-end inset, including boundaries; three-choice centers retain originalrun01 geometry",
+    "Missing/split/mismatched/wrong-length thumb and invalid offset interval refuse",
+    "Driver wiring re-observes short popup after positioning; stale post-drag thumb refuses before any row click",
+    "Drag below click threshold refuses; lost button-held proof and injected partial mousedown failure always attempt mouseup"
+  ],
+  "dependencies": "Only existing Pillow/xdotool/libX11.so.6; pgfplots workflow already installs python3-pil, xdotool, libx11-dev. Reuses existing I61 XQueryPointer helper; no new installs.",
+  "native_uncertainty": "Actual new drag and AT4 short-viewport traversal are not locally exercised (no native X11 surface); must pass disposable hosted rerun and independent original image/source review. Overall run04 FAIL remains unchanged.",
+  "production_and_originals": "No Rust/workflow/root/original changes; app tree7d35 remains unchanged; no Cargo commands, commit or push.",
+  "diagnosis": "/workspace/scratch/24342458ee84/reviews/popup_observed/diagnosis.json"
+}

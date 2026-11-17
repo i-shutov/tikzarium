@@ -1,0 +1,355 @@
+{
+  "created_utc": "2026-11-12T13:29:22.179936+00:00",
+  "source_commit": "79168f6838d29748bc4cd51a372b7c267fd97386",
+  "source_tree": "aaa57d868e836d6dab8588c32b5bc2b4da289a8a",
+  "app_source_tree": "be8bdaa8d5ecfecbc008a634121968bcc6e8517f",
+  "app_binary_sha256": "708e3a8cd2a2e5dd57fe84454bc38226994d94714be4b7ed222b692b22c5d46c",
+  "archive": {
+    "file": "evidence.zip",
+    "bytes": 2340645,
+    "sha256": "4a1dff1bc9bf882df4f85a1dc2794a9542fa4c5e1330eec2ec3ec50023115ef2"
+  },
+  "notes": [
+    "PNG 01-03: d897881; PNG04-15:79168f6. Original PNG bytes, no edits.",
+    "PNG10 records cached ledger before explicit recheck; PNG11 records rejection.",
+    "Native Linux F14_3 build/export subset, not complete scientific/Windows acceptance.",
+    "Baseline-code-d897881 validation and launch record kept separately."
+  ],
+  "files": [
+    {
+      "path": "build/baseline-code-d897881/build.log",
+      "bytes": 176,
+      "sha256": "a3ab562bc949ad2dae86e8c5970271ac21ca8295cc0054c80bf48a9d79f50c13"
+    },
+    {
+      "path": "build/baseline-code-d897881/clippy.log",
+      "bytes": 504,
+      "sha256": "224d63ab775918edaacebfb2849c1a78570c0793e11a38f76d9c5925c7d4885e"
+    },
+    {
+      "path": "build/baseline-code-d897881/diff.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/baseline-code-d897881/fmt.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/baseline-code-d897881/native-app.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/baseline-code-d897881/native-launch.txt",
+      "bytes": 196,
+      "sha256": "22feb45ae76bbfc3ac241a245403bdc13f2aac8482a4d16453c74f1547861f90"
+    },
+    {
+      "path": "build/baseline-code-d897881/tested-source-sha256.json",
+      "bytes": 7816,
+      "sha256": "584a1ecd97e32b0730d03d8595f891fb97ac2cee2ef3b62a2ad9f94990339311"
+    },
+    {
+      "path": "build/baseline-code-d897881/tests.log",
+      "bytes": 53889,
+      "sha256": "87b2e71a1aef9eb303431b1ad7fa5bd7fb1bcef532d31a9de2dfbd15f2b3705b"
+    },
+    {
+      "path": "build/baseline-code-d897881/validation.json",
+      "bytes": 356,
+      "sha256": "8234d91d95a2ea2027f421305e0bfec920424721266be8d24100deb6270b1504"
+    },
+    {
+      "path": "build/build.log",
+      "bytes": 176,
+      "sha256": "03208e3150dc08d19c2ff12dd448037d9f27bc756cdf94b68706adbd5e2ff7ab"
+    },
+    {
+      "path": "build/clippy.log",
+      "bytes": 176,
+      "sha256": "eec14e6af120db7ec414ed70b7a5fbcf67bb4dab74a724a4ffa81d79c0a12753"
+    },
+    {
+      "path": "build/diff.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/fmt.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/hosted-ci-code-79168f6-report.txt",
+      "bytes": 1580,
+      "sha256": "cb4c6707469fcda2d02206a90a39cd65776ef7a8056a4a8051ab514065655caa"
+    },
+    {
+      "path": "build/hosted-ci-code-79168f6.json",
+      "bytes": 4578,
+      "sha256": "295103b044980e6fcebf87d1591c9af0673a1c78dcf99e29267f81b0c2127131"
+    },
+    {
+      "path": "build/hosted-ci-code-d897881-report.txt",
+      "bytes": 1999,
+      "sha256": "be0a7f2239b0c15b620b19404bf8aa76e07985b8bfb0854592c3d488e5964b6e"
+    },
+    {
+      "path": "build/hosted-ci-code-d897881.json",
+      "bytes": 3999,
+      "sha256": "7a4e7f15cf1d69da40a703d50f97456c79dc0a3fc98e311106ae4d30483877d0"
+    },
+    {
+      "path": "build/native-01-startup.png",
+      "bytes": 139417,
+      "sha256": "ee09a9d5f3c7880074b13eff86de3778ce2356ceaa0d1b4e5e2156a0d65a71a4"
+    },
+    {
+      "path": "build/native-02-default-root-rejected.png",
+      "bytes": 167444,
+      "sha256": "c9347df24e83f7c91a2482afc635dabbd9a3296b4f93c0f12f1526d1eababc9d"
+    },
+    {
+      "path": "build/native-03-folder-dialog-unavailable.png",
+      "bytes": 170782,
+      "sha256": "f56f699a91d1b71b8c9b58a8dd7ce3158dc42f2d296128391232440ac3f7bf9d"
+    },
+    {
+      "path": "build/native-04-invalid-root-rejected.png",
+      "bytes": 177691,
+      "sha256": "14d918f0cf4ed019c116ea58853ce950a2974630fcae815bc243a954c0643746"
+    },
+    {
+      "path": "build/native-05-parent-root-applied.png",
+      "bytes": 177330,
+      "sha256": "64e65470f0bc597971063a58eefac6e9c47332542bb4f642554f94e2fc1feed8"
+    },
+    {
+      "path": "build/native-06-F14_3-preview-verified.png",
+      "bytes": 181520,
+      "sha256": "c9f79235fc2be252d474575549128ee968bba90d331fe6bae5a34c14bc0e2f95"
+    },
+    {
+      "path": "build/native-07-exported-PDF.png",
+      "bytes": 183710,
+      "sha256": "dc76912c0d67e11b15f24c080300daf895975d063755612bc01b89336ba332fb"
+    },
+    {
+      "path": "build/native-08-recorder-author-left.png",
+      "bytes": 185287,
+      "sha256": "4e85716003e6034c98b869aed37f8980d5745f1763b2aca37b5272c0eeffa2de"
+    },
+    {
+      "path": "build/native-09-recorder-left-middle.png",
+      "bytes": 189811,
+      "sha256": "d69a12b379e5febd771622ccfabae513ba90a83706129e9b65d18984cc45af6d"
+    },
+    {
+      "path": "build/native-10-cached-ledger-before-recheck.png",
+      "bytes": 186774,
+      "sha256": "a5b6888621f3b7176a893c70e90df6e29a68751ae28a65670e7d93c30698b372"
+    },
+    {
+      "path": "build/native-11-changed-data-export-blocked.png",
+      "bytes": 193041,
+      "sha256": "77c9540e4199ffef38ec92b8fd45d3012399cdc7f0c3ff3d88dc7e432e3293cd"
+    },
+    {
+      "path": "build/native-12-inputs-restored.png",
+      "bytes": 184297,
+      "sha256": "8c4c281d2ceb375159799516feb1e305f5d00e7c2df864889355b035ed483b1e"
+    },
+    {
+      "path": "build/native-13-shell-escape-warning.png",
+      "bytes": 171315,
+      "sha256": "0e8dfcd78b8e7c47a9014733382d0f269c0ac2a64eef4a3e07878b33d43772bb"
+    },
+    {
+      "path": "build/native-14-F1-help.png",
+      "bytes": 140325,
+      "sha256": "8b2ea0a803812e293d76cb2c8e326d8974172c01dc2b6918c6b7a5dec4f6c833"
+    },
+    {
+      "path": "build/native-15-final-project-verified.png",
+      "bytes": 183696,
+      "sha256": "807b2585ff80837f776b2e11831de6be9a042412724e33b2c6d7da370a4ac2cc"
+    },
+    {
+      "path": "build/native-F14_3.pdf",
+      "bytes": 19856,
+      "sha256": "81c90e9dd27f68aafd5a32cfd8d48170e6e8bd680cb8a31dfd51a44e2729b5bb"
+    },
+    {
+      "path": "build/native-app.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/native-data-mutation/F14_3_left.original.dat",
+      "bytes": 16128,
+      "sha256": "02a56c0ec4b924fbcd2bbe1520806a993b4fc2d0ded61aa139fea4650a576f6c"
+    },
+    {
+      "path": "build/native-data-mutation/mutation.json",
+      "bytes": 427,
+      "sha256": "784811f7b90605f5d45d810715bb4b3a5a197caef586e07d68273f7c55f4897d"
+    },
+    {
+      "path": "build/native-export.json",
+      "bytes": 188,
+      "sha256": "41d09b139abfef0b4133087ee7a71f115e769b2e77a2240ffe389efecff080b3"
+    },
+    {
+      "path": "build/native-inputs-after.json",
+      "bytes": 7281,
+      "sha256": "1d0d0f8fa24c745a90194e2332c4931c56f1fa713825a8d9e99b8b8c44eaa591"
+    },
+    {
+      "path": "build/native-inputs-before.json",
+      "bytes": 7281,
+      "sha256": "1d0d0f8fa24c745a90194e2332c4931c56f1fa713825a8d9e99b8b8c44eaa591"
+    },
+    {
+      "path": "build/native-launch.txt",
+      "bytes": 196,
+      "sha256": "14299e9b2ed2db2cb36af824de88645066dc133eb9e287256659f5dffc3c184a"
+    },
+    {
+      "path": "build/native-pdffonts.txt",
+      "bytes": 283,
+      "sha256": "f03a67b776add0ba1cbea8fdad3cf075ca55f56fad1b7134547737b2a96c3f7f"
+    },
+    {
+      "path": "build/native-pdfinfo.txt",
+      "bytes": 438,
+      "sha256": "7eaa58d8ec82c7fa054fdd81a775fc1f442757d9b84f9b0fa2d6004c93488fc4"
+    },
+    {
+      "path": "build/native-result.json",
+      "bytes": 1204,
+      "sha256": "c7a1afc415ced64745838c545615a57210191ad23d306c3bbc8bfe4fbbd1986d"
+    },
+    {
+      "path": "build/native-wm.log",
+      "bytes": 272,
+      "sha256": "12d29c1e9fda8768de4c133950418c625f5fcceeb16861a497e6a3bb7dc962c5"
+    },
+    {
+      "path": "build/run-native-qa.sh",
+      "bytes": 583,
+      "sha256": "0346ac42d317b5415bb98db49c20040c20eeb37c01d77d063f895215680d4c83"
+    },
+    {
+      "path": "build/tested-source-sha256.json",
+      "bytes": 7816,
+      "sha256": "b7adc3e48113ba93f652d7bb735f7e07a32670b3541b7d89be2495e1ec943bc4"
+    },
+    {
+      "path": "build/tests.log",
+      "bytes": 53560,
+      "sha256": "546d18ce6a252bbdaf6d7caecedb1a2f0800bb48c0ee23205ede3619ea89a199"
+    },
+    {
+      "path": "build/validation.json",
+      "bytes": 357,
+      "sha256": "99450c980142424fdf500db48813c790ed6b8f68c03c913631dcc2e199314275"
+    },
+    {
+      "path": "cli-qa/QA_REPORT.md",
+      "bytes": 2454,
+      "sha256": "1dc7d0256355bf0e103155e092d96dfbed5499b836ee5c70db993c7e3ffd7fbc"
+    },
+    {
+      "path": "cli-qa/activate-qa-texmf.sh",
+      "bytes": 1762,
+      "sha256": "2037de0a32b182dede73768e93d9ccc78d53d145fbe6c32cad3fa2fb062d1351"
+    },
+    {
+      "path": "cli-qa/resource-sha256.txt",
+      "bytes": 2238,
+      "sha256": "2cdd8fadcf31dde7a22eab9a5331727f2462fa6869bdfa0fce62157ba32e1695"
+    },
+    {
+      "path": "cli-qa/result-sha256.txt",
+      "bytes": 914,
+      "sha256": "5bbd29c4f4bcdb5b3d44981cd4f81926744f0fdaa22f67eab353f1fb89accf42"
+    },
+    {
+      "path": "cli-qa/qa-package-manifest-provenance.tsv",
+      "bytes": 2330,
+      "sha256": "13fa3be169f53e84368f80623bab3e2b8958443ea60bf565f9dcaebb316bf75a"
+    },
+    {
+      "path": "cli-qa/cli-positive/F14_3.log",
+      "bytes": 38207,
+      "sha256": "c83cdcc8861ce2e1d70a2725aa932c9f1ddec4886c990fc72048550ed409d112"
+    },
+    {
+      "path": "cli-qa/cli-positive/F14_3.pdf",
+      "bytes": 19857,
+      "sha256": "9b423442bbe9100f1c56677c83de98585099205e57392711d1ac57d3aee93a1d"
+    },
+    {
+      "path": "cli-qa/cli-positive/pdffonts.txt",
+      "bytes": 283,
+      "sha256": "6ee9a86146203ec36eacfe504f17abb0e04015a752409b1506caafe0b26bd3e8"
+    },
+    {
+      "path": "cli-qa/cli-positive/pdfinfo.txt",
+      "bytes": 438,
+      "sha256": "9b55e7df6ca98563137f4bc729817b7fbe1bdf10d77509283537e7749a1b935b"
+    },
+    {
+      "path": "cli-qa/cli-positive/source-data.after.sha256",
+      "bytes": 704,
+      "sha256": "a67312091b9a00a3e21b1db89102dd234bc36d87b062030e491702c5254fb404"
+    },
+    {
+      "path": "cli-qa/cli-positive/source-data.before.sha256",
+      "bytes": 704,
+      "sha256": "a67312091b9a00a3e21b1db89102dd234bc36d87b062030e491702c5254fb404"
+    },
+    {
+      "path": "cli-qa/cli-positive/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cli-qa/cli-positive/stdout.log",
+      "bytes": 137,
+      "sha256": "8775aee52c5bb703851db3451b6a27e2949a96c2a2085206ee348897ac304d76"
+    },
+    {
+      "path": "cli-qa/cli-negative/F14_3.log",
+      "bytes": 38207,
+      "sha256": "d5daf3bf2b9873adaf73998ade4bcc729dee371e2fb8c9fdeb256efa695bf91c"
+    },
+    {
+      "path": "cli-qa/cli-negative/F14_3.pdf",
+      "bytes": 38,
+      "sha256": "032ea3a0e15e4aa753a80ee5c936542251581d7b772369f0018acd673461c2c6"
+    },
+    {
+      "path": "cli-qa/cli-negative/output.after.sha256",
+      "bytes": 130,
+      "sha256": "55aabc9f3f30274f6405c5e3f8ba63f9149321a8f36fc176bad24a8a310dcc01"
+    },
+    {
+      "path": "cli-qa/cli-negative/output.before.sha256",
+      "bytes": 130,
+      "sha256": "55aabc9f3f30274f6405c5e3f8ba63f9149321a8f36fc176bad24a8a310dcc01"
+    },
+    {
+      "path": "cli-qa/cli-negative/stderr.log",
+      "bytes": 143,
+      "sha256": "3bba1dc2038bb5e9d0ba015e8fb0d7d0de1cff18befb2b423ce43b28d1566e74"
+    },
+    {
+      "path": "cli-qa/cli-negative/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "task_id": "/root/pgf_qa_review",
+  "review_type": "INDEPENDENT_READ_ONLY_SOURCE_AND_UNIT_EVENT_REVIEW",
+  "patch_sha256": "02679b6f87021ff7fe7e2b7692d0e0119022bf16c8f7c1f2075ea3710a0e1fb2",
+  "base_commit": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+  "verdict": "CLEAR_FOR_QA_ONLY_INTEGRATION_AND_HOSTED_RERUN",
+  "blockers": [],
+  "checks": {
+    "actual_tests": 31,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0,
+    "test_log": "/workspace/scratch/24342458ee84/reviews/strict_warning_collection/independent-tests.log",
+    "unchanged_driver_methods": [
+      "__init__",
+      "start",
+      "stage",
+      "open_case",
+      "popup_pointer",
+      "popup_wheel",
+      "popup_drag",
+      "combo_index",
+      "field_copy",
+      "select_operation",
+      "exercise",
+      "run_case",
+      "stop"
+    ],
+    "build_prefix_through_full_retained_summary": "Byte-identical to24f7: identity/source/stage success/fatal/font/text/PDF/recorder/source checks retain their previous order before recoverable throw",
+    "warning_error_raise_scope": "Exactly the end-of-build strict missing-character/nullfont branch after built stage and all diagnostics",
+    "catch_scope": "Only StrictXeLaTeXWarningError; current fixture/built stage and retained strict FAIL summary must match",
+    "all_fixture_validation": "Unchanged exact fixture iterator and initial flag, followed by evidence.validate_all for full stage inventory",
+    "aggregate": "Any collected warning overwrites validation PASS with FAIL_STRICT_XELATEX_WARNING_GATE and NOT_ACCEPTED_STRICT_XELATEX_WARNINGS; main success predicate therefore exits1",
+    "other_errors": "Generic identity/source/clipboard/process/engine/font/recorder errors propagate immediately; later hard failure and final inventory failure preserve earlier failure records"
+  },
+  "validation_helper_analysis": "Skipped validate_xelatex_log call on typed-warning path does not bypass its engine-success/fatal checks: identical XeTeX+Output-written and ^! checks have already run immediately before diagnostics. Known missing-character/nullfont is still rejected, now with typed terminal failure; clean-path helper remains unchanged.",
+  "meaningful_tests": [
+    "Exact order and complete validation on clean suite",
+    "Two warning cases continue but cannot become PASS",
+    "Hard recorder/source/engine-class error aborts immediately",
+    "Typed warning without completed built/FAIL proof refuses continuation",
+    "A later hard clipboard error aborts and retains earlier warning",
+    "Final inventory failure propagates after warning without passing"
+  ],
+  "native_boundary": "No native execution performed by reviewer. Actual continuation through warning case to next guarded open_case must still be verified in hosted originals. Source corpus and strict glyph gate remain unchanged. Overall run05 is still FAIL atSV003; this review is not retrospective suite acceptance.",
+  "scope": "QA driver+tests only; no production/corpus/engine/gate relaxation; reviewer made no code edits."
+}

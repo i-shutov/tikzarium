@@ -1,0 +1,20 @@
+test_blocked_proof_requires_reason (test_qa_windows_hosted_gui_audit.W2AuditTests.test_blocked_proof_requires_reason) ... ok
+test_reject_blank_or_unpainted_client (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_blank_or_unpainted_client) ... ok
+test_reject_blocked_report_claiming_captured_gui (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_blocked_report_claiming_captured_gui) ... ok
+test_reject_corrupt_original_png_crc (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_corrupt_original_png_crc) ... ok
+test_reject_disconnected_or_locked_desktop (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_disconnected_or_locked_desktop) ... ok
+test_reject_false_windows10 (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_false_windows10) ... ok
+test_reject_foreign_client_position (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_foreign_client_position) ... ok
+test_reject_forged_full_gui_pass (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_forged_full_gui_pass) ... ok
+test_reject_forged_personal_server (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_forged_personal_server) ... ok
+test_reject_outer_window_crop_mislabeled_as_client (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_outer_window_crop_mislabeled_as_client) ... ok
+test_reject_screen_read_or_unknown_capture_method (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_screen_read_or_unknown_capture_method) ... ok
+test_reject_screenshot_tamper (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_screenshot_tamper) ... ok
+test_reject_wrong_pid (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_wrong_pid) ... ok
+test_reject_wrong_source (test_qa_windows_hosted_gui_audit.W2AuditTests.test_reject_wrong_source) ... ok
+test_valid_partial_remains_not_run (test_qa_windows_hosted_gui_audit.W2AuditTests.test_valid_partial_remains_not_run) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.131s
+
+OK

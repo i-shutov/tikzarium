@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "reviewer": "root independent byte/provenance and original-image review",
+  "status": "HOSTED_GUI_SCOPED_ACCEPTED",
+  "tested_source_commit": "b646c4d46d331a281c1fe51d6bcc79c436ffdf35",
+  "app_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+  "hosted_app_sha256": "55c5424932f3e8581cd4ab7d2ea848bb1a398d457880074cb92bddcf2d2eaf15",
+  "scope": "SV-001 derived fixture; Linux/Xvfb1366x768; productionclient1180x680;Midnight;nativePaste(notIME)",
+  "states": [
+    {
+      "stage": "opened",
+      "bytes": 2421,
+      "sha256": "978ccbef1c5b61156f129d52a3ca47b0d4cff23f45c3b46cafdca2a1139c9bab",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "typed",
+      "bytes": 2455,
+      "sha256": "497a2417d43d72aa0d79de5201f2e4775243f0fc0ef5683cb637558dacebfce2",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "draft",
+      "bytes": 2455,
+      "sha256": "497a2417d43d72aa0d79de5201f2e4775243f0fc0ef5683cb637558dacebfce2",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "applied",
+      "bytes": 2455,
+      "sha256": "0da2421d3185430e8280c87919eb11849cc22d88452e189639d36787298cce3e",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "undo-inspector",
+      "bytes": 2455,
+      "sha256": "497a2417d43d72aa0d79de5201f2e4775243f0fc0ef5683cb637558dacebfce2",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "undo-typing",
+      "bytes": 2421,
+      "sha256": "978ccbef1c5b61156f129d52a3ca47b0d4cff23f45c3b46cafdca2a1139c9bab",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "reopened",
+      "bytes": 2421,
+      "sha256": "978ccbef1c5b61156f129d52a3ca47b0d4cff23f45c3b46cafdca2a1139c9bab",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    },
+    {
+      "stage": "built",
+      "bytes": 2421,
+      "sha256": "978ccbef1c5b61156f129d52a3ca47b0d4cff23f45c3b46cafdca2a1139c9bab",
+      "crlf_count": 64,
+      "bare_lf_count": 0
+    }
+  ],
+  "apply_changed_byte_offsets": [
+    1788
+  ],
+  "apply_old_byte": 48,
+  "apply_new_byte": 49,
+  "draft_actual_clipboard": "151",
+  "artifact_file_hashes_verified": 99,
+  "artifact_hash_mismatches": [],
+  "original_artifact_zip_sha256": "21148d1d3e755221da67fad1bbd5fd163dacd5136c8a97f6c1aa8a397a44ea2b",
+  "original_artifact_zip_bytes": 7359489,
+  "pdf_sha256": "c4aaa313afba9233240f07976345bd275abe3210c67f546429ec611f47deb81b",
+  "pdf_pages": 1,
+  "embedded_fonts": 4,
+  "missing_character_messages": 0,
+  "original_images_reviewed": [
+    "observed/draft/screenshot.original.png",
+    "observed/applied/screenshot.original.png",
+    "observed/undo-inspector/screenshot.original.png",
+    "observed/undo-typing/screenshot.original.png",
+    "observed/reopened/screenshot.original.png",
+    "raw/031-exact-pdf-view-exported.png",
+    "raw/033-actual-raw-xelatex-log.png",
+    "export/exact-pdf.png"
+  ],
+  "visual_notes": [
+    "Draft151 with source150 and marker",
+    "Appliedsource151 and preservationcomment/unknownmacro retained",
+    "Undo1parameter150;Undo2markerremoved;ReopenRedo disabled and fullsourcecopied",
+    "CurrentGaussianPDF visibleinGUI with correct axes/Greeklabels;exportrender matches"
+  ],
+  "engine_warnings": [
+    "Shell escape disabled",
+    "inputenc ignored for UTF8 engine",
+    "Russian hyphenation patterns not installed; this fixture has no renderedRussian prose"
+  ],
+  "release_go": false,
+  "physical_win10": "NOT_RUN",
+  "real_ime": "NOT_RUN",
+  "full_scientific_scope": "NOT_ACCEPTED",
+  "checked_utc": "2026-11-13T05:24:24.615520+00:00"
+}

@@ -1,6 +1,8 @@
 //! Direct XeLaTeX runner. -no-shell-escape is not an OS sandbox.
 use crate::{
-    dependencies::ProjectDependencySnapshot,
+    dependencies::{
+        BaselineAbort, BaselineCaptureError, ProjectBuildBaseline, ProjectDependencySnapshot,
+    },
     diagnostics::{BuildDiagnostic, Severity, extract_diagnostics},
     discovery::{TexDistribution, inspect_xelatex},
     preview::{Preview, render_first_page},
@@ -22,12 +24,16 @@ use std::{
 };
 use thiserror::Error;
 
+const MAX_FLS_RECORDER_BYTES: u64 = 8 * 1024 * 1024;
+
 #[derive(Debug, Clone)]
 pub struct BuildOptions {
     pub timeout: Duration,
     pub rasterize_first_page: bool,
     /// Optional persistent build log. If absent, temporary TeX output is removed.
     pub log_path: Option<PathBuf>,
+    /// Explicit project root for local input provenance. Defaults to source parent.
+    pub project_root: Option<PathBuf>,
 }
 
 impl Default for BuildOptions {
@@ -36,6 +42,7 @@ impl Default for BuildOptions {
             timeout: Duration::from_secs(120),
             rasterize_first_page: true,
             log_path: None,
+            project_root: None,
         }
     }
 }
@@ -84,6 +91,8 @@ pub enum BuildError {
     MissingPdf(PathBuf),
     #[error("Build log path would overwrite the TeX source: {0}")]
     UnsafeLogPath(PathBuf),
+    #[error("Invalid project root {path}: {details}")]
+    InvalidProjectRoot { path: PathBuf, details: String },
     #[error("Cannot save XeLaTeX log to {path}: {cause}")]
     LogWrite {
         path: PathBuf,
@@ -166,6 +175,42 @@ impl BuildService {
         }
 
         let cwd = source.parent().unwrap_or_else(|| Path::new("."));
+        let requested_root = request.options.project_root.as_deref().unwrap_or(cwd);
+        let project_root =
+            requested_root
+                .canonicalize()
+                .map_err(|error| BuildError::InvalidProjectRoot {
+                    path: requested_root.to_path_buf(),
+                    details: error.to_string(),
+                })?;
+        if !project_root.is_dir() || !source.starts_with(&project_root) {
+            return Err(BuildError::InvalidProjectRoot {
+                path: requested_root.to_path_buf(),
+                details: "must be a directory containing the author source".into(),
+            });
+        }
+        let baseline = ProjectBuildBaseline::capture_with_checkpoint(&project_root, || {
+            if self.cancelled.load(Ordering::SeqCst) {
+                return Err(BaselineAbort::Cancelled);
+            }
+            if started.elapsed() > request.options.timeout {
+                return Err(BaselineAbort::Deadline);
+            }
+            Ok(())
+        })
+        .map_err(|error| match error {
+            BaselineCaptureError::Io(error) => BuildError::Io(error),
+            BaselineCaptureError::Aborted(BaselineAbort::Cancelled) => BuildError::Cancelled,
+            BaselineCaptureError::Aborted(BaselineAbort::Deadline) => {
+                BuildError::Timeout(request.options.timeout)
+            }
+        })?;
+        if self.cancelled.load(Ordering::SeqCst) {
+            return Err(BuildError::Cancelled);
+        }
+        if started.elapsed() > request.options.timeout {
+            return Err(BuildError::Timeout(request.options.timeout));
+        }
         let filename = source
             .file_name()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Missing source name"))?;
@@ -258,7 +303,7 @@ impl BuildService {
             return Err(BuildError::MissingPdf(pdf_path));
         }
         let pdf = fs::read(&pdf_path)?;
-        let recorder = fs::read_to_string(&fls_path);
+        let recorder = read_fls_recorder(&fls_path);
         // Any INPUT line is insufficient: a truncated or foreign-only .fls
         // could miss actual project dependencies. Require a recorder that
         // explicitly includes this author source as an input.
@@ -274,7 +319,7 @@ impl BuildService {
                 .into_iter()
                 .filter(|path| !path.starts_with(&out_dir))
                 .collect();
-        let recorder_complete = recorder.is_ok() && dependencies.contains(&source);
+        let recorder_complete = recorder.is_some() && dependencies.contains(&source);
         // Keep a genuine source-file symlink so retargeting invalidates it.
         // For an ordinary file, prefer the canonical compiler source: macOS
         // /var and /private/var are aliases and must not duplicate the source.
@@ -290,12 +335,14 @@ impl BuildService {
         } else {
             source.clone()
         };
-        let project_dependencies = ProjectDependencySnapshot::capture(
-            cwd,
+        let mut project_dependencies = ProjectDependencySnapshot::capture(
+            &project_root,
             &authored_source,
             &recorded_inputs,
             recorder_complete,
         )?;
+        let verification = baseline.validate(&project_dependencies);
+        project_dependencies.set_build_input_verification(verification);
         let preview = if request.options.rasterize_first_page {
             match &request.pdf_renderer {
                 Some(renderer) => render_first_page(renderer, &pdf_path)
@@ -325,6 +372,18 @@ fn tex_source_operand(filename: &OsStr) -> OsString {
     let mut operand = OsString::from("./");
     operand.push(filename);
     operand
+}
+
+fn read_fls_recorder(path: &Path) -> Option<String> {
+    let file = File::open(path).ok()?;
+    let mut bytes = Vec::new();
+    file.take(MAX_FLS_RECORDER_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .ok()?;
+    if bytes.len() as u64 > MAX_FLS_RECORDER_BYTES {
+        return None;
+    }
+    String::from_utf8(bytes).ok()
 }
 
 fn terminate_child(child: &mut Child) {
@@ -488,6 +547,22 @@ fn tail(text: &str, max: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recorder_reader_rejects_oversized_and_invalid_utf8_without_truncating() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("input.fls");
+        fs::write(&path, b"PWD /tmp\nINPUT /tmp/a.tex\n").unwrap();
+        assert!(read_fls_recorder(&path).unwrap().contains("INPUT"));
+        fs::write(
+            &path,
+            [vec![b'a'; MAX_FLS_RECORDER_BYTES as usize], vec![b'b']].concat(),
+        )
+        .unwrap();
+        assert!(read_fls_recorder(&path).is_none());
+        fs::write(&path, [b"INPUT ".as_slice(), &[0xff]].concat()).unwrap();
+        assert!(read_fls_recorder(&path).is_none());
+    }
 
     #[test]
     fn successful_engine_warnings_remain_visible_without_a_false_build_failure() {

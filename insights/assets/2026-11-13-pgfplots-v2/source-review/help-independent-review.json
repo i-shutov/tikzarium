@@ -1,0 +1,70 @@
+{
+  "schema": "tikzarium.independent_integration_review.v1",
+  "reviewed_at": "2026-11-13",
+  "checkout": {
+    "path": "/workspace/scratch/24342458ee84/tikzarium",
+    "head": "0d33710e4b20dbb8bdef6b2e5fe377e840bd20b9",
+    "review_scope": "Staged compact Help app change and current I61/N5 app-tree lease updates, read-only."
+  },
+  "decision": "CLEAR_SOURCE_AND_REGRESSION_REVIEW_PENDING_FULL_NATIVE_RERUN",
+  "summary": "Compact Help uses a shorter visible header while retaining the previous persistent ID salt and adding a tooltip. The old-caption regression log demonstrates the actual width expansion in the same unit-event harness, while the changed caption passes. The I61/N5 lease changes are exactly three app-tree pin updates and do not alter scenario assertions. The staged app source tree hashes to the requested candidate 6ea8f033c5241781e895ecb54af3bb3b48bb0735. Historical I61/N5 results on fe405... do not transfer; full native runs on the new tree remain mandatory.",
+  "compact_help": {
+    "file": "crates/tikzarium-app/src/tikz_libraries.rs",
+    "visible_title": "Поиск по справке",
+    "persisted_id_salt": "Найти команду/параметр · единый C-каталог",
+    "tooltip": "Найти команды TikZ и их параметры по названию или описанию.",
+    "behavior_review": "The new display title is concise. The explicit id_salt reproduces the prior header label as the persistent identity, so existing collapsed/open state continues to resolve to the same ID. The tooltip retains the commands/parameters search intent. The TextEdit, C-catalogue query path, result order, details, and truncation remain unchanged in the diff.",
+    "regression_distinguishes_old_behavior": true,
+    "baseline_log": {
+      "path": "/workspace/scratch/24342458ee84/reviews/help_compact/baseline-regression.log",
+      "sha256": "0d89b58a8adf1579dd517e9a0ed0a6fab58631b585587947f5b0fd818b29e248",
+      "result": "EXPECTED_FAILURE_WITH_OLD_CAPTION",
+      "observed": "225px dock expanded to 307.15625px at first collapsed frame; the exact old long title is restored by the baseline test setup."
+    },
+    "changed_caption_log": {
+      "path": "/workspace/scratch/24342458ee84/reviews/help_compact/title-only-regression.log",
+      "sha256": "d4826309fd6301ca36f48d399c339173a9ca54fe73514e0c4174b6a23b83104d",
+      "result": "PASS",
+      "coverage": "Same test passes the 225/252/260px widths, collapsed frames, pointer opening, opened frames, and Russian query/result mapping."
+    },
+    "final_help_tests_log": {
+      "path": "/workspace/scratch/24342458ee84/reviews/help_compact/help-final-tests.log",
+      "sha256": "38d2de147d893eea4dbb47474021f87df2502d956c2d678b661f64e02a44d48e",
+      "worker_reported": "4 app tests and 4 qa-control tests passed."
+    },
+    "evidence_class": "UNIT_EVENT_ONLY; no native GUI acceptance inferred"
+  },
+  "app_tree_lease_review": {
+    "expected_new_app_tree": "6ea8f033c5241781e895ecb54af3bb3b48bb0735",
+    "current_head_app_tree": "fe40516186fb1728baceb40d0da137a780c1d9de",
+    "staged_app_tree_calculated_from_index": "6ea8f033c5241781e895ecb54af3bb3b48bb0735",
+    "pins_updated": [
+      {
+        "file": ".github/workflows/i61-b42-studio-x11.yml",
+        "change": "Exact app source tree lease: fe405... → 6ea8..."
+      },
+      {
+        "file": "scripts/qa_i61_b42_studio_x11.py",
+        "change": "APP_TREE constant: fe405... → 6ea8..."
+      },
+      {
+        "file": "scripts/qa_n2_studio_x11.py",
+        "change": "APP_TREE constant: fe405... → 6ea8..."
+      }
+    ],
+    "diff_check": "Each of those three files has exactly one added and one removed line, solely the tree hash. No other I61/N5 lease pin change was found in the reviewed delta.",
+    "criteria_preserved": "I61 workflow still verifies exact HEAD, verifies HEAD:crates/tikzarium-app/src against the lease, and cross-checks the Python APP_TREE before GUI prerequisites. I61 and N2 scripts retain their existing identity, scenario, and runtime guards; only the APP_TREE constant changed. No full I61/N5 scenario assertion or acceptance gate was removed or weakened.",
+    "old_acceptance_transfer": "PROHIBITED: previously accepted I61/N5 evidence is pinned to app tree fe40516186fb1728baceb40d0da137a780c1d9de. Full I61/N5 native scenarios must rerun on app tree 6ea8f033c5241781e895ecb54af3bb3b48bb0735."
+  },
+  "status_boundaries": {
+    "current_head_contains_new_app_tree": false,
+    "staged_candidate_app_tree_matches_lease": true,
+    "full_native_i61_n5": "MUST_RERUN",
+    "physical_windows_or_macos_acceptance": "NOT_ESTABLISHED",
+    "reviewer_modified_root_checkout": false
+  },
+  "review_files": {
+    "implementation_report": "/workspace/scratch/24342458ee84/reviews/help_compact/implementation-report.json",
+    "implementation_report_sha256": "1f369432185401532666bac2fb1492334b46bf9b9f817c860159444d3fcae0f1"
+  }
+}

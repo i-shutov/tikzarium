@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "review": "Run06 final documentation independent audit",
+  "review_scope": "Read-only consistency review of new Run06 sections in docs/RESUME.md, insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md and plans/2026-11-11_SCI_1_0_EXECUTION.md against the independent Run06 V2/AT4 audits, warning diagnosis, CI ledger, and CP07 input inventory. Prior CSV byte-level review is retained; this review checks status scope only.",
+  "candidate": {
+    "published_head": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+    "published_root_tree": "08d229e9acfb8e08c32b0d6a8bd0d2a61677fa3c",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "documentary_changes": "Uncommitted documentation/evidence additions; current native source head is ee35; no claim that later documentary source has been published."
+  },
+  "result": "CLEAR_FOR_FINAL_PUBLICATION_FROM_SCOPE_AND_CLAIM_CONSISTENCY_PERSPECTIVE",
+  "independent_sources": {
+    "run06_v2_audit": {
+      "path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run06/v2-audit.json",
+      "sha256": "1db85f48cdbf55b43f104a5805ab7505196b1c58f28a5f4e41d94346edbc2237",
+      "expected_sha256": "1db85f48cdbf55b43f104a5805ab7505196b1c58f28a5f4e41d94346edbc2237",
+      "review_copy_sha256": "1db85f48cdbf55b43f104a5805ab7505196b1c58f28a5f4e41d94346edbc2237",
+      "status": "FAIL_STRICT_XELATEX_WARNING_GATE",
+      "native_acceptance": "NOT_ACCEPTED_STRICT_XELATEX_WARNINGS",
+      "run_id": "43419233297",
+      "source_head": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "verified_report_files": 2104,
+      "transactions": 26,
+      "stages": 109,
+      "builds": 8,
+      "strict_failure_fixtures": [
+        "SV-003",
+        "SV-029",
+        "SV-009"
+      ],
+      "process_exit": 1,
+      "five_strict_pass_three_fail_status": "EIGHT_ACTUAL_GUI_OUTPUTS_VERIFIED_FIVE_STRICT_PASS_THREE_STRICT_FAIL"
+    },
+    "run06_at4_audit": {
+      "path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run06/at4-audit.json",
+      "sha256": "a436f9928b6d49186667b6ab1f940a98ffeca36283fa14a33ca4498372b10acd",
+      "expected_sha256": "a436f9928b6d49186667b6ab1f940a98ffeca36283fa14a33ca4498372b10acd",
+      "review_copy_sha256": "a436f9928b6d49186667b6ab1f940a98ffeca36283fa14a33ca4498372b10acd",
+      "source_head": "ee35ec96fd0bea203627f7acb45092cc0d74d5b8",
+      "assessment": "PASS_BOUNDED_EIGHT_CASE_HOSTED_GUI_AT4_VERTICAL; AGGREGATE_SC3_AT4_NOT_VERIFIED",
+      "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+      "cases": 8,
+      "stage_count": 56,
+      "native_hashes_verified": 1368,
+      "pdf_raster_pngs_equal_run05": 8,
+      "stage_screenshots_equal_run05": 56,
+      "aggregate_sc3_at4": "NOT_VERIFIED",
+      "physical_win10": "NOT_RUN",
+      "physical_mac_arm": "NOT_RUN"
+    },
+    "warning_source_diagnosis": {
+      "path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run06/warning-source-diagnosis.json",
+      "sha256": "3255b7c2bf467883b77e416666282b51d81bb59a4ca5082b5c578765ac87603a",
+      "expected_sha256": "3255b7c2bf467883b77e416666282b51d81bb59a4ca5082b5c578765ac87603a",
+      "cases": [
+        "SV-003",
+        "SV-029",
+        "SV-009"
+      ],
+      "historical_exact_source_match": true,
+      "caution": "Per-case diagnosis fields explicitly state no differential repair compilation was performed and no source repair was accepted.",
+      "actual_and_historical_warning_counts": {
+        "SV-003": {
+          "actual": 2,
+          "historical": 2,
+          "exact_source_match": true
+        },
+        "SV-029": {
+          "actual": 2,
+          "historical": 2,
+          "exact_source_match": true
+        },
+        "SV-009": {
+          "actual": 2,
+          "historical": 2,
+          "exact_source_match": true
+        }
+      }
+    },
+    "ci_final": {
+      "path": "/workspace/scratch/24342458ee84/tikzarium/insights/assets/2026-11-13-pgfplots-v2/run06/ci-final.json",
+      "sha256": "06543e95fe8f480728b4f91a52f041940203a6dd130aea90bfa0f160e5ab859c",
+      "runs": 16,
+      "head_shas": [
+        "ee35ec96fd0bea203627f7acb45092cc0d74d5b8"
+      ],
+      "conclusions": {
+        "failure": 1,
+        "success": 15
+      },
+      "failure_runs": [
+        {
+          "id": 43419233297,
+          "name": "PGFPlots V2 and original AT4 native verticals (hosted X11, independent review required)",
+          "conclusion": "failure"
+        }
+      ]
+    }
+  },
+  "claims_checked": {
+    "V2": {
+      "documentation": "26/26 transactions; 109 states; 8 builds; 5 strict gate passes, 3 strict failures (SV-003, SV-029, SV-009); overall FAIL/exit1.",
+      "matches_review": true,
+      "no_false_pass_claim": true,
+      "engine_exit_limit": "Docs do not claim the native GUI engine itself exited 0 for Run06 failures; they report written PDFs and historical exact-source exits only."
+    },
+    "warning_diagnosis": {
+      "documentation": "Same exact original hashes and historical warnings support source attribution; no isolated repair compile.",
+      "matches_review": true
+    },
+    "AT4": {
+      "documentation": "Bounded hosted eight-case vertical accepted, not full S3/S4 or aggregate AT4; all56 stage screenshots and 8 PDF raster images reused byte-identically from corrected Run05 review; provenance fresh on ee35.",
+      "matches_review": true
+    },
+    "source_identity_separation": {
+      "documentation": "I61/N2/N3/N5/R1/R2/R3/R5 and compact mixed Undo remain separately attributed to source24f7ae4c with same app tree; the text explicitly says they are not transferred by app-tree equality.",
+      "matches_review": true
+    },
+    "CI": {
+      "documentation": "16 completed workflows at ee35; 15 success, 1 PGFPlots fail.",
+      "matches_review": true
+    },
+    "originals_and_ledger": {
+      "documentation": "All17 original TeX and catalogue preserved; exact 18 CI originals retained; eight derived rows partial.",
+      "matches_inventory": true
+    },
+    "no_full_completion_or_release_claim": true
+  },
+  "local_references": {
+    "missing_run05_run06_links": [],
+    "all_four_run06_assets_present": true
+  },
+  "wording_note": "“Five clean builds” in the résumé is interpreted as the five builds marked PASS by the strict-warning audit, not a claim that the full V2 suite passed. The main audit table spells out strict PASS/FAIL counts; no material scope issue found.",
+  "findings": [],
+  "no_changes_made": true,
+  "archive_finalization_or_upload_performed": false
+}

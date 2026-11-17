@@ -1,0 +1,75 @@
+{
+  "source_head": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "pdfs": [
+    {
+      "run": 43388892327,
+      "original": "i61-evidence/figure.pdf",
+      "pdf_sha256": "8f6f051d2c17193868ceb867aee587db0c074965519a9d0c8cca513bc74a1145",
+      "rendered_png_sha256": "3383ff2b3029e34d61db5b931f647a5c0a930ae98c418ded1a97f434ae1ff63a",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Не менять",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/root-pdf-review/original-01.png"
+    },
+    {
+      "run": 43388892327,
+      "original": "n2-evidence/original-n2-before-completion.pdf",
+      "pdf_sha256": "bfed826eb476a0643f680603ba4536ba167cda77ba99d4139148c49970b63fcc",
+      "rendered_png_sha256": "e81c5d33487721d06534cd56f7a4154439698799133a57c655ed6bcf1ed19993",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Фигура",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/root-pdf-review/original-02.png"
+    },
+    {
+      "run": 43388892327,
+      "original": "n2-evidence/original-n3-completed.pdf",
+      "pdf_sha256": "3832c6fe2f0015697e24dcf92424ef12e029cc37a4c2a2ad19edc9190bbea55a",
+      "rendered_png_sha256": "e81c5d33487721d06534cd56f7a4154439698799133a57c655ed6bcf1ed19993",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Фигура",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892327/root-pdf-review/original-03.png"
+    },
+    {
+      "run": 43388892262,
+      "original": "packaged-i61/figure.pdf",
+      "pdf_sha256": "6ebf01fd2cac607cf09dfcbc288b14e56ad70209b1ffd966b85ac91208f1556e",
+      "rendered_png_sha256": "3383ff2b3029e34d61db5b931f647a5c0a930ae98c418ded1a97f434ae1ff63a",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Не менять",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892262/root-pdf-review/original-04.png"
+    },
+    {
+      "run": 43388892262,
+      "original": "packaged-n2/original-n2-before-completion.pdf",
+      "pdf_sha256": "82952c21f7a1db666d23d38d289d293805a4bc2fe094c758cd9cc0aab956e164",
+      "rendered_png_sha256": "e81c5d33487721d06534cd56f7a4154439698799133a57c655ed6bcf1ed19993",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Фигура",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892262/root-pdf-review/original-05.png"
+    },
+    {
+      "run": 43388892262,
+      "original": "packaged-n2/original-n3-completed.pdf",
+      "pdf_sha256": "54c09558f36bf47ba7f19f97e6569c84c76a324253297dc5784f92c6fcbbbf33",
+      "rendered_png_sha256": "e81c5d33487721d06534cd56f7a4154439698799133a57c655ed6bcf1ed19993",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Фигура",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892262/root-pdf-review/original-06.png"
+    },
+    {
+      "run": 43388892262,
+      "original": "packaged-r3-native/project/экспорт через XDG.pdf",
+      "pdf_sha256": "57042144eb7add9f4b60a602a9e0f27c035ded420597f89d14a5e35ff8f78b49",
+      "rendered_png_sha256": "3b93887ad4de002374bd487d4279d81b3bd0685f08a9650cd523f73ec7469192",
+      "page_count": 1,
+      "embedded_fonts": 1,
+      "expected_text": "Фигура R3-Picker-Canary",
+      "rendered_png": "/workspace/scratch/bd022a30f859/validation/2026-11-13-i61-n5/ci/43388892262/root-pdf-review/original-07.png"
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "reviewer": {
+    "task_id": "/root/pgf_qa_review",
+    "model": "GPT-6 Codex; inherited parent model"
+  },
+  "reviewed_utc": "2026-11-13T11:48:39.092826+00:00",
+  "run_id": "43415761917",
+  "suite": "v2",
+  "overall_status": "FAIL",
+  "native_gui_acceptance": "NOT_ACCEPTED",
+  "review_result": "PARTIAL_REACHED_EVIDENCE_VERIFIED_STRICT_WARNING_FAILURE_RETAINED",
+  "originals_root": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native",
+  "archive": {
+    "sha256": "de436254e96572b2150669eb98a99d7173062343545a30d2c68d9fe9252338a3",
+    "bytes": 105905233,
+    "root_verified_entries": 1465,
+    "independently_rehashed_report_files": 1454
+  },
+  "identity": {
+    "source_head": "24f7ae4cdb483b9097337c38aa0f932ad89e3f80",
+    "app_tree": "7d35e7b8064a651084fef931a827ac46b3448c6a",
+    "app_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+    "pid": 5031,
+    "window": "6291459"
+  },
+  "identity_scope": {
+    "production_receipt_and_owned_proc_exe_sha_match": true,
+    "source24_start_guard_reviewed": true,
+    "native_action_identity_matches": true,
+    "binary_bytes_retained": false,
+    "limitation": "Executable identity is supported by exact hosted build receipt, source provenance, owned /proc/PID/exe resolved path/hash and native PID/window events. The artifact contains no executable copy; ELF bytes were not independently reopened locally."
+  },
+  "attained": {
+    "fixtures_opened_and_built": [
+      "formula",
+      "external-tables",
+      "SV-001",
+      "SV-003"
+    ],
+    "transactions_completed": 23,
+    "planned_transactions": 26,
+    "stages_verified": 85,
+    "stage_counts": {
+      "formula": 58,
+      "external-tables": 13,
+      "SV-001": 7,
+      "SV-003": 7
+    },
+    "completed_operations": [
+      "formula-axis0-samples",
+      "formula-axis0-domain",
+      "formula-axis0-xmin",
+      "formula-axis0-xmax",
+      "formula-axis0-ymin",
+      "formula-axis0-ymax",
+      "formula-axis0-xtick-distance",
+      "formula-axis0-ytick-distance",
+      "formula-axis0-xtick",
+      "formula-axis0-ytick",
+      "formula-axis0-width",
+      "formula-axis0-height",
+      "formula-axis0-xlabel",
+      "formula-axis0-ylabel",
+      "formula-axis0-mark",
+      "formula-addplot1-samples",
+      "formula-addplot1-domain",
+      "formula-addplot1-mark",
+      "external-tables-axis0-ymax",
+      "external-tables-addplot1-mark",
+      "external-tables-addplot2-mark",
+      "SV-001-axis0-ymax",
+      "SV-003-axis0-xmax"
+    ],
+    "field_original_proposed_pairs_verified": 27,
+    "selected_property_f1_transitions_verified": 27,
+    "property_popup_plans_replayed_from_original_pixels": 27,
+    "native_scrollbar_drags": 13,
+    "button_held_proofs": 26,
+    "final_reapply_and_unsaved_challenge_reopen_checks": 4
+  },
+  "not_run": {
+    "fixtures_in_suite_order": [
+      "SV-022",
+      "SV-029",
+      "SV-040",
+      "SV-009"
+    ],
+    "operations_in_suite_order": [
+      "SV-022-axis0-width",
+      "SV-029-axis0-height",
+      "SV-009-addplot1-domain"
+    ],
+    "SV-040": "BUILD_PRESERVATION_ONLY_NO_PGF_INSPECTOR; build NOT_RUN",
+    "remaining_builds": 4
+  },
+  "source_and_transaction_review": {
+    "status": "VERIFIED_FOR_ALL_23_REACHED_TRANSACTIONS",
+    "checks": [
+      "All 8 manifest input hashes and 6 immutable named corpus copies match pinned canonical bytes.",
+      "Each draft stage equals the immutable original; each Apply stage equals only Operation.patch(original); every Undo equals the exact original bytes including CRLF, comments, unknown macros and unrelated source.",
+      "Every saved stage source and editor clipboard match independently expected normalized bytes; stage/source/dependency/screenshot hashes and stage order verified.",
+      "All four final sources equal only their last supported literal reapply. Unsaved reopen challenges exist only in editor clipboard, saved bytes remain final, explicit native dirty discard and reopened stage recover exact saved final source.",
+      "Actual original/proposed field clipboard payloads match exact literal bytes before edits; candidate command and property inventory match scoped source operations."
+    ]
+  },
+  "popup_and_f1_review": {
+    "status": "VERIFIED_FOR_REACHED_OPERATIONS",
+    "observations": [
+      "Original pixels replay source24 observed-popup geometry, all 27 recorded plans and safe target rows.",
+      "Full originals show both 200px long-list viewport and retained 86px short viewport with genuine 15-choice scrollbar; targets are observed row interiors.",
+      "13 drag gestures have two actual X11 Button1Mask proofs each, matching owned pointer origin and bounded vertical movement.",
+      "27 original selected-property F1 crops show the correct samples/domain/axis literal/mark Help content; corresponding Properties crops show exact source literals. Repeated F1 returns visibly to Help without widening dock."
+    ],
+    "visual_scope": "All 27 Properties and 27 selected-property Help crops inspected; representative full top/bottom/86px popup screenshots independently inspected. Crops are analysis derivatives; original PNGs remain authoritative and unchanged."
+  },
+  "build_and_pdf_review": {
+    "fixture_results": {
+      "formula": {
+        "pdf_sha256": "0691ee6fc6f7f68f64c7ab4dcb1dc380e88cb81f71b4145b66c87f46fe5fce75",
+        "source_sha256": "a226abe0f190ef1222e249b50c57a376369f54aa068969681d940afb200ef446",
+        "log_sha256": "6a64a19d4ec08a030fcab497ae5f3724495ce34792acc922b1f199c00740a14f",
+        "embedded_font_rows": 7,
+        "warning_lines": [],
+        "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 11:25",
+        "recorder_sha256": "dbee166844d4e8d2b989e3efb80bb1712591a45a3dea4f4c55dd9287cfbc41ee",
+        "required_inputs": [
+          "/home/runner/work/_temp/pgfplots-native/live/formula/formula.tex"
+        ],
+        "dependency_sha256": {}
+      },
+      "external-tables": {
+        "pdf_sha256": "ffe9835bb745fa43b5dd51c73b5728fe7d7c7acc2ee172c74518857c57c4096e",
+        "source_sha256": "21691d8977949edea3ab852f9888ea5259c7a6c513842301868977c39348709d",
+        "log_sha256": "7819658610c76cc537d0e69a6f1620a599facc9ffefdfa87477c8632f2fac83f",
+        "embedded_font_rows": 4,
+        "warning_lines": [],
+        "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 11:26",
+        "recorder_sha256": "647147c50a24ce314317608fb28ab03fa7261ab13f2745ff3894a787d98439e1",
+        "required_inputs": [
+          "/home/runner/work/_temp/pgfplots-native/live/external-tables/external-tables.tex",
+          "/home/runner/work/_temp/pgfplots-native/live/external-tables/measurements.dat",
+          "/home/runner/work/_temp/pgfplots-native/live/external-tables/reference.csv"
+        ],
+        "dependency_sha256": {
+          "measurements.dat": "638a1ea6b925149501b245e601c1297b378d6cbd51d9a1d620fa08f800b33ea9",
+          "reference.csv": "8c5f31af39fa2dfbc0ff94266f36897b6e4e253f3998e3b17d7e078a8b845793"
+        }
+      },
+      "SV-001": {
+        "pdf_sha256": "0e187e44ccafe56f034b792d6dade24c874fe1ce3cc75633eaecc147068c743a",
+        "source_sha256": "43d473b71f96e9e9133c5e13928e4bdb2504a442c9938107ded65afeb75492b5",
+        "log_sha256": "d44e36e5a79bf8902514f8ad317cc45e42d445a34f237616d912e0c80086b601",
+        "embedded_font_rows": 4,
+        "warning_lines": [],
+        "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 11:27",
+        "recorder_sha256": "bc767c3ee27c133453581a67170d3d705dcb7a6aa861a053212e0e154a2021f0",
+        "required_inputs": [
+          "/home/runner/work/_temp/pgfplots-native/live/SV-001/SV-001.tex"
+        ],
+        "dependency_sha256": {}
+      },
+      "SV-003": {
+        "pdf_sha256": "5dbb03da1c95e990eb1be1177ebec7e6e66966e8e9c96fcd746e141152fcb95f",
+        "source_sha256": "20ca32e8db7749adbdc6a12d9f0414031eed75e7e19bd33c501012fc2dab82bf",
+        "log_sha256": "2aaf84b09217807e227cd8d686240e93e73d20d201565282317810e8388d76f8",
+        "embedded_font_rows": 5,
+        "warning_lines": [
+          "Missing character: There is no ; (\"3B) in font nullfont!",
+          "Missing character: There is no ; (\"3B) in font nullfont!"
+        ],
+        "engine_header": "This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.11.13)  13 NOV 2026 11:28",
+        "recorder_sha256": "819e81bf3e09c5140de91fe8f91c24abd9f4a26ed6b784fe95a170c1d4f47403",
+        "required_inputs": [
+          "/home/runner/work/_temp/pgfplots-native/live/SV-003/SV-003.tex"
+        ],
+        "dependency_sha256": {}
+      }
+    },
+    "compile_mode": "ACTUAL_GUI_BUILD_DIRECT_SAVED_AUTHOR_SOURCE; no local compiler invoked by reviewer",
+    "recorder": "Each retained original .fls includes exact compiled author source; captured input-source bytes equal final approved source. External tables includes both measurements.dat and reference.csv with exact pinned hashes.",
+    "pdf_checks": "All four actual exported PDFs independently reread with pdfinfo/pdffonts/pdftotext and independently rendered with Poppler at120dpi. Each has1page, all fonts embedded (7/4/4/5 rows); text nonempty without replacement characters; expected Cyrillic titles present in synthetic cases.",
+    "visual_observations": {
+      "formula": "Symmetric positive Gaussian maximum near1 atx0, dashed curve maximum near0.6, final blue x markers visible, readable Cyrillic title/axis labels and intact ticks.",
+      "external-tables": "Three blue measured points with vertical error bars and three red dashed reference points; final red x markers visible. Cyrillic title/units and numeric ticks intact; external mapping backed by original tables and recorder.",
+      "SV-001": "Single smooth symmetric positive red Gaussian-like curve, maximum just below1, tails visible over[-3,3], mathematical labels readable; approved ymax1.2 saved/compiled.",
+      "SV-003": "Four red oscillatory bands and gray horizontal reference lines visible with intact mathematical labels. Actual GUI PDF view agrees with independent render; source xmax1000 approved. Appearance does not clear missing-character gate."
+    },
+    "strict_gate": {
+      "formula": "PASS",
+      "external-tables": "PASS",
+      "SV-001": "PASS",
+      "SV-003": "FAIL_STRICT_XELATEX_WARNING_GATE"
+    }
+  },
+  "failure_diagnosis": {
+    "fixture": "SV-003",
+    "stage": "built",
+    "error": "RuntimeError: Actual GUI XeLaTeX log reports missing glyphs or TeX errors",
+    "classification": "IMMUTABLE_CORPUS_WARNING; ENGINE_OUTPUT_SUCCEEDED; NO_EVIDENCE_OF_EDITOR_PATCH_OR_POPUP_FAILURE",
+    "actual_log": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/raw/SV-003-actual-gui-xelatex.log",
+    "actual_log_sha256": "2aaf84b09217807e227cd8d686240e93e73d20d201565282317810e8388d76f8",
+    "actual_engine": "XeTeX3.141592653-2.6-0.999995 TeX Live2023/Debian",
+    "actual_lines": {
+      "815": "Missing character: There is no ; (\"3B) in font nullfont!",
+      "816": "Missing character: There is no ; (\"3B) in font nullfont!",
+      "839": "Output written on ... (1 page; wrapped continuation)."
+    },
+    "fatal_tex_bang_lines": 0,
+    "actual_engine_exit_code": "NOT_SEPARATELY_RETAINED; successful Output written proof and exported1page PDF retained",
+    "immutable_source_sha256": "5f4c1533dbcc96ef9d59a10c433e43f0b20bb46b742826f8eae4736c08bfd586",
+    "unchanged_suspect_source_lines": {
+      "48": "  \\def\\xo{1.8};",
+      "49": "  \\def\\yn{1.1};"
+    },
+    "cause_assessment": "Strongly supported: two bare semicolons after macro definitions are TeX text tokens while inside the TikZ picture nullfont context. The supported xmax edit preserves both tokens. Exactly two same warnings occur in historical compilation of the exact original hash. No differential repair compilation was performed.",
+    "historical_R4": {
+      "compile_evidence": "roadmap/Tikzarium_Scientific_142_R4/evidence/compile-evidence.csv rowSV-003",
+      "engine": "XeTeX3.141592653-2.6-0.999996 TeX Live2025/dev/Debian",
+      "exit_code": 0,
+      "pages": 1,
+      "nullfont_count": 2,
+      "console_sha256": "21fb86e4f6b1d6e76506aef13ab5ab06a0100054b9712f45476b0f6dafba09aa",
+      "reported_tex_log_sha256": "62c42afadc787cf09744c4a7edb21cabc5ebeccc1961f4c0d2da225d7bb8a065",
+      "QA_MATRIX": "WARN_NULLFONT"
+    },
+    "SV-009": "NOT_REACHED; do not attribute run05 stop to SV-009.",
+    "source_repair": "NONE_EXECUTED_OR_ACCEPTED; corpus and strict warning gate unchanged."
+  },
+  "supporting_mechanical_audit": {
+    "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/mechanical-audit.json",
+    "sha256": "29bb6c471488ccfd1a79d74bb6a34c31083abc952762e81063f46936c6c6b51b"
+  },
+  "inspected_visual_artifacts": [
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/formula-independent-render.png",
+      "sha256": "655d42d7d4707d4abb3cbdee127dd1c1000855488442275cd0ba1dc734fbf8c9"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/observed/formula/built/desktop.original.png",
+      "sha256": "e8d1571e1aee9f05e20a45787879b186efd99377c118932579691a74c485a4bf"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/external-tables-independent-render.png",
+      "sha256": "31d5a3d107f699058a51c8def1b3af34ea0f2fe064f39e2ceae9ae7d2fa5f265"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/observed/external-tables/built/desktop.original.png",
+      "sha256": "5baa87774d94cdd664400d8a482e804e24df150ff96fdb48b9adb25f71d87e53"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/SV-001-independent-render.png",
+      "sha256": "d7b456bb8bd69c5bd174cd3e207587a6940438e43121ddf9dc732cc618800833"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/observed/SV-001/built/desktop.original.png",
+      "sha256": "093161dcdb2ec3be01760e363868d8db6dead0b497588146066249fc3d49f44e"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/SV-003-independent-render.png",
+      "sha256": "546794bdd7b53b8fa411ba22e0e35cd690f5695ec1e48bdb5b06268d9b02e13f"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/observed/SV-003/built/desktop.original.png",
+      "sha256": "a16839e3a568414fd36daf0dc05c5fa7a6ad8ede65d404e5e5a863b39d2e616d"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/f1-original-crops-1.png",
+      "sha256": "5eb526464b9119378e33351068727e4b82b144ea16ffd7af52c983dcb849ff38"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/f1-original-crops-2.png",
+      "sha256": "e2acca770d420f168880cd279612282a8a5543e1220fd961d057d32e365dd0bc"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/f1-original-crops-3.png",
+      "sha256": "c6141a424ff9813b5fcd0af56e24878519ef733b9d70ffbfcf29b937fa8b0efb"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/property-original-crops-1.png",
+      "sha256": "552bc7ea1e3c9b94f97e67c7abeb247f70c3bfc68efa864ce669937966b6d895"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/property-original-crops-2.png",
+      "sha256": "e4902b13a211a1374513c1f0741280b3fd38198647c3a79a38420ce788c384a4"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/reviews/run05-v2/property-original-crops-3.png",
+      "sha256": "f5151d47e27d3a7eabea42a554cd0a3d4f97bc8e38c716b078426af07dbe97cd"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/raw/152-formula-property-menu-reset-top.png",
+      "sha256": "96054df21a4afec03aa73042462ff7e2422056e1bc9ade6d690a3fa0d53dd1eb"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/raw/344-formula-property-menu-positioned-target.png",
+      "sha256": "d6548f3183f2b81388a8fef32a49e730dc4e982526c7b8ff8ae65d9f15fcaa04"
+    },
+    {
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43415761917-v2/originals/pgfplots-native/raw/475-external-tables-property-menu-positioned-target.png",
+      "sha256": "13efce373a03e0177459d52df04bf824eb2f15ceffdeb7d6d87ed940ede19b44"
+    }
+  ],
+  "scope_limits": [
+    "23/26 operations verified; four later fixtures and their builds NOT_RUN.",
+    "OverallFAIL remains despite three clean builds and successful SV-003 engine output.",
+    "No full V2 acceptance, aggregate SC3/AT4 acceptance, or physical Win10/macOS acceptance.",
+    "Independent scientific visual review is bounded to the four actual exported final PDFs; no manufactured comparison, measurement, or source repair.",
+    "No production/source/corpus edits, CI runs, downloads, or local TeX compilation performed by this review."
+  ]
+}

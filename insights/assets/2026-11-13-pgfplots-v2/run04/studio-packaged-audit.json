@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "review": "Run04 independent original-artifact audit",
+  "review_scope": "Read-only review of downloaded CI originals and screenshots for packaged/native I61, N2/N3, R1, R2, R3, and available R5 evidence. No app, TeX, or acceptance tests run by reviewer.",
+  "candidate": {
+    "source_commit": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+    "packaged_preview_archive": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/originals/Tikzarium-linux-x86_64-preview.tar.gz",
+    "packaged_preview_archive_sha256": "509be1fb1c7557e627cda83988974e3c4f7c5b85bf22a9fe8297e0501825ee9e",
+    "source_run_originals": "/workspace/scratch/24342458ee84/validation/attempts/43410590489/originals",
+    "packaged_run_originals": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/originals",
+    "packaged_full_proof_status": "PASS_HOSTED_X11_AUTOMATED_MANUAL_REVIEW_REQUIRED",
+    "app_tree_sha": "7d35e7b8064a651084fef931a827ac46b3448c6a"
+  },
+  "result": "SCOPED HOSTED-X11 ACCEPTANCE: I61 GESTURES/UNDO/F1, N2/N3 LIBRARY-HELP FLOWS, R1 CLOSE, R2 HOSTED GEOMETRY, R3 HOSTED GTK OPEN/SAVE/EXPORT, AND R5 RC PACKAGE REPRODUCIBILITY ACCEPTED WITH NOTED LIMITATIONS; PHYSICAL ACCEPTANCE NOT ESTABLISHED",
+  "findings": [
+    {
+      "id": "I61-PACKAGED",
+      "classification": "SUPPORTED_BY_ORIGINALS",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/originals/packaged-i61",
+      "details": {
+        "report_status": "PASS_AUTOMATED_REAL_X11_REQUIRES_MANUAL_ARTIFACT_REVIEW",
+        "native_acceptance": "REQUIRES_INDEPENDENT_CURRENT_ORIGINAL_REVIEW",
+        "running_pid": 5670,
+        "running_window_id": "4194307",
+        "executable_path": "/home/runner/work/_temp/n5-linux/extracted/Tikzarium-preview/tikzarium-app",
+        "running_executable_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "app_launcher_sha256": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+        "client_geometry": {
+          "x": 1,
+          "y": 20,
+          "width": 1180,
+          "height": 680
+        },
+        "screen": [
+          1366,
+          768
+        ],
+        "six_tool_operation_stage_sha256": [
+          "42b9503d970ae06d6bde1a1a32aac77158b59166f60a66f35e31d88c7ea16091",
+          "72d2c8d51d9661321c12d8ec26969e42be3ea1595db1152479294c8c7712c120",
+          "00866e3c3cdd8ae146b240df2e5a20abcb7e84ccbf9192c73069e8da0f6e2317",
+          "90244997f85c214ccc225155fab4664968146ae3deb60b0a4be22e01879556d4",
+          "3ff3b75d7ca7667e70b67c85b4d2915f46583fa111268ae77caedaccd1814e7a",
+          "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90"
+        ],
+        "inspector_node_x_apply": {
+          "before_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90",
+          "after_sha256": "be3ab4f52d634b4d531fab9e05ab80c1b6285056b6162e158e02031956a17bf1",
+          "changed_line": 16,
+          "original_focused_clipboard": "10.25cm",
+          "draft_focused_clipboard": "10.50cm",
+          "sentinel_rejected": true,
+          "source_restored_by_undo_sha256": "acb3e4801f28ab7076205f0387fa4e24b71e49ee2e90a0838d856282db989a90"
+        },
+        "independent_image_review": [
+          "06-node-pointer.png shows selected command #6, node A, and source node at (10.25cm,3.25cm).",
+          "28a-inspector-before-draft.png shows the original X value; 28b-inspector-draft-only.png shows 10.50cm focused while source remains 10.25cm; 28c-inspector-applied.png shows source updated to 10.50cm; 28d-inspector-apply-undo.png shows restored source 10.25cm and inspector's manual-edit state.",
+          "29-manual-source-edited.png shows the deliberate undo marker; 30-native-ctrl-z.png shows the marker removed by editor Ctrl+Z; 31-seven-before-visual-undo.png shows an extra seventh line command; 32-visual-undo-click.png shows that command removed.",
+          "20-f1-help.png and 27-f1-help-open.png show shared F1 help content; 21-f1-closed.png and 28-f1-help-closed.png show return to Properties. The report correctly marks label review required."
+        ],
+        "f1_status": "INDEPENDENT_REVIEW_PASS: F1 visibly opens contextual TikZ node help with syntax, explanation, example, and PGF references; closing it returns to Properties. The original report still records manual review not run, but this scoped screenshot review was performed.",
+        "two_file_crlf_and_cancel": "Report records byte-exact open/reopen/save and dirty-open cancel. second-crlf.tex retains CRLF line endings; screenshots 39-pending-dirty-open.png and 40-dirty-open-cancelled.png show cancel preserves edited second file.",
+        "build_artifacts": {
+          "pdf_sha256": "9e14d378e1315678c535f5860cc9a9401d21bc708ec9abad9abe6c90cbd2c8e9",
+          "gui_xelatex_log_sha256": "32b6d5d58433cf9576fc3fce5137668165fdc6f699f8c6bc1f7587de520324b3",
+          "pdfinfo_pages": 1,
+          "pdffonts_embedded_dejavu_serif": true,
+          "log_output_written": true,
+          "log_engine_warning": "Shell escape disabled on input line 73",
+          "log_fatal_tex_errors": false
+        },
+        "independent_scoped_decision": "PASS for the six visible tool additions, selected node field, draft/apply/inverse edit, editor Ctrl+Z, visual Undo, F1-open/F1-close, exact one-page XeLaTeX PDF, and saved-source reports. This is a bounded artifact decision, not physical acceptance."
+      }
+    },
+    {
+      "id": "I61-SOURCE-AND-PACKAGED-COMPARISON",
+      "classification": "CONSISTENT",
+      "details": {
+        "source_run_report": "/workspace/scratch/24342458ee84/validation/attempts/43410590489/originals/i61-evidence/report.json",
+        "source_run_executable_sha256": "bde9fbb2598c16de2d45f9ec4c55d1580d68db3e3e2c9de8f0f12bf2a4f3f55a",
+        "source_run_pid": 5452,
+        "source_run_pdf_sha256": "b54479b179af7e3f11fa173a7bc947948d1ded1c5a836b5522bad02a8d76cf60",
+        "source_run_log_sha256": "6be61481b48abfa3e5446549a96f89a839108d0b40ee69123e7a4f1c6d61b7e6",
+        "source_and_packaged_reports_share_same_operation_source_hash_chain": true,
+        "comparison_note": "Source and packaged PDFs have different SHA-256 values. The observed PDF metadata has distinct XeTeX creation times and different subset font prefixes; no normalized or byte-equivalence assertion is made. Both visually render the same six geometry elements and text in the reviewed screenshot."
+      }
+    },
+    {
+      "id": "N2-N3-PACKAGED",
+      "classification": "SUPPORTED_BY_ORIGINALS",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/originals/packaged-n2",
+      "details": {
+        "report_status": "PASS_AUTOMATED_N2_N3_REAL_STUDIO_REQUIRES_MANUAL_REVIEW",
+        "executable_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "pid": 6846,
+        "window_id": "4194307",
+        "dirty_open_cancel_visible": "04-scratch-dirty-open-modal.png",
+        "connect_disconnect_undo_screenshots": [
+          "08-connect-button-target.png",
+          "09-after-connect.png",
+          "10-connect-saved.png",
+          "11-after-disconnect.png",
+          "12-undo-restored-source.png"
+        ],
+        "n3_f1_sequence": [
+          "17a-n3-real-caret-before-brace.png shows real source caret before the closing brace and the previous PDF explicitly marked stale.",
+          "18-n3-caret-f1.png shows shared-help panel and the current caret context.",
+          "19-n3-caret-complete-target.png shows the target completion context.",
+          "20-n3-complete-click.png shows the minimal completion and report records byte-exact inverse Undo."
+        ],
+        "n2_pdf_sha256": "8d0ac6d212b40c0f79d43f8db4f63d92f73169f4ffe9113437b0aa47e1e97183",
+        "n3_pdf_sha256": "2a60d9f9f0578662b8cc51747c0e7eed05542332428dfa36646f0f4a6d8c8dca",
+        "pdf_validation": "pdfinfo reports one-page PDFs; pdffonts shows embedded DejaVu Serif; actual GUI xelatex logs and copied raw logs are included.",
+        "manual_review_status": "INDEPENDENT_REVIEW_PASS: reviewed catalogue, status text, connect/disconnect/undo, and N3 F1 completion screenshots. Original report still says manual review not run; this scoped review was performed.",
+        "physical_windows_mac": "NOT_RUN",
+        "independent_help_wording_review": {
+          "library_catalogue": "Accurately states source-based project library connection differs from installation. Catalogue says Installed / loaded / engine / tool / help are independent and no automatic installation occurs.",
+          "five_statuses": "The arrows.meta screenshot shows installed=CONFIRMED, project-loaded=ABSENT, engine-target=CONFIRMED, tool-implemented=CONFIRMED, help=CONFIRMED. It defines Installed CONFIRMED as a file found in selected external TeX distribution, explicitly says this is not PDF PASS, distinguishes engine-target from a full visual adapter, and states MiKTeX file presence does not imply project connection or editability. The source patch preview shows the exact preamble insertion and says only the connection edit is applied with Undo and no package installation.",
+          "n3_help": "F1 at a real source caret shows the name completion context, PGF minimum/version state, and an explicit warning that package presence, installation, project connection and editability differ. Completion inserts only arrows.meta; report and saved source preserve one-name edit and inverse Undo.",
+          "judgment": "PASS: the source wording accurately separates engine-target status from complete visual-adapter support; “tool” is the intended word, not a typo. The installation, project-loaded, engine, tool, and help statuses remain explicitly distinct.",
+          "engine_tool_message_exact": "Engine target ≠ XeLaTeX PASS; tool ≠ полный визуальный адаптер."
+        }
+      }
+    },
+    {
+      "id": "PACKAGED-R1-R2-R3",
+      "classification": "SUPPORTED_IN_HOSTED_X11_SCOPE",
+      "details": {
+        "r1_report_status": "PASS_HOSTED_X11_MANUAL_REVIEW_REQUIRED",
+        "r1_visuals": "03-native-close-confirmation.png shows dirty-window close prompt; 04-cancel-keeps-source.png shows source retained after cancel. Report includes Escape cancel, Alt+F4 cancel, save then clean close, and exit_code 0.",
+        "r2_scope": "Three GUI/window geometry snapshots at 1366x768 scale 1.0, 1920x1080 scale 1.25, and 1920x1080 scale 2.0. Geometry JSONs all state HOSTED_GEOMETRY_IDENTITY_MANUAL_IMAGE_REVIEW_REQUIRED and HOSTED_X11_GEOMETRY_IDENTITY_NOT_PHYSICAL_DPI. These are virtual X11 configurations, not physical HiDPI acceptance.",
+        "r3_report_status": "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED",
+        "r3_visuals": "Original GTK file chooser screenshots show genuine open, save, and PDF export dialogs, actual Unicode source loaded, XeLaTeX PDF visible, and exported PDF. Exported PDF sha256 b88154e5ee09860ea713e962e5607eb4b00e3757b295489a2ec95b7b77fe5c49; pdffonts says embedded DejaVu Serif.",
+        "r3_cleanup_exit_code": -15,
+        "r3_exit_interpretation": "The driver finally calls native.stop(), which calls process.terminate() if the app is still alive, waits 8 seconds, then kill() only on timeout; report exit_code -15 is therefore consistent with that explicit cleanup signal. This is not an app crash signal in context and not app exit success; report main returns 0 on PASS status, while the child is deliberately terminated during cleanup.",
+        "r2_independent_visual_review": "PASS_FOR_HOSTED_GEOMETRY_ONLY: all three original screenshots show a coherent, legible Studio layout at virtual 1366x768 scale 1.0, 1920x1080 scale 1.25, and 1920x1080 scale 2.0. At 2.0 the editor text wraps substantially and the app nearly fills the virtual screen, but the screenshot shows no obvious cropped controls or missing panels. Geometry metadata scopes these to virtual X11 identity, not physical DPI.",
+        "r3_independent_visual_review": "PASS_FOR_HOSTED_GTK_PORTAL_SCOPE: actual GTK open/save/export dialogs are visible; native open loaded the Unicode source; cancel preserved the editor; save created a new Unicode filename; GUI XeLaTeX output was shown; native PDF export matched the GUI PDF bytes and rendered the Cyrillic canary. Does not establish physical desktop dialog behavior.",
+        "r3_driver_cleanup_source": {
+          "driver": "/workspace/scratch/24342458ee84/tikzarium/scripts/qa_r3_native_picker_x11.py",
+          "finally_calls_native_stop": "lines 196-198",
+          "stop_implementation": "/workspace/scratch/24342458ee84/tikzarium/scripts/qa_n2_studio_x11.py lines 268-275 terminate/wait then kill on timeout",
+          "interpretation": "Observed child return -15 is the expected SIGTERM status when still alive during the explicit finally cleanup; not a claim that the app exited successfully on its own. Driver return is status-based (0 for PASS status), distinct from child return."
+        }
+      }
+    },
+    {
+      "id": "PREVIEW-ARCHIVE-PROVENANCE",
+      "classification": "CONSISTENT_WITH_VALIDATION_TARGET",
+      "details": {
+        "archive_sha256": "509be1fb1c7557e627cda83988974e3c4f7c5b85bf22a9fe8297e0501825ee9e",
+        "embedded_app_sha256": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+        "embedded_launcher_sha256": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c",
+        "source_sha": "81f8acccaa9783f9cfaea3a70321ddca345a0464",
+        "tex_or_fonts_bundled": false,
+        "embedded_provenance_claims_packaged_gui_xelatex_and_physical_desktop_as_NOT_RUN": true,
+        "scope_interpretation": "Package metadata says external XeLaTeX GUI validation and physical desktop/Wayland qualification are NOT_RUN for the archive artifact. Separate hosted CI evidence below demonstrates the GUI XeLaTeX runs and virtual X11 dialogs reviewed here; the archive does not bundle TeX/fonts."
+      }
+    },
+    {
+      "id": "R5-RELEASE-CANDIDATE-REPRODUCIBILITY",
+      "classification": "PASS_HOSTED_PACKAGE_AND_BYTE_IDENTICAL_REPACKAGE; RELEASE_GO_FALSE",
+      "path": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/originals",
+      "details": {
+        "archive": "Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz",
+        "archive_sha256": "eaa4dac743b08959c10c7e9cc3df503828c450288955c0ae60f769eef04b1322",
+        "archive_sha_file": "rc-archive.sha256 matches the archive digest.",
+        "attestation": "rc-attestation.json: PASS_RC_PACKAGE_HOSTED_NOT_PHYSICAL; source 81f8acccaa9783f9cfaea3a70321ddca345a0464; app binary f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632; release_go=false; scientific_studio_scope=NOT_ACCEPTED; physical_linux=NOT_RUN.",
+        "embedded_rc_manifest": "PROVENANCE.json, README_RU.md, launch.sh, qa/figure-crlf.tex, tikzarium-app, tikzarium-cli each pass sha256sum -c as logged at 2026-11-13T10:44:03Z.",
+        "binary_manifest_digests": {
+          "app": "f77a5f2193c26df2f762e705b145b8429c47b554853d30d146444ffb9845e632",
+          "cli": "8d2df1cdb13a39fa63d55646192d170a1b91fc978e3434384172b2ce3ca11384",
+          "launcher": "ad7de57784e7d7f5151df2e19b8fa092f7da18bcb6c015c5732361d0850e0c5c"
+        },
+        "exact_repackage_proof": "original-job.log R5 step at 10:44:00 runs package_linux_release_candidate.py again to rc-second.tar.gz, then `cmp -s Tikzarium-linux-x86_64-1.0.0-rc.1.tar.gz rc-second.tar.gz`; command completed in the job, and log shows the same archive SHA eaa4dac... for rc-second.tar.gz. The preceding step compares RC app and CLI byte-for-byte with N5 preview app and CLI. N5 preview archive SHA is 509be1fb1c7557e627cda83988974e3c4f7c5b85bf22a9fe8297e0501825ee9e; both manifests share exact app/CLI/launcher hashes.",
+        "decision": "PASS for deterministic hosted Linux x86_64 RC packaging and exact repackage reproducibility. Candidate remains explicitly NOT release-go and Studio scope NOT_ACCEPTED.",
+        "original_job_log": {
+          "path": "/workspace/scratch/24342458ee84/validation/attempts/43410590289/original-job.log",
+          "sha256": "ec895c55e4fa497cf69a2917b9d41369bafb6409d18e832cd4ef1f25ffa54be4",
+          "repackage_commands_at_lines": "1796-1806",
+          "archive_sha_lines": "1817 and 1805 output"
+        }
+      }
+    }
+  ],
+  "limits": [
+    "The CI report fields retain their original MANUAL_REVIEW_REQUIRED/NOT_RUN labels because this independent review occurred later. This review manually inspected the listed screenshots, seven PDF renders, extracted PDF text, and relevant original logs; it does not modify those historical reports.",
+    "Physical Windows, macOS, Linux/X11, Wayland, physical HiDPI/native-dialog behavior, and release GO are not established by these hosted virtual X11 artifacts.",
+    "This audit does not approve scientific correctness of arbitrary TeX or general application release readiness."
+  ],
+  "pdfs_independently_inspected": [
+    {
+      "path": "validation/attempts/43410590489/originals/i61-evidence/figure.pdf",
+      "sha256": "b54479b179af7e3f11fa173a7bc947948d1ded1c5a836b5522bad02a8d76cf60",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590489/originals/n2-evidence/n2-crlf.pdf",
+      "sha256": "cbab3d2ed50fc71495b1f9d2d761ebe0fafdb8e2581175014fbe46be691dad73",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590489/originals/n2-evidence/original-n2-before-completion.pdf",
+      "sha256": "c68df9f0df2c987e42eaf1929fdde0c0c9ad87e0c4a63e6e11d68819533c5f07",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590489/originals/n2-evidence/original-n3-completed.pdf",
+      "sha256": "cbab3d2ed50fc71495b1f9d2d761ebe0fafdb8e2581175014fbe46be691dad73",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-i61/figure.pdf",
+      "sha256": "9e14d378e1315678c535f5860cc9a9401d21bc708ec9abad9abe6c90cbd2c8e9",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-n2/n2-crlf.pdf",
+      "sha256": "2a60d9f9f0578662b8cc51747c0e7eed05542332428dfa36646f0f4a6d8c8dca",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-n2/original-n2-before-completion.pdf",
+      "sha256": "8d0ac6d212b40c0f79d43f8db4f63d92f73169f4ffe9113437b0aa47e1e97183",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-n2/original-n3-completed.pdf",
+      "sha256": "2a60d9f9f0578662b8cc51747c0e7eed05542332428dfa36646f0f4a6d8c8dca",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-r3-native/project/новая фигура с проблемами.pdf",
+      "sha256": "b88154e5ee09860ea713e962e5607eb4b00e3757b295489a2ec95b7b77fe5c49",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    },
+    {
+      "path": "validation/attempts/43410590289/originals/packaged-r3-native/project/экспорт через XDG.pdf",
+      "sha256": "b88154e5ee09860ea713e962e5607eb4b00e3757b295489a2ec95b7b77fe5c49",
+      "pages": 1,
+      "embedded_font": "DejaVu Serif"
+    }
+  ],
+  "pdf_inventory_note": "pdfinfo and pdffonts were run read-only across all PDF files found in the two downloaded roots; all listed files report one page and embedded DejaVu Serif. GUI log output-written records and report/log hashes were also checked for the I61 builds and N2/N3/R3 build artifacts.",
+  "seven_pdf_render_review": [
+    {
+      "scope": "ordinary I61",
+      "image": "validation/attempts/43410590489/originals/i61-evidence/24-exact-pdf.png",
+      "decision": "PASS_VISUAL",
+      "observed": "One-page standalone rendering contains line, rectangle, circle, cubic curve, Stealth arrow, node label A, and Cyrillic Не менять; no obvious missing glyph or clipping."
+    },
+    {
+      "scope": "ordinary N2",
+      "image": "validation/attempts/43410590489/originals/n2-evidence/16-rendered-pdf.png",
+      "pdf": "validation/attempts/43410590489/originals/n2-evidence/original-n2-before-completion.pdf",
+      "decision": "PASS_VISUAL_AND_TEXT",
+      "observed": "Single-page output shows Фигура; pdftotext extracts Фигура; DejaVu Serif embedded."
+    },
+    {
+      "scope": "ordinary N3",
+      "image": "validation/attempts/43410590489/originals/n2-evidence/n3-rendered-pdf.png",
+      "pdf": "validation/attempts/43410590489/originals/n2-evidence/original-n3-completed.pdf",
+      "decision": "PASS_VISUAL_AND_TEXT",
+      "observed": "Single-page output shows Фигура; pdftotext extracts Фигура; DejaVu Serif embedded."
+    },
+    {
+      "scope": "packaged I61",
+      "image": "validation/attempts/43410590289/originals/packaged-i61/24-exact-pdf.png",
+      "pdf": "validation/attempts/43410590289/originals/packaged-i61/figure.pdf",
+      "decision": "PASS_VISUAL",
+      "observed": "Same expected six drawn elements, node A, and Cyrillic Не менять; no obvious missing glyph or clipping."
+    },
+    {
+      "scope": "packaged N2",
+      "image": "validation/attempts/43410590289/originals/packaged-n2/16-rendered-pdf.png",
+      "pdf": "validation/attempts/43410590289/originals/packaged-n2/original-n2-before-completion.pdf",
+      "decision": "PASS_VISUAL_AND_TEXT",
+      "observed": "Single-page output shows Фигура; pdftotext extracts Фигура; DejaVu Serif embedded."
+    },
+    {
+      "scope": "packaged N3",
+      "image": "validation/attempts/43410590289/originals/packaged-n2/n3-rendered-pdf.png",
+      "pdf": "validation/attempts/43410590289/originals/packaged-n2/original-n3-completed.pdf",
+      "decision": "PASS_VISUAL_AND_TEXT",
+      "observed": "Single-page output shows Фигура; pdftotext extracts Фигура; DejaVu Serif embedded."
+    },
+    {
+      "scope": "packaged R3 native export",
+      "image": "validation/attempts/43410590289/originals/packaged-r3-native/native-pdf-render.png",
+      "pdf": "validation/attempts/43410590289/originals/packaged-r3-native/project/экспорт через XDG.pdf",
+      "decision": "PASS_VISUAL_AND_TEXT",
+      "observed": "Single-page output renders “Фигура R3-Picker-Canary”; report and pdftotext confirm Cyrillic canary; DejaVu Serif embedded."
+    }
+  ],
+  "independent_manual_review": {
+    "i61_f1_labels": "PASS: node help visibly identifies text/math distinction, syntax, example and PGF source; actual F1 tab transition and return to Properties are clear in the paired screenshots.",
+    "n2_n3_help_and_library": "PASS: statuses and preamble-only change are factually separated; library connect/disconnect/Undo is clear; caret-specific completion is visible and one-name scoped. The source-confirmed tool wording is accurate.",
+    "r2_original_screenshots": [
+      "validation/attempts/43410590289/originals/r2-desktop/1366x768-scale-1_0/desktop.png",
+      "validation/attempts/43410590289/originals/r2-desktop/1920x1080-scale-1_25/desktop.png",
+      "validation/attempts/43410590289/originals/r2-desktop/1920x1080-scale-2_0/desktop.png"
+    ],
+    "r5": "PASS: RC archive hash, embedded manifests, provenance fields, preview binary identity, deterministic repackage and attestation align. No release-go or scientific Studio acceptance is implied.",
+    "physical_acceptance": "NOT_ESTABLISHED: no physical Linux machine, Wayland, physical DPI/native portal qualification, Windows or macOS run is covered here."
+  },
+  "related_independent_review": {
+    "path": "/workspace/scratch/24342458ee84/reviews/run04-r5-package-audit.json",
+    "sha256": "1189075563a4901e5e95129997409bb52b34f204ca8d08595a7102a14ee1e151",
+    "scope": "Independent R5 package archive and inner-manifest digest verification; exact archive members, preview/RC identity, and provenance review."
+  }
+}

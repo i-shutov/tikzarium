@@ -1,0 +1,12 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{statistics}
+\begin{document}
+\begin{tikzpicture}[>=Stealth]
+\begin{axis}[width=10cm,height=6cm,grid=major,ymin=0,xlabel={value},ylabel={count}]
+\addplot+[hist={bins=5,data min=0,data max=5}]table[row sep=\\,y index=0]{data\\.2\\.5\\1.1\\1.2\\1.6\\2.2\\2.3\\2.5\\2.7\\3.1\\3.8\\4.4\\};
+\end{axis}
+\end{tikzpicture}
+\end{document}

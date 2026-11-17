@@ -1,0 +1,9 @@
+# Scientific Studio 1.0 — PGFPlots SV-001 GUI Inspector integration
+
+Stacked on UX2 branch exact head 35661a6fb62b66e97da6099a1b1936f8d688e2fc, after the merged Scientific SC1 and SC2 scanner. The source-safe Inspector and authoring transaction methods were ported from researched PR #148. The integration uses the actual newly restructured Studio Properties/F1 panels, with a source editor alongside exact XeLaTeX PDF.
+
+Supported path: user explicitly scans literal PGFPlots axis/addplot in an ordinary .tex, selects source-owned instance, chooses existing samples/domain literal, proposes a value, applies one revision-checked SourcePatch, jumps to correct source line, undoes through the same existing Session undo stack. Help uses the actual scientific property catalogue and reports UNKNOWN instead of invented TeX default/manual. Unknown macros or stale selected byte spans refuse instead of rewriting source.
+
+Original SV-001 test: samples=150 changed to samples=180, other TeX including compat=1.17 remains, undo restores exact original source bytes; manual text mutation invalidates old candidate. GUI and F1 modules have source-only unit tests.
+
+Acceptance open: cargo fmt/clippy -D warnings/all workspace tests on exact head; real native editor+scientific Inspector source patch/Undo→XeLaTeX PDF; screenshot and independent scientific review. Existing I61/N2 hosted QA unchanged with strict app-tree SHA lease renewed. Full Scientific-142 142/103, other PGFPlots SC3 parameters, W2b/W3/IME/DPI/G3 memory remain NOT_ACCEPTED; stable 1.0 NO-GO. After parent UX2 merge, rebase this PR on main and repeat source/evidence checks.

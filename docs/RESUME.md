@@ -1,4 +1,108 @@
-# TikZarium — release resume, 2026-11-11
+# TikZarium — release resume, 2026-11-13
+
+## 2026-11-13 — CP07: 26 V2 транзакций, восемь AT4 и сохранённый strict FAIL
+
+[Итоговый отчёт CP07](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md): на `ee35ec96fd0bea203627f7acb45092cc0d74d5b8` выполнены все **26 V2 Apply/Undo, 109 source/editor/image states, восемь GUI PDF builds**. Пять сборок чистые; SV-003/029/009 имеют по два исходных semicolon/nullfont предупреждения. Typed warning collection дошёл до остальных случаев и сохранил **общий FAIL/exit1**. Все16 workflows завершены15 SUCCESS/1 PGFPlots FAIL.
+
+Восемь исходных AT4 09/48/49/50/55/56/58/61 независимо приняты в bounded hosted Linux/X11 scope на этом exact source; 56 stages/8PDF, свежий PID/recorder и предметная проверка. I61/N2/N3, portable N5/R1/R2/R3/R5 и scientific mixed Undo отдельно приняты на source24f7ae4c того же app tree7d35. Все17 исходных TeX и полный оригинальный каталог неизменны; восемь derived ledger строк получили только partial native statuses. CP07 связывает final documentary source, эти две native identities и все18 original CI ZIP; адрес доставки и проверяемый INDEX указаны в отчёте.
+
+**Следующий исполняемый блок:** явные атрибутированные чистые производные SV-003/029/009 и устранение причин строгих предупреждений без изменения immutable originals; далее оставшийся SC3/AT4 scope/descriptor gaps59/60 и общие scientific gates. Physical Win10/IME/DPI/G3 и полный Scientific Studio1.0 ещё не приняты. Draft, release/merge GO отсутствуют. Ниже сохранена история предыдущих попыток.
+
+## 2026-11-13 — CP07 Run05: восемь AT4 исполнены, V2 остановлен строгим glyph gate
+
+[Run05](https://github.com/i-shutov/tikzarium/actions/runs/43415761917), source `24f7ae4cdb483b9097337c38aa0f932ad89e3f80`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`: **15 SUCCESS / 1 PGFPlots FAIL**. Все восемь AT4 native сценариев независимо приняты в bounded hosted scope: 56 сохранённых состояний, восемь текущих PDF, научные инварианты, точные stage bindings. V2 достиг 23/26 операций и четырёх PDF, затем отверг два `nullfont`/missing-character предупреждения SV-003. Эти предупреждения сохраняются в оригинальном журнале; последующие SV-022/029/040/009 в этом прогоне не выполнены. Compact mixed Undo и полные I61/N2/N3/N5/R1/R2/R3/R5 независимо перепроверены на Run05 по собственным source/GUI/PDF/package evidence; сохраняются прежние границы hosted X11.
+
+Следующее действие — QA-only сбор evidence остальных независимых случаев после типизированного отказа законченного build. Предупреждение допускает продолжение лишь после всех source/clipboard/process/font/recorder checks; оно остаётся per-case FAIL и общим FAIL/exit1. Любая другая ошибка немедленно обрывает suite. Production, immutable corpus и строгий glyph gate сохранены. После полного повторного evidence/review — CP07; merge/stable/release GO отсутствуют.
+
+## 2026-11-13 — CP07 Run04: собственные результаты нового app tree
+
+[Run04](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run04-f1-и-полный-studio-прошли-обнаружены-два-расхождения-qa-popup): source `81f8acccaa9783f9cfaea3a70321ddca345a0464`, app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`, **15 SUCCESS / 1 FAIL**. Повторный F1 работает; шесть V2 Apply/Undo и полный AT4-09 source/Undo/reopen/GUI PDF подтверждены оригиналами. Полные I61/N2/N3 и portable N5/R1/R2/R3/R5 независимо приняты по новым оригиналам, включая семь PDF, настоящие GTK dialogs и manifests/повторную упаковку. Scientific mixed Undo независимо принят на этом source.
+
+Текущее executable действие — QA-only исправление двух popup расхождений (наблюдаемая прокрутка и фактическая высота viewport при неизменном списке свойств), затем полный повтор 26+8 операций. V2/AT4 suites остаются FAIL; до исправления ошибочный выбор остановлен clipboard/geometry guards, исходник не повреждён. Production app tree сохраняется. После полного evidence/review — CP07 с историей всех отказов; draft без merge/stable/release GO.
+
+## 2026-11-13 — CP07 follow-up: повторный F1 и полный native retry
+
+[Run03 и точные границы](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md#run03-первая-транзакция-прошла-повторный-f1-выявил-рассинхронизацию): на `73667007` завершены 13/3 из 16 workflows. Первые V2 и AT4 Apply/Undo прошли побайтно; повторный F1 выявил stale Help flag после ручной смены вкладки. I61/package-I61 отдельно остановлены original-X guard из-за переноса строк в исправленной узкой панели; исходник не изменён. Восемь оригинальных AT4 reference PDFs прошли внешний compile/font check и независимый научный просмотр, без native claim.
+
+Исправлены Studio F1 routing и две подтверждённые QA точки; app tree `7d35e7b8064a651084fef931a827ac46b3448c6a`. Следующее действие — все 34 PGFPlots операции плюс полный I61/N2/N3 и portable N5/R1/R2/R3/R5 на новом exact head. Новый GUI scope **IMPLEMENTED_NOT_VERIFIED**. После оригиналов и независимых reviews — финальный CP07 с сохранением всех отказов. Merge/stable/release GO отсутствуют.
+
+## 2026-11-13 — CP07: PGFPlots V2, compact Help и исходные AT4
+
+Продолжение после прерывания восстановлено побайтно в отдельной worktree. [Текущий отчёт и scope](../insights/2026-11-13_PGFPLOTS_V2_NATIVE_RU.md). Published `0d33710e` сохранил 17 исходных AT4 и исправил выбор popup; его [native run43403624097](https://github.com/i-shutov/tikzarium/actions/runs/43403624097) выявил расширение Help dock после F1 и остановился до первого Apply. ZIP/CRC и 73 retained hashes проверены независимо; прежние отказы сохранены.
+
+Следующий объединённый блок исправляет сам compact Help, распознаёт поддержанные literal keys у `\addplot3`/`\addplot3+` и проверяет восемь исходных AT4 09/48/49/50/55/56/58/61. Неоднозначные ключи, namespaces, неизвестные макросы и неподдержанные 3D keys сохраняют отказ; исходные формулы, таблицы и CRLF не переписываются. V2 сохраняет все 26 операций в восьми входах. **IMPLEMENTED_NOT_VERIFIED для нового hosted GUI объёма** до собственных run originals и независимого просмотра PDF.
+
+Compact Help меняет app/src с `fe40516186fb1728baceb40d0da137a780c1d9de` на `6ea8f033c5241781e895ecb54af3bb3b48bb0735`. Полные I61/N2/N3 и portable N5/R1/R2/R3/R5 требуют повторного исполнения на этом app tree; прежняя приёмка CP06 не переносится. Следующее действие — locked production build, независимые native V2/AT4 jobs и полный I61/N5, затем CP07 по фактическим результатам. **Draft; merge/stable/release GO отсутствуют.**
+
+## 2026-11-13 — полные compact I61/N5 независимо приняты
+
+**Закрыт следующий блок после CP05:** полный I61/N2/N3 и portable N5 с R1/R2/R3/R5, scope **HOSTED_GUI Linux/X11**. [Итоговый отчёт](../insights/2026-11-13_COMPACT_I61_N5_ACCEPTANCE_RU.md), [проверенные оригиналы и manifest](../insights/assets/2026-11-13-compact-i61-n5/accepted-fa9/provenance-manifest.json), [CP06](https://drive.google.com/file/d/1c8AqOBGfIgmyjuYgrx2AxaUhqoEa-kBF/view).
+
+Source приёмки `fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d`, root tree `e0e1f9060a41199ad8135ddb567f51e1e498397a`, неизменённый app/src `fe40516186fb1728baceb40d0da137a780c1d9de`. **15/15 workflows SUCCESS**, [полный I61 run43388892327](https://github.com/i-shutov/tikzarium/actions/runs/43388892327) и [полный N5 run43388892262](https://github.com/i-shutov/tikzarium/actions/runs/43388892262). Независимо проверены original source/PNG/PDF/log/ELF, все семь PDF, фактические GTK dialogs и byte-identical повторная упаковка. Последующая публикация отчёта имеет отдельный documentary head; доказательства закреплены за этим source.
+
+Исправлены QA full-source toggle/event payload, реальные координаты Inspector/Library и доказательство старого X перед draft. Production crates/extensions/Cargo не изменены. Шесть инструментов, Scratch Build Cancel, точные Apply/Undo/CRLF/Open/reload/F1, Library Connect/Disconnect/Complete/Undo, dirty close и native file dialogs прошли в полном объёме. Два неудачных candidate и их оригиналы сохранены, критерии не сокращались. Root и independent reviewer повторили 34 compact contracts — PASS.
+
+**Одна следующая исполнимая задача по V2:** полный native PGFPlots SC3/AT4 `axis/addplot → Inspector Apply → общий Undo → Save/reopen → GUI XeLaTeX → current PDF`, с сохранением `.dat/.csv` dependencies и отдельными original evidence. G3, full SCI142/103/scientific AI88, physical Win10/IME/DPI, Asymptote и затем Typst/CeTZ остаются обязательными. **Draft; merge/stable/release GO отсутствуют.** Нижележащие pending-записи сохраняют историю и обновлены этим checkpoint только в указанном hosted scope.
+
+## 2026-11-13 — следующий блок: полные I61/N5 на компактном UI
+
+[Адаптация и обязательный объём](../insights/2026-11-13_COMPACT_I61_N5_REVALIDATION_RU.md). Восстановлен точный CP05/b1; production app/src `fe40516186fb1728baceb40d0da137a780c1d9de` сохранён. QA переводится на client1180×680/desktop1366×768 с PID/active-window, фактическим `/proc/PID/exe`, абсолютной геометрией и свежим clipboard proof. Сохраняются шесть инструментов, все I61/N2/N3 source/PDF/Undo/Help, packaged launch, R1/R2/R3/R5. Исторический RC явно не означает приёмку полного Scientific Studio.
+
+**IMPLEMENTED_NOT_VERIFIED:** candidate coordinates и локальные контракты не являются native PASS. Следующее действие — собственные полные exact-head I61/N5 и независимый просмотр originals, затем обновление этого checkpoint результатами. Physical Win10/IME/DPI/G3/full ST-SCI и merge/stable/release GO остаются открытыми.
+
+## 2026-11-13 — принят hosted scientific workflow с общей историей
+
+**Завершён следующий запланированный сценарий:** SV-001 derivative → native Unicode Paste → PGFPlots draft/Apply `150 → 151` → два общих Undo → точные Save/Open → GUI XeLaTeX → текущий PDF. [Итоговый отчёт и оригинальные свидетельства](../insights/2026-11-13_HOSTED_SCIENTIFIC_WORKFLOW_RU.md), [успешный run 43370706180](https://github.com/i-shutov/tikzarium/actions/runs/43370706180), [CP05](https://drive.google.com/file/d/1n4cvVs-un4pJRssnA6b7P9dy5dJ3l4a9/view).
+
+Проверенный source commit `b646c4d46d331a281c1fe51d6bcc79c436ffdf35`, app tree `fe40516186fb1728baceb40d0da137a780c1d9de`. Восемь исходных состояний сверены побайтно; Apply изменяет один байт, оба Undo возвращают точные предыдущие состояния. Независимо проверены native clipboard, оригинальные PNG, GUI build log и экспортированный PDF: 1 страница, 4 встроенных шрифта, греческие обозначения без missing-glyph ошибок. Scope — **HOSTED_GUI Linux/Xvfb, экран 1366×768, клиент 1180×680, Midnight**. Полный CI этого exact head завершён: **14 success / 2 failure / 16 runs**; два отказа — прежние I61/N5 APP_TREE leases. Новые локальные gates: **566 PASS / 0 failed / 4 ignored**, fmt/strict Clippy/build PASS, 20/20 evidence contracts.
+
+**Одна следующая исполнимая задача:** пересмотреть I61 и N5 под текущую компактную раскладку и провести их собственные полные сценарии с оригиналами; обновление leases допускается только вместе с проверенной адаптацией, не по одному startup или этому SV-001. Physical Win10 W0–W4/actual W2b/W3, IME, DPI, G3, полный SCI142/103/AI88, Asymptote/Typst и ST-SCI остаются открытыми. **Merge/stable/release GO отсутствуют.** Нижележащие разделы сохраняют промежуточную историю, их pending-состояния этим checkpoint обновлены.
+
+## 2026-11-13 — единый SourcePatch/Undo для текста и Inspector
+
+[Новый checkpoint](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md), [исходные команды/результаты](../insights/assets/2026-11-13-shared-history/summary.json), [SHA256 evidence manifest](../insights/assets/2026-11-13-shared-history/manifest.json). Исходная база [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189) — `0eee418ca4d4869b2a4b9fb6ea1462d53df84e1d`; новый commit/app-tree и CI интегратор фиксирует после публикации/readback.
+
+Исправлен подтверждённый разрыв истории: ручной текст → Inspector Apply → Undo → Undo теперь проходит через один bounded ledger точных inverse SourcePatch. Standalone Session API сохранён; старые inverse stacks не дублируются, idle source clones не добавлены. Open отделяет document identity и старый deferred/raw input; общий Undo отменяет удержанный жест без ghost insertion. **566 workspace tests PASS / 0 failed / 4 ignored / 27 suites; fmt, strict Clippy, app/CLI build PASS.** Четыре новые production-shell регрессии — `UNIT_EVENT`; offline collector — 16/16 PASS. Есть отдельный независимый static review.
+
+Аудит исходной базы: 15 runs, из них 13 success и 2 старых APP_TREE lease stops; финальный D QA matrix success. I61/N5 не перепривязаны. Сейчас наблюдались реальное production-окно и мышь, но ненадёжный keyboard focus не позволил принять полный native scientific workflow. Отдельный hosted 1366×768 сценарий готовится; его originals/итог ещё ожидаются. Старые HWND/F1/CLI/PDF PASS не перенесены на новый код.
+
+**Следующий шаг:** exact-commit native SV-001 derivative → Inspector draft/Apply `150 → 151` → два Undo → byte-exact Save/Open → GUI XeLaTeX → текущий PDF Export, затем независимый просмотр originals и provenance. Physical Win10/IME/DPI/G3 и full ST-SCI остаются открытыми. Stable v1.0 и merge/release GO **не выданы**.
+
+Дополнение 13.11: настоящие native attempts cc25 (**13/3 из16 CI**) и QA1 6b3e (**12/3 из15**) подтвердили Open/typed, но не Inspector Apply/Undo/PDF; false draft candidate пойман source guard. Исправлены только устаревший Undo status и QA-coordinate/focused-field proof; повторные локальные **566 tests/fmt/clippy/build PASS**, helper20/20. [Актуальный follow-up и оригинальные аудиты](../insights/2026-11-13_SHARED_SOURCE_HISTORY_RU.md#follow-up-1311--два-настоящих-hosted-прогона-и-точная-граница-результата). Новый native PASS/commit здесь не заявлен.
+
+## 2026-11-12 — Compact Studio: восстановлен точный app tree, публикация PR #189
+
+[Отчёт восстановления](../insights/2026-11-12_COMPACT_STUDIO_RECOVERY_RU.md), [атлас реального интерфейса, 6 страниц](../design/studio-compact-atlas/published/TikZarium_Studio_Compact_UI_Atlas_RU.pdf), [свежие исходные журналы](../insights/assets/2026-11-12-compact-recovery/validation.json).
+
+Последний процесс успел загрузить app tree `6c3208dc309a4c31ba36c4cf3ccda63b85083bd9` и PDF blob, но не обновил ветку. Восстановлены все 25 app blobs; base `eb9d415e` и 1440 записей опубликованного дерева сверены. Это точная поздняя версия, а не восстановление интерфейса по скриншоту или перенос непроверенного CP03. Верхнее меню, компактные иконки, gutter, отдельный fold преамбулы, revision-checked source Undo/Redo и порядок source → tools → canvas → Inspector включены в единый блок.
+
+**Свежие 562 workspace tests PASS / 0 failed / 4 ignored; fmt, strict Clippy, app/CLI build PASS.** Два независимых static review не выявили блокирующих дефектов. Новый native GUI здесь не состоялся из-за недоступного keyboard focus desktop; прежние native кадры атласа не стали новой приёмкой. Финальный SHA/ref, CI и пакет восстановления фиксируются в описании [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189) и delivery receipt в [рабочей папке](https://drive.google.com/drive/folders/1KOiMLat9r0QN-J0R1mTjZuIx2QvEDw4H).
+
+Следующая исполнимая задача: exact-tree native 1366×768 PGFPlots Inspector → patch → Undo → Save/Open → XeLaTeX → PDF с оригиналами; затем проверка старых APP_TREE-gated сценариев на новой геометрии. Локальный кандидат `fe85cc60` из атласа не является новым remote SHA. Stable v1.0 **NO-GO**.
+
+## 2026-11-12 — SCI-BUILD и настоящий F14_3 GUI → PDF
+
+[Текущий checkpoint](../insights/2026-11-12_SCI_BUILD_CHECKPOINT_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [папка чекпойнтов на Google Диске](https://drive.google.com/drive/folders/1KOiMLat9r0QN-J0R1mTjZuIx2QvEDw4H).
+
+Проверенный опубликованный code commit `79168f6838d29748bc4cd51a372b7c267fd97386`, tree `aaa57d868e836d6dab8588c32b5bc2b4da289a8a`; ветка `feat/studio-scientific-integration-20261112`. **531 workspace tests PASS**, fmt/strict Clippy/build PASS. Реализованы bounded pre/post input baseline, явный project root для `../data`, CLI refusal до изменения PDF и ручной ввод папки при недоступном системном picker. Регрессия с `.dat`, изменённым во время TeX, отклоняет неподтверждённый кандидат. Изменение с восстановлением байтов между наблюдениями всё ещё вне гарантии; внешняя TeX-установка не сертифицирована.
+
+Desktop восстановлен. На точном Linux binary `708e3a8c…` в окне 1180×680 выполнены F14_3 Open → общий root → XeLaTeX → Preview → Export; recorder показал source + три `.dat`. После same-length изменения тестового `.dat` повторный экспорт заблокирован, last-good PDF сохранён и помечен stale. Данные восстановлены, исходный corpus не изменён. F1 открыл справку. Это конкретный native Linux subset; полный Inspector/Undo workflow, physical Win10/IME/DPI/G3 и full scientific acceptance **не приняты**.
+
+CP00/CP01 сохранены на Google Диске, итоговый CP02 фиксируется отдельным delivery receipt. Атлас 14 страниц сохранён. На code `79168f6` два hosted задания остановились на прежнем APP_TREE до своих проверок; общий CI не зелёный. Gates не ослаблялись. **Следующий шаг:** native PGFPlots Inspector → patch → Undo → Save → PDF с оригиналами, затем корректная актуализация соответствующих APP_TREE/GUI scripts. Stable v1.0 **NO-GO**.
+
+## Предыдущий checkpoint 2026-11-12 — интеграция и атлас, PR #189
+
+[Предыдущий checkpoint](../insights/2026-11-12_SCIENTIFIC_STUDIO_IMPLEMENTATION_RU.md), [draft PR #189](https://github.com/i-shutov/tikzarium/pull/189), [атлас PDF, 14 страниц](../design/studio-atlas/published/TikZarium_Studio_UI_Atlas_RU.pdf).
+
+Проверенный code commit `1784a48246cbdfd260fb80ce4731c7f165ad52c5`, tree `3bb17ee38e0f77d6d06a125d4076c70f1f707bf1`; ветка `feat/studio-scientific-integration-20261112`. **512 workspace tests PASS**, strict Clippy/fmt/build PASS, 20-operation API и 53-request/26-action matrix PASS, два explicit SC3 exports и реальные CLI/XeLaTeX PDFs PASS. Hosted Win32 startup/F1/slow-probe subset на последующем QA-only commit `8fa502c277920599f0ca8e43b49ef74b7bb31591` — **PASS**; полный native scientific workflow и physical Win10 — **NOT_ACCEPTED**, stable v1.0 **NO-GO**.
+
+Интегрированы шесть прямых инструментов, компактный PGFPlots Inspector и shared Undo/F1, read-only resource references, project-local dependency ledger и повторная проверка перед экспортом. Source ownership и opaque TeX случаи усилены по независимому ревью. Подробные hashes/logs и реальные задачи gpt-6-luna сохранены в checkpoint.
+
+**Следующий исполнимый шаг:** SCI-BUILD regression для изменения `.dat` во время работы TeX и контракт project root для parent-data inputs; затем native compact GUI с новыми оригинальными PNG и корректным обновлением APP_TREE gate. Post-build snapshot не устраняет build-time race; внешние ресурсы не сертифицированы. Desktop runtime в этой сессии после перезапуска не запускается. Старые платформенные PASS не переносятся; Asymptote/Typst и дальнейшие домены не опережают научную приёмку.
+
+Исторические записи ниже сохраняют свои source SHA и даты.
+
+Дополнение к текущему checkpoint: [hosted follow-up](../insights/assets/2026-11-12-scientific-studio/HOSTED_FOLLOWUP.md). На `8fa502c` завершены 26 успешных checks, 2 failed APP_TREE gate, 1 skipped. Исправленная проверка полного capture interval прошла: оригинальный кадр после F1 целиком получен во время synthetic lookup probe. JSON, probe log и PNG сохранены с hashes. Это Windows Server 2022/96 DPI startup/F1/responsiveness; локальный интерактивный канал, полный GUI workflow и physical Windows10 остаются открытыми. Rust crate/lock objects не изменены; общий CI пока не зелёный.
 
 ## SCIENTIFIC STUDIO v1.0.0 — OWNER APPROVED SCOPE, 11.11.2026
 

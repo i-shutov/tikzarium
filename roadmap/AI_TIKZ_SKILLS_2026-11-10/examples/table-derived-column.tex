@@ -1,0 +1,10 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{pgfplotstable}
+\usepackage{booktabs}
+
+\begin{document}
+
+\pgfplotstableread[row sep=\\]{x y\\1 1.1\\2 3.9\\3 9.2\\4 15.8\\}\datatable
+\pgfplotstablecreatecol[create col/expr={\thisrow{x}^2}]{model}\datatable
+\pgfplotstabletypeset[columns={x,y,model},columns/x/.style={column name=$x$},columns/y/.style={column name=$y$},columns/model/.style={column name=$x^2$},every head row/.style={before row=\toprule,after row=\midrule},every last row/.style={after row=\bottomrule}]\datatable
+\end{document}

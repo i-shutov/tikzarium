@@ -1,0 +1,53 @@
+{
+  "task_id": "/root/pgf_qa_review",
+  "run_id": 43408533617,
+  "suite": "v2",
+  "overall_status": "FAIL",
+  "error": "RuntimeError: Actual selected-property F1 did not change the dock",
+  "failed_stage": "formula/formula-axis0-samples-undo",
+  "source_head_sha": "73667007ecc5b6a66b3a178c486700be98bd1aa3",
+  "app_tree_sha": "6ea8f033c5241781e895ecb54af3bb3b48bb0735",
+  "app_sha256": "74456eeb3105e7ccd690bdc888d57ed9ef5c90849472b3827cb48445d04e69bd",
+  "observed_proc_exe_sha256": "74456eeb3105e7ccd690bdc888d57ed9ef5c90849472b3827cb48445d04e69bd",
+  "pid": 5013,
+  "window": "6291459",
+  "zip_sha256": "b6797f8b5c824c0d25ea806817328ba984fb30c563c8c9f20f6a15df87e52d14",
+  "zip_crc_pass": true,
+  "report_hashes_independently_verified": 108,
+  "key_originals": {
+    "raw/019-formula-axis0-samples-selected-property-f1.png": "3fee5512507da75e00683228fe808c2934923eef28ecefd5138fcbf836dbd3d9",
+    "raw/041-formula-axis0-domain-before-f1.png": "507fe9bd9fe2e1a4f153a782a386fa3ad1f2d4eaaff46e1e1c694a8debe5c773",
+    "raw/042-formula-axis0-domain-selected-property-f1.png": "f22f275c982f249ff464299609fc210b5f2cb4d54ca6779b5f70ea265ea26532",
+    "raw/failure-original-desktop.png": "f22f275c982f249ff464299609fc210b5f2cb4d54ca6779b5f70ea265ea26532",
+    "raw/017-formula-axis0-samples-original-field.txt": "3d914f9348c9cc0ff8a79716700b9fcd4d2f3e711608004eb8f138bcba7f14d9",
+    "raw/022-formula-axis0-samples-proposed-field.txt": "44cb730c420480a0477b505ae68af508fb90f96cf0ec54c6ad16949dd427f13a",
+    "raw/040-formula-axis0-domain-original-field.txt": "884508e939882707e93508431bd1ae408a39ee1eb0e6d6990855d9348ee16dbf",
+    "native-actions.jsonl": "89b0860649b592495a7aee492ea131d5da46766685b4628982603be124c65ae1"
+  },
+  "first_operation": {
+    "status": "BOUNDED_HOSTED_GUI_OBSERVED_ONLY",
+    "operation": "formula axis samples41→43",
+    "draft_source_unchanged": true,
+    "apply_exact_minimal_patch": true,
+    "undo_exact_original": true,
+    "editor_and_stage_guards": "Four retained stages independently checked: exact bytes/editor/png hashes/geometry, timezone/order, identity and remote live_source equals actual GUI Open clipboard input",
+    "build_or_export": "NOT_RUN"
+  },
+  "independent_visual_observations": [
+    "raw019 displays correct PGFPlots:samples Help at stable dock width after compact-title fix",
+    "raw041 selects axis/domain and actual focused original field is -3:3",
+    "raw042 and failure retain Properties/domain after second F1; this is a real absent dock change, not a false screenshot comparison"
+  ],
+  "cause": "Manual tab selection in show_studio_inspector changes only prefs.studio_dock; Session.help stays true after first F1. Next actual F1 toggles stale true to false. route_studio_help_toggle redirects true→false only if dock is Help, so current Properties stays unchanged. Toolbar selected state uses dock/open, explaining the invisible stale flag.",
+  "key_release_scope": "Driver records xdotool key command, not raw backend key-up events. Deterministic egui regression with explicit key-up/down reproduces the same failure; no sleep/key timing adjustment is needed.",
+  "minimal_correction": "Studio-only canonical helper normalizes Session.help from inspector_open && dock==Help before existing key toggle/route. Main selects helper only inside original nonmodal gate; legacy mode handler remains intact.",
+  "not_run": [
+    "Remaining25 operations",
+    "Second property F1/draft/apply/undo completion",
+    "External dependency/engine recorder validation",
+    "All PDF builds/exports/fonts/glyph logs",
+    "SV-009 strict warning outcome",
+    "Physical platform/DPI/IME acceptance"
+  ],
+  "acceptance_note": "No corpus warning was reached. Run fails on product Help state synchronization. First Apply/Undo does not qualify full26-operation suite or transfer to changed binary."
+}

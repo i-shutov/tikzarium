@@ -1,0 +1,56 @@
+{
+  "schema": "tikzarium.independent_source_review.v1",
+  "reviewed_at": "2026-11-13",
+  "scope": "Read-only review of current root checkout addplot3 suffix boundary, source-literal tests, and original AT4-55/56 operations.",
+  "checkout": {
+    "path": "/workspace/scratch/24342458ee84/tikzarium",
+    "head": "0d33710e4b20dbb8bdef6b2e5fe377e840bd20b9",
+    "scanner_path": "crates/tikzarium-extensions/src/scientific_scan.rs",
+    "scanner_sha256": "bdd62c25a1ce169b61877420089a3b9dac145803004e707d5f8355e5370bad79",
+    "test_path": "crates/tikzarium-extensions/tests/scientific_addplot3_literals.rs",
+    "test_sha256": "aa263844912f1eca38f8d3d1c10e4d806e8bc935247858db57be789fa7988f98"
+  },
+  "decision": "CLEAR_SOURCE_REVIEW_PENDING_ROOT_GATES",
+  "summary": "The v3 code closes both identified lexical false-recognition paths within the bounded source scanner: it validates the byte after an optional plus, and skips a rejected suffix's balanced semicolon command or fails closed if unbalanced. New regression assertions require zero AddPlot descriptors for all malformed suffixes including 3++, while separately checking that following valid plots retain their outer axis ownership. This review does not claim GUI, PDF, visual, or full 3D acceptance.",
+  "prior_v2_blocker": {
+    "id": "AT4-ADDPlot3-02",
+    "status": "CLOSED_IN_CURRENT_ROOT_FILES",
+    "v2_risk_scope": "The malformed 3++ path produced a lexical AddPlot descriptor with option_range=None; it did not make any property editable. The risk was false recognition/navigation, not unsafe literal editing.",
+    "current_evidence": "scientific_scan.rs lines 597-603 computes suffix_end after a possible plus and validates the following byte against whitespace, `[`, `{`, `(`, or `%`. A second plus is rejected and the whole command is skipped via command_semicolon or scan refusal. Lines 606-610 consume the optional plus only after validation. Tests lines 195-214 assert all malformed forms, including 3++, produce no AddPlot descriptor. Tests lines 240-283 include 3++ in balanced nested-control and unbalanced cases."
+  },
+  "review_findings": [],
+  "bounded_at4_acceptance": {
+    "status": "SOURCE_LITERAL_SCOPE_ONLY",
+    "original_55_surface_gaussian": {
+      "path": "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/surface-gaussian.tex",
+      "sha256": "19a9b97ea74710a4e9b218bbe7901e6b41474e2e8100bf77578ed6d42a86465d",
+      "source_operation": "First recognized addplot3 has literal samples=21 and domain=-2:2; proposed reversible literals are samples=25 and domain=-3:3.",
+      "evidence": "Test lines 64-93 pins original SHA and CRLF, checks exact full AddPlot source range, applies samples/domain patches, verifies byte preservation and inverse, and refuses unsupported mark/domain y edits.",
+      "limit": "This establishes bounded lexical literal editing only; it does not establish 3D surface semantics, geometry quality, rendering, PDF correctness, or native GUI acceptance."
+    },
+    "original_56_parametric_helix": {
+      "path": "roadmap/AI_TIKZ_SKILLS_2026-11-10/examples/parametric-helix.tex",
+      "sha256": "f8b301977a879cc567720a1b68d1847eb22d6860da6c6f9fecf07ab297229b31",
+      "source_operation": "First recognized addplot3 has literal samples=181 and domain=0:720; proposed reversible literals are samples=201 and domain=0:360. Parametric x/y/z body is byte-preserved; samples y remains unsupported.",
+      "evidence": "Test lines 95-119 pins original SHA and CRLF, checks exact full AddPlot range, applies samples/domain patches and inverse, and asserts samples y is unsupported.",
+      "limit": "This establishes bounded lexical literal editing only; it does not accept 3D parameterization visually or semantically and does not claim samples y editing."
+    },
+    "shared_contract": "The existing ScientificKind::AddPlot, axis-stack ownership, immediate option-group range, and existing literal whitelist are reused. No 3D property keys/defaults or full 3D semantic adapter are introduced.",
+    "native_gui_pdf_visual": "NOT_RUN_BY_THIS_REVIEW"
+  },
+  "valid_syntax_review": {
+    "reviewed_forms": [
+      "Original surface formula form: \\addplot3[options]{expression};",
+      "Original helix parametric form: \\addplot3[options](x,y,z);",
+      "Explicit coordinate form in test: \\addplot3+[options] coordinates {...};",
+      "Bare and plus options forms with samples/domain/mark and opaque unrelated options."
+    ],
+    "table_form": "No explicit table-form unit test is present. Static inspection shows addplot3 recognition consumes only the immediate options group and then uses the existing balanced command-semicolon boundary without inspecting table contents; a form like `\\addplot3[samples=21] table[x=x,y=y,z=z] {file.dat};` leaves only samples in the addplot option range and the table body uninterpreted. This is a coverage note, not a blocker or a request to add table semantics.",
+    "candidate_identity": "The recognized instance intentionally uses the existing generic AddPlot kind/range and parent_axis; there is no distinct 3D candidate type or visual-semantic claim."
+  },
+  "root_test_execution": {
+    "status": "NOT_RUN_BY_REVIEWER_AS_REQUESTED",
+    "reason": "Root owns rerunning mandatory Rust gates after the current root change.",
+    "reviewer_workspace_changes": []
+  }
+}

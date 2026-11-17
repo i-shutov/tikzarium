@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "eade89ecbbfd2301e0a12c061ef9fb62b7c0f1b962727e3643dd0209a88b1bcb",
+  "physical_linux": "NOT_RUN",
+  "release_go": false,
+  "scientific_studio_scope": "NOT_ACCEPTED",
+  "source_sha": "fa9f8d9c9bd4d7365dbc6f927fb247d0d945c33d",
+  "status": "PASS_RC_PACKAGE_HOSTED_NOT_PHYSICAL",
+  "version": "1.0.0-rc.1"
+}

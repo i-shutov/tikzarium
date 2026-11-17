@@ -1,0 +1,17 @@
+\documentclass[border=5mm]{standalone}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\pgfmathdeclarefunction{response}{1}{\pgfmathparse{1/(1+#1^2)}}
+\begin{document}
+\begin{tikzpicture}
+  \begin{axis}[width=10cm,height=6cm,xlabel={Detuning $\Delta$},
+    ylabel={Normalized intensity},grid=major,legend pos=north east,
+    xmin=-4,xmax=4,ymin=0,ymax=1.1]
+    % A dimensionless model, not a claim of experimental data.
+    \addplot[blue!75!black,thick,domain=-4:4,samples=161] {response(x)};
+    \addlegendentry{Model}
+    \addplot[only marks,mark=*,red!75!black,domain=-2:2,samples=5] {response(x)};
+    \addlegendentry{Sampled model}
+  \end{axis}
+\end{tikzpicture}
+\end{document}

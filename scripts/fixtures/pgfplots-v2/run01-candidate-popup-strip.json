@@ -1,0 +1,18 @@
+{
+  "kind": "DERIVED_ANALYSIS_NOT_ORIGINAL_DESKTOP",
+  "source_original_sha256": "952e89bb4520b24fb3473e94b9308a3c019f1644ae551d0c3dcb64a81880ead9",
+  "run_id": 43400159227,
+  "source_file": "raw/011-formula-candidate-menu.png",
+  "root_column": 950,
+  "client_origin": [
+    1,
+    20
+  ],
+  "client_y_start": 0,
+  "pixels": 680,
+  "encoding": "RGB24 top-to-bottom",
+  "expected_strip_top_client": 318,
+  "expected_strip_height": 96,
+  "observed_first_item_client_y": 336,
+  "observed_row_step": 30
+}

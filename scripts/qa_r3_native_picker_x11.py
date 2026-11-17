@@ -1,122 +1,77 @@
 #!/usr/bin/env python3
-"""R3: exercise real system XDG/GTK file chooser via extracted Linux release ELF.
+"""R3 genuine XDG/GTK Open/Cancel/Save/PDF-export dialogs in packaged production.
 
-This is an Xvfb/Openbox + DBus + installed GTK portal regression, NOT physical
-Linux acceptance. No mock portal and no app-provided typed-path fallback passes.
+Hosted Xvfb/Openbox + session DBus + installed GTK portal. A typed app path or
+mock portal cannot satisfy this contract. Original sources, desktops and native
+window metadata survive failures; physical native qualification remains open.
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
 import platform
-import subprocess
 import time
 
+from qa_n2_studio_x11 import APP_TREE, Native, POINTS, audit_embedded_fonts, run, screenshot, sha, wait
 
-def cmd(*args: str, timeout: float = 30.0) -> str:
-    r = subprocess.run(args, capture_output=True, timeout=timeout, check=False)
-    if r.returncode:
-        raise RuntimeError(f"{args}: exit={r.returncode}; stderr={r.stderr.decode('utf-8', 'replace')[-1200:]}")
-    return r.stdout.decode("utf-8", "replace").strip()
-
-
-def wait(predicate, what: str, timeout: float = 20.0) -> None:
-    limit = time.monotonic() + timeout
-    while time.monotonic() < limit:
-        if predicate():
-            return
-        time.sleep(0.25)
-    raise RuntimeError("Timed out: " + what)
-
-
-def snap(folder: Path, name: str) -> None:
-    path = folder / (name + ".png")
-    cmd("import", "-window", "root", str(path), timeout=40)
-    if path.stat().st_size < 5000:
-        raise RuntimeError(f"Empty original GUI screenshot: {name}")
+# main.rs::studio_file_menu: compact top menu; native operations occur after
+# Open/Save, separator, project label/path, manual Open/SaveAs, separator.
+# The actual OS-window guard below makes a mistaken manual-path click fail.
+PICKER_POINTS = {"open": (66, 232), "save": (96, 262), "export": (102, 292)}
 
 
 def windows() -> dict[str, str]:
-    return {line.split(maxsplit=1)[0]: line for line in cmd("wmctrl", "-l").splitlines()
-            if line.strip()}
+    return {line.split(maxsplit=1)[0]: line for line in run("wmctrl", "-l").splitlines() if line.strip()}
 
 
-def key(name: str) -> None:
-    cmd("xdotool", "key", "--clearmodifiers", name)
-    time.sleep(0.30)
-
-
-def click(x: int, y: int) -> None:
-    cmd("xdotool", "mousemove", "--sync", str(x), str(y), "click", "1")
-    time.sleep(0.45)
-
-
-def clipboard(text: str) -> None:
-    # xclip forks a persistent X11 selection-owner. Capturing stdout/stderr
-    # keeps the daemon's inherited pipes open and subprocess.communicate hangs,
-    # even when the original xclip invocation succeeded.
-    r = subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode("utf-8"),
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8)
-    if r.returncode:
-        raise RuntimeError(f"xclip could not own X11 clipboard (exit={r.returncode})")
-
-
-def copied_tex() -> str:
-    key("ctrl+a")
-    key("ctrl+c")
-    return cmd("xclip", "-selection", "clipboard", "-o")
-
-
-def choose_path(dialog_id: str, path: Path) -> None:
-    cmd("wmctrl", "-i", "-a", dialog_id)
-    key("ctrl+l")
-    clipboard(str(path))
-    key("ctrl+v")
-    key("Return")
-    # GTK may first resolve the absolute location, then accept a filename.
-    time.sleep(0.6)
-    if dialog_id in windows():
-        key("Return")
-    wait(lambda: dialog_id not in windows(), f"GTK dialog to close for {path}", 15)
-
-
-def dialog_after_click(baseline: set[str], label: str) -> str:
+def native_dialog(baseline: set[str], label: str, out: Path) -> str:
     selected = []
     def found():
-        selected[:] = [k for k in windows() if k not in baseline]
+        selected[:] = [key for key in windows() if key not in baseline]
+        if len(selected) > 1:
+            raise RuntimeError("Ambiguous new native dialog windows: " + label)
         return bool(selected)
-    wait(found, label + " native GTK window", 25)
-    return selected[-1]
+    wait(found, label + " actual OS file chooser window did not appear", 25)
+    dialog = selected[0]
+    properties = run("xprop", "-id", dialog, "WM_CLASS", "_NET_WM_WINDOW_TYPE", "_NET_WM_PID", "WM_TRANSIENT_FOR")
+    (out / (label + "-dialog-window.txt")).write_text(windows()[dialog] + "\n" + properties + "\n", encoding="utf-8")
+    # Positive OS-native dialog metadata, in addition to FileChooser introspect
+    # and original screenshots. An egui popup has no distinct WM dialog window.
+    if ("_NET_WM_WINDOW_TYPE_DIALOG" not in properties
+            and not any(value in properties.lower() for value in ("xdg-desktop-portal", "gtk"))):
+        raise RuntimeError("New window lacks native GTK/dialog metadata")
+    return dialog
 
 
-def open_file_menu(entry_y: int) -> str:
-    # Coordinates refer to the real 1180x680 egui window moved to (0, 0).
-    # A changed GUI must update this explicit click contract and source lease.
-    click(320, 41)
-    click(347, entry_y)
-    return "clicked"
+def choose_path(native: Native, dialog: str, path: Path) -> None:
+    native.key("ctrl+l", window=dialog)
+    native.clipboard(str(path).encode("utf-8"), "actual-dialog-location")
+    native.key("ctrl+v", window=dialog)
+    native.key("Return", window=dialog)
+    time.sleep(0.6)
+    if dialog in windows():
+        native.key("Return", window=dialog)
+    wait(lambda: dialog not in windows(), "GTK dialog did not accept selected path", 15)
+    native.focus()
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    a = parser.parse_args()
-    out = a.out.resolve()
+    args = parser.parse_args()
+    out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
         parser.error("Use an empty evidence directory")
-    launcher = a.app.resolve(strict=True)
-    report = {"kind": "R3_ACTUAL_XDG_GTK_FILE_CHOOSER",
-              "status": "FAIL", "source_sha": os.getenv("SOURCE_SHA", "UNKNOWN"),
-              "app_tree_sha": os.getenv("TIKZARIUM_APP_TREE_SHA", "UNKNOWN"),
-              "app_launcher_sha256": hashlib.sha256(launcher.read_bytes()).hexdigest(),
-              "host": platform.platform(), "environment": "HOSTED_XVFB_GTK_PORTAL_NOT_PHYSICAL",
-              "steps": []}
-    process = None
+    launcher = args.app.resolve(strict=True)
+    report = {"kind": "R3_ACTUAL_XDG_GTK_FILE_CHOOSER", "status": "FAIL",
+              "source_sha": os.getenv("SOURCE_SHA", "UNKNOWN"), "app_tree_sha": APP_TREE,
+              "app_launcher_sha256": sha(launcher), "host": platform.platform(),
+              "environment": "HOSTED_XVFB_GTK_PORTAL_NOT_PHYSICAL", "steps": [],
+              "picker_client_coordinates": PICKER_POINTS}
     work = out / "project"
     work.mkdir()
     original = work / "исходный пример.tex"
@@ -130,158 +85,124 @@ def main() -> int:
                       + r"\node at (0,0) {Фигура R3-Picker-Canary};" + "\r\n"
                       + r"\end{tikzpicture}" + "\r\n"
                       + r"\end{document}" + "\r\n").encode("utf-8")
-    original.write_bytes(original_bytes)
-    with (out / "app.log").open("wb") as log:
+    original.write_bytes(original_bytes)  # Original test input before GUI launch.
+    native = Native(launcher, out, report)
+    def picker(operation, label):
+        baseline = set(windows())
+        native.click(*POINTS["file_menu"])
+        screenshot(out, label + "-actual-file-menu")
+        native.click(*PICKER_POINTS[operation])
+        return native_dialog(baseline, label, out)
+    try:
+        if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
+            raise RuntimeError("No session DBus; run under dbus-run-session")
+        portal = run("gdbus", "introspect", "--session", "--dest", "org.freedesktop.portal.Desktop",
+                     "--object-path", "/org/freedesktop/portal/desktop")
+        (out / "portal-introspection.txt").write_text(portal, encoding="utf-8")
+        if "org.freedesktop.portal.FileChooser" not in portal:
+            raise RuntimeError("XDG FileChooser portal missing")
+        # Preserve the session's installed portal selection/configuration.
+        native.start(work, preserve_config=True)
+        native.key("ctrl+s")
+        wait((work / "figure.tex").exists, "Initial dirty scratch Save failed", 12)
+        screenshot(out, "01-before-dialog")
+        dialog = picker("open", "open")
+        screenshot(out, "02-real-open-picker")
+        report["steps"].append("genuine_portal_open_window_visible")
+        choose_path(native, dialog, original)
+        time.sleep(0.6)
+        native.full_source()
+        source = native.copy("open-full-editor")
+        if source != original_bytes or original.read_bytes() != original_bytes:
+            raise RuntimeError("Native Open/editor copy did not preserve exact Unicode CRLF input")
+        screenshot(out, "03-native-open-loaded-source")
+        report["steps"].append("native_open_selected_unicode_CRLF_source")
+        dialog = picker("open", "cancel")
+        screenshot(out, "04-real-cancel-picker")
+        native.key("Escape", window=dialog)
+        wait(lambda: dialog not in windows(), "Native Cancel did not close picker", 12)
+        if native.copy("cancel-full-editor") != source:
+            raise RuntimeError("Cancelled native chooser altered source")
+        report["steps"].append("portal_cancel_keeps_editable_source")
+        native.click(*POINTS["source"])
+        native.key("ctrl+End")
+        marker = b"%R3-Native-Save-Canary"
+        native.paste(marker, "native-save-marker")
+        expected_saved = original_bytes + marker
+        if native.copy("before-save-full-editor") != expected_saved:
+            raise RuntimeError("Native source edit changed unrelated CRLF bytes")
+        dialog = picker("save", "save")
+        screenshot(out, "05-real-save-picker")
+        # Native GTK Save applies selected .tex filter to a filename stem.
+        choose_path(native, dialog, saved.with_suffix(""))
+        wait(saved.exists, "Native Save As did not create exact .tex filename", 15)
+        content = saved.read_bytes()
+        if content != expected_saved or original.read_bytes() != original_bytes:
+            raise RuntimeError("Native Save changed modified bytes or original input")
+        screenshot(out, "06-native-save-completed")
+        report["steps"].append("native_save_unicode_new_file_no_overwrite")
+        selected_source_sha = sha(saved)
+        built_pdf = saved.with_suffix(".pdf")
+        if built_pdf.exists():
+            raise RuntimeError("PDF unexpectedly existed before actual native GUI build")
+        native.key("ctrl+Return")
+        until = time.monotonic() + 180
+        while time.monotonic() < until and not built_pdf.exists():
+            native.alive()
+            native.click(*POINTS["export"])
+            time.sleep(1)
+        if not built_pdf.exists() or not built_pdf.read_bytes().startswith(b"%PDF-"):
+            raise RuntimeError("Actual GUI XeLaTeX/current PDF export failed")
+        if sha(saved) != selected_source_sha:
+            raise RuntimeError("Native GUI build changed saved user source bytes")
+        native.click(*POINTS["pdf"])
+        screenshot(out, "07-real-xelatex-pdf-ready")
+        built_source = out / "original-r3-built-source.tex"
+        built_source.write_bytes(saved.read_bytes())
+        if built_source.read_bytes() != expected_saved:
+            raise RuntimeError("R3 built source differs from actual saved native source edit")
+        gui_log = native.capture_xelatex_log("r3-build", saved, expected_saved)
+        report["build_originals"] = {
+            "source": built_source.name, "source_sha256": sha(built_source),
+            "gui_xelatex_log": gui_log.name, "gui_xelatex_log_sha256": sha(gui_log),
+        }
+        native_pdf = work / "экспорт через XDG.pdf"
+        dialog = picker("export", "export")
+        screenshot(out, "08-real-native-pdf-export-picker")
+        choose_path(native, dialog, native_pdf.with_suffix(""))
+        wait(native_pdf.exists, "Native PDF Export did not create exact .pdf filename", 20)
+        if native_pdf.read_bytes() != built_pdf.read_bytes():
+            raise RuntimeError("Native Export differs from actual current GUI XeLaTeX PDF")
+        font_table = run("pdffonts", str(native_pdf))
+        if not any("DejaVu" in row for row in audit_embedded_fonts(font_table)):
+            raise RuntimeError("No embedded DejaVu fonts in actual native Export")
+        extracted = run("pdftotext", str(native_pdf), "-")
+        if "Фигура" not in extracted or "R3-Picker-Canary" not in extracted:
+            raise RuntimeError("Native Export lost actual Unicode text")
+        (out / "pdffonts.txt").write_text(font_table + "\n", encoding="utf-8")
+        (out / "pdfinfo.txt").write_text(run("pdfinfo", str(native_pdf)) + "\n", encoding="utf-8")
+        (out / "pdftotext.txt").write_text(extracted + "\n", encoding="utf-8")
+        run("pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "120", str(native_pdf), str(out / "native-pdf-render"))
+        report["native_pdf_sha256"] = sha(native_pdf)
+        screenshot(out, "09-native-pdf-export-completed")
+        report["steps"].append("native_export_exact_xelatex_pdf_unicode_embedded_fonts")
+        report["status"] = "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED"
+    except Exception as error:
+        native.fail(error)
         try:
-            if not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
-                raise RuntimeError("No session DBus; run under dbus-run-session")
-            portal = cmd("gdbus", "introspect", "--session",
-                         "--dest", "org.freedesktop.portal.Desktop",
-                         "--object-path", "/org/freedesktop/portal/desktop")
-            (out / "portal-introspection.txt").write_text(portal, encoding="utf-8")
-            if "org.freedesktop.portal.FileChooser" not in portal:
-                raise RuntimeError("XDG FileChooser portal is missing")
-            env = os.environ.copy()
-            env.update({"XDG_DATA_HOME": str(out / "data"), "XDG_CACHE_HOME": str(out / "cache"),
-                        "LIBGL_ALWAYS_SOFTWARE": "1", "WINIT_UNIX_BACKEND": "x11"})
-            env.pop("WAYLAND_DISPLAY", None)
-            process = subprocess.Popen([str(launcher)], cwd=work, env=env,
-                                       stdout=log, stderr=log)
-            def app_windows() -> list[str]:
-                p = subprocess.run(["xdotool", "search", "--onlyvisible",
-                                    "--name", "TikZarium"], capture_output=True, timeout=5)
-                return p.stdout.decode().splitlines() if p.returncode == 0 else []
-            wait(lambda: process.poll() is None and bool(app_windows()), "native app", 40)
-            app_id = app_windows()[-1]
-            cmd("xdotool", "windowmove", app_id, "0", "0")
-            cmd("wmctrl", "-i", "-a", app_id)
-            time.sleep(1.0)
-            # The bundled quickstart is initially dirty scratch. Save it first:
-            # Open on a dirty source intentionally invokes the separately proven
-            # R1 dirty-open confirmation, not an immediate file replacement.
-            key("ctrl+s")
-            wait((work / "figure.tex").exists, "initial scratch save", 12)
-            snap(out, "01-before-dialog")
-
-            existing = set(windows())
-            open_file_menu(207)  # «Выбрать файл…»
-            native_id = dialog_after_click(existing, "Open")
-            (out / "open-dialog-window.txt").write_text(windows()[native_id] + "\n", encoding="utf-8")
-            snap(out, "02-real-open-picker")
-            report["steps"].append("genuine_portal_open_window_visible")
-            choose_path(native_id, original)
-            cmd("wmctrl", "-i", "-a", app_id)
-            # UX1 source body below the navigation toolbar; original native
-            # editor PNGs and bootstrap 42981807266 place y=209 above it.
-            click(130, 260)
-            source = copied_tex()
-            if "R3-Picker-Canary" not in source:
-                raise RuntimeError("Native Open selected file but app source has no canary")
-            if original.read_bytes() != original_bytes:
-                raise RuntimeError("Native Open changed original CRLF source on disk")
-            (out / "open-clipboard-source.txt").write_text(source, encoding="utf-8")
-            snap(out, "03-native-open-loaded-source")
-            report["steps"].append("native_open_selected_unicode_CRLF_source")
-
-            # Reopen picker, Escape cancels without destroying current source.
-            existing = set(windows())
-            open_file_menu(207)
-            native_id = dialog_after_click(existing, "Cancel")
-            snap(out, "04-real-cancel-picker")
-            cmd("wmctrl", "-i", "-a", native_id)
-            key("Escape")
-            wait(lambda: native_id not in windows(), "Cancel closing picker", 12)
-            cmd("wmctrl", "-i", "-a", app_id)
-            click(130, 260)
-            if copied_tex() != source:
-                raise RuntimeError("Cancelled native dialog rewrote editor source")
-            report["steps"].append("portal_cancel_keeps_editable_source")
-
-            # Native Save As must use the OS picker and preserve the source file.
-            click(130, 260)
-            key("ctrl+End")
-            key("Return")
-            clipboard("%R3-Native-Save-Canary")
-            key("ctrl+v")
-            existing = set(windows())
-            open_file_menu(239)  # «Сохранить через диалог…»
-            native_id = dialog_after_click(existing, "Save")
-            snap(out, "05-real-save-picker")
-            # GTK portal Save adds the selected TeX filter extension when the
-            # location is entered via Ctrl+L. Supply the stem, as a normal
-            # Save As user does in the Name field; assert the resulting on-disk
-            # path is the exact requested .tex (not .tex.tex).
-            choose_path(native_id, saved.with_suffix(""))
-            wait(saved.exists, "native Save As exact .tex output", 15)
-            content = saved.read_bytes()
-            if b"R3-Native-Save-Canary" not in content or original.read_bytes() != original_bytes:
-                raise RuntimeError("Native save lost modified bytes or overwrote original")
-            snap(out, "06-native-save-completed")
-            report["steps"].append("native_save_unicode_new_file_no_overwrite")
-
-            # Build the selected user source through the actual GUI and external
-            # XeLaTeX. The existing toolbar exporter is used as a completion
-            # signal; only the subsequent XDG picker qualifies native Export.
-            selected_source_sha = hashlib.sha256(content).hexdigest()
-            click(219, 39)  # Native Studio Build icon, proven in I61.
-            time.sleep(3.0)
-            click(73, 77)  # Exact PDF tab, source remains visible.
-            time.sleep(1.5)
-            click(259, 39)  # Existing explicit PDF export action.
-            built_pdf = saved.with_suffix(".pdf")
-            wait(built_pdf.exists, "actual XeLaTeX GUI PDF build and export", 25)
-            if not built_pdf.read_bytes().startswith(b"%PDF-"):
-                raise RuntimeError("GUI Build/Export did not produce a valid PDF")
-            if hashlib.sha256(saved.read_bytes()).hexdigest() != selected_source_sha:
-                raise RuntimeError("XeLaTeX GUI build changed saved user TeX bytes")
-            snap(out, "07-real-xelatex-pdf-ready")
-
-            native_pdf = work / "экспорт через XDG.pdf"
-            existing = set(windows())
-            open_file_menu(271)  # «Экспорт PDF через диалог…»
-            native_id = dialog_after_click(existing, "PDF Export")
-            snap(out, "08-real-native-pdf-export-picker")
-            choose_path(native_id, native_pdf.with_suffix(""))
-            wait(native_pdf.exists, "native PDF export exact .pdf filename", 20)
-            if native_pdf.read_bytes() != built_pdf.read_bytes():
-                raise RuntimeError("Native PDF export differs from GUI-generated XeLaTeX PDF")
-            font_table = cmd("pdffonts", str(native_pdf))
-            font_rows = [line.split() for line in font_table.splitlines()[2:] if line.strip()]
-            if not font_rows or not any("DejaVu" in line for line in font_table.splitlines()):
-                raise RuntimeError("No DejaVu fonts in exported GUI PDF")
-            if any(len(row) < 5 or row[-5].lower() != "yes" for row in font_rows):
-                raise RuntimeError("Native PDF export contains a non-embedded font")
-            extracted_text = cmd("pdftotext", str(native_pdf), "-")
-            if "Фигура" not in extracted_text or "R3-Picker-Canary" not in extracted_text:
-                raise RuntimeError("Native PDF export does not preserve Unicode text")
-            report["native_pdf_sha256"] = hashlib.sha256(native_pdf.read_bytes()).hexdigest()
-            snap(out, "09-native-pdf-export-completed")
-            report["steps"].append("native_export_exact_xelatex_pdf_unicode_embedded_fonts")
-            report["status"] = "PASS_HOSTED_NATIVE_GTK_PORTAL_ORIGINAL_GUI_REVIEW_REQUIRED"
-        except Exception as exc:
-            report["error"] = repr(exc)
-            try:
-                snap(out, "failure-visible-desktop")
-                (out / "visible-windows.txt").write_text(cmd("wmctrl", "-l") + "\n")
-            except Exception:
-                pass
-            raise
-        finally:
-            if process and process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=4)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-            report["exit_code"] = process.returncode if process else None
-            (out / "report.json").write_text(
-                json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            with (out / "SHA256SUMS").open("w", encoding="utf-8") as f:
-                for path in sorted(out.iterdir()):
-                    if path.is_file() and path.name != "SHA256SUMS":
-                        f.write(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n")
-            print(json.dumps(report, ensure_ascii=False))
+            (out / "failure-visible-windows.txt").write_text(run("wmctrl", "-l") + "\n", encoding="utf-8")
+        except Exception as capture_error:
+            report["failure_window_capture_error"] = str(capture_error)
+    finally:
+        native.stop()
+        report["exit_code"] = native.process.returncode if native.process else None
+        (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        with (out / "SHA256SUMS").open("w", encoding="utf-8") as stream:
+            for path in sorted(out.rglob("*")):
+                if path.is_file() and path.name != "SHA256SUMS":
+                    stream.write(f"{sha(path)}  {path.relative_to(out)}\n")
+        print(json.dumps(report, ensure_ascii=False))
+    return 0 if report["status"].startswith("PASS_") else 1
 
 
 if __name__ == "__main__":
