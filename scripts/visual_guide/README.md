@@ -31,6 +31,15 @@ xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escap
 xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder guide.tex
 ```
 
+The PDF and HTML show the observed application frame from the top-left
+`1182 × 704 px` of each `1366 × 768 px` capture; the full-screen PNG remains
+byte-identical in `assets/`. The generator accepts only this reviewed crop,
+true integer geometry, and PNGs without a `pHYs` chunk. It records both
+rectangles and the `graphicx` trim vector `[0, 64, 184, 0]` in bp.
+`extractbb` on these originals reports `0 0 1366 768`, giving 1 bp per pixel.
+The [LaTeX Project graphics manual](https://mirrors.ctan.org/macros/latex/required/graphics/graphicx.pdf)
+documents trim order (left, bottom, right, top). No image pixels are rewritten.
+
 `resolved_manifest.json` retains full PNG/report/archive hashes and producer run
 identities. A successful compile is only a build result: every final PDF page
 must still be rendered and independently inspected for readability, overflow

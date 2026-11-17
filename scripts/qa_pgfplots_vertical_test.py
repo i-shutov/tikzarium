@@ -289,6 +289,111 @@ class EngineRecorderContracts(unittest.TestCase):
         self.assertEqual(recorder_inputs(b"PWD /tmp/project\nINPUT ./figure.tex\nINPUT /tmp/shared/a.dat\n", Path("/wrong")),
                          {Path("/tmp/project/figure.tex"), Path("/tmp/shared/a.dat")})
 
+    def test_snapshot_budget_scales_with_closed_suite_without_dropping_originals(self):
+        self.assertEqual(len(qa.fixtures_for_suite("at4")), 17)
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            old = RecorderWatcher(root / "temp8", root / "retained8")
+            expanded = RecorderWatcher(root / "temp17", root / "retained17",
+                                       expected_build_count=len(qa.fixtures_for_suite("at4")))
+            self.assertEqual((old.max_snapshots, expanded.max_snapshots), (512, 1088))
+            for index in range(513):
+                raw = f"distinct snapshot{index}".encode()
+                path = expanded.temporary / "engine.log"
+                path.write_bytes(raw)
+                expanded.capture(path)
+                previous = old.temporary / "engine.log"
+                previous.write_bytes(raw)
+                if index < 512:
+                    old.capture(previous)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "snapshot budget"):
+                        old.capture(previous)
+            self.assertEqual((len(old.records), len(expanded.records)), (512, 513))
+            for index, record in enumerate(expanded.records):
+                raw = f"distinct snapshot{index}".encode()
+                self.assertEqual(Path(record["retained"]).read_bytes(), raw)
+                self.assertEqual(record["sha256"], qa.digest(raw))
+            expanded.capture(path)  # Same path+hash is still one original.
+            self.assertEqual(len(expanded.records), 513)
+            expanded.stop()
+            report = qa.read_json(expanded.out / "recorder-captures.json")
+            self.assertEqual(report["expected_build_count"], 17)
+            self.assertEqual(report["max_retained_bytes"], 8_000_000 * 17)
+            self.assertEqual(report["retained_bytes"], sum(Path(r["retained"]).stat().st_size for r in expanded.records))
+
+    def test_recorder_rejects_invalid_build_counts_before_creating_directories(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            for count in (0, -1, 33, True, 17.0, "17", None):
+                with self.subTest(count=count), self.assertRaises(ValueError):
+                    RecorderWatcher(root / "temp", root / "retained", count)
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_snapshot_read_and_aggregate_bytes_are_bounded_without_eviction(self):
+        with tempfile.TemporaryDirectory() as name, patch.object(RecorderWatcher, "MAX_SNAPSHOT_BYTES", 32):
+            root = Path(name)
+            watcher = RecorderWatcher(root / "temp", root / "retained", 1)
+            path = watcher.temporary / "engine.log"
+            path.write_bytes(b"x" * 33)
+            with patch.object(Path, "open") as opened:
+                reader = opened.return_value.__enter__.return_value.read
+                reader.return_value = b"x" * 33
+                with self.assertRaisesRegex(RuntimeError, "snapshot exceeded"):
+                    watcher.read_bounded(path)
+                reader.assert_called_once_with(33)  # MAX+1, never an unbounded read.
+            with self.assertRaisesRegex(RuntimeError, "snapshot exceeded"):
+                watcher.capture(path)
+            self.assertEqual(list(watcher.out.iterdir()), [])
+            path.write_bytes(b"x" * 20)
+            watcher.capture(path)
+            first = watcher.records[0].copy()
+            path.write_bytes(b"y" * 13)
+            with self.assertRaisesRegex(RuntimeError, "aggregate byte"):
+                watcher.capture(path)
+            self.assertEqual(watcher.retained_bytes, 20)
+            self.assertEqual(watcher.records, [first])
+            self.assertEqual(Path(first["retained"]).read_bytes(), b"x" * 20)
+            watcher.done.wait = lambda _: watcher.done.set()
+            watcher.watch()
+            self.assertIn("aggregate byte", watcher.error)
+            with self.assertRaisesRegex(RuntimeError, "watcher failed"):
+                watcher.proof(root / "source.tex", b"author", {})
+            watcher.stop()
+            self.assertIn("aggregate byte", qa.read_json(watcher.out / "recorder-captures.json")["error"])
+
+    def test_late_watcher_error_fails_finalization_after_production_cleanup(self):
+        driver = object.__new__(Driver)
+        calls = []
+        driver.watcher = SimpleNamespace(stop=lambda: calls.append("retained metadata"), error="aggregate byte budget")
+        with patch("qa_sci_compact_x11.Driver.stop") as cleanup:
+            with self.assertRaisesRegex(RuntimeError, "watcher failed.*aggregate byte"):
+                driver.stop()
+            cleanup.assert_called_once()
+        self.assertEqual(calls, ["retained metadata"])
+
+    def test_captured_author_sources_count_toward_aggregate_and_keep_proof_binding(self):
+        with tempfile.TemporaryDirectory() as name, patch.object(RecorderWatcher, "MAX_SNAPSHOT_BYTES", 1024):
+            root = Path(name)
+            source = root / "live" / "case" / "formula.tex"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"author")
+            watcher = RecorderWatcher(root / "temp", root / "retained", 1)
+            path = watcher.temporary / "engine.fls"
+            raw = f"PWD {source.parent}\nINPUT {source}\n".encode()
+            path.write_bytes(raw)
+            watcher.capture(path)
+            self.assertEqual(watcher.retained_bytes, len(raw) + len(b"author"))
+            proof = watcher.proof(source, b"author", {})
+            self.assertEqual(proof["compiled_source_sha256"], qa.digest(b"author"))
+            source.write_bytes(b"a" * 1000)
+            path.write_bytes(raw + b"OUTPUT changed.pdf\n")
+            with self.assertRaisesRegex(RuntimeError, "aggregate byte"):
+                watcher.capture(path)
+            self.assertEqual(len(watcher.records), 1)
+            captured = next(iter(watcher.records[0]["captured_sources"].values()))
+            self.assertEqual(Path(captured["retained"]).read_bytes(), b"author")
+
     def test_incomplete_fls_cannot_certify_dependency(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
@@ -309,6 +414,15 @@ class EngineRecorderContracts(unittest.TestCase):
             watcher.records[0]["sha256"] = qa.sha(path)
             proof = watcher.proof(source, b"author", qa.dependency_hashes(root, "external-tables"))
             self.assertEqual(proof["compiled_source_sha256"], qa.digest(b"author"))
+            dependencies = qa.dependency_hashes(root, "external-tables")
+            (root / "measurements.dat").write_bytes(b"x y\n0 2\n")
+            with self.assertRaisesRegex(RuntimeError, "source/dependencies changed"):
+                watcher.proof(source, b"author", dependencies)
+            (root / "measurements.dat").write_bytes(b"x y\n0 1\n")
+            captured.write_bytes(b"forged compiled author")
+            with self.assertRaisesRegex(RuntimeError, "all actual table inputs"):
+                watcher.proof(source, b"author", dependencies)
+            captured.write_bytes(b"author")
             source.write_bytes(b"newer author")
             with self.assertRaisesRegex(RuntimeError, "source/dependencies changed"):
                 watcher.proof(source, b"author", qa.dependency_hashes(root, "external-tables"))

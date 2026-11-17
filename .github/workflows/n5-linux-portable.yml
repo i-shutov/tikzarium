@@ -73,6 +73,7 @@ jobs:
         run: |
           app_tree="$(git rev-parse HEAD:crates/tikzarium-app/src)"
           grep -Fqx "APP_TREE = \"$app_tree\"" scripts/qa_i61_b42_studio_x11.py
+          grep -Fqx "APP_TREE = \"$app_tree\"" scripts/qa_n2_studio_x11.py
           echo "TIKZARIUM_APP_TREE_SHA=$app_tree" >> "$GITHUB_ENV"
           echo "TIKZARIUM_SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
       - name: Locked Rust 1.91.0 toolchain

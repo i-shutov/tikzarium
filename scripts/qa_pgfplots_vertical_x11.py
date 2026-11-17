@@ -194,7 +194,16 @@ class RecorderWatcher:
     retained as exact bytes; a partial recorder cannot certify a build unless it
     contains the actual source and all required project dependencies.
     """
-    def __init__(self, temporary: Path, out: Path):
+    MAX_SNAPSHOT_BYTES = 8_000_000
+    MAX_EXPECTED_BUILDS = 32
+
+    def __init__(self, temporary: Path, out: Path, expected_build_count: int = 8):
+        if type(expected_build_count) is not int or not 1 <= expected_build_count <= self.MAX_EXPECTED_BUILDS:
+            raise ValueError("Expected recorder build count must be an integer from 1 to 32")
+        self.expected_build_count = expected_build_count
+        self.max_snapshots = 64 * expected_build_count
+        self.max_retained_bytes = self.MAX_SNAPSHOT_BYTES * expected_build_count
+        self.retained_bytes = 0
         self.temporary = temporary
         self.out = out
         temporary.mkdir()
@@ -205,6 +214,48 @@ class RecorderWatcher:
         self.records = []
         self.error = None
 
+    def read_bounded(self, path: Path) -> bytes:
+        with path.open("rb") as stream:
+            raw = stream.read(self.MAX_SNAPSHOT_BYTES + 1)
+        if len(raw) > self.MAX_SNAPSHOT_BYTES:
+            raise RuntimeError("Actual engine recorder snapshot exceeded bounded byte budget")
+        return raw
+
+    def capture(self, path: Path) -> None:
+        raw = self.read_bounded(path)
+        digest = evidence.digest(raw)
+        identity = (str(path), digest)
+        if identity in self.seen:
+            return
+        if len(self.records) >= self.max_snapshots:
+            raise RuntimeError("Actual engine recorder retention exceeded bounded snapshot budget")
+        destination = self.out / f"engine-{len(self.records):04d}.original{path.suffix}"
+        pending = [(destination, raw)]
+        pending_bytes = len(raw)
+        captured_sources = {}
+        if self.retained_bytes + pending_bytes > self.max_retained_bytes:
+            raise RuntimeError("Actual engine recorder retention exceeded aggregate byte budget")
+        if path.suffix == ".fls":
+            for source in recorder_inputs(raw, self.temporary):
+                if source.suffix == ".tex" and source.is_relative_to(self.temporary.parent / "live"):
+                    try:
+                        contents = self.read_bounded(source)
+                    except FileNotFoundError:
+                        continue
+                    pending_bytes += len(contents)
+                    if self.retained_bytes + pending_bytes > self.max_retained_bytes:
+                        raise RuntimeError("Actual engine recorder retention exceeded aggregate byte budget")
+                    retained = destination.with_suffix("." + source.parent.name + ".input-source.original.tex")
+                    pending.append((retained, contents))
+                    captured_sources[str(source)] = {"retained": str(retained), "sha256": evidence.digest(contents)}
+        for retained, contents in pending:
+            retained.write_bytes(contents)
+        self.retained_bytes += pending_bytes
+        self.seen.add(identity)
+        self.records.append({"original_path": str(path), "retained": str(destination),
+                             "kind": path.suffix, "sha256": digest, "byte_size": len(raw),
+                             "captured_sources": captured_sources, "captured_utc": evidence.now()})
+
     def watch(self):
         try:
             while not self.done.is_set():
@@ -212,31 +263,9 @@ class RecorderWatcher:
                     if path.suffix not in (".fls", ".log"):
                         continue
                     try:
-                        raw = path.read_bytes()
+                        self.capture(path)
                     except FileNotFoundError:
                         continue
-                    identity = (str(path), evidence.digest(raw))
-                    if identity in self.seen:
-                        continue
-                    if len(raw) > 8_000_000 or len(self.records) >= 512:
-                        raise RuntimeError("Actual engine recorder retention exceeded bounded budget")
-                    self.seen.add(identity)
-                    destination = self.out / f"engine-{len(self.records):04d}.original{path.suffix}"
-                    destination.write_bytes(raw)
-                    captured_sources = {}
-                    if path.suffix == ".fls":
-                        for source in recorder_inputs(raw, self.temporary):
-                            if source.suffix == ".tex" and source.is_relative_to(self.temporary.parent / "live"):
-                                try:
-                                    contents = source.read_bytes()
-                                except FileNotFoundError:
-                                    continue
-                                retained = destination.with_suffix("." + source.parent.name + ".input-source.original.tex")
-                                retained.write_bytes(contents)
-                                captured_sources[str(source)] = {"retained": str(retained), "sha256": evidence.digest(contents)}
-                    self.records.append({"original_path": str(path), "retained": str(destination),
-                                         "kind": path.suffix, "sha256": evidence.digest(raw),
-                                         "captured_sources": captured_sources, "captured_utc": evidence.now()})
                 self.done.wait(0.01)
         except Exception as error:
             self.error = str(error)
@@ -248,7 +277,14 @@ class RecorderWatcher:
         self.done.set()
         if self.thread.ident is not None:
             self.thread.join(timeout=5)
-        evidence.write_json(self.out / "recorder-captures.json", {"snapshots": self.records, "error": self.error})
+            if self.thread.is_alive():
+                self.error = self.error or "Engine recorder watcher did not stop within bounded timeout"
+        evidence.write_json(self.out / "recorder-captures.json", {
+            "snapshots": self.records, "error": self.error,
+            "expected_build_count": self.expected_build_count,
+            "max_snapshots": self.max_snapshots, "max_snapshot_bytes": self.MAX_SNAPSHOT_BYTES,
+            "max_retained_bytes": self.max_retained_bytes, "retained_bytes": self.retained_bytes,
+        })
 
     def proof(self, source: Path, expected: bytes, dependencies: dict[str, str]) -> dict:
         if self.error:
@@ -259,16 +295,17 @@ class RecorderWatcher:
             path = Path(record["retained"])
             if path.suffix != ".fls":
                 continue
-            if evidence.sha(path) != record["sha256"]:
+            raw = self.read_bounded(path)
+            if evidence.digest(raw) != record["sha256"]:
                 raise RuntimeError("Retained engine recorder hash differs from captured original")
-            if required.issubset(recorder_inputs(path.read_bytes(), source.parent)):
+            if required.issubset(recorder_inputs(raw, source.parent)):
                 captured = record.get("captured_sources", {}).get(str(source.resolve()))
-                if not captured or captured["sha256"] != evidence.digest(expected) or evidence.sha(Path(captured["retained"])) != evidence.digest(expected):
+                if not captured or captured["sha256"] != evidence.digest(expected) or evidence.digest(self.read_bounded(Path(captured["retained"]))) != evidence.digest(expected):
                     continue
                 matching.append(record)
         if not matching:
             raise RuntimeError("No original GUI engine recorder contains source and all actual table inputs")
-        if source.read_bytes() != expected or evidence.dependency_hashes(source.parent, source.stem) != dependencies:
+        if self.read_bounded(source) != expected or evidence.dependency_hashes(source.parent, source.stem) != dependencies:
             raise RuntimeError("GUI source/dependencies changed during engine recorder observation")
         return {"recorder": matching[-1], "compiled_author_source": str(source.resolve()),
                 "compiled_source_sha256": evidence.digest(expected),
@@ -315,7 +352,8 @@ class Driver(common.Driver):
                        "builds": {}, **provenance}
         if args.suite in ("v2", "v2-clean"):
             self.report["sv040"] = "BOUNDED_NATIVE_TIKZ_GAUSSIAN_SAMPLES_APPLY_UNDO_REVIEW_REQUIRED"
-        self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals")
+        self.watcher = RecorderWatcher(self.out / "engine-tmp", self.out / "engine-originals",
+                                       expected_build_count=len(evidence.fixtures_for_suite(args.suite)))
 
     def start(self):
         previous = os.environ.get("TMPDIR")
@@ -628,8 +666,12 @@ class Driver(common.Driver):
         self.build(final)
 
     def stop(self):
-        self.watcher.stop()
-        super().stop()
+        try:
+            self.watcher.stop()
+        finally:
+            super().stop()
+        if self.watcher.error:
+            raise RuntimeError("Engine recorder watcher failed: " + self.watcher.error)
 
 
 def main() -> int:

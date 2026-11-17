@@ -4,6 +4,7 @@
   "build_label": "TikZarium Scientific Studio · CP09 Visual Guide",
   "environment_summary": "Per-screen host/run/geometry comes from each producer report in evidence-index.json; do not infer Win10/macOS from Linux/Xvfb.",
   "contents_intro": "Статус Windows 10/macOS см. в подписях и ограничениях каждого кадра.",
+  "window_crop": {"left": 0, "top": 0, "width": 1182, "height": 704, "source": "observed full application frame in current 1366x768 capture"},
   "ergonomics": {
     "source_set": "i61",
     "path": "native-actions.log"

@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import qa_n2_studio_x11 as n2
 import qa_r3_native_picker_x11 as r3
+import qa_i61_b42_studio_x11 as i61
 
 
 def geometry(x=1, y=20, width=1180, height=680):
@@ -18,6 +19,12 @@ def geometry(x=1, y=20, width=1180, height=680):
 
 
 class CompactGeometry(unittest.TestCase):
+    def test_all_native_drivers_use_the_same_reviewed_app_candidate(self):
+        # A stale N2 pin also blocks the R1/R3 wrappers after I61 has passed.
+        # CI separately compares this shared candidate to the actual git tree.
+        self.assertEqual(n2.APP_TREE, i61.APP_TREE)
+        self.assertEqual(r3.APP_TREE, i61.APP_TREE)
+
     def test_uses_absolute_origin_even_when_relative_origin_disagrees(self):
         parsed = n2.parse_geometry(geometry() + "  Relative upper-left X: 999\n  Relative upper-left Y: 999\n")
         self.assertEqual(parsed, {"X": 1, "Y": 20, "WIDTH": 1180, "HEIGHT": 680})

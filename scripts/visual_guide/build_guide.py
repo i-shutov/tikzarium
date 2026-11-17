@@ -52,6 +52,24 @@ def png_dimensions(path: Path) -> tuple[int, int] | None:
     return struct.unpack(">II", header[16:24])
 
 
+def png_has_phys_chunk(path: Path) -> bool:
+    """Return whether a PNG declares physical pixel density."""
+    with path.open("rb") as stream:
+        if stream.read(8) != b"\x89PNG\r\n\x1a\n":
+            return False
+        while True:
+            size_bytes = stream.read(4)
+            if len(size_bytes) != 4:
+                return False
+            size = struct.unpack(">I", size_bytes)[0]
+            chunk_type = stream.read(4)
+            if chunk_type == b"pHYs":
+                return True
+            if chunk_type == b"IEND" or len(chunk_type) != 4:
+                return False
+            stream.seek(size + 4, 1)  # chunk payload and CRC
+
+
 def metadata_line(screen: dict, args: argparse.Namespace) -> str:
     provenance = screen.get("provenance", {})
     source_sha = provenance.get("source_sha") or args.source_sha or "не указан"
@@ -75,10 +93,21 @@ def html_document(manifest: dict, resolved: list[dict], args: argparse.Namespace
     blocks = []
     for screen in resolved:
         width, height = screen.get("png_dimensions") or (0, 0)
+        crop = screen.get("display_crop")
+        if crop:
+            rect = crop["rectangle_px_from_top_left"]
+            frame_style = f"aspect-ratio:{rect['width']}/{rect['height']}"
+            image_style = f"width:{width / rect['width'] * 100:.5f}%;max-width:none"
+            image_markup = (f'<div class="app-frame" style="{frame_style}"><img '
+                            f'style="{image_style}" src="{html.escape(screen["resolved_path"])}" '
+                            f'alt="{html.escape(screen["caption"])}"></div>')
+        else:
+            image_markup = (f'<img src="{html.escape(screen["resolved_path"])}" '
+                            f'alt="{html.escape(screen["caption"])}">')
         blocks.append(f'''<section id="screen-{html.escape(screen['id'])}">
   <p class="eyebrow">{html.escape(screen.get('chapter', 'Наблюдение'))}</p>
   <h2>{html.escape(screen['title'])}</h2>
-  <figure><img src="{html.escape(screen['resolved_path'])}" alt="{html.escape(screen['caption'])}">
+  <figure>{image_markup}
     <figcaption>{html.escape(screen['caption'])}</figcaption></figure>
   <p>{html.escape(screen.get('observed', ''))}</p>
   <p class="limit">{html.escape(screen.get('limitation', ''))}</p>
@@ -105,7 +134,7 @@ header,main{{max-width:1180px;margin:auto;padding:24px}}header{{border-bottom:2p
 h1{{font-size:2rem;line-height:1.15;margin:.4rem 0}}h2{{font-size:1.45rem;margin:.3rem 0 .8rem}}
 nav{{padding:12px 18px;background:var(--panel);border:1px solid var(--line);border-radius:8px}}
 nav a,a{{color:var(--teal)}}nav ol{{columns:2;padding-left:1.3rem}}section{{padding:28px 0;border-bottom:1px solid var(--line)}}
-figure{{margin:8px 0 14px}}img{{display:block;width:100%;height:auto;border:1px solid var(--line)}}figcaption{{font-size:.9rem;color:var(--muted);padding-top:5px}}
+figure{{margin:8px 0 14px}}img{{display:block;width:100%;height:auto;border:1px solid var(--line)}}.app-frame{{width:100%;overflow:hidden;border:1px solid var(--line)}}.app-frame img{{height:auto;border:0}}figcaption{{font-size:.9rem;color:var(--muted);padding-top:5px}}
 .limit,.meta{{color:var(--muted)}}.meta{{font-size:.78rem}}code{{overflow-wrap:anywhere}}
 @media(max-width:700px){{body{{font-size:14px}}header,main{{padding:16px}}nav ol{{columns:1}}}}
 @media print{{body{{font-size:11pt}}header,main{{max-width:none;padding:10mm}}section{{break-after:page}}}}
@@ -113,7 +142,7 @@ figure{{margin:8px 0 14px}}img{{display:block;width:100%;height:auto;border:1px 
 <header><p class="eyebrow">TikZarium · CP09 · Visual Guide</p><h1>Реальный интерфейс и путь от исходника до графика</h1>
 <p>Практический гид по наблюдаемым экранам, действиям редактора и границам подтверждённого поведения.</p>
 <p><strong>Исходный commit:</strong> {html.escape(args.source_sha or manifest.get('source_sha','не указан'))} · <strong>Run:</strong> <a href="{html.escape(run)}">{html.escape(run or 'не указан')}</a></p>
-<p>Исторические кадры CP08 явно отмечены. Linux/Xvfb не является платформенной проверкой Windows 10 или macOS.</p></header>
+<p>В HTML и PDF видно окно приложения; исходный полноэкранный PNG остаётся целиком в `assets`. Linux/Xvfb не является платформенной проверкой Windows 10 или macOS.</p></header>
 <main><nav><strong>Содержание</strong><ol>{toc}</ol></nav>{replay_html}{''.join(blocks)}</main></body></html>'''
 
 
@@ -159,7 +188,7 @@ def load_evidence_index(index_path: Path, evidence_root: Path, expected_sha: str
 
 
 def render_pages(screens: list[dict], evidence: dict[str, dict], output: Path,
-                 args: argparse.Namespace) -> tuple[str, list[dict]]:
+                 args: argparse.Namespace, manifest: dict) -> tuple[str, list[dict]]:
     pages: list[str] = []
     resolved: list[dict] = []
     ids: set[str] = set()
@@ -189,6 +218,37 @@ def render_pages(screens: list[dict], evidence: dict[str, dict], output: Path,
         dimensions = png_dimensions(original)
         if dimensions != tuple(source["display"]):
             raise ValueError(f"Screen {screen_id} PNG size {dimensions} does not match producer display {source['display']}")
+        crop_record = None
+        crop_option = ""
+        crop = manifest.get("window_crop")
+        if crop:
+            expected_dimensions = (1366, 768)
+            expected_rect = {"left": 0, "top": 0, "width": 1182, "height": 704}
+            if dimensions != expected_dimensions:
+                raise ValueError(f"Window-crop calibration is only verified for {expected_dimensions}; got {dimensions} for {screen_id}")
+            if any(type(crop.get(key)) is not int for key in expected_rect):
+                raise ValueError("Window crop coordinates and dimensions must be true integers, not booleans or numeric strings")
+            actual_rect = {key: crop[key] for key in expected_rect}
+            if actual_rect != expected_rect:
+                raise ValueError(f"Unreviewed crop rectangle for {screen_id}: {actual_rect}; expected {expected_rect}")
+            if png_has_phys_chunk(original):
+                raise ValueError(f"Screen {screen_id} has PNG pHYs metadata; natural bp crop basis must be reviewed")
+            left, top, width, height = (crop[key] for key in ("left", "top", "width", "height"))
+            image_width, image_height = dimensions
+            if min(left, top, width, height) < 0 or width == 0 or height == 0:
+                raise ValueError(f"Invalid window crop for screen {screen_id}: {crop}")
+            if left + width > image_width or top + height > image_height:
+                raise ValueError(f"Window crop exceeds screenshot bounds for screen {screen_id}: {crop}")
+            right = image_width - left - width
+            bottom = image_height - top - height
+            crop_option = f"trim={left}bp {bottom}bp {right}bp {top}bp,clip"
+            crop_record = {
+                "displayed_region": "application window; original full-screen PNG is retained in assets",
+                "rectangle_px_from_top_left": {"left": left, "top": top, "width": width, "height": height},
+                "source_image_px": {"width": image_width, "height": image_height},
+                "graphicx_trim_bp_left_bottom_right_top": [left, bottom, right, top],
+                "basis": "extractbb HiResBoundingBox verified as 0 0 1366 768; input PNG has no pHYs chunk, so 1 bp per pixel",
+            }
         dest_name = f"{item['id']}_{original.name}"
         dest = assets_root / dest_name
         if not dest.resolve().is_relative_to(assets_root):
@@ -220,7 +280,8 @@ def render_pages(screens: list[dict], evidence: dict[str, dict], output: Path,
         body = (f"\\hypertarget{{sc{index}}}{{}}\n"
                 f"\\eyebrow{{{tex_text(item.get('chapter', 'Наблюдение'))}}}\n"
                 f"\\sectionTitle{{{tex_text(item['title'])}}}\n"
-                f"\\screenImage{{assets/{dest_name}}}\n"
+                f"\\screenImage[{crop_option}]{{assets/{dest_name}}}\n"
+                f"\\vspace{{-3mm}}\\meta{{Окно приложения; полный PNG без изменений сохранён в assets.}}\\par\n"
                 f"\\vspace{{-2mm}}\\callout{{Что видно}}{{{tex_text(item['caption'])}}}\n\\vspace{{2pt}}\n"
                 f"\\begin{{minipage}}[t]{{0.56\\linewidth}}\\footnotesize {tex_text(observed)}\\end{{minipage}}"
                 f"\\hfill\\begin{{minipage}}[t]{{0.40\\linewidth}}\\footnotesize\\color{{Muted}}"
@@ -241,6 +302,7 @@ def render_pages(screens: list[dict], evidence: dict[str, dict], output: Path,
                                   ("run_id", "run_url", "artifact_id", "artifact_sha256", "app_tree_sha", "host", "checkpoint")},
             "byte_size": original.stat().st_size,
             "png_dimensions": list(dimensions),
+            "display_crop": crop_record,
             "provenance": page_provenance,
         })
     return "\n".join(pages), resolved
@@ -319,7 +381,7 @@ def main() -> None:
     if not index_path.is_relative_to(evidence_root):
         raise ValueError("Evidence index must be located inside --evidence-root")
     evidence_index, evidence = load_evidence_index(index_path, evidence_root, args.source_sha)
-    body, resolved = render_pages(manifest["screens"], evidence, args.output_dir, args)
+    body, resolved = render_pages(manifest["screens"], evidence, args.output_dir, args, manifest)
     replay = replay_metrics(manifest.get("ergonomics"), evidence)
     intro = manifest.get("contents_intro", "")
     toc_rows = "\\\\\n".join(

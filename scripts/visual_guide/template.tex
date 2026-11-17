@@ -1,7 +1,7 @@
 % TikZarium CP09 Visual Guide — XeLaTeX page template
 % All interface images are included from a generated evidence manifest.
 \documentclass[10pt,a4paper,landscape]{article}
-\usepackage[margin=12mm,headheight=13pt,includeheadfoot]{geometry}
+\usepackage[margin=8mm,headheight=13pt,headsep=3mm,footskip=4mm,includeheadfoot]{geometry}
 \usepackage{fontspec}
 \usepackage{polyglossia}
 \setdefaultlanguage{russian}
@@ -29,7 +29,7 @@
 \fancyhf{}
 \fancyhead[L]{\small\sffamily\color{Muted}TikZarium · CP09 · интерфейс и рабочий процесс}
 \fancyhead[R]{\small\sffamily\color{Muted}Основано на наблюдаемых экранах}
-\fancyfoot[L]{\small\color{Muted}CP09 · полный SHA и связь с producer report указаны в манифесте.}
+\fancyfoot[L]{\small\color{Muted}CP09 · оригинальный полноэкранный PNG сохранён в assets.}
 \fancyfoot[R]{\small\sffamily\color{Muted}\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
@@ -38,7 +38,7 @@
 \newcommand{\eyebrow}[1]{{\small\sffamily\bfseries\color{Teal}\MakeUppercase{#1}}\par\vspace{2pt}}
 \newcommand{\meta}[1]{{\footnotesize\sffamily\color{Muted}#1}}
 \newcommand{\callout}[2]{\colorbox{Panel}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textcolor{Teal}{\sffamily\bfseries #1}\hspace{0.5em}#2}}}
-\newcommand{\screenImage}[1]{\begin{center}\includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{\detokenize{#1}}\end{center}}
+\newcommand{\screenImage}[2][]{\begin{center}\includegraphics[width=\linewidth,height=0.73\textheight,keepaspectratio,#1]{\detokenize{#2}}\end{center}}
 \begin{document}
 \thispagestyle{empty}
 \vspace*{9mm}
@@ -93,7 +93,7 @@
 \eyebrow{Эргономика: что видно и что остаётся гипотезой}
 Инспектор и редактор находятся рядом, поэтому перед изменением удобно читать источник и свойство в одном поле зрения. Видимая строка и имя активного файла снижают риск редактировать не тот документ. F1 открывает контекстную справку в зафиксированной сцене.
 
-В зафиксированном экране F1 открывает контекстную справку. Клавиатурная палитра и другие сочетания не включены в рекомендации, если они не показаны в кадре или журнале.
+Клавиатурная палитра и сочетания клавиш не включены в рекомендации, если они не показаны в кадре или журнале.
 
 \GuideReplayErgo
 \end{minipage}

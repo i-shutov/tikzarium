@@ -19,7 +19,10 @@ import time
 
 from qa_i61_b42_studio_x11 import audit_embedded_fonts, run, screenshot, sha, wait
 
-APP_TREE = "a71dc1205213ded99b81174b568a445cd756f49d"
+# CP09 changes only the scientific Properties section; Libraries, native file
+# menus, source settings and dirty-close controls retain their reviewed layout.
+# This is a candidate for the full fresh N2/R1/R3 run, never transferred PASS.
+APP_TREE = "b5759efbf0c200f3497e99d43ea8de4a110f1f85"
 CLIENT = (1180, 680)
 SCREEN = (1366, 768)
 # main.rs studio_file_menu/show_source_editor/show_studio_inspector. File path,
