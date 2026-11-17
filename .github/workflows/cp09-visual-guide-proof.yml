@@ -1,0 +1,152 @@
+name: CP09 Visual Guide proof from verified native evidence
+
+# A document build, not a new native acceptance run. The collector still
+# requires successful AT4/clean/I61/compact producers at the pinned source.
+on:
+  push:
+    branches: [work/cp09-guide-proof-20261117]
+    paths:
+      - '.github/workflows/cp09-visual-guide-proof.yml'
+      - 'scripts/visual_guide/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cp09-visual-guide-proof
+  cancel-in-progress: true
+
+jobs:
+  scientific-visual-guide:
+    name: Visual Guide from current native interfaces
+    # Original warning failures remain failures. The guide consumes only the
+    # separately successful AT4/clean jobs and same-source shell evidence.
+    if: always() && !cancelled()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      TIKZARIUM_SOURCE_SHA: 92a01f2a8d58718e4d1439b0343e9d0d03d6444d
+      TIKZARIUM_GUIDE_SOURCE_SHA: ${{ github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out the exact guide generator source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify source and guide input contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TIKZARIUM_GUIDE_SOURCE_SHA"
+          python3 - <<'PYVERIFY'
+          import os, subprocess
+          source = os.environ['TIKZARIUM_SOURCE_SHA']
+          changed = subprocess.check_output(['git', 'diff', '--name-only', source, 'HEAD'], text=True).splitlines()
+          allowed_file = '.github/workflows/cp09-visual-guide-proof.yml'
+          assert all(p == allowed_file or p.startswith('scripts/visual_guide/') for p in changed), changed
+          assert subprocess.check_output(['git', 'rev-parse', source + ':crates/tikzarium-app/src'], text=True).strip() == 'b5759efbf0c200f3497e99d43ea8de4a110f1f85'
+          PYVERIFY
+          mkdir -p "$RUNNER_TEMP/scientific-visual-guide/logs"
+          git show --no-patch --format=fuller "$TIKZARIUM_SOURCE_SHA" > "$RUNNER_TEMP/scientific-visual-guide/logs/native-source-commit.txt"
+          git show --no-patch --format=fuller HEAD > "$RUNNER_TEMP/scientific-visual-guide/logs/guide-source-commit.txt"
+          python3 -m unittest discover -s scripts -p 'qa_visual_guide_*_test.py' -v 2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/input-contract-tests.log"
+      - name: Fetch original screenshots bound to successful same-source producers
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/qa_visual_guide_inputs.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --source-sha "$TIKZARIUM_SOURCE_SHA" \
+            --pgf-run-id 44052884286 \
+            --out "$RUNNER_TEMP/scientific-visual-guide-inputs" \
+            2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/input-provenance.log"
+      - name: Install disposable hosted XeLaTeX and explicit guide fonts
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f /etc/apt/apt-mirrors.txt; then
+            sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu/#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/apt-mirrors.txt
+          fi
+          sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
+            texlive-xetex texlive-latex-extra texlive-fonts-recommended texlive-lang-cyrillic fonts-dejavu-core poppler-utils
+          test "$(fc-match -f '%{family}' 'DejaVu Sans')" = 'DejaVu Sans'
+          test "$(fc-match -f '%{family}' 'DejaVu Sans Mono')" = 'DejaVu Sans Mono'
+          metric_path="$(kpsewhich pzdr.tfm)"
+          test -f "$metric_path"
+          kpsewhich pzdr.tfm > "$RUNNER_TEMP/scientific-visual-guide/logs/tex-font-metrics.txt"
+          xelatex --version > "$RUNNER_TEMP/scientific-visual-guide/logs/xelatex-version.txt"
+          fc-match -v 'DejaVu Sans' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-sans.txt"
+          fc-match -v 'DejaVu Sans Mono' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-mono.txt"
+      - name: Generate portable source with unchanged original PNG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/visual_guide/build_guide.py \
+            --evidence-root "$RUNNER_TEMP/scientific-visual-guide-inputs" \
+            --evidence-index evidence-index.json \
+            --source-sha "$TIKZARIUM_SOURCE_SHA" \
+            --run-url "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --output-dir "$RUNNER_TEMP/scientific-visual-guide" \
+            2>&1 | tee "$RUNNER_TEMP/scientific-visual-guide/logs/generate.log"
+          mkdir -p "$RUNNER_TEMP/scientific-visual-guide/source"
+          cp scripts/visual_guide/* "$RUNNER_TEMP/scientific-visual-guide/source/"
+          cp "$RUNNER_TEMP/scientific-visual-guide-inputs/evidence-index.json" "$RUNNER_TEMP/scientific-visual-guide/source/"
+      - name: Compile the guide and render every page for independent review
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/scientific-visual-guide"
+          xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder guide.tex > logs/xelatex-pass1.txt 2>&1
+          xelatex -interaction=nonstopmode -halt-on-error -file-line-error -no-shell-escape -recorder guide.tex > logs/xelatex-pass2.txt 2>&1
+          if grep -E 'Missing character:|Overfull \\[hv]box|LaTeX Font Warning:.*undefined' guide.log; then
+            exit 1
+          fi
+          pdfinfo guide.pdf > logs/pdfinfo.txt
+          pdffonts guide.pdf > logs/pdffonts.txt
+          pdftotext -layout guide.pdf logs/guide-text.txt
+          mkdir -p rendered
+          pdftoppm -r 120 -png guide.pdf rendered/page
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root = pathlib.Path.cwd()
+          manifest = json.loads((root / 'resolved_manifest.json').read_text())
+          pages = sorted(root.glob('rendered/page-*.png'))
+          assert len(pages) == len(manifest['screens']) + 3, 'Guide page count differs from the designed cover/navigation/workflow plus one page per original screen'
+          font_rows = (root / 'logs/pdffonts.txt').read_text().splitlines()[2:]
+          assert font_rows, 'No embedded guide fonts'
+          for row in font_rows:
+              fields = row.split()
+              assert len(fields) >= 8 and fields[-5] == 'yes', 'A guide font is not embedded'
+          pdf = root / 'guide.pdf'
+          receipt = {'schema_version': 1, 'status': 'COMPILED_REQUIRES_INDEPENDENT_PAGE_REVIEW',
+                     'source_head_sha': manifest['build']['source_sha'],
+                     'pdf_sha256': hashlib.sha256(pdf.read_bytes()).hexdigest(),
+                     'pdf_bytes': pdf.stat().st_size, 'rendered_page_count': len(pages),
+                     'original_screen_count': len(manifest['screens']),
+                     'fonts_explicit': ['DejaVu Sans', 'DejaVu Sans Mono'],
+                     'native_platform_acceptance': 'NOT_ESTABLISHED_BY_THIS_GUIDE',
+                     'files': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                               for p in sorted(root.rglob('*')) if p.is_file()},
+                     'generator_source_sha': os.environ['TIKZARIUM_GUIDE_SOURCE_SHA'],
+                     'evidence_source_sha': os.environ['TIKZARIUM_SOURCE_SHA'],
+                     'scope': 'Document build; native evidence remains bound to its own producer source, not this guide commit'}
+          (root / 'guide-build-report.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - name: Preserve the guide, original PNGs, portable source and all build logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scientific-visual-guide-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scientific-visual-guide/
+          if-no-files-found: error
+          retention-days: 14
