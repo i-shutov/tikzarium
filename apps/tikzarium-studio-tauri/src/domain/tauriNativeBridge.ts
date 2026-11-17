@@ -16,8 +16,10 @@ import type {
   EngineAdapter,
   PdfUnderlayRenderRequest,
   PdfUnderlayRenderResponse,
+  SourcePatchSpan,
+  CheckedSourcePatchResult,
 } from './sourcePatchEngine';
-import { computeHexDigest } from './tikzEngine';
+import { computeSourceDigest as computeHexDigest } from './sourceDigest';
 
 export interface TauriInternalsBridge {
   invoke: <T = unknown>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -79,7 +81,7 @@ export const TAURI_V2_IPC_CATALOG: readonly TauriIpcCommandSpec[] = [
     command: 'tz_render_pdf_underlay',
     rustHandler: 'commands::tz_render_pdf_underlay',
     upstreamCrateBinding: 'tikzarium_core::BuildService::run + pdftoppm',
-    purposeRu: 'Живая компиляция .tex в калиброванную PDF-кальку 1:1 (144 DPI PNG + PDF байты) с LRU-кэшем SHA-256.',
+    purposeRu: 'Явная компиляция .tex во внешний PDF и PNG; source SHA-256 связывает ответ с запросом, кэш отключён до dependency closure.',
     securityInvariantRu: 'Строгий -no-shell-escape, запрет автоустановки MiKTeX и проверка привилегий дочернего процесса.',
   },
   {
@@ -325,4 +327,13 @@ export async function subscribeTauriExternalFileChanges(
       eventId,
     });
   };
+}
+
+/** Actual async Rust command. The synchronous adapter method is preview-only. */
+export async function tauriApplyCheckedSourcePatch(
+  source: string, patch: SourcePatchSpan, expectedDigest: string,
+  explicitGlobal?: Record<string, unknown>
+): Promise<CheckedSourcePatchResult> {
+  return invokeTauriCommand<CheckedSourcePatchResult>('tz_apply_checked_patch',
+    { source, patch, expectedDigest }, explicitGlobal);
 }

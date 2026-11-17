@@ -1,5 +1,12 @@
 # TikZarium Studio — единый roadmap: научная графика первой, данные последними
 
+## Current UI override — 17.11.2026
+
+**Tauri + Rust is the owner-selected primary interface.** The code is in `apps/tikzarium-studio-tauri/`, merged into main at `2a59631e`. egui is retained only as the tagged legacy/CP09 donor. Earlier egui-only or no-web-shell wording below is historical for the shell choice, not an instruction to reverse this transition. Source integrity, scientific scope, offline/trust requirements and independent platform evidence are unchanged.
+
+Current execution: [Tauri migration plan](../plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md). Current findings: [source/build contracts](../insights/2026-11-17_TAURI_SOURCE_BUILD_CONTRACTS_RU.md). Build success must be tied to actual external XeLaTeX output, not a timer or TypeScript syntax scan. Opening a document is not permission to compile it. Never transfer the old CP09 GUI acceptance to a new Tauri executable.
+
+
 ## 1.0 REBASE — scientific Studio is the actual stable release target
 
 **Owner-approved 11.11.2026:** TikZarium stable v1.0.0 now means **the entire agreed ST-SCI scientific first release**, NOT the historical limited six-tool/UX Windows release. Normative [MUST/excludes and release gates](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [execution plan](../plans/2026-11-11_SCI_1_0_EXECUTION.md), [Windows Codex QA assignment](../plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). Complete ST-SCI includes premium multi-document native Studio and UX-F01…F14/G3; TikZ and PGFPlots scientific source edits, SCI142 142/103, scientific AI88 cases, scoped Asymptote and Typst/CeTZ verified GUI + build/export, scientific-quality publication outputs. Penrose is research/candidate, not automatically a universal solver gate. Full Data Figure/import/analysis remains last; the already-required PGFPlots .dat/.csv dependencies remain.

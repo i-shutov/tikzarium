@@ -6,7 +6,7 @@ authors = ["TikZarium Contributors"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/i-shutov/tikzarium"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.91"
 
 [lib]
 name = "tikzarium_studio_tauri_lib"

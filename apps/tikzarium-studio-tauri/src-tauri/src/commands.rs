@@ -3,13 +3,13 @@
 //! атомарную запись `.tex` и реестр прямых точек PDF-мануалов напрямую в `tikzarium-core` и `tikzarium-extensions`.
 
 use crate::patch_engine::{
-    CheckedSourcePatchResult, SourcePatchSpan, apply_checked_source_patch, sha256_short_hex,
+    CheckedSourcePatchResult, SourcePatchSpan, apply_checked_source_patch, sha256_hex,
+    sha256_short_hex,
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::VecDeque,
     fs,
     path::{Path, PathBuf},
     process::{Command, Stdio},
@@ -23,12 +23,9 @@ use tikzarium_core::{
 };
 use tikzarium_extensions::{manual_anchors::ManualAnchorCatalog, project_imports};
 
-const MAX_UNDERLAY_CACHE_ENTRIES: usize = 32;
-
 pub struct StudioSessionInner {
     pub active_document: Option<Document>,
     pub active_build: Arc<BuildService>,
-    pub underlay_cache: VecDeque<(String, CachedUnderlayEntry)>,
     pub fs_watcher: Option<RecommendedWatcher>,
 }
 
@@ -37,7 +34,6 @@ impl Default for StudioSessionInner {
         Self {
             active_document: None,
             active_build: Arc::new(BuildService::new()),
-            underlay_cache: VecDeque::with_capacity(MAX_UNDERLAY_CACHE_ENTRIES),
             fs_watcher: None,
         }
     }
@@ -53,17 +49,6 @@ impl Default for StudioTauriState {
             inner: Mutex::new(StudioSessionInner::default()),
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct CachedUnderlayEntry {
-    pub source_digest: String,
-    pub engine: String,
-    pub engine_label_ru: String,
-    pub png_data_url: Option<String>,
-    pub pdf_base64: Option<String>,
-    pub page_width_pt: f64,
-    pub page_height_pt: f64,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -273,41 +258,17 @@ pub async fn tz_render_pdf_underlay(
 ) -> Result<PdfUnderlayRenderResponse, String> {
     let started = Instant::now();
     let dpi = req.dpi.unwrap_or(144).clamp(96, 240);
-    let source_digest = sha256_short_hex(&req.source);
-    let cache_key = format!(
-        "{source_digest}:{:.3}:{:.3}:{:.3}:{:.3}:{dpi}",
-        req.min_x_cm, req.max_x_cm, req.min_y_cm, req.max_y_cm
-    );
+    let source_digest = sha256_hex(&req.source);
 
     let build_service = {
-        let guard = state
+        let mut guard = state
             .inner
             .lock()
             .map_err(|_| "Блокировка состояния сессии повреждена".to_owned())?;
-        if let Some((_, hit)) = guard.underlay_cache.iter().find(|(k, _)| k == &cache_key) {
-            return Ok(PdfUnderlayRenderResponse {
-                ok: true,
-                revision: req.revision,
-                source_digest: hit.source_digest.clone(),
-                engine: hit.engine.clone(),
-                engine_label_ru: hit.engine_label_ru.clone(),
-                png_data_url: hit.png_data_url.clone(),
-                pdf_base64: hit.pdf_base64.clone(),
-                page_width_pt: hit.page_width_pt,
-                page_height_pt: hit.page_height_pt,
-                render_ms: started.elapsed().as_millis() as u64,
-                objects_rendered: 1,
-                hitboxes: Vec::new(),
-                error_ru: None,
-            });
-        }
+        // Superseding a request must cancel the previous worker, not lose its handle.
+        guard.active_build.cancel();
         let fresh = Arc::new(BuildService::new());
-        drop(guard);
-        let mut guard_mut = state
-            .inner
-            .lock()
-            .map_err(|_| "Блокировка состояния сессии повреждена".to_owned())?;
-        guard_mut.active_build = Arc::clone(&fresh);
+        guard.active_build = Arc::clone(&fresh);
         fresh
     };
 
@@ -450,26 +411,6 @@ pub async fn tz_render_pdf_underlay(
     })
     .await
     .map_err(|e| format!("spawn_blocking error: {e}"))?;
-
-    if blocking_out.ok {
-        if let Ok(mut guard) = state.inner.lock() {
-            if guard.underlay_cache.len() >= MAX_UNDERLAY_CACHE_ENTRIES {
-                guard.underlay_cache.pop_front();
-            }
-            guard.underlay_cache.push_back((
-                cache_key,
-                CachedUnderlayEntry {
-                    source_digest: blocking_out.source_digest.clone(),
-                    engine: blocking_out.engine.clone(),
-                    engine_label_ru: blocking_out.engine_label_ru.clone(),
-                    png_data_url: blocking_out.png_data_url.clone(),
-                    pdf_base64: blocking_out.pdf_base64.clone(),
-                    page_width_pt: blocking_out.page_width_pt,
-                    page_height_pt: blocking_out.page_height_pt,
-                },
-            ));
-        }
-    }
 
     Ok(blocking_out)
 }

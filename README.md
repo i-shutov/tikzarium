@@ -1,3 +1,21 @@
+# TikZarium Scientific Studio — Tauri + Rust
+
+Основной интерфейс по решению владельца от 17.11.2026: `apps/tikzarium-studio-tauri/`. Исторический egui-срез сохранён тегом `archive/egui-cp09-20261117`; его научные операции переносятся по отдельной матрице, без возврата старой оболочки.
+
+```sh
+cd apps/tikzarium-studio-tauri
+npm ci
+npm test
+npm run lint
+npm run tauri:dev
+```
+
+Требуются отдельно установленные Rust и системные зависимости Tauri; для компиляции рисунков — локальный XeLaTeX и Poppler. Windows WebView2 устанавливается владельцем явно; приложение/установщик не докачивает его скрытно. `npm run dev` — browser preview, не нативная приёмка и не внешний TeX-сервер.
+
+[План перехода](plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md) · [находки и решения](insights/2026-11-17_TAURI_SOURCE_BUILD_CONTRACTS_RU.md). Промежуточная интеграция не означает готовый Scientific Studio 1.0, Win10/IME/DPI или перенос всех операций CP09.
+
+## Историческая документация egui и общих компонентов
+
 # TikZarium
 
 > **CURRENT PRODUCT/RELEASE DECISION (2026-11-11):** owner approved TikZarium **v1.0.0 as the first complete Scientific Studio**, not an earlier narrow TikZ GUI. [Normative release scope](docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) · [Science-first roadmap](docs/ROADMAP.md) · [execution plan](plans/2026-11-11_SCI_1_0_EXECUTION.md). Required: beautiful multi-document UI, all UX/G3; scientific TikZ/PGFPlots, SCI142 142 figures/103 requirements, scientific AI88, scoped Asymptote and Typst/CeTZ native scientific GUI source edits/build/export, W0–W4 actual Win10/Server/IME/96-120-192 DPI QA. UML/BPMN/engineering/chem-bio/animation/other/data are subsequent priorities. **STABLE 1.0 NO-GO** pending implementation and independent acceptance. The old dated status paragraphs below, including 96-DPI-only and "scientific-after-1.0", are retained as historical evidence, not the current v1.0 contract.

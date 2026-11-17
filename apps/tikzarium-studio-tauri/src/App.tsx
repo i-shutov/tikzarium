@@ -232,6 +232,7 @@ import type { ManualModalTabId } from './components/PdfManualAnchorModal';
 import type { StudioControlSnapshot } from './domain/studioControlApi';
 import type { TikzExtensionId } from './domain/tikzExtensionsSuite';
 import type { PdfUnderlayRenderResponse } from './domain/sourcePatchEngine';
+import { NativeBuildGate, LiveBuildAdmission, requestAuthoritativePdf, assertAuthoritativePdf, saveThenContinue } from './domain/nativeBuildGate';
 import {
   createAdaptiveEngineAdapter,
   isTauriRuntime,
@@ -304,7 +305,7 @@ export default function App() {
     initialStored.inspectorCollapsed ?? false
   );
   const [liveAutoBuild, setLiveAutoBuild] = useState<boolean>(
-    initialStored.liveAutoBuild ?? false
+    false // Execution consent is session/document-scoped; never restore it from storage.
   );
   const [recentFiles, setRecentFiles] = useState<
     { filename: string; titleRu: string; openedAt: string }[]
@@ -326,9 +327,7 @@ export default function App() {
   const allDocuments = useMemo(() => [...createdDocs, ...specimens], [createdDocs, specimens]);
   const [specimenId, setSpecimenId] = useState<string>(specimens[0].id);
   const [filename, setFilename] = useState<string>(specimens[0].filename);
-  const [savedDirectory, setSavedDirectory] = useState<string | null>(
-    'C:\\Users\\Researcher\\Documents\\TikZarium\\figures'
-  );
+  const [savedDirectory, setSavedDirectory] = useState<string | null>(null);
   const [nativeFilePath, setNativeFilePath] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([
     { source: specimens[0].source, revision: 1, labelRu: 'Исходный документ' },
@@ -372,12 +371,11 @@ export default function App() {
   const [inspectorTabOverride, setInspectorTabOverride] = useState<InspectorTabId | null>(null);
 
   // Build, PDF triad & Modals state (P13, P15, P16, P18, P19, P20)
-  const [buildStatus, setBuildStatus] = useState<BuildStatus>('succeeded');
-  const [builtRevision, setBuiltRevision] = useState<number | null>(1);
-  const [builtAt, setBuiltAt] = useState<string | null>('Сборка rev #1');
-  const [lastGoodPrimitives, setLastGoodPrimitives] = useState<OwnedPrimitive[]>(() =>
-    parseOwnedPrimitives(specimens[0].source)
-  );
+  const [buildStatus, setBuildStatus] = useState<BuildStatus>('idle');
+  const [builtRevision, setBuiltRevision] = useState<number | null>(null);
+  const [builtAt, setBuiltAt] = useState<string | null>(null);
+  const [lastGoodPrimitives, setLastGoodPrimitives] = useState<OwnedPrimitive[]>([]);
+  const [builtSource, setBuiltSource] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState<boolean>(false);
   const [newTemplateModalOpen, setNewTemplateModalOpen] = useState<boolean>(false);
   const [initialTemplateId, setInitialTemplateId] = useState<DocumentTemplateId>('diagram');
@@ -472,7 +470,10 @@ export default function App() {
     externalEditor: string;
   } | null>(null);
 
-  const buildTimerRef = useRef<number | null>(null);
+  const buildGateRef = useRef(new NativeBuildGate());
+  const liveAdmissionRef = useRef(new LiveBuildAdmission());
+  const documentEpochRef = useRef(0);
+  const saveInFlightRef = useRef(false);
   const liveDebounceRef = useRef<number | null>(null);
   const studioRowRef = useRef<HTMLDivElement | null>(null);
   const splitterDragRef = useRef<{
@@ -491,6 +492,8 @@ export default function App() {
   const source = currentEntry.source;
   const sourceRevision = currentEntry.revision;
   const isDirtyDocument = sourceRevision !== savedRevision;
+  const liveSourceRef = useRef({ source, revision: sourceRevision });
+  liveSourceRef.current = { source, revision: sourceRevision };
 
   const ownedPrimitives = useMemo(() => parseOwnedPrimitives(source), [source]);
   const packageObjects = useMemo(() => parseScenePackageObjects(source), [source]);
@@ -556,7 +559,9 @@ export default function App() {
   );
 
   const pdfStatus: 'absent' | 'current' | 'stale' =
-    builtRevision === null ? 'absent' : builtRevision === sourceRevision ? 'current' : 'stale';
+    builtRevision === null ? 'absent' :
+      builtRevision === sourceRevision && builtSource === source && buildStatus === 'succeeded' &&
+      pdfUnderlayResponse !== null && externalDiskChange === null ? 'current' : 'stale';
 
   // P20 + P49: Persist workspace settings, panelCols, snippets & recent files to eframe::Storage mirror
   useEffect(() => {
@@ -712,9 +717,13 @@ export default function App() {
   const pushSourceChange = useCallback(
     (nextSource: string, labelRu: string) => {
       if (nextSource === source) return;
+      buildGateRef.current.invalidate();
+      setBuildStatus((prev) => prev === 'running' ? 'cancelled' : prev);
+      setPdfUnderlayLoading(false);
       const nextRev = history[history.length - 1].revision + 1;
       const truncated = history.slice(0, historyIndex + 1);
       const nextStack = [...truncated, { source: nextSource, revision: nextRev, labelRu }];
+      liveSourceRef.current = { source: nextSource, revision: nextRev };
       setHistory(nextStack);
       setHistoryIndex(nextStack.length - 1);
     },
@@ -722,45 +731,44 @@ export default function App() {
   );
 
   const executeBuildCycle = useCallback(
-    (targetRev: number, targetSource: string, switchToPdfTab = true) => {
-      if (buildTimerRef.current) {
-        window.clearTimeout(buildTimerRef.current);
-      }
+    async (targetRev: number, targetSource: string, switchToPdfTab = true) => {
+      const ticket = buildGateRef.current.begin(targetSource, targetRev, documentEpochRef.current);
+      liveAdmissionRef.current.remember(targetSource, targetRev, documentEpochRef.current);
+      const current = () => buildGateRef.current.isCurrent(ticket,
+        liveSourceRef.current.source, liveSourceRef.current.revision, documentEpochRef.current);
       setBuildStatus('running');
-      setSavedRevision(targetRev);
-
-      buildTimerRef.current = window.setTimeout(() => {
-        buildTimerRef.current = null;
-        const diags = analyzeTexDiagnostics(targetSource);
-        const hasFatal = diags.some((d) => d.severity === 'error');
-        if (hasFatal) {
-          setBuildStatus('failed');
-          const firstErrLine = diags.find((d) => d.severity === 'error')?.lineNumber ?? 1;
-          setActiveLine(firstErrLine);
-          if (switchToPdfTab) {
-            setToastBanner(
-              `Сборка остановлена с ошибкой (строка ${firstErrLine}). Предыдущий PDF помечен устаревшим.`
-            );
-          }
-        } else {
-          const parsedOwned = parseOwnedPrimitives(targetSource);
-          setBuildStatus('succeeded');
-          setBuiltRevision(targetRev);
-          setBuiltAt(`Сборка rev #${targetRev} · ${new Date().toLocaleTimeString('ru-RU')}`);
-          setLastGoodPrimitives(parsedOwned);
-          if (switchToPdfTab) {
-            setCanvasMode((prev) => (prev === 'onion' || prev === 'split' ? prev : 'pdf'));
-            setToastBanner(`Файл ${filename} сохранён; PDF актуален для ревизии #${targetRev}.`);
-          }
+      setPdfUnderlayLoading(true);
+      try {
+        const result = await requestAuthoritativePdf(engineAdapter, {
+          source: targetSource, revision: targetRev, ...stageBoundsCm, dpi: 144,
+        });
+        if (!current()) return;
+        setPdfUnderlayResponse(result);
+        setBuildStatus('succeeded');
+        setBuiltRevision(targetRev);
+        setBuiltSource(targetSource);
+        setBuiltAt(`XeLaTeX · rev #${targetRev} · ${new Date().toLocaleTimeString('ru-RU')}`);
+        setLastGoodPrimitives(parseOwnedPrimitives(targetSource));
+        if (switchToPdfTab) {
+          setCanvasMode((prev) => prev === 'onion' || prev === 'split' ? prev : 'pdf');
+          setToastBanner(`PDF ${filename}: внешний XeLaTeX подтвердил ревизию #${targetRev}.`);
         }
-      }, 450);
+      } catch (error) {
+        if (!current()) return;
+        setBuildStatus('failed');
+        setToastBanner(error instanceof Error ? error.message : String(error));
+      } finally {
+        if (current()) setPdfUnderlayLoading(false);
+      }
     },
-    [filename]
+    [engineAdapter, filename, stageBoundsCm.minXCm, stageBoundsCm.maxXCm, stageBoundsCm.minYCm, stageBoundsCm.maxYCm]
   );
 
   // P15: Debounced Live Auto-Build on idle (900ms) when enabled
   useEffect(() => {
-    if (!liveAutoBuild || pdfStatus === 'current') return;
+    if (!liveAutoBuild) { liveAdmissionRef.current.reset(); return; }
+    if (pdfStatus === 'current' || buildStatus === 'running' ||
+        !liveAdmissionRef.current.shouldSchedule(source, sourceRevision, documentEpochRef.current)) return;
     if (liveDebounceRef.current) {
       window.clearTimeout(liveDebounceRef.current);
     }
@@ -773,59 +781,22 @@ export default function App() {
         window.clearTimeout(liveDebounceRef.current);
       }
     };
-  }, [executeBuildCycle, liveAutoBuild, pdfStatus, source, sourceRevision]);
+  }, [executeBuildCycle, liveAutoBuild, pdfStatus, buildStatus, source, sourceRevision]);
 
-  // INS-01 / MOD-09: Live calibrated server PDF underlay render (XeLaTeX or Ghostscript 9.55)
-  useEffect(() => {
-    const needsPdfRaster =
-      pdfUnderlayEnabled || canvasMode === 'pdf' || canvasMode === 'split';
-    if (!needsPdfRaster) return;
-
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      setPdfUnderlayLoading(true);
-      try {
-        const res = await engineAdapter.renderPdfUnderlay({
-          source,
-          revision: sourceRevision,
-          minXCm: stageBoundsCm.minXCm,
-          maxXCm: stageBoundsCm.maxXCm,
-          minYCm: stageBoundsCm.minYCm,
-          maxYCm: stageBoundsCm.maxYCm,
-          dpi: 144,
-        });
-        if (!cancelled) {
-          setPdfUnderlayResponse(res);
-        }
-      } finally {
-        if (!cancelled) {
-          setPdfUnderlayLoading(false);
-        }
-      }
-    }, 180);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [
-    canvasMode,
-    engineAdapter,
-    pdfUnderlayEnabled,
-    source,
-    sourceRevision,
-    stageBoundsCm.maxXCm,
-    stageBoundsCm.maxYCm,
-    stageBoundsCm.minXCm,
-    stageBoundsCm.minYCm,
-  ]);
+  // A visible PDF pane is not consent to execute TeX. Only explicit Build or
+  // the session-scoped Live toggle calls the native engine. Opening stays read-only.
 
   const loadDocumentObject = useCallback(
     (doc: SpecimenDocument) => {
-      if (buildTimerRef.current) {
-        window.clearTimeout(buildTimerRef.current);
-        buildTimerRef.current = null;
-      }
+      buildGateRef.current.invalidate();
+      documentEpochRef.current++;
+      liveSourceRef.current = { source: doc.source, revision: 1 };
+      setNativeFilePath(null);
+      setSavedDirectory(null);
+      setLiveAutoBuild(false);
+      setPdfUnderlayLoading(false);
+      setPdfUnderlayResponse(null);
+      setBuiltSource(null);
       setSpecimenId(doc.id);
       setFilename(doc.filename);
       setExternalDiskChange(null);
@@ -842,18 +813,11 @@ export default function App() {
       setSelectedPackageObjectId(null);
       setActiveLine(initialOwned[0]?.lineNumber ?? 1);
 
-      const initialDiags = analyzeTexDiagnostics(doc.source);
-      if (doc.id === 'error-demo' || initialDiags.some((d) => d.severity === 'error')) {
-        setBuildStatus('failed');
-        setBuiltRevision(null);
-        setBuiltAt(null);
-        setLastGoodPrimitives([]);
-      } else {
-        setBuildStatus('succeeded');
-        setBuiltRevision(1);
-        setBuiltAt('Сборка rev #1');
-        setLastGoodPrimitives(initialOwned);
-      }
+      // No source-analysis timer or sample document can stand in for a real build.
+      setBuildStatus('idle');
+      setBuiltRevision(null);
+      setBuiltAt(null);
+      setLastGoodPrimitives([]);
     },
     [recordRecentFile]
   );
@@ -905,6 +869,9 @@ export default function App() {
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
+      buildGateRef.current.invalidate();
+      setPdfUnderlayLoading(false);
+      setBuildStatus((prev) => prev === 'running' ? 'cancelled' : prev);
       setHistoryIndex(historyIndex - 1);
       setToastBanner(`Отменено действие: возврат к ревизии #${history[historyIndex - 1].revision}`);
     }
@@ -912,6 +879,9 @@ export default function App() {
 
   const handleRedo = useCallback(() => {
     if (historyIndex < history.length - 1) {
+      buildGateRef.current.invalidate();
+      setPdfUnderlayLoading(false);
+      setBuildStatus((prev) => prev === 'running' ? 'cancelled' : prev);
       setHistoryIndex(historyIndex + 1);
       setToastBanner(`Возвращено действие: ревизия #${history[historyIndex + 1].revision}`);
     }
@@ -1014,11 +984,13 @@ export default function App() {
   );
 
   const handleDownloadRenderedPdf = useCallback(() => {
-    const b64 = pdfUnderlayResponse?.pdfBase64;
-    if (!b64) {
-      setToastBanner('PDF-артефакт ещё рендерится сервером — повторите через долю секунды.');
+    if (pdfStatus !== 'current' || !pdfUnderlayResponse) {
+      setToastBanner('Экспорт отклонён: нет актуального PDF внешнего XeLaTeX.');
       return;
     }
+    try { assertAuthoritativePdf({ source, revision: sourceRevision, ...stageBoundsCm }, pdfUnderlayResponse); }
+    catch (error) { setToastBanner(String(error)); return; }
+    const b64 = pdfUnderlayResponse.pdfBase64!;
     const binary = window.atob(b64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -1035,7 +1007,7 @@ export default function App() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setToastBanner(`Скачан отрендеренный PDF «${stem}.pdf» (${pdfUnderlayResponse.engineLabelRu}).`);
-  }, [filename, pdfUnderlayResponse]);
+  }, [filename, pdfUnderlayResponse, pdfStatus, source, sourceRevision, stageBoundsCm]);
 
   const handleSelectMultiplePrimitives = useCallback((ids: number[]) => {
     setSelectedPrimitiveIds(ids);
@@ -2217,6 +2189,19 @@ export default function App() {
         return;
       }
       const s = parsed.session;
+      buildGateRef.current.invalidate();
+      documentEpochRef.current++;
+      liveSourceRef.current = { source: s.activeSource, revision: 1 };
+      setLiveAutoBuild(false);
+      setNativeFilePath(null);
+      setSavedDirectory(null);
+      setExternalDiskChange(null);
+      setPdfUnderlayLoading(false);
+      setPdfUnderlayResponse(null);
+      setBuildStatus('idle');
+      setBuiltRevision(null);
+      setBuiltSource(null);
+      setBuiltAt(null);
       setCreatedDocs(s.createdDocs);
       setCustomSnippets(s.customSnippets);
       setSharedStyleTikz(s.sharedStyleTikz || SHARED_STYLE_DEFAULT_TIKZ);
@@ -2229,9 +2214,9 @@ export default function App() {
       setFilename(s.activeFilename);
       setHistory([{ source: s.activeSource, revision: 1, labelRu: 'Восстановлено из .tikzproj' }]);
       setHistoryIndex(0);
-      setSavedRevision(1);
+      setSavedRevision(0); // Imported project is not an acknowledged native .tex Save.
       const owned = parseOwnedPrimitives(s.activeSource);
-      setLastGoodPrimitives(owned);
+      setLastGoodPrimitives([]);
       setSelectedPrimitiveId(owned[0]?.id ?? null);
       setSelectedPrimitiveIds(owned[0] ? [owned[0].id] : []);
       setActiveTab('studio');
@@ -2717,47 +2702,45 @@ export default function App() {
     setSaveModalOpen(true);
   }, [loadDocumentObject]);
 
-  const handleSaveAndBuildClick = useCallback(() => {
-    if (!savedDirectory && !isTauriRuntime()) {
-      setSaveModalOpen(true);
+  const handleSaveAndBuildClick = useCallback(async () => {
+    if (!isTauriRuntime()) {
+      setToastBanner('Сохранение на диск и сборка доступны в нативном окне Tauri; browser preview не выдаёт PASS.');
       return;
     }
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+    const epoch = documentEpochRef.current;
     let buildSrc = source;
     let buildRev = sourceRevision;
     if (formatOnSave) {
       const fmt = formatTikzDocumentSource(source, { indentSpaces });
       if (fmt.nextSource !== source) {
         buildSrc = fmt.nextSource;
-        buildRev = sourceRevision + 1;
+        buildRev = history[history.length - 1].revision + 1;
         pushSourceChange(fmt.nextSource, 'Автоформатирование при сохранении');
       }
     }
-    if (isTauriRuntime()) {
-      void tauriSaveTexDocument(buildSrc, nativeFilePath, filename)
-        .then((saved) => {
-          if (saved) {
-            setNativeFilePath(saved.path);
-            setSavedDirectory(saved.path.replace(/[\\/][^\\/]+$/, ''));
-          }
-        })
-        .catch((err) => {
-          setToastBanner(
-            `Отказ записи на диск (Tauri IPC): ${err instanceof Error ? err.message : String(err)}`
-          );
-        });
-    }
-    executeBuildCycle(buildRev, buildSrc, true);
-  }, [
-    executeBuildCycle,
-    filename,
-    formatOnSave,
-    indentSpaces,
-    nativeFilePath,
-    pushSourceChange,
-    savedDirectory,
-    source,
-    sourceRevision,
-  ]);
+    try {
+      const outcome = await saveThenContinue(buildSrc,
+        () => tauriSaveTexDocument(buildSrc, nativeFilePath, filename),
+        () => epoch === documentEpochRef.current && liveSourceRef.current.source === buildSrc &&
+          liveSourceRef.current.revision === buildRev,
+        (saved) => {
+          setNativeFilePath(saved.path);
+          setFilename(saved.path.split(/[\\/]/).pop() || filename);
+          setSavedDirectory(saved.path.replace(/[\\/][^\\/]+$/, ''));
+          setSavedRevision(buildRev);
+        },
+        () => executeBuildCycle(buildRev, buildSrc, true));
+      if (epoch === documentEpochRef.current && outcome !== 'continued') {
+        setToastBanner(outcome === 'cancelled' ? 'Сохранение отменено; сборка не запущена.' :
+          'Сохранён снимок предыдущей ревизии; текущий буфер не помечен сохранённым, сборка не запущена.');
+      }
+    } catch (error) {
+      if (epoch === documentEpochRef.current) setToastBanner(`Сохранение/сборка: ${error instanceof Error ? error.message : String(error)}`);
+    } finally { saveInFlightRef.current = false; }
+  }, [executeBuildCycle, filename, formatOnSave, history, indentSpaces, nativeFilePath,
+      pushSourceChange, source, sourceRevision]);
 
   // Global desktop-grade keyboard shortcuts
   useEffect(() => {
@@ -2933,13 +2916,14 @@ export default function App() {
   ]);
 
   const handleCancelBuild = () => {
-    if (buildTimerRef.current) {
-      window.clearTimeout(buildTimerRef.current);
-      buildTimerRef.current = null;
-    }
-    void tauriCancelActiveBuild();
+    setLiveAutoBuild(false);
+    if (liveDebounceRef.current) window.clearTimeout(liveDebounceRef.current);
+    buildGateRef.current.invalidate();
+    setPdfUnderlayLoading(false);
     setBuildStatus('cancelled');
-    setToastBanner('Сборка отменена пользователем (T7): исходный документ сохранён без повреждений.');
+    void tauriCancelActiveBuild().catch((error) =>
+      setToastBanner(`IPC отмены: ${error instanceof Error ? error.message : String(error)}`));
+    setToastBanner('Результат отменённой сборки не будет принят; исходник не изменён.');
   };
 
   const handleJumpToUxSolution = (item: UxFindingItem) => {
@@ -4859,11 +4843,10 @@ export default function App() {
         open={saveModalOpen}
         defaultFilename={filename}
         onClose={() => setSaveModalOpen(false)}
-        onConfirmSaveAndBuild={(dir, nextFile) => {
-          setSavedDirectory(dir);
-          setFilename(nextFile);
+        onConfirmSaveAndBuild={() => {
+          // A preview path field is not a disk write; choose the real path in the OS dialog.
           setSaveModalOpen(false);
-          executeBuildCycle(sourceRevision, source, true);
+          void handleSaveAndBuildClick();
         }}
       />
 
@@ -4883,12 +4866,31 @@ export default function App() {
           setPendingSpecimenId(null);
           if (next) loadSpecimenNow(next);
         }}
-        onSaveAndSwitch={() => {
+        onSaveAndSwitch={async () => {
+          if (!isTauriRuntime()) {
+            setToastBanner('Browser preview не подтверждает запись на диск; переключение без сохранения отменено.');
+            return;
+          }
+          if (saveInFlightRef.current) return;
           const next = pendingSpecimenId;
-          setSavedRevision(sourceRevision);
-          setPendingSpecimenId(null);
-          if (next) loadSpecimenNow(next);
-          setToastBanner(`Изменения в ${filename} сохранены перед переключением документа.`);
+          const epoch = documentEpochRef.current;
+          saveInFlightRef.current = true;
+          try {
+            const outcome = await saveThenContinue(source,
+              () => tauriSaveTexDocument(source, nativeFilePath, filename),
+              () => epoch === documentEpochRef.current && liveSourceRef.current.source === source &&
+                liveSourceRef.current.revision === sourceRevision,
+              (saved) => { setNativeFilePath(saved.path); setSavedRevision(sourceRevision); },
+              async () => {
+                setPendingSpecimenId(null);
+                if (next) loadSpecimenNow(next);
+                setToastBanner(`Файл ${filename} записан перед переключением документа.`);
+              });
+            if (outcome !== 'continued' && epoch === documentEpochRef.current)
+              setToastBanner('Переключение остановлено: сохранение отменено или буфер уже изменился.');
+          } catch (error) {
+            if (epoch === documentEpochRef.current) setToastBanner(`Запись отклонена: ${String(error)}`);
+          } finally { saveInFlightRef.current = false; }
         }}
       />
     </div>

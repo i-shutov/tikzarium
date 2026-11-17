@@ -1,5 +1,12 @@
 # Architecture — TikZarium Multi-Engine Scientific Studio
 
+## Current UI override — 17.11.2026
+
+**Tauri + Rust is the owner-selected primary interface.** The code is in `apps/tikzarium-studio-tauri/`, merged into main at `2a59631e`. egui is retained only as the tagged legacy/CP09 donor. Earlier egui-only or no-web-shell wording below is historical for the shell choice, not an instruction to reverse this transition. Source integrity, scientific scope, offline/trust requirements and independent platform evidence are unchanged.
+
+Current execution: [Tauri migration plan](../plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md). Current findings: [source/build contracts](../insights/2026-11-17_TAURI_SOURCE_BUILD_CONTRACTS_RU.md). Build success must be tied to actual external XeLaTeX output, not a timer or TypeScript syntax scan. Opening a document is not permission to compile it. Never transfer the old CP09 GUI acceptance to a new Tauri executable.
+
+
 ## Release binding 2026-11-11: full Scientific Studio v1.0.0
 
 The owner has fixed [v1.0 release scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md) to the **whole ST-SCI**: multi-document source-safe scientific Studio, all UX/G3, native TikZ/PGFPlots/SCI142/scientific AI88, scoped Asymptote and Typst/CeTZ scientific profiles with real editable GUI operations, exact source/build/export and native W0–W4. Shared project/engine/action APIs are built only as needed for this science-first vertical; no mandatory Graphviz/D2/Mermaid-first, generic multi-engine compositor or Data Figure. Penrose remains scoped investigation unless its detailed operations are approved. No operation-level ME-L3/4 acceptance from mere renderer/CLI. These are target architecture requirements, NOT implementation evidence. Stable release NO-GO.

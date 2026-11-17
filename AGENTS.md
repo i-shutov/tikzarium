@@ -1,5 +1,14 @@
 # TikZarium Studio — engineering instructions
 
+## Owner decision — 2026-11-17: Tauri is the primary Studio
+
+The owner explicitly chose **Tauri + Rust**. This is no longer a framework-selection question. `apps/tikzarium-studio-tauri/` is the primary UI; Rust core/extensions remain shared. The egui app is a tagged legacy reference and scientific donor, not a second feature roadmap. Earlier instructions requiring egui as the primary shell or prohibiting this owner-authorized transition are superseded ONLY on that point. All source/Undo, engine trust, scientific, G3 and native-platform obligations remain.
+
+Preserved refs: `archive/egui-cp09-20261117` → `c057fc3c`; `archive/main-before-tauri-20261117` → `0a983140`. Tauri was merged into main as `2a59631e`; these are development/archive milestones, not stable 1.0 acceptance. Do not merge the old GUI wholesale to claim inherited scientific parity.
+
+Follow [the migration plan](plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md) and save reproducible findings/decisions in `insights/`. Launch junior-model workers only through an actually available launcher and record model/session/base/file ownership; task descriptions are not launched agents. One integrator owns shared source/build contracts and main promotion.
+
+
 ## Latest owner release decision — 2026-11-11: Scientific Studio v1.0.0
 
 The owner expressly approves **the complete ST-SCI scientific product as TikZarium stable v1.0.0**, not the historical UX-only narrow Windows/TikZ release. Authoritative [release contract](docs/RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md), [execution tasks](plans/2026-11-11_SCI_1_0_EXECUTION.md), [Win10 local Codex QA](plans/2026-11-11_WIN10_CODEX_SCI_1_0_QA_RU.md). All UX-F01–F14/G3, source safety, physical W0–W4/real IME/96-120-192 DPI remain mandatory. SCI142 142=100AK+42Sarov/103, scientific AI88, PGFPlots shared SC3/AT4, Asymptote and Typst/CeTZ with scoped native scientific GUI editing/build/export belong to the v1.0 target. Penrose is scoped research until operations approved; full nonscientific 88/35/23/13 corpus remains for later stages UML→BPMN→engineering→chemistry/biology→animation→other→data last. No silent engine install, system changes, OS sandbox claims or premature version/tag. This APPROVES SCOPE, not software implementation or release GO. Former statements below about "only UX in Windows 1.0" or scientific-after-1.0 are SUPERSEDED for release scope only; their technical acceptance/safety requirements persist.
@@ -19,7 +28,7 @@ Full Studio remains the goal, not an optional post-1.0 appendix. The earlier glo
 
 ## Product and architecture boundaries
 
-1. Retain Rust/egui and the existing core/app/CLI/extensions. Evolve by tested vertical slices; do not replace the application with an unproved web shell, a universal graphics language or empty speculative crates.
+1. Use Tauri + Rust as the primary Studio UI; preserve shared core/CLI/extensions and the archived egui regression reference. Evolve by tested vertical slices. A web preview, mock response or menu item is not native acceptance.
 2. A project can contain multiple figures and native source documents with assets/dependencies. Each editor view has an explicitly active document and revision. Source plus authoritative preview remain the normal workspace; focus views are deliberate choices. Linked publication composition is a separate document, not destructive conversion of sources. Data workspaces are delivered last, even though project files can already reference data resources.
 3. Native formats remain authoritative: .tex/.tikz, .asy, .typ and later .dot/.d2/.mmd, UML sources, .bpmn/XML, JSON and domain formats as actually supported. A shared engine API does not imply a shared semantic AST. Derived object indices/handles are invalidated by source edits. No promise of arbitrary PDF/SVG-to-TikZ inversion or lossless cross-language conversion.
 4. For supported edits, use minimal revision-checked patches and one reversible transaction. Preserve comments, unknown macros/fields, unrelated bytes, Unicode and CRLF. No-op Open/Save must not reformat source. When exact safe editing is unavailable, use explicit source-first/OPAQUE mode; it is not an accepted visual adapter.

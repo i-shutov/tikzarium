@@ -1,0 +1,352 @@
+[
+  {
+    "id": "empty-insert",
+    "source": "",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 0,
+      "replacement": "a",
+      "descriptionRu": "empty-insert"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "a",
+    "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "afterSha256": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+  },
+  {
+    "id": "delete-only-crlf",
+    "source": "a\r\nb",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 3,
+      "replacement": "",
+      "descriptionRu": "delete-only-crlf"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "ab",
+    "beforeSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2",
+    "afterSha256": "fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603"
+  },
+  {
+    "id": "delete-entire-crlf",
+    "source": "\r\n",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 2,
+      "replacement": "",
+      "descriptionRu": "delete-entire-crlf"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "",
+    "beforeSha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "afterSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "mixed-noop",
+    "source": "a\nb\r\nc",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 6,
+      "replacement": "a\nb\r\nc",
+      "descriptionRu": "mixed-noop"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "a\nb\r\nc",
+    "beforeSha256": "fb129fc5b78b4080d40235bfb262c2d82b390e034a0c58adbc06e61ce1e717b9",
+    "afterSha256": "fb129fc5b78b4080d40235bfb262c2d82b390e034a0c58adbc06e61ce1e717b9"
+  },
+  {
+    "id": "crlf-insert-normalizes",
+    "source": "a\r\nb",
+    "patch": {
+      "startOffset": 4,
+      "endOffset": 4,
+      "replacement": "x\n",
+      "descriptionRu": "crlf-insert-normalizes"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "a\r\nbx\r\n",
+    "beforeSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2",
+    "afterSha256": "666834975af14df1567f52e70a56f8dae3e579f624884d6052b7c3541a3d699c"
+  },
+  {
+    "id": "explicit-exact",
+    "source": "a\r\nb",
+    "patch": {
+      "startOffset": 4,
+      "endOffset": 4,
+      "replacement": "\nx",
+      "descriptionRu": "explicit-exact",
+      "lineEndingPolicy": "exact"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "a\r\nb\nx",
+    "beforeSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2",
+    "afterSha256": "d01c5dfa7d703e25376c9f0fa6a164f9a9d0d74e00be3a09bffb14db82f353c9"
+  },
+  {
+    "id": "emoji-whole",
+    "source": "A😀B",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 3,
+      "replacement": "Ф",
+      "descriptionRu": "emoji-whole"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "AФB",
+    "beforeSha256": "aacfb6637bd0df2238641c5b15898d1a61df3157b1d0b4099f590fc0b0b6fbbd",
+    "afterSha256": "b9c76a062add80432aa10589419553115572e2cde340e6696a71387a19aa4074"
+  },
+  {
+    "id": "emoji-split",
+    "source": "A😀B",
+    "patch": {
+      "startOffset": 2,
+      "endOffset": 2,
+      "replacement": "x",
+      "descriptionRu": "emoji-split"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "A😀B",
+    "beforeSha256": "aacfb6637bd0df2238641c5b15898d1a61df3157b1d0b4099f590fc0b0b6fbbd",
+    "afterSha256": "aacfb6637bd0df2238641c5b15898d1a61df3157b1d0b4099f590fc0b0b6fbbd"
+  },
+  {
+    "id": "emoji-replace-half",
+    "source": "A😀B",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 2,
+      "replacement": "x",
+      "descriptionRu": "emoji-replace-half"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "A😀B",
+    "beforeSha256": "aacfb6637bd0df2238641c5b15898d1a61df3157b1d0b4099f590fc0b0b6fbbd",
+    "afterSha256": "aacfb6637bd0df2238641c5b15898d1a61df3157b1d0b4099f590fc0b0b6fbbd"
+  },
+  {
+    "id": "crlf-split",
+    "source": "a\r\nb",
+    "patch": {
+      "startOffset": 2,
+      "endOffset": 2,
+      "replacement": "x",
+      "descriptionRu": "crlf-split"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "a\r\nb",
+    "beforeSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2",
+    "afterSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2"
+  },
+  {
+    "id": "crlf-half-delete",
+    "source": "a\r\nb",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 2,
+      "replacement": "",
+      "descriptionRu": "crlf-half-delete"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "a\r\nb",
+    "beforeSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2",
+    "afterSha256": "18745f36a05e29072709042d6062ce54f1b08ff36c27ba80c39f81fb010c8ce2"
+  },
+  {
+    "id": "stale",
+    "source": "abc",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 1,
+      "replacement": "Z",
+      "descriptionRu": "stale"
+    },
+    "expectedDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "empty-digest-not-bypass",
+    "source": "abc",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 1,
+      "replacement": "Z",
+      "descriptionRu": "empty-digest-not-bypass"
+    },
+    "expectedDigest": "",
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "valid-digest",
+    "source": "abc",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 1,
+      "replacement": "Z",
+      "descriptionRu": "valid-digest"
+    },
+    "expectedDigest": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "accepted": true,
+    "nextSource": "Zbc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "2b3e634b71b287b6cd9b2be78832b7096b6ee4abd65b5452d2e5e7e39acd4cfd"
+  },
+  {
+    "id": "short-digest-not-authority",
+    "source": "abc",
+    "patch": {
+      "startOffset": 0,
+      "endOffset": 1,
+      "replacement": "Z",
+      "descriptionRu": "short-digest-not-authority"
+    },
+    "expectedDigest": "ba7816bf8f01cfea",
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "expected-slice-mismatch",
+    "source": "abc",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 2,
+      "replacement": "Z",
+      "descriptionRu": "expected-slice-mismatch",
+      "expectedText": "a"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "expected-slice-match",
+    "source": "abc",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 2,
+      "replacement": "Z",
+      "descriptionRu": "expected-slice-match",
+      "expectedText": "b"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "aZc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "703a1b35f8e398e5ff9af9b0179718e6abee86d42beb55192d0d5b5e93c8cb50"
+  },
+  {
+    "id": "reversed",
+    "source": "abc",
+    "patch": {
+      "startOffset": 2,
+      "endOffset": 1,
+      "replacement": "Z",
+      "descriptionRu": "reversed"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "beyond",
+    "source": "abc",
+    "patch": {
+      "startOffset": 4,
+      "endOffset": 4,
+      "replacement": "Z",
+      "descriptionRu": "beyond"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "abc",
+    "beforeSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    "afterSha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "id": "bom-combining",
+    "source": "﻿Яé😀\r\n",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 2,
+      "replacement": "Ю",
+      "descriptionRu": "bom-combining"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "﻿Юé😀\r\n",
+    "beforeSha256": "48080a80ed84e3865a160e4b945932328f145f2b34818d3ea62e8dc14614bce7",
+    "afterSha256": "c288312580b4c2bf72e4135160d34fcc927c96efc453685cd4be8a0daf37cedc"
+  },
+  {
+    "id": "join-crlf-left",
+    "source": "a\rb",
+    "patch": {
+      "startOffset": 2,
+      "endOffset": 2,
+      "replacement": "\n",
+      "descriptionRu": "join-crlf-left",
+      "lineEndingPolicy": "exact"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "a\rb",
+    "beforeSha256": "af9081672dd5ef3247a30c2db5b0dafcc9bcf981a26aefb3c55d210d43fcc14e",
+    "afterSha256": "af9081672dd5ef3247a30c2db5b0dafcc9bcf981a26aefb3c55d210d43fcc14e"
+  },
+  {
+    "id": "join-crlf-right",
+    "source": "a\nb",
+    "patch": {
+      "startOffset": 1,
+      "endOffset": 1,
+      "replacement": "\r",
+      "descriptionRu": "join-crlf-right",
+      "lineEndingPolicy": "exact"
+    },
+    "expectedDigest": null,
+    "accepted": false,
+    "nextSource": "a\nb",
+    "beforeSha256": "7e18f737311b2dc3b2f269dd78396b0351f14fb66efa879f768cb23181883c78",
+    "afterSha256": "7e18f737311b2dc3b2f269dd78396b0351f14fb66efa879f768cb23181883c78"
+  },
+  {
+    "id": "mixed-replace",
+    "source": "x\ny\r\nz",
+    "patch": {
+      "startOffset": 2,
+      "endOffset": 3,
+      "replacement": "Ю",
+      "descriptionRu": "mixed-replace"
+    },
+    "expectedDigest": null,
+    "accepted": true,
+    "nextSource": "x\nЮ\r\nz",
+    "beforeSha256": "6564ae724171cd7f0d27cf8c8a6409a9b748c30aff4cedc367d5719602ecde5c",
+    "afterSha256": "41052968a7b82771d866569c08fd047325ab54cac19c763d23c0ea686abed37c"
+  }
+]

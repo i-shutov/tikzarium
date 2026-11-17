@@ -116,3 +116,25 @@ Win10 Pro — основной пользовательский стенд, macO
 - Проверено: PR #191 открыт, не draft, mergeable; main до перехода = 0a983140.
 - Найдено: Tauri workflow пока лишь шаблон внутри приложения; native Tauri CI не доказан.
 - Теги, активный CI, merge и проверки: PENDING на момент этого первого коммита; последующие факты фиксируются отдельными записями, старые failures не переписываются.
+
+## 7. Возобновление после обрыва — T3-A, 17.11.2026
+
+Подтверждено live GitHub: main `2a59631e`; отдельная ветка `bc67f929` содержала план/findings/первичный CI. Документы интегрированы в main коммитом `fb0fc39a` без изменения production source. Архивная квитанция исходного run `44070412964` связывает два аннотированных тега с указанными в разделе 2 commit SHA. Его frontend и native Rust проверки относятся только к его исходнику.
+
+Текущий крупный блок **T3-A: честные source/build contracts**:
+
+| Пакет | Содержание | Статус перед CI |
+|---|---|---|
+| INT-01 | Актуальные AGENTS/README/PRODUCT_SPEC/ARCHITECTURE/ROADMAP с Tauri primary | IMPLEMENTED_NOT_VERIFIED |
+| J1-equivalent | Полный source SHA-256, границы UTF-16/CRLF, exact inverse, shared fixtures | Локальные 34 JS теста PASS; не native |
+| J2-equivalent | Аналогичные Rust contracts, блокировка source-only cache, контроль superseded build | IMPLEMENTED_NOT_VERIFIED |
+| INT-02 | Save-before-Build, исключение simulated PDF-current, epoch/current-source guards | IMPLEMENTED_NOT_VERIFIED |
+| J3-equivalent | Негативные тесты cancel/stale/mismatched digest/PDF, no-op, Unicode, mixed EOL | Локальный JS PASS; полный CI pending |
+| CI-01 | Сохранить два lockfile, выполнить npm ci/test/typecheck/build и Rust --locked | PENDING |
+| QA-01 | Запуск настоящего Tauri в hosted X11, оригинальный screenshot и PID/source receipt | PENDING; не Win10/IME/DPI |
+
+В этом сеансе launcher/CLI младших моделей не доступен; фактически запущенных субагентов **0**. Подготовленные пакеты сохраняют свои границы, но текущую реализацию/проверку выполняет интегратор; независимая агентная приёмка НЕ заявляется. GitHub Actions jobs — процессы CI, не агенты.
+
+Публикация: промежуточные source-коммиты в `integration/tauri-source-build-20261117`; после чтения результатов — fast-forward main с exact-head lease, без force. Разрешённый одноразовый CI importer применяет проверенный patch, импортирует lockfile из известного предыдущего artifact и коммитит только в эту integration-ветку. Постоянный primary workflow read-only; он никогда не публикует релиз и не запускает приватные runners.
+
+После T3-A: native document/session authority (включая переключение файла во время диалога Save), полный real IPC вертикальный сценарий, dependency closure/working directory, bounded rasterization/cancel дерева, научный перенос CP09, затем реальный Tauri Visual Guide. Предыдущий CP09 Guide остаётся legacy. Эти пункты не закрываются текущими unit tests или startup screenshot.

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "SOURCE_IMPORTED_NOT_YET_QUALIFIED",
+  "base_sha": "fb0fc39abab68e47ec4dadd0e2b198a7dfcb4002",
+  "importer_sha": "68e9c05a32aec0e8abb5eaf6aab81c988501b7a1",
+  "run_id": "44088234408",
+  "compressed_patch_sha256": "fc8988992203fefe4e026a7e60dc92850f27bb1b0db133a92440f762b207246e",
+  "lockfiles": [
+    {
+      "artifact_id": 14323220076,
+      "artifact_sha256": "afa4c0bf8668af2c33f90d0215a703ae61d9a4f8dd81d41f45ab93b632b1a7ef",
+      "path": "apps/tikzarium-studio-tauri/package-lock.json",
+      "sha256": "53098ee84cefb47ce11b7c220d5442c802787613d1e626ed3f4365d43c194e38"
+    },
+    {
+      "artifact_id": 14321819111,
+      "artifact_sha256": "cb9558a2e9b6b3fb440f5b741fa6ddde3ceb2592a03f4c66d85dfe7f10f3fd9a",
+      "path": "apps/tikzarium-studio-tauri/src-tauri/Cargo.lock",
+      "sha256": "f92a9fce8f62e35c0c79d79b88adcbb019dca4ad177ac38feda617043db02fee"
+    }
+  ],
+  "subagents_launched": 0,
+  "platform_acceptance": "NOT_ESTABLISHED",
+  "source_commit": "The commit containing this receipt"
+}

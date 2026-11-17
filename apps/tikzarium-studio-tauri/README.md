@@ -29,7 +29,7 @@
 
 - **Windows 10 / 11 (x64)**:
   - Rust `1.85+` (`1.91.0` из `rust-toolchain.toml`), Node.js `20+`
-  - Системный Microsoft Edge **WebView2** (предустановлен в актуальных Windows 10/11; при необходимости ставится тихим бутстраппером)
+  - Системный Microsoft Edge **WebView2** (предустановлен в актуальных Windows 10/11; при отсутствии устанавливается владельцем отдельно и явно)
   - Локальный MiKTeX или TeX Live (`xelatex` в `PATH` или `TIKZARIUM_XELATEX`)
 
 - **Ubuntu 22.04 / 24.04 (X11 / Wayland)**:
@@ -45,7 +45,7 @@
 
 ```bash
 cd apps/tikzarium-studio-tauri
-npm install
+npm ci
 npm test
 npm run tauri:dev
 ```
@@ -62,3 +62,11 @@ npm run tauri:build
 ```bash
 cp apps/tikzarium-studio-tauri/ci/tauri-v2-studio.workflow.yml .github/workflows/tauri-v2-studio.yml
 ```
+
+## Источник, сборка и пределы текущей проверки
+
+SourcePatch использует полный SHA-256 точных UTF-8 bytes и смещения UTF-16; 16-символьный digest остаётся только краткой квитанцией Save. Обратная правка помечается `lineEndingPolicy: exact`; no-op и Undo сохраняют смешанные LF/CRLF. Операции, разрезающие surrogate pair или CRLF, отклоняются.
+
+PDF не существует до реального ответа XeLaTeX с совпадающими исходником/revision и PDF-артефактом. Save/Build ожидает завершения записи; Cancel/ошибка Save не запускают сборку. Открытие и переключение PDF-панели не запускают TeX. Live включается явно в текущем документе. Старый source-only cache отключён до учёта зависимостей.
+
+Синхронный `EngineAdapter.applyPatch` — локальная проверка/preview. `tauriApplyCheckedSourcePatch` — отдельный async IPC-вызов Rust. Полный перенос всех visual edit actions в авторитетную native document session остаётся задачей T4; наличие метода не доказывает этот перенос. Реальные native window/IME/DPI и научные PDF-проверки не заменяются unit/mock tests.

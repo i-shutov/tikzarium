@@ -1,0 +1,11 @@
+{
+  "scope": "Local JavaScript reproduction of downloaded source; not native GUI",
+  "source": "bc67f92918942ae911cb26cf50987c784e5b7020",
+  "undoExact": false,
+  "original": "a\r\nb",
+  "undo": "a\nb",
+  "surrogateSplitAccepted": true,
+  "mixedNoopExact": false,
+  "frontendDigest": "c40663db648db04f",
+  "rustExpectedSha256Short": "18745f36a05e2907"
+}

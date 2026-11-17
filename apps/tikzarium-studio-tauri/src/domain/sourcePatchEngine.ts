@@ -8,13 +8,17 @@
  * - Clean EngineAdapter boundary between UI views and backend execution (TypeScript / Express / Rust).
  */
 
-import { computeHexDigest, utf8ByteLength } from './tikzEngine';
+import { utf8ByteLength } from './tikzEngine';
+import { computeSourceDigest as computeHexDigest, isSourceBoundary, isWellFormedUnicode } from './sourceDigest';
 
 export interface SourcePatchSpan {
   startOffset: number;
   endOffset: number;
   replacement: string;
   descriptionRu: string;
+  /** Forward editor input follows the document EOL; inverse patches restore exact bytes. */
+  lineEndingPolicy?: 'document' | 'exact';
+  expectedText?: string;
 }
 
 export interface CheckedSourcePatchResult {
@@ -61,7 +65,7 @@ export function applyCheckedSourcePatch(
   const lineEnding = detectDocumentLineEnding(source);
   const beforeDigest = computeHexDigest(source);
 
-  if (expectedDigest && expectedDigest !== beforeDigest) {
+  if (expectedDigest !== undefined && expectedDigest !== beforeDigest) {
     return {
       ok: false,
       nextSource: source,
@@ -77,11 +81,12 @@ export function applyCheckedSourcePatch(
   }
 
   if (
-    !Number.isInteger(patch.startOffset) ||
-    !Number.isInteger(patch.endOffset) ||
-    patch.startOffset < 0 ||
+    !isSourceBoundary(source, patch.startOffset) ||
+    !isSourceBoundary(source, patch.endOffset) ||
     patch.endOffset < patch.startOffset ||
-    patch.endOffset > source.length
+    !isWellFormedUnicode(source) || !isWellFormedUnicode(patch.replacement) ||
+    (patch.lineEndingPolicy !== undefined && patch.lineEndingPolicy !== 'document' && patch.lineEndingPolicy !== 'exact') ||
+    (patch.expectedText !== undefined && source.slice(patch.startOffset, patch.endOffset) !== patch.expectedText)
   ) {
     return {
       ok: false,
@@ -98,9 +103,16 @@ export function applyCheckedSourcePatch(
   }
 
   const oldSlice = source.slice(patch.startOffset, patch.endOffset);
-  const normalizedReplacement = normalizeFragmentEol(patch.replacement, lineEnding);
+  const normalizedReplacement = patch.lineEndingPolicy === 'exact' || patch.replacement === oldSlice
+    ? patch.replacement : normalizeFragmentEol(patch.replacement, lineEnding);
   const nextSource =
     source.slice(0, patch.startOffset) + normalizedReplacement + source.slice(patch.endOffset);
+  if (!isSourceBoundary(nextSource, patch.startOffset) ||
+      !isSourceBoundary(nextSource, patch.startOffset + normalizedReplacement.length)) {
+    return { ok: false, nextSource: source, lineEnding, beforeDigest, afterDigest: beforeDigest,
+      byteDelta: 0, changedStartLine: 1, changedEndLine: 1, descriptionRu: patch.descriptionRu,
+      errorRu: 'Правка образует CRLF на границе обратного патча.' };
+  }
   const afterDigest = computeHexDigest(nextSource);
   const changedStartLine = offsetToLine1(source, patch.startOffset);
   const changedEndLine = offsetToLine1(
@@ -122,6 +134,8 @@ export function applyCheckedSourcePatch(
       startOffset: patch.startOffset,
       endOffset: patch.startOffset + normalizedReplacement.length,
       replacement: oldSlice,
+      lineEndingPolicy: 'exact',
+      expectedText: normalizedReplacement,
       descriptionRu: `Отмена: ${patch.descriptionRu}`,
     },
   };
@@ -139,50 +153,26 @@ export function applyCheckedLineRangePatch(
   descriptionRu: string
 ): CheckedSourcePatchResult {
   const lineEnding = detectDocumentLineEnding(source);
-  const lines = source.split(/\r?\n/);
-
-  if (
-    startLine1 < 1 ||
-    endLine1 < startLine1 ||
-    endLine1 > lines.length
-  ) {
+  // Offsets come from actual terminators, never from a document-wide EOL guess.
+  const starts = [0];
+  for (let i = 0; i < source.length; i++) if (source[i] === '\n') starts.push(i + 1);
+  const contentEnd = (line: number) => {
+    const next = starts[line + 1];
+    if (next === undefined) return source.length;
+    return source[next - 2] === '\r' ? next - 2 : next - 1;
+  };
+  if (!Number.isSafeInteger(startLine1) || !Number.isSafeInteger(endLine1) ||
+      startLine1 < 1 || endLine1 < startLine1 || endLine1 > starts.length) {
     const digest = computeHexDigest(source);
-    return {
-      ok: false,
-      nextSource: source,
-      lineEnding,
-      beforeDigest: digest,
-      afterDigest: digest,
-      byteDelta: 0,
-      changedStartLine: 1,
-      changedEndLine: 1,
-      descriptionRu,
-      errorRu: `Диапазон строк [${startLine1}..${endLine1}] выходит за границы документа (1..${lines.length}).`,
-    };
+    return { ok: false, nextSource: source, lineEnding, beforeDigest: digest, afterDigest: digest,
+      byteDelta: 0, changedStartLine: 1, changedEndLine: 1, descriptionRu,
+      errorRu: `Диапазон строк [${startLine1}..${endLine1}] вне документа.` };
   }
-
-  let startOffset = 0;
-  for (let i = 0; i < startLine1 - 1; i++) {
-    startOffset += lines[i].length + lineEnding.length;
-  }
-
-  let endOffset = startOffset;
-  for (let i = startLine1 - 1; i <= endLine1 - 1; i++) {
-    endOffset += lines[i].length;
-    if (i < endLine1 - 1) {
-      endOffset += lineEnding.length;
-    }
-  }
-
-  // If deleting lines completely (`replacementLines.length === 0`), also consume trailing newline if present
-  let effectiveStart = startOffset;
-  let effectiveEnd = endOffset;
+  let effectiveStart = starts[startLine1 - 1];
+  let effectiveEnd = contentEnd(endLine1 - 1);
   if (replacementLines.length === 0) {
-    if (effectiveEnd + lineEnding.length <= source.length) {
-      effectiveEnd += lineEnding.length;
-    } else if (effectiveStart >= lineEnding.length) {
-      effectiveStart -= lineEnding.length;
-    }
+    if (starts[endLine1] !== undefined) effectiveEnd = starts[endLine1];
+    else if (effectiveStart > 0) effectiveStart = contentEnd(startLine1 - 2);
   }
 
   const replacement = replacementLines.join(lineEnding);

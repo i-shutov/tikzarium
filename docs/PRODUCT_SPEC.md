@@ -1,5 +1,12 @@
 # TikZarium Studio — продуктовая спецификация
 
+## Current UI override — 17.11.2026
+
+**Tauri + Rust is the owner-selected primary interface.** The code is in `apps/tikzarium-studio-tauri/`, merged into main at `2a59631e`. egui is retained only as the tagged legacy/CP09 donor. Earlier egui-only or no-web-shell wording below is historical for the shell choice, not an instruction to reverse this transition. Source integrity, scientific scope, offline/trust requirements and independent platform evidence are unchanged.
+
+Current execution: [Tauri migration plan](../plans/2026-11-17_TAURI_PRIMARY_MIGRATION_RU.md). Current findings: [source/build contracts](../insights/2026-11-17_TAURI_SOURCE_BUILD_CONTRACTS_RU.md). Build success must be tied to actual external XeLaTeX output, not a timer or TypeScript syntax scan. Opening a document is not permission to compile it. Never transfer the old CP09 GUI acceptance to a new Tauri executable.
+
+
 ## Approved v1.0.0 target — complete Scientific Studio (11 November 2026)
 
 The owner approved the **full ST-SCI scientific product as version 1.0**, not a narrower TikZ GUI. [Normative scope](RELEASE_SCOPE_SCIENTIFIC_STUDIO_1_0_RU.md). Included: beautiful multi-document scientific Studio; all UX/G3 and Windows gates; TikZ/PGFPlots SC3/AT4 with verified edits; Scientific-142 142 figures/103 requirements; scientific AI88; Asymptote and Typst/CeTZ with independently agreed real scientific GUI actions/source/Undo/engine build/export. Penrose remains candidate until approved L3/L4 scope. Full nondo-main 88/35/23/13 obligations follow the domain priority, no silent scope reduction. New Data Figure/analysis remains LAST while existing scientific .dat/.csv dependencies remain required NOW. Old "number of first release will be chosen later" statements below are historical. Stable NO-GO; target scope ≠ shipped capability.

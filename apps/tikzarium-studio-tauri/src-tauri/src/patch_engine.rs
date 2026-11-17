@@ -8,12 +8,24 @@ use sha2::{Digest, Sha256};
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourcePatchSpan {
-    /// Смещение начала в символах UTF-16 / Unicode scalar (совместимое с JS-строками WebView).
+    /// Смещение начала в кодовых единицах UTF-16 (JS string offsets), не Unicode scalar.
     pub start_offset: usize,
     /// Смещение конца в символах UTF-16.
     pub end_offset: usize,
     pub replacement: String,
     pub description_ru: String,
+    #[serde(default)]
+    pub line_ending_policy: LineEndingPolicy,
+    #[serde(default)]
+    pub expected_text: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LineEndingPolicy {
+    #[default]
+    Document,
+    Exact,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,11 +45,15 @@ pub struct CheckedSourcePatchResult {
 }
 
 #[must_use]
-pub fn sha256_short_hex(source: &str) -> String {
+pub fn sha256_hex(source: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(source.as_bytes());
-    let full = format!("{:x}", hasher.finalize());
-    full[..16].to_owned()
+    format!("{:x}", hasher.finalize())
+}
+
+#[must_use]
+pub fn sha256_short_hex(source: &str) -> String {
+    sha256_hex(source)[..16].to_owned()
 }
 
 #[must_use]
@@ -96,10 +112,9 @@ pub fn apply_checked_source_patch(
     expected_digest: Option<&str>,
 ) -> CheckedSourcePatchResult {
     let eol = detect_document_line_ending(source);
-    let before_digest = sha256_short_hex(source);
+    let before_digest = sha256_hex(source);
 
     if let Some(expected) = expected_digest
-        && !expected.is_empty()
         && expected != before_digest
     {
         return CheckedSourcePatchResult {
@@ -162,7 +177,39 @@ pub fn apply_checked_source_patch(
     };
 
     let old_slice = &source[start_byte..end_byte];
-    let normalized_replacement = normalize_fragment_eol(&patch.replacement, eol);
+    let split_crlf = |offset: usize| {
+        offset > 0
+            && offset < source.len()
+            && source.as_bytes()[offset - 1] == b'\r'
+            && source.as_bytes()[offset] == b'\n'
+    };
+    if split_crlf(start_byte)
+        || split_crlf(end_byte)
+        || patch
+            .expected_text
+            .as_deref()
+            .is_some_and(|expected| expected != old_slice)
+    {
+        return CheckedSourcePatchResult {
+            ok: false,
+            next_source: source.to_owned(),
+            line_ending: eol.to_owned(),
+            before_digest: before_digest.clone(),
+            after_digest: before_digest,
+            byte_delta: 0,
+            changed_start_line: 1,
+            changed_end_line: 1,
+            description_ru: patch.description_ru.clone(),
+            inverse_patch: None,
+            error_ru: Some("Нарушена граница CRLF или ожидаемый фрагмент исходника.".to_owned()),
+        };
+    }
+    let normalized_replacement =
+        if patch.line_ending_policy == LineEndingPolicy::Exact || patch.replacement == old_slice {
+            patch.replacement.clone()
+        } else {
+            normalize_fragment_eol(&patch.replacement, eol)
+        };
     let replacement_utf16_len: usize = normalized_replacement.chars().map(char::len_utf16).sum();
 
     let mut next_source =
@@ -171,7 +218,29 @@ pub fn apply_checked_source_patch(
     next_source.push_str(&normalized_replacement);
     next_source.push_str(&source[end_byte..]);
 
-    let after_digest = sha256_short_hex(&next_source);
+    let joins_crlf = |offset: usize| {
+        offset > 0
+            && offset < next_source.len()
+            && next_source.as_bytes()[offset - 1] == b'\r'
+            && next_source.as_bytes()[offset] == b'\n'
+    };
+    if joins_crlf(start_byte) || joins_crlf(start_byte + normalized_replacement.len()) {
+        return CheckedSourcePatchResult {
+            ok: false,
+            next_source: source.to_owned(),
+            line_ending: eol.to_owned(),
+            before_digest: before_digest.clone(),
+            after_digest: before_digest,
+            byte_delta: 0,
+            changed_start_line: 1,
+            changed_end_line: 1,
+            description_ru: patch.description_ru.clone(),
+            inverse_patch: None,
+            error_ru: Some("Правка образует CRLF на границе обратного патча.".to_owned()),
+        };
+    }
+
+    let after_digest = sha256_hex(&next_source);
     let byte_delta = (next_source.len() as isize) - (source.len() as isize);
     let changed_start_line = byte_offset_to_line1(source, start_byte);
     let changed_end_line =
@@ -191,6 +260,8 @@ pub fn apply_checked_source_patch(
             start_offset: patch.start_offset,
             end_offset: patch.start_offset + replacement_utf16_len,
             replacement: old_slice.to_owned(),
+            line_ending_policy: LineEndingPolicy::Exact,
+            expected_text: Some(normalized_replacement.clone()),
             description_ru: format!("Отмена: {}", patch.description_ru),
         }),
         error_ru: None,
@@ -215,6 +286,8 @@ mod tests {
             end_offset: start_utf16,
             replacement: "  \\draw (0cm,0cm) to[R=$R_1$] (2.4cm,0cm);\n".to_owned(),
             description_ru: "Вставка резистора CircuiTikZ".to_owned(),
+            line_ending_policy: LineEndingPolicy::Document,
+            expected_text: Some(String::new()),
         };
 
         let applied = apply_checked_source_patch(original, &patch, None);
@@ -227,5 +300,62 @@ mod tests {
             apply_checked_source_patch(&applied.next_source, &inverse, Some(&applied.after_digest));
         assert!(undone.ok);
         assert_eq!(undone.next_source, original);
+    }
+}
+
+#[cfg(test)]
+mod shared_contract_tests {
+    use super::*;
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Case {
+        id: String,
+        source: String,
+        patch: SourcePatchSpan,
+        expected_digest: Option<String>,
+        accepted: bool,
+        next_source: String,
+        before_sha256: String,
+        after_sha256: String,
+    }
+    #[test]
+    fn shared_json_contract_matches_typescript_and_exact_undo() {
+        let cases: Vec<Case> =
+            serde_json::from_str(include_str!("../../tests/source-patch-contract-v1.json"))
+                .unwrap();
+        assert!(cases.len() >= 20);
+        for c in cases {
+            let actual =
+                apply_checked_source_patch(&c.source, &c.patch, c.expected_digest.as_deref());
+            assert_eq!(actual.ok, c.accepted, "{}: {:?}", c.id, actual.error_ru);
+            assert_eq!(actual.next_source, c.next_source, "{} next", c.id);
+            assert_eq!(actual.before_digest, c.before_sha256, "{} before", c.id);
+            assert_eq!(actual.after_digest, c.after_sha256, "{} after", c.id);
+            if c.accepted {
+                let inverse = actual.inverse_patch.unwrap();
+                assert_eq!(inverse.line_ending_policy, LineEndingPolicy::Exact);
+                let undo = apply_checked_source_patch(
+                    &actual.next_source,
+                    &inverse,
+                    Some(&actual.after_digest),
+                );
+                assert!(undo.ok, "{} inverse: {:?}", c.id, undo.error_ru);
+                assert_eq!(
+                    undo.next_source.as_bytes(),
+                    c.source.as_bytes(),
+                    "{} undo bytes",
+                    c.id
+                );
+            } else {
+                assert!(actual.inverse_patch.is_none());
+            }
+        }
+    }
+    #[test]
+    fn malformed_or_unknown_wire_policy_is_rejected() {
+        for policy in ["typo", "RAW", ""] {
+            let v = serde_json::json!({"startOffset":0,"endOffset":0,"replacement":"","descriptionRu":"bad", "lineEndingPolicy":policy});
+            assert!(serde_json::from_value::<SourcePatchSpan>(v).is_err());
+        }
     }
 }
