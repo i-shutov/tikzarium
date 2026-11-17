@@ -1,0 +1,605 @@
+{
+  "schema": "tikzarium.pdf_manual_index.v1",
+  "redistributionPolicy": "index-only-local-texlive-kpsewhich",
+  "generatedBy": "tools/index_manuals/extract_pdf_anchors.py (MuPDF / PyMuPDF + qpdf)",
+  "coordinateSpace": "top-left-normalized-0..1",
+  "documents": [
+    {
+      "id": "pgfmanual",
+      "filename": "pgfmanual.pdf",
+      "version": "3.1.12",
+      "totalPages": 1322,
+      "sha256Short": "9f4a8c12…e30b"
+    },
+    {
+      "id": "pgfplots",
+      "filename": "pgfplots.pdf",
+      "version": "1.18.1",
+      "totalPages": 596,
+      "sha256Short": "4b82d190…71ac"
+    },
+    {
+      "id": "circuitikz",
+      "filename": "circuitikzmanual.pdf",
+      "version": "1.6.8",
+      "totalPages": 312,
+      "sha256Short": "c71d05a4…19fe"
+    },
+    {
+      "id": "tikz-cd",
+      "filename": "tikz-cd-doc.pdf",
+      "version": "1.0",
+      "totalPages": 18,
+      "sha256Short": "2e91f8b3…88d1"
+    },
+    {
+      "id": "chemfig",
+      "filename": "chemfig-en.pdf",
+      "version": "1.66",
+      "totalPages": 82,
+      "sha256Short": "6a30c9d1…44b2"
+    },
+    {
+      "id": "tikz-3dplot",
+      "filename": "tikz-3dplot_documentation.pdf",
+      "version": "0.70",
+      "totalPages": 35,
+      "sha256Short": "8d12a7e5…03c9"
+    },
+    {
+      "id": "forest",
+      "filename": "forest-doc.pdf",
+      "version": "2.1.5",
+      "totalPages": 108,
+      "sha256Short": "1f54e820…b9a7"
+    },
+    {
+      "id": "pgfgantt",
+      "filename": "pgfgantt.pdf",
+      "version": "5.0",
+      "totalPages": 57,
+      "sha256Short": "5c83b211…d40e"
+    },
+    {
+      "id": "quantikz",
+      "filename": "quantikz.pdf",
+      "version": "1.0.1",
+      "totalPages": 25,
+      "sha256Short": "7e29a04c…61f8"
+    },
+    {
+      "id": "tkz-euclide",
+      "filename": "tkz-euclide.pdf",
+      "version": "5.10c",
+      "totalPages": 304,
+      "sha256Short": "3a76d902…c51a"
+    },
+    {
+      "id": "tikz-timing",
+      "filename": "tikz-timing.pdf",
+      "version": "0.7f",
+      "totalPages": 48,
+      "sha256Short": "0b94c318…e72d"
+    },
+    {
+      "id": "tikz-optics",
+      "filename": "tikz-optics.pdf",
+      "version": "0.2.3",
+      "totalPages": 42,
+      "sha256Short": "5e29b814…a10f"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "pgf.env.tikzpicture",
+      "docId": "pgfmanual",
+      "section": "§12.2.1",
+      "page": 128,
+      "namedDest": "section.12.2.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.21,
+        "x1": 0.91,
+        "y1": 0.44
+      },
+      "matchedTokens": [
+        "tikzpicture",
+        "\\tikz"
+      ]
+    },
+    {
+      "id": "pgf.draw.line",
+      "docId": "pgfmanual",
+      "section": "§14.1",
+      "page": 162,
+      "namedDest": "section.14.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.24,
+        "x1": 0.91,
+        "y1": 0.48
+      },
+      "matchedTokens": [
+        "\\draw",
+        "--",
+        "cycle",
+        "\\path",
+        "\\fill",
+        "\\filldraw",
+        "\\clip"
+      ]
+    },
+    {
+      "id": "pgf.draw.rectangle",
+      "docId": "pgfmanual",
+      "section": "§14.4",
+      "page": 165,
+      "namedDest": "section.14.4",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.18,
+        "x1": 0.91,
+        "y1": 0.42
+      },
+      "matchedTokens": [
+        "rectangle",
+        "grid",
+        "rounded corners"
+      ]
+    },
+    {
+      "id": "pgf.draw.circle",
+      "docId": "pgfmanual",
+      "section": "§14.6",
+      "page": 167,
+      "namedDest": "section.14.6",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.27,
+        "x1": 0.91,
+        "y1": 0.52
+      },
+      "matchedTokens": [
+        "circle",
+        "ellipse",
+        "radius",
+        "arc"
+      ]
+    },
+    {
+      "id": "pgf.draw.bezier",
+      "docId": "pgfmanual",
+      "section": "§14.3",
+      "page": 164,
+      "namedDest": "section.14.3",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.19,
+        "x1": 0.91,
+        "y1": 0.45
+      },
+      "matchedTokens": [
+        "controls",
+        ".."
+      ]
+    },
+    {
+      "id": "pgf.lib.arrows.meta",
+      "docId": "pgfmanual",
+      "section": "§16.1",
+      "page": 201,
+      "namedDest": "section.16.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.25,
+        "x1": 0.91,
+        "y1": 0.54
+      },
+      "matchedTokens": [
+        "arrows.meta",
+        "Stealth",
+        "Latex",
+        "->",
+        "<->",
+        "|<->|"
+      ]
+    },
+    {
+      "id": "pgf.nodes.anchors",
+      "docId": "pgfmanual",
+      "section": "§17.2",
+      "page": 229,
+      "namedDest": "section.17.2",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.22,
+        "x1": 0.91,
+        "y1": 0.51
+      },
+      "matchedTokens": [
+        "\\node",
+        "anchor",
+        "inner sep",
+        "minimum width",
+        "minimum height"
+      ]
+    },
+    {
+      "id": "pgf.coords.calc",
+      "docId": "pgfmanual",
+      "section": "§13.5",
+      "page": 148,
+      "namedDest": "section.13.5",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.3,
+        "x1": 0.91,
+        "y1": 0.57
+      },
+      "matchedTokens": [
+        "calc",
+        "\\coordinate",
+        "coordinate"
+      ]
+    },
+    {
+      "id": "pgf.styles.tikzset",
+      "docId": "pgfmanual",
+      "section": "§12.4",
+      "page": 133,
+      "namedDest": "section.12.4",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.16,
+        "x1": 0.91,
+        "y1": 0.43
+      },
+      "matchedTokens": [
+        "\\tikzset",
+        "scope",
+        "\\pgfdeclarelayer",
+        "\\pgfsetlayers"
+      ]
+    },
+    {
+      "id": "pgf.foreach",
+      "docId": "pgfmanual",
+      "section": "§88",
+      "page": 979,
+      "namedDest": "section.88",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.2,
+        "x1": 0.91,
+        "y1": 0.47
+      },
+      "matchedTokens": [
+        "\\foreach",
+        "foreach"
+      ]
+    },
+    {
+      "id": "pgf.lib.positioning",
+      "docId": "pgfmanual",
+      "section": "§17.5.3",
+      "page": 241,
+      "namedDest": "section.17.5.3",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.26,
+        "x1": 0.91,
+        "y1": 0.5
+      },
+      "matchedTokens": [
+        "positioning"
+      ]
+    },
+    {
+      "id": "pgf.lib.patterns.decorations",
+      "docId": "pgfmanual",
+      "section": "§62 & §50",
+      "page": 726,
+      "namedDest": "section.62",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.19,
+        "x1": 0.91,
+        "y1": 0.45
+      },
+      "matchedTokens": [
+        "patterns",
+        "decorations.pathreplacing",
+        "decorations.pathmorphing",
+        "decorations.markings",
+        "decorate",
+        "pattern"
+      ]
+    },
+    {
+      "id": "pgf.lib.angles.spy",
+      "docId": "pgfmanual",
+      "section": "§41 & §73",
+      "page": 558,
+      "namedDest": "section.41",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.23,
+        "x1": 0.91,
+        "y1": 0.49
+      },
+      "matchedTokens": [
+        "angles",
+        "quotes",
+        "spy",
+        "intersections",
+        "backgrounds",
+        "fit",
+        "shapes.geometric",
+        "\\pic"
+      ]
+    },
+    {
+      "id": "pgf.lib.automata.petri",
+      "docId": "pgfmanual",
+      "section": "§43 & §63",
+      "page": 571,
+      "namedDest": "section.43",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.21,
+        "x1": 0.91,
+        "y1": 0.48
+      },
+      "matchedTokens": [
+        "automata",
+        "petri",
+        "chains",
+        "mindmap",
+        "lindenmayersystems",
+        "\\pgfdeclarelindenmayersystem"
+      ]
+    },
+    {
+      "id": "ext.pgfplots.axis",
+      "docId": "pgfplots",
+      "section": "§4.3 & §4.6",
+      "page": 54,
+      "namedDest": "section.4.3",
+      "bboxNorm": {
+        "x0": 0.08,
+        "y0": 0.18,
+        "x1": 0.92,
+        "y1": 0.5
+      },
+      "matchedTokens": [
+        "pgfplots",
+        "\\pgfplotsset",
+        "\\usepgfplotslibrary",
+        "axis",
+        "semilogxaxis",
+        "semilogyaxis",
+        "loglogaxis",
+        "polaraxis",
+        "groupplot",
+        "\\addplot",
+        "\\addplot3",
+        "\\legend",
+        "\\addlegendentry",
+        "fillbetween"
+      ]
+    },
+    {
+      "id": "ext.circuitikz.bipoles",
+      "docId": "circuitikz",
+      "section": "§3.1 & §4.2",
+      "page": 38,
+      "namedDest": "section.3.1",
+      "bboxNorm": {
+        "x0": 0.08,
+        "y0": 0.22,
+        "x1": 0.92,
+        "y1": 0.51
+      },
+      "matchedTokens": [
+        "circuitikz",
+        "siunitx",
+        "\\qty",
+        "\\unit",
+        "\\SI"
+      ]
+    },
+    {
+      "id": "ext.tikzcd.arrows",
+      "docId": "tikz-cd",
+      "section": "§1.2 & §2.1",
+      "page": 3,
+      "namedDest": "section.1.2",
+      "bboxNorm": {
+        "x0": 0.1,
+        "y0": 0.25,
+        "x1": 0.9,
+        "y1": 0.54
+      },
+      "matchedTokens": [
+        "tikz-cd",
+        "tikzcd",
+        "\\arrow",
+        "\\ar"
+      ]
+    },
+    {
+      "id": "ext.chemfig.molecules",
+      "docId": "chemfig",
+      "section": "§3 & §12",
+      "page": 14,
+      "namedDest": "section.3",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.2,
+        "x1": 0.91,
+        "y1": 0.49
+      },
+      "matchedTokens": [
+        "chemfig",
+        "mhchem",
+        "\\chemfig",
+        "\\schemestart",
+        "\\schemestop",
+        "\\ce"
+      ]
+    },
+    {
+      "id": "ext.tdplot.coords",
+      "docId": "tikz-3dplot",
+      "section": "§2.1 & §3.2",
+      "page": 7,
+      "namedDest": "section.2.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.23,
+        "x1": 0.91,
+        "y1": 0.51
+      },
+      "matchedTokens": [
+        "tikz-3dplot",
+        "\\tdplotsetmaincoords",
+        "\\tdplotsetrotatedcoords",
+        "\\tdplotdrawarc",
+        "tdplot_main_coords"
+      ]
+    },
+    {
+      "id": "ext.forest.trees",
+      "docId": "forest",
+      "section": "§2.1 & §3.4",
+      "page": 8,
+      "namedDest": "section.2.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.19,
+        "x1": 0.91,
+        "y1": 0.47
+      },
+      "matchedTokens": [
+        "forest"
+      ]
+    },
+    {
+      "id": "ext.pgfgantt.chart",
+      "docId": "pgfgantt",
+      "section": "§2.2 & §2.7",
+      "page": 11,
+      "namedDest": "section.2.2",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.24,
+        "x1": 0.91,
+        "y1": 0.52
+      },
+      "matchedTokens": [
+        "pgfgantt",
+        "ganttchart",
+        "\\gantttitle",
+        "\\gantttitlelist",
+        "\\ganttbar",
+        "\\ganttgroup",
+        "\\ganttmilestone",
+        "\\ganttlink"
+      ]
+    },
+    {
+      "id": "ext.quantikz.gates",
+      "docId": "quantikz",
+      "section": "§2 & §4",
+      "page": 4,
+      "namedDest": "section.2",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.21,
+        "x1": 0.91,
+        "y1": 0.5
+      },
+      "matchedTokens": [
+        "quantikz",
+        "tikz-feynman",
+        "feynman",
+        "\\lstick",
+        "\\rstick",
+        "\\gate",
+        "\\ctrl",
+        "\\targ",
+        "\\meter",
+        "\\qw",
+        "\\vertex",
+        "\\diagram"
+      ]
+    },
+    {
+      "id": "ext.euclide.constructions",
+      "docId": "tkz-euclide",
+      "section": "§6 & §14",
+      "page": 42,
+      "namedDest": "section.6",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.22,
+        "x1": 0.91,
+        "y1": 0.51
+      },
+      "matchedTokens": [
+        "tkz-euclide",
+        "tikz-network",
+        "\\tkzDefPoint",
+        "\\tkzDefCircle",
+        "\\tkzGetPoint",
+        "\\tkzDrawPolygon",
+        "\\tkzDrawCircle",
+        "\\tkzDrawPoints",
+        "\\tkzDrawSegments",
+        "\\tkzLabelPoints",
+        "\\Vertex",
+        "\\Edge"
+      ]
+    },
+    {
+      "id": "ext.timing.waveforms",
+      "docId": "tikz-timing",
+      "section": "§2.1 & §3.3",
+      "page": 9,
+      "namedDest": "section.2.1",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.2,
+        "x1": 0.91,
+        "y1": 0.49
+      },
+      "matchedTokens": [
+        "tikz-timing",
+        "tikztimingtable",
+        "\\tikztiming",
+        "\\extracode"
+      ]
+    },
+    {
+      "id": "ext.optics.bench",
+      "docId": "tikz-optics",
+      "section": "§2.2 & §3.4",
+      "page": 11,
+      "namedDest": "section.2.2",
+      "bboxNorm": {
+        "x0": 0.09,
+        "y0": 0.22,
+        "x1": 0.91,
+        "y1": 0.52
+      },
+      "matchedTokens": [
+        "tikz-optics",
+        "stanli",
+        "use optics",
+        "\\beam",
+        "\\support",
+        "\\lineload"
+      ]
+    }
+  ]
+}
