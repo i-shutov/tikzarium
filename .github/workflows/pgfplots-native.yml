@@ -287,9 +287,12 @@ jobs:
           fi
           sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 update -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=25 install -y --no-install-recommends \
-            texlive-xetex texlive-latex-extra texlive-lang-cyrillic fonts-dejavu-core poppler-utils
+            texlive-xetex texlive-latex-extra texlive-fonts-recommended texlive-lang-cyrillic fonts-dejavu-core poppler-utils
           test "$(fc-match -f '%{family}' 'DejaVu Sans')" = 'DejaVu Sans'
           test "$(fc-match -f '%{family}' 'DejaVu Sans Mono')" = 'DejaVu Sans Mono'
+          metric_path="$(kpsewhich pzdr.tfm)"
+          test -f "$metric_path"
+          kpsewhich pzdr.tfm > "$RUNNER_TEMP/scientific-visual-guide/logs/tex-font-metrics.txt"
           xelatex --version > "$RUNNER_TEMP/scientific-visual-guide/logs/xelatex-version.txt"
           fc-match -v 'DejaVu Sans' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-sans.txt"
           fc-match -v 'DejaVu Sans Mono' > "$RUNNER_TEMP/scientific-visual-guide/logs/font-mono.txt"
@@ -336,6 +339,8 @@ jobs:
           pdf = root / 'guide.pdf'
           receipt = {'schema_version': 1, 'status': 'COMPILED_REQUIRES_INDEPENDENT_PAGE_REVIEW',
                      'source_head_sha': manifest['build']['source_sha'],
+                     'generator_source_sha': manifest['build']['source_sha'],
+                     'evidence_source_sha': manifest['build']['source_sha'],
                      'pdf_sha256': hashlib.sha256(pdf.read_bytes()).hexdigest(),
                      'pdf_bytes': pdf.stat().st_size, 'rendered_page_count': len(pages),
                      'original_screen_count': len(manifest['screens']),

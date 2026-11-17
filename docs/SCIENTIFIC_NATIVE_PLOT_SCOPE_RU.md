@@ -33,3 +33,7 @@ Descriptor range принадлежит всей команде draw до `;`, o
 Unit/event проверки используют оригинальный fixture, полный исходник до/после `50→80`, один inverse/общую Undo, Unicode/CRLF, соседние draw и два независимых native owner. Отрицательные проверки покрывают чужой диапазон options, forged kind/range, stale hash/revision, неверные expected bytes, неподдерживаемую property, samples вне bounds, неизвестные макросы, закрытые контексты и неподдерживаемые формы plot. Старые списки Axis 15 / AddPlot 3 / Group / Table сохранены.
 
 Логи локальных Rust проверок находятся в `validation/cp09/native-plot` рабочего окружения. Эти проверки сами по себе имеют статус UNIT_EVENT; native GUI, реальный XeLaTeX/PDF, Save/reopen, Linux/Windows и независимая приёмка требуют собственных свидетельств на точном интегрированном head. Полный native TikZ AST, произвольные формулы/стили и остальные операции SV-040 не заявляются.
+
+## Последующая native-проверка CP09
+
+На source `92a01f2a8d58718e4d1439b0343e9d0d03d6444d` операция SV-040 `samples=50→80` прошла реальные Apply/Undo/Save/reopen/GUI XeLaTeX и независимый просмотр PDF в hosted Linux/X11. Formula/domain/annotations и исходный corpus сохранены. Original и attributed-clean V2 проверены отдельно; строгие предупреждения трёх других original fixtures остаются FAIL. [Итоговый CP09 report](../insights/2026-11-17_CP09_NATIVE_PLOT_AT4_VISUAL_GUIDE_RU.md) фиксирует source, run, пределы приёмки и отдельную сборку Visual Guide. Физические Windows/macOS и полный SCI142 этим результатом не закрываются.

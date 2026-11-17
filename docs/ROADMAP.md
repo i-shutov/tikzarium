@@ -135,6 +135,8 @@ Publication связывает исходные документы и артеф
 
 **SCI-04:** shared SC1–SC3/AT4 распознавание/SourcePatch/PGFPlots с корпусными примерами, затем SC4–SC6 и научная матрица; общий каталог параметров/F1.
 
+CP09 (17.11.2026): на native source `92a01f2a` независимо проверены закрытая операция NativePlot/SV-040 samples, 17 выбранных AT4-сценариев и регрессии I61/N5/compact; подготовлен 17-страничный Visual Guide по реальным кадрам. Original V2 сохраняет три строгих warning FAIL; атрибутированные clean-копии проверены отдельно. Это ограниченный прогресс SCI-04, а не закрытие всей SC3/SCI142 или физических платформ. [Отчёт, точные source/run и оставшиеся задачи](../insights/2026-11-17_CP09_NATIVE_PLOT_AT4_VISUAL_GUIDE_RU.md).
+
 **SCI-05:** upstream audit и Asymptote vertical в реальной Studio; затем Typst/CeTZ, ограниченная математическая семантика по отдельному scope. Поздние data/diagram/engineering реализации не начинаются параллельно этому пакету.
 
 **SCI-QA:** #171 — независимые scientific/UX/source/engine и Windows оригиналы. Нативный Win10 100/125/200%, Server отдельно; W0–W4 и IME не подменяются hosted evidence. Если прямой доступ отсутствует, записать BLOCKED/NOT_RUN и продолжать независимую часть текущего научного этапа.
