@@ -105,13 +105,13 @@ def main():
         report["window_id"] = window
         screenshot(out, "01-studio-initial")
         # Open an independently prepared existing CRLF+opaque source in actual GUI.
-        click(window, 321, 40)
+        click(window, 402, 40)  # UX2: actual Studio File button; x321 is the Build CTA.
         screenshot(out, "02-file-popup")
-        click(window, 440, 93)
+        click(window, 522, 93)  # Reviewed native File menu path field after UX2 primary Build.
         key("ctrl+a")
         paste(b"n2-crlf.tex", out / "clipboard-open.txt")
         screenshot(out, "03-open-target")
-        click(window, 351, 124)
+        click(window, 433, 124)  # Reviewed native Open action in File menu after UX2.
         time.sleep(0.5)
         screenshot(out, "04-scratch-dirty-open-modal")
         # A new scratch buffer is deliberately DIRTY. Opening another file
@@ -127,6 +127,35 @@ def main():
             raise RuntimeError("N2 initial dirty-scratch Open modal was not dismissed")
         if source.read_bytes() != FIXTURE:
             raise RuntimeError("Open modified initial CRLF fixture")
+        # Guard against a fake open: the old UX2 script clicked Build instead
+        # of File, dismissed the Build modal, and then audited only the
+        # UNCHANGED input file. Require an actual source-panel visual delta.
+        for name in ("01-studio-initial", "04a-after-gui-open-confirmed"):
+            run(
+                "convert", str(out / (name + ".png")),
+                "-crop", "410x500+75+220", "+repage",
+                str(out / (name + "-source-crop.png")),
+            )
+        changed = subprocess.run(
+            ["compare", "-metric", "AE", "-fuzz", "5%",
+             str(out / "01-studio-initial-source-crop.png"),
+             str(out / "04a-after-gui-open-confirmed-source-crop.png"),
+             "null:"],
+            capture_output=True, text=True, check=False, timeout=20,
+        )
+        if changed.returncode not in (0, 1):
+            raise RuntimeError("Cannot check initial File/Open source panel: "
+                               + changed.stderr[-400:])
+        try:
+            pixels = int(changed.stderr.strip().split()[0])
+        except (ValueError, IndexError) as error:
+            raise RuntimeError("Invalid initial source-region delta metric") from error
+        report["initial_open_source_changed_pixels"] = pixels
+        if pixels < 350:
+            raise RuntimeError(
+                "N2 initial File/Open did not visibly replace the scratch TeX; "
+                "must not use a pre-existing fixture file as GUI-open proof"
+            )
 
         # Right-hand Libraries dock: coordinate lease from accepted B42 image.
         click(window, 1190, 109)
@@ -162,8 +191,8 @@ def main():
         time.sleep(0.45)
         screenshot(out, "08-connect-button-target")
 
-        # Original run 41556652239 screenshot 08: actual Connect button
-        # spans x1105..1341, y549..577. Old (1212,635) expanded the
+        # Verify Connect/Disconnect from the new original N2 screenshot; prior
+        # x1105..1341, y549..577 region is a candidate AFTER real fixture Open.
         # following positioning row rather than clicking the C SourcePatch.
         click(window, 1212, 563)
         screenshot(out, "09-after-connect")
@@ -188,8 +217,8 @@ def main():
         wait(lambda: source.read_bytes() == FIXTURE,
              "N2 real Studio Disconnect did not exactly restore source")
         report["library_disconnect"] = "PASS_REAL_X11_INVERSE_SOURCE_BYTES"
-        click(window, 1052, 109)  # Properties dock.
-        click(window, 1085, 157)  # Visual transaction Undo, not TextEdit Ctrl+Z.
+        click(window, 1090, 109)  # Reviewed Properties tab, inside x1067..1130.  # Properties dock.
+        click(window, 1125, 157)  # Reviewed pinned visual Undo button on Properties.  # Visual transaction Undo, not TextEdit Ctrl+Z.
         click(window, 177, 39)
         wait(lambda: source.read_bytes() == connected,
              "N2 visual Undo of library disconnect did not restore source")
@@ -205,9 +234,9 @@ def main():
         # visible. Drive genuine Studio File -> Open path, already accepted
         # in the initial fixture Open, rather than assume shortcut delivery.
         run("xdotool", "windowactivate", "--sync", window)
-        click(window, 321, 40)
+        click(window, 402, 40)  # UX2: actual Studio File button; x321 is the Build CTA.
         screenshot(out, "12b-file-reopen-menu")
-        click(window, 351, 124)
+        click(window, 433, 124)  # Reviewed native Open action in File menu after UX2.
         time.sleep(0.8)
         screenshot(out, "13-reopened-external-change")
         # Must prove the source TEXT changed on screen before typing into it.
@@ -263,7 +292,7 @@ def main():
         click(window, 73, 77)  # Exact PDF tab, editable source still visible.
         time.sleep(1.2)
         screenshot(out, "15-exact-pdf-tab")
-        click(window, 259, 39)  # GUI PDF Export.
+        click(window, 341, 39)  # UX2: Export moved right of labelled Build.  # GUI PDF Export.
         pdf = source.with_suffix(".pdf")
         wait(pdf.is_file, "N2 real Studio external XeLaTeX did not export PDF", 20)
         info = run("pdfinfo", str(pdf))
@@ -371,7 +400,7 @@ def main():
         time.sleep(3.0)
         screenshot(out, "21-n3-real-build")
         click(window, 73, 77)
-        click(window, 259, 39)
+        click(window, 341, 39)  # UX2: Export moved right of labelled Build.
         wait(lambda: pdf.is_file() and pdf.stat().st_mtime_ns != old_pdf_mtime,
              "N3 GUI Build/Export did not refresh the external XeLaTeX PDF", 25)
         if "Фигура" not in run("pdftotext", "-enc", "UTF-8", str(pdf), "-"):
@@ -386,7 +415,7 @@ def main():
 
         # Visual inverse transaction restores the user's typed prefix exactly;
         # it must never revert the independent original macro or CRLF.
-        click(window, 1085, 157)
+        click(window, 1125, 157)  # Reviewed pinned visual Undo button on Properties.
         screenshot(out, "23-n3-visual-undo")
         click(window, 177, 39)
         wait(lambda: source.read_bytes() == n3_prefix,
