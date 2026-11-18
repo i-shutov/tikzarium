@@ -40,6 +40,20 @@ jobs:
         run: python -c "import platform,sys; print(platform.machine()); sys.exit(0 if platform.machine().lower() in ('arm64','aarch64') else 1)"
       - name: Python fixture harness unit tests
         run: python -m unittest discover -s scripts/tools -p "test_qa_*.py" -v
+      - name: AT0 AI TikZ source-ledger validation (synthetic, no private data or TeX)
+        run: python -m unittest discover -s scripts/tests -p "test_ai_tikz_intake.py" -v
+      - name: Archive exact-source AT0 offline auditor (no owner data)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tikzarium-at0-offline-auditor
+          path: |
+            scripts/ai_tikz_intake.py
+            scripts/tests/test_ai_tikz_intake.py
+            roadmap/AI_TIKZ_SKILLS_2026-11-10_88_CASES.csv
+            roadmap/AI_TIKZ_SKILLS_2026-11-10_13_SKILLS_SHA256.csv
+          if-no-files-found: error
+          retention-days: 14
       - name: N5 offline portable packaging tests (NOT a physical GUI)
         run: python -m unittest discover -s scripts/tests -p "test_package_n5_preview.py" -v
       - name: C04/C06 static extension catalogue audit
